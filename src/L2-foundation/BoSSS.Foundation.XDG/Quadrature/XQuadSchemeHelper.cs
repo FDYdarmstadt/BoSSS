@@ -35,7 +35,7 @@ namespace BoSSS.Foundation.XDG {
     /// This is a driver-class for the creation of various quadrature schemes.
     /// All of these have different, involved, constructor calls.
     /// Via this utility class, a somewhat unified access to the creation of these rules is provided.
-    /// (see also <see cref="MomentFittingVariant"/>).
+    /// (see also <see cref="CutCellQuadratureMethod"/>).
     /// </summary>
     public class XQuadSchemeHelper {
 
@@ -354,6 +354,7 @@ namespace BoSSS.Foundation.XDG {
         ///    \oint_{K_j \cap \mathfrak{I} } \ldots \mathrm{dS} .
         /// ```
         /// These rules are used, e.g., by the (volume parts of) surface element operator <see cref="XDifferentialOperatorMk2.SurfaceElementOperator_Ls0"/>
+        /// </summary>
         public CellQuadratureScheme Get_SurfaceElement_VolumeQuadScheme(SpeciesId sp, int iLevSet) {
             if (!this.SpeciesList.Contains(sp))
                 throw new ArgumentException("Given species (id = " + sp.cntnt + ") is not supported.");

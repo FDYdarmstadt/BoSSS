@@ -1,5 +1,7 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
+using BoSSS.Solution.NSECommon;
+using BoSSS.Solution.XNSECommon;
 using ilPSP;
 using System;
 using System.Collections.Generic;
@@ -15,6 +17,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
         string species;
         protected int d;
         string[] variableNames;
+        IncompressibleMultiphaseBoundaryCondMap boundaryMap;
         public double PenaltySafety;
         public SIPTransposeForm(string species, string[] variables, int d, double viscosity, double __PenaltySafety = 4.0) {
             this.PenaltySafety = __PenaltySafety;
@@ -22,6 +25,14 @@ namespace ZwoLevelSetSolver.SolidPhase {
             this.viscosity = viscosity;
             this.variableNames = variables;
             this.d = d;
+        }
+
+        public SIPTransposeForm(string species, string[] variables, int d, double viscosity, IncompressibleMultiphaseBoundaryCondMap boundaryMap, double __PenaltySafety = 4.0)
+          : this(species, variables, d, viscosity, __PenaltySafety) {
+            this.boundaryMap = boundaryMap;
+
+            //var bndyFunctions = variables.Select(varname => boundaryMap.bndFunction[varname]).ToArray();
+            //Console.WriteLine(bndyFunctions[d][1](new double[] { 0.4, 0.4 }, 0.0));
         }
 
         public TermActivationFlags VolTerms {
@@ -43,15 +54,51 @@ namespace ZwoLevelSetSolver.SolidPhase {
         public string ValidSpecies => species;
 
         public virtual double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN) {
-            double acc1 = 0.0;
-            Vector dirichlet = new Vector(D);
-            for (int i = 0; i < D; i++) {
-                acc1 -=  viscosity * (_Grad_uIN[i, d] ) * (_vIN ) * inp.Normal[i];  // consistency term  
-                acc1 -=  viscosity * (_Grad_vIN[i] ) * (_uIN[i] - dirichlet[i]) * inp.Normal[d];  // symmetry term
+            if(boundaryMap != null) {
+                IncompressibleBcType edgType = boundaryMap.EdgeTag2Type[inp.EdgeTag];
+                double acc1 = 0.0;
+                double pnlty = PenaltyIn(inp.jCellIn);
+                Vector dirichlet = new Vector(D);
+                for(int i = 0; i < D; ++i) {
+                    dirichlet[i] = boundaryMap.bndFunction[variableNames[i]][inp.EdgeTag](inp.X, inp.time);
+                }
+                switch(edgType) {
+                    case IncompressibleBcType.Wall:
+                    for(int i = 0; i < D; i++) {
+                        acc1 -= viscosity * (_Grad_uIN[i, d]) * (_vIN) * inp.Normal[i];  // consistency term  
+                        acc1 -= viscosity * (_Grad_vIN[i]) * (_uIN[i] - dirichlet[i]) * inp.Normal[d];  // symmetry term
+                    }
+                    acc1 += PenaltySafety * pnlty * (_uIN[d] - dirichlet[d]) * _vIN * viscosity;
+                    break;
+                    case IncompressibleBcType.FreeSlip:
+                    for(int i = 0; i < D; i++) {
+                        for(int j = 0; j < D; ++j) {
+                            acc1 -= viscosity * inp.Normal[i] * _Grad_uIN[j, i] * inp.Normal[j] * _vIN * inp.Normal[d];  // consistency term  
+                            acc1 -= viscosity * inp.Normal[d] * _Grad_vIN[i] * inp.Normal[i] * (_uIN[j] - dirichlet[j]) * inp.Normal[j];  // symmetry term
+                        }
+                        acc1 += viscosity * PenaltySafety * pnlty * (_uIN[i] - dirichlet[i]) * inp.Normal[i] * _vIN * inp.Normal[d];
+                    }
+                    break;
+                    case IncompressibleBcType.SIMPLE_Outflow:
+                    case IncompressibleBcType.Pressure_Outlet:
+                    case IncompressibleBcType.Velocity_Inlet:
+                    break;
+                    default:
+                    throw new NotImplementedException();
+                }
+                return acc1;
+            } else {
+
+                double acc1 = 0.0;
+                Vector dirichlet = new Vector(D);
+                for(int i = 0; i < D; i++) {
+                    acc1 -= viscosity * (_Grad_uIN[i, d]) * (_vIN) * inp.Normal[i];  // consistency term  
+                    acc1 -= viscosity * (_Grad_vIN[i]) * (_uIN[i] - dirichlet[i]) * inp.Normal[d];  // symmetry term
+                }
+                double pnlty = PenaltyIn(inp.jCellIn);
+                acc1 += PenaltySafety * (_uIN[d] - dirichlet[d]) * (_vIN) * pnlty * viscosity;
+                return acc1;
             }
-            double pnlty = PenaltyIn(inp.jCellIn);
-            acc1 += PenaltySafety * (_uIN[d] - dirichlet[d]) * (_vIN) * pnlty * viscosity;
-            return acc1;
         }
 
         MultidimensionalArray cj;
@@ -100,7 +147,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             double acc1 = 0.0;
             for (int i = 0; i < D; i++) {
                 acc1 -= 0.5 * viscosity * (_Grad_uIN[i, d] + _Grad_uOUT[i, d]) * (_vIN - _vOUT) * inp.Normal[i];  // consistency term  
-                acc1 -= 0.5 * viscosity * (_Grad_vIN[i] + _Grad_vOUT[i]) * (_uIN[i] - _uOUT[i]) * inp.Normal[d];  // symmetry term
+                acc1 -= 0.5 * viscosity * (_Grad_vIN[i] + _Grad_vOUT[i]) * (_uIN[i] - _uOUT[i]) * inp.Normal[d];  // symmetry term !!! It is modified in LSS. 
             }
             double penalty = Math.Max(PenaltyIn(inp.jCellIn), PenaltyOut(inp.jCellOut));
             acc1 += PenaltySafety * penalty * (_uIN[d] - _uOUT[d]) * (_vIN - _vOUT) * viscosity;

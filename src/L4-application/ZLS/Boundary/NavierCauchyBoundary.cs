@@ -16,7 +16,7 @@ namespace ZwoLevelSetSolver.Boundary {
         string codomainName;
 
         public NavierCauchyBoundary(string fluidSpecies, string solidSpecies, int d, int D, 
-            Solid material, double rho_fluid, double viscosity) {
+            Solid material, double rho_fluid, double viscosity, double sliplength) {
 
             codomainName = BoSSS.Solution.NSECommon.EquationNames.MomentumEquationComponent(d);
             this.fluidSpecies = fluidSpecies;
@@ -29,7 +29,7 @@ namespace ZwoLevelSetSolver.Boundary {
             //Stress equality
             //AddComponent(new NeoHookeanNeumannForm(fluidSpecies, solidSpecies, d, 1, viscosity, material.Viscosity, material.Lame2));
             //AddComponent(new NonLinearNeoHookeanNeumannForm(fluidSpecies, solidSpecies, d, 1, viscosity, material.Viscosity, material.Lame2));
-            AddComponent(new NeoHookeanBoundaryForm(fluidSpecies, solidSpecies, d, 1, viscosity, material.Viscosity, material.Lame2));
+            AddComponent(new NeoHookeanBoundaryForm(fluidSpecies, solidSpecies, d, D, 1, viscosity, material.Viscosity, material.Lame2));
 
             //Transport therms 
             AddComponent(new NonLinearSolidConvectionForm(
@@ -38,8 +38,21 @@ namespace ZwoLevelSetSolver.Boundary {
 
             //Penalty coupling
             double maxViscosity = Math.Max(viscosity, material.Viscosity);
-            AddComponent(new NoSlipVelocityPenaltyForm(fluidSpecies, solidSpecies, d, D, 1, maxViscosity, maxViscosity));
-            //AddComponent(new NavierSlipVelocityPenaltyForm(fluidSpecies, solidSpecies, d, D, 1, viscosity, material.Lame2, 0.1));
+            if(sliplength == 0.0) {
+                Console.Write("using no slip. ");
+                //AddComponent(new NoSlipVelocityPenaltyForm(fluidSpecies, solidSpecies, d, D, 1, maxViscosity, maxViscosity));
+                AddComponent(new NoSlipVelocityPenaltyFormNormal(fluidSpecies, solidSpecies, d, D, 1, maxViscosity, material.Lame2, sliplength));
+                AddComponent(new NoSlipVelocityPenaltyFormTangential(fluidSpecies, solidSpecies, d, D, 1, maxViscosity, material.Lame2, sliplength));
+            } else if(double.IsInfinity(sliplength)) {
+                Console.Write("using slip. Not implemented yet!!!");
+                AddComponent(new SlipVelocityPenaltyForm(fluidSpecies, solidSpecies, d, D, 1, maxViscosity, maxViscosity));
+                //AddComponent(new NoSlipVelocityPenaltyFormTangential(fluidSpecies, solidSpecies, d, D, 1, maxViscosity, material.Lame2, sliplength));
+                AddComponent(new NoSlipVelocityPenaltyFormNormal(fluidSpecies, solidSpecies, d, D, 1, maxViscosity, material.Lame2, sliplength));
+            } else {
+                Console.Write("using navier slip. ");
+                AddComponent(new NavierSlipVelocityPenaltyForm(fluidSpecies, solidSpecies, d, D, 1, maxViscosity, material.Lame2, sliplength));
+                AddComponent(new NoSlipVelocityPenaltyFormNormal(fluidSpecies, solidSpecies, d, D, 1, maxViscosity, material.Lame2, sliplength));
+            }
         }
 
         public override string FirstSpeciesName => fluidSpecies;

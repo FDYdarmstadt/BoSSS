@@ -35,6 +35,10 @@ namespace ZwoLevelSetSolver.SolidPhase {
         public SIPForm(string species, string[] variables, int d, double viscosity, IncompressibleMultiphaseBoundaryCondMap boundaryMap, double __PenaltySafety = 4.0) 
             :this(species, variables, d, viscosity, __PenaltySafety) {
             this.boundaryMap = boundaryMap;
+
+            //Debugger.Launch();
+            //var bndyFunctions = variables.Select(varname => boundaryMap.bndFunction[varname]).ToArray();
+            //Console.WriteLine(bndyFunctions[d][1](new double[] { 0.4, 0.4 }, 0.0));
         }
 
         public TermActivationFlags VolTerms {

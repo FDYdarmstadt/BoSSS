@@ -7,6 +7,8 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 using ZwoLevelSetSolver.SolidPhase;
+using Newtonsoft.Json;
+
 
 namespace ZwoLevelSetSolver {
     public class ZLS_Control : XNSE_Control {
@@ -56,6 +58,13 @@ namespace ZwoLevelSetSolver {
             });
 
         }
+
+        /// <summary>
+        /// Exact solution for Displacement, for each species (either A or B or C).
+        /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
+        public IDictionary<string, Func<double[], double, double>[]> ExactSolutionDisplacement;
     }
 
 

@@ -193,7 +193,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         underRelax,
                         incremental);
 
-                    if(changed) EnforceContinuity();
+                    if(changed) 
+                        EnforceContinuity();
                 }
 
 

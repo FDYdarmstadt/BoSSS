@@ -291,6 +291,12 @@ namespace BoSSS.Solution.XNSECommon {
         public double LFFB = 0.8;
 
         /// <summary>
+        /// stabilization parameter for Local-Lax-Friedrichs flux, phase C
+        /// </summary>
+        [DataMember]
+        public double LFFC = 0.8;
+
+        /// <summary>
         /// Penalty safety factor for the viscous operator.
         /// </summary>
         [DataMember]

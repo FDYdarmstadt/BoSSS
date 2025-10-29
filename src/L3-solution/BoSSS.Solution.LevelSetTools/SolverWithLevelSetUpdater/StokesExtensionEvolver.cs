@@ -204,8 +204,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             IReadOnlyDictionary<string, DGField> DomainVarFields,
             IReadOnlyDictionary<string, DGField> ParameterVarFields) {
 
+
             bool changed = false;
             ReInit_TimestepIndex++; // increment first
+            if (phaseInterface.LevelSetIndex > 0) 
+                return false; //skip the second level set
+
             // after level-set evolution and for initializing non-signed-distance level set fields
             if (ReInit_Period > 0 && ReInit_TimestepIndex % ReInit_Period == 0) {
 

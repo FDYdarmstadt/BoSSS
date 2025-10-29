@@ -15,13 +15,13 @@ namespace ZwoLevelSetSolver.Boundary {
         string solidSpecies;
         string fluidSpecies;
         string[] variableNames;
-        int D = 2;
+        int D;//Should check here!!!
         int d;
         double fluidViscosity;
         double solidViscosity;
         double lame2;
 
-        public NeoHookeanBoundaryForm(string fluidSpecies, string solidSpecies, int d, int levelSetIndex, 
+        public NeoHookeanBoundaryForm(string fluidSpecies, string solidSpecies, int d, int D, int levelSetIndex, 
             double fluidViscosity, double solidViscosity, double lame2) {
             this.levelSetIndex = levelSetIndex;
             this.fluidSpecies = fluidSpecies;
@@ -30,6 +30,7 @@ namespace ZwoLevelSetSolver.Boundary {
             this.lame2 = lame2;
             this.fluidViscosity = fluidViscosity;
             this.d = d;
+            this.D = D;
             variableNames = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D);
             variableNames = variableNames.Cat(ZwoLevelSetSolver.VariableNames.DisplacementVector(D));
             variableNames = variableNames.Cat(BoSSS.Solution.NSECommon.VariableNames.Pressure);
@@ -76,7 +77,7 @@ namespace ZwoLevelSetSolver.Boundary {
                 viscousStressT -= 1 * solidViscosity * (_Grad_uOUT[i, d]) * inp.Normal[i];
             }
 
-            double stress = (fluidStress + fluidStressT + pIn + solidStress + solidStressT + viscousStress + viscousStressT + pOut) * 0.5;
+            double stress = (fluidStress + fluidStressT + pIn + solidStress + solidStressT + viscousStress + viscousStressT + pOut) * 0.5;//Lacking surface tension and curvature here? Should be SIP form? 
 
             return  (stress ) * _vIN -  (stress) * _vOUT;
         }
