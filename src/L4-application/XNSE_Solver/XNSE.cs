@@ -78,11 +78,9 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
-
             //InitMPI(num_threads: 2);
             //BoSSS.Application.XNSE_Solver.Tests.RestartTest.Run_RestartTests(true, LevelSetHandling.LieSplitting, TimeSteppingScheme.ImplicitEuler, true, 3);
             //NUnit.Framework.Assert.IsTrue(false, "remove me and lines above");
-
             {
                 XNSE._Main(args, false, delegate () {
                     var p = new XNSE();
