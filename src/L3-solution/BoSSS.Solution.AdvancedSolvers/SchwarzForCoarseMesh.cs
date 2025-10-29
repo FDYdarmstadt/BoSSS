@@ -1431,20 +1431,24 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					m_comm.CommRHStoBlocks(RES, RHSblocks);
 				}
 
-				for (int iBlock = 0; iBlock < m_BlockSolvers.Length; iBlock++) {
-					if (m_BlockSolvers[iBlock] != null) {
-						m_BlockSolvers[iBlock].Solve(Xblocks[iBlock], RHSblocks[iBlock]);
-						if (m_OverlapScaling != null) {
-							var scale = m_OverlapScaling[iBlock];
-							var Xb = Xblocks[iBlock];
-							int L = scale.Length;
-							for (int l = 0; l < L; l++)
-								Xb[l] *= scale[l];
-						}
-					}
-				}
+                ilPSP.Environment.ParallelFor(0, m_BlockSolvers.Length, (iBlock) => {
+                    //Console.WriteLine($"Rank {ilPSP.Environment.MPIEnv.MPI_Rank} Thread {System.Threading.Thread.CurrentThread.ManagedThreadId} running");
+                    var solver = m_BlockSolvers[iBlock];
+                    if(solver == null)
+                        return;
 
-				m_comm.AccBlockSol(X, Xblocks);
+                    solver.Solve(Xblocks[iBlock], RHSblocks[iBlock]);
+
+                    var scale = m_OverlapScaling?[iBlock];
+                    if(scale != null) {
+                        var Xb = Xblocks[iBlock];
+                        int L = scale.Length;
+                        for(int l = 0; l < L; l++)
+                            Xb[l] *= scale[l];
+                    }
+                });
+
+                m_comm.AccBlockSol(X, Xblocks);
 
 				this.NoIter++;
 			}
