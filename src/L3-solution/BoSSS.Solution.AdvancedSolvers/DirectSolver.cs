@@ -526,11 +526,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         bool ISolverSmootherTemplate.Converged => true;
 
         public void Init(IOperatorMappingPair op) {
-            var Mtx = op.OperatorMatrix;
-            var MgMap = op.DgMapping;
-            if(!Mtx.RowPartitioning.EqualsPartition(MgMap)) { //notice that on Debug configuration Mtx may not be initialized
-                throw new ArgumentException("Row partitioning mismatch.");
-            }
+            InitializeMatrix(op.OperatorMatrix, op.DgMapping);
         }
 
         object ICloneable.Clone() {
@@ -538,15 +534,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         void ISolverSmootherTemplate.Init(MultigridOperator op) {
-            var Mtx = op.OperatorMatrix;
-            var MgMap = op.DgMapping;
-            if(!Mtx.RowPartitioning.EqualsPartition(MgMap)) { //notice that on Debug configuration Mtx may not be initialized
+            InitializeMatrix(op.OperatorMatrix, op.DgMapping);
+        }
+
+        private void InitializeMatrix(IMutableMatrixEx Mtx, IBlockPartitioning MgMap) {
+            if(!Mtx.RowPartitioning.EqualsPartition(MgMap)) {
                 throw new ArgumentException("Row partitioning mismatch.");
             }
+            DefineMatrix(Mtx);
         }
 
         void ISolverSmootherTemplate.ResetStat() {
-            Console.Error.WriteLine("ResetStat is not supported");
+            //Console.Error.WriteLine("ResetStat is not supported");
         }
 
         void ISolverSmootherTemplate.Solve<U, V>(U X, V B) {
