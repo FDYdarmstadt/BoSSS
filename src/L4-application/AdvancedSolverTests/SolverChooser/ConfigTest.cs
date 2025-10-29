@@ -40,7 +40,10 @@ namespace AdvancedSolverTests.SolverChooser
 
                 //Act and Assert
                 foreach(LinearSolverCode code in lincodes) {
-                    
+                    if(code == LinearSolverCode.SchurPrecond) {
+                        Console.WriteLine($"Skipping {LinearSolverCode.SchurPrecond}: the Schur Complement requires a (D+1)×(D+1) - system, an the test system here is only 2×2.");
+                        continue;
+                    }
 
                     Assert.DoesNotThrow(() => code.GetConfig().CreateInstance(O.MGOp), "", null);
                     Assert.IsNotNull(code.GetConfig().CreateInstance(O.MGOp));

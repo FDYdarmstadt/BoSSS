@@ -103,7 +103,7 @@ namespace ApplicationWithIDT {
         public XDifferentialOperatorMk2 XSpatialOperator { get; set; }
         public XDifferentialOperatorMk2 Op_obj { get; set; }
         public IEvaluatorNonLin Eval_r { get; set; }
-        public IOptProb Oproblem {get;set;}
+        public IOptProb Oproblem { get; set; }
         public IEvaluatorNonLin Eval_R { get; set; }
         public MultigridOperator.ChangeOfBasisConfig[][] MultiGridOperatorConfig { get; set; }
         public MultiphaseCellAgglomerator MultiphaseAgglomerator { get; set; }
@@ -155,7 +155,7 @@ namespace ApplicationWithIDT {
         public List<double[]> Steps { get; set; }
         #endregion
         #region Matrices
-        public MsrMatrix LHS {get;set;}
+        public MsrMatrix LHS { get; set; }
         public MsrMatrix Jr_U { get; set; }
         public MsrMatrix Jr { get; set; }
         public MsrMatrix Jr_phi { get; set; }
@@ -259,15 +259,15 @@ namespace ApplicationWithIDT {
             if(this.LevelSetOpti is SplineOptiLevelSet spliny) {
                 return new IDTTimeStepInfo(t, this.CurrentSessionInfo, timestepno, this.IOFields,
                         this.gamma, this.kappa, this.m_alpha, this.mu, this.res_l2, this.obj_f, this.Alphas,
-                        this.Gammas,this.Kappas, this.Mus, this.ResNorms, this.obj_f_vals, this.StepCount,
-                        this.LevelSetOpti.GetParamsAsArray(),spliny.y );
+                        this.Gammas, this.Kappas, this.Mus, this.ResNorms, this.obj_f_vals, this.StepCount,
+                        this.LevelSetOpti.GetParamsAsArray(), spliny.y);
             } else {
                 return new IDTTimeStepInfo(t, this.CurrentSessionInfo, timestepno, this.IOFields,
                         this.gamma, this.kappa, this.m_alpha, this.mu, this.res_l2, this.obj_f, this.Alphas,
                         this.Gammas, this.Kappas, this.Mus, this.ResNorms, this.obj_f_vals, this.StepCount,
                         this.LevelSetOpti.GetParamsAsArray(), null);
             }
-                   
+
         }
         /// <summary>
         /// Creates or Loads the grid
@@ -278,24 +278,20 @@ namespace ApplicationWithIDT {
             IGrid grid = null;
             switch(Control.getGridFrom) {
                 case GetGridFrom.DB:
-                    if (Control.MeshPath != null)
-                    {
-                        grid = GridImporter.Import(Control.MeshPath);
-                        var tmp = new byte[] { 1, 2, 3, 4, 5 };
-                        for (int i = 0; i < Control.EdgTagNames.Length; i++)
-                        {
-                            grid.EdgeTagNames.Add(tmp[i], Control.EdgTagNames[i]);
-                        }
-                        grid.DefineEdgeTags(Control.EdgTagFunc);
-                        return grid;
+                if(Control.MeshPath != null) {
+                    grid = GridImporter.Import(Control.MeshPath);
+                    var tmp = new byte[] { 1, 2, 3, 4, 5 };
+                    for(int i = 0; i < Control.EdgTagNames.Length; i++) {
+                        grid.EdgeTagNames.Add(tmp[i], Control.EdgTagNames[i]);
                     }
-                    else
-                    {
-                        grid = base.CreateOrLoadGrid();
-                        CompressibleEnvironment.Initialize(grid.SpatialDimension);
-                        return grid;
-                    }
-                
+                    grid.DefineEdgeTags(Control.EdgTagFunc);
+                    return grid;
+                } else {
+                    grid = base.CreateOrLoadGrid();
+                    CompressibleEnvironment.Initialize(grid.SpatialDimension);
+                    return grid;
+                }
+
                 case GetGridFrom.GridFunc:
                 default:
                 // Optional: load grid from CNS calculation from which the shock level set has been reconstructed
@@ -327,7 +323,7 @@ namespace ApplicationWithIDT {
         /// wanted also the DerivedFields. The DerivedFields also need to be registered.
         /// </summary>
         /// <returns></returns>
-        public abstract void CreateConservativeFields(LevelSetTracker LsTrk,int DgDegree);
+        public abstract void CreateConservativeFields(LevelSetTracker LsTrk, int DgDegree);
 
         /// <summary>
         /// This method creates the Fields used in this solver, also various lists are being created 
@@ -344,10 +340,10 @@ namespace ApplicationWithIDT {
             //Initialize mandatory conservative fields and Residuals by abstract Function
             switch(Control.solRunType) {
                 case SolverRunType.Standard:
-                    CreateConservativeFields(this.LsTrk, Control.SolDegree);
+                CreateConservativeFields(this.LsTrk, Control.SolDegree);
                 break;
                 case SolverRunType.PContinuation:
-                    CreateConservativeFields(this.LsTrk, Control.DgDegree_Start); //here we start with the lowest degree
+                CreateConservativeFields(this.LsTrk, Control.DgDegree_Start); //here we start with the lowest degree
                 break;
                 default:
                 throw new NotImplementedException("this type of Solver run is undefined");
@@ -394,19 +390,19 @@ namespace ApplicationWithIDT {
         public void ChooseOptProblem() {
             switch(Control.optProblemType) {
                 case OptProblemType.FullEnRes:
-                    Oproblem = new SFFullEnRes(XSpatialOperator, pDiff: 1);
+                Oproblem = new SFFullEnRes(XSpatialOperator, pDiff: 1);
                 break;
                 case OptProblemType.EnResOnlyNearBand:
-                    Oproblem = new SFNearBandEnRes(XSpatialOperator, pDiff: 1);
+                Oproblem = new SFNearBandEnRes(XSpatialOperator, pDiff: 1);
                 break;
                 case OptProblemType.EnResOnlyCutCells:
-                    Oproblem = new SFCutCellEnRes(XSpatialOperator, pDiff: 1);
+                Oproblem = new SFCutCellEnRes(XSpatialOperator, pDiff: 1);
                 break;
                 case OptProblemType.RankineHugoniotFull:
                 case OptProblemType.RankineHugoniotOnlyInterface:
-                    Oproblem = new SFRankineHugoniotBase(XSpatialOperator,Op_obj, pDiff: 0);
+                Oproblem = new SFRankineHugoniotBase(XSpatialOperator, Op_obj, pDiff: 0);
                 break;
-                default: 
+                default:
                 throw new Exception("This OptProblem is not implemented yet");
             }
 
@@ -423,18 +419,18 @@ namespace ApplicationWithIDT {
             }
             switch(Control.solRunType) {
                 case SolverRunType.PContinuation:
-                    if(Control.ReiniTMaxIters.Length < maxDeg+1) {
-                        throw new NotSupportedException($"Control.ReiniTMaxIters length mus bet at least {maxDeg + 1}");
-                    }
-                    if(Control.TerminationMinNs.Length < maxDeg + 1) {
-                        throw new NotSupportedException($"Control.TerminationMinNs length must be at least {maxDeg+1}");
-                    }
-                    if(Control.tALNRs.Length < maxDeg + 1) {
-                        throw new NotSupportedException($"Control.tALNRs length must be at least {maxDeg+1}");
-                    }
-                    if(Control.minimalSQPIterations.Length < maxDeg + 1) {
-                        throw new NotSupportedException($"Control.MinPIter length must be at least {maxDeg+1}");
-                    }
+                if(Control.ReiniTMaxIters.Length < maxDeg + 1) {
+                    throw new NotSupportedException($"Control.ReiniTMaxIters length mus bet at least {maxDeg + 1}");
+                }
+                if(Control.TerminationMinNs.Length < maxDeg + 1) {
+                    throw new NotSupportedException($"Control.TerminationMinNs length must be at least {maxDeg + 1}");
+                }
+                if(Control.tALNRs.Length < maxDeg + 1) {
+                    throw new NotSupportedException($"Control.tALNRs length must be at least {maxDeg + 1}");
+                }
+                if(Control.minimalSQPIterations.Length < maxDeg + 1) {
+                    throw new NotSupportedException($"Control.MinPIter length must be at least {maxDeg + 1}");
+                }
 
                 break;
             }
@@ -458,7 +454,7 @@ namespace ApplicationWithIDT {
             Console.WriteLine($"*  f_phi type:                         {Control.fphiType}");
             Console.WriteLine($"*  globalization strategy:             {Control.GlobalizationStrategy}");
             Console.WriteLine($"*  initial value from:                 {Control.GetInitialValue}");
-            
+
             Console.WriteLine($"*  ");
             Console.WriteLine("******************************* Params ************************************************");
             Console.WriteLine($"*  Solution Degree:                    {Control.SolDegree}");
@@ -531,7 +527,7 @@ namespace ApplicationWithIDT {
             if(Control.IsTwoLevelSetRun) {
                 this.m_IOFields.Add(LevelSetTwo);
             }
-            
+
             this.m_IOFields.AddRange(ConservativeFields);
             this.m_IOFields.AddRange(Residuals);
             this.m_IOFields.AddRange(obj_f_fields);
@@ -564,35 +560,29 @@ namespace ApplicationWithIDT {
             //if(CurrentAgglo > 0 && TimestepNo % Control.ImmediatePlotPeriod ==0 && Control.ImmediatePlotPeriod!= -1) {
             //    MultiphaseAgglomerator.PlotAgglomerationPairs(Control.ProjectName + "_aggloMap" + "_" + CurrentStepNo);
             //}
-            using (new FuncTrace())
-            {
-                if (TimestepNo == 1)
-                {
+            using(new FuncTrace()) {
+                if(TimestepNo == 1) {
                     //set initial kappa
                     //compute using kappa=1
                     kappa = 1;
                     var f_phi_vec = ComputeFphi();
                     f_phi = f_phi_vec.InnerProd(f_phi_vec);
-                    if (f_phi > 1e-10)
-                    {
+                    if(f_phi > 1e-10) {
                         kappa = Math.Sqrt(obj_f / f_phi_vec.InnerProd(f_phi_vec));
-                    }
-                    else
-                    {
+                    } else {
                         kappa = 1e3;
                     }
                     Kappas.Add(kappa);
-                    
+
                     Console.WriteLine($"Initial Value : l2: |r|= {string.Format("{0:#.#######E+00}", res_l2)}, |f_err|={string.Format("{0:#.#######E+00}", obj_f)}, | f_phi |={string.Format("{0:#.#######E+00}", f_phi)},");
                     UpdateAgglomerator();
                 }
 
                 // potentially change basis
-                switch (Control.solRunType)
-                {
+                switch(Control.solRunType) {
                     case SolverRunType.PContinuation:
-                        ChangeOfBasis();
-                        break;
+                    ChangeOfBasis();
+                    break;
                 }
 
                 //reinitialization if p>0
@@ -605,8 +595,7 @@ namespace ApplicationWithIDT {
                 createBackUp();
 
                 //just to be safe, project spline Level Set on LsTBO
-                if (LevelSetOpti is SplineOptiLevelSet spliny)
-                {
+                if(LevelSetOpti is SplineOptiLevelSet spliny) {
                     LsTBO.Clear();
                     LsTBO.ProjectFromForeignGrid(1.0, spliny);
                 }
@@ -635,20 +624,14 @@ namespace ApplicationWithIDT {
 
                 var orgStep = stepIN.CloneAs();
                 // 
-                try
-                {
+                try {
                     SQPStep();
-                }
-                catch
-                {
+                } catch {
                     // if something goes wrong here plot the failed state
-                    try
-                    {
+                    try {
                         UpdateDerivedVariables();
                         this.PlotCurrentState(0.0, 666, this.Control.SuperSampling);
-                    }
-                    catch
-                    {
+                    } catch {
                         this.PlotCurrentState(0.0, 666, this.Control.SuperSampling);
                     }
                     throw;
@@ -661,8 +644,7 @@ namespace ApplicationWithIDT {
                 CurrentStepNo++;
                 LsTrk.PushStacks();
                 //this is called only due to plotting reasons
-                if (ConservativeFields[0].Basis.Degree > 0)
-                {
+                if(ConservativeFields[0].Basis.Degree > 0) {
                     GetPerssonSensor(true);
                 }
                 //Check for termination or Increase of P degree
@@ -675,11 +657,9 @@ namespace ApplicationWithIDT {
 
         //Changes the Basis of the current solution, making it one DG higher 
         public void ChangeOfBasis() {
-            using (new FuncTrace())
-            {
+            using(new FuncTrace()) {
                 int CurrentDeg = ConservativeFields[0].Basis.Degree;
-                if (IncreaseDegreeNextTS && CurrentDeg < Control.SolDegree)
-                {
+                if(IncreaseDegreeNextTS && CurrentDeg < Control.SolDegree) {
                     {
                         Console.WriteLine("################################################################################################");
                         Console.WriteLine("################################################################################################");
@@ -715,11 +695,11 @@ namespace ApplicationWithIDT {
         }
 
         public void Reinitialization() {
-            int cDeg= ConservativeFields[0].Basis.Degree;
+            int cDeg = ConservativeFields[0].Basis.Degree;
             switch(Control.reInitMode) {
                 case ReInitMode.OneTolForEachP:
-                    Control.reInit_c1 = Control.reInitTols[cDeg];
-                break; 
+                Control.reInit_c1 = Control.reInitTols[cDeg];
+                break;
             }
             if(ConservativeFields[0].Basis.Degree > 0 && Control.ApplyReiInit && CurrentStepNo < ReiniTMaxIter) {
                 Reinitialization(false);
@@ -733,7 +713,7 @@ namespace ApplicationWithIDT {
             if(CurrentAgglo > 0) {
                 try {
                     var testAgg = LsTrk.GetAgglomerator(SpeciesToEvaluate_Ids, GetGlobalQuadOrder(), CurrentAgglo, ExceptionOnFailedAgglomeration: false);
-                    MultiphaseAgglomerator = LsTrk.GetAgglomerator(SpeciesToEvaluate_Ids, GetGlobalQuadOrder(), CurrentAgglo, ExceptionOnFailedAgglomeration: false); 
+                    MultiphaseAgglomerator = LsTrk.GetAgglomerator(SpeciesToEvaluate_Ids, GetGlobalQuadOrder(), CurrentAgglo, ExceptionOnFailedAgglomeration: false);
                 } catch {
                     Console.WriteLine("Failed to update Agglomerator");
                 }
@@ -761,14 +741,10 @@ namespace ApplicationWithIDT {
 
             #region Create level set objects, and the level set tracker
             // Enusre that for a SpecFemField the LevelSet contains the SpecFemSpace
-            if (Control.OptiLevelSetType == OptiLevelSetType.SpecFemField)
-            {
-                if (Control.IsTwoLevelSetRun)
-                {
+            if(Control.OptiLevelSetType == OptiLevelSetType.SpecFemField) {
+                if(Control.IsTwoLevelSetRun) {
                     this.Control.LevelSetTwoDegree = this.Control.LevelSetTwoDegree < this.Control.OptiLevelSetDegree * 2 ? this.Control.OptiLevelSetDegree * 2 : this.Control.LevelSetTwoDegree;
-                }
-                else
-                {
+                } else {
                     this.Control.LevelSetDegree = this.Control.LevelSetDegree < this.Control.OptiLevelSetDegree * 2 ? this.Control.OptiLevelSetDegree * 2 : this.Control.LevelSetDegree;
                 }
             }
@@ -878,7 +854,7 @@ namespace ApplicationWithIDT {
         /// </summary>
         public void InitializeMatricesAndVectors() {
 
-            int length_r = (int) new CoordinateMapping(ConservativeFields).TotalLength;
+            int length_r = (int)new CoordinateMapping(ConservativeFields).TotalLength;
             int length_obj = Oproblem.GetObjLength(ConservativeFields);
             int length_phi = LevelSetOpti.GetLength();
 
@@ -926,14 +902,14 @@ namespace ApplicationWithIDT {
 
                     TransformFromAggToSourceSpace();
                     ComputeResiduals(objStep, resStep);
-                    
+
                     double[] f_phi_vec = ComputeFphi();
                     double resStep_l1 = 0;
                     for(int i = 0; i < resStep.Length; i++) {
                         resStep_l1 += resStep[i].Abs();
                     }
                     resetStepAgglomerated();
-                    return 0.5 * (objStep.InnerProd(objStep)+ f_phi_vec.InnerProd(f_phi_vec)) + mu * resStep_l1;
+                    return 0.5 * (objStep.InnerProd(objStep) + f_phi_vec.InnerProd(f_phi_vec)) + mu * resStep_l1;
                 };
 
                 /// <summary>
@@ -960,8 +936,7 @@ namespace ApplicationWithIDT {
                     //merit_del.AccV(beta, gradf);
                     double resJacRTimesStep_l1 = 0;
                     res_l1 = 0;
-                    for (int i = 0; i < JacR0TimesStep.Length; i++)
-                    {
+                    for(int i = 0; i < JacR0TimesStep.Length; i++) {
                         res_l1 += ResidualVector[i].Abs();
                         resJacRTimesStep_l1 += JacR0TimesStep[i].Abs();
                     }
@@ -993,7 +968,7 @@ namespace ApplicationWithIDT {
                     ComputeResiduals(objStep, resStep);
                     resetStepAgglomerated();
 
-                    return 0.5 * ( objStep.InnerProd(objStep) + f_phi_vec.InnerProd(f_phi_vec))+ mu * resStep.L2Norm();
+                    return 0.5 * (objStep.InnerProd(objStep) + f_phi_vec.InnerProd(f_phi_vec)) + mu * resStep.L2Norm();
                     //return (0.5 * (mu * resStep.InnerProd(resStep) + objStep.InnerProd(objStep) + f_phi_vec.InnerProd(f_phi_vec)));
                 };
                 break;
@@ -1126,14 +1101,14 @@ namespace ApplicationWithIDT {
             kappa = 1;
             var f_phi_vec = ComputeFphi();
             kappa = kappa_copy;
-             Console.Write($"l2: ||R0||= {string.Format("{0:#.#######E+00}", res_l2)}, f_err={string.Format("{0:#.######E+00}", obj_f)}, f_phi={string.Format("{0:#.######E+00}", f_phi_vec.InnerProd(f_phi_vec))},");
+            Console.Write($"l2: ||R0||= {string.Format("{0:#.#######E+00}", res_l2)}, f_err={string.Format("{0:#.######E+00}", obj_f)}, f_phi={string.Format("{0:#.######E+00}", f_phi_vec.InnerProd(f_phi_vec))},");
 
         }
         /// <summary>
         /// evaluates both residuals
         /// </summary>
         public void ComputeResiduals<V>(V enRes_out, V res_out) where V : IList<double> {
-            Oproblem.EvalConsAndObj(enRes_out, res_out,ConservativeFields);
+            Oproblem.EvalConsAndObj(enRes_out, res_out, ConservativeFields);
             //Transform back into Agglomerated Space
             if(CurrentAgglo > 0) {
                 MultiphaseAgglomerator.ManipulateMatrixAndRHS(default(MsrMatrix), enRes_out, obj_f_map, ResidualMap);
@@ -1148,13 +1123,10 @@ namespace ApplicationWithIDT {
         /// simply sets a one one the diagonal for zero rows
         /// </summary>
         /// <param name="Mat"></param>
-        static public void SetDiagonaForZeroRows(MsrMatrix Mat)
-        {
+        static public void SetDiagonaForZeroRows(MsrMatrix Mat) {
             //Console.WriteLine("Check: Computed System ...");
-            for (int rows = 0; rows < Mat.NoOfRows; rows++)
-            {
-                if (Mat.GetNoOfNonZerosPerRow(rows) == 0)
-                {
+            for(int rows = 0; rows < Mat.NoOfRows; rows++) {
+                if(Mat.GetNoOfNonZerosPerRow(rows) == 0) {
                     Mat[rows, rows] = 1;
                 }
             }
@@ -1163,13 +1135,10 @@ namespace ApplicationWithIDT {
         /// simply sets a one one the diagonal for zero rows
         /// </summary>
         /// <param name="Mat"></param>
-        static public void SetDiagonaForZeroRows(BlockMsrMatrix Mat)
-        {
+        static public void SetDiagonaForZeroRows(BlockMsrMatrix Mat) {
             //Console.WriteLine("Check: Computed System ...");
-            for (int rows = 0; rows < Mat.NoOfRows; rows++)
-            {
-                if (Mat.GetNoOfNonZerosPerRow(rows) == 0)
-                {
+            for(int rows = 0; rows < Mat.NoOfRows; rows++) {
+                if(Mat.GetNoOfNonZerosPerRow(rows) == 0) {
                     Mat[rows, rows] = 1;
                 }
             }
@@ -1179,16 +1148,12 @@ namespace ApplicationWithIDT {
         /// </summary>
         public void SolveSystem() {
 
-            using (new FuncTrace())
-            {
+            using(new FuncTrace()) {
                 //Adds ones on the diagonal to ghost rows (rows coincing with empty or agglomerated phase-cells) of the left hand side
-                for (int rows = 0; rows < LHS.NoOfRows; rows++)
-                {
-                    if (LHS.GetNoOfNonZerosPerRow(rows) == 0)
-                    {
+                for(int rows = 0; rows < LHS.NoOfRows; rows++) {
+                    if(LHS.GetNoOfNonZerosPerRow(rows) == 0) {
                         LHS[rows, rows] = 1;
-                        if (Math.Abs(RHS[rows]) > 1e-32)
-                        {
+                        if(Math.Abs(RHS[rows]) > 1e-32) {
                             Console.WriteLine("Nonzero Entry in ghost RHS row " + rows + "!!!!!! FIX Please");
                             RHS[rows] = 0;
                             Jobj_U.CheckForNanOrInfM();
@@ -1196,21 +1161,18 @@ namespace ApplicationWithIDT {
                     }
                 }
 
-                try
-                {
+                try {
                     //save mat files 
 
                     SimpleSolversInterface.Solve_Direct(LHS, stepIN, RHS);
-                }
-                catch (Exception e)
-                {
+                } catch(Exception e) {
                     Console.WriteLine("Exception: " + e.ToString() + " From DirectSOlver Thrown, but we continue...");
                 }
                 CmpLineSearchResidualWeight();
                 CmpFphiWeight();
-                
 
-                
+
+
             }
         }
         /// <summary>
@@ -1219,13 +1181,13 @@ namespace ApplicationWithIDT {
         public void CmpFphiWeight() {
             var f_phi_vec = ComputeFphi();
             var f_phi = f_phi_vec.InnerProd(f_phi_vec);
-            if(CurrentStepNo< Control.Kappa_M) {
-                if(obj_f < Control.Kappa_Xi*kappa*kappa*f_phi) {
+            if(CurrentStepNo < Control.Kappa_M) {
+                if(obj_f < Control.Kappa_Xi * kappa * kappa * f_phi) {
                     kappa = Math.Max(Control.Kappa_Min, Control.Kappa_v * kappa);
                 }
             }
             Kappas.Add(kappa);
-        }     
+        }
         /// <summary>
         /// Computes the weigth (mu) associated with the line-search merit function
         /// </summary>
@@ -1253,7 +1215,7 @@ namespace ApplicationWithIDT {
             //Version 3
             double max = 0;
             var LamCoord = new CoordinateVector(LagMult);
-            for (int i=0; i < (int)UnknownsMap.TotalLength; i++) {
+            for(int i = 0; i < (int)UnknownsMap.TotalLength; i++) {
                 LamCoord[i] = stepIN[i + (int)UnknownsMap.TotalLength + LevelSetOpti.GetLength()];
                 if(LamCoord[i].Abs() > max) {
                     max = LamCoord[i].Abs();
@@ -1282,9 +1244,9 @@ namespace ApplicationWithIDT {
             gamma = Math.Min(gamma, Control.Gamma_Max);
 
         }
-#endregion
-        
-#region Plotting
+        #endregion
+
+        #region Plotting
         /// <summary>
         /// A public plot function (can't make Application member PlotCurrentState public)
         /// </summary>
@@ -1325,10 +1287,8 @@ namespace ApplicationWithIDT {
         /// <param name="timestepNo"></param>
         /// <param name="superSampling"></param>
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
-            using (new FuncTrace())
-            {
-                if (plotDriver == null)
-                {
+            using(new FuncTrace()) {
+                if(plotDriver == null) {
                     plotDriver = new Tecplot(GridData, true, false, (uint)superSampling);
                 }
                 UpdateDerivedVariables();
@@ -1336,7 +1296,7 @@ namespace ApplicationWithIDT {
             }
         }
 
-#endregion
+        #endregion
 
 
         /// <summary>
@@ -1345,8 +1305,7 @@ namespace ApplicationWithIDT {
         /// <param name="timestepno">time step number</param>
         /// <param name="t">physical time</param>
         protected override ITimestepInfo SaveToDatabase(TimestepNumber timestepno, double t) {
-            using (new FuncTrace())
-            {
+            using(new FuncTrace()) {
                 // Make sure that all derived variables are updated before saving
                 UpdateDerivedVariables();
                 return base.SaveToDatabase(timestepno, t);
@@ -1390,16 +1349,15 @@ namespace ApplicationWithIDT {
                 phi0backup.CopyFrom(LsTBO);
 
                 //Evaluation of unperturbed
-                Oproblem.EvalConsAndObj(obj_vec,r_vec,ConservativeFields);
+                Oproblem.EvalConsAndObj(obj_vec, r_vec, ConservativeFields);
 
 
                 for(int n_param = 0; n_param < nRow; n_param++) {
 
                     //skip loop if param is non changeable
-                    if (Control.PartiallyFixLevelSetForSpaceTime && LevelSetOpti is SplineOptiLevelSet splineLS)
-                    {
+                    if(Control.PartiallyFixLevelSetForSpaceTime && LevelSetOpti is SplineOptiLevelSet splineLS) {
                         double yMin = splineLS.y.Min(); //lower boundary of space time domain
-                        if (n_param < splineLS.y.Length && Math.Abs(yMin - splineLS.y[n_param]) < 1e-14) //only accumalte if DOF if it is not on lower time boundary (here yMin=tMin)
+                        if(n_param < splineLS.y.Length && Math.Abs(yMin - splineLS.y[n_param]) < 1e-14) //only accumalte if DOF if it is not on lower time boundary (here yMin=tMin)
                         {
                             continue;
                         }
@@ -1412,8 +1370,7 @@ namespace ApplicationWithIDT {
                     dx_left = x - eps / 2;
 
 
-                    try
-                    {
+                    try {
                         // apply right distortion
                         LevelSetOpti.SetParam(n_param, dx_right);
                         //project
@@ -1432,23 +1389,21 @@ namespace ApplicationWithIDT {
                         LsTBO.CopyFrom(phi0backup);
                         LsTrk.UpdateTracker(CurrentStepNo);
 
-                    }
-                    catch
-                    {
+                    } catch {
                         //reset
                         LevelSetOpti.SetParam(n_param, x);
                         LsTBO.CopyFrom(phi0backup);
                         LsTrk.UpdateTracker(CurrentStepNo);
                         //throw new Exception("Error in FD Computation");
                     }
-                    
+
                     //Write value into the matrix
                     for(int iRow = 0; iRow < nCol_obj; iRow++) {
                         val = (obj_vec_eps[iRow] - obj_vec_eps2[iRow]) / eps;
                         if(val != 0 && !val.IsNaNorInf()) {
                             Jobj[iRow, n_param] = val;
                         }
-                        
+
                     }
                     //IMutuableMatrixEx_Extensions.SaveToTextFile(Jobj,"Jobj.txt");
                     for(int iRow = 0; iRow < nCol_con; iRow++) {
@@ -1459,7 +1414,7 @@ namespace ApplicationWithIDT {
                     }
 
                 }
-                return (Jr,Jobj);
+                return (Jr, Jobj);
             }
         }
         /// <summary>
@@ -1523,7 +1478,7 @@ namespace ApplicationWithIDT {
         //    gradf_U.Clear();
         //    lambda.Clear();
 
-            
+
         //    int length_r = (int)UnknownsMap.TotalLength;
         //    int length_R = (int)obj_f_map.TotalLength;
         //    int length_l = LevelSetOpti.GetLength();
@@ -1582,7 +1537,7 @@ namespace ApplicationWithIDT {
         //            foreach(SpeciesId spc in SpeciesToEvaluate_Ids) {
         //                AccRowManipulationMatrixForSpeciesAndFields(spc, ConservativeFields, LeftMul);
         //            }
-                    
+
         //            //multiply
         //            AggMatrix = MsrMatrix.Multiply(LeftMul.ToMsrMatrix(), BUPhi);
         //            BUPhi = AggMatrix.CloneAs();
@@ -1689,20 +1644,18 @@ namespace ApplicationWithIDT {
         /// <param name="M"></param>
         /// <param name="uMap"></param>
         /// <returns></returns>
-        public static BlockMsrMatrix GetBlockJacobi(BlockMsrMatrix M,CoordinateMapping uMap)
-        {
+        public static BlockMsrMatrix GetBlockJacobi(BlockMsrMatrix M, CoordinateMapping uMap) {
             var Diag = new BlockMsrMatrix(M._RowPartitioning, M._ColPartitioning);
-                   
+
             int Jloc = uMap.LocalNoOfBlocks;
             long j0 = uMap.FirstBlock;
             MultidimensionalArray temp = null;
-            for (int j = 0; j < Jloc; j++)
-            {
+            for(int j = 0; j < Jloc; j++) {
                 long jBlock = j + j0;
                 int Nblk = uMap.GetBlockLen(jBlock);
                 long i0 = uMap.GetBlockI0(jBlock);
 
-                if (temp == null || temp.NoOfCols != Nblk)
+                if(temp == null || temp.NoOfCols != Nblk)
                     temp = MultidimensionalArray.Create(Nblk, Nblk);
 
                 M.ReadBlock(i0, i0, temp);
@@ -1710,14 +1663,10 @@ namespace ApplicationWithIDT {
             }
             return Diag;
         }
-        public void AgglomerateJacobiansAndResiduals()
-        {
-            using (new FuncTrace())
-            {
-                if (CurrentAgglo > 0.0)
-                {
-                    if (MultiphaseAgglomerator.TotalNumberOfAgglomerations > 0)
-                    {
+        public void AgglomerateJacobiansAndResiduals() {
+            using(new FuncTrace()) {
+                if(CurrentAgglo > 0.0) {
+                    if(MultiphaseAgglomerator.TotalNumberOfAgglomerations > 0) {
                         // Get the current MultigridOperator
                         var MgSeq = CoarseningAlgorithms.CreateSequence(GridData);
                         AggregationGridBasis[][] basisSeq = AggregationGridBasis.CreateSequence(MgSeq, obj_f_map.BasisS);
@@ -1735,19 +1684,17 @@ namespace ApplicationWithIDT {
                         MultiphaseAgglomerator.ManipulateMatrixAndRHS(Jr_U, ResidualVector, new CoordinateMapping(ConservativeFields), new CoordinateMapping(ConservativeFields));
                         MultiphaseAgglomerator.ManipulateMatrixAndRHS(Jobj_U, obj_f_vec, new CoordinateMapping(obj_f_fields), new CoordinateMapping(ConservativeFields));
                         // helper function to do the agglomeration
-                        void AccRowManipulationMatrixForSpeciesAndFields(SpeciesId spc, XDGField[] fields, BlockMsrMatrix inputMatrix)
-                        {
+                        void AccRowManipulationMatrixForSpeciesAndFields(SpeciesId spc, XDGField[] fields, BlockMsrMatrix inputMatrix) {
                             var AggRphi = MultiphaseAgglomerator.GetAgglomerator(spc);
                             CellMask spcMask = LsTrk.Regions.GetSpeciesMask(spc);
                             MiniMapping rowMini = new MiniMapping(new CoordinateMapping(fields), spc, LsTrk.Regions);
-                            inputMatrix.Acc(1.0, AggRphi.GetRowManipulationMatrix(new CoordinateMapping(fields), rowMini.MaxDeg, rowMini.NoOfVars, rowMini.i0Func, rowMini.NFunc, false, spcMask));
+                            inputMatrix.Acc(1.0, AggRphi.GetRowManipulationMatrix(new CoordinateMapping(fields), rowMini.MaxDeg, rowMini.NoOfVars, rowMini.i0Func, rowMini.NFunc, spcMask));
                         }
 
 
                         // ****Perform custom Aggregation for Jobj_phi***
                         LeftMul = new BlockMsrMatrix(new CoordinateMapping(obj_f_fields), new CoordinateMapping(obj_f_fields));
-                        foreach (SpeciesId spc in SpeciesToEvaluate_Ids)
-                        {
+                        foreach(SpeciesId spc in SpeciesToEvaluate_Ids) {
                             AccRowManipulationMatrixForSpeciesAndFields(spc, obj_f_fields, LeftMul);
                         }
                         MsrMatrix AggMatrix;
@@ -1759,8 +1706,7 @@ namespace ApplicationWithIDT {
 
                         // ****Perform custom Aggregation for Jr_phi***
                         LeftMul = new BlockMsrMatrix(new CoordinateMapping(ConservativeFields), new CoordinateMapping(ConservativeFields));
-                        foreach (SpeciesId spc in SpeciesToEvaluate_Ids)
-                        {
+                        foreach(SpeciesId spc in SpeciesToEvaluate_Ids) {
                             AccRowManipulationMatrixForSpeciesAndFields(spc, ConservativeFields, LeftMul);
                         }
                         //multiply
@@ -1771,17 +1717,13 @@ namespace ApplicationWithIDT {
             }
         }
 
-        public void AgglomerateOnlyResiduals()
-        {
-            using (new FuncTrace())
-            {
-                if (CurrentAgglo > 0.0)
-                {
-                    if (MultiphaseAgglomerator.TotalNumberOfAgglomerations > 0)
-                    {
-                        MultiphaseAgglomerator.ManipulateMatrixAndRHS(default (MsrMatrix), ResidualVector, new CoordinateMapping(ConservativeFields), new CoordinateMapping(ConservativeFields));
+        public void AgglomerateOnlyResiduals() {
+            using(new FuncTrace()) {
+                if(CurrentAgglo > 0.0) {
+                    if(MultiphaseAgglomerator.TotalNumberOfAgglomerations > 0) {
+                        MultiphaseAgglomerator.ManipulateMatrixAndRHS(default(MsrMatrix), ResidualVector, new CoordinateMapping(ConservativeFields), new CoordinateMapping(ConservativeFields));
                         MultiphaseAgglomerator.ManipulateMatrixAndRHS(default(MsrMatrix), obj_f_vec, new CoordinateMapping(obj_f_fields), new CoordinateMapping(ConservativeFields));
-                        
+
                     }
                 }
             }
@@ -1796,8 +1738,7 @@ namespace ApplicationWithIDT {
         ///  5. grad_f is computed and put together in the RHS variable
         /// </summary>
         public void ComputeSystem() {
-            using (var f=new FuncTrace())
-            {
+            using(var f = new FuncTrace()) {
                 LHS.Clear();
                 RHS.Clear();
                 Jobj_U.Clear();
@@ -1826,16 +1767,13 @@ namespace ApplicationWithIDT {
                 //***************************** */
                 //// Compute Jobj_phi & Jr_phi
                 //***************************** */
-               try
-                {
+                try {
                     (Jr_phi, Jobj_phi) = FD_LevelSet();
-                }
-                catch
-                {
+                } catch {
                     Console.WriteLine("Error in FD Level Set");
                     //AllthePossibleStepsPlot();
                 }
-                
+
 
                 //***************************** */
                 //// Agglomerate Jobj,Jr and obj_vec,r before multiplication
@@ -1845,8 +1783,7 @@ namespace ApplicationWithIDT {
                 //// assemble R_{phi} (part of objective function corresponding to Level Set)
                 ///*******************************/
                 (double[] f_phi_vec, MsrMatrix Jf_phi) = ComputeFphiandJFphi();
-                using (new BlockTrace("Blocks Of LHS",f))
-                {
+                using(new BlockTrace("Blocks Of LHS", f)) {
                     //***************************** */
                     //// Set the Blocks of LHS
                     //***************************** */
@@ -1879,8 +1816,7 @@ namespace ApplicationWithIDT {
                 //***************************** */
                 //// compute RHS
                 //***************************** */
-                using (new BlockTrace("RHS compuation", f))
-                {
+                using(new BlockTrace("RHS compuation", f)) {
                     int length_l = (int)Jobj_phi.NoOfCols;
                     //calculate Grad f
                     Jobj.Transpose().SpMV(1, obj_f_vec, 0, gradf);
@@ -1890,13 +1826,11 @@ namespace ApplicationWithIDT {
                     Jf_phi.Transpose().SpMV(1, f_phi_vec, 0, gradfphi);
 
                     // add gradient of f
-                    for (int i = length_r; i < gradf.Length; i++)
-                    {
+                    for(int i = length_r; i < gradf.Length; i++) {
                         gradf[i] = gradf[i] + gradfphi[i - length_r];
                     }
                     gradf_U.SetSubVector(gradf, 0, length_r);
-                    for (int i = 0; i < gradf.Length; i++)
-                    {
+                    for(int i = 0; i < gradf.Length; i++) {
                         RHS[i] = gradf[i];
                     }
 
@@ -1909,15 +1843,13 @@ namespace ApplicationWithIDT {
                     Jr.Transpose().SpMV(1, ResidualVector, 0, JacR0TimesR0);
                 }
 
-                if (Control.SaveMatrices)
-                {
+                if(Control.SaveMatrices) {
                     // Save for preconditioner analysis
                     var uMap = new CoordinateMapping(ConservativeFields);
 
                     //create directory
                     var folder = "matrices";
-                    if (!Directory.Exists(@".\" + folder))
-                    {
+                    if(!Directory.Exists(@".\" + folder)) {
                         Directory.CreateDirectory(@".\" + folder);
                     }
                     folder = @".\" + folder + @"\";
@@ -1964,7 +1896,7 @@ namespace ApplicationWithIDT {
                 int length_l = LevelSetOpti.GetLength();
                 // compute unperturbed fphi
                 var f_phi_vec = ComputeFphi();
-                
+
                 double[] f_phi_vec_eps = new double[f_phi_vec.Length];
                 double[] f_phi_vec_eps2 = new double[f_phi_vec.Length];
                 var Jf_phi_vec = new MsrMatrix(f_phi_vec.Length, length_l, 1, 1);
@@ -2026,9 +1958,9 @@ namespace ApplicationWithIDT {
         public void ChooseFphiType() {
             switch(Control.fphiType) {
                 case FphiType.None:
-                    ComputeFphi= delegate() { 
-                        return new double[1]; 
-                    };
+                ComputeFphi = delegate () {
+                    return new double[1];
+                };
                 break;
                 case FphiType.CurvatureAll:
                 ComputeFphi = delegate () {
@@ -2067,9 +1999,9 @@ namespace ApplicationWithIDT {
                     var tmpmsk = new CellMask(GridData, ba);
                     // Copy only the coordinates that belong to the highest modes 
                     foreach(int coordinate in LsTBO.Basis.GetPolynomialIndicesForDegree(iCell, deg)) {
-                        fphi[count] = fphi[count]+Math.Pow(LsTBO.Coordinates[iCell, coordinate],2);
+                        fphi[count] = fphi[count] + Math.Pow(LsTBO.Coordinates[iCell, coordinate], 2);
                     }
-                    fphi[count] = fphi[count] / Math.Pow(LsTBO.L2Norm(tmpmsk),2);
+                    fphi[count] = fphi[count] / Math.Pow(LsTBO.L2Norm(tmpmsk), 2);
                     ba[iCell] = false; // reset
                     count++;
                 }
@@ -2137,12 +2069,10 @@ namespace ApplicationWithIDT {
         /// <summary>
         /// This method creates a backup of all the agglomerated state variables and the levelset
         /// </summary>
-        public void createAgglomeratedBackUp()
-        {
+        public void createAgglomeratedBackUp() {
             levelSetBackup = LsTBO.CloneAs();
             AgglomeratedUBackup = new XDGField[ConservativeFields.Length];
-            for (int i = 0; i < ConservativeFields.Length; i++)
-            {
+            for(int i = 0; i < ConservativeFields.Length; i++) {
                 AgglomeratedUBackup[i] = new XDGField(ConservativeFields[i].Basis, ConservativeFields[i].Identification + "_copy");
                 AgglomeratedUBackup[i].CoordinateVector.SetV(ConservativeFields[i].CoordinateVector);
             }
@@ -2156,7 +2086,7 @@ namespace ApplicationWithIDT {
                 throw new NotSupportedException("cannot reset with not backup available");
             }
             LsTBO.CopyFrom(levelSetBackup);
-            LsTrk.UpdateTracker(CurrentStepNo);  
+            LsTrk.UpdateTracker(CurrentStepNo);
             UpdateAgglomerator();
             for(int i = 0; i < ConservativeFields.Length; i++) {
                 ConservativeFields[i].CopyFrom(UBackup[i]);
@@ -2166,17 +2096,14 @@ namespace ApplicationWithIDT {
         /// <summary>
         /// this method resets the actual state to the agglomerated backup and the levelset
         /// </summary>
-        public void resetStepAgglomerated()
-        {
-            if (levelSetBackup == null || AgglomeratedUBackup == null)
-            {
+        public void resetStepAgglomerated() {
+            if(levelSetBackup == null || AgglomeratedUBackup == null) {
                 throw new NotSupportedException("cannot reset with not backup available");
             }
             LsTBO.CopyFrom(levelSetBackup);
             LsTrk.UpdateTracker(CurrentStepNo);
             UpdateAgglomerator();
-            for (int i = 0; i < ConservativeFields.Length; i++)
-            {
+            for(int i = 0; i < ConservativeFields.Length; i++) {
                 ConservativeFields[i].CopyFrom(AgglomeratedUBackup[i]);
             }
             LevelSetOpti.CopyParamsFrom(LevelSetOptiBackup);
@@ -2275,13 +2202,13 @@ namespace ApplicationWithIDT {
                 gamma = Control.Gamma_Start;
                 CurrentAgglo = Control.AgglomerationThreshold;
             }
-            
-            
+
+
         }
         public int GetCurrentTermN() {
             switch(Control.solRunType) {
                 case SolverRunType.Standard:
-                    return Control.TerminationMinNs[0];
+                return Control.TerminationMinNs[0];
                 case SolverRunType.PContinuation:
                 try {
                     return Control.TerminationMinNs[ConservativeFields[0].Basis.Degree];
@@ -2289,7 +2216,7 @@ namespace ApplicationWithIDT {
                     return Control.TerminationMinNs.Last();
                 }
                 default:
-                    return 5;
+                return 5;
             }
         }
         public double GetCurrenttALNR() {
@@ -2303,15 +2230,15 @@ namespace ApplicationWithIDT {
                     return Control.tALNRs.Last();
                 }
                 default:
-                    return 1.001;
+                return 1.001;
             }
         }
         public void CheckTermination() {
             bool success = false;
             double tALNR = GetCurrenttALNR();
             int TerminationMinN = GetCurrentTermN();
-            
-            Console.WriteLine("");            
+
+            Console.WriteLine("");
             if(CheckTermination(ref success, res_l2, InitResNorm, ResNorms, CurrentStepNo, TerminationMinN, tALNR) &&
                 CheckTermination(ref success, obj_f, Init_obj_f, obj_f_vals, CurrentStepNo, TerminationMinN, tALNR)) {
                 if(ConservativeFields[0].Basis.Degree >= Control.SolDegree) {
@@ -2425,37 +2352,37 @@ namespace ApplicationWithIDT {
 
                     if(itc >= MinIter) {
 
-                        
-                            
-                            // only terminate if we reached the minimum number of iterations
-                            //if(norm_CurRes <= _MinConvCrit * fnorminit + _MinConvCrit) {
-                            // reached minimum convergence criterion
 
-                            double ALNR = LastAverageNormReduction();
-                            tr.Info($"LastAverageNormReduction is {ALNR}, {norm_CurRes} ...");
-                            // continue until the solver stalls
-                            if(ALNR <= tALNR) {
-                                Console.WriteLine();
-                                Console.WriteLine($"ALNR={ALNR} <= {tALNR} so we terminate/increase degree");
-                                tr.Info("... no sufficient further progress - terminating.");
-                                success = true;
-                                terminateLoop = true;
-                            } else {
-                                tr.Info("... but continue as long as we make progress;");
-                                Console.WriteLine($"ALNR={ALNR} > {tALNR} so we continue");
-                                //success = true;
-                                //terminateLoop = true;
-                            }
-                            //} else {
-                            //    tr.Info($"minimal build-in convergence criterion NOT reached (current residual is {norm_CurRes}, limit is {_MinConvCrit * fnorminit + _MinConvCrit}) yet.");
-                            //}
 
-                            if(itc >= Control.MaxIterations) {
-                                // run out of iterations
-                                tr.Info($"Maximum number of iterations reached ({Control.MaxIterations}) - terminating.");
-                                terminateLoop = true;
-                                TerminationKey = false;
-                            }
+                        // only terminate if we reached the minimum number of iterations
+                        //if(norm_CurRes <= _MinConvCrit * fnorminit + _MinConvCrit) {
+                        // reached minimum convergence criterion
+
+                        double ALNR = LastAverageNormReduction();
+                        tr.Info($"LastAverageNormReduction is {ALNR}, {norm_CurRes} ...");
+                        // continue until the solver stalls
+                        if(ALNR <= tALNR) {
+                            Console.WriteLine();
+                            Console.WriteLine($"ALNR={ALNR} <= {tALNR} so we terminate/increase degree");
+                            tr.Info("... no sufficient further progress - terminating.");
+                            success = true;
+                            terminateLoop = true;
+                        } else {
+                            tr.Info("... but continue as long as we make progress;");
+                            Console.WriteLine($"ALNR={ALNR} > {tALNR} so we continue");
+                            //success = true;
+                            //terminateLoop = true;
+                        }
+                        //} else {
+                        //    tr.Info($"minimal build-in convergence criterion NOT reached (current residual is {norm_CurRes}, limit is {_MinConvCrit * fnorminit + _MinConvCrit}) yet.");
+                        //}
+
+                        if(itc >= Control.MaxIterations) {
+                            // run out of iterations
+                            tr.Info($"Maximum number of iterations reached ({Control.MaxIterations}) - terminating.");
+                            terminateLoop = true;
+                            TerminationKey = false;
+                        }
                     } else {
                         Console.WriteLine($"**NOT** terminating now, minimal number of iterations not reached");
                         tr.Info($"**NOT** terminating now, minimal number of iterations (iteration {itc}, minimum is {MinIter}) not reached yet; CurRes = {norm_CurRes}, threshold is {_MinConvCrit * fnorminit + _MinConvCrit}, initial norm was {fnorminit}");
@@ -2485,7 +2412,7 @@ namespace ApplicationWithIDT {
             int counter2 = 0;
             m_alpha = Control.Alpha_Start;
 
-#region LevelSetCFL
+            #region LevelSetCFL
             // we will check the LevelSetCFL not with the original LevelSetTrecker but with a nonShallow Copy
             // Reason: causing the LevelSetCFL with the original LevelSetTracker breaks everything 
             LevelSet LevelSet_copy;
@@ -2538,30 +2465,26 @@ namespace ApplicationWithIDT {
             //PlotCurrentState(2, 5);
             #region Operator Exceptions
             //This loop gives us a Step which doesn't break the operator (e.g. negative rho/pressure etc...)
-            while (success == false) {
+            while(success == false) {
                 success = true;
-                try
-                { //try to compute the residuals
+                try { //try to compute the residuals
                     double[] obj_f = new double[obj_f_vec.Length];
                     double[] res = new double[ResidualVector.Length];
 
                     TransformFromAggToSourceSpace();
-                    
+
                     ComputeResiduals(obj_f, res);
 
-                    if (obj_f.MPI_L2Norm().IsNaN()) {
+                    if(obj_f.MPI_L2Norm().IsNaN()) {
                         throw new NotFiniteNumberException("enriched residual norm is NaN");
                     }
 
-                } catch (Exception e) { //if error is thrown reset the step
+                } catch(Exception e) { //if error is thrown reset the step
                     if(e is NotFiniteNumberException) {
                         Console.WriteLine($"alpha, ||R1||  {m_alpha}, NaN ");
-                    } else if (e is TimeoutException)
-                    {
+                    } else if(e is TimeoutException) {
                         Console.WriteLine($"alpha, ||R1||  {m_alpha}, TimeOut ");
-                    }
-                    else
-                    {
+                    } else {
                         Console.WriteLine($"alpha, ||R1||  {m_alpha}, Error ");
                     }
                     resetStepAgglomerated();
@@ -2573,7 +2496,7 @@ namespace ApplicationWithIDT {
                         success = true;
                     }
                 }
-                
+
             }
             // if alpha hat to be shortened to much throw exception
             if(m_alpha < Control.Alpha_Min) {
@@ -2581,11 +2504,10 @@ namespace ApplicationWithIDT {
                 throw new Exception("step needed to be shortened to much (m_alpha < alpha_min)");
             }
 
-#endregion
+            #endregion
             resetStepAgglomerated();
         }
-        public void AllthePossibleStepsPlot(double eps=1e-8)
-        {
+        public void AllthePossibleStepsPlot(double eps = 1e-8) {
             var length_r = (int)ResidualMap.TotalLength;
             //Plot the current state
             LevelSetOpti.ProjectOntoLevelSet(LsTBO);
@@ -2625,14 +2547,12 @@ namespace ApplicationWithIDT {
             Oproblem.EvalConsAndObj(obj_vec, r_vec, ConservativeFields);
 
 
-            for (int n_param = 0; n_param < nRow; n_param++)
-            {
+            for(int n_param = 0; n_param < nRow; n_param++) {
 
                 //skip loop if param is non changeable
-                if (Control.PartiallyFixLevelSetForSpaceTime && LevelSetOpti is SplineOptiLevelSet splineLS)
-                {
+                if(Control.PartiallyFixLevelSetForSpaceTime && LevelSetOpti is SplineOptiLevelSet splineLS) {
                     double yMin = splineLS.y.Min(); //lower boundary of space time domain
-                    if (n_param < splineLS.y.Length && Math.Abs(yMin - splineLS.y[n_param]) < 1e-14) //only accumalte if DOF if it is not on lower time boundary (here yMin=tMin)
+                    if(n_param < splineLS.y.Length && Math.Abs(yMin - splineLS.y[n_param]) < 1e-14) //only accumalte if DOF if it is not on lower time boundary (here yMin=tMin)
                     {
                         continue;
                     }
@@ -2648,20 +2568,17 @@ namespace ApplicationWithIDT {
                 LevelSetOpti.SetParam(n_param, dx_right);
                 //project
                 LevelSetOpti.ProjectOntoLevelSet(LsTBO);
-                
+
                 //compute Objective
 
-                try
-                {
+                try {
                     LsTrk.UpdateTracker(CurrentStepNo);
                     TransformFromAggToSourceSpace();
                     (double _resl2, double _obj, double _resL2) = ComputeResiduals();
                     AgglomerateOnlyResiduals();
                     resetStepAgglomerated();
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("Exception at right fd of n_param = " +n_param + ": ");
+                } catch(Exception e) {
+                    Console.WriteLine("Exception at right fd of n_param = " + n_param + ": ");
                     Console.WriteLine(e.ToString());
                     Console.WriteLine("");
                     resetStepAgglomerated();
@@ -2673,16 +2590,13 @@ namespace ApplicationWithIDT {
                 LevelSetOpti.ProjectOntoLevelSet(LsTBO);
                 LsTrk.UpdateTracker(CurrentStepNo);
 
-                try
-                {
+                try {
                     LsTrk.UpdateTracker(CurrentStepNo);
                     TransformFromAggToSourceSpace();
                     (double _resl2, double _obj, double _resL2) = ComputeResiduals();
                     AgglomerateOnlyResiduals();
                     resetStepAgglomerated();
-                }
-                catch (Exception e)
-                {
+                } catch(Exception e) {
                     Console.WriteLine("Exception at left fd of n_param = " + n_param + ": ");
                     Console.WriteLine(e.ToString());
                     Console.WriteLine("");
@@ -2696,8 +2610,8 @@ namespace ApplicationWithIDT {
                 LsTrk.UpdateTracker(CurrentStepNo);
             }
         }
-        public void AllthePossibleStepsPlot<Tin>(Tin step_t,double tau ) where Tin: IList<double> {
-            var length_r = (int) ResidualMap.TotalLength; 
+        public void AllthePossibleStepsPlot<Tin>(Tin step_t, double tau) where Tin : IList<double> {
+            var length_r = (int)ResidualMap.TotalLength;
             //Plot the current state
             LevelSetOpti.ProjectOntoLevelSet(LsTBO);
             Plot(0.0, 1000);
@@ -2711,7 +2625,7 @@ namespace ApplicationWithIDT {
                     ConservativeFields[iField].CoordinateVector[jCell * ConservativeFields[iField].Basis.DOFperSpeciesPerCell * LsTrk.TotalNoOfSpecies + nMode] += alpha_p * step_t[stepIndex];
                 }
                 TransformFromAggToSourceSpace();
-                for (int j = 0; j < LevelSetOpti.GetLength(); j++) {
+                for(int j = 0; j < LevelSetOpti.GetLength(); j++) {
                     LevelSetOpti.AccToParam(j, alpha_p * step_t[j + length_r]);
                 }
                 LevelSetOpti.ProjectOntoLevelSet(LsTBO);
@@ -2723,8 +2637,8 @@ namespace ApplicationWithIDT {
                     (double _resl2, double _obj, double _resL2) = ComputeResiduals();
                     Plot(0.0, 1000 + i + 1);
                     resetStepAgglomerated();
-                } catch (Exception e){
-                    Console.WriteLine("Exception at alpha = "+ alpha_p +": ");
+                } catch(Exception e) {
+                    Console.WriteLine("Exception at alpha = " + alpha_p + ": ");
                     Console.WriteLine(e.ToString());
                     Console.WriteLine("");
                     Plot(0.0, 1000 + i + 1);
@@ -2753,24 +2667,19 @@ namespace ApplicationWithIDT {
 
             //TransformFromAggToSourceSpace();
 
-            
+
             /// Level Set Update
             //special treatment for space time level sets
-            if (Control.PartiallyFixLevelSetForSpaceTime && LevelSetOpti is SplineOptiLevelSet splineLS)
-            {
+            if(Control.PartiallyFixLevelSetForSpaceTime && LevelSetOpti is SplineOptiLevelSet splineLS) {
                 double yMin = splineLS.y.Min(); //lower boundary of space time domain
-                for (int i = 0; i < LevelSetOpti.GetLength(); i++)
-                {
-                    if (i<splineLS.y.Length && Math.Abs(yMin - splineLS.y[i])> 1e-14) //only accumalte if DOF if it is not on lower time boundary (here yMin=tMin)
+                for(int i = 0; i < LevelSetOpti.GetLength(); i++) {
+                    if(i < splineLS.y.Length && Math.Abs(yMin - splineLS.y[i]) > 1e-14) //only accumalte if DOF if it is not on lower time boundary (here yMin=tMin)
                     {
-                        LevelSetOpti.AccToParam(i, m_alpha * step_t[i + length_r]); 
+                        LevelSetOpti.AccToParam(i, m_alpha * step_t[i + length_r]);
                     }
                 }
-            }
-            else
-            {
-                for (int i = 0; i < LevelSetOpti.GetLength(); i++)
-                {
+            } else {
+                for(int i = 0; i < LevelSetOpti.GetLength(); i++) {
                     LevelSetOpti.AccToParam(i, m_alpha * step_t[i + length_r]);
                 }
             }
@@ -2802,21 +2711,18 @@ namespace ApplicationWithIDT {
                     //MultiphaseAgglomerator.Extrapolate(new CoordinateMapping(ConservativeFields));//reset ConservativeFields into non-agglomerated form
                 }
             }
-            
 
-                   
+
+
         }
-        public void TransformStepFromAggToSourceSpace(double[] vector)
-        {
+        public void TransformStepFromAggToSourceSpace(double[] vector) {
 
             CoordinateVector SolutionVec = new CoordinateVector(ConservativeFields);
             var dummy = ConservativeFields.CloneNonshallow();
-            CoordinateVector vec= new CoordinateVector(dummy);
+            CoordinateVector vec = new CoordinateVector(dummy);
             vec.SetV(vector.GetSubVector(0, vec.Length));
-            if (CurrentAgglo > 0)
-            {
-                if (MultiphaseAgglomerator.TotalNumberOfAgglomerations > 0)
-                {
+            if(CurrentAgglo > 0) {
+                if(MultiphaseAgglomerator.TotalNumberOfAgglomerations > 0) {
                     MultiphaseAgglomerator.Extrapolate(vec.Mapping);//reset ConservativeFields into non-agglomerated form
                 }
             }
@@ -2854,8 +2760,7 @@ namespace ApplicationWithIDT {
         /// </summary>
         /// <returns></returns>
         public double SQPStep() {
-            using (new FuncTrace())
-            {
+            using(new FuncTrace()) {
                 double tau = Control.tauAlpha;
                 double beta = 1e-4;
                 double alpha_min = Control.Alpha_Min;
@@ -2863,7 +2768,7 @@ namespace ApplicationWithIDT {
                 TransformFromAggToSourceSpace();
                 //Evaluate the Operator at the Current state (normally this evaluation is done in RunSolverOneStep)
                 (res_l2, obj_f, res_L2) = ComputeResiduals();
-                resetStepAgglomerated();                
+                resetStepAgglomerated();
                 //transform everything back to non-agglomerated
                 int length_R = (int)obj_f_map.TotalLength;
                 int length_r = (int)UnknownsMap.TotalLength; // needs to be modified if more than one field is simulated
@@ -2880,272 +2785,228 @@ namespace ApplicationWithIDT {
                 double[] temp = new double[RHS.Length];
                 double[] step = new double[stepIN.Length];
 
-                switch (Control.GlobalizationStrategy)
-                {
+                switch(Control.GlobalizationStrategy) {
                     #region DogLeg
                     case GlobalizationStrategy.DogLeg: /// WARNING: May be deprecated
-                        // compute Cauchy point
-                        // ====================
-                        Console.WriteLine("WARNING: DogLeg globalization was not used for a long time, and migth contain errors.");
-                        double[] stepCP;
-                        {
-                            // step 1: calculate direction of Cauchy point / direction of steepest decent
-                            if (RHS.Length != (int)LHS.NoOfRows)
-                            {
-                                throw new ArgumentException("No of RHS entries must equal LHS Rows, but LHS:" + (int)LHS.NoOfRows + ", RHS:" + RHS.Length);
-                            }
-                            double[] dk = new double[stepIN.Length];
-                            MsrMatrix HTransp = LHS.Transpose();
-                            HTransp.SpMV(1.0, RHS, 0.0, dk);
-                            // step 2: computing Cauchy point
-                            double[] w = new double[RHS.Length];
-                            LHS.SpMV(1.0, dk, 0.0, w);
-
-                            double lambda = RHS.InnerProd(w) / w.InnerProd(w);
-                            stepCP = dk;
-                            stepCP.ScaleV(lambda);
-                            dk = null; // invalidate
+                    // compute Cauchy point
+                    // ====================
+                    Console.WriteLine("WARNING: DogLeg globalization was not used for a long time, and migth contain errors.");
+                    double[] stepCP; {
+                        // step 1: calculate direction of Cauchy point / direction of steepest decent
+                        if(RHS.Length != (int)LHS.NoOfRows) {
+                            throw new ArgumentException("No of RHS entries must equal LHS Rows, but LHS:" + (int)LHS.NoOfRows + ", RHS:" + RHS.Length);
                         }
+                        double[] dk = new double[stepIN.Length];
+                        MsrMatrix HTransp = LHS.Transpose();
+                        HTransp.SpMV(1.0, RHS, 0.0, dk);
+                        // step 2: computing Cauchy point
+                        double[] w = new double[RHS.Length];
+                        LHS.SpMV(1.0, dk, 0.0, w);
+
+                        double lambda = RHS.InnerProd(w) / w.InnerProd(w);
+                        stepCP = dk;
+                        stepCP.ScaleV(lambda);
+                        dk = null; // invalidate
+                    }
 
 
-                        // find point on Dogleg curve, within the trust region
-                        // ===================================================
+                    // find point on Dogleg curve, within the trust region
+                    // ===================================================
 
-                        double l2_stepCP = StepNorm(stepCP, length_r, length_l);
-                        double l2_stepIN = StepNorm(stepIN, length_r, length_l);
-                        void PointOnDogleg(double _TrustRegionDelta, double[] step)
-                        {
-                            if (l2_stepIN <= _TrustRegionDelta)
-                            {
-                                // use Newton Step
-                                step.SetV(stepIN);
-                            }
-                            else
-                            {
-                                if (l2_stepCP < _TrustRegionDelta)
+                    double l2_stepCP = StepNorm(stepCP, length_r, length_l);
+                    double l2_stepIN = StepNorm(stepIN, length_r, length_l);
+                    void PointOnDogleg(double _TrustRegionDelta, double[] step) {
+                        if(l2_stepIN <= _TrustRegionDelta) {
+                            // use Newton Step
+                            step.SetV(stepIN);
+                        } else {
+                            if(l2_stepCP < _TrustRegionDelta) {
+                                // interpolate between Cauchy-point and Newton-step
+                                double tau;
                                 {
-                                    // interpolate between Cauchy-point and Newton-step
-                                    double tau;
-                                    {
-                                        double A = l2_stepCP, B = l2_stepIN, C = C = StepInnerProd(stepCP, stepIN, length_r, length_l);
-                                        tau = (A.Pow2() - C + Math.Sqrt((A.Pow2() + B.Pow2() - 2 * C) * _TrustRegionDelta.Pow2() - A.Pow2() * B.Pow2() + C.Pow2()))
-                                            / (A.Pow2() + B.Pow2() - 2 * C);
-                                        if (!(tau >= -0.00001 && tau <= 1.00001) || tau.IsNaN() || tau.IsInfinity())
-                                            throw new ArithmeticException();
-                                    }
-                                    // do interpolation
-                                    step.SetV(stepCP, (1 - tau));
-                                    step.AccV(tau, stepIN);
-                                    //Debug.Assert(Math.Abs((step.MPI_L2Norm() / _TrustRegionDelta) - 1.0) <= 1.0e-3, "interpolation step went wrong");
+                                    double A = l2_stepCP, B = l2_stepIN, C = C = StepInnerProd(stepCP, stepIN, length_r, length_l);
+                                    tau = (A.Pow2() - C + Math.Sqrt((A.Pow2() + B.Pow2() - 2 * C) * _TrustRegionDelta.Pow2() - A.Pow2() * B.Pow2() + C.Pow2()))
+                                        / (A.Pow2() + B.Pow2() - 2 * C);
+                                    if(!(tau >= -0.00001 && tau <= 1.00001) || tau.IsNaN() || tau.IsInfinity())
+                                        throw new ArithmeticException();
                                 }
-                                else
-                                {
-                                    // use reduced Cauchy point
-                                    step.SetV(stepCP, (_TrustRegionDelta / l2_stepCP));
-                                }
+                                // do interpolation
+                                step.SetV(stepCP, (1 - tau));
+                                step.AccV(tau, stepIN);
+                                //Debug.Assert(Math.Abs((step.MPI_L2Norm() / _TrustRegionDelta) - 1.0) <= 1.0e-3, "interpolation step went wrong");
+                            } else {
+                                // use reduced Cauchy point
+                                step.SetV(stepCP, (_TrustRegionDelta / l2_stepCP));
                             }
                         }
+                    }
 
-                        const double delta_min = 1e-6;
-                        const double delta_max = 1e10;
-                        double norm_step = StepNorm(stepIN, length_r, length_l);
+                    const double delta_min = 1e-6;
+                    const double delta_max = 1e10;
+                    double norm_step = StepNorm(stepIN, length_r, length_l);
 
-                        if (norm_step < delta_min)
-                            TrustRegionDelta = 2 * delta_min;
-                        else
-                            TrustRegionDelta = norm_step;
+                    if(norm_step < delta_min)
+                        TrustRegionDelta = 2 * delta_min;
+                    else
+                        TrustRegionDelta = norm_step;
 
-                        TrustRegionDelta = Math.Min(delta_max, TrustRegionDelta);
+                    TrustRegionDelta = Math.Min(delta_max, TrustRegionDelta);
 
-                        if (TrustRegionDelta < delta_min || TrustRegionDelta > delta_max)
-                            throw new ArithmeticException("trust region width out of allowed range");
+                    if(TrustRegionDelta < delta_min || TrustRegionDelta > delta_max)
+                        throw new ArithmeticException("trust region width out of allowed range");
+                    PointOnDogleg(TrustRegionDelta, step);
+
+
+
+                    // check and adapt trust region
+                    // ============================
+                    double last_pred;
+                    double last_ared;
+                    try {
+                        last_pred = predictedMerit(1.0, step, beta);
+                        last_ared = actualMerit(step, 1.0);
+                    } catch {
+                        last_ared = 1000000;
+                        last_pred = -1;
+                    }
+
+                    //Console.WriteLine("delta start=" + TrustRegionDelta + " Ares:=" + last_ared +" Pres:=" + last_pred);
+                    // trust region adaptation loop
+                    while(last_ared >= last_pred) {
+                        double newTrustRegionDelta = TrustRegionDelta * 0.5;
+                        if(newTrustRegionDelta <= delta_min)
+                            break;
+                        //compute new step         
                         PointOnDogleg(TrustRegionDelta, step);
-
-
-
-                        // check and adapt trust region
-                        // ============================
-                        double last_pred;
-                        double last_ared;
-                        try
-                        {
-                            last_pred = predictedMerit(1.0, step, beta);
+                        TrustRegionDelta = Math.Max(delta_min, newTrustRegionDelta);
+                        try {
                             last_ared = actualMerit(step, 1.0);
-                        }
-                        catch
-                        {
+                            last_pred = predictedMerit(1.0, step, beta);
+                        } catch {
                             last_ared = 1000000;
                             last_pred = -1;
-                        }
-
-                        //Console.WriteLine("delta start=" + TrustRegionDelta + " Ares:=" + last_ared +" Pres:=" + last_pred);
-                        // trust region adaptation loop
-                        while (last_ared >= last_pred)
-                        {
-                            double newTrustRegionDelta = TrustRegionDelta * 0.5;
-                            if (newTrustRegionDelta <= delta_min)
-                                break;
-                            //compute new step         
-                            PointOnDogleg(TrustRegionDelta, step);
-                            TrustRegionDelta = Math.Max(delta_min, newTrustRegionDelta);
-                            try
-                            {
-                                last_ared = actualMerit(step, 1.0);
-                                last_pred = predictedMerit(1.0, step, beta);
+                            if(TrustRegionDelta == delta_min) {
+                                throw new Exception("TrustregionDeltaNeeded to be shortened to much");
                             }
-                            catch
-                            {
-                                last_ared = 1000000;
-                                last_pred = -1;
-                                if (TrustRegionDelta == delta_min)
-                                {
-                                    throw new Exception("TrustregionDeltaNeeded to be shortened to much");
-                                }
-                            }
-                            //Console.WriteLine("try delta=" + TrustRegionDelta + " Ares:=" + last_ared +" Pres:=" + last_pred);
                         }
-                        succes = AccumulateStep(step, 1.0);
-                        stepIN.SetV(step);
-                        return TrustRegionDelta;
+                        //Console.WriteLine("try delta=" + TrustRegionDelta + " Ares:=" + last_ared +" Pres:=" + last_pred);
+                    }
+                    succes = AccumulateStep(step, 1.0);
+                    stepIN.SetV(step);
+                    return TrustRegionDelta;
                     #endregion
                     #region Line Search
                     case GlobalizationStrategy.LineSearch:
 
-                        //Console.WriteLine("Starting Line Search:");
-                        //m_alpha = Control.Alpha_Start;
-                        while (m_alpha > alpha_min)
-                        {
+                    //Console.WriteLine("Starting Line Search:");
+                    //m_alpha = Control.Alpha_Start;
+                    while(m_alpha > alpha_min) {
 
-                            last_ared = actualMerit(stepIN, m_alpha);
-                            last_pred = predictedMerit(m_alpha, stepIN, beta);
-                            Console.WriteLine("alpha, M, predM  " + m_alpha + ", " + last_ared + ", " + last_pred);
-                            if (last_ared > double.MaxValue)
-                            {
-                                Console.Write("");
-                            }
-                            if (last_ared < last_pred)
-                            {
+                        last_ared = actualMerit(stepIN, m_alpha);
+                        last_pred = predictedMerit(m_alpha, stepIN, beta);
+                        Console.WriteLine("alpha, M, predM  " + m_alpha + ", " + last_ared + ", " + last_pred);
+                        if(last_ared > double.MaxValue) {
+                            Console.Write("");
+                        }
+                        if(last_ared < last_pred) {
+                            succes = AccumulateStep(stepIN, m_alpha);
+                            stepIN.ScaleV(m_alpha);
+                            return m_alpha;
+                        } else {
+                            //reset (only if the loop continues)
+                            resetStepAgglomerated();
+                            if(m_alpha * tau > alpha_min) {
+                                m_alpha = m_alpha * tau; //continues loop
+                            } else {
+                                m_alpha = alpha_min;
                                 succes = AccumulateStep(stepIN, m_alpha);
                                 stepIN.ScaleV(m_alpha);
                                 return m_alpha;
                             }
-                            else
-                            {
-                                //reset (only if the loop continues)
-                                resetStepAgglomerated();
-                                if (m_alpha * tau > alpha_min)
-                                {
-                                    m_alpha = m_alpha * tau; //continues loop
-                                }
-                                else
-                                {
-                                    m_alpha = alpha_min;
-                                    succes = AccumulateStep(stepIN, m_alpha);
-                                    stepIN.ScaleV(m_alpha);
-                                    return m_alpha;
-                                }
-                            }
                         }
-                        //This is the case if while loop doesn't return (so if m_alpha < alpha_min)
-                        m_alpha = alpha_min;
-                        succes = AccumulateStep(stepIN, m_alpha);
-                        stepIN.ScaleV(m_alpha);
-                        return m_alpha;
+                    }
+                    //This is the case if while loop doesn't return (so if m_alpha < alpha_min)
+                    m_alpha = alpha_min;
+                    succes = AccumulateStep(stepIN, m_alpha);
+                    stepIN.ScaleV(m_alpha);
+                    return m_alpha;
                     #endregion
                     #region ZickZack Search
                     case GlobalizationStrategy.ZickZackSearch:
-                        double FuncPhi(double m_alpha, bool biggerAlphaU)
-                        {
-                            double alphaPhi = m_alpha;
-                            if (biggerAlphaU)
-                            {
-                                return Math.Pow(alphaPhi, 5);
-                            }
-                            else
-                            {
-                                return Math.Pow(alphaPhi, 0.2);
-                            }
+                    double FuncPhi(double m_alpha, bool biggerAlphaU) {
+                        double alphaPhi = m_alpha;
+                        if(biggerAlphaU) {
+                            return Math.Pow(alphaPhi, 5);
+                        } else {
+                            return Math.Pow(alphaPhi, 0.2);
                         }
-                        double FuncU(double m_alpha, bool biggerAlphaU)
-                        {
-                            double alphaU = m_alpha;
-                            if (biggerAlphaU)
-                            {
-                                return Math.Pow(alphaU, 0.2);
-                            }
-                            else
-                            {
-                                return Math.Pow(alphaU, 5);
-                            }
+                    }
+                    double FuncU(double m_alpha, bool biggerAlphaU) {
+                        double alphaU = m_alpha;
+                        if(biggerAlphaU) {
+                            return Math.Pow(alphaU, 0.2);
+                        } else {
+                            return Math.Pow(alphaU, 5);
                         }
+                    }
 
-                        void ZickZack(double[] step, double m_alpha, bool biggerAlphaU)
-                        {
+                    void ZickZack(double[] step, double m_alpha, bool biggerAlphaU) {
 
-                            double alpha_u = FuncU(m_alpha, biggerAlphaU);
-                            double alpha_phi = FuncPhi(m_alpha, biggerAlphaU);
-                            for (int i = 0; i < length_r; i++)
-                            {
-                                step[i] = step[i] * alpha_u;
-                            }
-                            for (int i = length_r; i < length_l; i++)
-                            {
-                                step[i] = step[i] * alpha_phi;
-                            }
+                        double alpha_u = FuncU(m_alpha, biggerAlphaU);
+                        double alpha_phi = FuncPhi(m_alpha, biggerAlphaU);
+                        for(int i = 0; i < length_r; i++) {
+                            step[i] = step[i] * alpha_u;
                         }
-                        bool biggerAlphaU = false;
+                        for(int i = length_r; i < length_l; i++) {
+                            step[i] = step[i] * alpha_phi;
+                        }
+                    }
+                    bool biggerAlphaU = false;
 
-                        while (m_alpha > alpha_min)
-                        {
-                            biggerAlphaU = !biggerAlphaU;
-                            //Compute Step
-                            step.SetV(stepIN);
-                            ZickZack(step, m_alpha, biggerAlphaU);
-                            last_ared = actualMerit(step, 1.0);
-                            last_pred = predictedMerit(1.0, step, beta);
+                    while(m_alpha > alpha_min) {
+                        biggerAlphaU = !biggerAlphaU;
+                        //Compute Step
+                        step.SetV(stepIN);
+                        ZickZack(step, m_alpha, biggerAlphaU);
+                        last_ared = actualMerit(step, 1.0);
+                        last_pred = predictedMerit(1.0, step, beta);
 
-                            if (last_ared < last_pred)
-                            {
+                        if(last_ared < last_pred) {
+                            succes = AccumulateStep(step, 1.0);
+                            stepIN.SetV(step);
+                            return m_alpha;
+                        } else {
+                            //reset (only if the loop continues)
+                            resetStepAgglomerated();
+                            if(m_alpha * tau > alpha_min) {
+                                m_alpha = m_alpha * tau; //continues loop
+                            } else {
+                                m_alpha = alpha_min;
                                 succes = AccumulateStep(step, 1.0);
                                 stepIN.SetV(step);
                                 return m_alpha;
                             }
-                            else
-                            {
-                                //reset (only if the loop continues)
-                                resetStepAgglomerated();
-                                if (m_alpha * tau > alpha_min)
-                                {
-                                    m_alpha = m_alpha * tau; //continues loop
-                                }
-                                else
-                                {
-                                    m_alpha = alpha_min;
-                                    succes = AccumulateStep(step, 1.0);
-                                    stepIN.SetV(step);
-                                    return m_alpha;
-                                }
-                            }
                         }
+                    }
 
-                        m_alpha = alpha_min;
-                        step.SetV(stepIN, m_alpha);
-                        //ZickZack(step,m_alpha,false);
+                    m_alpha = alpha_min;
+                    step.SetV(stepIN, m_alpha);
+                    //ZickZack(step,m_alpha,false);
 
-                        succes = AccumulateStep(step, 1.0);
-                        stepIN.SetV(step);
-                        return m_alpha;
+                    succes = AccumulateStep(step, 1.0);
+                    stepIN.SetV(step);
+                    return m_alpha;
                     #endregion
                     #region NoGlob
                     case GlobalizationStrategy.None:
-                        step.SetV(stepIN);
-                        step.ScaleV(m_alpha);
-                        succes = AccumulateStep(step, 1.0);
-                        stepIN.SetV(step);
-                        return m_alpha;
+                    step.SetV(stepIN);
+                    step.ScaleV(m_alpha);
+                    succes = AccumulateStep(step, 1.0);
+                    stepIN.SetV(step);
+                    return m_alpha;
                     #endregion
                     default:
-                        throw new NotSupportedException("Problem with Globalization Strategy");
+                    throw new NotSupportedException("Problem with Globalization Strategy");
                 }
             }
         }
@@ -3154,7 +3015,7 @@ namespace ApplicationWithIDT {
         /// This function shall update all derived Variables that are added. User has maximum flexibility here
         /// </summary>
         public abstract void UpdateDerivedVariables();
-        
+
         /// <summary>
         /// This reinitializes all Cells prescribed
         /// </summary>
@@ -3273,7 +3134,7 @@ namespace ApplicationWithIDT {
             foreach(var iCell in cutcellMask.ItemEnum) {
                 double cellsize = ((GridData)GridData).Cells.GetCellVolume(iCell);
                 foreach(SpeciesId spc in SpeciesToEvaluate_Ids) {
-                    if(CutCellVolumes[spc][iCell]/cellsize <= size) {
+                    if(CutCellVolumes[spc][iCell] / cellsize <= size) {
                         K_reinit.Add(new Tuple<int, SpeciesId>(iCell, spc));
                     }
                 }
@@ -3314,8 +3175,7 @@ namespace ApplicationWithIDT {
         /// </summary>
         /// <param name="isExcessiveLineSearch">true if performed during line search</param>
         public void Reinitialization(bool isExcessiveLineSearch) {
-            using (new FuncTrace())
-            {
+            using(new FuncTrace()) {
                 //Compute the personField storing the values of the person sensor for each cell
                 GetPerssonSensor(isExcessiveLineSearch);
 
@@ -3326,16 +3186,12 @@ namespace ApplicationWithIDT {
                 {
                     //gives the maximum Sensor value, only used when performed during line-search
 
-                    if (isExcessiveLineSearch == true)
-                    {
+                    if(isExcessiveLineSearch == true) {
                         maxSensorValue = personField.GetMeanValue(0);
-                        foreach (SpeciesId speciesId in this.SpeciesToEvaluate_Ids)
-                        {
+                        foreach(SpeciesId speciesId in this.SpeciesToEvaluate_Ids) {
                             var personField_shadow = personField.GetSpeciesShadowField(speciesId);
-                            foreach (int cell in fullMask.ItemEnum)
-                            {
-                                if (maxSensorValue < personField_shadow.GetMeanValue(cell))
-                                {
+                            foreach(int cell in fullMask.ItemEnum) {
+                                if(maxSensorValue < personField_shadow.GetMeanValue(cell)) {
                                     maxSensorValue = personField_shadow.GetMeanValue(cell);
                                 }
                             }
@@ -3346,29 +3202,20 @@ namespace ApplicationWithIDT {
                 // Finds the set to be Reinitialized
                 List<Tuple<int, SpeciesId>> K_reinit = new List<Tuple<int, SpeciesId>>();
                 {
-                    foreach (SpeciesId speciesId in this.SpeciesToEvaluate_Ids)
-                    {
+                    foreach(SpeciesId speciesId in this.SpeciesToEvaluate_Ids) {
                         var personField_shadow = personField.GetSpeciesShadowField(speciesId);
-                        foreach (int cell in fullMask.ItemEnum)
-                        {
-                            if (isExcessiveLineSearch == true)
-                            {
+                        foreach(int cell in fullMask.ItemEnum) {
+                            if(isExcessiveLineSearch == true) {
                                 //add cell if person sensor greater than prescribed fraction of maximum sensor value
-                                if (personField_shadow.GetMeanValue(cell) >= Control.reInit_c2 * maxSensorValue)
-                                {
-                                    if (LsTrk.Regions.IsSpeciesPresentInCell(speciesId, cell))
-                                    {
+                                if(personField_shadow.GetMeanValue(cell) >= Control.reInit_c2 * maxSensorValue) {
+                                    if(LsTrk.Regions.IsSpeciesPresentInCell(speciesId, cell)) {
                                         K_reinit.Add(new Tuple<int, SpeciesId>(cell, speciesId));
                                     }
                                 }
-                            }
-                            else
-                            {
+                            } else {
                                 //add cell if person sensor greater than prescribed constant
-                                if (personField_shadow.GetMeanValue(cell) > Control.reInit_c1)
-                                {
-                                    if (LsTrk.Regions.IsSpeciesPresentInCell(speciesId, cell))
-                                    {
+                                if(personField_shadow.GetMeanValue(cell) > Control.reInit_c1) {
+                                    if(LsTrk.Regions.IsSpeciesPresentInCell(speciesId, cell)) {
                                         K_reinit.Add(new Tuple<int, SpeciesId>(cell, speciesId));
                                     }
                                 }
@@ -3379,13 +3226,11 @@ namespace ApplicationWithIDT {
 
                 //print all cells that are being reinitialized
                 List<int> CellsToReInit = new List<int>();
-                if (K_reinit.Count > 0)
-                {
+                if(K_reinit.Count > 0) {
                     Console.Write("Reinitialized Cells:");
                 }
 
-                foreach (Tuple<int, SpeciesId> cell in K_reinit)
-                {
+                foreach(Tuple<int, SpeciesId> cell in K_reinit) {
                     CellsToReInit.Add(cell.Item1);
                     Console.Write("(" + cell.Item1 + " " + LsTrk.GetSpeciesName(cell.Item2) + ") ,");
                 }
@@ -3402,7 +3247,7 @@ namespace ApplicationWithIDT {
             if(ConservativeFields[0].Basis.Degree == 0) {
                 throw new NotSupportedException("Sensor not supported for DG degree 0");
             }
-            
+
             XDGField xdgfieldToTest = ConservativeFields[0].CloneAs();
 
             //start by clearing the personField and setting all mean values to minus infinity
@@ -3431,7 +3276,7 @@ namespace ApplicationWithIDT {
             int N = xdgfieldToTest.Basis.NonX_Basis.Length; // DOFs per cell per species.
 
             //helper functions
-            double[] GetCoords(int j,SpeciesId spc,XDGField field) {
+            double[] GetCoords(int j, SpeciesId spc, XDGField field) {
                 int iSpc = LsTrk.Regions.GetSpeciesIndex(spc, j);
                 if(iSpc < 0)
                     return null;
@@ -3442,7 +3287,7 @@ namespace ApplicationWithIDT {
                 if(nominator == 0) {
                     personField.GetSpeciesShadowField(speciesId).SetMeanValue(cell, -10);
                 } else {
-                    
+
                     if(denominator == 0) {
                         throw new ArgumentException("denominator zero but nominator not zero");
                     } else {
@@ -3455,7 +3300,7 @@ namespace ApplicationWithIDT {
                     }
                 }
             }
-            
+
             //compute the person field
             foreach(SpeciesId speciesId in this.SpeciesToEvaluate_Ids) {
                 var speciesMask = LsTrk.Regions.GetSpeciesMask(speciesId);
@@ -3474,7 +3319,7 @@ namespace ApplicationWithIDT {
                     double[] CoordsFTT = GetCoords(jCell, speciesId, xdgfieldToTest);
                     double[] CoordsDiff = GetCoords(jCell, speciesId, diffField);
                     if(CoordsFTT == null)
-                       continue; // species not present in cell; no contribution.
+                        continue; // species not present in cell; no contribution.
 
                     var MM_j = MMblox.MassMatrixBlocks.ExtractSubArrayShallow(new int[] { iSub, 0, 0 }, new int[] { iSub - 1, N - 1, N - 1 });
 
@@ -3485,7 +3330,7 @@ namespace ApplicationWithIDT {
                     double nominator = CoordsDiff.InnerProd(tmp2);
 
                     SetValuePersonField(jCell, speciesId, nominator, denominator);
-                    
+
                 }
 
                 //2nd we do the NonCutCells
@@ -3509,13 +3354,11 @@ namespace ApplicationWithIDT {
         /// <param name="order2Pick"></param> Quad Order
         /// <param name="pOrder"></param> low porder polynomail degree
         /// <returns></returns>
-        MsrMatrix GetProjectionOperator(LevelSetTracker LsTrk, XDGField[] fieldPhigh, int order2Pick, int pOrder)
-        {
+        MsrMatrix GetProjectionOperator(LevelSetTracker LsTrk, XDGField[] fieldPhigh, int order2Pick, int pOrder) {
             //create a xdgfield of deg p and get some mappings
             var nVar = fieldPhigh.Length;
             var fieldP = new XDGField[fieldPhigh.Length];
-            for (int i = 0; i < nVar; i++)
-            {
+            for(int i = 0; i < nVar; i++) {
                 fieldP[i] = new XDGField(new XDGBasis(LsTrk, pOrder), "fieldP");
             }
             var highMap = new CoordinateMapping(fieldPhigh);
@@ -3539,16 +3382,14 @@ namespace ApplicationWithIDT {
                     int iField;
                     int jCell;
                     int nMode;
-                    for (int iRow = 0; iRow < lowMap.TotalLength; iRow++)
-                    {
+                    for(int iRow = 0; iRow < lowMap.TotalLength; iRow++) {
                         lowMap.LocalFieldCoordinateIndex(iRow, out iField, out jCell, out nMode);
                         double rMode = (double)nMode;
                         int fac = (int)Math.Floor(rMode / MaxModer);
                         int row = highMap.LocalUniqueCoordinateIndex(iField, jCell, nMode + fac * (MaxModeR - MaxModer));
                         rowIndices.Add(row);
                     }
-                    for (int i = 0; i < massMatrix.NoOfCols; i++)
-                    {
+                    for(int i = 0; i < massMatrix.NoOfCols; i++) {
                         colIndices.Add(i);
                     }
                 }
@@ -3558,7 +3399,7 @@ namespace ApplicationWithIDT {
 
             // Here we compute M_{p-1,p-1}^{-1} * M_{p-1,p}
             return MsrMatrix.Multiply(MPlowPlow.ToMsrMatrix(), MPlowP);
-            
+
         }
 
         /// <summary>
@@ -3568,13 +3409,11 @@ namespace ApplicationWithIDT {
         /// <param name="fieldPhigh"></param>
         /// <param name="pOrder">order of c_low</param>
         /// <returns></returns>
-        public MsrMatrix GetInclusionOperator(XDGField[] fieldPhigh, int pOrder)
-        {
+        public MsrMatrix GetInclusionOperator(XDGField[] fieldPhigh, int pOrder) {
             var nVar = fieldPhigh.Length;
             var fieldPlow = new XDGField[fieldPhigh.Length];
-            var copyHigh = new XDGField[fieldPhigh.Length]; 
-            for (int i = 0; i < nVar; i++)
-            {
+            var copyHigh = new XDGField[fieldPhigh.Length];
+            for(int i = 0; i < nVar; i++) {
                 fieldPlow[i] = new XDGField(new XDGBasis(LsTrk, pOrder), "fieldP");
                 copyHigh[i] = fieldPhigh[i].CloneAs();
                 copyHigh[i].Clear();
@@ -3583,24 +3422,20 @@ namespace ApplicationWithIDT {
             var highMap = new CoordinateMapping(copyHigh);
             var lowMap = new CoordinateMapping(fieldPlow);
             // numbering of entries
-            for (int iRow = 0; iRow < lowMap.TotalLength; iRow++)
-            {
+            for(int iRow = 0; iRow < lowMap.TotalLength; iRow++) {
                 cV_low[iRow] = iRow + 1;
             }
-            for (int i = 0; i < nVar; i++)
-            {
+            for(int i = 0; i < nVar; i++) {
                 copyHigh[i].AccLaidBack(1.0, fieldPlow[i]);
             }
 
             var cV_high = new CoordinateVector(copyHigh);
-            MsrMatrix Inclusion = new MsrMatrix((int) highMap.TotalLength, (int) lowMap.TotalLength,1,1) ;//Sub of Mass Mat with (rows pOrder ,column p)
+            MsrMatrix Inclusion = new MsrMatrix((int)highMap.TotalLength, (int)lowMap.TotalLength, 1, 1);//Sub of Mass Mat with (rows pOrder ,column p)
             {
-                for (int iRow = 0; iRow < highMap.TotalLength; iRow++)
-                {
-                    int lowRow = (int) cV_high[iRow];
-                    if (lowRow> 0)
-                    {
-                        Inclusion[iRow, lowRow-1]=1;
+                for(int iRow = 0; iRow < highMap.TotalLength; iRow++) {
+                    int lowRow = (int)cV_high[iRow];
+                    if(lowRow > 0) {
+                        Inclusion[iRow, lowRow - 1] = 1;
                     }
                 }
             }
@@ -3614,7 +3449,7 @@ namespace ApplicationWithIDT {
         /// <param name="xdgfieldToTest"></param>
         /// <param name="order2Pick"></param>
         /// <returns>projection</returns>
-        public static XDGField GetPMinus1Projection(LevelSetTracker LsTrk, XDGField xdgfieldToTest ,int order2Pick) {
+        public static XDGField GetPMinus1Projection(LevelSetTracker LsTrk, XDGField xdgfieldToTest, int order2Pick) {
             var fieldPMinus1 = new XDGField(new XDGBasis(LsTrk, xdgfieldToTest.Basis.Degree - 1), "fieldPMinus1");
             {
                 //get the MassMatrix
@@ -3630,7 +3465,7 @@ namespace ApplicationWithIDT {
                     var colIndices = new List<long>();
                     {
                         int MaxModeR = xdgfieldToTest.Mapping.MaxTotalNoOfCoordinatesPerCell / LsTrk.TotalNoOfSpecies;
-                        int MaxModer = fieldPMinus1.Mapping.MaxTotalNoOfCoordinatesPerCell  / LsTrk.TotalNoOfSpecies;
+                        int MaxModer = fieldPMinus1.Mapping.MaxTotalNoOfCoordinatesPerCell / LsTrk.TotalNoOfSpecies;
 
                         int iField;
                         int jCell;
@@ -3764,7 +3599,7 @@ namespace ApplicationWithIDT {
         /// <param name="ConVars"> Conservative Variables </param>
         /// <param name="residuals">Residual fields</param>
         void DoImplicitTimeStepping(XDGField[] ConVars, XDGField[] residuals) {
-            
+
             //init an operator with temp operator
             var OpWithTemp = XSpatialOperator.CloneAs();
             var TempOp = new ConstantXTemporalOperator(OpWithTemp);
@@ -3775,7 +3610,7 @@ namespace ApplicationWithIDT {
             //init an appropriate timeStepper
             NonLinearSolverConfig NonLinearSolver = new NonLinearSolverConfig();
             NonLinearSolver.MaxSolverIterations = 10;
-            var xdgtimestepping = new XdgTimestepping( OpWithTemp, ConVars, residuals,TimeSteppingScheme.RK_ImplicitEuler, _AgglomerationThreshold:CurrentAgglo, NonLinearSolver:NonLinearSolver);
+            var xdgtimestepping = new XdgTimestepping(OpWithTemp, ConVars, residuals, TimeSteppingScheme.RK_ImplicitEuler, _AgglomerationThreshold: CurrentAgglo, NonLinearSolver: NonLinearSolver);
 
 
             //get a starting Timestepsize
@@ -3792,7 +3627,7 @@ namespace ApplicationWithIDT {
                     dt = dt * Control.IG_beta;
                 }
             }
-            
+
             //choose max iter and initialize counter
             int maxIt = 200;
             int it = 0; // counter
@@ -3804,7 +3639,7 @@ namespace ApplicationWithIDT {
             //backup for solution
             var u_n0 = new double[SolVec.Length];
             u_n0.SetV(SolVec);
-            
+
             // eval inital residual
             Eval_r = XSpatialOperator.GetEvaluatorEx(LsTrk, ConVars, null, ResidualMap);
             Eval_r.Evaluate(1.0, 0.0, ResVec);
@@ -3812,10 +3647,10 @@ namespace ApplicationWithIDT {
             //agglomerate residual
             MultiphaseAgglomerator = LsTrk.GetAgglomerator(SpeciesToEvaluate_Ids, GetGlobalQuadOrder(), CurrentAgglo, ExceptionOnFailedAgglomeration: false);
             MultiphaseAgglomerator.ManipulateMatrixAndRHS(default(MsrMatrix), ResVec, ResidualMap, new CoordinateMapping(ConVars));
-            
+
             // while residual big, time step small and it < maxIt do timestepping
             while(ResVec.MPI_L2Norm() > 1e-12 && it < maxIt && dt <= Math.Max(1e06, Control.IG_dt_Start)) {
-                
+
                 // try implicit timestep, if fail make dt smaller
                 try {
                     var succes = xdgtimestepping.Solve(LsTrk.Regions.Time, dt);
@@ -3852,7 +3687,7 @@ namespace ApplicationWithIDT {
                 ResVec = new CoordinateVector(residuals);
                 Eval_r.Evaluate(1.0, 0.0, ResVec);
                 MultiphaseAgglomerator.ManipulateMatrixAndRHS(default(MsrMatrix), ResVec, ResidualMap, new CoordinateMapping(ConVars));
-                
+
                 // print result
                 Console.WriteLine($"It {it}: ||r||={ResVec.MPI_L2Norm()}, ||du||={norm}, ||nu|| = {nu}, dt={dt}");
 
@@ -3863,14 +3698,13 @@ namespace ApplicationWithIDT {
                 //tp.PlotFields($"ComputeP0Solution_{it}", LsTrk.Regions.Time, new DGField[] { LevelSet, LevelSetTwo, ConVars[0], ConVars[1], ConVars[2], ConVars[3], residuals[0], residuals[1], residuals[2], residuals[3] });
 
             }
-            
+
         }
         /// <summary>
         /// Compute a p0 initial guess for the sate given a fixed LevelSet
         /// </summary>
         public void ComputeP0Solution() {
-            using (new FuncTrace())
-            {
+            using(new FuncTrace()) {
                 //create a vector with the cons. fields with p=0 basis
                 var P0Vars = new XDGField[ConservativeFields.Length];
                 var P0Residuals = new XDGField[ConservativeFields.Length];
@@ -3883,15 +3717,13 @@ namespace ApplicationWithIDT {
 
                 //var p0Basis = new XDGBasis(tmp_trk, 0);
                 var p0Basis = new XDGBasis(LsTrk, 0);
-                for (int iField = 0; iField < ConservativeFields.Length; iField++)
-                {
+                for(int iField = 0; iField < ConservativeFields.Length; iField++) {
                     P0Vars[iField] = new XDGField(p0Basis);
                     P0Vars[iField].Identification = ConservativeFields[iField].Identification;
                     P0Residuals[iField] = new XDGField(p0Basis);
                     P0Residuals[iField].Identification = Residuals[iField].Identification + "_res";
                     //Projects the Initial Value onto p0vars
-                    foreach (SpeciesId spc in this.SpeciesToEvaluate_Ids)
-                    {
+                    foreach(SpeciesId spc in this.SpeciesToEvaluate_Ids) {
                         P0Vars[iField].GetSpeciesShadowField(spc).ProjectFromForeignGrid(1.0, (ConventionalDGField)ConservativeFields[iField].GetSpeciesShadowField(spc)); ;
                         P0Residuals[iField].GetSpeciesShadowField(spc).ProjectFromForeignGrid(1.0, (ConventionalDGField)Residuals[iField].GetSpeciesShadowField(spc));
                     }
@@ -3902,8 +3734,7 @@ namespace ApplicationWithIDT {
                 Console.WriteLine("...Finished");
 
                 //Write p0Vars onto Conservative Fields
-                for (int iField = 0; iField < ConservativeFields.Length; iField++)
-                {
+                for(int iField = 0; iField < ConservativeFields.Length; iField++) {
                     ConservativeFields[iField].Clear();
                     ConservativeFields[iField].AccLaidBack(1.0, P0Vars[iField]);
                 }
@@ -3919,10 +3750,10 @@ namespace ApplicationWithIDT {
         /// <exception cref="ArgumentException"></exception>
         public void ComputeJacobianAndRes(XDGField[] DoVars, XDGField[] CoDoVars, MsrMatrix Jacobian, CoordinateVector ResidualVec) {
 
-            Jacobian = Jacobian==null? new MsrMatrix(new CoordinateMapping(DoVars), new CoordinateMapping(CoDoVars)) : Jacobian;
-            ResidualVec = ResidualVec == null ? new CoordinateVector(CoDoVars):ResidualVec;
-         
-            
+            Jacobian = Jacobian == null ? new MsrMatrix(new CoordinateMapping(DoVars), new CoordinateMapping(CoDoVars)) : Jacobian;
+            ResidualVec = ResidualVec == null ? new CoordinateVector(CoDoVars) : ResidualVec;
+
+
             switch(XSpatialOperator.LinearizationHint) {
                 case LinearizationHint.FDJacobi:
                 //var r_JacobianBuilder = XSpatialOperator.GetFDJacobianBuilder(ConservativeFields, null, ResidualMap);
@@ -3957,7 +3788,7 @@ namespace ApplicationWithIDT {
         public virtual int GetGlobalQuadOrder() {
             int[] DomainDegrees = ResidualMap.BasisS.Select(f => f.Degree).ToArray();
             int[] CodomainDegrees = obj_f_map.BasisS.Select(f => f.Degree).ToArray();
-            var quadOrder = Control.quadOrderFunc(DomainDegrees,null,CodomainDegrees);
+            var quadOrder = Control.quadOrderFunc(DomainDegrees, null, CodomainDegrees);
             return quadOrder;
         }
         /// <summary>
@@ -3984,7 +3815,7 @@ namespace ApplicationWithIDT {
                 //load the fields
                 var l = ConservativeFields.Length;
                 XDGField[] ConsFieldsTS = new XDGField[l];
-                if(l==1) {
+                if(l == 1) {
                     ConsFieldsTS[0] = new XDGField(new XDGBasis(LsTrk, timestep.Fields.Single(f => f.Identification.Equals("c")).Basis.Degree));
                     ConsFieldsTS[0].CoordinateVector.SetV(timestep.Fields.Single(f => f.Identification.Equals("c")).CoordinateVector);
                 } else {
@@ -4019,7 +3850,7 @@ namespace ApplicationWithIDT {
         /// <param name="y3"></param>
         /// <param name="l3"></param>
         /// <returns></returns>
-        public Plot2Ddata GetPlot(List<double> y1, string l1, List<double> y2=null, string l2=null,List<double> y3 = null, string l3=null) {
+        public Plot2Ddata GetPlot(List<double> y1, string l1, List<double> y2 = null, string l2 = null, List<double> y3 = null, string l3 = null) {
             var plot = new Plot2Ddata();
             var Fmt = new PlotFormat();
             Fmt.PointType = PointTypes.OpenCircle;
@@ -4038,7 +3869,7 @@ namespace ApplicationWithIDT {
             Fmt3.LineColor = LineColors.Black;
 
             plot.AddDataGroup(l1, StepCount, y1, Fmt);
-            if(y2 != null && l2!=null) {
+            if(y2 != null && l2 != null) {
                 plot.AddDataGroup(l2, StepCount, y2, Fmt2);
             }
             if(y3 != null && l3 != null) {
@@ -4088,21 +3919,18 @@ namespace ApplicationWithIDT {
         /// <param name="l2"></param>
         /// <param name="y3"></param>
         /// <param name="l3"></param>
-        public static void SavePlotTable(List<double> StepCount,List<double> y1, string l1, List<double> y2 = null, string l2 = null, List<double> y3 = null, string l3 = null)
-        {
+        public static void SavePlotTable(List<double> StepCount, List<double> y1, string l1, List<double> y2 = null, string l2 = null, List<double> y3 = null, string l3 = null) {
             var table1 = MultidimensionalArray.Create(y1.Count, 2);
             table1.SetColumn(0, StepCount);
             table1.SetColumn(1, y1);
             table1.SaveToTextFile(l1 + ".txt");
-            if (y2 != null && l2 != null)
-            {
+            if(y2 != null && l2 != null) {
                 var table2 = MultidimensionalArray.Create(y2.Count, 2);
                 table2.SetColumn(0, StepCount);
                 table2.SetColumn(1, y2);
                 table2.SaveToTextFile(l2 + ".txt");
             }
-            if (y3 != null && l3 != null)
-            {
+            if(y3 != null && l3 != null) {
                 var table3 = MultidimensionalArray.Create(y3.Count, 2);
                 table3.SetColumn(0, StepCount);
                 table3.SetColumn(1, y3);
@@ -4130,7 +3958,7 @@ namespace ApplicationWithIDT {
             }
         }
     }
-#region Helper Class to Assemble System
+    #region Helper Class to Assemble System
     /// <summary>
     /// This is a helper class serving the purpose to insert one MsrMatrix A into a bigger Matrix B.
     /// This is done by using AccSubMatrixTo - method.
@@ -4181,8 +4009,8 @@ namespace ApplicationWithIDT {
 
     }
 
-#endregion
-#region Helper Class for Agglomeration
+    #endregion
+    #region Helper Class for Agglomeration
     class MiniMapping {
 
         /// <summary>
@@ -4213,11 +4041,15 @@ namespace ApplicationWithIDT {
             NoOfVars = BS.Length;
 
             for(int iVar = 0; iVar < BS.Length; iVar++) {
-                XDGBasis xBasis = BS[iVar] as XDGBasis;
-                if(xBasis != null) {
+                //XDGBasis xBasis = BS[iVar] as XDGBasis;
+                if(BS[iVar] is XDGBasis xBasis) {
                     NS[iVar] = xBasis.NonX_Basis.Length;
                     //m_LsTrk = xBasis.Tracker;
                     VarIsXdg[iVar] = true;
+                } else if(BS[iVar] is TraceDGBasis trBasis) {
+                    NS[iVar] = trBasis.MaximalLength;
+                    //m_LsTrk = xBasis.Tracker;
+                    VarIsXdg[iVar] = false;
                 } else {
                     NS[iVar] = BS[iVar].Length;
                     VarIsXdg[iVar] = false;
@@ -4242,6 +4074,6 @@ namespace ApplicationWithIDT {
 
 
     }
-#endregion
+    #endregion
 }
 

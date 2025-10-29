@@ -539,7 +539,7 @@ namespace BoSSS.Application.XNSEC {
         }
 
         private static XNSEC_Control TstObj2CtrlObj(IXNSECTest tst, int FlowSolverDegree, double AgglomerationTreshold, ViscosityMode vmode,
-            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            CutCellQuadratureMethod CutCellQuadratureType,
             SurfaceStressTensor_IsotropicMode SurfTensionMode,
             bool constantDensity,
             int GridResolution = 1, LinearSolverCode solvercode = LinearSolverCode.direct_pardiso) {
@@ -785,7 +785,7 @@ namespace BoSSS.Application.XNSEC {
         }
 
         private static XNSEC_Control TstObj2CtrlObj(IXNSECTest_Heat tst, int FlowSolverDegree, double AgglomerationTreshold, ViscosityMode vmode,
-        XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+        CutCellQuadratureMethod CutCellQuadratureType,
         SurfaceStressTensor_IsotropicMode SurfTensionMode,
         bool constantDensity,
         int GridResolution = 1, LinearSolverCode solvercode = LinearSolverCode.direct_pardiso) {

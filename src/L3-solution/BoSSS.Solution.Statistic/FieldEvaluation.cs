@@ -116,7 +116,7 @@ namespace BoSSS.Solution.Statistic {
 
         /// <summary>
         /// Like <see cref="Evaluate(double, IEnumerable{DGField}, MultidimensionalArray, double, MultidimensionalArray, BitArray, int[])"/>,
-        /// but with MPI-Exchange
+        /// but with MPI-Exchange, i.e., points (<paramref name="Points"/>) which couls not be located within the locally stored part of the mesh are sent to other MPI processors.
         /// </summary>
         public int EvaluateParallel(double alpha, IEnumerable<DGField> Flds, MultidimensionalArray Points, double beta, MultidimensionalArray Result, BitArray UnlocatedPoints = null) {
             using(new FuncTrace()) {
@@ -273,8 +273,8 @@ namespace BoSSS.Solution.Statistic {
         /// a list of <em>M</em> DG fields.
         /// </param>
         /// <param name="Points">
-        /// 2-dimensional: <br/>
-        ///  - 1st index: point index, from 0 (including) to <em>N</em> (excluding)<br/>
+        /// 2-dimensional:
+        ///  - 1st index: point index, from 0 (including) to <em>N</em> (excluding)
         ///  - 2nd index: spatial dimension/direction
         /// </param>
         /// <param name="Result">

@@ -21,6 +21,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
         public static ZLS_Control Channel(int p = 3, int kelem = 5, int AMRlvl = 0) {
             ZLS_Control C = new ZLS_Control(p);
             C.ImmediatePlotPeriod = 1;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             C.SuperSampling = 3;
             C.AgglomerationThreshold = 0.3;
             C.NoOfMultigridLevels = 1;
@@ -128,6 +129,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             C.AdaptiveMeshRefinement = true;
             C.activeAMRlevelIndicators.Add(new AMRonNarrowband { maxRefinementLevel = 2 });
@@ -270,6 +272,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             C.AdaptiveMeshRefinement = true;
             C.activeAMRlevelIndicators.Add(new AMRonNarrowband { maxRefinementLevel = 2 });
@@ -286,6 +289,9 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.dtMin = dt;
             C.Endtime = 100;
             C.NoOfTimesteps = 1000;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.BaseRefinementLevel  0;
+            //C.RefinementLevel = 0;
 
 
             //C.CheckJumpConditions = true;

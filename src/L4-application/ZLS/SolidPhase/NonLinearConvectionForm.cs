@@ -103,7 +103,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
                     case IncompressibleBcType.Wall:
                         return rho * uDirichlet * (vDirichlet * inp.Normal) * (_vIN);
                     case IncompressibleBcType.Velocity_Inlet:
-                    case IncompressibleBcType.Outflow:
+                    case IncompressibleBcType.SIMPLE_Outflow:
                     case IncompressibleBcType.Pressure_Outlet:
                         return rho * _uIN[D] * (VelocityIn * inp.Normal) * (_vIN); // outflow
                     default:

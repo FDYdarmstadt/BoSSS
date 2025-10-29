@@ -182,6 +182,16 @@ namespace BoSSS.Foundation.Quadrature {
         protected MultidimensionalArray m_EvalResultsCollapsed;
 
         /// <summary>
+        /// integration metric
+        /// </summary>
+        public IIntegrationMetric IntegrationMetric {
+            get;
+            protected set;
+        }
+
+        protected abstract IIntegrationMetric GetDefaultIntegrationMetric();
+
+        /// <summary>
         /// Standard constructor
         /// </summary>
         /// <param name="noOfIntegralsPerCell">
@@ -199,6 +209,11 @@ namespace BoSSS.Foundation.Quadrature {
             foreach (var no in noOfIntegralsPerCell)
                 m_TotalNoOfIntegralsPerItem *= no;
             m_IntegralsComponent = noOfIntegralsPerCell;
+            this.IntegrationMetric = rule.IntegrationMetric;
+            if(cs != CoordinateSystem.Reference && rule.IntegrationMetric == null) {
+                this.IntegrationMetric = GetDefaultIntegrationMetric();
+                //throw new ArgumentException("For integration in physical coordinate system, a quadrature scaling (integration metric) is required for the rule");
+            } 
 
 #if DEBUG
             if (rule.Count() > 0) {
@@ -431,11 +446,11 @@ namespace BoSSS.Foundation.Quadrature {
                     this.m_OnCloneForThreadParallelization?.Invoke(this, 0, NumThreads);
                     for (int iRnk = 1; iRnk < NumThreads; iRnk++) {
                         allThreads[iRnk] = this.CloneForThreadParallelization(iRnk, NumThreads);
+                        allThreads[iRnk].IntegrationMetric = this.IntegrationMetric;
                         allThreads[iRnk].m_OnCloneForThreadParallelization?.Invoke(allThreads[iRnk], iRnk, NumThreads);
                         allThreads[iRnk].m_compositeRule = null; // prevent accidental use
 
                     }
-
 
                     // compute serial results for checking
                     // (to be removed/de-activated)
@@ -458,15 +473,15 @@ namespace BoSSS.Foundation.Quadrature {
                     }
 
                     var errorList = new List<(int item, double err, double threshold)>[NumThreads];
-                    ilPSP.Environment.ParallelFor(0, NumThreads, 
-                        delegate(int iThread) {
+                    ilPSP.Environment.ParallelFor(0, NumThreads,
+                        delegate (int iThread) {
                             errorList[iThread] = allThreads[iThread].ExecuteThread(iThread, NumThreads, _compositeRuleS[iThread], checkResults, false, ItemOffset[iThread], allThreads);
                         });
 
                     if (errorList.Any(l => l != null)) {
                         int errCnt = 0;
                         using (var wrt = new StringWriter()) {
-                            
+
                             foreach (var checkErrors in errorList) {
                                 bool brk = false;
                                 if (checkErrors != null) {
@@ -501,7 +516,6 @@ namespace BoSSS.Foundation.Quadrature {
                     // ++++++++++++++++++++++++
                     // serial quadrature branch
                     // ++++++++++++++++++++++++
-
 
                     NumThreads = 1;
                     this.m_OnCloneForThreadParallelization?.Invoke(this, 0, 1);
@@ -582,7 +596,7 @@ namespace BoSSS.Foundation.Quadrature {
                     _compositeRule = new[] { m_compositeRule };
                 } else {
                     var __compositeRule = NumThreads.ForLoop(i => new List<IChunkRulePair<TQuadRule>>());
-                    _compositeRule = __compositeRule.Select(list => new CompositeQuadRule<TQuadRule>() { chunkRulePairs = list }).ToArray();
+                    _compositeRule = __compositeRule.Select(list => new CompositeQuadRule<TQuadRule>(m_compositeRule.IntegrationMetric, m_compositeRule.GridData) { chunkRulePairs = list }).ToArray();
 
                     // determine a cost partitioning across threads
                     // Note: this maybe does not align with the item Boundaries
@@ -706,6 +720,7 @@ namespace BoSSS.Foundation.Quadrature {
                 int NoOfNodes = m_CurrentRule.Nodes.GetLength(0);
                 long lItemSize = ((long)m_TotalNoOfIntegralsPerItem) * ((long)NoOfNodes);
                 if (lItemSize >= int.MaxValue) {
+                    m_CurrentRule.Nodes.SaveToTextFile("qr-" + m_CurrentRule.NoOfNodes + ".txt");
                     throw new OverflowException($"Too many integral evaluations per cell/edge! Number of quadrature nodes: {NoOfNodes}; Number of integrals: {m_TotalNoOfIntegralsPerItem}; Total number of evaluations is {lItemSize}, this exceeds the supported maximum (int.MaxValue).");
                 }
                 int ItemSize = m_TotalNoOfIntegralsPerItem * NoOfNodes;
@@ -781,7 +796,7 @@ namespace BoSSS.Foundation.Quadrature {
                             m_QuadResults.Clear(); 
                         } else {
                             // normal evaluation
-                            this.m_ExEvaluate(j, ChunkLength, this.CurrentRule, m_QuadResults, ThreadRank, NumThreads);
+                            this.m_ExEvaluate(j, ChunkLength, this.CurrentRule, IntegrationMetric, m_QuadResults, ThreadRank, NumThreads);
                         }
                         stpwEval.Stop();
                     }
@@ -899,11 +914,11 @@ namespace BoSSS.Foundation.Quadrature {
                                 double* pWeights = _pWeights + currentRuleWeights.Index(0);
 
 
-                                if (Linear) {
+                                if (Linear && !IntegrationMetric.AlwaysUsePerNodeScaling) {
                                     // codepath for integration of linear elements
                                     // +++++++++++++++++++++++++++++++++++++++++++
 
-                                    var scalings = GetScalingsForLinearElements(j0, Bulksize);
+                                    var scalings = IntegrationMetric.GetScalingsForLinearElements(gridData, quadRule, j0, Bulksize);
                                     Debug.Assert(scalings.Dimension == 1);
                                     Debug.Assert(scalings.GetLength(0) == Bulksize);
                                     Debug.Assert(currentRuleWeights.IsContinuous);
@@ -936,7 +951,7 @@ namespace BoSSS.Foundation.Quadrature {
                                     // codepath for integration of nonlinear/curved elements
                                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                                    var scalings = GetScalingsForNonlinElements(j0, Bulksize);
+                                    var scalings = IntegrationMetric.GetScalingsForNonlinElements(gridData, quadRule, j0, Bulksize);
                                     Debug.Assert(scalings.Dimension == 2);
                                     Debug.Assert(scalings.GetLength(0) == Bulksize);
                                     Debug.Assert(scalings.GetLength(1) == currentRuleWeights.GetLength(0));
@@ -1017,7 +1032,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// </summary>
         protected abstract void CheckQuadratureChunk(int j0, int Len, int iKRef);
         
-
+        /*
         /// <summary>
         /// Implement this method by returning the correct scaling factors for
         /// elements with a linear mapping of the domain of integration (e.g., cell volumes).
@@ -1025,7 +1040,9 @@ namespace BoSSS.Foundation.Quadrature {
         /// <returns>
         /// A list of scaling factors
         /// </returns>
-        protected abstract MultidimensionalArray GetScalingsForLinearElements(int i0, int L);
+        protected virtual MultidimensionalArray GetScalingsForLinearElements(int i0, int L) {
+            return Scaling.GetScalingsForLinearElements(i0, L);
+        }
 
         /// <summary>
         /// Returns Scaling metrics for
@@ -1035,6 +1052,8 @@ namespace BoSSS.Foundation.Quadrature {
         /// <param name="L"></param>
         /// <returns></returns>
         protected abstract MultidimensionalArray GetScalingsForNonlinElements(int i0, int L);
+        */
+
 
         /// <summary>
         /// identifies the chunk of elements (edges or cells), starting from <paramref name="i0"/>
@@ -1060,7 +1079,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// <summary>
         /// evaluation of integrand, multiplication with quadrature weights, and summation, in **a multi-threaded environment**.
         /// </summary>
-        public delegate void Del_EvaluateEx(int i0, int Length, TQuadRule rule, MultidimensionalArray EvalResult, int iThread, int NumOfThreads);
+        public delegate void Del_EvaluateEx(int i0, int Length, TQuadRule rule, IIntegrationMetric metric, MultidimensionalArray EvalResult, int iThread, int NumOfThreads);
 
 
         /// <summary>

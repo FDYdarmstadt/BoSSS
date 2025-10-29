@@ -66,7 +66,7 @@ namespace BoSSS.Application.XRheology_Solver {
     /// <summary>
     /// Solver for Incompressible Multiphase flows
     /// </summary>
-    public class XRheology_SolverMain : BoSSS.Application.XNSE_Solver.XBase_Solver<XRheology_Control> {
+    public class XRheology_SolverMain : XBase_Solver<XRheology_Control> {
 
 
 
@@ -236,7 +236,7 @@ namespace BoSSS.Application.XRheology_Solver {
 
                 // ALL VELOCITY RELATED FIELDS
                 this.XDGvelocity = new VelocityRelatedVars<XDGField>();
-                InitFromAttributes.CreateFieldsAuto(this.XDGvelocity, this.GridData, base.Control.FieldOptions, base.Control.CutCellQuadratureType, base.IOFields, base.m_RegisteredFields);
+                InitFromAttributes.CreateFieldsAuto(this.XDGvelocity, this.GridData, base.Control.FieldOptions, base.Control.CutCellQuadratureType, base.IOFields, base.m_RegisteredFields, out _);
 
                 //this.GravityX = new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.StressXX].Degree), "GravityX");
                 //base.RegisterField(this.GravityX);
@@ -481,7 +481,7 @@ namespace BoSSS.Application.XRheology_Solver {
             //Quadrature Order
             //----------------
 
-            if (Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
+            if (Control.CutCellQuadratureType == CutCellQuadratureMethod.Saye) {
                 m_HMForder = 2 * degU * (this.Control.PhysicalParameters.IncludeConvection ? 4 : 3) + 1;
             } else {
                 m_HMForder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 4 : 3);
@@ -1718,7 +1718,7 @@ namespace BoSSS.Application.XRheology_Solver {
         }
 
 
-
+        /*
         // =========================
         // adaptive mesh refinement
         // ========================
@@ -1994,7 +1994,7 @@ namespace BoSSS.Application.XRheology_Solver {
 
             }
         }
-
+        */
 
         /// <summary>
         /// Step 1 of 2 for dynamic load balancing: creating a backup of this objects 
@@ -2003,11 +2003,6 @@ namespace BoSSS.Application.XRheology_Solver {
         public override void DataBackupBeforeBalancing(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             m_BDF_Timestepper.DataBackupBeforeBalancing(L);
         }
-
-
-
-
-        #endregion
 
 
         // =========

@@ -441,6 +441,17 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
                     species.AddLast(componentSpecies);
                 }
             }
+
+            //Temporarily use for only surface equation case by xye
+            foreach (SurfaceEquation equation in InterfaceEquations)
+            {
+                string componentSpecies = equation.FirstSpeciesName;
+                if (componentSpecies != null && !species.Contains(componentSpecies))
+                {
+                    species.AddLast(componentSpecies);
+                }
+            }
+
             return species.ToArray();
         }
 

@@ -26,6 +26,7 @@ using System.Diagnostics;
 using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
 using BoSSS.Foundation.XDG;
+using NUnit.Framework.Internal.Execution;
 
 namespace BoSSS.Solution.NSECommon {
 
@@ -310,7 +311,7 @@ namespace BoSSS.Solution.NSECommon {
                     return r;
                 }
                 case IncompressibleBcType.Pressure_Dirichlet:
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet: {
                     double r = 0.0;
                     double u1, u2, u3 = 0, u_d;
@@ -353,10 +354,44 @@ namespace BoSSS.Solution.NSECommon {
 
                     return r;
                 }
+                case IncompressibleBcType.Dong_OutFlow: {
+                        double r = 0.0;
+                        double u1, u2, u3 = 0, u_d;
+
+                        if (m_UseBoundaryVelocityParameter) {
+                            throw new NotImplementedException();
+                        } else {
+                            u_d = Uin[0];
+                            u1 = inp.Parameters_IN[0];
+                            u2 = inp.Parameters_IN[1];
+                            if (m_SpatialDimension == 3)
+                                u3 = inp.Parameters_IN[2];
+                        }
+
+                        double ndotu = (u1 * inp.Normal[0] + u2 * inp.Normal[1]);
+                        double uAbs2 = u1.Pow2() + u2.Pow2();
+                        //r += u_d * (u1 * inp.Normal[0] + u2 * inp.Normal[1]);
+                        if (m_SpatialDimension == 3) {
+                            ndotu += u3 * inp.Normal[2];
+                            uAbs2 += u3.Pow2();
+                        }
+                        r += u_d * ndotu;
+
+                        // Dong energy term
+                        //double U0 = 1.0;
+                        //double delta = 1.0 / 20.0;
+                        //double Sout = 0.5 * (1.0 - Math.Tanh(ndotu / (U0 * delta)));
+                        //r -= 0.5 * uAbs2 * Sout * inp.Normal[m_component];
+                        r -= DongTerm.GetBoundaryTerm(ndotu, uAbs2) * inp.Normal[m_component];
+
+                        return r;
+                    }
                 default:
                 throw new NotImplementedException("Boundary condition not implemented!");
             }
         }
+
+        public DongBoundaryConditionTerm DongTerm = new DongBoundaryConditionTerm();
 
         /// <summary>
         /// bla bla bla
@@ -763,7 +798,7 @@ namespace BoSSS.Solution.NSECommon {
                         return r;
                     }
                 case IncompressibleBcType.Pressure_Dirichlet:
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet:
                 case IncompressibleBcType.ScalarDirichlet_PressureOutlet: {
                     double r = 0.0;
@@ -806,10 +841,44 @@ namespace BoSSS.Solution.NSECommon {
 
                     return r;
                 }
+                case IncompressibleBcType.Dong_OutFlow: {
+                        double r = 0.0;
+                        double u1, u2, u3 = 0, u_d;
+
+                        if (m_UseBoundaryVelocityParameter) {
+                            throw new NotImplementedException();
+                        } else {
+                            u_d = Uin[argumentIndex];
+                            u1 = Uin[0];
+                            u2 = Uin[1];
+                            if (m_SpatialDimension == 3)
+                                u3 = Uin[2];
+                        }
+
+                        double ndotu = (u1 * inp.Normal[0] + u2 * inp.Normal[1]);
+                        double uAbs2 = u1.Pow2() + u2.Pow2();
+                        //r += u_d * (u1 * inp.Normal[0] + u2 * inp.Normal[1]);
+                        if (m_SpatialDimension == 3) {
+                            ndotu += u3 * inp.Normal[2];
+                            uAbs2 += u3.Pow2();
+                        }
+                        r += u_d * ndotu;
+
+                        // Dong energy term
+                        //double U0 = 1.0;
+                        //double delta = 1.0 / 20.0;
+                        //double Sout = 0.5 * (1.0 - Math.Tanh(ndotu / (U0 * delta)));
+                        //r -= 0.5 * uAbs2 * Sout * inp.Normal[m_component];
+                        r -= DongTerm.GetBoundaryTerm(ndotu, uAbs2) * inp.Normal[m_component];
+
+                        return r;
+                    }
                 default:
                 throw new NotImplementedException("Boundary condition not implemented!");
             }
         }
+
+        public DongBoundaryConditionTerm DongTerm = new DongBoundaryConditionTerm();
 
         /// <summary>
         /// bla bla bla

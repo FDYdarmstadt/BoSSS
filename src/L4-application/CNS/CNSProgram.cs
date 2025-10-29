@@ -53,7 +53,8 @@ namespace CNS {
         /// <param name="args"></param>
         static void Main(string[] args) {
 
-            //Application.InitMPI(args);
+            Application.InitMPI(args);
+            CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder0th();
             //CNS.Tests.ConvectiveFlux.ShockTubeTests.Toro2AllButRusanovTest(Convection.ConvectiveFluxTypes.HLL);
             //CNS.Tests.ArtificialViscosity.ArtificialViscosityShockTubeTests.ToroTest1_ALTS1_3();
             //CNS.Tests.IBMTests.IBMIsentropicVortexTest.IBMVortexOneStepGaussAndStokesNoAgglomerationTest();
@@ -61,8 +62,8 @@ namespace CNS {
             //CNS.Tests.DiffusiveFlux.SIPGConsistency.SIPGconsistencyTest(1);
             //DeleteOldPlotFiles();
             //AcousticWaveShockInteraction.Test00();
-            //Debug.Assert(false, "remove me");
-            //return;
+            Debug.Assert(false, "remove me");
+            return;
 
             Application<CNSControl>._Main(
                 args,

@@ -4,10 +4,12 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.LevelSetTools;
+using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.XdgTimestepping;
 using ilPSP.Utils;
+using MathNet.Numerics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -285,7 +287,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             #region solver
 
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.OneStepGaussAndStokes;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MinSolverIterations = 1;
@@ -617,7 +619,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             #region solver
             C.conductMode = Solution.XheatCommon.ConductivityInSpeciesBulk.ConductivityMode.SIP;
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.OneStepGaussAndStokes;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MinSolverIterations = 1;
@@ -814,9 +816,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             #region solver
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             C.conductMode = Solution.XheatCommon.ConductivityInSpeciesBulk.ConductivityMode.SIP;
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.OneStepGaussAndStokes;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MinSolverIterations = 1;
@@ -845,6 +847,511 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             #endregion
             // ============================================
+
+            return C;
+        }
+
+        #endregion
+
+        #region Basic Interface Tests
+
+        /// <summary>
+        /// Constant Line Interface, shape should not change
+        /// </summary>
+        /// <param name="p"></param>
+        /// <param name="kelem"></param>
+        /// <returns></returns>
+        public static XNSE_Control BoxVerticalInterface(int p = 3, int kelem = 10) {
+
+            XNSE_Control C = new XNSE_Control();
+
+            // ============================================
+            #region IO
+
+            C.DbPath = null;
+            C.savetodb = false;
+            C.ProjectName = "XNSE/elementalTest";
+            C.ProjectDescription = "linear interface";
+            C.SuperSampling = 3;
+
+            #endregion
+            // ============================================
+
+            // ============================================
+            #region physics
+
+            #region material
+            C.PhysicalParameters.rho_A = 1;
+            C.PhysicalParameters.rho_B = 0.1;
+            C.PhysicalParameters.mu_A = 1;
+            C.PhysicalParameters.mu_B = 1;
+            C.PhysicalParameters.Sigma = 1.0;
+
+            C.PhysicalParameters.betaS_A = 0.0;
+            C.PhysicalParameters.betaS_B = 0.0;
+
+            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.Material = false;
+            #endregion
+
+            #region grid
+            C.GridFunc = delegate () {
+                double[] Xnodes = GenericBlas.Linspace(-1, 1, 2 * kelem + 2);
+                double[] Ynodes = GenericBlas.Linspace(-1, 1, 2 * kelem + 2);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false);
+
+                grd.EdgeTagNames.Add(1, "NavierSlip_linear");
+
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    return 1;
+                });
+
+                return grd;
+            };
+
+            #endregion           
+
+            #region boundary condition
+            C.AddBoundaryValue("NavierSlip_linear");
+            #endregion
+
+            #region initial condition            
+
+            double cahn = 8 * (1.0 / kelem) / (2 * p + 1);
+            C.InitialValues_Evaluators.Add("Phi", (X) => Math.Tanh(X[0] / (Math.Sqrt(2) * cahn)));
+            #endregion            
+
+            #endregion
+            // ============================================
+
+            // ============================================
+            #region numerics
+
+            #region dg degrees
+            C.SetDGdegree(p);
+            #endregion
+
+            #region level set
+
+            C.Option_LevelSetEvolution = LevelSetEvolution.Phasefield;
+            C.PhasefieldControl = new Solution.LevelSetTools.PhasefieldLevelSet.PhasefieldSettings() {
+                cahn = cahn,
+                diff = 1.0,
+                CorrectionType = Solution.LevelSetTools.PhasefieldLevelSet.Correction.None,
+                TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler,
+                theta = "X => Math.PI/2.0"
+            };
+
+
+            #endregion
+
+            #region solver
+
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.LevelSetTools.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MinSolverIterations = 1;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            #endregion
+
+            #region timestepping
+
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+
+            double dt = 1e-2;
+            C.dtMax = dt;
+            C.dtMin = dt;
+            C.Endtime = 1000;
+            C.NoOfTimesteps = 100;
+            C.saveperiod = 1;
+
+            #endregion
+
+            #endregion
+            // ============================================
+
+            return C;
+        }
+
+        /// <summary>
+        /// Constant Line Interface in corner of a box, shape should not change, ContactAngle 45°
+        /// </summary>
+        /// <param name="p"></param>
+        /// <param name="kelem"></param>
+        /// <returns></returns>
+        public static XNSE_Control BoxCornerInterface(int p = 3, int kelem = 10) {
+
+            XNSE_Control C = new XNSE_Control();
+
+            // ============================================
+            #region IO
+
+            C.DbPath = null;
+            C.savetodb = false;
+            C.ProjectName = "XNSE/elementalTest";
+            C.ProjectDescription = "linear interface";
+            C.SuperSampling = 3;
+
+            #endregion
+            // ============================================
+
+            // ============================================
+            #region physics
+
+            #region material
+            C.PhysicalParameters.rho_A = 1;
+            C.PhysicalParameters.rho_B = 0.1;
+            C.PhysicalParameters.mu_A = 1;
+            C.PhysicalParameters.mu_B = 1;
+            C.PhysicalParameters.Sigma = 1.0;
+            C.PhysicalParameters.theta_e = Math.PI/4.0;
+
+            C.PhysicalParameters.betaS_A = 0.0;
+            C.PhysicalParameters.betaS_B = 0.0;
+
+            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.Material = false;
+            #endregion
+
+            #region grid
+            C.GridFunc = delegate () {
+                double[] Xnodes = GenericBlas.Linspace(-1, 1, 2 * kelem + 2);
+                double[] Ynodes = GenericBlas.Linspace(-1, 1, 2 * kelem + 2);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false);
+
+                grd.EdgeTagNames.Add(1, "NavierSlip_linear");
+
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    return 1;
+                });
+
+                return grd;
+            };
+
+            #endregion           
+
+            #region boundary condition
+            C.AddBoundaryValue("NavierSlip_linear");
+            #endregion
+
+            #region initial condition            
+
+            double cahn = 8 * (1.0 / kelem) / (2 * p + 1);
+            C.InitialValues_Evaluators.Add("Phi", (X) => Math.Tanh(((X[0]+1)*Math.Sin(Math.PI/4.0)+X[1]*Math.Cos(Math.PI / 4.0))/(Math.Sqrt(2)*cahn)));
+            #endregion            
+
+            #endregion
+            // ============================================
+
+            // ============================================
+            #region numerics
+
+            #region dg degrees
+            C.SetDGdegree(p);
+            #endregion
+
+            #region level set
+            C.Option_LevelSetEvolution = LevelSetEvolution.Phasefield;
+            C.PhasefieldControl = new Solution.LevelSetTools.PhasefieldLevelSet.PhasefieldSettings() {
+                cahn = cahn,
+                diff = 1.0,
+                CorrectionType = Solution.LevelSetTools.PhasefieldLevelSet.Correction.None,
+                TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler,
+                theta = "X => X[1] < 1e-8 ? Math.PI / 4.0 : Math.PI/2.0"
+            };
+
+
+            #endregion
+
+            #region solver
+
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.LevelSetTools.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MinSolverIterations = 1;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            #endregion
+
+            #region timestepping
+
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+
+            double dt = 1e-2;
+            C.dtMax = dt;
+            C.dtMin = dt;
+            C.Endtime = 1000;
+            C.NoOfTimesteps = 100;
+            C.saveperiod = 1;
+
+            #endregion
+
+            #endregion
+            // ============================================
+
+            return C;
+        }
+
+        /// <summary>
+        /// Constant Droplet in the middle of a box, shape should not change
+        /// </summary>
+        /// <param name="p"></param>
+        /// <param name="kelem"></param>
+        /// <returns></returns>
+        public static XNSE_Control BoxStaticDropletFree(int p = 3, int kelem = 10) {
+
+            XNSE_Control C = new XNSE_Control();
+
+            // ============================================
+            #region IO
+
+            C.DbPath = null;
+            C.savetodb = false;
+            C.ProjectName = "XNSE/elementalTest";
+            C.ProjectDescription = "droplet interface";
+            C.SuperSampling = 3;
+
+            #endregion
+            // ============================================
+
+            // ============================================
+            #region physics
+
+            #region material
+            C.PhysicalParameters.rho_A = 1;
+            C.PhysicalParameters.rho_B = 0.1;
+            C.PhysicalParameters.mu_A = 1;
+            C.PhysicalParameters.mu_B = 1;
+            C.PhysicalParameters.Sigma = 1.0;
+
+            C.PhysicalParameters.betaS_A = 0.0;
+            C.PhysicalParameters.betaS_B = 0.0;
+
+            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.Material = false;
+            #endregion
+
+            #region grid
+            C.GridFunc = delegate () {
+                double[] Xnodes = GenericBlas.Linspace(-1, 1, 2 * kelem + 2);
+                double[] Ynodes = GenericBlas.Linspace(-1, 1, 2 * kelem + 2);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false);
+
+                grd.EdgeTagNames.Add(1, "NavierSlip_linear");
+
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    return 1;
+                });
+
+                return grd;
+            };
+
+            #endregion           
+
+            #region boundary condition
+            C.AddBoundaryValue("NavierSlip_linear");
+            #endregion
+
+            #region initial condition            
+
+            double cahn = 4 * (1.0 / kelem) / (2 * p + 1);
+            double r = 0.5;
+            C.InitialValues_Evaluators.Add("Phi", (X) => Math.Tanh((Math.Sqrt(Math.Pow(X[0], 2) + Math.Pow(X[1], 2)) - r) / (Math.Sqrt(2) * cahn)));
+            #endregion            
+
+            #endregion
+            // ============================================
+
+            // ============================================
+            #region numerics
+
+            #region dg degrees
+            C.SetDGdegree(p);
+            #endregion
+
+            #region level set
+
+            C.Option_LevelSetEvolution = LevelSetEvolution.Phasefield;
+            C.PhasefieldControl = new Solution.LevelSetTools.PhasefieldLevelSet.PhasefieldSettings() {
+                cahn = cahn,
+                diff = 1.0,
+                CorrectionType = Solution.LevelSetTools.PhasefieldLevelSet.Correction.None,
+                TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler,
+                theta = "X => Math.PI/2.0"
+            };
+
+
+            #endregion
+
+            #region solver
+
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.LevelSetTools.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MinSolverIterations = 1;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            #endregion
+
+            #region timestepping
+
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+
+            double dt = 1e-2;
+            C.dtMax = dt;
+            C.dtMin = dt;
+            C.Endtime = 1000;
+            C.NoOfTimesteps = 100;
+            C.saveperiod = 1;
+
+            #endregion
+
+            #endregion
+            // ============================================
+
+            return C;
+        }
+
+        /// <summary>
+        /// Constant Droplet sitting on a wall, shape should not change
+        /// </summary>
+        /// <param name="p"></param>
+        /// <param name="kelem"></param>
+        /// <returns></returns>
+        public static XNSE_Control BoxStaticDropletWall(int p = 2, int kelem = 10, int amrlevel = 2, double theta = Math.PI/4.0) {
+
+            XNSE_Control C = new XNSE_Control();
+
+            // ============================================
+            #region IO
+
+            C.DbPath = null;
+            C.savetodb = false;
+            C.ProjectName = "XNSE/elementalTest";
+            C.ProjectDescription = "droplet interface";
+            C.SuperSampling = 3;
+
+            #endregion
+            // ============================================
+
+            // ============================================
+            #region physics
+
+            #region material
+            C.PhysicalParameters.rho_A = 1000;
+            C.PhysicalParameters.rho_B = 1000;
+            C.PhysicalParameters.mu_A = 1;
+            C.PhysicalParameters.mu_B = 1;
+            C.PhysicalParameters.Sigma = 0.0;
+            C.PhysicalParameters.theta_e = theta;
+
+            C.PhysicalParameters.betaS_A = 0.0;
+            C.PhysicalParameters.betaS_B = 0.0;
+
+            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.Material = false;
+            #endregion
+
+            #region grid
+            C.GridFunc = delegate () {
+                double[] Xnodes = GenericBlas.Linspace(-1, 1, 2 * kelem + 1);
+                double[] Ynodes = GenericBlas.Linspace(0, 1, kelem + 1);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false);
+
+                grd.EdgeTagNames.Add(1, "NavierSlip_linear");
+
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    return 1;
+                });
+
+                return grd;
+            };
+
+            #endregion           
+
+            #region boundary condition
+            C.AddBoundaryValue("NavierSlip_linear");
+
+            #endregion
+
+            #region initial condition            
+
+            double cahn = 2 * 4 * 1.0 / (kelem * Math.Pow(2.0, amrlevel)) / (2 * p + 1);
+            double r = 0.5;
+            double y0 = r * Math.Cos(theta);
+            C.InitialValues_Evaluators.Add("Phi", (X) => Math.Tanh((Math.Sqrt(Math.Pow(X[0], 2) + Math.Pow(X[1]+y0, 2)) - r) / (Math.Sqrt(2) * cahn)));
+            #endregion            
+
+            #endregion
+            // ============================================
+
+            // ============================================
+            #region numerics
+
+            #region dg degrees
+            C.SetDGdegree(p);
+            #endregion
+
+            #region level set
+
+            C.Option_LevelSetEvolution = LevelSetEvolution.Phasefield;
+            C.PhasefieldControl = new Solution.LevelSetTools.PhasefieldLevelSet.PhasefieldSettings() {
+                cahn = cahn,
+                diff = 10,
+                CorrectionType = Solution.LevelSetTools.PhasefieldLevelSet.Correction.None,
+                TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler,
+                theta = $"X => X[1] < 1e-8 ? {theta} : Math.PI/2.0"
+            };
+
+
+            #endregion
+
+            #region solver
+
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.LevelSetTools.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MinSolverIterations = 1;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            #endregion
+
+            #region timestepping
+
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+
+            double dt = 1e-2;
+            C.dtMax = dt;
+            C.dtMin = dt;
+            C.Endtime = 1;
+            C.NoOfTimesteps = 100;
+            C.saveperiod = 1;
+
+            #endregion
+
+            #endregion
+            // ============================================
+            C.PostprocessingModules.Add(new XNSE_Solver.PhysicalBasedTestcases.MovingContactLineLogging());
+
+            C.AdaptiveMeshRefinement = amrlevel > 0;
+            C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = amrlevel });
+            C.AMR_startUpSweeps = amrlevel;
 
             return C;
         }

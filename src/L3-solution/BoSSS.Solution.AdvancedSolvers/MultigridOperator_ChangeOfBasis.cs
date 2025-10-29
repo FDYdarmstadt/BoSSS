@@ -301,7 +301,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     ilPSP.Environment.ParallelFor(0, J, 
                         () => new ComputeChangeOfBasis_ThreadLocals(this),
-                        delegate (int jCell, ParallelLoopState s, ComputeChangeOfBasis_ThreadLocals tmp) {
+                        delegate (int jCell, ComputeChangeOfBasis_ThreadLocals tmp) {
                             //for (int jCell = 0; jCell < J; jCell++) { // loop over cells...
                             //ReducedRegionCode rrc;
                             //int NoOfSpc = LsTrk.GetNoOfSpecies(jCell, out rrc);
@@ -600,7 +600,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             L.Clear();
             L.StructureType = MatrixStructure.LowerTriangular;
             R.Clear();
-            R.StructureType = MatrixStructure.UpperTriangular;
+            //R.StructureType = MatrixStructure.UpperTriangular; // will be set in L.TransposeTo(R)
+
             L.AccEye(1.0);
 #if DEBUG
             var Mbefore = M.CloneAs();

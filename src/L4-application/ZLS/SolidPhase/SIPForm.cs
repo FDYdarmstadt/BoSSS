@@ -81,7 +81,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
                         acc1 += viscosity * PenaltySafety * pnlty * (_uIN[i] - dirichlet[i]) * inp.Normal[i] * _vIN * inp.Normal[d];
                     }
                     break;
-                    case IncompressibleBcType.Outflow:
+                    case IncompressibleBcType.SIMPLE_Outflow:
                     case IncompressibleBcType.Pressure_Outlet:
                     case IncompressibleBcType.Velocity_Inlet:
                     break;

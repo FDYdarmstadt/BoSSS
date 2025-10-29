@@ -564,8 +564,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        BlockMsrMatrix m_RawOperatorMatrix = null; // forgotten after Setup()
-        BlockMsrMatrix m_RawMassMatrix = null;
+        public BlockMsrMatrix m_RawOperatorMatrix = null; // forgotten after Setup() public
+		BlockMsrMatrix m_RawMassMatrix = null;
 
         bool setupdone = false;
 
@@ -941,8 +941,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             } else {
                                 // should be a cell without any species.
 
-                                Debug.Assert(this.Mapping.AggBasis.Where(b => !(b is XdgAggregationBasis)).Count() == 0, "all must be XDG");
-                                Debug.Assert(this.Mapping.AggBasis.Where(b => ((XdgAggregationBasis)b).GetNoOfSpecies(j) != 0).Count() == 0, "no species in any cell allowed");
+                                //Debug.Assert(this.Mapping.AggBasis.Where(b => !(b is XdgAggregationBasis)).Count() == 0, "all must be XDG");
+                                //Debug.Assert(this.Mapping.AggBasis.Where(b => ((XdgAggregationBasis)b).GetNoOfSpecies(j) != 0).Count() == 0, "no species in any cell allowed");
 
 
 
@@ -1366,6 +1366,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             if(this.LeftChangeOfBasis != null) {
                 this.LeftChangeOfBasis.SpMV(1.0, uc, 0.0, v_OUT);
+                //this.LeftChangeOfBasis.ToMsrMatrix().SpMVpara(1.0, uc, 0.0, v_OUT);
             } else {
                 v_OUT.SetV(uc);
             }

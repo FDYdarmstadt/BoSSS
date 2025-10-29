@@ -36,7 +36,7 @@ namespace IntersectingLevelSetTest {
     /// if more than one level-set is involved.
     /// </summary>
     internal class ZwoLsCoupledSolver<T> : BoSSS.Solution.Application<T> where T : BoSSS.Solution.Control.AppControl, new() {
-        internal XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+        internal CutCellQuadratureMethod MomentFittingVariant = CutCellQuadratureMethod.OneStepGaussAndStokes;
 
         protected override IGrid CreateOrLoadGrid() {
             var t = Triangle.Instance;
@@ -191,9 +191,10 @@ namespace IntersectingLevelSetTest {
 
             //phystime = 1.8;
             LsUpdate(phystime);
+			PlotCurrentState(phystime, TimestepNo);
 
-            // operator-matrix assemblieren
-            MsrMatrix OperatorMatrix = new MsrMatrix(u.Mapping, u.Mapping);
+			// operator-matrix assemblieren
+			MsrMatrix OperatorMatrix = new MsrMatrix(u.Mapping, u.Mapping);
             double[] Affine = new double[OperatorMatrix.RowPartitioning.LocalLength];
 
             // operator matrix assembly
@@ -204,7 +205,9 @@ namespace IntersectingLevelSetTest {
 
             // mass matrix factory
             SpeciesId[] species = new SpeciesId[] { LsTrk.GetSpeciesId("A") , LsTrk.GetSpeciesId("B"), LsTrk.GetSpeciesId("C") };
-            var Mfact = LsTrk.GetXDGSpaceMetrics(species, QuadOrder, 1).MassMatrixFactory;// new MassMatrixFactory(u.Basis, Agg);
+			LsTrk.GetXDGSpaceMetrics(new SpeciesId[] { LsTrk.GetSpeciesId("A"), LsTrk.GetSpeciesId("B"), LsTrk.GetSpeciesId("C") }, QuadOrder, 1).WriteAllQuadratureRulesToVtp();// write quadrature nodes
+
+			var Mfact = LsTrk.GetXDGSpaceMetrics(species, QuadOrder, 1).MassMatrixFactory;// new MassMatrixFactory(u.Basis, Agg);
 
 
             // Mass matrix/Inverse Mass matrix
@@ -238,7 +241,7 @@ namespace IntersectingLevelSetTest {
 
             // check error
             double ErrorThreshold = 1.0e-1;
-            if (this.MomentFittingVariant == XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes)
+            if (this.MomentFittingVariant == CutCellQuadratureMethod.OneStepGaussAndStokes)
                 ErrorThreshold = 1.0e-6; // HMF is designed for such integrands and should perform close to machine accuracy; on general integrands, the precision is different.
 
             bool IsPassed = (L2Err <= ErrorThreshold);

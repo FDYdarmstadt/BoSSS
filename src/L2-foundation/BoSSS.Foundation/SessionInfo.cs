@@ -403,7 +403,26 @@ namespace BoSSS.Foundation.IO {
         [DataMember]
         private string m_deploypath;
 
+        /// <summary>
+        /// Number of threads per MPI rank
+        /// </summary>
+        public int ThreadPerMPIRank
+        {
+            get => m_ThreadPerMPIRank;
+            set {
+                if (m_ThreadPerMPIRank == 0)
+                {
+                    m_ThreadPerMPIRank = value;
+                }
+            }
+        }
 
+
+        /// <summary>
+        /// <see cref="ThreadPerMPIRank"/>
+        /// </summary>
+        [DataMember]
+        private int m_ThreadPerMPIRank = 0;
 
         /// <summary>
         /// Names of compute nodes on which the session is running; Index: MPI

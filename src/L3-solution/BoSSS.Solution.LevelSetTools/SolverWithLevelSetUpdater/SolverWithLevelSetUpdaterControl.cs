@@ -1,4 +1,6 @@
 ﻿using BoSSS.Solution.Control;
+using BoSSS.Solution.LevelSetTools.EllipticExtension;
+using BoSSS.Solution.LevelSetTools.EllipticReInit;
 using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 using BoSSS.Solution.LevelSetTools.PhasefieldLevelSet;
 using BoSSS.Solution.XdgTimestepping;
@@ -34,11 +36,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         virtual public LevelSetHandling Timestepper_LevelSetHandling {
             get;
             set;
-        } 
+        }
 
         /// <summary>
         /// underrelaxation of the level set movement in case of coupled iterative
         /// </summary>
+        [DataMember]
         public double LSunderrelax = 1.0;
 
 
@@ -112,10 +115,16 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public FourierLevSetControl FourierLevSetControl;
 
         /// <summary>
+        /// Options for the initialization of the Parameterized Level-set
+        /// </summary>
+        [DataMember]
+        public LevelSetTools.ParameterizedLevelSet.ParameterizedLevelSetControl ParameterizedLevelSetControl;
+
+        /// <summary>
         /// Options for the initialization of the Phasefield Level-set
         /// </summary>
         [DataMember]
-        public PhasefieldControl PhasefieldControl;
+        public PhasefieldSettings PhasefieldControl;
 
 
         /// <summary>
@@ -142,6 +151,32 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         [DataMember]
         public int ReInitPeriod = 0;
+
+        /// <summary>
+        /// in case of a restart set for internal timestep number within the ls evolver
+        /// </summary>
+        [DataMember]
+        public int ReInitTimestepIndex = 0;
+
+        /// <summary>
+        /// if false, Neumann boundary condtions are applied everywhere. If true, the boundary conditions from the BoundaryConditionMap are applied.
+        /// </summary>
+        [DataMember]
+        public bool StokesExtentionUseBCmap = false;
+
+
+        /// <summary>
+        /// Control Options for ReInit
+        /// </summary>
+        [DataMember]
+        public EllipticReInitAlgoControl ReInitControl = new EllipticReInitAlgoControl();
+
+        /// <summary>
+        /// Control Options for ExtVel
+        /// </summary>
+        public EllipticExtVelAlgoControl EllipticExtVelAlgoControl = new EllipticExtVelAlgoControl();
+
+
 
         /// <summary>
         /// Controls the behavior of the <see cref="ContinuityProjection"/>, i.e. the algorithm which enforces continuity of the level-set

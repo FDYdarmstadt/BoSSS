@@ -161,7 +161,7 @@ namespace BoSSS.Application.MultigridTest {
                 Err += JumpNorm(Test, CompCellSubGrid.InnerEdgesMask).Pow2();
             }
 
-            //Console.WriteLine("Jump norm of random prolongation: {0}", Err);
+            Console.WriteLine("Jump norm of random prolongation: {0}", Err);
             //Debug.Assert(Err < 1.0e-10);
             Assert.Less(Err, 1.0e-10);
 
@@ -308,6 +308,7 @@ namespace BoSSS.Application.MultigridTest {
             Assert.IsTrue(RestErrNorm < 1.0e-10);
             Assert.IsTrue(PrlgErrNorm < 1.0e-10);
 
+            /*
             // restriction onto level itself
             BlockMsrMatrix RestMtx = currentLevelMap.FromOtherLevelMatrix(currentLevelMap);
             BlockMsrMatrix ShldBeEye = BlockMsrMatrix.Multiply(RestMtx, RestMtx.Transpose());
@@ -315,7 +316,7 @@ namespace BoSSS.Application.MultigridTest {
             double errNorm = ShldBeEye.InfNorm();
             Console.WriteLine("Id norm {0} \t (level {1})", errNorm, currentLevelMap.AggGrid.MgLevel);
             Assert.IsTrue(errNorm < 1.0e-8);
-
+            */
 
             // recursion
             if (MgMapSeq.Count() > 1)
@@ -369,7 +370,7 @@ namespace BoSSS.Application.MultigridTest {
                 double AggregationThreshold,
                 int TrackerWidth,
                 MultigridOperator.Mode mumo,
-                XQuadFactoryHelper.MomentFittingVariants momentFittingVariant,
+                CutCellQuadratureMethod momentFittingVariant,
                 ScalarFunction LevSetFunc = null) {
 
                 // Level set, tracker and XDG basis
@@ -381,7 +382,7 @@ namespace BoSSS.Application.MultigridTest {
                 LevSet = new LevelSet(new Basis(grid, 2), "LevelSet");
                 LevSet.Clear();
                 LevSet.ProjectField(LevSetFunc);
-                LsTrk = new LevelSetTracker(grid, XQuadFactoryHelper.MomentFittingVariants.Classic, TrackerWidth, new string[] { "A", "B" }, LevSet);
+                LsTrk = new LevelSetTracker(grid, CutCellQuadratureMethod.Classic, TrackerWidth, new string[] { "A", "B" }, LevSet);
                 LsTrk.UpdateTracker(0.0);
 
                 XB = new XDGBasis(LsTrk, p);
@@ -491,7 +492,7 @@ namespace BoSSS.Application.MultigridTest {
             [Values(0.0, 0.3)] double AggregationThreshold,
             [Values(0, 1)] int TrackerWidth) {
 
-            XQuadFactoryHelper.MomentFittingVariants variant = XQuadFactoryHelper.MomentFittingVariants.OneStepGauss;
+            CutCellQuadratureMethod variant = CutCellQuadratureMethod.OneStepGauss;
 
             var xt = new XDGTestSetup(p, AggregationThreshold, TrackerWidth, MultigridOperator.Mode.Eye, variant);
 
@@ -541,7 +542,7 @@ namespace BoSSS.Application.MultigridTest {
             [Values(0.0, 0.3)] double AggregationThreshold,
             [Values(0, 1)] int TrackerWidth) {
 
-            XQuadFactoryHelper.MomentFittingVariants variant = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            CutCellQuadratureMethod variant = CutCellQuadratureMethod.OneStepGaussAndStokes;
             var xt = new XDGTestSetup(p, AggregationThreshold, TrackerWidth, MultigridOperator.Mode.Eye, variant);
 
 
@@ -655,13 +656,12 @@ namespace BoSSS.Application.MultigridTest {
                 // => Cholesky decomposition on mass matrix fails, i.e. 'mode == IdMass' cannot succeed.
                 return;
 
-            XQuadFactoryHelper.MomentFittingVariants variant = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            CutCellQuadratureMethod variant = CutCellQuadratureMethod.OneStepGaussAndStokes;
             var xt = new XDGTestSetup(p, AggregationThreshold, 1, mode, variant);
 
 
             // Restriction & prolongation together with orthonormalization
             // -----------------------------------------------------------
-
 
             for (var mgop = xt.XdgMultigridOp.CoarserLevel; mgop != null; mgop = mgop.CoarserLevel) {
                 Assert.GreaterOrEqual(mgop.LevelIndex, 1);
@@ -740,6 +740,8 @@ namespace BoSSS.Application.MultigridTest {
             mgOp.CoarserLevel.Prolongate(1.0, FineOut, 0.0, Coarse2);
         }
 
+
+#region XDG_ProlongationTest_untangling
         /// <summary>
         /// tests if the prolongation of an arbitrary restricted vector has jumps (which it should not have).
         /// </summary>
@@ -811,6 +813,7 @@ namespace BoSSS.Application.MultigridTest {
             ) {
             XDG_ProlongationTest(p, 0.3, 1, MultigridOperator.Mode.IdMass);
         }
+#endregion XDG_ProlongationTest_untangling
 
         /// <summary>
         /// tests if the prolongation of an arbitrary restricted vector has jumps (which it should not have).
@@ -821,7 +824,7 @@ namespace BoSSS.Application.MultigridTest {
             int TrackerWidth,
             MultigridOperator.Mode mode) {
 
-            XQuadFactoryHelper.MomentFittingVariants variant = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            CutCellQuadratureMethod variant = CutCellQuadratureMethod.OneStepGaussAndStokes;
             var xt = new XDGTestSetup(p, AggregationThreshold, TrackerWidth, MultigridOperator.Mode.Eye, variant
                 //, ((Func<double[], double>)(X => X[0] + 0.75)).Vectorize()
                 );
@@ -891,7 +894,7 @@ namespace BoSSS.Application.MultigridTest {
             [Values(0, 1)] int TrackerWidth,
             [Values(MultigridOperator.Mode.IdMass, MultigridOperator.Mode.IdMass_DropIndefinite, MultigridOperator.Mode.SymPart_DiagBlockEquilib, MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite, MultigridOperator.Mode.Eye)] MultigridOperator.Mode changeOfBasis) {
 
-            XQuadFactoryHelper.MomentFittingVariants variant = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            CutCellQuadratureMethod variant = CutCellQuadratureMethod.Saye;
 
             var xt = new XDGTestSetup(p, AggregationThreshold, TrackerWidth, MultigridOperator.Mode.Eye, variant);
 

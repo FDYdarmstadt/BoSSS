@@ -43,6 +43,7 @@ namespace BoSSS.Application.Matrix_MPItest {
         none,
         mixed1,
         mixed2,
+        mixed3,
         all
     }
 
@@ -93,7 +94,7 @@ namespace BoSSS.Application.Matrix_MPItest {
         protected override void CreateFields() {
             Phi = new LevelSet(new Basis(this.GridData, 2), "Phi");
    
-            LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData)this.GridData, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, 1, new string[] { "A", "B" }, Phi);
+            LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData)this.GridData, CutCellQuadratureMethod.OneStepGaussAndStokes, 1, new string[] { "A", "B" }, Phi);
 
             if (m_DGorder < 1)
                 throw new ArgumentException();
@@ -110,6 +111,9 @@ namespace BoSSS.Application.Matrix_MPItest {
             } else if(m_UseXdg == XDGusage.mixed2) {
                 u1 = new SinglePhaseField(new Basis(this.GridData, m_DGorder), "u1");
                 u2 = new XDGField(new XDGBasis(this.LsTrk, m_DGorder - 1), "u2");
+            } else if(m_UseXdg == XDGusage.mixed3) {
+                u1 = new XDGField(new XDGBasis(this.LsTrk, m_DGorder - 1), "u1");
+                u2 = new TraceDGField(new TraceDGBasis(this.LsTrk, m_DGorder), "u2");
             } else {
                 throw new NotImplementedException();
             }

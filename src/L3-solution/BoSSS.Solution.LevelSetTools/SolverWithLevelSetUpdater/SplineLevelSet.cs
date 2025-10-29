@@ -28,6 +28,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         public CubicSpline Spline { get; private set; }
 
+        SolverWithLevelSetUpdaterControl ctrl;
+
         /// <summary>
         /// ctor
         /// </summary>
@@ -54,7 +56,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// <summary>
         /// ctor
         /// </summary>
-        public SplineLevelSet(Func<double, double> initial, Basis basis, string name, int numberOfNodes) : this(basis, name, numberOfNodes) {
+        public SplineLevelSet(Func<double, double> initial, SolverWithLevelSetUpdaterControl ctrl, Basis basis, string name, int numberOfNodes) : this(basis, name, numberOfNodes) {
+            this.ctrl = ctrl;
             Interpolate(initial);
         }
 
@@ -96,6 +99,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 y[i] = Nodes[i, 1];
             }
             Spline = CubicSpline.InterpolateNaturalSorted(x, y);
+            ctrl.Phi0Initial = Spline.Interpolate;
             EmbeddInLevelSet(Spline, this, region);
         }
 
@@ -141,7 +145,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public IList<string> VariableNames => new string[] { };
 
         // nothing to do
-        public Action<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>> AfterMovePhaseInterface => null;
+        public Func<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>, bool> AfterMovePhaseInterface => null;
 
         /// <summary>
         /// <see cref="ILevelSetEvolver.InternalFields"/>; here, empty;

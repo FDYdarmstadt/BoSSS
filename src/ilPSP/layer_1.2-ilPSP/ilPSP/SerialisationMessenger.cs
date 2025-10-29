@@ -18,8 +18,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections;
 using System.IO;
-using System.Runtime.Serialization;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
 
@@ -264,10 +262,12 @@ namespace ilPSP.Utils {
         /// </summary>
         bool m_CommPathsCommited;
 
+/*
         /// <summary>
         /// formatter used for all serialization/de-serialization (legacy)
         /// </summary>
         BinaryFormatter m_Formatter = new BinaryFormatter();
+*/
 
         /// <summary>
         /// formatter used for all serialization/de-serialization
@@ -281,7 +281,8 @@ namespace ilPSP.Utils {
             TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Full
         };
         
-        bool m_UseJson = false;
+        /*
+        bool m_UseJson = true;
 
         /// <summary>
         /// Whether to use a JSON formatter (text) or the binary formatter
@@ -299,6 +300,7 @@ namespace ilPSP.Utils {
             }
 
         }
+        */
 
         [Serializable]
         class JsonContainer {
@@ -311,7 +313,8 @@ namespace ilPSP.Utils {
             using (var ms = new MemoryStream()) {
                 Stopwatch stw = new Stopwatch();
                 stw.Start();
-                if (m_UseJson) {
+                //if (m_UseJson) {
+                {
                     // see: https://stackoverflow.com/questions/25741895/error-serialising-simple-string-to-bson-using-newtonsoft-json-net
                     //var containerArray = Array.CreateInstance(o.GetType(), 1);
                     //containerArray.SetValue(o, 0);
@@ -320,9 +323,10 @@ namespace ilPSP.Utils {
                     using (var w = new BsonDataWriter(ms)) {
                         jsonFormatter.Serialize(w, containerObj);
                     }
-                } else {
-                    m_Formatter.Serialize(ms, o);
                 }
+                //} else {
+                //    m_Formatter.Serialize(ms, o);
+                //}
                 stw.Stop(); 
 
                 byte[] ret = ms.GetBuffer();
@@ -331,7 +335,7 @@ namespace ilPSP.Utils {
                 //}
 
                 if (writeSize) {
-                    Console.Error.WriteLine($"r{this.m_Rank}: serialized to {ret.Length/(1024.0*1024.0)} MEGAbyte! took {stw.Elapsed.TotalMilliseconds} msec(UesJSON = {m_UseJson})");
+                    Console.Error.WriteLine($"r{this.m_Rank}: serialized to {ret.Length/(1024.0*1024.0)} MEGAbyte! took {stw.Elapsed.TotalMilliseconds} msec(UesJSON = {true})");
                 }
 
                 return ret;
@@ -341,16 +345,18 @@ namespace ilPSP.Utils {
 
         object DeserializeObject(byte[] data, Type t) {
             using (var ms = new MemoryStream(data)) {
-                if (m_UseJson) {
+                //if (m_UseJson) {
+                {
                     //Type ArrayType = Array.CreateInstance(t, 0).GetType();
 
                     using (var w = new BsonDataReader(ms)) {
                         var containerObj = (JsonContainer) jsonFormatter.Deserialize(w, typeof(JsonContainer));
                         return containerObj.PayLoad;
                     }
-                } else {
-                    return m_Formatter.Deserialize(ms);
                 }
+                //} else {
+                //    return m_Formatter.Deserialize(ms);
+                //}
             }
         }
 
@@ -540,7 +546,7 @@ namespace ilPSP.Utils {
             m_ReceiveObjectSizesPin = GCHandle.Alloc(m_ReceiveObjectSizes,GCHandleType.Pinned);
 
             for( int p = 0; p < m_Size; p++) {
-                if (m_AllCommPaths[p, m_Rank] != 0) {
+                if (m_AllCommPaths[p, m_Rank] != 0) { //[Toprak]: information of the size about the message can be obtained via envelop of the actual message instead of transfer below info
                     csMPI.Raw.Irecv(Marshal.UnsafeAddrOfPinnedArrayElement(m_ReceiveObjectSizes,p),
                                  sizeof(int), csMPI.Raw._DATATYPE.BYTE,
                                  p, TagBufferSize + m_MyTagOffset,
@@ -766,12 +772,8 @@ namespace ilPSP.Utils {
         /// - keys: MPI rank of the process from which <em>q</em> has been received.
         /// - values: some object <em>q</em>
         /// </returns>
-        /// <param name="__UseJSON">
-        /// <see cref="UseJson"/>
-        /// </param>
-        public static IDictionary<int, T> ExchangeData<T>(IDictionary<int, T> objects_to_send, MPI_Comm comm, bool __UseJSON = false) {
+        public static IDictionary<int, T> ExchangeData<T>(IDictionary<int, T> objects_to_send, MPI_Comm comm) {
             using (var sms = new SerialisationMessenger(comm)) {
-                sms.UseJson = __UseJSON;
                 //if (PoorManDebugger != null) {
                 //    PoorManDebugger.WriteLine("tag offset is " + sms.m_MyTagOffset);
                 //    PoorManDebugger.Flush();

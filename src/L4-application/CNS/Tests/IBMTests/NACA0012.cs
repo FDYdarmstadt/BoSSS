@@ -71,7 +71,7 @@ namespace CNS.Tests.IBMTests {
             // NEXT STEP: SET THIS BOOL TO FALSE AND JUST USE IN POSITIVE SUB_VOLUME;
             // THEN TRY BOUNDING BOX APPROACH?
             // WHY THE HELL DOES THIS CONFIGURATION FAIL!??!?!?!?
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.Classic;
             c.SurfaceHMF_ProjectNodesToLevelSet = false;
             c.SurfaceHMF_RestrictNodes = true;
             c.SurfaceHMF_UseGaussNodes = false;

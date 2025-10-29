@@ -93,7 +93,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             base.m_RegisteredFields.Add(TestData);
 
             LevSet = new LevelSet(new Basis(this.GridData, 2), "LevelSet");
-            base.LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData) this.GridData, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, 1, new string[] { "A", "B" }, LevSet);
+            base.LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData) this.GridData, CutCellQuadratureMethod.OneStepGaussAndStokes, 1, new string[] { "A", "B" }, LevSet);
             base.m_RegisteredFields.Add(LevSet);
 
             var xBasis = new XDGBasis(base.LsTrk, DEGREE);
@@ -228,38 +228,14 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             }
         }
 
-        //bool LevelReminder = false;
+        
 
         /// <summary>
-        /// Very primitive refinement indicator, works on a gradient criterion.
-        /// </summary>
-        int LevelIndicator(int j, int CurrentLevel) {
-            double GradMag = MagGrad_u.GetMeanValue(j);
-
-            int DesiredLevel_j = 0;
-            if(GradMag > 0.6)
-                DesiredLevel_j = 1;
-            if(GradMag > 0.81)
-                DesiredLevel_j = 2;
-
-            //if(DesiredLevel_j < CurrentLevel) {
-            //    DesiredLevel_j = CurrentLevel;
-            //    if(!LevelReminder) {
-            //        Console.WriteLine("Reminder: coarsening disabled");
-            //        LevelReminder = true;
-            //    }
-            //}
-
-            return DesiredLevel_j;
-            
-        }
-
-        /// <summary>
-        /// Creates the cellmask which should be refined.
+        /// provides mesh levels for two-level adaptive mesh refinement, based on a gradient-criterion
         /// </summary>
         private int[] GetCellsToRefine() {
-            int refinementLevel = 2;
-            int coarseRefinementLevel = 1;
+            const int refinementLevel = 2;
+            const int coarseRefinementLevel = 1;
             int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             int[] cellsToRefine = new int[noOfLocalCells];
             for (int j = 0; j < noOfLocalCells; j++) {
@@ -286,11 +262,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             List<int> CellsToRefineList;
             List<int[]> Coarsening;
             GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData, LsTrk.Regions.GetCutCellMask());
-            if (MPISize > 1) {
-                AnyChange = gridRefinementController.ComputeGridChange(GetCellsToRefine(), out CellsToRefineList, out Coarsening);
-            }
-            else
-                AnyChange = gridRefinementController.ComputeGridChange(LevelIndicator, out CellsToRefineList, out Coarsening);
+            AnyChange = gridRefinementController.ComputeGridChange(GetCellsToRefine(), out CellsToRefineList, out Coarsening);
             int NoOfCellsToRefine = 0;
             int NoOfCellsToCoarsen = 0;
             if(AnyChange) {

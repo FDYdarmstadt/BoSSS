@@ -191,10 +191,11 @@ namespace BoSSS.Foundation {
 
                     // compile a quadrature rule:
                     // -----------------------------------------------
-                    // Don't use the CellQuadratureScheme, because to date this costs in the order of number of cells
+                    // Don't use the CellQuadratureScheme, because to date the compute costs are in the order of number of cells,
                     // due to cell mask operations. 
                     // For the construction of the aggregation grid basis, this causes a quadratic runtime behavior.
-                    var _quadRule = new CompositeQuadRule<QuadRule>();
+                    var _quadRule = new CompositeQuadRule<QuadRule>(null, GridDat);
+                    //_quadRule.IntegrationMetric = new CellIntegrationMetric();
                     var Kref1 = GridDat.iGeomCells.GetRefElement(jCell1);
                     if (_basicQr == null || !object.ReferenceEquals(_basicQr.Nodes.RefElement, Kref1))
                         _basicQr = Kref1.GetQuadratureRule(2 * this.Degree);

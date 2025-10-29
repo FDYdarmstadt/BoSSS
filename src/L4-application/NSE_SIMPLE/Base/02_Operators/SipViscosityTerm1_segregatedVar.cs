@@ -204,7 +204,7 @@ namespace NSE_SIMPLE {
                     //}
                     break;
                 }
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet: {
                     // Atmospheric outlet/pressure outflow: hom. Neumann
                     // +++++++++++++++++++++++++++++++++++++++++++++++++

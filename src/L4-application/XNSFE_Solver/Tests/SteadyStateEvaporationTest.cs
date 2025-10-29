@@ -81,6 +81,8 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
 
         public double[] AcceptableResidual => new double[] { 1e-7, 1e-7, 1e-7, 1e-7 };
 
+        public double theta_e => throw new NotImplementedException();
+
         double L = 1.0;
         public GridCommons CreateGrid(int Resolution) {            
             double[] Xnodes = GenericBlas.Linspace(0, L, Resolution + 1);

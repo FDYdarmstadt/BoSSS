@@ -1,0 +1,268 @@
+{
+  "$type": "System.Tuple`2[[System.String[], System.Private.CoreLib],[System.Array[], System.Private.CoreLib]], System.Private.CoreLib",
+  "Item1": {
+    "$type": "System.String[], System.Private.CoreLib",
+    "$values": [
+      "SessionName",
+      "DGdegree",
+      "Grid:NoOfCells",
+      "LinearSolver.Name",
+      "LinearSolver.Shortname",
+      "DOFs",
+      "MatrixAssembly",
+      "Grid:SpatialDimension",
+      "NoOfCores",
+      "Aggregation_basis_init_time",
+      "Solver_Init_time",
+      "Solver_Run_time",
+      "Solver_InitAndRun_time",
+      "NoIter",
+      "Solver_TimePerIter",
+      "ComputeNodeName",
+      "RegularTerminated"
+    ]
+  },
+  "Item2": {
+    "$type": "System.Array[], System.Private.CoreLib",
+    "$values": [
+      {
+        "$type": "System.String[], System.Private.CoreLib",
+        "$values": [
+          "BottiPietroStokes2D-J147456_p2_exp_Kcycle_schwarz_SkipPreComments",
+          "BottiPietroStokes2D-J36864_p5_exp_Kcycle_schwarz_SkipPreComments",
+          "BottiPietroStokes2D-J65536_p3_exp_Kcycle_schwarz_SkipPreComments",
+          "BottiPietroStokes2D-J16384_p5_exp_Kcycle_schwarz_SkipPreComments",
+          "BottiPietroStokes2D-J36864_p3_exp_Kcycle_schwarz_SkipPreComments",
+          "BottiPietroStokes2D-J65536_p2_exp_Kcycle_schwarz_SkipPreComments",
+          "BottiPietroStokes2D-J36864_p2_exp_Kcycle_schwarz_SkipPreComments",
+          "BottiPietroStokes2D-J16384_p3_exp_Kcycle_schwarz_SkipPreComments",
+          "BottiPietroStokes2D-J16384_p2_exp_Kcycle_schwarz_SkipPreComments"
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          2,
+          5,
+          3,
+          5,
+          3,
+          2,
+          2,
+          3,
+          2
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          147456,
+          36864,
+          65536,
+          16384,
+          36864,
+          65536,
+          36864,
+          16384,
+          16384
+        ]
+      },
+      {
+        "$type": "System.String[], System.Private.CoreLib",
+        "$values": [
+          "OrthonormalizationMultigrid with Additive Schwarz Smoother",
+          "OrthonormalizationMultigrid with Additive Schwarz Smoother",
+          "OrthonormalizationMultigrid with Additive Schwarz Smoother",
+          "OrthonormalizationMultigrid with Additive Schwarz Smoother",
+          "OrthonormalizationMultigrid with Additive Schwarz Smoother",
+          "OrthonormalizationMultigrid with Additive Schwarz Smoother",
+          "OrthonormalizationMultigrid with Additive Schwarz Smoother",
+          "OrthonormalizationMultigrid with Additive Schwarz Smoother",
+          "OrthonormalizationMultigrid with Additive Schwarz Smoother"
+        ]
+      },
+      {
+        "$type": "System.String[], System.Private.CoreLib",
+        "$values": [
+          "OrthoMG w Add Swz",
+          "OrthoMG w Add Swz",
+          "OrthoMG w Add Swz",
+          "OrthoMG w Add Swz",
+          "OrthoMG w Add Swz",
+          "OrthoMG w Add Swz",
+          "OrthoMG w Add Swz",
+          "OrthoMG w Add Swz",
+          "OrthoMG w Add Swz"
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          2211840.0,
+          2101248.0,
+          1703936.0,
+          933888.0,
+          958464.0,
+          983040.0,
+          552960.0,
+          425984.0,
+          245760.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          256.60097,
+          118.6806384,
+          143.8895015,
+          54.5323575,
+          45.7653469,
+          55.2099008,
+          26.1888626,
+          20.1588552,
+          15.1911192
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "$type": "System.Int32[], System.Private.CoreLib",
+        "$values": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          5.9969275,
+          6.3315138,
+          3.7358625,
+          4.5908391,
+          2.3688391,
+          2.3434212,
+          1.5714392,
+          0.7166919,
+          0.7719684
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          124.9294244,
+          136.1687491,
+          109.3651001,
+          89.4465606,
+          42.2786834,
+          52.9084327,
+          30.8294107,
+          20.8269062,
+          12.3032862
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          478.8461846,
+          455.218417,
+          144.4292803,
+          181.3081359,
+          95.799356,
+          74.6850466,
+          75.2471025,
+          50.9190724,
+          25.5364811
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          609.7725365,
+          597.7186799,
+          257.53024289999996,
+          275.3455356,
+          140.4468785,
+          129.9369005,
+          107.6479524,
+          72.4626705,
+          38.6117357
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          2.0,
+          4.0,
+          1.0,
+          3.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          239.4230923,
+          113.80460425,
+          144.4292803,
+          60.436045299999996,
+          47.899678,
+          37.3425233,
+          37.62355125,
+          25.4595362,
+          12.76824055
+        ]
+      },
+      {
+        "$type": "System.String[], System.Private.CoreLib",
+        "$values": [
+          "hpccluster01.fdy.maschinenbau.tu-darmstadt.de",
+          "hpccluster01.fdy.maschinenbau.tu-darmstadt.de",
+          "hpccluster01.fdy.maschinenbau.tu-darmstadt.de",
+          "hpccluster01.fdy.maschinenbau.tu-darmstadt.de",
+          "hpccluster01.fdy.maschinenbau.tu-darmstadt.de",
+          "hpccluster01.fdy.maschinenbau.tu-darmstadt.de",
+          "hpccluster01.fdy.maschinenbau.tu-darmstadt.de",
+          "hpccluster01.fdy.maschinenbau.tu-darmstadt.de",
+          "hpccluster01.fdy.maschinenbau.tu-darmstadt.de"
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      }
+    ]
+  }
+}

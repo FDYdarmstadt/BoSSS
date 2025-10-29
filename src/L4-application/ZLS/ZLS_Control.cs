@@ -16,13 +16,16 @@ namespace ZwoLevelSetSolver {
         [DataMember]
         public int Degree { get; private set; }
 
-        public ZLS_Control() {
+
+        public ZLS_Control() : base() {
             NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             UseImmersedBoundary = true;
             Option_LevelSetEvolution = BoSSS.Solution.LevelSetTools.LevelSetEvolution.StokesExtension;
             Option_LevelSetEvolution2 = BoSSS.Solution.LevelSetTools.LevelSetEvolution.StokesExtension;
             AdvancedDiscretizationOptions.ViscosityMode = BoSSS.Solution.XNSECommon.ViscosityMode.FullySymmetric;
             AdvancedDiscretizationOptions.PenaltySafety = 1;
+
+            base.CutCellQuadratureType = BoSSS.Foundation.XDG.CutCellQuadratureMethod.Saye;
         }
 
         public override Type GetSolverType() {

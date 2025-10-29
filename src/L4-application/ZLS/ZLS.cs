@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using BoSSS.Application.XNSE_Solver;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
@@ -10,25 +8,16 @@ using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
-using BoSSS.Solution.NSECommon;
-using ilPSP.Utils;
 using ZwoLevelSetSolver.Boundary;
 using ZwoLevelSetSolver.SolidPhase;
 using ZwoLevelSetSolver.ContactLine;
 using NSEVariableNames = BoSSS.Solution.NSECommon.VariableNames;
-using NSEEquationNames = BoSSS.Solution.NSECommon.EquationNames;
 using BoSSS.Solution.XNSECommon;
 using ilPSP;
-using BoSSS.Solution.Utils;
 using NUnit.Framework;
 using BoSSS.Solution;
-using System.Diagnostics;
-using System.ComponentModel;
-using BoSSS.Solution.Tecplot;
-using System.Xml.Linq;
-using System.Collections;
-using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Solution.LevelSetTools;
+
 
 namespace ZwoLevelSetSolver {
 
@@ -141,14 +130,17 @@ namespace ZwoLevelSetSolver {
 
 
             //*
-            if(config.dntParams.SST_isotropicMode == BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
+            if(config.dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
                 for(int d = 0; d < D; ++d) {
                     opFactory.AddEquation(new EquilibriumContactLine(d, D, config.physParams.betaL, config.physParams.theta_e));
                     //opFactory.AddEquation(new EquilibriumContactLine1(d, D, config.physParams.betaL, config.physParams.theta_e));
                 }
             }
+
             //*/
-            var normalsParameter = new BoSSS.Solution.XNSECommon.Normals(D, ((LevelSet)lsUpdater.Tracker.LevelSets[1]).Basis.Degree, VariableNames.SolidLevelSetCG);
+            //var normalsParameter = new BoSSS.Solution.XNSECommon.Normals(D, ((LevelSet)lsUpdater.Tracker.LevelSets[1]).Basis.Degree, VariableNames.SolidLevelSetCG);
+            var normalsParameter = new Normals(VariableNames.SolidLevelSetCG, D, ((LevelSet)lsUpdater.Tracker.LevelSets[1]).Basis.Degree);
+
             opFactory.AddParameter(normalsParameter);
             lsUpdater.AddLevelSetParameter(VariableNames.SolidLevelSetCG, normalsParameter);
         }
@@ -166,9 +158,9 @@ namespace ZwoLevelSetSolver {
             // check symmetry of RHS and Solution in Newton solver:
             Newton.DiagnosticFunction = delegate (DGField[] flds) {
                 double[] asymmetriesX = flds.FieldAsymmetry(0, new bool[] { true, false, false, true, false }); // adopt for 3D!
-                Console.WriteLine($"   --- asymmetry of {flds.Select(f => f.Identification).ToConcatString("(", ", ", ")")} = {asymmetries.ToConcatString("(", ", ", ")")}");
+                Console.WriteLine($"   --- asymmetry of {flds.Select(f => f.Identification).ToConcatString("(", ", ", ")")} = {asymmetriesX.ToConcatString("(", ", ", ")")}");
                 double[] asymmetriesY = flds.FieldAsymmetry(1, new bool[] { true, false, false, true, false }); // adopt for 3D!
-                Console.WriteLine($"   --- asymmetry of {flds.Select(f => f.Identification).ToConcatString("(", ", ", ")")} = {asymmetries.ToConcatString("(", ", ", ")")}");
+                Console.WriteLine($"   --- asymmetry of {flds.Select(f => f.Identification).ToConcatString("(", ", ", ")")} = {asymmetriesY.ToConcatString("(", ", ", ")")}");
             };
             Newton.DiagnosticFunction(this.CurrentStateVector.Mapping);
 

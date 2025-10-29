@@ -691,9 +691,9 @@ namespace ilPSP {
                     int li = rEnd[i] - rStart[i] + 1;
 
                     if(rStart[i] < 0 || rStart[i] >= GetLength(i))
-                        throw new IndexOutOfRangeException("subarray start range out of range for dimension " + i);
+                        throw new IndexOutOfRangeException("subarray start range out of range for dimension " + i + " (got " + rStart[i] + ", length is " + GetLength(i) + ")");
                     if(rEnd[i] >= GetLength(i))
-                        throw new IndexOutOfRangeException("subarray end range out of range for dimension " + i);
+                        throw new IndexOutOfRangeException("subarray end range out of range for dimension " + i + " (got " + rEnd[i] + ", length is " + GetLength(i) + ")");
 
                     if(li > 0)
                         dims++;
@@ -808,9 +808,14 @@ namespace ilPSP {
 
             // calculate offset ...
             int[] indices = (int[])subArrayIndices.Clone();
-            for (int j = 0; j < indices.Length; j++) if (indices[j] < 0)
+            bool zeroSourceArray = false; // the length f one dimension is zero
+            for(int j = 0; j < indices.Length; j++)
+                if(indices[j] < 0) {
                     indices[j] = 0;
-            ret.m_Offset = this.Index(indices);
+                    if(this.GetLength(j) <= 0)
+                        zeroSourceArray = true;
+                }
+            ret.m_Offset = zeroSourceArray ? 0 : this.Index(indices);
 
             // ... and cycles:
             int cnt = 0;
@@ -820,9 +825,9 @@ namespace ilPSP {
                 if (indices[i] >= 0)
                     continue; // this dimension is not included in the 
                 // returned array
-                if (this.GetLength(i) <= 1) {
+                if (this.GetLength(i) <= 1 || zeroSourceArray) {
                     // the only valid index is 0, 
-                    // so the cycle is of no interrest
+                    // so the cycle is of no interest
                     // (and cannot be calculated);
 
                     ret.SetCycle(cnt, Int32.MinValue);
@@ -1235,6 +1240,32 @@ namespace ilPSP {
 
 
         /// <summary>
+        /// Creates a matrix with all the possible combinations of elements in set x in n-dimension.
+        /// Row index: point index, column index: dimension.
+        /// </summary>
+        /// <remarks>increments with the order from the lowest to the highest dim </remarks>
+        public static MultidimensionalArray CreateCartesianPairProduct(double[] x, int n) {
+            if (n < 0)
+                throw new ArgumentOutOfRangeException();
+
+            int numberOfCombinations = (int)Math.Pow(x.Length,n); 
+            var r = Create(numberOfCombinations, n);
+
+            for (int i = 0; i < numberOfCombinations; i++) {
+                // Write i in base-(x.Length) notation and and assign the element of x w.r.t. each digit (last digit to first dimension).
+                // e.g. x.Length=3, d=2, i=0: base-2 notation= 0 0 => r[i,0]=x[0],  r[i,1]=x[0]
+                // e.g. x.Length=3, d=2, i=1: base-2 notation= 0 1 => r[i,0]=x[1],  r[i,1]=x[0]
+                int temp = i;
+                for (int j = 0; j < n; j++) {
+                    r[i, j] = x[temp % x.Length]; //assign the remainder-th element into i in component j
+                    temp /= x.Length;             //pass the division for the next dimension
+                }
+            }
+
+            return r;
+        }
+
+        /// <summary>
         /// Creates a wrapper for the given one-dimensional array. That is,
         /// the result will be a shallow 'copy' of
         /// <paramref name="wrappedArray"/>.
@@ -1251,7 +1282,7 @@ namespace ilPSP {
         /// <paramref name="wrappedArray"/>.
         /// </returns>
         public static MultidimensionalArray CreateWrapper(double[] wrappedArray, params int[] lengths) {
-            Debug.Assert(lengths.All((i) => i > 0), "All lengths must be positive");
+            Debug.Assert(lengths.All((i) => i >= 0), "All lengths must be positive");
             //Debug.Assert(
             //    lengths.Aggregate((i, j) => i * j) == wrappedArray.Length,
             //    "Length of wrapped array must be equal to length of wrapper");
@@ -1498,7 +1529,7 @@ namespace ilPSP {
         /// still possible. This method is intended mainly for debugging
         /// purpose and may disappear in future.
         /// </summary>
-        public void LockForever() {
+        virtual public void LockForever() {
             m_LockedForever = true;
         }
 
@@ -1616,6 +1647,9 @@ namespace ilPSP {
         /// </summary>
         /// <param name="x">new values</param>
         public void Set2DArray(double[,] x) {
+            if(this.IsLocked) {
+                throw new NotSupportedException("Array is locked -- no changes allows.");
+            }
             this.Clear();
             this.Acc2DArray(1.0, x);
         }
@@ -1641,6 +1675,9 @@ namespace ilPSP {
             for (int i = this.m_Dimension - 1; i >= 0; i--) {
                 if (x.GetLength(i) != this.GetLength(i))
                     throw new ArgumentException("Mismatch in dimension " + i);
+            }
+            if(this.IsLocked) {
+                throw new NotSupportedException("Array is locked -- no changes allows.");
             }
 
 

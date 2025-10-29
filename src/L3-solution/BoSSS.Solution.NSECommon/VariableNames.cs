@@ -53,7 +53,13 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         Multiphase,
 
-
+        /// <summary>
+        /// Incompressible Helical Symmetric Flows,
+        /// i.e. solving equations for
+        /// mass, momentum in Helical Coordintaes.
+        /// Attention \frac{\partial}{\partial \eta} = 0. 
+        /// Due to helical symmetry. 
+        /// </summary>
         Helical,
 
         /// <summary>
@@ -295,9 +301,11 @@ namespace BoSSS.Solution.NSECommon {
             else
                 throw new NotSupportedException("unsupported spatial dimension: D = " + D + ".");
         }
+
+        public const string ElectricPoissonEquation = "ElectricPoissonEq";
     }
 
-    
+
     /// <summary>
     /// predefined variable names for velocity, pressure, etc. that should be used
     /// by all Navier-Stokes - Solvers
@@ -1802,5 +1810,45 @@ namespace BoSSS.Solution.NSECommon {
         /// vector of orientation of a rigid object, used in XNSERO - y component
         /// </summary>
         public const string OrientationVectorY = "OrientationVectorY";
+
+
+        /// <summary>
+        /// Electric potential, dimensi is Voltage
+        /// </summary>
+        public const string ElectricPotential = "ElectricPotential";
+
+        public const string FreechargeDensity = "FreechargeDensity";
+
+        /// <summary>
+        /// used for surface advection-reaction problem.
+        /// </summary>
+        public const string SurfaceAdvectionVelocityX = "SurfaceAdvectionVelocityX";
+
+        public const string SurfaceAdvectionVelocityY = "SurfaceAdvectionVelocityY";
+
+        public const string SurfaceAdvectionVelocityZ = "SurfaceAdvectionVelocityZ";
+
+        static public string SurfaceAdvectionVelocity_d(int d) {
+            switch(d) {
+                case 0: return SurfaceAdvectionVelocityX;
+                case 1: return SurfaceAdvectionVelocityY;
+                case 2: return SurfaceAdvectionVelocityZ;
+                default: throw new NotSupportedException("unsupported names");
+            }
+        }
+
+        static public string[] SurfaceAdvectionVelocity(int D) {
+            switch(D) {
+                case 1: return new string[] { SurfaceAdvectionVelocityX };
+                case 2: return new string[] { SurfaceAdvectionVelocityX, SurfaceAdvectionVelocityY };
+                case 3: return new string[] { SurfaceAdvectionVelocityX, SurfaceAdvectionVelocityY, SurfaceAdvectionVelocityZ };
+                default: throw new NotSupportedException("unsupported names.");
+            }
+        }
+        /// <summary>
+        /// The domain variable for any surface equation defined on the level-set based on TraceDG Solver
+        /// </summary>
+        public const string SurfaceScalar = "q";
+
     }
 }

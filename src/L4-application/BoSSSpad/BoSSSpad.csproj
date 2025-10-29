@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <RootNamespace>BoSSS.Application.BoSSSpad</RootNamespace>
     <PublishUrl>publish\</PublishUrl>
@@ -47,6 +47,7 @@
     <!--PackageReference Include="Microsoft.DotNet.Interactive.Formatting" Version="1.0.0-beta.21606.1" /-->
     <PackageReference Include="Microsoft.DotNet.Interactive.Documents" Version="1.0.0-beta.21459.1" />
     <PackageReference Include="Microsoft.DotNet.Interactive.Formatting" Version="1.0.0-beta.21459.1" />
+    <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.MUMPS\ilPSP.LinSolvers.MUMPS.csproj" />
@@ -61,6 +62,7 @@
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XNSECommon\BoSSS.Solution.XNSECommon.csproj" />
     <ProjectReference Include="..\ApplicationWithIDT\ApplicationWithIDT.csproj" />
     <ProjectReference Include="..\BUIDT\BUIDT.csproj" />
+    <ProjectReference Include="..\DongBoundaryConditionTests\DongBoundaryConditionTests.csproj" />
     <ProjectReference Include="..\GridGen\GridGen.csproj" />
     <ProjectReference Include="..\NSE_SIMPLE\SIMPLE.csproj" />
     <ProjectReference Include="..\RheologySolver2\Rheology2.csproj" />

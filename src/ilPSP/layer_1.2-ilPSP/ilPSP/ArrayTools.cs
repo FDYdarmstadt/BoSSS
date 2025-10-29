@@ -461,10 +461,28 @@ namespace ilPSP.Utils {
             return ret;
         }
 
-        /// <summary>
-        /// Overwrites a part of a vector.
-        /// </summary>
-        public static void SetSubVector<T,V,W>(this V dest, W sub, int i0, int Length)
+		/// <summary>
+		/// Extracts a part of a vector.
+		/// </summary>
+		/// <param name="inp"></param>
+		/// <param name="indices">indices for elements</param>
+		/// <returns>
+		/// an array containing the i-th entries of the input <paramref name="inp"/> for each i in <paramref name="indices"/>
+		/// </returns>
+		public static T[] GetSubVector<T>(this IList<T> inp, int[] indices) {
+			T[] ret = new T[indices.Length];
+			for (int i = 0; i < indices.Length; i++) {
+                int i0 = indices[i];
+				ret[i] = inp[i0];
+			}
+			return ret;
+		}
+
+
+		/// <summary>
+		/// Overwrites a part of a vector.
+		/// </summary>
+		public static void SetSubVector<T,V,W>(this V dest, W sub, int i0, int Length)
             where V : IList<T>
             where W : IList<T> //
         {

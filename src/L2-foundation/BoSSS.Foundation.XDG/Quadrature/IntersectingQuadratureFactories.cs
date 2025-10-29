@@ -126,7 +126,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 try {
                     QuadRule rule = GetQuadRule(j, order);
                     if (rule.NoOfNodes == 0) {
-                        rule = QuadRule.CreateEmpty(RefElement, 1, RefElement.SpatialDimension);
+                        rule = QuadRule.CreateBlank(RefElement, 1, RefElement.SpatialDimension);
                         rule.Nodes.LockForever();
                     }
                     rules.Add(new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(j), rule));
@@ -278,7 +278,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             }
             
             AffineTrafo t = FromCodomainToDomain(jEdge);
-            QuadRule q = QuadRule.CreateEmpty(Domain, rule.Count, Domain.SpatialDimension);
+            QuadRule q = QuadRule.CreateBlank(Domain, rule.Count, Domain.SpatialDimension);
             t.Transform(globalNodes, q.Nodes);
 
             double jacobianDeterminant = Math.Abs(t.Matrix.Determinant());
@@ -385,7 +385,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 }
             }
             
-            QuadRule q = QuadRule.CreateEmpty(Domain, rule.Count, dim);
+            QuadRule q = QuadRule.CreateBlank(Domain, rule.Count, dim);
             grid.TransformGlobal2Local(globalNodes, q.Nodes, jCell, null);
             double jacobianDeterminant = grid.Cells.JacobiDet[jCell];
             for (int i = 0; i < rule.Count; ++i) {

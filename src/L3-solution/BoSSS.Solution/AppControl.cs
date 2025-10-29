@@ -576,12 +576,6 @@ namespace BoSSS.Solution.Control {
 
                 if (!InitialValues.Keys.IsSubsetOf(ret.Keys))
                     throw new ApplicationException($"InitialValues key mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")} (expecting a subset).");
-
-                //if (!ret.Keys.SetEquals(InitialValues_Evaluators.Keys))
-                //    throw new ApplicationException($"InitialValues_Evaluators keys mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")}.");
-                //if (!ret.Keys.SetEquals(InitialValues_Evaluators_TimeDep.Keys))
-                //    throw new ApplicationException($"InitialValues_Evaluators_TimeDep keys mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")}.");
-
                 return ret;
             }
         }
@@ -601,16 +595,11 @@ namespace BoSSS.Solution.Control {
             get {
                 Sync__InitialValues_Evaluators();
                 var ret = new ProxyDict_Func() {
-                    home = m_InitialValues_Evaluators
+                    home = m_InitialValues_Evaluators 
                 };
 
-                if (!InitialValues.Keys.IsSubsetOf(ret.Keys))
+                if(!InitialValues.Keys.IsSubsetOf(ret.Keys))
                     throw new ApplicationException($"InitialValues key mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")} (expecting a subset).");
-
-                //if (!ret.Keys.SetEquals(InitialValues_EvaluatorsVec.Keys))
-                //    throw new ApplicationException($"InitialValues_EvaluatorsVec keys mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")}.");
-                //if (!ret.Keys.SetEquals(InitialValues_Evaluators_TimeDep.Keys))
-                //    throw new ApplicationException($"InitialValues_Evaluators_TimeDep keys mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")}.");
 
                 return ret;
             }
@@ -632,7 +621,7 @@ namespace BoSSS.Solution.Control {
             get {
                 Sync__InitialValues_Evaluators();
                 var ret = new ProxyDict_Func_TimeDep() {
-                    home = m_InitialValues_Evaluators
+                    home = m_InitialValues_Evaluators 
                 };
 
                 if (!InitialValues.Keys.IsSubsetOf(ret.Keys))
@@ -1132,12 +1121,22 @@ namespace BoSSS.Solution.Control {
         [DataMember]
         public int AMR_startUpSweeps = 1;
 
+
+
+        /// <summary>
+        /// List of active AMR level indicators;
+        /// One can use e.g., <see cref="AMRLevelIndicatorLibrary.AMRonBoundary"/>, <see cref="AMRLevelIndicatorLibrary.AMRInBoundingBox"/>, <see cref="AMRLevelIndicatorLibrary.AMReveryWhere"/>;
+        /// </summary>
+        [DataMember]
+        public List<AMRLevelIndicator> activeAMRlevelIndicators = new List<AMRLevelIndicator>();
+
+
         /// <summary>
         /// Actual type of cut cell quadrature to use; If no XDG, is used, resp. no cut cells are present,
         /// this setting has no effect.
         /// </summary>
         [DataMember]
-        public XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+        public CutCellQuadratureMethod CutCellQuadratureType = CutCellQuadratureMethod.Algoim;
 
         /// <summary>
         /// Calculation is not stopped if an I/O exception is thrown in <see cref="Application{T}.SaveToDatabase(TimestepNumber, double)"/>.
@@ -1270,7 +1269,8 @@ namespace BoSSS.Solution.Control {
 
                 foreach(var a in assiList) {
                     var tt = new Dictionary<string, Type>();
-                    knownTypes.Add(a.GetName().Name, tt);
+                    string name = a.GetName().Name;
+                    knownTypes.Add(name, tt);
                     foreach(var t in a.GetExportedTypes()) {
                         tt.Add(t.FullName, t);
                     }

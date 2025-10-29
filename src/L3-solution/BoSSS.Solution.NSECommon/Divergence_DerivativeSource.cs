@@ -95,7 +95,7 @@ namespace BoSSS.Solution.NSECommon {
         protected int component;
 
 
-        IncompressibleBoundaryCondMap bcmap;
+        protected IncompressibleBoundaryCondMap bcmap;
 
         /// <summary>
         /// Ctor for incompressible flows.
@@ -146,13 +146,13 @@ namespace BoSSS.Solution.NSECommon {
             IncompressibleBcType edgeType = bcmap.EdgeTag2Type[inp.EdgeTag];
 
             switch (edgeType) {
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 throw new ArithmeticException("Tests on channel flow indicate that b.c. " + edgeType + " is ill-posed, fk 25may16.");
                 case IncompressibleBcType.Pressure_Dirichlet:
                 case IncompressibleBcType.Pressure_Outlet:
                 {
                     FluxInCell = 0.0;
-                        break;
+                    break;
                 }
                 case IncompressibleBcType.Wall: // wall and inlet are both Dirichlet conditions w.r.t. velocity
                 case IncompressibleBcType.Velocity_Inlet:
@@ -161,7 +161,7 @@ namespace BoSSS.Solution.NSECommon {
                     double u_j_Out = this.bndFunction[inp.EdgeTag](inp.X, inp.time);
 
                     FluxInCell = -(u_j_In - u_j_Out) * inp.Normal[component];
-                        break;
+                    break;
                 }
                 case IncompressibleBcType.FreeSlip:
                 case IncompressibleBcType.SlipSymmetry:
@@ -170,6 +170,11 @@ namespace BoSSS.Solution.NSECommon {
                     double u_j_In = Uin[0];
                     double u_j_Out = 0.0;// this.bndFunction[inp.EdgeTag](inp.X, inp.time);
                     FluxInCell = -(u_j_In - u_j_Out) * inp.Normal[component];
+                    break;
+                }
+                case IncompressibleBcType.Dong_OutFlow: 
+                {
+                    FluxInCell = 0.0;
                     break;
                 }
                 default:

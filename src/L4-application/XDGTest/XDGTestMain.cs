@@ -32,6 +32,7 @@ using BoSSS.Foundation.IO;
 using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
 using NUnit.Framework;
+using BoSSS.Solution.Control;
 
 namespace BoSSS.Application.XDGTest {
 
@@ -56,6 +57,7 @@ namespace BoSSS.Application.XDGTest {
             base.FieldOptions.Clear();
             base.AddFieldOption("Pressure", p, Solution.Control.FieldOpts.SaveToDBOpt.TRUE);
             base.AddFieldOption("Phi", Math.Max(2, p), Solution.Control.FieldOpts.SaveToDBOpt.TRUE);
+            base.AddFieldOption("PressureTrace", p, Solution.Control.FieldOpts.SaveToDBOpt.TRUE);
         }
     }
 
@@ -84,13 +86,26 @@ namespace BoSSS.Application.XDGTest {
         /// <summary>
         /// pressure computed in projection step
         /// </summary>
-        XDGField Pressure;
+        [InstantiateFromControlFile("Pressure")]
+        public XDGField Pressure;
+
+        /// <summary>
+        /// trace of pressure on all interior edges
+        /// </summary>
+        [InstantiateFromControlFile(FieldIdentification: "PressureTrace", DGDegreeImpliedBy: "Pressure", ioListOpt: IOListOption.ControlFileDetermined)]
+        public TraceDGField PressureTrace;
 
         /// <summary>
         /// the level set
         /// </summary>
-        LevelSet LevSet;
+        [InstantiateFromControlFile("Phi")]
+        public LevelSet LevSet;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        [LevelSetTracker("-:A +:B", 1)]
+        public LevelSetTracker myLsTrk;
 
         /// <summary>
         /// marks all cells which contain species A
@@ -122,17 +137,18 @@ namespace BoSSS.Application.XDGTest {
             return Phi(X, 0.0);
         }
 
-
         protected override void CreateFields() {
-            this.LevSet = new LevelSet(new Basis(this.GridData, Control.FieldOptions["Phi"].Degree), "Phi");
-            this.LsTrk = new LevelSetTracker((GridData) this.GridData, XQuadFactoryHelper.MomentFittingVariants.Classic, 1, new string[] { "A", "B" }, LevSet);
-            Pressure = new XDGField(new XDGBasis(this.LsTrk, Control.FieldOptions["Pressure"].Degree), "Pressure");
-            IOFields.Add(this.LevSet);
-            IOFields.Add(this.Pressure);
+            //this.LevSet = new LevelSet(new Basis(this.GridData, Control.FieldOptions["Phi"].Degree), "Phi");
+            //this.LsTrk = new LevelSetTracker((GridData) this.GridData, CutCellQuadratureMethod.Classic, 1, new string[] { "A", "B" }, LevSet);
+            //Pressure = new XDGField(new XDGBasis(this.LsTrk, Control.FieldOptions["Pressure"].Degree), "Pressure");
+            //IOFields.Add(this.LevSet);
+            //IOFields.Add(this.Pressure);
+            Assert.IsTrue(object.ReferenceEquals(base.LsTrk, this.myLsTrk));
             Amarker = new SinglePhaseField(new Basis(this.GridData, 0), "SpeciesA");
             Bmarker = new SinglePhaseField(new Basis(this.GridData, 0), "SpeciesB");
             LevelSetDistancce = new SinglePhaseField(new Basis(this.GridData, 0), "LevelSetDistancce");
         }
+
 
         protected override int BurstSaves => 2;
 

@@ -134,12 +134,24 @@ namespace ZwoLevelSetSolver.SolidPhase {
         }
 
         double Penalty(int jCellIn, int jCellOut) {
-            double penaltySizeFactor = 1/ cj[jCellIn];
-            if(jCellOut > -1) {
-                penaltySizeFactor = Math.Max(penaltySizeFactor, 1/cj[jCellOut]);
-            }
-            Debug.Assert(!double.IsNaN(penaltySizeFactor));
-            Debug.Assert(!double.IsInfinity(penaltySizeFactor));
+            double penaltySizeFactor_A = 1/cj[jCellIn];
+            double penaltySizeFactor_B = jCellOut >= 0 && !cj[jCellOut].IsNaNorInf() ? 1/cj[jCellOut] : 0;
+            // 0.0 case:
+            // there is no OUT-cell, i.e., current edge is at the boundary of the domain
+            // -- or -- 
+            // in 3D, with certain cut-cell quad rules (e.g. Algoim),
+            // when the Level Set passes exactly through the corner of the cell,
+            // it might happen that the species-volume of the OUT-cell is empty,
+            // but the edge integral is only almost zero (slightly positive, e.g., weights around 10e-14 or so).
+            // In such cases, the edge integral is evaluated (since it is a non-empty rule),
+            // but the OUT-cell already has a NAN-length scale assigned.
+
+            double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
+
+            Debug.Assert(!double.IsNaN(penaltySizeFactor_A));
+            Debug.Assert(!double.IsNaN(penaltySizeFactor_B));
+            Debug.Assert(!double.IsInfinity(penaltySizeFactor_A));
+            Debug.Assert(!double.IsInfinity(penaltySizeFactor_B));
             Debug.Assert(!double.IsInfinity(penalty));
 
             double µ = penaltySizeFactor * penalty;

@@ -152,7 +152,7 @@ namespace BoSSS.Application.XNSEC {
             C.NonLinearSolver.MaxSolverIterations = 10;
             // Parameters
             // ==============
-            //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            //C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.OneStepGaussAndStokes;
             C.Reynolds = 1.0;
             C.Prandtl = 1.0;
             C.Schmidt = 1.0;

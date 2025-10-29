@@ -231,6 +231,17 @@ namespace BoSSS.Solution.XdgTimestepping {
             get;
         }
 
+        /// <summary>
+        /// quadrature degree used for the operator evaluation or linearization w.r.t. current unknown, residual and parameter degrees.
+        /// </summary>
+        public int GetOperatorQuadOrder() {
+            return Operator.GetOrderFromQuadOrderFunction(
+                this.CurrentState.Fields.Select(f => f.Basis),
+                this.Parameters.Select(f => f.Basis),
+                this.CurrentResidual.Fields.Select(f => f.Basis)
+                );
+        }
+
 
         /// <summary>
         /// initialization of <see cref="ApplicationWithSolver{T}.Timestepping"/>
@@ -282,16 +293,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         protected override void SetUpEnvironment() {
             base.SetUpEnvironment();
 
-            // AMR level indactors
-            //====================
-            m_AMRLevelIndicators.Clear();
-            if (this.Control != null && this.Control.activeAMRlevelIndicators != null) {
-                m_AMRLevelIndicators.AddRange(this.Control.activeAMRlevelIndicators);
-            }
-
-            foreach (var lvlInd in ActiveAMRLevelIndicators) {
-                lvlInd.Setup(this);
-            }
+            
         }
 
 
@@ -456,8 +458,12 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 if (RollingSave) {
 
-                    int rsIndex = 1;
-                    for (int ts = 1; ts < S; ts++) {
+                    //int rsIndex = 1;
+                    int N = Math.Min(rollingSavesTsi.Count, S);
+                    for (int ts = 1; ts < N; ts++) {
+                        int rsIndex = N - ts - 1; // iterate backward through list, skipping the most recent timestep
+                        if (rsIndex < 0)
+                            break;
                         var ari_ts = adaptedRestartInfo.Where(rsi => rsi.Item1 == timeStepInt - ts);
                         if (ari_ts.Count() == 0) {
                             // delete rolling save (if not in burst range), get restartInfo from timestepper and save adapted timestep
@@ -488,9 +494,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                             //Console.WriteLine($"timestep: {ari_ts.Single()} added to rollingSaves[{rsIndex}] (deleteTs = {ari_ts.Single().Item3})");
 
                         } else
-                            throw new ArgumentException($"There are more than one rolling saves for timestepnumber = {timeStepInt - ts}");
+                            throw new ArgumentException($"There are more than one burst saves for timestepnumber = {timeStepInt - ts}");
 
-                        rsIndex -= 1;
+                        //rsIndex -= 1;
                     }
                 }
 
@@ -512,7 +518,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             else
                 throw new ArgumentNullException();
 
-            if (restartFields == null)
+            if (restartFields == null || restartFields.Length == 0)
                 return null;
 
             var tsn = new TimestepNumber(new int[] { timeStepInt - historyIndex, 1 });
@@ -564,105 +570,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
-        /// <summary>
-        /// 
-        /// </summary>
-        protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
-            using (var tr = new FuncTrace()) {
-
-                if (this.Control.AdaptiveMeshRefinement) {
-
-                    // Check grid changes
-                    // ==================
-
-                    int[] desiredLevels = GetDesiredRefinementLevels();
-
-                    GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData, null);
-                    bool AnyChange = gridRefinementController.ComputeGridChange(desiredLevels, out List<int> CellsToRefineList, out List<int[]> Coarsening);
-
-                    int NoOfCellsToRefine = 0;
-                    int NoOfCellsToCoarsen = 0;
-                    if (AnyChange.MPIOr()) {
-                        int[] glb = (new int[] { CellsToRefineList.Count, Coarsening.Sum(L => L.Length) }).MPISum();
-                        NoOfCellsToRefine = glb[0];
-                        NoOfCellsToCoarsen = glb[1];
-                    }
-                    long oldJ = this.GridData.CellPartitioning.TotalLength;
-
-                    // Update Grid
-                    // ===========
-                    if (AnyChange.MPIOr()) {
-
-                        Console.WriteLine(" Refining " + NoOfCellsToRefine + " of " + oldJ + " cells");
-                        Console.WriteLine(" Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
-
-                        newGrid = ((GridData)this.GridData).Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
-
-                    } else {
-
-                        newGrid = null;
-                        old2NewGrid = null;
-                    }
-
-                } else {
-
-                    newGrid = null;
-                    old2NewGrid = null;
-                }
-
-            }
-        }
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        private int[] GetDesiredRefinementLevels() {
-
-            if(Control.AdaptiveMeshRefinement == true)
-                if(ActiveAMRLevelIndicators == null || ActiveAMRLevelIndicators.Count <= 0) {
-                    Console.Error.WriteLine("Control object configuration inconsistent: 'AdaptiveMeshRefinement == true', but no refinement indicators in 'activeAMRLevelIndicators' are set.");
-                }
-
-            int J = this.GridData.CellPartitioning.LocalLength;
-            int[] levelChanges = new int[J];
-
-            // combine all results of active level indicators
-            foreach (var lvlInd in ActiveAMRLevelIndicators) {
-                if(ActiveAMRLevelIndicators.IndexOf(lvlInd) == 0) {
-                    levelChanges = lvlInd.DesiredCellChanges(); // levelChanges is instantiated to zero. Without this line, coarsening is impossible due to Max(a,b)
-                }
-                int[] lvls = lvlInd.DesiredCellChanges();
-                //levelChanges = levelChanges.Zip(lvls, (a, b) => a + b).ToArray();
-                levelChanges = levelChanges.Zip(lvls, (a, b) => Math.Max(a,b)).ToArray(); // keep finer level indicator, but don't double refine
-            }
-
-            // get desired level 
-            int[] levels = new int[J];
-            Cell[] cells = ((GridData)this.GridData).Grid.Cells;
-            for (int j = 0; j < J; j++) {
-                levels[j] = cells[j].RefinementLevel;
-                if (levelChanges[j] > 0)
-                    levels[j] += 1;
-                else if (levelChanges[j] < 0)
-                    levels[j] -= 1;
-            }
-
-            return levels;
-        }
-
-
-        List<AMRLevelIndicator> m_AMRLevelIndicators = new List<AMRLevelIndicator>();
-
-        /// <summary>
-        /// <see cref="Control.AppControl.activeAMRlevelIndicators"/>
-        /// </summary>
-        public IList<AMRLevelIndicator> ActiveAMRLevelIndicators {
-            get {
-                return m_AMRLevelIndicators;
-            }
-        }
+        
 
 
 
@@ -721,7 +629,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             //Update Calls
             dt = GetTimestep();
-            Timestepping.Solve(phystime, dt);
+            Timestepping.Solve(phystime, dt, SkipSolveAndEvaluateResidual:Control.SkipSolveAndEvaluateResidual);
             return dt;
         }
 
@@ -809,7 +717,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Instantiation of Level-Sets (<see cref="ILevelSet"/>, <see cref="LevelSet"/>) and the tracker.
         /// </summary>
-        protected abstract LevelSetTracker InstantiateTracker();
+        protected virtual LevelSetTracker InstantiateTracker() { return null; }
 
 
         /// <summary>
@@ -818,11 +726,13 @@ namespace BoSSS.Solution.XdgTimestepping {
         protected override void CreateTracker() {
             var trk = InstantiateTracker();
             //var test = this.Operator;
-            if (base.LsTrk == null) {
-                base.LsTrk = trk;
-            } else {
-                if (!object.ReferenceEquals(trk, base.LsTrk))
-                    throw new ApplicationException("It seems there is more then one Level-Set-Tracker in the application; not supported by the Application class.");
+            if(trk != null) {
+                if(base.LsTrk == null) {
+                    base.LsTrk = trk;
+                } else {
+                    if(!object.ReferenceEquals(trk, base.LsTrk))
+                        throw new ApplicationException("It seems there is more then one Level-Set-Tracker in the application; not supported by the Application class.");
+                }
             }
 
             //foreach(var ls in LsTrk.LevelSetHistories.Select(history => history.Current)) {
@@ -894,6 +804,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         bool PlotShadowfields = false;
+
         /// <summary>
         /// Plot using Tecplot
         /// </summary>

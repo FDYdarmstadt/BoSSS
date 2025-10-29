@@ -63,7 +63,7 @@ namespace ZwoLevelSetSolver.ContactLine {
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             // only parameter dependent, leave this empty
-            return new IEquationComponent[] { };
+            return new IEquationComponent[] { this };
         }
     }
 }

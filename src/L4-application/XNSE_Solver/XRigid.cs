@@ -10,6 +10,7 @@ using System.Runtime.Serialization;
 using Newtonsoft.Json;
 using BoSSS.Platform.LinAlg;
 using System.Drawing;
+using BoSSS.Solution.Control;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -19,7 +20,8 @@ namespace BoSSS.Application.XNSE_Solver {
         Cube = 2,
         Torus = 3,
         CollidingSpheres = 4, //a temporary test case (highly experimental) TODO: Move this to SetRigidLevelSet and EvolveRigidLevelSet
-        Popcorn = 5
+        Popcorn = 5,
+        MovingSphere = 6
     }
 
     [DataContract]
@@ -46,13 +48,16 @@ namespace BoSSS.Application.XNSE_Solver {
         private double[] m_RotationCenter;
         [DataMember]
         private Shape theShape = Shape.None;
+        [DataMember]
+        private bool m_staticShape = false;
+        [DataMember]
+        private bool m_isThereExactSolution = false;
+        [DataMember]
+        private string m_RotationAxis = "z";
 
         [NonSerialized]
         private XNSE_Control m_ctrl;
 
-
-        [DataMember]
-        private string m_RotationAxis = "z";
 
         public bool IsInitialized() {
             return m_SpaceDim > 0;
@@ -69,13 +74,14 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// TODO: Move this to SetRigidLevelSet and EvolveRigidLevelSet
         /// </summary>
-        public void SetParameters(double[] pos, double angleVelocity, double majorRadius, int SpaceDim, double minorRadius = 0.0, double rateOfRadius = 0.0) {
+        public void SetParameters(double[] pos, double angleVelocity, double majorRadius, int SpaceDim, double minorRadius = 0.0, double rateOfRadius = 0.0, bool staticShape = false) {
             m_pos = pos;
             m_angleVelocity = angleVelocity;
             m_partRadius = majorRadius;
             m_SpaceDim = SpaceDim;
             m_ringRadius = minorRadius;
             m_rateOfRadius = rateOfRadius;
+            m_staticShape = staticShape;
         }
 
         public void SpecifyShape(Shape shape) {
@@ -109,7 +115,6 @@ namespace BoSSS.Application.XNSE_Solver {
             m_RotationCenter = RotationCenter;
             m_RotationAxis = Axis;
         }
-
 
         /// <summary>
         /// Tilt the object around an axis
@@ -147,10 +152,50 @@ namespace BoSSS.Application.XNSE_Solver {
                 case Shape.Popcorn:
                     DefinePopcorn();
                     break;
+                case Shape.MovingSphere:
+                    DefineMovingSphere();
+                    break;
                 default:
                     throw new NotSupportedException();
             }
             SetVelocityAtIB();
+            if (m_isThereExactSolution)
+                SetExactSolutionForSteadyRotatingSphere();
+        }
+
+        public void AssignExactSolutionForSteadyRotatingSphere()
+        {
+            m_isThereExactSolution = true;
+        }
+
+        public void SetExactSolutionForSteadyRotatingSphere() {
+            m_ctrl.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
+            m_ctrl.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
+            if (m_RotationAxis != "z")
+                throw new NotImplementedException("Exact solution is provided only for rotations around z axis");
+
+            if (m_SpaceDim == 2) { 
+                m_ctrl.ExactSolutionVelocity.Add("A", new Func<double[], double, double>[] { 
+                    (X, t) => -m_angleVelocity * m_partRadius * m_partRadius * X[1] / (X[0] * X[0] + X[1] * X[1]), 
+                    (X, t) => m_angleVelocity * m_partRadius * m_partRadius * X[0] / (X[0] * X[0] + X[1] * X[1]) 
+                });
+                m_ctrl.ExactSolutionPressure.Add("A", new Func<double[], double, double> ( (X, t) => 0 ));
+
+                m_ctrl.ExactSolutionVelocity.Add("C", new Func<double[], double, double>[] { (X, t) => 0, (X, t) => 0 });
+                m_ctrl.ExactSolutionPressure.Add("C", new Func<double[], double, double>((X, t) => 0));
+            } else if (m_SpaceDim == 3) {
+                m_ctrl.ExactSolutionVelocity.Add("A", new Func<double[], double, double>[] {                  
+                    (X, t) => -m_angleVelocity * m_partRadius * m_partRadius * m_partRadius * X[1] / Math.Pow((X[0] * X[0] + X[1] * X[1] + X[2] * X[2]), 1.5),
+                    (X, t) => m_angleVelocity * m_partRadius * m_partRadius * m_partRadius * X[0] / Math.Pow((X[0] * X[0] + X[1] * X[1] + X[2] * X[2]), 1.5),
+                    (X, t) => 0
+                });
+                m_ctrl.ExactSolutionPressure.Add("A", new Func<double[], double, double>((X, t) => 0));
+
+                m_ctrl.ExactSolutionVelocity.Add("C", new Func<double[], double, double>[] { (X, t) => 0, (X, t) => 0, (X, t) => 0 });
+                m_ctrl.ExactSolutionPressure.Add("C", new Func<double[], double, double>((X, t) => 0));
+            } else {
+                throw new NotImplementedException();
+            }
         }
 
         private void DefineSphere() {
@@ -162,11 +207,14 @@ namespace BoSSS.Application.XNSE_Solver {
             var RotationCenter = m_RotationCenter;
             var RotationAxis = m_RotationAxis;
             m_ctrl.Tags.Add("Sphere");
-            m_ctrl.LSContiProjectionMethod = ContinuityProjectionOption.None;
+            m_ctrl.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
 
             Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
+                if (m_staticShape) //static shape -> stay at the initial position
+                    t = 0;
+
                 double[] RotationArm = new double[SpaceDim];
-                double angle = -(anglevelocity * t) % (2 * Math.PI);
+                double angle = m_staticShape ? 0 : -(anglevelocity * t) % (2 * Math.PI);
                 double dynamicRadius = rateOfRadius == 0.0 ? particleRad : Math.Max((1 + rateOfRadius * t) * particleRad, 0.0);
                 Vector rotAxis;
                 switch (RotationAxis) {
@@ -211,7 +259,6 @@ namespace BoSSS.Application.XNSE_Solver {
             SetPhi(PhiFunc);
         }
 
-
         private void DefineCollidingSpheres() {
             //var pos = m_pos;
             //var anglevelocity = m_angleVelocity;
@@ -221,9 +268,12 @@ namespace BoSSS.Application.XNSE_Solver {
             //var RotationCenter = m_RotationCenter;
             //var RotationAxis = m_RotationAxis;
             m_ctrl.Tags.Add("CollidingSphere");
-            m_ctrl.LSContiProjectionMethod = ContinuityProjectionOption.None;
+            m_ctrl.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
 
             Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
+                if (m_staticShape) //static shape -> stay at the initial position
+                    t = 0;
+
                 double[] posL = new double[SpaceDim];
                 posL[0] = - 1.5 * particleRad  + (rateOfRadius * t) * particleRad; // (initial pos + change)
 
@@ -251,6 +301,46 @@ namespace BoSSS.Application.XNSE_Solver {
             SetPhi(PhiFunc);
         }
 
+        private void DefineMovingSphere()
+        {
+            //var pos = m_pos;
+            //var anglevelocity = m_angleVelocity;
+            var SpaceDim = m_SpaceDim;
+            var particleRad = m_partRadius;
+            var rateOfRadius = m_rateOfRadius;
+            //var RotationCenter = m_RotationCenter;
+            //var RotationAxis = m_RotationAxis;
+            m_ctrl.Tags.Add("MovingSphere");
+            m_ctrl.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
+
+            Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
+                if (m_staticShape) //static shape -> stay at the initial position
+                    t = 0;
+
+                double[] posL = new double[SpaceDim];
+                posL[0] = -1.5 * particleRad + (rateOfRadius * t) * particleRad; // (initial pos + change)
+
+                double L;
+
+                switch (SpaceDim)
+                {
+                    case 2:
+                        // circle
+                        L = -(X[0] - posL[0]) * (X[0] - posL[0]) - (X[1] - posL[1]) * (X[1] - posL[1]) + particleRad * particleRad;
+
+                        return L;
+                    case 3:
+                        // sphere
+                        L = -(X[0] - posL[0]) * (X[0] - posL[0]) - (X[1] - posL[1]) * (X[1] - posL[1]) - (X[2] - posL[2]) * (X[2] - posL[2]) + particleRad * particleRad;
+
+                        return L;
+                    default:
+                        throw new NotImplementedException();
+                }
+            };
+            SetPhi(PhiFunc);
+        }
+
         private void DefineCube() {
             var pos = m_pos;
             var anglevelocity = m_angleVelocity;
@@ -264,10 +354,12 @@ namespace BoSSS.Application.XNSE_Solver {
             m_ctrl.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
 
             Func<double[], double, double> PhiFunc = delegate (double[] x, double t) {
+                if (m_staticShape) //static shape -> stay at the initial position
+                    t = 0;
+
                 Vector TiltVector = new Vector(tiltVector);
 
                 double angle = -(anglevelocity * t) % (2 * Math.PI);
-
                 Vector rotAxis;
 
                 switch (RotationAxis) {
@@ -361,6 +453,9 @@ namespace BoSSS.Application.XNSE_Solver {
             m_ctrl.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
 
             Func<double[], double, double> PhiFunc = delegate (double[] x, double t) {
+                if (m_staticShape) //static shape -> stay at the initial position
+                    t = 0;
+
                 Vector TiltVector = new Vector(tiltVector);
 
                 double angle = -(anglevelocity * t) % (2 * Math.PI);
@@ -429,6 +524,9 @@ namespace BoSSS.Application.XNSE_Solver {
             m_ctrl.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
 
             Func<double[], double, double> PhiFunc = delegate (double[] x, double t) {
+                if (m_staticShape) //static shape -> stay at the initial position
+                    t = 0;
+
                 Vector TiltVector = new Vector(tiltVector);
 
                 double angle = -(anglevelocity * t) % (2 * Math.PI);
@@ -481,7 +579,6 @@ namespace BoSSS.Application.XNSE_Solver {
             };
             SetPhi(PhiFunc);
         }
-
 
         private void SetVelocityAtIB() {
             var pos = m_pos;
@@ -539,7 +636,44 @@ namespace BoSSS.Application.XNSE_Solver {
                     return pointVelocity;
                 };
 
-            } else{
+            } else if(theShape == Shape.MovingSphere) {
+
+                VelocityAtIB = delegate (double[] X, double t) {
+                    if (pos.Length != X.Length)
+                        throw new ArgumentException("check dimension of center of mass");
+
+
+                    double[] posL = new double[SpaceDim];
+                    posL[0] = -1.5 * particleRad + (rateOfRadius * t) * particleRad; // (initial pos + change)
+
+                    double L;
+
+                    switch (SpaceDim)
+                    {
+                        case 2:
+                            // circle
+                            L = -(X[0] - posL[0]) * (X[0] - posL[0]) - (X[1] - posL[1]) * (X[1] - posL[1]) + particleRad * particleRad;
+                            break;
+                        case 3:
+                            // sphere
+                            L = -(X[0] - posL[0]) * (X[0] - posL[0]) - (X[1] - posL[1]) * (X[1] - posL[1]) - (X[2] - posL[2]) * (X[2] - posL[2]) + particleRad * particleRad;
+                            break;
+                        default:
+                            throw new NotImplementedException();
+                    }
+
+                    double[] pointVel = new double[SpaceDim];
+                    double tol = -1E-8;
+                    if (L > tol)
+                    {
+                        pointVel[0] += rateOfRadius;
+                    }
+
+                    Vector pointVelocity = new Vector(pointVel);
+                    return pointVelocity;
+                };
+
+            } else {
 
             VelocityAtIB = delegate (double[] x, double time) {
                 if (pos.Length != x.Length)

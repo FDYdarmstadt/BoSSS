@@ -341,6 +341,46 @@ namespace ilPSP.Utils {
         }
 
         /// <summary>
+        /// Creates Chebyshev nodes between two points (first kind).
+        /// </summary>
+        /// <param name="a">minimum</param>
+        /// <param name="b">maximum</param>
+        /// <param name="n">number of nodes desired</param>
+        /// <returns>
+        /// an array of length <paramref name="n"/>,
+        /// with first entry equal to <paramref name="a"/>, 
+        /// last entry equal to <paramref name="b"/>, and 
+        /// all other points linear interpolated in between. 
+        /// </returns>
+        public static double[] ChebyshevNodesFirstKind(double a, double b, int n) {
+            double[] points = new double[n];
+            for (int i = 0; i < n; i++) {
+                points[i] = (a + b) / 2 + (b - a) / 2 * Math.Cos(Math.PI * (2 * i + 1) / (2 * n));
+            }
+            return points;
+        }
+
+        /// <summary>
+        /// Creates Chebyshev nodes between two points (second kind: includes end points).
+        /// </summary>
+        /// <param name="a">minimum</param>
+        /// <param name="b">maximum</param>
+        /// <param name="n">number of nodes desired</param>
+        /// <returns>
+        /// an array of length <paramref name="n"/>,
+        /// with first entry equal to <paramref name="a"/>, 
+        /// last entry equal to <paramref name="b"/>, and 
+        /// all other points linear interpolated in between. 
+        /// </returns>
+        public static double[] ChebyshevNodesSecondKind(double a, double b, int n) {
+            double[] points = new double[n];
+            for (int i = 0; i < n; i++) {
+                points[i] = (a + b) / 2 + (b - a) / 2 * Math.Cos(Math.PI * i / (n - 1));
+            }
+            return points;
+        }
+
+        /// <summary>
         /// Random vector with <paramref name="n"/> entries.
         /// </summary>
         public static double[] RandomVec(int n, int seed = 0) {
@@ -880,7 +920,6 @@ namespace ilPSP.Utils {
                     throw new ArgumentOutOfRangeException("length of 'acc_index' and 'b_index' must match.");
 
                 int N = acc_index.Count;
-                //var dir = new ConcurrentDictionary<int, List<int>>();
                 ilPSP.Environment.ParallelFor(0, N, delegate (int i0, int iE) {
                     for(int i = i0; i < iE; i++) 
                         acc[acc_index[i] + acc_index_shift] += alpha*b[b_index[i] + b_index_shift];
@@ -888,14 +927,12 @@ namespace ilPSP.Utils {
 
                 //for (int i = 0; i < N; i++) {
                 //    acc[acc_index[i] + acc_index_shift] += alpha*b[b_index[i] + b_index_shift];
-                //}
-
             } else if( acc_index != null && b_index == null) {
 
                 int N = acc_index.Count;
                 ilPSP.Environment.ParallelFor(0, N, delegate (int i0, int iE) {
-                    for (int i = i0; i < iE; i++)
-                        acc[acc_index[i] + acc_index_shift] += alpha*b[i + b_index_shift];
+                    for(int i = i0; i < iE; i++)
+                        acc[acc_index[i] + acc_index_shift] += alpha * b[i + b_index_shift];
                 });
             } else if (acc_index == null && b_index != null) {
 
@@ -1098,12 +1135,16 @@ namespace ilPSP.Utils {
         }
     }
 
-    internal class BLAS_LAPACK_Libstuff {
+
+    /// <summary>
+    /// provides arguments for <see cref="DynLibLoader"/>
+    /// </summary>
+    public class BLAS_LAPACK_IntelMKL_Libstuff {
         // workaround for .NET bug:
         // https://connect.microsoft.com/VisualStudio/feedback/details/635365/runtimehelpers-initializearray-fails-on-64b-framework
         public static PlatformID[] GetPlatformID(Parallelism par) {
             switch (par) {
-                case Parallelism.SEQ: return new PlatformID[] { PlatformID.Win32NT, PlatformID.Win32NT, PlatformID.Unix };
+                case Parallelism.SEQ: return new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix };
                 case Parallelism.OMP: return new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix };
                 default: throw new ArgumentOutOfRangeException();
             }
@@ -1111,15 +1152,15 @@ namespace ilPSP.Utils {
 
         public static string[] GetLibname(Parallelism par) {
             switch (par) {
-                case Parallelism.SEQ: return new string[] { "PARDISO_seq.dll", "BLAS_LAPACK.dll", "libBoSSSnative_seq.so" };
-                case Parallelism.OMP: return new string[] { "PARDISO2_omp.dll", "libBoSSSnative_omp.so" };
+                case Parallelism.SEQ: return new string[] { "PARDISO_seq.dll", "libBoSSSnative_seq.so" };
+                case Parallelism.OMP: return new string[] { "PARDISO_omp.dll", "libBoSSSnative_omp.so" };
                 default: throw new ArgumentOutOfRangeException();
             }
         }
 
         public static GetNameMangling[] GetGetNameMangling(Parallelism par) {
             switch (par) {
-                case Parallelism.SEQ: return new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix };
+                case Parallelism.SEQ: return new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix };
                 case Parallelism.OMP: return new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix };
                 default: throw new ArgumentOutOfRangeException();
             }
@@ -1150,11 +1191,11 @@ namespace ilPSP.Utils {
         /// ctor
         /// </summary>
         public UnsafeDBLAS(Parallelism par) :
-            base(BLAS_LAPACK_Libstuff.GetLibname(par),
-                 BLAS_LAPACK_Libstuff.GetPrequesiteLibraries(par),
-                 BLAS_LAPACK_Libstuff.GetGetNameMangling(par),
-                 BLAS_LAPACK_Libstuff.GetPlatformID(par),
-                 BLAS_LAPACK_Libstuff.GetPointerSizeFilter(par)) { }
+            base(BLAS_LAPACK_IntelMKL_Libstuff.GetLibname(par),
+                 BLAS_LAPACK_IntelMKL_Libstuff.GetPrequesiteLibraries(par),
+                 BLAS_LAPACK_IntelMKL_Libstuff.GetGetNameMangling(par),
+                 BLAS_LAPACK_IntelMKL_Libstuff.GetPlatformID(par),
+                 BLAS_LAPACK_IntelMKL_Libstuff.GetPointerSizeFilter(par)) { }
 
         
         /// <summary> FORTRAN BLAS routine </summary>
@@ -1396,7 +1437,7 @@ namespace ilPSP.Utils {
         }
 
         /// <summary>
-        /// native blas in C-stype
+        /// native blas in C-style
         /// (matrices are still in FORTRAN order)
         /// </summary>
         unsafe static public void dgemm(int TRANSA, int TRANSB,

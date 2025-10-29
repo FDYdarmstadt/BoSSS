@@ -1164,9 +1164,14 @@ namespace BoSSS.Foundation.XDG {
 
 
             /// <summary>
+            /// <see cref="LevSetCoincidingFaces"/>
+            /// </summary>
+            internal (int iLevSet, int iFace)[][] m_LevSetCoincidingFaces;
+
+            /// <summary>
             /// Handling of special cases, when the level-set coincides with a cell face;
             /// It can be null, if there is no such face in the entire mesh;
-            /// - 1st index: local cell index
+            /// - 1st index: local geometric cell index
             /// - 2nd index: enumeration (most of the time, only one level-set will have a coinciding face, so there can be 
             /// - entry: if null, there is no face on the cell which coincides with any level-set 
             /// - contains tuples, which level-set coincides with which face (if any)
@@ -1179,21 +1184,41 @@ namespace BoSSS.Foundation.XDG {
             /// - the Level set is not recognized in any cell.
             /// Therefore, this case is already intercepted in the tracker beforehand, see <see cref="Quadrature.LevelSetOnEdgeRule"/>
             /// </remarks>
-            internal (int iLevSet, int iFace)[][] m_LevSetCoincidingFaces;
-
-            /// <summary>
-            /// Handling of special cases, when the level-set coincides with a cell face;
-            /// It can be null, if there is no such face in the entire mesh;
-            /// - 1st index: local cell index
-            /// - 2nd index: enumeration (most of the time, only one level-set will have a coinciding face, so there can be 
-            /// - entry: if null, there is no face on the cell which coincides with any level-set 
-            /// - contains tuples, which level-set coincides with which face (if any)
-            /// </summary>
             public (int iLevSet, int iFace)[][] LevSetCoincidingFaces {
                 get {
                     return m_LevSetCoincidingFaces;
                 }
             }
+
+
+            /// <summary>
+            /// <see cref="LevSetCoincidingCoFaces"/>>
+            /// </summary>
+            internal (int iLevSet, int iCoFace)[][] m_LevSetCoincidingCoFaces;
+
+            /// <summary>
+            /// Handling of special cases, when the level-set coincides with a cell co-face (e.g., in 2D it passes through a corner, in 3D through a co-face);
+            /// It can be null, if there is no such co-face in the entire mesh;
+            /// - 1st index: local geometric cell index
+            /// - 2nd index: enumeration (most of the time, only one level-set will have a coinciding co-face, so there can be 
+            /// - entry: if null, there is no face on the cell which coincides with any level-set 
+            /// - contains tuples, which level-set coincides with which co-face (if any)
+            /// </summary>
+            /// <remarks>
+            /// This member enables stable treatment of the special case when 
+            /// the level set is on some cell boundary.
+            /// There, the normal rules behave unstably, e.g.
+            /// - the Level set is recognized in both cells
+            /// - the Level set is not recognized in any cell.
+            /// Therefore, this case is already intercepted in the tracker beforehand, see <see cref="Quadrature.LevelSetOnEdgeRule"/>
+            /// </remarks>
+            public (int iLevSet, int iCoFace)[][] LevSetCoincidingCoFaces {
+                get {
+                    return m_LevSetCoincidingCoFaces;
+                }
+            }
+
+
 
             /// <summary>
             /// Returns the sign (pos, neg, both) for all level-sets in cell <paramref name="jCell"/>
@@ -1237,6 +1262,7 @@ namespace BoSSS.Foundation.XDG {
                 this.m_NearField4LevelSet = null;
                 this.m_NearMask = null;
                 this.m_NearMask4LevelSet = null;
+                this.m_ZeroSetEdges4LevelSet = null;
                 this.m_SpeciesMask = null;
                 this.m_SpeciesSubGrids = null;
                 this.m_ColorMap4Spc = new Dict_ColorMap4Spc(this);
@@ -1283,12 +1309,54 @@ namespace BoSSS.Foundation.XDG {
                 return GetNearFieldMask(0);
             }
 
+            EdgeMask[] m_ZeroSetEdges4LevelSet;
             /// <summary>
             /// For each level-set, a mask containing all edges that coincide with the level-set itself.
             /// Return value can be null, if there are no such edges.
             /// </summary>
             public EdgeMask GetZeroSetEdges(int LevSetIdx) {
-                throw new NotImplementedException("todo");
+                //throw new NotImplementedException("todo");
+                if (m_ZeroSetEdges4LevelSet == null) {
+                    m_ZeroSetEdges4LevelSet = new EdgeMask[this.m_owner.NoOfLevelSets];
+                }
+
+                if (m_ZeroSetEdges4LevelSet[LevSetIdx] == null) {
+                    var CutCells = GetCutCellMask4LevSet(LevSetIdx);
+                    var CandidateEdges = CutCells.GetAllLocalEdgesMask();
+                    var ZeroSetEdges = CandidateEdges.GetBitMask();
+                    ZeroSetEdges.SetAll(false);
+
+                    var LevSet = m_owner.LevelSets[LevSetIdx];
+
+                    foreach (int edge in CandidateEdges.ItemEnum) {
+                        ZeroSetEdges[edge] = isCutEdge(edge);
+                    }
+
+                    m_ZeroSetEdges4LevelSet[LevSetIdx] = new EdgeMask(CandidateEdges.GridData, ZeroSetEdges);
+
+                    bool isCutEdge(int iedge) {
+                        int icell = GridDat.Edges.CellIndices[iedge, 0];
+                        var edgRef = GridDat.Edges.GetRefElement(iedge);
+                        NodeSet edgNodes;
+                        edgRef.GetNodeSet(15, out edgNodes, out _, out _);
+                        NodeSet evalNodes = edgNodes.GetVolumeNodeSet(GridDat, GridDat.Edges.Edge2CellTrafoIndex[iedge, 0], false);
+                        MultidimensionalArray result = MultidimensionalArray.Create(1, evalNodes.NoOfNodes);
+                        LevSet.Evaluate(icell, 1, evalNodes, result);
+
+                        bool pos = false;
+                        bool neg = false;
+                        for (int i = 0; i < evalNodes.NoOfNodes; i++) {
+                            if (result[0, i] > 0) {
+                                pos = true;
+                            } else if (result[0, i] < 0) {
+                                neg = true;
+                            }
+                        }
+                        return pos && neg || (!pos && !neg);
+                    }
+                }
+
+                return m_ZeroSetEdges4LevelSet[LevSetIdx];
             }
 
 
@@ -1828,6 +1896,19 @@ namespace BoSSS.Foundation.XDG {
                         }
                     }
                 }
+
+                if(m_LevSetCoincidingCoFaces != null) {
+                    int len = m_LevSetCoincidingCoFaces.Length;
+                    L.m_LevSetCoincidingCoFaces = new (int iLevSet, int iCoFace)[len][];
+                    for(int j = 0; j < len; j++) {
+                        var entry_j = m_LevSetCoincidingCoFaces[j];
+                        if(entry_j != null) {
+                            L.m_LevSetCoincidingCoFaces[j] = entry_j.CloneAs();
+                        }
+                    }
+                }
+
+
                 return L;
             }
 

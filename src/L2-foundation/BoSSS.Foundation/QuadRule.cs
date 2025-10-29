@@ -21,6 +21,9 @@ using ilPSP.Utils;
 using ilPSP;
 using System.Diagnostics;
 using BoSSS.Foundation.Grid.RefElements;
+using System.Xml;
+using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.Grid;
 
 namespace BoSSS.Foundation.Quadrature {
 
@@ -31,15 +34,17 @@ namespace BoSSS.Foundation.Quadrature {
 
 
         /// <summary>
-        /// creates a empty (i.e. all entries set to 0.0) <see cref="QuadRule"/> object 
-        /// with <paramref name="noOfNodes"/> quadrature nodes.
+        /// Creates a empty (i.e. all entries set to 0.0) quadrature rule for filling by the user.
         /// </summary>
         /// <param name="noOfNodes"></param>
         /// <param name="D">spatial dimension</param>
         /// <param name="Kref">reference element for which this quadrature rule is valid</param>
         /// <param name="useNodeSetCaching">switching on the caching for the associated Nodes (<see cref="NodeSet"/>)</param>
-        /// <returns>an empty (i.e. all weights are 0.0) quadrature rule</returns>
-        public static QuadRule CreateEmpty(RefElement Kref, int noOfNodes, int D, bool useNodeSetCaching = false) {
+        /// <returns>
+        /// an empty (i.e. all weights are 0.0) quadrature rule.
+        /// Note: before this rule can be used, the nodes (<see cref="Nodes"/>) must be locked (<see cref="MultidimensionalArray.LockForever"/>).
+        /// </returns>
+        public static QuadRule CreateBlank(RefElement Kref, int noOfNodes, int D, bool useNodeSetCaching = false) {
             QuadRule ret = new QuadRule();
             ret.Nodes = new NodeSet(Kref, noOfNodes, D, useNodeSetCaching);
             ret.Weights = MultidimensionalArray.Create(noOfNodes);
@@ -127,6 +132,35 @@ namespace BoSSS.Foundation.Quadrature {
                 return false;
             }
         }
+
+
+        /*
+        /// <summary>
+        /// Transforms the nodes from jCell local coordinates to global
+        /// </summary>
+        /// <param name="grd">grid</param>
+        /// <param name="jCell">local cell index</param>
+        public void TransformLocal2Global(GridCommons grd, int jCell) {
+            TransformLocal2Global(grd.GridData, jCell);
+        }
+
+		/// <summary>
+		/// Transforms the nodes from jCell local coordinates to global
+		/// </summary>
+		/// <param name="grdData">grid data</param>
+		/// <param name="jCell">local cell index</param>
+		public void TransformLocal2Global(IGridData grdData, int jCell) {
+            if (NoOfNodes == 0)
+                return;
+
+            MultidimensionalArray globalVertices = MultidimensionalArray.Create(1, NoOfNodes, SpatialDim);
+			grdData.TransformLocal2Global(Nodes, jCell, 1, globalVertices, 0);
+			Nodes.Set(globalVertices.ExtractSubArrayShallow(0, -1, -1));
+		}
+        */
+
+		
+
 
         /// <summary>
         /// Creates a hash based on the hashes of <see cref="Weights"/> and

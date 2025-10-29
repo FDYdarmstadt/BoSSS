@@ -32,7 +32,7 @@ namespace BoSSS.Application.XNSEC {
 
             XNSEC_Control C = new XNSEC_Control();
 
-            //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //C.CutCellQuadratureType = CutCellQuadratureMethod.Classic;
 
             bool steady = true;
             bool separated = false;
@@ -256,7 +256,7 @@ namespace BoSSS.Application.XNSEC {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
@@ -273,14 +273,14 @@ namespace BoSSS.Application.XNSEC {
             //C.PhysicalParameters.mu_I = dt * 0.2;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             //C.AdvancedDiscretizationOptions.CurvatureNeeded = true;
 
 
             C.AdaptiveMeshRefinement = false;
-            C.RefineStrategy = XNSEC_Control.RefinementStrategy.constantInterface;
-            C.RefineNavierSlipBoundary = false;
-            C.BaseRefinementLevel = 1;
+            //C.RefineStrategy = XNSEC_Control.RefinementStrategy.constantInterface;
+            //C.RefineNavierSlipBoundary = false;
+            //C.BaseRefinementLevel  1;
 
             C.InitSignedDistance = false;
 
@@ -553,7 +553,7 @@ namespace BoSSS.Application.XNSEC {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             C.LSContiProjectionMethod = BoSSS.Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
@@ -570,14 +570,14 @@ namespace BoSSS.Application.XNSEC {
             //C.PhysicalParameters.mu_I = dt * 0.2;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             //C.AdvancedDiscretizationOptions.CurvatureNeeded = true;
 
 
             C.AdaptiveMeshRefinement = false;
-            C.RefineStrategy = XNSEC_Control.RefinementStrategy.constantInterface;
-            C.RefineNavierSlipBoundary = false;
-            C.BaseRefinementLevel = 1;
+            //C.RefineStrategy = XNSEC_Control.RefinementStrategy.constantInterface;
+            //C.RefineNavierSlipBoundary = false;
+            //C.BaseRefinementLevel  1;
 
             C.InitSignedDistance = false;
 

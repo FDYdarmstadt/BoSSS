@@ -278,9 +278,11 @@ namespace BoSSS.Foundation {
         /// </summary>
         public void DoIOnow() {
             if(GridDat.CellPartitioning.MpiSize == ReferenceMPISize) {
+                Console.WriteLine("Save ref Data");
                 SaveData();
                 this.ReferenceData = this.CurrentData;
             } else {
+                Console.WriteLine("Load ref Data");
                 LoadData();
             }
         }

@@ -1,5 +1,4 @@
 ﻿using BoSSS.Foundation;
-using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
@@ -7,18 +6,13 @@ using BoSSS.Solution.Utils;
 using ilPSP;
 using ilPSP.Utils;
 using System;
-using System.Collections.Generic;
-using System.Data;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
 
 namespace IntersectingLevelSetTest {
     static class Integrals {
 
         /// <summary>
-        /// Evaluate on domain definde by negative region of both level sets
+        /// Evaluate on domain defined by negative region of both level sets
         /// on grid [-1,1]^2
         /// </summary>
         /// <param name="alpha">level set</param>
@@ -33,7 +27,7 @@ namespace IntersectingLevelSetTest {
         }
 
         /// <summary>
-        /// Evaluate on domain definde by negative region of both level sets
+        /// Evaluate on domain defined by negative region of both level sets
         /// on grid [-1,1]^3
         /// </summary>
         /// <param name="alpha">level set</param>
@@ -71,7 +65,7 @@ namespace IntersectingLevelSetTest {
             Alpha.ProjectField(alpha);
             Beta.ProjectField(beta);
 
-            LevelSetTracker tracker = new LevelSetTracker(grid, XQuadFactoryHelper.MomentFittingVariants.Saye, 2,
+            LevelSetTracker tracker = new LevelSetTracker(grid, CutCellQuadratureMethod.Saye, 2,
                 speciesTable, Alpha, Beta);
             return tracker;
         }
@@ -157,10 +151,12 @@ namespace IntersectingLevelSetTest {
 
         static double EvaluateIntersection(LevelSetTracker lsTrkr, int quadOrder, XQuadSchemeHelper schemes, SpeciesId id) {
             double integral = 0;
-            for (int i = 0; i < lsTrkr.NoOfLevelSets; ++i) {
-                CellQuadratureScheme surfScheme = schemes.GetContactLineQuadScheme( id, i);
-                var surf = CellQuadrature(surfScheme.Compile(lsTrkr.GridDat, quadOrder), lsTrkr.GridDat);
-                integral += surf.Sum();
+            for (int iLevSet0 = 0; iLevSet0 < lsTrkr.NoOfLevelSets; ++iLevSet0) {
+                for(int iLevSet1 = iLevSet0 + 1; iLevSet1 < lsTrkr.NoOfLevelSets; ++iLevSet1) {
+                    CellQuadratureScheme surfScheme = schemes.GetContactLineQuadScheme(id, iLevSet0, iLevSet1);
+                    var surf = CellQuadrature(surfScheme.Compile(lsTrkr.GridDat, quadOrder), lsTrkr.GridDat);
+                    integral += surf.Sum();
+                }
             }
             return integral;
         }

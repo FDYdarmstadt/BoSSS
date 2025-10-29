@@ -97,7 +97,10 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public bool DirichletPressureBoundary {
             get {
-                return ((BCTypeUseCount[IncompressibleBcType.Pressure_Outlet] > 0) || (BCTypeUseCount[IncompressibleBcType.Pressure_Dirichlet] > 0) || (BCTypeUseCount[IncompressibleBcType.ScalarDirichlet_PressureOutlet] > 0));
+                return ((BCTypeUseCount[IncompressibleBcType.Pressure_Outlet] > 0)
+                    || (BCTypeUseCount[IncompressibleBcType.Pressure_Dirichlet] > 0)
+                    || (BCTypeUseCount[IncompressibleBcType.ScalarDirichlet_PressureOutlet] > 0)
+                    || (BCTypeUseCount[IncompressibleBcType.Dong_OutFlow] > 0));
             }
         }
 
@@ -106,7 +109,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public bool _OutflowBoundary {
             get {
-                return (BCTypeUseCount[IncompressibleBcType.Outflow] > 0);
+                return (BCTypeUseCount[IncompressibleBcType.SIMPLE_Outflow] > 0);
             }
         }
 

@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace BoSSS.Application.XNSFE_Solver {
@@ -53,6 +54,12 @@ namespace BoSSS.Application.XNSFE_Solver {
         }
 
         /// <summary>
+        /// include interface heat source on the liquid solid wall, right now only a string formula is supported
+        /// </summary>
+        [DataMember]
+        public Dictionary<string, string> HeatSourceIBM;
+
+        /// <summary>
         /// include recoil pressure.
         /// </summary>
         [DataMember]
@@ -80,5 +87,12 @@ namespace BoSSS.Application.XNSFE_Solver {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
         }
+
+        /// <summary>
+        /// Exact solution, temperature, for each species (either A or B).
+        /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
+        public IDictionary<string, Func<double[], double, double>> ExactSolutionTemperature;
     }
 }

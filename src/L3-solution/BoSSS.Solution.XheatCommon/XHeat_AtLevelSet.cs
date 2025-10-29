@@ -12,6 +12,7 @@ using BoSSS.Solution.NSECommon;
 using ilPSP;
 using System.Collections;
 using BoSSS.Solution.XNSECommon;
+using BoSSS.Solution.Control;
 
 namespace BoSSS.Solution.XheatCommon {
 
@@ -1388,7 +1389,77 @@ namespace BoSSS.Solution.XheatCommon {
         }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    public class HeatSourceAtLevelSet : ILevelSetForm, ISupportsJacobianComponent {
 
+        //LevelSetTracker m_LsTrk;
+        string phaseA, phaseB;
+        public HeatSourceAtLevelSet(int SpatialDim, Formula HeatSource, string phaseA, string phaseB, int iLevSet = 0) {
+            this.m_D = SpatialDim;
+
+            this.phaseA = phaseA;
+            this.phaseB = phaseB;
+
+            this.source = HeatSource;
+
+            this.iLevSet = iLevSet;
+        }
+
+        int m_D;
+        int iLevSet;
+        Formula source;
+
+        /// <summary>
+        /// default-implementation
+        /// </summary>
+        public double InnerEdgeForm(ref CommonParams inp,
+        //public override double EdgeForm(ref Linear2ndDerivativeCouplingFlux.CommonParams inp,
+            double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
+            double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+
+            Debug.Assert(inp.jCellIn == inp.jCellOut);
+
+            double Ret = -0.5 * source.Evaluate(inp.X, inp.time) * (vA + vB);            
+
+            Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
+            return Ret;
+        }
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
+        }
+
+        public int LevelSetIndex {
+            get { return iLevSet; }
+        }
+
+        public IList<string> ArgumentOrdering {
+            get { return new string[0]; }
+        }
+
+        public string PositiveSpecies {
+            get { return phaseB; }
+        }
+
+        public string NegativeSpecies {
+            get { return phaseA; }
+        }
+
+        public TermActivationFlags LevelSetTerms {
+            get {
+                return TermActivationFlags.V;
+            }
+        }
+
+        public IList<string> ParameterOrdering {
+            get {
+                return null;
+            }
+        }
+
+    }
 
     /// <summary>
     /// 
@@ -1473,9 +1544,10 @@ namespace BoSSS.Solution.XheatCommon {
 
                         // robin b.c.
                         // +++++++++++++++++++++
-                        Ret += 0.5 * kA / ls * (uA[0] - uB[0]) * (vA - 0.0); // half the slip length from bot sides
-                        Ret += 0.5 * kB * (kA/kB) / ls * (uA[0] - uB[0]) * (0.0 - vB); // sliplength defined from A-side, we want the Heatfluxes to be continuous, therefore we need kA/kB
-
+                        //Ret += 0.5 * kA / ls * (uA[0] - uB[0]) * (vA - 0.0); // half the slip length from bot sides
+                        //Ret += 0.5 * kB * (kA / kB) / ls * (uA[0] - uB[0]) * (0.0 - vB); // sliplength defined from A-side, we want the Heatfluxes to be continuous, therefore we need kA/kB
+                        double alpha = (kA + kB) / (2 * ls);
+                        Ret += alpha * (uA[0] - uB[0]) * (vA - vB);
                         break;
                     }
             }

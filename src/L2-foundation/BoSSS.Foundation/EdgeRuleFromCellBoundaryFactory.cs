@@ -20,12 +20,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using BoSSS.Foundation.Grid;
-using BoSSS.Platform;
 using ilPSP;
 using BoSSS.Foundation.Grid.RefElements;
-using BoSSS.Platform.LinAlg;
 using MPI.Wrappers;
-using System.Threading.Tasks;
 using ilPSP.Utils;
 
 namespace BoSSS.Foundation.Quadrature {
@@ -38,11 +35,12 @@ namespace BoSSS.Foundation.Quadrature {
     /// level-set-fields is at least C^0 continuous, i.e. the level-set field is continuous across the cell boundaries.
     /// </summary>
     public class EdgeRuleFromCellBoundaryFactory : IQuadRuleFactory<QuadRule> {
+                
 
         /// <summary>
         /// constructor
         /// </summary>
-        public EdgeRuleFromCellBoundaryFactory(IGridData g, RefElement edgeRefElement, IEnumerable<IQuadRuleFactory<CellBoundaryQuadRule>> cellBndQF, EdgeMask maxEdgeDomain) {
+        public EdgeRuleFromCellBoundaryFactory(IGridData g, bool _scaleReq, RefElement edgeRefElement, IEnumerable<IQuadRuleFactory<CellBoundaryQuadRule>> cellBndQF, EdgeMask maxEdgeDomain) {
             m_cellBndQF = new Dictionary<RefElement, IQuadRuleFactory<CellBoundaryQuadRule>>();
             foreach(var f in cellBndQF) {
                 m_cellBndQF.Add(f.RefElement, f);
@@ -52,6 +50,7 @@ namespace BoSSS.Foundation.Quadrature {
                 throw new ArgumentException("edgeRefElement is not an edge ref element of the grid.");
             
             RefElement = edgeRefElement;
+            m_scaleReq = _scaleReq;
             grd = g;
             if (maxEdgeDomain.MaskType != MaskType.Geometrical)
                 throw new ArgumentException("expecting a geometrical mask", nameof(maxEdgeDomain));
@@ -69,6 +68,8 @@ namespace BoSSS.Foundation.Quadrature {
             private set;
         }
 
+
+        readonly bool m_scaleReq;
         int m_quadorder;
 
         public void CreateRulesAndMPIExchgange(int __quadorder) {
@@ -109,6 +110,7 @@ namespace BoSSS.Foundation.Quadrature {
 
             var Edg2Cel = this.grd.iGeomEdges.CellIndices;
             var Edg2Fac = this.grd.iGeomEdges.FaceIndices;
+
             QuadRule DefaultRule = this.RefElement.GetQuadratureRule(order);
             var iGeomEdges = this.grd.iGeomEdges;
             var iGeomCells = this.grd.iGeomCells;
@@ -116,6 +118,7 @@ namespace BoSSS.Foundation.Quadrature {
             int Jgeom = iGeomCells.NoOfLocalUpdatedCells;
             int Jlog = iLogiCells.NoOfLocalUpdatedCells;
             int myIKrfeEdge = this.grd.iGeomEdges.EdgeRefElements.IndexOf(this.RefElement, (a, b) => object.ReferenceEquals(a, b));
+
             if (myIKrfeEdge < 0)
                 throw new ApplicationException("fatal error");
 
@@ -224,7 +227,6 @@ namespace BoSSS.Foundation.Quadrature {
             // - 2nd index: index of the chunk
             IChunkRulePair<CellBoundaryQuadRule>[][] cellBndRuleS = NoOfRefElements.ForLoop(iKref =>
                  this.m_cellBndQF[iGeomCells.RefElements[iKref]].GetQuadRuleSet(CellMasks[iKref], order).ToArray());
-
 
             int[] jCellGeom2Chunk = new int[iGeomCells.Count]; // mapping: Cell Index (geometrical) --> Chunk Index into `cellBndRule`
             jCellGeom2Chunk.SetAll(-1);
@@ -450,11 +452,10 @@ namespace BoSSS.Foundation.Quadrature {
 
             // extract edge rule
             // -----------------
-
-            int i0 = 0;
+            int i0 = 0; //determine where the edge rule is stored from the cluster
             for (int i = 0; i < iFace; i++)
-                i0 += givenRule.NumbersOfNodesPerFace[i];
-            int iE = i0 + givenRule.NumbersOfNodesPerFace[iFace] - 1;
+                i0 += givenRule.NumbersOfNodesPerFace[i]; //accumulate the number of nodes for the previous faces (e.g., i0 for iFace=2 : NumbersOfNodesPerFace[0] + NumbersOfNodesPerFace[1])
+            int iE = i0 + givenRule.NumbersOfNodesPerFace[iFace] - 1; //end index of the node belonging to iFace
 
             if (iE < i0) {
                 // rule is empty (measure is zero).
@@ -462,7 +463,7 @@ namespace BoSSS.Foundation.Quadrature {
                 if (qrEdge == null) {
                     QuadRule ret = new QuadRule();
                     ret.OrderOfPrecision = int.MaxValue - 1;
-                    ret.Nodes = new NodeSet(this.RefElement, 1, Math.Max(1, D - 1), false);
+                    ret.Nodes = new NodeSet(this.RefElement, 1, Math.Max(1, D - 1), givenRule.Nodes.Reference > 0);
                     ret.Weights = MultidimensionalArray.Create(1);  // this is an empty rule, since the weight is zero!
                     // (rules with zero nodes may cause problems at various places.)
                     return ret;
@@ -477,8 +478,10 @@ namespace BoSSS.Foundation.Quadrature {
             MultidimensionalArray Weigts = givenRule.Weights.ExtractSubArrayShallow(new int[] { i0 }, new int[] { iE }).CloneAs();
             NodeSet Nodes = new NodeSet(this.RefElement, iE - i0 + 1, coD, qrEdge == null);
 
+            // transform from the cell coordinate system to the face
             volSplx.GetInverseFaceTrafo(iFace).Transform(NodesVol, Nodes);
             Nodes.LockForever();
+            //Nodes.SaveToTextFileUnsteady($"NodesFace{iFace}");
 
             //Debug.Assert((Weigts.Sum() - grd.Grid.GridSimplex.EdgeSimplex.Volume).Abs() < 1.0e-6, "i've forgotten the gramian");
 
@@ -554,7 +557,7 @@ namespace BoSSS.Foundation.Quadrature {
                 if (qrEdge == null) {
                     QuadRule ret = new QuadRule();
                     ret.OrderOfPrecision = int.MaxValue - 1;
-                    ret.Nodes = new NodeSet(this.RefElement, 1, Math.Max(1, D - 1), false);
+                    ret.Nodes = new NodeSet(this.RefElement, 1, Math.Max(1, D - 1), (givenRule.Nodes.Reference > 0));
                     ret.Weights = MultidimensionalArray.Create(1);  // this is an empty rule, since the weight is zero!
                     // (rules with zero nodes may cause problems at various places.)
                     return ret;
@@ -590,8 +593,10 @@ namespace BoSSS.Foundation.Quadrature {
             volSplx.GetInverseFaceTrafo(iFace).Transform(CellNodes, FaceNodes);
 
             // build transformation from face to edge
-            var Trafo = AffineTrafo.FromPoints(FaceNodes.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { this.RefElement.SpatialDimension, this.RefElement.SpatialDimension -1 }), EdgeNodes.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { this.RefElement.SpatialDimension, this.RefElement.SpatialDimension - 1 }));
-            double scale = Trafo.Matrix.Determinant();
+            var Trafo = AffineTrafo.FromPoints(
+                FaceNodes.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { this.RefElement.SpatialDimension, this.RefElement.SpatialDimension -1 }), 
+                EdgeNodes.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { this.RefElement.SpatialDimension, this.RefElement.SpatialDimension - 1 }));
+            double scale = m_scaleReq ? Trafo.Matrix.Determinant() : 1.0;
 
             // construct the NodeSet in edge local coordinates
             NodeSet NodesEdge = new NodeSet(this.RefElement, Trafo.Transform(Nodes), false);
@@ -605,10 +610,12 @@ namespace BoSSS.Foundation.Quadrature {
                 
                 double weight = Weigts[i] * scale;
                 if (this.RefElement.IsWithin(point)) {
+                    // take node
                     NodesOnEdge = NodesOnEdge.Concat(point).ToArray();
                     WeightsOnEdge = WeightsOnEdge.Concat(weight).ToArray();
                     NoOfNodes++;
                 }
+                // else: drop node
             }
 
             // create empty if none of the points lies on this edge

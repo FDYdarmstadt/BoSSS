@@ -31,35 +31,45 @@ namespace BoSSS.Foundation.XDG {
 
     partial class LevelSetTracker {
 
+        HistoryStack<Dictionary<CutCellQuadratureMethod, XQuadFactoryHelperBase>> m_QuadFactoryHelpersHistory = null;
 
-
-        HistoryStack<Dictionary<XQuadFactoryHelper.MomentFittingVariants, XQuadFactoryHelper>> m_QuadFactoryHelpersHistory = null;
-        
         /// <summary>
         /// Central 'factory' for creating Level Set - related quadrature.
         /// </summary>
         /// <remarks>
         /// The centralized approach should avoid multiple creation of the same quadrature rule.
         /// </remarks>
-        XQuadFactoryHelper GetXQuadFactoryHelper(XQuadFactoryHelper.MomentFittingVariants variant, int HistoryIndex = 1) {
+        XQuadFactoryHelperBase GetXQuadFactoryHelper(CutCellQuadratureMethod variant, int HistoryIndex = 1) {
             var dict = m_QuadFactoryHelpersHistory[HistoryIndex];
-            
-            if (!dict.ContainsKey(variant)) {
-                dict[variant] = new XQuadFactoryHelper(
-                    this.DataHistories.Select(hist => hist[HistoryIndex]).ToArray(),
-                    variant);
-            }
 
-            return dict[variant];
+           
+            if(variant == CutCellQuadratureMethod.Algoim) {
+                if(!dict.ContainsKey(variant)) {
+                    dict[variant] = new XQuadFactoryHelperAlgoim(
+                        this.DataHistories.Select(hist => hist[HistoryIndex]).ToArray());
+                }
+
+                return dict[variant];
+
+            } else {
+
+                if(!dict.ContainsKey(variant)) {
+                    dict[variant] = new XQuadFactoryHelper(
+                        this.DataHistories.Select(hist => hist[HistoryIndex]).ToArray(),
+                        variant);
+                }
+
+                return dict[variant];
+            }
         }
+
+
+        HistoryStack<Dictionary<Tuple<SpeciesId[], CutCellQuadratureMethod, int>, XDGSpaceMetrics>> m_XDGSpaceMetricsHistory = null;
         
-      
-        HistoryStack<Dictionary<Tuple<SpeciesId[], XQuadFactoryHelper.MomentFittingVariants, int>, XDGSpaceMetrics>> m_XDGSpaceMetricsHistory = null;
-        
-        Dictionary<Tuple<SpeciesId[], XQuadFactoryHelper.MomentFittingVariants, int>, XDGSpaceMetrics> NewXDGSpaceMetricsCache() {
-            return new Dictionary<Tuple<SpeciesId[], XQuadFactoryHelper.MomentFittingVariants, int>, XDGSpaceMetrics>(
-                new FuncEqualityComparer<Tuple<SpeciesId[], XQuadFactoryHelper.MomentFittingVariants, int>>(
-                    delegate(Tuple<SpeciesId[], XQuadFactoryHelper.MomentFittingVariants, int> A, Tuple<SpeciesId[], XQuadFactoryHelper.MomentFittingVariants, int> B) {
+        Dictionary<Tuple<SpeciesId[], CutCellQuadratureMethod, int>, XDGSpaceMetrics> NewXDGSpaceMetricsCache() {
+            return new Dictionary<Tuple<SpeciesId[], CutCellQuadratureMethod, int>, XDGSpaceMetrics>(
+                new FuncEqualityComparer<Tuple<SpeciesId[], CutCellQuadratureMethod, int>>(
+                    delegate(Tuple<SpeciesId[], CutCellQuadratureMethod, int> A, Tuple<SpeciesId[], CutCellQuadratureMethod, int> B) {
                         //if(.)
                         if(!ArrayTools.ListEquals(A.Item1, B.Item1, (a, b) => a.cntnt == b.cntnt))
                             return false;
@@ -76,14 +86,28 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// The order of all cut-cell quadrature rules which are present in the cache.
         /// </summary>
-        public ISet<int> GetCachedOrders() {
+        public ISet<int> GetCachedOrders(int iHistory = 1) {
             HashSet<int> hs = new HashSet<int>();
-            foreach(var t in m_XDGSpaceMetricsHistory.Current.Keys) {
+            foreach(var t in m_XDGSpaceMetricsHistory[iHistory].Keys) {
                 hs.Add(t.Item3);
             }
 
             return hs;
         }
+
+        /// <summary>
+        /// Cut Cell and Cut Edge metrics before agglomeration
+        /// </summary>
+        public XDGSpaceMetrics GetXDGSpaceMetrics(int HistoryIndex = 1) {
+            int CutCellsQuadOrder;
+            if(this.GetCachedOrders().Count > 0)
+                CutCellsQuadOrder = this.GetCachedOrders(HistoryIndex).Max();
+            else 
+                CutCellsQuadOrder = this.LevelSets.Select(ls => ((ls as LevelSet)?.Basis?.Degree ?? 4)).Max() * 2;
+
+            return GetXDGSpaceMetrics(this.SpeciesIdS, CutCellsQuadOrder, HistoryIndex);
+        }
+
 
         /// <summary>
         /// Cut Cell and Cut Edge metrics before agglomeration
@@ -113,6 +137,7 @@ namespace BoSSS.Foundation.XDG {
             //if(!m_QuadFactoryHelpers.ContainsKey(variant)) {
             //    m_QuadFactoryHelpers[variant] = new XQuadFactoryHelper(this, variant);
             //}
+            
             var _Spc = Spc.ToArray();
 #if TEST
             MPICollectiveWatchDog.WatchAtRelease();
@@ -139,6 +164,7 @@ namespace BoSSS.Foundation.XDG {
             return dict[key];
         }
 
+
         /// <summary>
         /// 
         /// </summary>
@@ -164,7 +190,7 @@ namespace BoSSS.Foundation.XDG {
         /// </param>
         /// <param name="ExceptionOnFailedAgglomeration">
         /// If true, an exception is thrown for 
-        /// any cell which should be agglomerated, if no neighbour is found.
+        /// any cell which should be agglomerated, if no neighbor is found.
         /// </param>
         /// <param name="NewbornAndDecasedThreshold">
         /// Volume fraction threshold at which a cut-cell counts as newborn, resp. deceased, see <paramref name="AgglomerateNewborn"/>, <paramref name="AgglomerateDecased"/>;
@@ -182,8 +208,24 @@ namespace BoSSS.Foundation.XDG {
             string Tag = null
             ) {
             MPICollectiveWatchDog.Watch(token: 169);
-            return new MultiphaseCellAgglomerator(this, Spc, CutCellsQuadOrder,
+            var ret = new MultiphaseCellAgglomerator(this, Spc, CutCellsQuadOrder,
                 __AgglomerationTreshold, AgglomerateNewborn, AgglomerateDecased, ExceptionOnFailedAgglomeration, oldTs__AgglomerationTreshold, NewbornAndDecasedThreshold, Tag);
+
+            if(AgglomerationAlgorithm.debugging_PlotAgglomeration) {
+                ret.PlotAgglomerationPairs($"aggpairsRank{this.GridDat.MpiRank}of{this.GridDat.MpiSize}");
+
+                foreach(var spc in Spc) {
+                    Console.WriteLine("Agglomeration species " + this.GetSpeciesName(spc) + ": ");
+                    Console.WriteLine(ret.GetAgglomerator(spc).AggInfo.ToString());
+                }
+
+
+
+
+
+            }
+
+            return ret;
         }
 
 

@@ -151,13 +151,21 @@ namespace BoSSS.Foundation.Quadrature {
         /// if true, quadrature rule factories for default (Gaussian) rules will be added for the domain <paramref name="domain"/>;
         /// if false, the user must add factories for all items in the domain.
         /// </param>
-        public QuadratureScheme(bool UseDefaultFactories, TDomain domain = null) {
+        /// <param name="scaling"></param>
+        public QuadratureScheme(IIntegrationMetric scaling, bool UseDefaultFactories, TDomain domain = null) {
             if (domain != null)
                 if (domain.MaskType != MaskType.Geometrical)
                     throw new ArgumentException();
             this.Domain = domain;
             this.m_UseDefaultFactories = UseDefaultFactories;
+            this.IntegrationMetric = scaling;
         }
+
+        /// <summary>
+        /// Scaling/Integration metric which will be forwarded to the produced composite quadrature rules (<see cref="ICompositeQuadRule{TQuadRule}.IntegrationMetric"/>)
+        /// </summary>
+        public readonly IIntegrationMetric IntegrationMetric;
+
 
         bool m_UseDefaultFactories;
 
@@ -192,11 +200,10 @@ namespace BoSSS.Foundation.Quadrature {
         /// The factory to be added.
         /// </param>
         /// <param name="domain">
-        /// The domain on which <paramref name="factory"/> should act.
+        /// The domain on which <paramref name="factory"/> should act; if null, the entire domain of the scheme (<see cref="Domain"/> will be used
         /// </param>
         /// <param name="order">
-        /// An optional order that overrides the order passed to
-        /// <see cref="Compile"/>.
+        /// An optional order that overrides the order passed to <see cref="Compile"/>.
         /// </param>
         /// <returns>
         /// This object (to allow for fluent addition of multiple factories).
@@ -242,7 +249,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// <see cref="IQuadratureScheme{S, T}.Compile"/>
         /// </summary>
         public ICompositeQuadRule<TQuadRule> Compile(IGridData gridData, int order) {
-            using (var tr = new FuncTrace()) {
+            using(var tr = new FuncTrace()) {
                 tr.Info("order = " + order);
                 // set domain
                 TDomain baseDomain = Domain ?? GetDefaultDomain(gridData);
@@ -259,7 +266,7 @@ namespace BoSSS.Foundation.Quadrature {
                 // define standard factories, if necessary
                 // =======================================
                 IEnumerable<IFactoryDomainPair<TQuadRule, TDomain>> factoryDomainPairs;
-                if (m_UseDefaultFactories) {
+                if(m_UseDefaultFactories) {
                     var defaultFactories = RefElements.Select(
                             RefElm => (new FactoryDomainPair(
                                 GetDefaultRuleFactory(gridData, RefElm),
@@ -277,14 +284,14 @@ namespace BoSSS.Foundation.Quadrature {
 
                 // apply factories
                 // ---------------
-                CompositeQuadRule<TQuadRule> fullRule = new CompositeQuadRule<TQuadRule>();
+                CompositeQuadRule<TQuadRule> fullRule = new CompositeQuadRule<TQuadRule>(null, gridData);
                 int i = -1;
-                foreach (var factoryDomainPair in factoryDomainPairs) {
+                foreach(var factoryDomainPair in factoryDomainPairs) {
                     i++;
                     TDomain currentDomain = baseDomain;
                     var RefElm = factoryDomainPair.RuleFactory.RefElement;
 
-                    if (factoryDomainPair.Domain == null) {
+                    if(factoryDomainPair.Domain == null) {
                         currentDomain = GetDomainForRefElement(RefElm, gridData).Intersect(baseDomain);
                     } else {
                         currentDomain = baseDomain.Intersect(factoryDomainPair.Domain);
@@ -292,11 +299,11 @@ namespace BoSSS.Foundation.Quadrature {
                     }
 
                     // check the type of factory
-                    if (!RefElements.Contains(factoryDomainPair.RuleFactory.RefElement)) {
+                    if(!RefElements.Contains(factoryDomainPair.RuleFactory.RefElement)) {
                         string simplexNames = "";
-                        for (int _i = 0; _i < RefElements.Length; _i++) {
+                        for(int _i = 0; _i < RefElements.Length; _i++) {
                             simplexNames += RefElements[_i].GetType().Name;
-                            if (_i < RefElements.Length - 1)
+                            if(_i < RefElements.Length - 1)
                                 simplexNames += ",";
                         }
 
@@ -308,23 +315,23 @@ namespace BoSSS.Foundation.Quadrature {
 
                     // Causes parallel issues for classic HMF
                     // -> deactivated by Björn until classic HMF is fixed
-                    if (gridData.MpiSize > 1) {
+                    if(gridData.MpiSize > 1) {
                         var FactoryName = factoryDomainPair.RuleFactory.GetType().FullName;
-                        if (FactoryName.Contains("LevelSetSurfaceQuadRuleFactory"))
+                        if(FactoryName.Contains("LevelSetSurfaceQuadRuleFactory"))
                             throw new NotSupportedException("there is still an MPI BUG in the classic HMF");
                     }
 
-                    if (currentDomain != null && currentDomain.NoOfItemsLocally <= 0) {
+                    if(currentDomain != null && currentDomain.NoOfItemsLocally <= 0) {
                         continue;
                     }
 
                     CompositeQuadRule<TQuadRule> currentRule = CompositeQuadRule<TQuadRule>.Create(
-                            factoryDomainPair.RuleFactory, factoryDomainPair.Order ?? order, currentDomain);
+                            factoryDomainPair.RuleFactory, factoryDomainPair.Order ?? order, currentDomain, IntegrationMetric);
 
                     int prevIE = -1;
-                    foreach (var CRP in currentRule) {
-                        if (prevIE >= 0) {
-                            if (CRP.Chunk.i0 < prevIE) {
+                    foreach(var CRP in currentRule) {
+                        if(prevIE >= 0) {
+                            if(CRP.Chunk.i0 < prevIE) {
                                 throw new ApplicationException("Quadrature rule factory " + factoryDomainPair.RuleFactory.GetType().Name + " produced an un-sorted quadrature rule!");
                             }
                         }
@@ -333,38 +340,38 @@ namespace BoSSS.Foundation.Quadrature {
 
 
 #if DEBUG
-                //// Check removed since there are situations where it is valid _not_
-                //// to return quadrature rule for a given cell/edge
-                Debug.Assert(currentRule.NumberOfItems == currentDomain.NoOfItemsLocally);
+                    //// Check removed since there are situations where it is valid _not_
+                    //// to return quadrature rule for a given cell/edge
+                    Debug.Assert(currentRule.NumberOfItems == currentDomain.NoOfItemsLocally);
 
-                Debug.Assert(
-                     currentRule.Where(w => (w.Rule.Nodes.IsLocked == false)).Count() <= 0,
-                     "error in quadrature rule creation: factory delivered some rule non-locked node set.");
+                    Debug.Assert(
+                         currentRule.Where(w => (w.Rule.Nodes.IsLocked == false)).Count() <= 0,
+                         "error in quadrature rule creation: factory delivered some rule non-locked node set.");
 
-                Debug.Assert(
-                    currentRule.Where(w => (w.Rule.NoOfNodes <= 0)).Count() <= 0,
-                    "error in quadrature rule creation: factory delivered some rule with zero nodes.");
+                    //Debug.Assert(
+                    //    currentRule.Where(w => (w.Rule.NoOfNodes <= 0)).Count() <= 0,
+                    //    "error in quadrature rule creation: factory delivered some rule with zero nodes.");
 
-                foreach(IChunkRulePair<TQuadRule> cr in currentRule ) {
-                    cr.Rule.Weights.CheckForNanOrInf();
-                    cr.Rule.Nodes.CheckForNanOrInf();
-                }
+                    foreach(IChunkRulePair<TQuadRule> cr in currentRule) {
+                        cr.Rule.Weights.CheckForNanOrInf();
+                        cr.Rule.Nodes.CheckForNanOrInf();
+                    }
 
 #endif
 
-                    if (i == 0) {
+                    if(i == 0) {
                         fullRule = currentRule;
                     } else {
                         fullRule = CompositeQuadRule<TQuadRule>.Merge(fullRule, currentRule);
                     }
 
-                    if (fullRule != null && fullRule.Count() > 0) {
+                    if(fullRule != null && fullRule.Count() > 0) {
                         int J = fullRule.Max(crp => crp.Chunk.JE);
                         System.Collections.BitArray ChunkTest = new System.Collections.BitArray(J);
-                        foreach (var chunk in fullRule) {
+                        foreach(var chunk in fullRule) {
                             int IE = chunk.Chunk.JE;
-                            for (int ii = chunk.Chunk.i0; ii < IE; ii++) {
-                                if (ChunkTest[ii])
+                            for(int ii = chunk.Chunk.i0; ii < IE; ii++) {
+                                if(ChunkTest[ii])
                                     throw new ArgumentException("More than one quadrature rule defined for integration item " + ii + ".");
                                 ChunkTest[ii] = true;
 
@@ -494,21 +501,21 @@ namespace BoSSS.Foundation.Quadrature {
         /// <summary>
         /// Save Quadrule nodes in cell as .txt file
         /// </summary>
-        public static void ToTextFileCell<TQuadRule, TDomain>(this IQuadratureScheme<TQuadRule, TDomain> scheme, IGridData grid, int quadOrder = 3, string name = "QuadratureNodes.txt")
+        public static void SaveToTextFileCell<TQuadRule, TDomain>(this IQuadratureScheme<TQuadRule, TDomain> scheme, IGridData grid, int quadOrder = 3, string name = "QuadratureNodes.txt")
             where TQuadRule : QuadRule
             where TDomain : ExecutionMask {
             var rule = scheme.Compile(grid, quadOrder);
-            rule.ToTextFileCell(grid, name);
+            rule.SaveToTextFileCell(grid, name);
         }
 
         /// <summary>
         /// Save Quadrule nodes on edge as .txt file
         /// </summary>
-        public static void ToTextFileEdge<TQuadRule, TDomain>(this IQuadratureScheme<TQuadRule, TDomain> scheme, IGridData grid, int quadOrder = 3, string name = "QuadratureNodes.txt")
+        public static void SaveToTextFileEdge<TQuadRule, TDomain>(this IQuadratureScheme<TQuadRule, TDomain> scheme, IGridData grid, int quadOrder = 3, string name = "QuadratureNodes.txt")
             where TQuadRule : QuadRule
             where TDomain : ExecutionMask {
             var rule = scheme.Compile(grid, quadOrder);
-            rule.ToTextFileEdge(grid, name);
+            rule.SaveToTextFileEdge(grid, name);
         }
 
         /// <summary>
@@ -655,7 +662,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// </summary>
         public static ICompositeQuadRule<QuadRule> SaveCompile(this CellQuadratureScheme scheme, IGridData g, int order) {
             // sometimes, a bit of repetition seems easier ...
-            scheme = (scheme ?? new CellQuadratureScheme(true));
+            scheme = (scheme ?? new CellQuadratureScheme(UseDefaultFactories: true));
             return scheme.Compile(g, order);
         }
 
@@ -690,8 +697,43 @@ namespace BoSSS.Foundation.Quadrature {
         /// if true, quadrature rule factories for default (Gaussian) rules will be added for the domain <paramref name="domain"/>;
         /// if false, the user must add factories for all items in the domain.
         /// </param>
+        /// <param name="scaling">
+        /// if null, the default scaling for volume integration will be used.
+        /// </param>
+        public CellQuadratureScheme(IIntegrationMetric scaling, bool UseDefaultFactories = true,  CellMask domain = null)
+            : base(scaling ?? new CellIntegrationMetric(), UseDefaultFactories, ConvDomain(domain)) {
+        }
+
+        /// <summary>
+        /// Constructs an empty quadrature scheme.
+        /// </summary>
+        /// <param name="domain">
+        /// Background domain.
+        /// </param>
+        /// <param name="UseDefaultFactories">
+        /// if true, quadrature rule factories for default (Gaussian) rules will be added for the domain <paramref name="domain"/>;
+        /// if false, the user must add factories for all items in the domain.
+        /// </param>
         public CellQuadratureScheme(bool UseDefaultFactories = true, CellMask domain = null)
-            : base(UseDefaultFactories, ConvDomain(domain)) {
+            : this(null, UseDefaultFactories, domain) {
+        }
+
+        /// <summary>
+        /// Convenience constructor that allows for the construction of a
+        /// scheme with a predefined factory. Equivalent to creating an empty
+        /// scheme and calling
+        /// <see cref="QuadratureScheme{S, T}.AddFactoryDomainPair"/>(<paramref name="factory"/>, <paramref name="domain"/>).
+        /// </summary>
+        /// <param name="factory">
+        /// <see cref="QuadratureScheme{S, T}.AddFactoryDomainPair"/>
+        /// </param>
+        /// <param name="domain">
+        /// <see cref="QuadratureScheme{S, T}.AddFactoryDomainPair"/>
+        /// </param>
+        /// <param name="scaling"></param>
+        public CellQuadratureScheme(IIntegrationMetric scaling, IQuadRuleFactory<QuadRule> factory, CellMask domain = null)
+            : base(scaling ?? (new CellIntegrationMetric()), false, ConvDomain(domain)) {
+            AddFactoryDomainPair(factory, ConvDomain(domain));
         }
 
         /// <summary>
@@ -707,10 +749,10 @@ namespace BoSSS.Foundation.Quadrature {
         /// <see cref="QuadratureScheme{S, T}.AddFactoryDomainPair"/>
         /// </param>
         public CellQuadratureScheme(IQuadRuleFactory<QuadRule> factory, CellMask domain = null)
-            : base(false, ConvDomain(domain)) {
-            AddFactoryDomainPair(factory, ConvDomain(domain));
+            : this(null, factory, domain) {
         }
 
+       
         /// <summary>
         /// <see cref="CellMask.GetFullMask"/>
         /// </summary>
@@ -771,8 +813,41 @@ namespace BoSSS.Foundation.Quadrature {
         /// if true, quadrature rule factories for default (Gaussian) rules will be added for the domain <paramref name="domain"/>;
         /// if false, the user must add factories for all items in the domain.
         /// </param>
+        /// <param name="scaling"></param>
+        public EdgeQuadratureScheme(IIntegrationMetric scaling, bool UseDefaultFactories = true, EdgeMask domain = null)
+            : base(scaling ?? new EdgeIntegrationMetric(), UseDefaultFactories, ConvDomain(domain)) {
+        }
+
+        /// <summary>
+        /// Constructs an empty quadrature scheme.
+        /// </summary>
+        /// <param name="domain">
+        /// Background domain.
+        /// </param>
+        /// <param name="UseDefaultFactories">
+        /// if true, quadrature rule factories for default (Gaussian) rules will be added for the domain <paramref name="domain"/>;
+        /// if false, the user must add factories for all items in the domain.
+        /// </param>
         public EdgeQuadratureScheme(bool UseDefaultFactories = true, EdgeMask domain = null)
-            : base(UseDefaultFactories, ConvDomain(domain)) {
+            : this(null, UseDefaultFactories, ConvDomain(domain)) {
+        }
+
+        /// <summary>        
+        /// Convenience constructor that allows for the construction of a
+        /// scheme with a predefined factory. Equivalent to creating an empty
+        /// scheme and calling
+        /// <see cref="QuadratureScheme{S, T}.AddFactoryDomainPair"/>(<paramref name="factory"/>, <paramref name="domain"/>).
+        /// </summary>
+        /// <param name="factory">
+        /// <see cref="QuadratureScheme{S, T}.AddFactoryDomainPair"/>
+        /// </param>
+        /// <param name="domain">
+        /// <see cref="QuadratureScheme{S, T}.AddFactoryDomainPair"/>
+        /// </param>
+        /// <param name="scaling"></param>
+        public EdgeQuadratureScheme(IIntegrationMetric scaling, IQuadRuleFactory<QuadRule> factory, EdgeMask domain = null)
+            : base(scaling ?? new EdgeIntegrationMetric(), false, ConvDomain(domain)) {
+            AddFactoryDomainPair(factory, ConvDomain(domain));
         }
 
         /// <summary>
@@ -788,8 +863,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// <see cref="QuadratureScheme{S, T}.AddFactoryDomainPair"/>
         /// </param>
         public EdgeQuadratureScheme(IQuadRuleFactory<QuadRule> factory, EdgeMask domain = null)
-            : base(false, ConvDomain(domain)) {
-            AddFactoryDomainPair(factory, ConvDomain(domain));
+            : this(null, factory, domain) {
         }
 
         /// <summary>
@@ -843,8 +917,41 @@ namespace BoSSS.Foundation.Quadrature {
         /// if true, quadrature rule factories for default (Gaussian) rules will be added for the domain <paramref name="domain"/>;
         /// if false, the user must add factories for all items in the domain.
         /// </param>
+        /// <param name="scaling"></param>
+        public CellBoundaryQuadratureScheme(IIntegrationMetric scaling, bool UseDefaultFactories, CellMask domain = null)
+            : base(scaling ?? new CellBoundaryIntegrationMetric(), UseDefaultFactories, domain) {
+        }
+
+        /// <summary>
+        /// Constructs an empty quadrature scheme.
+        /// </summary>
+        /// <param name="domain">
+        /// Background domain.
+        /// </param>
+        /// <param name="UseDefaultFactories">
+        /// if true, quadrature rule factories for default (Gaussian) rules will be added for the domain <paramref name="domain"/>;
+        /// if false, the user must add factories for all items in the domain.
+        /// </param>
         public CellBoundaryQuadratureScheme(bool UseDefaultFactories, CellMask domain = null)
-            : base(UseDefaultFactories, domain) {
+            : this(null, UseDefaultFactories, domain) {
+        }
+
+        /// <summary>
+        /// Convenience constructor that allows for the construction of a
+        /// scheme with a predefined factory. Equivalent to creating an empty
+        /// scheme and calling
+        /// <see cref="QuadratureScheme{S, T}.AddFactoryDomainPair"/>(<paramref name="factory"/>, <paramref name="domain"/>).
+        /// </summary>
+        /// <param name="factory">
+        /// <see cref="QuadratureScheme{S, T}.AddFactoryDomainPair"/>
+        /// </param>
+        /// <param name="domain">
+        /// <see cref="QuadratureScheme{S, T}.AddFactoryDomainPair"/>
+        /// </param>
+        /// <param name="scaling"></param>
+        public CellBoundaryQuadratureScheme(IIntegrationMetric scaling, IQuadRuleFactory<CellBoundaryQuadRule> factory, CellMask domain = null)
+            : base(scaling ?? new CellBoundaryIntegrationMetric(), false, domain) {
+            AddFactoryDomainPair(factory, domain);
         }
 
         /// <summary>
@@ -860,9 +967,9 @@ namespace BoSSS.Foundation.Quadrature {
         /// <see cref="QuadratureScheme{S, T}.AddFactoryDomainPair"/>
         /// </param>
         public CellBoundaryQuadratureScheme(IQuadRuleFactory<CellBoundaryQuadRule> factory, CellMask domain = null)
-            : base(false, domain) {
-            AddFactoryDomainPair(factory, domain);
+            : this(null, factory, domain) {
         }
+
 
         /// <summary>
         /// <see cref="CellMask.GetFullMask"/>

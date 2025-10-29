@@ -699,6 +699,13 @@ namespace ilPSP {
         }
 
         /// <summary>
+        /// Macht Array aus Zweier-Tupel.
+        /// </summary>
+        public static T[] TupleToArray<T>(this (T, T) t) {
+            return new T[] { t.Item1, t.Item2 };
+        }
+
+        /// <summary>
         /// Creates a set from an enumeration.
         /// </summary>
         public static ISet<T> ToSet<T>(this IEnumerable<T> e) {

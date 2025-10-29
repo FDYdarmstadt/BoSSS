@@ -1170,6 +1170,7 @@ namespace BoSSS.Foundation.IO {
         public static Plot2Ddata ToEstimatedGridConvergenceData(this IEnumerable<ISessionInfo> sessions, string fieldName, bool xAxis_Is_hOrDof = true, NormType normType = NormType.L2_approximate) {
             ISessionInfo[] _session = sessions.ToArray();
             ITimestepInfo[] _timesteps = sessions.Select(s => s.Timesteps.Last()).ToArray();
+            //Debugger.Launch();
             return _timesteps.ToEstimatedGridConvergenceData(fieldName, xAxis_Is_hOrDof, normType);
         }
 
@@ -1620,7 +1621,7 @@ namespace BoSSS.Foundation.IO {
                 var phi = session.Timesteps.First().Fields.ElementAt(0);
                 var LevSet = new LevelSet(phi.Basis, "LevelSet");
                 LevSet.Acc(1.0, phi);
-                var LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData)phi.GridDat, XQuadFactoryHelper.MomentFittingVariants.Saye, 1, new string[] { "A", "B" }, LevSet);
+                var LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData)phi.GridDat, CutCellQuadratureMethod.Saye, 1, new string[] { "A", "B" }, LevSet);
                 int numCC = LsTrk.Regions.GetCutCellMask().Count();
                 cellCount += numCC;
             }
@@ -1693,6 +1694,13 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         public static int NumberOfCores(this ISessionInfo session) {
             return session.ComputeNodeNames.Count();
+        }
+
+        /// <summary>
+        /// The number of threads per mpi rank used for this simulation
+        /// </summary>
+        public static int NumberOfThreadsPerRank(this ISessionInfo session) {
+            return session.ThreadPerMPIRank;
         }
 
         /// <summary>
@@ -2063,53 +2071,18 @@ namespace BoSSS.Foundation.IO {
         /// imports the specified log file data 
         /// </summary>
         /// <param name="sess"> List of sessions to be evaluated </param>
-        /// <param name="logName"> which log values to be evaluated </param>
+        /// <param name="logName"> which log file to be evaluated </param>
+        /// <param name="values"> which log values to be evaluated </param>
         /// <param name="evalName"></param>
         /// <param name="keyName"></param>
         /// <returns></returns>
-        public static List<Plot2Ddata> ReadLogDataForXNSE(this List<ISessionInfo> sess, string logName, string evalName = null, string keyName = null) {
-
-
-            string[] values;
-            switch (logName) {
-                case Application.XNSE_Solver.PhysicalBasedTestcases.WaveLikeLogging.LogfileName: {
-                        values = new string[] { "#timestep", "time", "magnitude", "real", "imaginary" };
-                        break;
-                    }
-                case Application.XNSE_Solver.PhysicalBasedTestcases.Dropletlike.LogfileName: {
-                        values = new string[] { "#timestep", "time", "semi axis x", "semi axis y", "area", "perimeter" };
-                        break;
-                    }
-                case Application.XNSE_Solver.PhysicalBasedTestcases.RisingBubble2DBenchmarkQuantities.LogfileName: {
-                        values = new string[] { "#timestep", "time", "area", "center of mass - x", "center of mass - y", "circularity", "rise velocity" };
-                        break;
-                    }
-                case Application.XNSE_Solver.PhysicalBasedTestcases.MovingContactLineLogging.LogfileName: {
-                        values = new string[] { "#timestep", "time", "contact-pointX", "contact-pointY", "contact-VelocityX", "contact-VelocityY", "contact-angle" };
-                        break;
-                    }
-                case Application.XNSFE_Solver.PhysicalBasedTestcases.EvaporationLogging.LogfileName: {
-                    values = new string[] { "#timestep", "time", "interfacePosition", "meanInterfaceVelocity", "meanMassFlux" };
-                    break;
-                }
-                case Application.XNSFE_Solver.PhysicalBasedTestcases.StefanProblemBenchmarkQuantities.LogfileName: {
-                    values = new string[] { "#timestep", "time", "interface-x-pos-min", "interface-x-pos-max", "mass-vapor", "mass-liquid", "massflux-interface", "massflux-outlet" };
-                    break;
-                }
-                case Application.XNSFE_Solver.PhysicalBasedTestcases.MassfluxLogging.LogfileName: {
-                    values = new string[] { "#timestep", "time", "mass-liq", "mass-vap", "mass-total", "masschange-evap", "masschange-vapor", "masschange-liquid", "masschange-total", "interface length" };
-                    break;
-                }
-                default:
-                    throw new ArgumentException("No specified LogFormat");
-            }
-
+        public static List<Plot2Ddata> ReadLogData(this List<ISessionInfo> sess, string logName, string[] values, string evalName = null, string keyName = null) {
 
             List<Plot2Ddata> plotData = new List<Plot2Ddata>();
 
             int numberSessions = sess.Count();
-            int numberValues = values.Count();      
-            for (int vIdx = 2; vIdx < numberValues; vIdx++) {       
+            int numberValues = values.Count();
+            for (int vIdx = 2; vIdx < numberValues; vIdx++) {
 
                 double[][] times = new double[numberSessions][];
                 double[][] valueDatas = new double[numberSessions][];
@@ -2119,8 +2092,8 @@ namespace BoSSS.Foundation.IO {
                     string path = Path.Combine(sess.Pick(j).Database.Path, "sessions", sess.Pick(j).ID.ToString(), logName + ".txt");
                     string[] lines = File.ReadAllLines(path);
 
-                    if (sess.Pick(j).RestartedFrom == Guid.Empty) { 
-                   
+                    if (sess.Pick(j).RestartedFrom == Guid.Empty) {
+
                         double[] time = new double[lines.Length - 1];
                         double[] valueData = new double[lines.Length - 1];
 
@@ -2133,7 +2106,7 @@ namespace BoSSS.Foundation.IO {
 
                     } else {
 
-                        string pathR = @sess.Pick(j).Database.Path + "\\sessions\\" + sess.Pick(j).RestartedFrom + logName;
+                        string pathR = Path.Combine(sess.Pick(j).Database.Path, "sessions", sess.Pick(j).RestartedFrom.ToString(), logName + ".txt");
                         string[] linesR = File.ReadAllLines(pathR);
 
                         int len = (lines.Length - 1) + (linesR.Length - 1);
@@ -2154,9 +2127,9 @@ namespace BoSSS.Foundation.IO {
                         // remove doubled time steps 
                         List<double> rTime = new List<double>();
                         List<double> rValDat = new List<double>();
-                        rTime.Add(time[len-1]);
-                        rValDat.Add(valueData[len-1]);
-                        for(int i = len-2; i >= 0; i--) {
+                        rTime.Add(time[len - 1]);
+                        rValDat.Add(valueData[len - 1]);
+                        for (int i = len - 2; i >= 0; i--) {
                             if (time[i] < rTime.Last()) {
                                 rTime.Add(time[i]);
                                 rValDat.Add(valueData[i]);
@@ -2187,23 +2160,77 @@ namespace BoSSS.Foundation.IO {
             }
 
             return plotData;
+        }
+
+        /// <summary>
+        /// imports the specified log file data 
+        /// </summary>
+        /// <param name="sess"> List of sessions to be evaluated </param>
+        /// <param name="logName"> which log values to be evaluated </param>
+        /// <param name="evalName"></param>
+        /// <param name="keyName"></param>
+        /// <returns></returns>
+        public static List<Plot2Ddata> ReadLogDataForXNSE(this List<ISessionInfo> sess, string logName, string evalName = null, string keyName = null) {
+
+            string[] values;
+            switch (logName) {
+                case Application.XNSE_Solver.PhysicalBasedTestcases.WaveLikeLogging.LogfileName: {
+                        values = new string[] { "#timestep", "time", "magnitude", "real", "imaginary" };
+                        break;
+                    }
+                case Application.XNSE_Solver.PhysicalBasedTestcases.Dropletlike.LogfileName: {
+                        values = new string[] { "#timestep", "time", "semi axis x", "semi axis y", "area", "perimeter" };
+                        break;
+                    }
+                case Application.XNSE_Solver.PhysicalBasedTestcases.RisingBubble2DBenchmarkQuantities.LogfileName: {
+                        values = new string[] { "#timestep", "time", "area", "center of mass - x", "center of mass - y", "circularity", "mean velocity - x", "mean velocity - y" };
+                        break;
+                    }
+                case Application.XNSE_Solver.PhysicalBasedTestcases.MovingContactLineLogging.LogfileName: {
+                        values = new string[] { "#timestep", "time", "contact-pointX", "contact-pointY", "contact-VelocityX", "contact-VelocityY", "contact-angle" };
+                        break;
+                    }
+                case Application.XNSFE_Solver.PhysicalBasedTestcases.EvaporationLogging.LogfileName: {
+                    values = new string[] { "#timestep", "time", "interfacePosition", "meanInterfaceVelocity", "meanMassFlux" };
+                    break;
+                }
+                case Application.XNSFE_Solver.PhysicalBasedTestcases.StefanProblemBenchmarkQuantities.LogfileName: {
+                    values = new string[] { "#timestep", "time", "interface-x-pos-min", "interface-x-pos-max", "mass-vapor", "mass-liquid", "massflux-interface", "massflux-outlet" };
+                    break;
+                }
+                case Application.XNSFE_Solver.PhysicalBasedTestcases.MassfluxLogging.LogfileName: {
+                    values = new string[] { "#timestep", "time", "mass-liq", "mass-vap", "mass-total", "masschange-evap", "masschange-vapor", "masschange-liquid", "masschange-total", "interface length" };
+                    break;
+                }
+                default:
+                    throw new ArgumentException("No specified LogFormat");
+            }
+
+            return ReadLogData(sess, logName, values, evalName, keyName);
 
         }
 
         /// <summary>
         /// special purpose method, most likely legacy stuff
         /// </summary>
-        public static List<Plot2Ddata>[] ReadLogDataForMovingContactLine(this IEnumerable<ISessionInfo> sess) {
+        public static List<Plot2Ddata>[] ReadLogDataForMovingContactLine(this IEnumerable<ISessionInfo> sess, string[] CustomValues = null) {
 
-            string[] values = new string[] { "#timestep", "time", "contact-pointX", "contact-pointY", "contact-VelocityX", "contact-VelocityY", "contact-angle" };
+
+            string[] values;
+            if (CustomValues != null) {
+                values = CustomValues;
+            } else {
+                values = new string[] { "#timestep", "time", "contact-pointX", "contact-pointY", "contact-VelocityX", "contact-VelocityY", "contact-Velocity", "contact-angle" };
+            }
 
             // check number of contact lines
             string path = @sess.Pick(0).Database.Path + "\\sessions\\" + sess.Pick(0).ID + "\\ContactAngle.txt";
             string[] lines = File.ReadAllLines(path);
-            int numCL = 0;
-            for (int i = 1; i <= 4; i++) {       // max number of contact lines should be 4
+            int numCL = 1;
+            int ts0 = (int)Convert.ToDouble(lines[1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[0]);
+            for (int i = 2; i <= 4; i++) {       // max number of contact lines should be 4
                 int ts = (int)Convert.ToDouble(lines[i].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[0]);
-                if (ts == 0)
+                if (ts == ts0)
                     numCL++;
             }
 
@@ -2432,6 +2459,74 @@ namespace BoSSS.Foundation.IO {
                 }
             }
 
+        }
+
+
+        /// <summary>
+        /// Check for condition number loggings 
+        /// </summary>
+        /// <param name="pSessions"></param>
+        /// <returns>An array of dictionaries, where each dictionary represents a session, with keys as column names (string) and values as a list of doubles.</returns>
+        public static Dictionary<Guid, Dictionary<string, List<double>>> CheckForCondLogging(this IEnumerable<ISessionInfo> pSessions)
+        {
+            string[] allColumnNames = new string[] { ""};
+            int numberSessions = pSessions.Count();
+
+            //the so-called database the first key: session Id, second key: column name, value: list of entries
+            Dictionary<Guid, Dictionary<string, List<double>>> logsForAllSessions = new Dictionary<Guid, Dictionary<string, List<double>>>(numberSessions);
+            
+            for (int j = 0; j < numberSessions; j++){
+                ISessionInfo currentSession = pSessions.Pick(j);
+                //Initiate the "database", it should suffice the need
+                Dictionary<string, List<double>> logs = new Dictionary<string, List<double>>();
+                logsForAllSessions[currentSession.ID] = logs;
+
+                Console.WriteLine("Session: {0}", currentSession.ID);
+                string path = @currentSession.Database.Path + "\\sessions\\" + currentSession.ID + "\\CondNumbers.txt";
+                string[] lines;
+                string header;
+
+                try{ //reading
+                    lines = File.ReadAllLines(path);
+                    header = lines[0];
+                } catch{
+                    Console.WriteLine("no logging file available");
+                    continue;
+                }
+
+                //Get column names
+                var columnsNames = header.Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries);
+                if (!allColumnNames.SequenceEqual(columnsNames)) {
+                    allColumnNames = columnsNames;
+                    allColumnNames.ForEach(c => Console.Write(c + ", "));
+                    Console.WriteLine("");
+                }
+                //Initiate a list for each column and add to the database
+                for (int i = 0; i < columnsNames.Length; i++){
+                    string columnName = columnsNames[i];
+                    var list = new List<double>();
+                    logs.Add(columnName, list);  
+                }
+
+                // loop for each line in the log
+                for (int k = 1; k < lines.Length; k++){
+                    for (int i = 0; i < columnsNames.Length; i++){
+                        string currentColumn = columnsNames[i];
+                        string value = lines[k].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[i];
+                        double valueDouble;
+
+                        //Check if it is NaN or Infinity
+                        if (Double.TryParse(value, out valueDouble)){
+                            logs[currentColumn].Add(valueDouble);
+                        } else {
+                            logs[currentColumn].Add(double.NaN);
+                            Console.WriteLine($"The value '{value}' could not be converted to a double for line {k} at column {i} in session {currentSession.Name}.");
+                        }
+                    }
+                }
+
+            }
+            return logsForAllSessions;
         }
 
         /// <summary>

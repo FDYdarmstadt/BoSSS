@@ -18,6 +18,7 @@ namespace XESF {
         public XESFControl():base() {
             base.NoOfMultigridLevels = 1;
             base.quadOrderFunc = (int[] A, int[] B, int[] C) =>  Math.Abs(2*A.Max()) + Math.Abs(C.Max()) + Math.Max(this.LevelSetDegree,this.LevelSetTwoDegree);
+            base.CutCellQuadratureType = BoSSS.Foundation.XDG.CutCellQuadratureMethod.Saye;
         }
         public override Type GetSolverType() {
             return typeof(XESFMain);
