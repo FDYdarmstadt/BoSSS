@@ -239,11 +239,11 @@ namespace BoSSS.Foundation.XDG {
                 UseDefaultFactories: false, 
                 domain: allRelevantEdges);
 
-            foreach (var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
+            foreach (var KrefEdge in gdat.iGeomEdges.EdgeRefElements) {
                 //for (int iLevSet = 0; iLevSet < XDGSpaceMetrics.NoOfLevelSets; iLevSet++) { // loop over level sets...
                 {
-                    EdgeMask cutEdges = this.GetCutEdges(Kref, iLevSet);
-                    var factory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, Kref);
+                    EdgeMask cutEdges = this.GetCutEdges(KrefEdge, iLevSet);
+                    var factory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, KrefEdge);
                     edgeQrIns.AddFactory(factory, cutEdges);
                 }
             }
