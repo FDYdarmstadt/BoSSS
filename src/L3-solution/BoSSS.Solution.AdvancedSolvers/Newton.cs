@@ -629,7 +629,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         private void NewtonStep(CoordinateVector SolutionVec, int itc, double[] CurSol, double[] CurRes, double HomotopyValue, ref double norm_CurRes, ref double TrustRegionDelta) {
             using (var tr = new FuncTrace()) {
-                tr.InfoToConsole = true;
+                tr.InfoToConsole = false;
                 // computation of Newton step
                 // --------------------------
 
@@ -813,7 +813,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         step.ScaleV(-1);
 
                         //Console.WriteLine($"NewtonStep: linear solver converged? {solver.Converged}");
-                        tr.Info($"NewtonStep: linear solver converged? {solver.Converged}");
+                        if(solver.Converged)
+                            tr.Info($"NewtonStep: linear solver converged? {solver.Converged}");
+                        else
+                            tr.Error($"NewtonStep: linear solver converged? {solver.Converged}");
 
                         //if(!solver.Converged) {
                         //    // check for high residual in single cells

@@ -326,6 +326,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
 
             var Tst = new SteadyStateEvaporationTest(rawangle * Math.PI / 180.0);
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, stm, 2, nonlinsolver: nonlinsolver);
+            C.NonLinearSolver.ConvergenceCriterion = 1.0e-10;
             XNSFESolverTest(Tst, C);
         }
 
