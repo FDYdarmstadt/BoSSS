@@ -213,7 +213,6 @@ namespace BoSSS.Foundation.XDG {
         /// the returned factory produces <see cref="QuadRule"/>'s on edges
         /// </returns>
         override public IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex, RefElement KrefEdge) {
-
             int iKref = Array.IndexOf(gdat.iGeomEdges.EdgeRefElements, KrefEdge);
             if(iKref < 0)
                 throw new ArgumentException("Expecting an **Edge** reference element.");

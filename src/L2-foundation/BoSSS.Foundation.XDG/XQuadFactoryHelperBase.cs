@@ -143,7 +143,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Generates a quadrature rule factory for the cut edge integrals.
         /// </summary>
-        abstract public IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex, JumpTypes jmp, RefElement KrefVol);
+        abstract public IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex, JumpTypes jmp, RefElement KrefEdge);
         // ref (2), on edges
 
         /// <summary>
@@ -164,13 +164,13 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Returns a rule factory for the boundary of surface-elements 
-        /// (elements on the zero-level-set surface), i.e. on \f$  K \cap \mathfrak{I}\f$ .
+        /// (elements on the zero-level-set surface), i.e., for integrals 
+        /// ```math 
+        ///    \int_{ E \cap \mathfrak{I} \textrm{dl} . 
+        /// ```
         /// This are point integrals in 2D and line integrals in 3D.
         /// </summary>
-        /// <returns>
-        /// the returned factory produces <see cref="QuadRule"/>'s on edges
-        /// </returns>
-        abstract public IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex, RefElement KrefVol);
+        abstract public IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex, RefElement KrefEdge);
         // ref (5a), on edge
 
         /// <summary>
