@@ -405,7 +405,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
                 int order = phaseInterface.C0LevelSet.Basis.Degree;
                 var testMetrics = testTracker.GetXDGSpaceMetrics(testTracker.SpeciesIdS.ToArray(), order);
-                var testFactory = testMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, testTracker.GridDat.Grid.RefElements[0]);
+                var testFactory = testMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, testTracker.GridDat.iGeomEdges.EdgeRefElements.Single());
                 
 
                 // the boundary of the cut-cell domain
