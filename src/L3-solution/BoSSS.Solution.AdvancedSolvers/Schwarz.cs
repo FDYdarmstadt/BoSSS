@@ -893,13 +893,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 return ret;
                             };
                         }
-
+                        if (TPLDirectSolve)
+                            throw new ArgumentException("There seems to be a problem with thread parallelization, either use all block solvers pardiso or not");
                     } else {
-
                         // ++++++++++++++++++++++++
                         // direct solver for blocks
                         // ++++++++++++++++++++++++
-
+                        TPLDirectSolve = true;
 
                         var direct = new DirectSolver() {
                             ActivateCaching = (int NoIter, int MgLevel) => true
@@ -910,6 +910,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             var ParSolver = new SubSystemPardiso();
                             ParSolver.UseDoublePrecision = false;
+                            ParSolver.Parallelism = Parallelism.SEQ;
                             ParSolver.DefineMatrix(BlockSolver.OperatorRestriction.OperatorMatrix);
                             return ParSolver;
                         } else {
@@ -926,6 +927,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             return blockSolve;
         }
+
+        /// <summary>
+        /// This method activates TPL parallelization for block solvers (useful with direct solvers like pardiso or lapack (libraries called seq but blocks are tpl parallel))
+        /// However, it does not apply to other solvers like p-multigrid here.
+        /// </summary>
+        bool TPLDirectSolve = false;
 
         //private void ModifyLowSelector(SubBlockSelector sbs, MultigridOperator op) {
         //    AssignXdgBlocksModification(sbs, op, true);
@@ -1037,19 +1044,36 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     //if (CoarseSolver != null) 
                     //    CoarseSolver.Solve(X, B, Res, ResExchange.Vector_Ext);
-                    var tt =new Stopwatch();
-                    tt.Start();
-                    using (new BlockTrace("block_solve_level", tr)) {
-                        Console.WriteLine($"Schwarz iteration {iIter + 1}/{FixedNoOfIterations} on level {m_MgOp.LevelIndex}");
-                        ilPSP.Environment.ParallelFor(0, NoParts, iPart => {
-                            this.blockSolvers[iPart].Solve(X, Res); // Note: this **acuumulates** onto X, i.e. X=(X0+Xc)
-                        });
-                        //for (int iPart = 0; iPart < NoParts; iPart++) {
-                        //    this.blockSolvers[iPart].Solve(X, Res); // Note: this **acuumulates** onto X, i.e. X=(X0+Xc)
-                        //}
+
+                    using(new BlockTrace("block_solve_level", tr)) {
+                        var tt = new Stopwatch();
+                        tt.Start();
+                        Console.WriteLine($"Schwarz iteration {iIter + 1}/{FixedNoOfIterations} on level {m_MgOp.LevelIndex} with TPLDirectSolve={TPLDirectSolve}");
+
+                        if (TPLDirectSolve) {
+                            // --- 1. Initialize sequentially (MPI operations considered not thread-safe) ---
+                            var initData = new (bool skip, double[] xLo, double[] bLo, double[] xExt, double[] bExt)[NoParts];
+
+                            for(int iPart = 0; iPart < NoParts; iPart++) {
+                                initData[iPart] = blockSolvers[iPart].ThreadSafeSolveInit(X, Res);
+                            }
+
+
+                            // --- 2. Thread-safe parallel solve phase ---
+                            ilPSP.Environment.ParallelFor(0, NoParts, iPart => {
+                                var (skip, xLo, bLo, xExt, bExt) = initData[iPart];
+                                if(!skip)
+                                    blockSolvers[iPart].ThreadSafeSolve(X, Res, xLo, bLo, xExt, bExt);
+                            });
+                        } else {
+                            for(int iPart = 0; iPart < NoParts; iPart++) {
+                               blockSolvers[iPart].Solve(X, Res);
+                            }
+                        }
+
+                            tt.Stop();
+                        Console.WriteLine($"  time for block solves: {tt.Elapsed.TotalSeconds:0.###} s with {ilPSP.Environment.NumThreads} threads");
                     }
-                    tt.Stop();
-                    Console.WriteLine($"  time for block solves: {tt.Elapsed.TotalSeconds:0.###} s with {ilPSP.Environment.NumThreads} threads");
 
                     using (new BlockTrace("schwarz_sync", tr)) {
                         // block solutions stored on *external* indices will be accumulated on other processors.
