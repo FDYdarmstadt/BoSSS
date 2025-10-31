@@ -1,40 +1,22 @@
-﻿using BoSSS.Application.XNSE_Solver.LoadBalancing;
-using BoSSS.Application.XNSE_Solver.SpecificSolutions;
-using BoSSS.Foundation;
+﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.Grid.Classic;
-using BoSSS.Foundation.Grid.RefElements;
-using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
-using BoSSS.Solution;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
-using BoSSS.Solution.Gnuplot;
 using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.NSECommon;
-using BoSSS.Solution.NSECommon.Operator.Viscosity;
-using BoSSS.Solution.Tecplot;
-using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.Utils;
-using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.XNSECommon;
-using CommandLine;
 using ilPSP;
-using ilPSP.LinSolvers;
 using ilPSP.Tracing;
 using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
-using static System.Reflection.Metadata.BlobBuilder;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -81,9 +63,10 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
-            //InitMPI();
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TaylorCouetteConvergenceTest(2, Tests.TaylorCouette.Mode.Test2Phase, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, false, NonLinearSolverCode.Picard);
-            //throw new Exception("remove");
+            InitMPI();
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.BcTest_PressureOutletTest(2, 1, 0.1, CutCellQuadratureMethod.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, false);
+            throw new Exception("remove");
+            
             {
                 XNSE._Main(args, false, delegate () {
                     var p = new XNSE();
