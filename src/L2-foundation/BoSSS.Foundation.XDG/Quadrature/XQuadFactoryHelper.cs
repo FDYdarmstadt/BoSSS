@@ -134,7 +134,7 @@ namespace BoSSS.Foundation.XDG {
         /// <returns>
         /// the returned factory produces <see cref="CellBoundaryQuadRule"/>'s
         /// </returns>
-        IQuadRuleFactory<CellBoundaryQuadRule> _GetSurfaceElement_BoundaryRuleFactory(int levSetIndex, RefElement KrefVol) {
+        public override IQuadRuleFactory<CellBoundaryQuadRule> _GetSurfaceElement_BoundaryRuleFactory(int levSetIndex, RefElement KrefVol) {
             int D = gdat.SpatialDimension;
             int iKref = Array.IndexOf(gdat.iGeomCells.RefElements, KrefVol);
             int NoOfRefElements = gdat.iGeomCells.RefElements.Length;

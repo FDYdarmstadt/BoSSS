@@ -26,10 +26,11 @@ namespace HangingNodesTests {
         static void Main(string[] args) {
             // mpiexec -n 2 dotnet HangingNodesTests.dll
             //Console.WriteLine("Starting Hanging Nodes Test!");
-            //BoSSS.Solution.Application.InitMPI();
-            //ilPSP.Environment.NumThreads = 1;
-            //HangingNodesTests.HangingNodesTestMain.Test3Phase(CutCellQuadratureMethod.Saye);
-            //Assert.IsFalse(true, "remove me");
+            BoSSS.Solution.Application.InitMPI(num_threads: 1);
+            //HangingNodesTests.HangingNodesTestMain.Test1Phase(CutCellQuadratureMethod.Saye);
+            HangingNodesTests.HangingNodesTestMain.Test3Phase(CutCellQuadratureMethod.Saye);
+            Assert.IsFalse(true, "remove me");
+            BoSSS.Solution.Application.InitMPI();
 
             // to test individual setups
             double[] sizes = new double[] { 1e0 };
@@ -153,7 +154,7 @@ namespace HangingNodesTests {
             List<string> Description = new List<string>();
 
             int TestCounter = 0;
-            foreach (double size in sizes) {
+            foreach(double size in sizes) {
                 foreach(byte s in setup) {
                     TestCounter++;
                     string desc = String.Format($"Test #{TestCounter}: Size : {size}, Phases : {phase}, Setup : {s}, Procs : {procs}, CutCellQuadratureMethod: {ccqm}");
@@ -167,20 +168,20 @@ namespace HangingNodesTests {
                     C.SuperSampling = 4;
 
                     using(var solver = new XNSFE()) {
-                        try {
+                        //try {
                             solver.Init(C);
                             solver.RunSolverMode();
 
                             MomentumRes.Add(solver.CurrentResidual.Fields.Take(3).Sum(f => f.L2Norm()).MPISum());
                             TemperatureRes.Add(solver.CurrentResidual.Fields[3].L2Norm().MPISum());
                             CheckLengthScales(solver, "sz" + size + "ph" + phase + "setup" + s + "ccqm" + ((int)ccqm));
-                        } catch(Exception e) {
-                            Console.Error.WriteLine("MPI" + ilPSP.Environment.MPIEnv.MPI_Rank + "of" + ilPSP.Environment.MPIEnv.MPI_Size + ": " + desc + " : failed");
-                            Console.Error.WriteLine(e.Message);
-                            Console.Error.WriteLine(e.StackTrace);
-                            TemperatureRes.Add(-1.0);
-                            MomentumRes.Add(-1.0);
-                        }
+                        //} catch(Exception e) {
+                        //    Console.Error.WriteLine("MPI" + ilPSP.Environment.MPIEnv.MPI_Rank + "of" + ilPSP.Environment.MPIEnv.MPI_Size + ": " + desc + " : failed");
+                        //    Console.Error.WriteLine(e.Message);
+                        //    Console.Error.WriteLine(e.StackTrace);
+                        //    TemperatureRes.Add(-1.0);
+                        //    MomentumRes.Add(-1.0);
+                        //}
                     }
                 }
             }

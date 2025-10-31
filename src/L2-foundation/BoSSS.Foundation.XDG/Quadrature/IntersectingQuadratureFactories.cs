@@ -127,8 +127,10 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                     QuadRule rule = GetQuadRule(j, order);
                     if (rule.NoOfNodes == 0) {
                         rule = QuadRule.CreateBlank(RefElement, 1, RefElement.SpatialDimension);
+                        rule.OrderOfPrecision = order;
                         rule.Nodes.LockForever();
                     }
+                    rule.OrderOfPrecision = order;
                     rules.Add(new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(j), rule));
                 } catch(Exception e) {
 

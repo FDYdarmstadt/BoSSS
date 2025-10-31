@@ -426,7 +426,7 @@ namespace BoSSS.Foundation.XDG {
                     if (iLevSet != jLevSet) {
                         if (!SpeciesAreSeparatedByLevSet(jLevSet, sp, sp)) {
 
-                            CellMask doublyCut = this.GetDoubleCutCells(iLevSet, jLevSet).ToGeometicalMask();
+                            CellMask doublyCut = this.GetDoubleCutCells(iLevSet, jLevSet);
                             //CellMask doublyCut = this.GetDoubleCutCells(iLevSet, jLevSet);
 
                             if (doublyCut.Count() > 0) {
@@ -481,8 +481,6 @@ namespace BoSSS.Foundation.XDG {
 
             //Handle doubly cut cells, do it all again, this time add quadrature Factory
 //<<<<<<< HEAD
-//            var KrefS = XDGSpaceMetrics.GridDat.Grid.RefElements;
-//            int NoOfRefElm = KrefS.Length;
 //            for (int iKref = 0; iKref < NoOfRefElm; iKref++) {
 //                var Kref = KrefS[iKref];
 //                for (int jLevSet = 0; jLevSet < XDGSpaceMetrics.NoOfLevelSets; ++jLevSet) {
@@ -516,7 +514,8 @@ namespace BoSSS.Foundation.XDG {
                     CellMask doublyCut = this.GetDoubleCutCells(iLevSet0, iLevSet1);
                     if(doublyCut.Count() > 0) {
                         var jmpJ = IdentifyWingA(iLevSet1, sp);
-                        var backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet0, Kref);
+                        var KrefEdge = XDGSpaceMetrics.GridDat.iGeomEdges.EdgeRefElements.Single();
+                        var backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet0, KrefEdge);
                         var surfaceFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetIntersectionRuleFactory(iLevSet0, iLevSet1, Kref, backupFactory);
                         LevSetQrIns.AddFactory(surfaceFactory, doublyCut);
                     }

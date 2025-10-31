@@ -171,7 +171,9 @@ namespace BoSSS.Foundation.XDG {
         /// This are point integrals in 2D and line integrals in 3D.
         /// </summary>
         abstract public IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex, RefElement KrefEdge);
-        // ref (5a), on edge
+
+        abstract public IQuadRuleFactory<CellBoundaryQuadRule> _GetSurfaceElement_BoundaryRuleFactory(int levSetIndex, RefElement KrefVol);
+
 
         /// <summary>
         /// Generates a volume quadrature rule factory for cells cut by two level sets. <see cref="GetSurfaceElement_BoundaryRuleFactory(int, RefElement)"/>

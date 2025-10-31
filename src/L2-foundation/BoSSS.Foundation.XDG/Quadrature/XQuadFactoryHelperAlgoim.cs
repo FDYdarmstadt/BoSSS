@@ -190,16 +190,21 @@ namespace BoSSS.Foundation.XDG {
                 } else {
                     CheckIfVolElement(KrefVol);
 
-                    var algoimFactory = new AlgoimFactories(m_LevelSetDatas[levSetIndex], KrefVol);
+
 
                     m_SurfaceElement_BoundaryRuleFactory.Add((levSetIndex, iKref),
                         new EdgeRuleFromCellBoundaryFactory(gdat, D > 2, KrefEdge,
-                            [algoimFactory.GetCellBoundarySurfaceFactory()],
+                            [_GetSurfaceElement_BoundaryRuleFactory(levSetIndex, KrefVol)],
                             maxDom));
                 }
             }
 
             return m_SurfaceElement_BoundaryRuleFactory[key];
+        }
+
+        public override IQuadRuleFactory<CellBoundaryQuadRule> _GetSurfaceElement_BoundaryRuleFactory(int levSetIndex, RefElement KrefVol) {
+            var algoimFactory = new AlgoimFactories(m_LevelSetDatas[levSetIndex], KrefVol);
+            return algoimFactory.GetCellBoundarySurfaceFactory();
         }
 
         public override IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
