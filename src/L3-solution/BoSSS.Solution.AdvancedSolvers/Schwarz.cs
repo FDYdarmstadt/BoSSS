@@ -1037,13 +1037,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     //if (CoarseSolver != null) 
                     //    CoarseSolver.Solve(X, B, Res, ResExchange.Vector_Ext);
-
+                    var tt =new Stopwatch();
+                    tt.Start();
                     using (new BlockTrace("block_solve_level", tr)) {
-                        for (int iPart = 0; iPart < NoParts; iPart++) {
+                        Console.WriteLine($"Schwarz iteration {iIter + 1}/{FixedNoOfIterations} on level {m_MgOp.LevelIndex}");
+                        ilPSP.Environment.ParallelFor(0, NoParts, iPart => {
                             this.blockSolvers[iPart].Solve(X, Res); // Note: this **acuumulates** onto X, i.e. X=(X0+Xc)
-                        }
+                        });
+                        //for (int iPart = 0; iPart < NoParts; iPart++) {
+                        //    this.blockSolvers[iPart].Solve(X, Res); // Note: this **acuumulates** onto X, i.e. X=(X0+Xc)
+                        //}
                     }
-
+                    tt.Stop();
+                    Console.WriteLine($"  time for block solves: {tt.Elapsed.TotalSeconds:0.###} s with {ilPSP.Environment.NumThreads} threads");
 
                     using (new BlockTrace("schwarz_sync", tr)) {
                         // block solutions stored on *external* indices will be accumulated on other processors.
