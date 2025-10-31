@@ -71,7 +71,21 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// sequence determined by <see cref="VariableNames"/> (maybe)
         /// </param>
         /// <param name="ParameterVarFields"></param>
-        Func<DualLevelSet,double,double,bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>, bool> AfterMovePhaseInterface{ get; }
+        /// <returns>
+        /// - true: the level-set-field has been changed
+        /// - false: the level-set-field remains unchanged
+        /// </returns>
+        bool AfterMovePhaseInterface(
+            DualLevelSet levelSet,
+            double time,
+            double dt,
+            bool incremental,
+            IReadOnlyDictionary<string, DGField> DomainVarFields,
+            IReadOnlyDictionary<string, DGField> ParameterVarFields);
+
+
+
+        //Func<DualLevelSet,double,double,bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>, bool> AfterMovePhaseInterface{ get; }
 
     }
 

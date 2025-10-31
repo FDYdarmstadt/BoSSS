@@ -89,6 +89,10 @@ namespace BoSSS.Solution.Control {
             this.Tags = new List<string>();
             this.m_InitialValues_Evaluators = new Dictionary<string, (ScalarFunctionTimeDep vec, Func<double[], double, double> scalar)>();
             this.m_InitialValues = new Dictionary<string, IBoundaryAndInitialData>();
+
+            this.m_ExactSolutions_Evaluators = new Dictionary<string, (ScalarFunctionTimeDep vec, Func<double[], double, double> scalar)>();
+            this.m_ExactSolutions = new Dictionary<string, IBoundaryAndInitialData>();
+
             //this.NoOfMultigridLevels = 0;
         }
 
@@ -211,6 +215,8 @@ namespace BoSSS.Solution.Control {
                 }
             }
         }
+
+        #region BOUNDARY_VALUES
 
         /// <summary>
         /// A collection of all boundary values for a specific edge tag,
@@ -410,9 +416,7 @@ namespace BoSSS.Solution.Control {
             this.BoundaryValues[EdgeTagName].Values.Add(fieldname, data);
         }
 
-        [NonSerialized]
-        Dictionary<string, (ScalarFunctionTimeDep vec, Func<double[],double,double> scalar)> m_InitialValues_Evaluators;
-
+        #endregion
         abstract class ProxyDictBase<R> : IDictionary<string, R> {
             internal Dictionary<string, (ScalarFunctionTimeDep vec, Func<double[], double, double> scalar)> home;
             
@@ -540,7 +544,10 @@ namespace BoSSS.Solution.Control {
                 return (rTime.Vectorize(), rTime);
             }
         }
-
+        
+        #region INITIAL_VALUES
+        [NonSerialized]
+        Dictionary<string, (ScalarFunctionTimeDep vec, Func<double[],double,double> scalar)> m_InitialValues_Evaluators;
 
         void Sync__InitialValues_Evaluators() {
             if(m_InitialValues_Evaluators == null)
@@ -661,6 +668,26 @@ namespace BoSSS.Solution.Control {
         }
 
         /// <summary>
+        /// Adds a time-dependent value to <see cref="InitialValues_Evaluators_TimeDep"/>
+        /// (e.g., for time-stepping schemes with require multiple initial value, time-dependent source fields, ...)
+        /// </summary>
+        public void AddInitialValue(string fieldname, Func<double[], double, double> value) {
+            if(this.ExactSolutions.ContainsKey(fieldname))
+                throw new ArgumentException($"Exact solution for field '{fieldname}' already specified.");
+
+            this.InitialValues_Evaluators_TimeDep.Add(fieldname, value);
+        }
+
+        /// <summary>
+        /// Adds an initial value to <see cref="InitialValues_Evaluators"/>
+        /// </summary>
+        public void AddInitialValue(string fieldname, Func<double[], double> value) {
+            this.InitialValues_Evaluators.Add(fieldname, value);
+        }
+
+
+
+        /// <summary>
         /// Adds an initial value to <see cref="InitialValues"/>
         /// </summary>
         /// <param name="fieldname"></param>
@@ -673,16 +700,161 @@ namespace BoSSS.Solution.Control {
         public void AddInitialValue(string fieldname, string FormulaText, bool TimeDependent) {
            InitialValues.Add(fieldname, new Formula(FormulaText, TimeDependent));
         }
+       
+
+        #endregion
+
+        #region EXACT_SOLUTION
+        [NonSerialized]
+        Dictionary<string, (ScalarFunctionTimeDep vec, Func<double[], double, double> scalar)> m_ExactSolutions_Evaluators;
+
+        void Sync__ExactSolutions_Evaluators() {
+            if(m_ExactSolutions_Evaluators == null)
+                m_ExactSolutions_Evaluators = new Dictionary<string, (ScalarFunctionTimeDep vec, Func<double[], double, double> scalar)>();
+
+            foreach(string name in m_ExactSolutions.Keys) {
+                if(!m_ExactSolutions_Evaluators.ContainsKey(name)) {
+
+                    var vv = m_ExactSolutions[name];
+
+                    m_ExactSolutions_Evaluators.Add(name, new ValueTuple<ScalarFunctionTimeDep, Func<double[], double, double>>(
+                        (MultidimensionalArray X, double time, MultidimensionalArray R) => vv.EvaluateV(X, time, R),
+                        (double[] X, double time) => vv.Evaluate(X, time)));
+                }
+            }
+        }
 
 
-        ///// <summary>
-        ///// Adds a time-dependent initial value (e.g. some external force field which may change over time).
-        ///// </summary>
-        ///// <param name="fieldname">Name of the DG field which should hold the initial value.</param>
-        ///// <param name="value">Function of the boundary condition</param>
-        //public void AddInitialValue(string fieldname, Func<double[], double> value) {
-        //    this.InitialValues_Evaluators.Add(fieldname, value);
-        //}
+        /// <summary>
+        /// Transient exact solutions, e.g., for computing errors in benchmark cases
+        /// - key: identification of the DG field, see <see cref="BoSSS.Foundation.DGField.Identification"/>.
+        /// - value: data or mathematical expression for the exact solution
+        /// </summary>
+        /// <remarks>
+        /// Adding delegates directly to this dictionary is possible for backward compatibility reasons,
+        /// although this limits some functionality - e.g. the control object is usually not serializeable anymore.
+        /// </remarks>
+        [JsonIgnore]
+        public IDictionary<string, ScalarFunctionTimeDep> ExactSolutions_EvaluatorsVec {
+            get {
+                Sync__ExactSolutions_Evaluators();
+                var ret = new ProxyDict_ScalarFunction() { home = m_ExactSolutions_Evaluators };
+
+                if(!ExactSolutions.Keys.IsSubsetOf(ret.Keys))
+                    throw new ApplicationException($"ExactSolutions key mismatch: {ExactSolutions.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")} (expecting a subset).");
+                return ret;
+            }
+        }
+
+
+        /// <summary>
+        /// Time-independent exact solutions, e.g., for computing errors in benchmark cases
+        /// - key: identification of the DG field, see <see cref="BoSSS.Foundation.DGField.Identification"/>.
+        /// - value: data or mathematical expression for the exact solution
+        /// </summary>
+        /// <remarks>
+        /// Adding delegates directly to this dictionary is possible for backward compatibility reasons,
+        /// although this limits some functionality - e.g. the control object is usually not serializeable anymore.
+        /// </remarks>
+        [JsonIgnore]
+        public IDictionary<string, Func<double[], double>> ExactSolutions_Evaluators {
+            get {
+                Sync__ExactSolutions_Evaluators();
+                var ret = new ProxyDict_Func() {
+                    home = m_ExactSolutions_Evaluators
+                };
+
+                if(!ExactSolutions.Keys.IsSubsetOf(ret.Keys))
+                    throw new ApplicationException($"ExactSolutions key mismatch: {ExactSolutions.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")} (expecting a subset).");
+
+                return ret;
+            }
+        }
+
+
+        /// <summary>
+        /// Transient exact solutions, e.g., for computing errors in benchmark cases
+        /// - key: identification of the DG field, see <see cref="BoSSS.Foundation.DGField.Identification"/>.
+        /// - value: data or mathematical expression for the exact solution
+        /// </summary>
+        /// <remarks>
+        /// Adding delegates directly to this dictionary is possible for backward compatibility reasons,
+        /// although this limits some functionality - e.g. the control object is usually not serializeable anymore.
+        /// </remarks>
+        [JsonIgnore]
+        public IDictionary<string, Func<double[], double, double>> ExactSolutions_Evaluators_TimeDep {
+            get {
+                Sync__ExactSolutions_Evaluators();
+                var ret = new ProxyDict_Func_TimeDep() {
+                    home = m_ExactSolutions_Evaluators
+                };
+
+                if(!ExactSolutions.Keys.IsSubsetOf(ret.Keys))
+                    throw new ApplicationException($"ExactSolutions key mismatch: {ExactSolutions.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")} (expecting a subset).");
+
+                return ret;
+            }
+        }
+
+        [DataMember]
+        Dictionary<string, IBoundaryAndInitialData> m_ExactSolutions;
+
+        /// <summary>
+        /// Exact solutions, e.g., for computing errors in benchmark cases
+        /// - key: identification of the DG field, see <see cref="BoSSS.Foundation.DGField.Identification"/>.
+        /// - value: data or mathematical expression for the exact solution
+        /// </summary>
+        [JsonIgnore]
+        public IDictionary<string, IBoundaryAndInitialData> ExactSolutions {
+            get {
+                return m_ExactSolutions;
+            }
+        }
+
+        /// <summary>
+        /// Adds an item to <see cref="ExactSolutions"/>, e.g., for computing errors in benchmark cases
+        /// </summary>
+        /// <param name="fieldname">Name of the field for which the exact solution is valid</param>
+        /// <param name="value">Function of the exact solution</param>
+        public void AddExactSolution(string fieldname, IBoundaryAndInitialData value) {
+            ExactSolutions.Add(fieldname, value);
+        }
+
+        /// <summary>
+        /// Adds a transient exact solution, e.g., for computing errors in benchmark cases
+        /// </summary>
+        /// <param name="fieldname">Name of the field for which the exact solution is valid</param>
+        /// <param name="value">Function of the exact solution</param>
+        public void AddExactSolution(string fieldname, Func<double[], double, double> value) {
+            if(this.ExactSolutions.ContainsKey(fieldname))
+                throw new ArgumentException($"Exact solution for field '{fieldname}' already specified.");
+
+            this.ExactSolutions_Evaluators_TimeDep.Add(fieldname, value);
+        }
+
+        /// <summary>
+        /// Adds a time-independent exact solution, e.g., for computing errors in benchmark cases
+        /// </summary>
+        /// <param name="fieldname">Name of the field for which the exact solution is valid</param>
+        /// <param name="value">Function of the exact solution</param>
+        public void AddExactSolution(string fieldname, Func<double[], double> value) {
+            this.ExactSolutions_Evaluators_TimeDep.Add(fieldname, (X, t) => value(X));
+        }
+
+        /// <summary>
+        /// Adds an item to <see cref="ExactSolutions"/>
+        /// </summary>
+        /// <param name="fieldname"></param>
+        /// <param name="FormulaText">
+        /// Text representation of a delegate, see <see cref="Formula"/>.
+        /// </param>
+        /// <param name="TimeDependent">
+        /// Whether the formula in <paramref name="FormulaText"/> is time-dependent or not, see <see cref="Formula"/>.
+        /// </param>
+        public void AddExactSolution(string fieldname, string FormulaText, bool TimeDependent) {
+            ExactSolutions.Add(fieldname, new Formula(FormulaText, TimeDependent));
+        }
+        #endregion
 
         /// <summary>
         /// Contains a list of queries that shall be evaluated at the end of
@@ -833,11 +1005,11 @@ namespace BoSSS.Solution.Control {
         [DataMember]
         public int NoOfTimesteps = -1;
 
-        /// <summary>
-        /// true: constant dt, false: dt varies depending on solution
-        /// </summary>
-        [DataMember]
-        public bool staticTimestep = true;
+        // /// <summary>
+        // /// true: constant dt, false: dt varies depending on solution
+        // /// </summary>
+        // [DataMember]
+        // public bool staticTimestep = true;
 
         /// <summary>
         /// physical time at which the solver terminates;
@@ -1088,7 +1260,8 @@ namespace BoSSS.Solution.Control {
         protected List<ICellCostEstimator> m_DynamicLoadBalancing_CellCostEstimators = new List<ICellCostEstimator>();
 
         /// <summary>
-        /// Number of time-steps, after which dynamic load balancing is performed; if negative, dynamic load balancing is turned off.
+        /// Number of time-steps, after which dynamic load balancing is performed; 
+        /// if negative, dynamic load balancing is turned off during the simulation, but it might happen at startup, if <see cref="DynamicLoadBalancing_On"/> is true.
         /// </summary>
         [DataMember]
         public int DynamicLoadBalancing_Period = -1;

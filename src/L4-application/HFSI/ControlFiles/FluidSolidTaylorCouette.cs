@@ -458,20 +458,17 @@ namespace HFSISolver.Tests {
 
             // initial values and exact solution
             // =================================
-
-            C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
-            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionDisplacement = new Dictionary<string, Func<double[], double, double>[]>();
-            C.ExactSolutionTemperature = new Dictionary<string, Func<double[], double, double>>();
-
+                 
 
             int D = tst.SpatialDimension;
 
             foreach(var spc in new[] { "A", "B", "C" }) {
-                C.ExactSolutionPressure.Add(spc, tst.GetPress(spc));
-                C.ExactSolutionVelocity.Add(spc, D.ForLoop(d => tst.GetU(spc, d)));
-                C.ExactSolutionDisplacement.Add(spc, D.ForLoop(d => tst.GetDis(spc, d)));
-                C.ExactSolutionTemperature.Add(spc, tst.GetTemperature(spc));
+                C.AddExactSolution(BoSSS.Solution.NSECommon.VariableNames.Pressure, spc, tst.GetPress(spc));
+                for(int d = 0; d < D; d++) {
+                    C.AddExactSolution(BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d), spc, tst.GetU(spc, d));
+                    C.AddExactSolution(VariableNames.DisplacementComponent(d), spc, tst.GetDis(spc, d));
+                }
+                C.AddExactSolution(BoSSS.Solution.NSECommon.VariableNames.Temperature , spc, tst.GetTemperature(spc));
 
                 for(int d = 0; d < D; d++) {
                     C.InitialValues_Evaluators.Add(BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d) + "#" + spc, tst.GetU(spc, d).Convert_Xt2X(0.0));

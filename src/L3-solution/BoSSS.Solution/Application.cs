@@ -3158,7 +3158,7 @@ namespace BoSSS.Solution {
 
 
 
-                    GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData, null);
+                    GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData);
                     bool AnyChange = gridRefinementController.ComputeGridChange(desiredLevels, out List<int> CellsToRefineList, out List<int[]> Coarsening);
 
 
@@ -3199,44 +3199,53 @@ namespace BoSSS.Solution {
         /// </summary>
         /// <returns></returns>
         private int[] GetDesiredRefinementLevels() {
-
-            if(Control.AdaptiveMeshRefinement == true) {
-                if(ActiveAMRLevelIndicators == null || ActiveAMRLevelIndicators.Count <= 0) {
-                    Console.Error.WriteLine("Control object configuration inconsistent: 'AdaptiveMeshRefinement == true', but no refinement indicators in 'activeAMRLevelIndicators' are set.");
+            using(var tr = new FuncTrace()) {
+                if(Control.AdaptiveMeshRefinement == true) {
+                    if(ActiveAMRLevelIndicators == null || ActiveAMRLevelIndicators.Count <= 0) {
+                        tr.Error("Control object configuration inconsistent: 'AdaptiveMeshRefinement == true', but no refinement indicators in 'activeAMRLevelIndicators' are set.");
+                    }
                 }
-            }
 
-            int J = this.GridData.CellPartitioning.LocalLength;
-            int[] levelChanges = null;
+                int J = this.GridData.CellPartitioning.LocalLength;
+                int[] levelChanges = null;
 
-            // combine all results of active level indicators
-            int cnt = 0;
-            foreach(var lvlInd in ActiveAMRLevelIndicators) {
-                if(cnt == 0) {
-                    levelChanges = lvlInd.DesiredCellChanges(); // levelChanges is instantiated to zero. Without this line, coarsening is impossible due to Max(a,b)
-                } else {
-                    int[] lvls = lvlInd.DesiredCellChanges();
-                    //levelChanges = levelChanges.Zip(lvls, (a, b) => a + b).ToArray();
-                    levelChanges = levelChanges.Zip(lvls, (a, b) => Math.Max(a, b)).ToArray(); // keep finer level indicator, but don't double refine
+                // combine all results of active level indicators
+                int cnt = 0;
+                foreach(var lvlInd in ActiveAMRLevelIndicators) {
+                    if(cnt == 0) {
+                        levelChanges = lvlInd.DesiredCellChanges(); // levelChanges is instantiated to zero. Without this line, coarsening is impossible due to Max(a,b)
+                    } else {
+                        int[] lvls = lvlInd.DesiredCellChanges();
+                        //levelChanges = levelChanges.Zip(lvls, (a, b) => a + b).ToArray();
+                        levelChanges = levelChanges.Zip(lvls, (a, b) => Math.Max(a, b)).ToArray(); // keep finer level indicator, but don't double refine
+                    }
+                    cnt++;
                 }
-                cnt++;
+                if(levelChanges == null)
+                    levelChanges = new int[J];
+
+
+                // get desired level 
+                int[] levels = new int[J];
+                Cell[] cells = ((GridData)this.GridData).Grid.Cells;
+
+                int cellsToRefine = 0;
+                int cellsToCoarse = 0;
+                for(int j = 0; j < J; j++) {
+                    levels[j] = cells[j].RefinementLevel;
+                    if(levelChanges[j] > 0) {
+                        levels[j] += 1;
+                        cellsToRefine++;
+                    } else if(levelChanges[j] < 0) {
+                        levels[j] -= 1;
+                        cellsToCoarse++;
+                    }
+                }
+
+                tr.Info($"all AMR indicators combined: cells to refine: {cellsToRefine}, cells to coarsen: {cellsToCoarse}");
+
+                return levels;
             }
-            if(levelChanges == null)
-                levelChanges = new int[J];
-
-
-            // get desired level 
-            int[] levels = new int[J];
-            Cell[] cells = ((GridData)this.GridData).Grid.Cells;
-            for(int j = 0; j < J; j++) {
-                levels[j] = cells[j].RefinementLevel;
-                if(levelChanges[j] > 0)
-                    levels[j] += 1;
-                else if(levelChanges[j] < 0)
-                    levels[j] -= 1;
-            }
-
-            return levels;
         }
 
 
@@ -3252,7 +3261,7 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
-        /// Default implementation (which does nothing) for the computation of the grid partitioning
+        /// Default implementation for the computation of the grid partitioning
         /// during runtime (dynamic load balancing).
         /// </summary>
         /// <param name="TimeStepNo"></param>

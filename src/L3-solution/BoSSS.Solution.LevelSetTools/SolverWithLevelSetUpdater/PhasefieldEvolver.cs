@@ -79,8 +79,20 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         public IList<string> VariableNames => null;
 
-        // nothing to do
-        public Func<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>, bool> AfterMovePhaseInterface => MassCorrection;
+        
+        /// <summary>
+        /// <see cref="MassCorrection(DualLevelSet, double, double, bool, IReadOnlyDictionary{string, DGField}, IReadOnlyDictionary{string, DGField})"/>
+        /// </summary>
+        public bool AfterMovePhaseInterface(
+            DualLevelSet levelSet,
+            double time,
+            double dt,
+            bool incremental,
+            IReadOnlyDictionary<string, DGField> DomainVarFields,
+            IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+
+            return MassCorrection(levelSet, time, dt, incremental, DomainVarFields, ParameterVarFields);
+        }
 
         static Dictionary<string,double> mass;
         /// <summary>
@@ -93,6 +105,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// <param name="incremental"></param>
         /// <param name="DomainVarFields"></param>
         /// <param name="ParameterVarFields"></param>
+        /// <returns>
+        /// - true: the level-set-field has been changed
+        /// - false: the level-set-field remains unchanged
+        /// </returns>
         public bool MassCorrection(DualLevelSet phaseInterface,
             double time,
             double dt,

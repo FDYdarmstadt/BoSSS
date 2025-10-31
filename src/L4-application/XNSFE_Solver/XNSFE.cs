@@ -37,24 +37,10 @@ namespace BoSSS.Application.XNSFE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
-            InitMPI(args);
-            DeleteOldPlotFiles();
-            //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.InterfaceSlipTestNonLin(3, 0.0d, ViscosityMode.FullySymmetric, 0.0d, CutCellQuadratureMethod.Saye, NonLinearSolverCode.Newton, double.PositiveInfinity, 0.143d, 1.2d);
-            BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.InterfaceSlipTestNonLin(3, 0.0d, ViscosityMode.FullySymmetric, 0.0d, CutCellQuadratureMethod.Saye, NonLinearSolverCode.Newton, 0.0d, 1.0d, 0.27d);
-            Assert.IsTrue(false, "remove me");
-
-            //using (var solver = new XNSFE()) {
-            //    solver.Init(ThermalSlip_HardcodedControls.HeatedWall_3PhaseDemo(true));
-            //    solver.RunSolverMode();
-            //}
-
-            //FinalizeMPI();
-            //System.Environment.Exit(-111);
-
-            //ilPSP.Environment.InitThreading(true, 8);
-            //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.InterfaceSlipTestLin(3, 0.0d, ViscosityMode.FullySymmetric, 0.0d, CutCellQuadratureMethod.Saye, NonLinearSolverCode.Newton, 1.0d, 1.0d, 1.2d);
+            //InitMPI(args);
+            //DeleteOldPlotFiles();
+            //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.InterfaceSlipTestNonLin(3, 0.0d, ViscosityMode.FullySymmetric, 0.0d, CutCellQuadratureMethod.Saye, NonLinearSolverCode.Newton, 0.0d, 1.0d, 0.27d);
             //Assert.IsTrue(false, "remove me");
-
 
             XNSFE._Main(args, false, delegate () {
                 var p = new XNSFE();

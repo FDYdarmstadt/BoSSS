@@ -293,22 +293,26 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ==============
             #region exact
 
-            C.Phi = ((X, t) => PhiFunc(X));
+            C.AddExactSolution("Phi", (X, t) => PhiFunc(X));
 
-            C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
             if(D == 2) {
-                C.ExactSolutionVelocity.Add("A", new Func<double[], double, double>[] { (X, t) => 0.0, (X, t) => 0.0 });
-                C.ExactSolutionVelocity.Add("B", new Func<double[], double, double>[] { (X, t) => 0.0, (X, t) => 0.0 });
+                C.AddExactSolution("VelocityX#A", (X, t) => 0.0);
+                C.AddExactSolution("VelocityY#A", (X, t) => 0.0);
+                C.AddExactSolution("VelocityX#B", (X, t) => 0.0);
+                C.AddExactSolution("VelocityY#B", (X, t) => 0.0);
             }
 
             if(D == 3) {
-                C.ExactSolutionVelocity.Add("A", new Func<double[], double, double>[] { (X, t) => 0.0, (X, t) => 0.0, (X, t) => 0.0 });
-                C.ExactSolutionVelocity.Add("B", new Func<double[], double, double>[] { (X, t) => 0.0, (X, t) => 0.0, (X, t) => 0.0 });
+                C.AddExactSolution("VelocityX#A", (X, t) => 0.0);
+                C.AddExactSolution("VelocityY#A", (X, t) => 0.0);
+                C.AddExactSolution("VelocityZ#A", (X, t) => 0.0);
+                C.AddExactSolution("VelocityX#B", (X, t) => 0.0);
+                C.AddExactSolution("VelocityY#B", (X, t) => 0.0);
+                C.AddExactSolution("VelocityZ#B", (X, t) => 0.0);
             }
 
-            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionPressure.Add("A", (X, t) => Pjump);
-            C.ExactSolutionPressure.Add("B", (X, t) => 0.0);
+            C.AddExactSolution("Pressure#A", (X, t) => Pjump);
+            C.AddExactSolution("Pressure#B", (X, t) => 0.0);
 
             #endregion
 
@@ -2768,15 +2772,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ==============
             #region exact
 
-            C.Phi = ((X, t) => PhiFunc(X));
+            C.AddExactSolution("Phi", (X, t) => PhiFunc(X));
 
-            C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
-            C.ExactSolutionVelocity.Add("A", new Func<double[], double, double>[] { (X, t) => 0.0, (X, t) => 0.0 });
-            C.ExactSolutionVelocity.Add("B", new Func<double[], double, double>[] { (X, t) => 0.0, (X, t) => 0.0 });
+            C.AddExactSolution("VelocityX#A", (X, t) => 0.0);
+            C.AddExactSolution("VelocityY#A", (X, t) => 0.0);
+            C.AddExactSolution("VelocityX#B", (X, t) => 0.0);
+            C.AddExactSolution("VelocityY#B", (X, t) => 0.0);
 
-            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionPressure.Add("A", (X, t) => Pjump);
-            C.ExactSolutionPressure.Add("B", (X, t) => 0.0);
+            C.AddExactSolution("Pressure#A", (X, t) => Pjump);
+            C.AddExactSolution("Pressure#B", (X, t) => 0.0);
 
             #endregion
 
@@ -3039,7 +3043,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ==============
             #region exact
 
-            C.Phi = (PhiFunc);
+            C.AddExactSolution("Phi", PhiFunc);
 
             //C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
             //C.ExactSolutionVelocity.Add("A", new Func<double[], double, double>[] { (X, t) => 0.0, (X, t) => 0.0 });

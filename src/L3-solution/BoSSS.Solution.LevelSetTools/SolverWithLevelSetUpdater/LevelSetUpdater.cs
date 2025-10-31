@@ -6,13 +6,18 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
+using BoSSS.Solution.Tecplot;
 using ilPSP;
 using ilPSP.LinSolvers.monkey.CUDA;
+using ilPSP.Tracing;
 using ilPSP.Utils;
+using MathNet.Numerics.Distributions;
 using MPI.Wrappers;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 
 namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
@@ -208,7 +213,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
             /// <summary>
             /// 1. calls the <see cref="ILevelSetEvolver.MovePhaseInterface"/> method
-            /// 2. calls the continuity projection
+            /// 2. applies under-relaxation
             /// </summary>
             void MoveLevelSet(
                 DualLevelSet phaseInterface,
@@ -242,7 +247,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             }
 
             /// <summary>
-            /// Additional routines, the Evolver might call after LS Movement
+            /// Additional routines, the evolver might call after Level-Set Movement, <see cref="ILevelSetEvolver.AfterMovePhaseInterface"/>
             /// E.g. Reinitialization
             /// </summary>
             bool AfterMoveLevelSet(
@@ -254,87 +259,15 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 double underRelax,
                 bool incremental) {
 
-                if(lsMover.AfterMovePhaseInterface != null)
-                    return lsMover.AfterMovePhaseInterface.Invoke(
+
+                return lsMover.AfterMovePhaseInterface(
                         phaseInterface,
                         time,
                         dt,
                         incremental,
                         DomainVarFields,
                         ParameterVarFields);
-
-                return false;
-
             }
-
-
-            //internal void EnforceContinuity(bool enforceOnNearband = false) {
-            //    LevelSetTracker Tracker = phaseInterface.Tracker;
-            //    CellMask Near1 = Tracker.Regions.GetSpeciesRestrictedNearMask4LevSet(phaseInterface.LevelSetIndex, 1);
-            //    CellMask PosFF = Tracker.Regions.GetLevelSetWing(phaseInterface.LevelSetIndex, +1).VolumeMask;
-
-            //    //enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, Near1, PosFF);
-
-            //    ContinuityProjection preEnforcer = new ContinuityProjection(
-            //        phaseInterface.CGLevelSet.Basis,
-            //        phaseInterface.DGLevelSet.Basis,
-            //        Tracker.GridDat,
-            //        ContinuityProjectionOption.None);
-            //    LevelSet preCGLevelSet = phaseInterface.CGLevelSet.CloneAs();
-            //    preEnforcer.MakeContinuous(phaseInterface.DGLevelSet, preCGLevelSet, Near1, PosFF);
-            //    LevelSetTracker preTracker = new LevelSetTracker(Tracker.GridDat, Tracker.CutCellQuadratureType, 1, new string[] { "A", "B" }, preCGLevelSet);
-            //    preTracker.UpdateTracker(0.0);
-
-            //    CellMask CC = preTracker.Regions.GetCutCellMask4LevSet(0);
-            //    CellMask CCplus = CC.Union(Tracker.Regions.GetCutCellMask4LevSet(phaseInterface.LevelSetIndex));
-            //    PosFF = preTracker.Regions.GetLevelSetWing(0, +1).VolumeMask;
-            //    preTracker.Dispose();
-
-            //    bool FalseContactline = false;
-
-            //    if(!enforceOnNearband) {
-            //        enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, CCplus, PosFF);
-
-            //        EdgeMask CCplusBnd = CCplus.AllEdges().Intersect(CellMask.GetFullMask(Tracker.GridDat, MaskType.Logical).GetAllInnerEdgesMask().Except(CCplus.GetAllInnerEdgesMask()));
-            //        foreach(int iEdge in CCplusBnd.ItemEnum) {
-            //            Tracker.GridDat.Edges.GetRefElement(iEdge).GetNodeSet(5, out NodeSet TestNodes, out _, out _);
-            //            MultidimensionalArray phiIn = MultidimensionalArray.Create(1, TestNodes.NoOfNodes);
-            //            MultidimensionalArray phiOut = MultidimensionalArray.Create(1, TestNodes.NoOfNodes);
-            //            phaseInterface.CGLevelSet.EvaluateEdge(iEdge, 1, TestNodes, phiIn, phiOut);
-
-            //            if(phiIn.Max() * phiIn.Min() < 0 || phiOut.Max() * phiOut.Min() < 0) {
-            //                FalseContactline = true;
-            //            }
-            //        }
-
-            //        FalseContactline = FalseContactline.MPIOr();
-
-            //        if(FalseContactline) {
-            //            Console.WriteLine("Error in continuity projection, extending computation to nearband!");
-            //            EnforceContinuity(true);
-            //        }
-            //    } else {
-            //        enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, Near1, PosFF);
-
-            //        EdgeMask NearBnd = Near1.AllEdges().Intersect(CellMask.GetFullMask(Tracker.GridDat, MaskType.Logical).GetAllInnerEdgesMask().Except(Near1.GetAllInnerEdgesMask()));
-            //        foreach(int iEdge in NearBnd.ItemEnum) {
-            //            Tracker.GridDat.Edges.GetRefElement(iEdge).GetNodeSet(5, out NodeSet TestNodes, out _, out _);
-            //            MultidimensionalArray phiIn = MultidimensionalArray.Create(1, TestNodes.NoOfNodes);
-            //            MultidimensionalArray phiOut = MultidimensionalArray.Create(1, TestNodes.NoOfNodes);
-            //            phaseInterface.CGLevelSet.EvaluateEdge(iEdge, 1, TestNodes, phiIn, phiOut);
-
-            //            if(phiIn.Max() * phiIn.Min() < 0) {
-            //                FalseContactline = true;
-            //            }
-            //        }
-
-            //        FalseContactline = FalseContactline.MPIOr();
-
-            //        if(FalseContactline) {
-            //            throw new ApplicationException("Continuity projection failed, cannot recover!");
-            //        }
-            //    }
-            //}
 
 
             /// <summary>
@@ -357,7 +290,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             }
 
             /// <summary>
-            /// The preEnforcer ensures that the projection is performed on new cut-cells in case of a moving interface
+            /// The Pre-Enforcer ensures that the projection is performed on new cut-cells in case of a moving interface
             /// </summary>
             /// <param name="ProjOpt"></param>
             internal void EnforceContinuityWithPreEnforcer(ContinuityProjectionOption ProjOpt = ContinuityProjectionOption.None) {
@@ -365,8 +298,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 LevelSetTracker Tracker = phaseInterface.Tracker;
                 CellMask Near1 = Tracker.Regions.GetSpeciesRestrictedNearMask4LevSet(phaseInterface.LevelSetIndex, 1);
                 CellMask PosFF = Tracker.Regions.GetLevelSetWing(phaseInterface.LevelSetIndex, +1).VolumeMask;
-
-                //enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, Near1, PosFF);
 
                 ContinuityProjection preEnforcer = new ContinuityProjection(
                     phaseInterface.C0LevelSet.Basis,
@@ -377,103 +308,184 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 LevelSet preCGLevelSet = phaseInterface.C0LevelSet.CloneAs();
 
                 preEnforcer.MakeContinuous(phaseInterface.DGLevelSet, preCGLevelSet, Near1, PosFF);
-                LevelSetTracker preTracker = new LevelSetTracker(Tracker.GridDat, Tracker.CutCellQuadratureType, 1, new string[] { "A", "B" }, preCGLevelSet);
-                preTracker.UpdateTracker(0.0);
 
-                CellMask CC = preTracker.Regions.GetCutCellMask4LevSet(0);
-                CellMask CCplus = CC.Union(Tracker.Regions.GetCutCellMask4LevSet(phaseInterface.LevelSetIndex));
-                PosFF = preTracker.Regions.GetLevelSetWing(0, +1).VolumeMask;
+                using(LevelSetTracker preTracker = new LevelSetTracker(Tracker.GridDat, Tracker.CutCellQuadratureType, 1, [ "A", "B" ], preCGLevelSet)) {
+                    preTracker.UpdateTracker(0.0);
 
+                    CellMask CC = preTracker.Regions.GetCutCellMask4LevSet(0);
+                    CellMask CCplus = CC.Union(Tracker.Regions.GetCutCellMask4LevSet(phaseInterface.LevelSetIndex));
+                    PosFF = preTracker.Regions.GetLevelSetWing(0, +1).VolumeMask;
 
-                enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.C0LevelSet, CCplus, PosFF);
-                preTracker.Dispose();
+                    enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.C0LevelSet, CCplus, PosFF);
+                }
             }
 
             /// <summary>
-            /// Checks for inner contact points/lines,
-            /// which may occur when an actually cut cell is **not** detected as cut!
+            /// Checks for inner contact points/lines, on the boundary of the cut-cell domain.
+            /// This might occur when the continuity projection, or the re-initialization, modifies the level-set in a way 
+            /// so that it leaves its original cut-cell domain.
             /// 
-            /// Sometimes (so far only 2D) one need to do the projection on the nearband in order to remove holes in the interface
+            /// Sometimes one need to do the projection on the near-band in order to remove holes in the interface
             /// </summary>
             /// <returns></returns>
             internal bool IsInterfaceClosed() {
-                const int iLevSet = 0;
-                LevelSetTracker LsTrk = phaseInterface.Tracker;
-                LevelSet preCGLevelSet = phaseInterface.C0LevelSet.CloneAs();
-                LevelSetTracker testTracker = new LevelSetTracker(LsTrk.GridDat, LsTrk.CutCellQuadratureType, 1, new string[] { "A", "B" }, preCGLevelSet);
-                testTracker.UpdateTracker(0.0);
+                using(var tr = new FuncTrace()) {
+                    const int iLevSet = 0;
+                    LevelSetTracker LsTrk = phaseInterface.Tracker;
+                    LevelSet preCGLevelSet = phaseInterface.C0LevelSet.CloneAs();
+                    using(LevelSetTracker testTracker = new LevelSetTracker(LsTrk.GridDat, LsTrk.CutCellQuadratureType, 1, ["A", "B"], preCGLevelSet)) {
+                        testTracker.UpdateTracker(0.0);
+                        var gdat = testTracker.GridDat;
 
-                int order = phaseInterface.C0LevelSet.Basis.Degree;
-                var testMetrics = testTracker.GetXDGSpaceMetrics(testTracker.SpeciesIdS.ToArray(), order);
-                var testFactory = testMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, testTracker.GridDat.iGeomEdges.EdgeRefElements.Single());
-                
+                        if(gdat.Grid.RefElements.Length > 1)
+                            throw new NotImplementedException("todo");
 
-                // the boundary of the cut-cell domain
-                EdgeMask CutCellBoundaryEdgeMask = testTracker.Regions.GetCutCellMask().AllEdges().Except(
-                    testTracker.Regions.GetCutCellMask().GetAllInnerEdgesMask()).Except(testTracker.GridDat.BoundaryEdges);
-                EdgeQuadratureScheme CutCellInnerBoundary_Scheme = new EdgeQuadratureScheme(
-                    new BoSSS.Foundation.XDG.Quadrature.SurfaceElementEdgeIntegrationMetric(testMetrics.LevelSetData[iLevSet]), 
-                    UseDefaultFactories: false, domain: CutCellBoundaryEdgeMask);
-                //EdgeQuadratureScheme CutCellInnerBoundary_Scheme = new EdgeQuadratureScheme( 
-                //    UseDefaultFactories: false, domain: CutCellBoundaryEdgeMask);
 
-                CutCellInnerBoundary_Scheme.AddFactoryDomainPair(testFactory);
+                        int order = phaseInterface.C0LevelSet.Basis.Degree;
+                        var testMetrics = testTracker.GetXDGSpaceMetrics(testTracker.SpeciesIdS.ToArray(), order);
+                        var testFactory = testMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, testTracker.GridDat.iGeomEdges.EdgeRefElements.Single());
 
-                // integrate over the **boundary** of the cut-cell domain.
-                // if the level-set has no holes due to un-detected cut cells, this integral should be zero
-                double result = 0.0;
-                int D = testTracker.GridDat.SpatialDimension;
-                EdgeQuadrature.GetQuadrature([ 1 ], testTracker.GridDat,
-                    CutCellInnerBoundary_Scheme.Compile(testTracker.GridDat, order),
-                    delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
 
-                        for (int i = 0; i < length; i++) { // 
-                            EdgeInfo edgInfo = testTracker.GridDat.Edges.Info[i0 + i];
-                            double edgSign = 1.0;
-                            if (edgInfo.HasFlag(EdgeInfo.Interprocess)) {
-                                // on an inter-process-edge, if both cells are correctly identified as cut-cells
-                                // the integral contributions from both processors cancel out 
-                                // when the sum over all processors is taken.
+                        // the boundary of the cut-cell domain
+                        EdgeMask CutCellBoundaryEdgeMask = testTracker.Regions.GetCutCellMask().AllEdges().Except(
+                            testTracker.Regions.GetCutCellMask().GetAllInnerEdgesMask()).Except(testTracker.GridDat.BoundaryEdges);
+                        EdgeQuadratureScheme CutCellInnerBoundary_Scheme = new EdgeQuadratureScheme(
+                            new BoSSS.Foundation.XDG.Quadrature.SurfaceElementEdgeIntegrationMetric(testMetrics.LevelSetData[iLevSet]),
+                            UseDefaultFactories: false, domain: CutCellBoundaryEdgeMask);
+                        //EdgeQuadratureScheme CutCellInnerBoundary_Scheme = new EdgeQuadratureScheme( 
+                        //    UseDefaultFactories: false, domain: CutCellBoundaryEdgeMask);
 
-                                double[] edgNormal = testTracker.GridDat.Edges.NormalsForAffine.ExtractSubArrayShallow(i0 + i, -1).To1DArray();
-                                edgSign = edgNormal.Sum();
+                        CutCellInnerBoundary_Scheme.AddFactoryDomainPair(testFactory);
+
+                        // integrate over the **boundary** of the cut-cell domain.
+                        // if the level-set has no holes due to un-detected cut cells, this integral should be zero!
+                        // - the quadrature rules on the boundary of the cut cell domain (`GetSurfaceElement_BoundaryRuleFactory`) must be empty!
+                        // - only exception: edges at MPI boundaries; 
+                        int D = testTracker.GridDat.SpatialDimension;
+                        Vector result_InterProcess = new Vector(D);
+                        double result_loc = 0;
+
+                        var GlbProblemList = new List<(long jCell0, long jCell1, int iEdge, Vector normal, Vector pt, double weights_sum, double usedmul, int originProc)>();
+
+                        BitArray failEdgesMask = new BitArray(gdat.Edges.Count);
+                        var failQRs = new List<(QuadRule qr, int iEdge, int jCell0, int jCell1, bool lCell0isCut, bool jCell1IsCut)>();
+                        var ccBitMask = testTracker.Regions.GetCutCellMask().GetBitMask();
+
+                        EdgeQuadrature.GetQuadrature([D + 1], gdat,
+                            CutCellInnerBoundary_Scheme.Compile(gdat, order),
+                            delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
+                                //var edgeNormals = testTracker.GridDat.Edges.NormalsCache.GetNormals_Edge(QR.Nodes, i0, length);
+                                // note: on inter-process-edges the normals point into opposite directions,
+                                //       therefore they should cancel out!
+
+                                for(int i = 0; i < length; i++) { // loop over edges
+                                    int iEdge = i0 + i;
+                                    EdgeInfo edgInfo = gdat.Edges.Info[iEdge];
+
+                                    if(edgInfo.HasFlag(EdgeInfo.Boundary))
+                                        throw new ArithmeticException("some boundary edge should not be part of the integration domain");
+
+                                    if(edgInfo.HasFlag(EdgeInfo.Interprocess)) {
+                                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                                        // An inter-process-edge: measure is not zero
+                                        // If both cells are correctly identified as cut-cells,
+                                        // the normals from both processors cancel out.
+                                        // when the sum over all processors is taken.
+                                        // We also multiply every edge with some unique number, to avoid two errors to cancel each other.
+                                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                                        double multiplyer; // 
+                                        long jCell0_global, jCell1_global;
+                                        {
+                                            int jCell0 = gdat.iGeomEdges.LogicalCellIndices[iEdge, 0];
+                                            int jCell1 = gdat.iGeomEdges.LogicalCellIndices[iEdge, 1];
+                                            if(jCell0 < 0 || jCell0 >= gdat.CellPartitioning.LocalLength)
+                                                throw new ApplicationException("expecting Cell0 to be in local range");
+                                            if(jCell1 < gdat.CellPartitioning.LocalLength)
+                                                throw new ApplicationException("expecting Cell1 to be external/ghost");
+
+                                            jCell0_global = jCell0 + gdat.CellPartitioning.i0;
+                                            jCell1_global = gdat.iParallel.GlobalIndicesExternalCells[jCell1 - gdat.CellPartitioning.LocalLength];
+                                            multiplyer = Math.Max(jCell0_global, jCell1_global);
+
+                                            if(jCell0_global >  jCell1_global) {
+                                                long t = jCell0_global;
+                                                jCell0_global = jCell1_global;
+                                                jCell1_global = t;
+                                            }
+                                        }
+
+                                        var edgeNormals = gdat.Edges.NormalsCache.GetNormals_Edge(QR.Nodes, iEdge, 1);
+                                        var globCoords = QR.Nodes.TransformLocal2Global(gdat, iEdge);
+                                        var edgNormal = edgeNormals.GetRowPt(0, 0);
+                                        var globCoord = globCoords.GetRowPt(0);
+
+                                        GlbProblemList.Add((jCell0_global, jCell1_global, iEdge, edgNormal, globCoord, QR.Weights.Sum(), multiplyer, gdat.MpiRank));
+
+                                        EvalResult.ExtractSubArrayShallow([i, 0, 0], [i, QR.NoOfNodes - 1, D - 1]).Acc(multiplyer, edgeNormals);
+
+
+                                    } else {
+                                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                                        // interior edge within local MPI process
+                                        // SurfaceElement_BoundaryRule measure must be 0.0,
+                                        // unless the Level-Set has an open end!!!
+                                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                                        for(int qn = 0; qn < QR.NoOfNodes; qn++) {
+                                            // on a closed interface, this integrand should be zero
+                                            // (either the quadrature rule is empty or the weights are zero)
+                                            
+                                            EvalResult[i, qn, D] = 1.0;
+
+
+                                            int jCell0 = gdat.iGeomEdges.CellIndices[iEdge, 0];
+                                            int jCell1 = gdat.iGeomEdges.CellIndices[iEdge, 1];
+
+                                            failEdgesMask[iEdge] = true;
+                                            failQRs.Add((QR, iEdge, jCell0, jCell1, ccBitMask[jCell0], jCell1 >= 0 ? ccBitMask[jCell1] : false));
+                                        }
+                                    }
+                                }
+                            },
+                            delegate (int i0, int length, MultidimensionalArray ResultsOfIntegration) {
+                                for(int i = 0; i < length; i++) {
+                                    //if (resOfIntg != 0) {
+                                    //    int[,] cellIdx = LsTrk.GridDat.Edges.CellIndices;
+                                    //    long jIn = (rank == 0) ? cellIdx[i0 + i, 0] : cellIdx[i0 + i, 0] + cellPart.i0;
+                                    //    long jOut = (rank == 0) ? cellIdx[i0 + i, 1] : cellIdx[i0 + i, 1] - LsTrk.GridDat.Cells.NoOfExternalCells;
+                                    //    Console.WriteLine($"proc {rank} - edge {i0 + i} ({jIn}, {jOut}): integration result = {ResultsOfIntegration[i, 0]}");
+                                    //}
+                                    result_loc += ResultsOfIntegration[i, D];
+                                    result_InterProcess += ResultsOfIntegration.GetRowPart(i, 0, D);
+                                }
                             }
-                            for (int qn = 0; qn < QR.NoOfNodes; qn++) {
-                                // on a closed interface, this integrand should be zero
-                                // (either the quadrature rule is empty or the weights are zero)
-                                EvalResult[i, qn, 0] = 1.0 * edgSign;
-                            }
-                        }
-                        //EvalResult.SetAll(1.0);
+                        ).Execute();
 
-                    },
-                    delegate (int i0, int length, MultidimensionalArray ResultsOfIntegration) {
-                        for (int i = 0; i < length; i++) {
-                            //if (resOfIntg != 0) {
-                            //    int[,] cellIdx = LsTrk.GridDat.Edges.CellIndices;
-                            //    long jIn = (rank == 0) ? cellIdx[i0 + i, 0] : cellIdx[i0 + i, 0] + cellPart.i0;
-                            //    long jOut = (rank == 0) ? cellIdx[i0 + i, 1] : cellIdx[i0 + i, 1] - LsTrk.GridDat.Cells.NoOfExternalCells;
-                            //    Console.WriteLine($"proc {rank} - edge {i0 + i} ({jIn}, {jOut}): integration result = {ResultsOfIntegration[i, 0]}");
-                            //}
-                            result += ResultsOfIntegration[i, 0];
+                        //ilPSP.Environment.StdoutOnlyOnRank0 = true;
+
+                        result_InterProcess = result_InterProcess.ToArray().MPISum();
+                        bool isClosed_Interprocess = result_InterProcess.L2Norm() < 1e-10 * gdat.CellPartitioning.TotalLength;
+                        bool isClosed_Locally = result_loc == 0.0;
+
+                        bool isClosed = (isClosed_Interprocess && isClosed_Locally).MPIAnd();
+
+
+                        if(!isClosed_Interprocess) {
+                            tr.Info($"Interface not closed between MPI processes (interprocess result = {result_InterProcess.L2Norm()})");
+                            //throw new ArithmeticException($"Interface not closed between MPI processes: local result = {result_loc}, interprocess result = {result_InterProcess.L2Norm()}");
                         }
+
+                        if(!isClosed_Locally) {
+                            tr.Info($"Interface not closed: result = {isClosed_Locally}");
+                            //(new EdgeMask(gdat, failEdgesMask, MaskType.Geometrical)).SaveToTextFile($"unbalancedEdges.csv");
+                            //testFactory.GetQuadRuleSet(CutCellInnerBoundary_Scheme.Domain, order);
+                            //throw new ArithmeticException($"Interface not closed: local result = {result_loc}, interprocess result = {result_InterProcess.L2Norm()}");
+                        }
+
+                        return isClosed;
                     }
-                ).Execute();
-                testTracker.Dispose();
-
-                //ilPSP.Environment.StdoutOnlyOnRank0 = true;
-
-                result = result.MPISum();
-                bool isClosed = Math.Abs(result) < 1e-10;
-
-                if(!isClosed) {
-                    Console.Error.WriteLine($"Interface not closed: result = {result}");
-                    //throw new ArithmeticException($"Interface not closed: result = {result}");
                 }
-
-                return isClosed;
             }
-
 
             public void UpdateParameters(
                 IReadOnlyDictionary<string, DGField> DomainVarFields,

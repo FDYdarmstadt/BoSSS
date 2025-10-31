@@ -59,12 +59,6 @@ namespace ZwoLevelSetSolver {
 
         }
 
-        /// <summary>
-        /// Exact solution for Displacement, for each species (either A or B or C).
-        /// </summary>
-        [NonSerialized]
-        [JsonIgnore]
-        public IDictionary<string, Func<double[], double, double>[]> ExactSolutionDisplacement;
     }
 
 

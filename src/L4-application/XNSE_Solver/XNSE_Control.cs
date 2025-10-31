@@ -14,34 +14,34 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using System.Collections.Generic;
-using System.Runtime.Serialization;
-using System.Linq;
-using System.Text;
-using BoSSS.Solution.Control;
-using BoSSS.Solution.LevelSetTools.FourierLevelSet;
-using BoSSS.Solution.LevelSetTools.Advection;
-using BoSSS.Solution.XheatCommon;
-using BoSSS.Solution.XNSECommon;
-using BoSSS.Solution.AdvancedSolvers;
-using BoSSS.Solution.XdgTimestepping;
-using BoSSS.Solution.NSECommon;
-
+using BoSSS.Application.XNSE_Solver.LoadBalancing;
+using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
+using BoSSS.Foundation.XDG.OperatorFactory;
+using BoSSS.Solution.AdvancedSolvers;
+using BoSSS.Solution.Control;
+using BoSSS.Solution.EnergyCommon;
 using BoSSS.Solution.LevelSetTools;
+using BoSSS.Solution.LevelSetTools.Advection;
 using BoSSS.Solution.LevelSetTools.EllipticExtension;
 using BoSSS.Solution.LevelSetTools.EllipticReInit;
-using BoSSS.Solution.Timestepping;
-using Newtonsoft.Json;
-using BoSSS.Solution.EnergyCommon;
+using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 using BoSSS.Solution.LevelSetTools.PhasefieldLevelSet;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
-using BoSSS.Foundation;
-using BoSSS.Application.XNSE_Solver.LoadBalancing;
+using BoSSS.Solution.NSECommon;
+using BoSSS.Solution.Timestepping;
+using BoSSS.Solution.XdgTimestepping;
+using BoSSS.Solution.XheatCommon;
+using BoSSS.Solution.XNSECommon;
 using ilPSP;
+using MathNet.Numerics;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using BoSSS.Foundation.XDG.OperatorFactory;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.Serialization;
+using System.Text;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -313,7 +313,7 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public PhysicalParameters PhysicalParameters = new PhysicalParameters() {
             Material = true,
-            IncludeConvection = false,
+            IncludeConvection = true,
             IncludeDiffusion = true,
             mu_A = 1.0,
             mu_B = 1.0,
@@ -455,18 +455,19 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
 
-        /// <summary>
-        /// An explicit expression of the Level-set over time: \phi = f(x,y;t).
-        /// </summary>
-        [NonSerialized]
-        [JsonIgnore]
-        public Func<double[], double, double> Phi;
+        ///// <summary>
+        ///// An explicit expression of the Level-set over time: \phi = f(x,y;t).
+        ///// </summary>
+        //[NonSerialized]
+        //[JsonIgnore]
+        //public Func<double[], double, double> Phi;
 
         /// <summary>
         /// See <see cref="InterfaceAveraging"/>
         /// </summary>
         public InterfaceVelocityAveraging InterVelocAverage = InterfaceVelocityAveraging.density;
 
+        /*
         /// <summary>
         /// Exact solution for velocity, for each species (either A or B).
         /// </summary>
@@ -481,27 +482,14 @@ namespace BoSSS.Application.XNSE_Solver {
         [JsonIgnore]
         public IDictionary<string, Func<double[], double, double>> ExactSolutionPressure;
 
-        /*
-        /// <summary>
-        /// Exact solution, temperature, for each species (either A or B).
-        /// </summary>
-        [NonSerialized]
-        [JsonIgnore]
-        public IDictionary<string, Func<double[], double, double>> ExactSolutionTemperature;
-        /// <summary>
-        /// Exact solution, Mixture fraction, for each species (either A or B).
-        /// </summary>
-        [NonSerialized]
-        [JsonIgnore]
-        public IDictionary<string, Func<double[], double, double>> ExactSolutionMixtureFraction;
-        */
-
         /// <summary>
         /// Exact solution, electric potential, for each species (either A or B).
         /// </summary>
         [NonSerialized]
         [JsonIgnore]
         public IDictionary<string, Func<double[], double, double>> ExactSolutionElectricPotential;
+        */
+
 
         /// <summary>
         /// Time dependent (component-wise) gravitational acceleration (either A or B).
@@ -578,20 +566,106 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         /// <summary>
-        /// activates inertia force terms occuring in rotational systems
+        /// Adds an initial value to <see cref="InitialValues"/>
         /// </summary>
+        /// <param name="fieldname">Name of the field for which the boundary condition is valid</param>
+        /// <param name="value">Function of the boundary condition</param>
+        /// <param name="species">species name, e.g., 'A' or 'B'</param>
+        public void AddInitialValue(string fieldname, string species, IBoundaryAndInitialData value) {
+            base.AddInitialValue(fieldname + "#" + species, value);
+        }
+
+        /// <summary>
+        /// Adds a time-dependent value to <see cref="InitialValues_Evaluators_TimeDep"/>
+        /// (e.g., for time-stepping schemes with require multiple initial value, time-dependent source fields, ...)
+        /// </summary>
+        public void AddInitialValue(string fieldname, string species, Func<double[], double, double> value) {
+            base.AddInitialValue(fieldname + "#" + species, value);
+        }
+
+        /// <summary>
+        /// Adds an initial value to <see cref="InitialValues_Evaluators"/>
+        /// </summary>
+        public void AddInitialValue(string fieldname, string species, Func<double[], double> value) {
+            base.AddInitialValue(fieldname + "#" + species, value);
+        }
+
+        /// <summary>
+        /// Adds an initial value to <see cref="InitialValues"/>
+        /// </summary>
+        /// <param name="fieldname"></param>
+        /// <param name="FormulaText">
+        /// Text representation of a delegate, see <see cref="Formula"/>.
+        /// </param>
+        /// <param name="TimeDependent">
+        /// Whether the formula in <paramref name="FormulaText"/> is time-dependent or not, see <see cref="Formula"/>.
+        /// </param>
+        /// <param name="species">species name</param>
+        public void AddInitialValue(string fieldname, string species, string FormulaText, bool TimeDependent) {
+            base.AddInitialValue(fieldname + "#" + species, FormulaText, TimeDependent);
+        }
+
+        /// <summary>
+        /// Adds an item to <see cref="ExactSolutions"/>, e.g., for computing errors in benchmark cases
+        /// </summary>
+        /// <param name="fieldname">Name of the field for which the exact solution is valid</param>
+        /// <param name="value">Function of the exact solution</param>
+        /// <param name="species"></param>
+        public void AddExactSolution(string fieldname, string species, IBoundaryAndInitialData value) {
+            ExactSolutions.Add(fieldname + "#" + species, value);
+        }
+
+        /// <summary>
+        /// Adds a transient exact solution, e.g., for computing errors in benchmark cases
+        /// </summary>
+        /// <param name="fieldname">Name of the field for which the exact solution is valid</param>
+        /// <param name="value">Function of the exact solution</param>
+        /// <param name="species"></param>
+        public void AddExactSolution(string fieldname, string species, Func<double[], double, double> value) {
+            base.AddExactSolution(fieldname + "#" + species, value);
+        }
+
+        /// <summary>
+        /// Adds a time-independent exact solution, e.g., for computing errors in benchmark cases
+        /// </summary>
+        /// <param name="fieldname">Name of the field for which the exact solution is valid</param>
+        /// <param name="value">Function of the exact solution</param>
+        /// <param name="species"></param>
+        public void AddExactSolution(string fieldname, string species, Func<double[], double> value) {
+            base.AddExactSolution(fieldname + "#" + species, value);
+        }
+
+        /// <summary>
+        /// Adds an item to <see cref="ExactSolutions"/>
+        /// </summary>
+        /// <param name="fieldname"></param>
+        /// <param name="FormulaText">
+        /// Text representation of a delegate, see <see cref="Formula"/>.
+        /// </param>
+        /// <param name="TimeDependent">
+        /// Whether the formula in <paramref name="FormulaText"/> is time-dependent or not, see <see cref="Formula"/>.
+        /// </param>
+        /// <param name="species"></param>
+        public void AddExactSolution(string fieldname, string species, string FormulaText, bool TimeDependent) {
+            base.AddExactSolution(fieldname + "#" + species, FormulaText, TimeDependent);
+        }
+
+
+        // <summary>
+        // activates inertia force terms occuring in rotational systems
+        // </summary>
         //[DataMember]
         //public bool UseRotInertForceTerms = false;
 
-        /// <summary>
-        /// Angular velocity for rotating systems
-        /// </summary>
+        // <summary>
+        // Angular velocity for rotating systems
+        // </summary>
         //[DataMember]
         //public double[] AngularVelocity;
 
-        /// <summary>
-        /// activates cylindircal terms
-        /// </summary>
+        // <summary>
+        // activates cylindircal terms
+        // </summary>
         //[DataMember]
         //public bool UseCylindricalCoords = false;
 

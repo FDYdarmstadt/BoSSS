@@ -296,7 +296,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                         int K = (int)Math.Ceiling(Math.Sqrt(NoOfEqTotal * 1.75)) + 1;
 
-                        var Nodes1D = GenericBlas.Linspace(-1, 1, K);
+                        //var Nodes1D = GenericBlas.Linspace(-1, 1, K);
+                        var Nodes1D = GenericBlas.Linspace(-1, 1, K + 2).Skip(1).Take(K).ToArray();
 
                         var _NodeSet = new NodeSet(this.RefElement, K*K, 2, true);
                         int n = 0;

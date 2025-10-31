@@ -192,7 +192,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// </param>
         protected override void Flux(double time, double[] x, double[] U, double[] output) {
             StateVector state = new StateVector(U, material);
-            equationComponent.Flux(state).CopyTo(output, output.Length);
+            equationComponent.Flux(state).CopyTo(output, 0);
         }
 
         /// <summary>

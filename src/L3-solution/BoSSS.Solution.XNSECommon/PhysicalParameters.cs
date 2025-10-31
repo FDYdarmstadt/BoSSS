@@ -33,7 +33,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// Resp.: Navier-Stokes vs. Stokes
         /// </summary>
         [DataMember]
-        public bool IncludeConvection;
+        public bool IncludeConvection = true;
 
         /// <summary>
         /// Include Diffusive Term, standard: this is on
@@ -218,7 +218,7 @@ namespace BoSSS.Solution.XNSECommon {
 
         public override bool Equals(object obj) {
             var other = obj as PhysicalParameters;
-            if (other == null)
+            if(other == null)
                 return false;
 
             return
@@ -241,6 +241,10 @@ namespace BoSSS.Solution.XNSECommon {
                 this.lambda_I == other.lambda_I &&
                 this.lambdaI_tilde == other.lambdaI_tilde &&
                 this.useArtificialSurfaceForce == other.useArtificialSurfaceForce;
+        }
+
+        public override int GetHashCode() {
+            return (int)(rho_A * 1000);
         }
     }
 

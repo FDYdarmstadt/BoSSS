@@ -43,7 +43,7 @@ namespace ilPSP {
         public int iThread;
 
         /// <summary>
-        /// actuial numbe of threads
+        /// actual number of threads
         /// </summary>
         public int NumThreads;
     }
@@ -530,7 +530,7 @@ namespace ilPSP {
 
         /// <summary>
         /// The signature of <see cref="body"/> is: `i, localData => localData`
-        /// **Note**: the balancing is performend by the TPL implementation;
+        /// **Note**: the balancing is performed by the TPL implementation;
         /// </summary>
         public static void ParallelFor<TLocal>(int fromInclusive, int toExclusive, Func<TLocal> localInit, Func<int, TLocal, TLocal> body, Action<TLocal> localFinally, bool enablePar = true) {
             if(InParallelSection == true || !enablePar || NumThreads <= 1) {

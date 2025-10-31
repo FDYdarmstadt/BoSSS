@@ -835,7 +835,7 @@ namespace BoSSS.Application.BoSSSpad {
                             this.ExitCodeCache = ExitCode;
                         } catch (Exception e) {
                            
-                            tr.Error($"{e.GetType().Name} during Job.Deployment status evaluation: {e.Message}");
+                            tr.Info($"{e.GetType().Name} during Job.Deployment status evaluation: {e.Message}; Most likely reason: job was submitted a long time ago, and the job manager deleted teh respective record."); 
                             tr.Info("Exception trace: " + (e.StackTrace ?? ""));
                             bpc_status = JobStatus.Unknown;
                             ExitCode = null;
@@ -1220,7 +1220,7 @@ namespace BoSSS.Application.BoSSSpad {
                 return m_NumberOfMPIProcs;
             }
             set {
-                if (value <= 0)
+                if(value <= 0)
                     throw new ArgumentOutOfRangeException("number of MPI processes must be at least 1");
                 TestActivation();
                 m_NumberOfMPIProcs = value;
@@ -1238,7 +1238,7 @@ namespace BoSSS.Application.BoSSSpad {
                 return m_NumberOfThreads;
             }
             set {
-                if(value <= 0) 
+                if(value <= 0)
                     throw new ArgumentOutOfRangeException("number of threads must be at least 1");
                 m_EnvironmentVars["OMP_NUM_THREADS"] = this.m_NumberOfThreads.ToString();
                 TestActivation();

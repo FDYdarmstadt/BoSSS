@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using ZwoLevelSetSolver.SolidPhase;
 using static BoSSS.Solution.Control.AppControl;
 using ilPSP.LinSolvers.PARDISO;
+using System.CodeDom.Compiler;
 
 namespace ZwoLevelSetSolver.Tests {
     public static class FSTC {
@@ -395,17 +396,16 @@ namespace ZwoLevelSetSolver.Tests {
             // initial values and exact solution
             // =================================
 
-            C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
-            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionDisplacement = new Dictionary<string, Func<double[], double, double>[]>();
-
+            
 
             int D = tst.SpatialDimension;
 
             foreach(var spc in new[] { "A", "B", "C" }) {
-                C.ExactSolutionPressure.Add(spc, tst.GetPress(spc));
-                C.ExactSolutionVelocity.Add(spc, D.ForLoop(d => tst.GetU(spc, d)));
-                C.ExactSolutionDisplacement.Add(spc, D.ForLoop(d => tst.GetDis(spc, d)));
+                C.AddExactSolution(BoSSS.Solution.NSECommon.VariableNames.Pressure, spc, tst.GetPress(spc));
+                for(int d = 0; d < D; d++) {
+                    C.AddExactSolution(BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d), spc, tst.GetU(spc, d));
+                    C.AddExactSolution(VariableNames.DisplacementComponent(d), spc, tst.GetDis(spc, d));
+                }
 
                 for(int d = 0; d < D; d++) {
                     C.InitialValues_Evaluators.Add(BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d) + "#" + spc, tst.GetU(spc, d).Convert_Xt2X(0.0));
@@ -633,17 +633,16 @@ namespace ZwoLevelSetSolver.Tests {
             // initial values and exact solution
             // =================================
 
-            C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
-            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionDisplacement = new Dictionary<string, Func<double[], double, double>[]>();
 
 
             int D = tst.SpatialDimension;
 
             foreach(var spc in new[] { "A", "B", "C" }) {
-                C.ExactSolutionPressure.Add(spc, tst.GetPress(spc));
-                C.ExactSolutionVelocity.Add(spc, D.ForLoop(d => tst.GetU(spc, d)));
-                C.ExactSolutionDisplacement.Add(spc, D.ForLoop(d => tst.GetDis(spc, d)));
+                C.AddExactSolution(BoSSS.Solution.NSECommon.VariableNames.Pressure, spc, tst.GetPress(spc));
+                for(int d = 0; d < D; d++) {
+                    C.AddExactSolution(BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d), spc, tst.GetU(spc, d));
+                    C.AddExactSolution(VariableNames.DisplacementComponent(d), spc, tst.GetDis(spc, d));
+            }
 
                 for(int d = 0; d < D; d++) {
                     C.InitialValues_Evaluators.Add(BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d) + "#" + spc, tst.GetU(spc, d).Convert_Xt2X(0.0));
@@ -871,27 +870,11 @@ namespace ZwoLevelSetSolver.Tests {
             // initial values and exact solution
             // =================================
 
-            C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
-            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionDisplacement = new Dictionary<string, Func<double[], double, double>[]>();
+
 
 
             int D = tst.SpatialDimension;
 
-            //foreach(var spc in new[] { "A", "B", "C" }) {
-            //    C.ExactSolutionPressure.Add(spc, tst.GetPress(spc));
-            //    C.ExactSolutionVelocity.Add(spc, D.ForLoop(d => tst.GetU(spc, d)));
-            //    C.ExactSolutionDisplacement.Add(spc, D.ForLoop(d => tst.GetDis(spc, d)));
-
-            //    for(int d = 0; d < D; d++) {
-            //        C.InitialValues_Evaluators.Add(BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d) + "#" + spc, tst.GetU(spc, d).Convert_Xt2X(0.0));
-            //        C.InitialValues_Evaluators.Add(VariableNames.DisplacementComponent(d) + "#" + spc, tst.GetDis(spc, d).Convert_Xt2X(0.0));
-            //        //var Gravity_d = tst.GetF(spc, d).Convert_X2Xt();
-            //        //C.SetGravity(spc, d, Gravity_d);
-            //    }
-
-            //    C.InitialValues_Evaluators.Add(BoSSS.Solution.NSECommon.VariableNames.Pressure + "#" + spc, tst.GetPress(spc).Convert_Xt2X(0.0));
-            //}
 
             #endregion
 

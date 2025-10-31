@@ -312,9 +312,11 @@ namespace BoSSS.Foundation.Quadrature {
             // build rule
             // ==========
             {
+
                 m_EdgesToChunk = new int[grd.iGeomEdges.Count];
                 m_EdgesToChunk.SetAll(-1111);
                 m_QuadRule = new ChunkRulePair<QuadRule>[NoEdg];
+
 
 
                 for (int i = 0; i < NoEdg; i++) { // loop over edges in mask
@@ -349,6 +351,7 @@ namespace BoSSS.Foundation.Quadrature {
 #endif
 
                     m_EdgesToChunk[EdgeIndices[i]] = i;
+
                 }
             }
 

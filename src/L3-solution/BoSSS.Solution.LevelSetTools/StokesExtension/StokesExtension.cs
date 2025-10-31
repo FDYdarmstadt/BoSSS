@@ -37,7 +37,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             this.m_CutCellQuadOrder = cutCellQuadOrder;
             this.AgglomerationThreshold = AgglomerationThrshold;
             this.fullStokes = fullStokes;
-            this.m_useBCMap = useBCMap; // if false, Neumann boundary condtions are applied everywhere. If true, the boundary conditions from map are applied.
+            this.m_useBCMap = useBCMap; // if false, Neumann boundary conditions are applied everywhere. If true, the boundary conditions from map are applied.
         }
 
         int D;
@@ -315,6 +315,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                 MultigridOperator mgOp = new MultigridOperator(AggBasis, ExtenstionSolVec.Mapping, OpMtx, null, MultigridOperatorConfig, GetBulkOperator());
 
                 var bkup_RHS = RHS.CloneAs();
+                Exception e;
                 try {
                     var Pre_RHS = RHS.CloneAs();
                     var Pre_Sol = ExtenstionSolVec.CloneAs();
@@ -322,11 +323,18 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                     mgOp.TransformRhsInto(RHS, Pre_RHS, true);
                     mgOp.OperatorMatrix.Solve_Direct(Pre_Sol, Pre_RHS);
                     mgOp.TransformSolFrom(ExtenstionSolVec, Pre_Sol);
+                    e = null;
+                } catch(Exception ee) {
+                    e = ee;
+                }
+                try {
+                    e.ExceptionBcast(); // MPI-parallel exception handling 
+                    
                 } catch {
                     // should be replaced by something more sophisticated
                     //var Residual = RHS.CloneAs();
                     //var cExtenstionSolVec = ExtenstionSolVec.CloneAs();
-                    tr.Warning("StokesExtension.SolveExtension with Multigridoperator failed, trying direct method");
+                    tr.Warning($"StokesExtension.SolveExtension with Multigridoperator failed, trying direct method; got exception");
                     OpMtx.Solve_Direct(ExtenstionSolVec, bkup_RHS);
                 }
 

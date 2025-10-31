@@ -1692,7 +1692,7 @@ namespace BoSSS.Foundation.XDG {
         Func<LevelSetTracker, SpeciesId, XQuadSchemeHelper, int, int, CellQuadratureScheme> m_ContactLine_VolumeQuadraturSchemeProvider;
 
         /// <summary>
-        /// User-customizable factory, to specify the cell/volume quadrature, see also <see cref="QuadOrderFunction"/>
+        /// User-customizable factory, to specify the contact line quadrature (<see cref="ContactLineOperator_Ls0"/>), see also <see cref="QuadOrderFunction"/>
         /// - 1st argument: current level-set tracker
         /// - 2nd argument: species which should be integrated, one of <see cref="Species"/>
         /// - 3rd argument: a default <see cref="XQuadSchemeHelper"/>

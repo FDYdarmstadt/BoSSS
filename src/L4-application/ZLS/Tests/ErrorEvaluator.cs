@@ -21,17 +21,16 @@ using ilPSP.Utils;
 using ZwoLevelSetSolver;
 using BoSSS.Solution.Tecplot;
 
-namespace ZwoLevelSetSolver.Tests
-{
+namespace ZwoLevelSetSolver.Tests {
+
+    /*
     /// <summary>
     /// base class for error evaluation within tests
     /// </summary>
-    public abstract class ZLSErrorEvaluator {
+    public abstract class ZLSErrorEvaluator : BoSSS.Application.XNSE_Solver.Tests.ErrorEvaluator {
 
-        protected IApplication solver;
 
-        public ZLSErrorEvaluator(IApplication solver) {
-            this.solver = solver;
+        public ZLSErrorEvaluator(IApplication solver) : base(solver) {
         }
 
         /// <summary>
@@ -39,21 +38,7 @@ namespace ZwoLevelSetSolver.Tests
         /// </summary>
         public abstract double[] ComputeL2Error(double time, ZLS_Control control);
 
-
-        /// <summary>
-        /// number of cells in the grid/mesh
-        /// </summary>
-        public double GetGridCells() {
-            return solver.GridData.CellPartitioning.TotalLength;
-        }
-
-        /// <summary>
-        /// characteristic grid/mesh length scale
-        /// </summary>
-        public double GetGrid_h() {
-            return ((BoSSS.Foundation.Grid.Classic.GridData)(solver.GridData)).Cells.h_minGlobal;
-        }
-    }
+    }*/
 
     /// <summary>
     /// error evaluator for ZLS-based tests 
@@ -62,9 +47,9 @@ namespace ZwoLevelSetSolver.Tests
     /// <remarks>
     /// Seems redundant with <see cref="L2ErrorLogger"/>
     /// </remarks>
-    public class ZLSErrorEvaluator<T> : ZLSErrorEvaluator where T: ZLS_Control, new() {
-        
-        public ZLSErrorEvaluator(IApplication solver) : base(solver){
+    public class ZLSErrorEvaluator<T> : BoSSS.Application.XNSE_Solver.Tests.XNSEErrorEvaluator<T> where T : ZLS_Control, new() {
+
+        public ZLSErrorEvaluator(IApplication solver) : base(solver) {
 
         }
 
@@ -74,19 +59,17 @@ namespace ZwoLevelSetSolver.Tests
             }
         }
 
-        public double[] ComputeVelocityError(IDictionary<string, Func<double[], double, double>[]> exactVelocity, double time)
-        {
+        /*
+
+        public double[] ComputeVelocityError(IDictionary<string, Func<double[], double, double>[]> exactVelocity, double time) {
             int D = solver.GridData.SpatialDimension;
             var FluidSpecies = exactVelocity.Keys.ToArray();
             double[] Ret = new double[D];
 
             int order = 0;
-            if (solver.LsTrk.GetCachedOrders().Count > 0)
-            {
+            if(solver.LsTrk.GetCachedOrders().Count > 0) {
                 order = solver.LsTrk.GetCachedOrders().Max();
-            }
-            else
-            {
+            } else {
                 order = 1;
             }
 
@@ -95,22 +78,20 @@ namespace ZwoLevelSetSolver.Tests
             Dictionary<string, double[]> L2Error_Species = new Dictionary<string, double[]>();
             double[] L2Error = new double[D];
 
-            foreach (var spc in FluidSpecies)
-            {
+            foreach(var spc in FluidSpecies) {
                 L2Error_Species.Add(spc, new double[D]);
 
                 SpeciesId spId = solver.LsTrk.GetSpeciesId(spc);
                 var scheme = SchemeHelper.GetVolumeQuadScheme(spId);
 
 
-                for (int d = 0; d < D; d++)
-                {
+                for(int d = 0; d < D; d++) {
                     string velocity = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d];
                     ConventionalDGField Vel_d = ((XDGField)solver.CurrentStateVector.Mapping.Single(Field => Field.Identification == velocity)).GetSpeciesShadowField(spc);
 
                     double LxError = Vel_d.LxError(exactVelocity[spc][d].Vectorize(time), null, scheme.SaveCompile(Vel_d.GridDat, order));
                     LxError = (LxError > -1e-12 && LxError < 0) ? 0.0 : LxError; // Avoid nans if solution is too close to the analytic one
-                    L2Error_Species[spc][d] = LxError.Sqrt(); 
+                    L2Error_Species[spc][d] = LxError.Sqrt();
 
                     L2Error[d] += L2Error_Species[spc][d].Pow2();
 
@@ -119,16 +100,14 @@ namespace ZwoLevelSetSolver.Tests
             }
             L2Error = L2Error.Select(x => x.Sqrt()).ToArray();
 
-            for (int d = 0; d < D; d++)
-            {
+            for(int d = 0; d < D; d++) {
                 solver.QueryHandler.ValueQuery("L2err_" + BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d), L2Error[d], true);
                 Ret[d] = L2Error[d];
             }
             return L2Error;
         }
 
-        public double ComputePressureError(IDictionary<string, Func<double[], double, double>> exactPressure, double time)
-        {
+        public double ComputePressureError(IDictionary<string, Func<double[], double, double>> exactPressure, double time) {
             int D = solver.GridData.SpatialDimension;
             var FluidSpecies = exactPressure.Keys.ToArray();
 
@@ -136,7 +115,7 @@ namespace ZwoLevelSetSolver.Tests
             XDGField pressure = (XDGField)solver.CurrentStateVector.Mapping.Single(Field => Field.Identification == pressureName);
 
             int order = 0;
-            if (solver.LsTrk.GetCachedOrders().Count > 0) {
+            if(solver.LsTrk.GetCachedOrders().Count > 0) {
                 order = solver.LsTrk.GetCachedOrders().Max();
             } else {
                 order = 1;
@@ -149,13 +128,12 @@ namespace ZwoLevelSetSolver.Tests
             // pass 1: mean value of pressure difference
             double DiffInt = 0;
             double Volume = 0;
-            foreach (var spc in FluidSpecies)
-            {
+            foreach(var spc in FluidSpecies) {
 
                 SpeciesId spId = solver.LsTrk.GetSpeciesId(spc);
                 var scheme = SchemeHelper.GetVolumeQuadScheme(spId);
                 var rule = scheme.Compile(solver.GridData, order);
-               
+
                 DiffInt += pressure.GetSpeciesShadowField(spc).LxError(exactPressure[spc].Vectorize(time), (X, a, b) => (a - b), rule);
                 Volume += pressure.GetSpeciesShadowField(spc).LxError(exactPressure[spc].Vectorize(time), (X, a, b) => 1.0, rule);
             }
@@ -165,8 +143,7 @@ namespace ZwoLevelSetSolver.Tests
             double L2Error = 0;
             Dictionary<string, double> L2Error_Species = new Dictionary<string, double>();
 
-            foreach (var spc in FluidSpecies)
-            {
+            foreach(var spc in FluidSpecies) {
 
                 SpeciesId spId = solver.LsTrk.GetSpeciesId(spc);
                 var scheme = SchemeHelper.GetVolumeQuadScheme(spId);
@@ -182,6 +159,12 @@ namespace ZwoLevelSetSolver.Tests
             L2Error = L2Error.Sqrt();
             solver.QueryHandler.ValueQuery("L2err_" + BoSSS.Solution.NSECommon.VariableNames.Pressure, L2Error, true);
             return L2Error;
+        }
+        */
+
+        IDictionary<string, Func<double[], double, double>[]> GetExactSolutionDisplacement(AppControl control) {
+            int D = solver.GridData.SpatialDimension;
+            return base.GetExactSolution(control, VariableNames.DisplacementVector(D));
         }
 
         public double[] ComputeDisplacementError(IDictionary<string, Func<double[], double, double>[]> exactDisplacement, double time) {
@@ -235,28 +218,24 @@ namespace ZwoLevelSetSolver.Tests
 
         /// <summary>
         /// Computes the L2 Error of the actual solution against the exact solution in the control object 
-        /// (<see cref="ZLS_Control.ExactSolutionVelocity"/> and <see cref="ZLS_Control.ExactSolutionPressure"/>).
+        /// (<see cref="AppControl.ExactSolutions"/>).
         /// </summary>
-        public override double[] ComputeL2Error(double time, ZLS_Control control) {
+        override public double[] ComputeL2Error(double time, AppControl control) {
             int D = solver.GridData.SpatialDimension;
             //double[] Ret = new double[D + 1];
-            double[] Ret = new double[D + 1 + 2];
-
-            if(control.ExactSolutionVelocity != null) {
-                double[] error = ComputeVelocityError(control.ExactSolutionVelocity, time);
-                error.CopyTo(Ret, 0);
+            
+            var Ret0 = base.ComputeL2Error(time, control);
+            
+            IDictionary<string, Func<double[], double, double>[]> ExactSolutionDisplacement = this.GetExactSolutionDisplacement(control);
+            var Ret1 = new double[D];
+            if(ExactSolutionDisplacement != null) {
+                Ret1 = ComputeDisplacementError(ExactSolutionDisplacement, time);
             }
-            if(control.ExactSolutionPressure != null) {
-                double error = ComputePressureError(control.ExactSolutionPressure, time);
-                Ret[D] = error;
-            }
-            if(control.ExactSolutionDisplacement != null) {
-                double[] error = ComputeDisplacementError(control.ExactSolutionDisplacement, time);
-                error.CopyTo(Ret, D + 1);
-            }
-            return Ret;
+            return Ret0.Cat(Ret1);
         }
     }
+
+    /*
 
     /// <summary>
     /// error evaluator for LevelSet-based tests 
@@ -435,5 +414,5 @@ namespace ZwoLevelSetSolver.Tests
             return Ret;
         }
 
-    }   
+    }   */
 }

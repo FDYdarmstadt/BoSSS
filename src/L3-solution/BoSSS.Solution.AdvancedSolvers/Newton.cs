@@ -632,7 +632,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         private void NewtonStep(CoordinateVector SolutionVec, int itc, double[] CurSol, double[] CurRes, double HomotopyValue, ref double norm_CurRes, ref double TrustRegionDelta) {
             using (var tr = new FuncTrace()) {
-                tr.InfoToConsole = true;
+                tr.InfoToConsole = false;
                 // computation of Newton step
                 // --------------------------
 
@@ -699,8 +699,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
                         step.ScaleV(-1);
 
-                        //Console.WriteLine($"NewtonStep: linear solver converged? {solver.Converged}");
-                        tr.Info($"NewtonStep: linear solver converged? {solver.Converged}");
+                        if(solver.Converged)
+                            tr.Info($"NewtonStep: linear solver converged? {solver.Converged}");
+                        else
+                            tr.Error($"NewtonStep: linear solver converged? {solver.Converged}");
+
+
                     }
                 } else {
                     throw new NotImplementedException($"approximation option {ApproxJac} for the Jacobian seems not to be existent.");
@@ -716,78 +720,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     OldSolClone = null;
                 }
 
-                /*
-                if(ilPSP.Environment.NumThreads == 1) {
-                    CurSol.SaveToTextFile($"sol{itc}.txt");
-                    CurRes.SaveToTextFile($"res{itc}.txt");
-                    step.SaveToTextFile($"stp{itc}.txt");
-                    CurrentLin.OperatorMatrix.ToMsrMatrix().SaveToFile($"mtx{itc}.bin");
-                    CurrentLin.OperatorMatrix.SaveToTextFileSparse($"mtx{itc}.txt");
-                } else {
-                    CurSol.SaveToTextFile($"sol{itc}t{ilPSP.Environment.NumThreads}.txt");
-                    CurRes.SaveToTextFile($"res{itc}t{ilPSP.Environment.NumThreads}.txt");
-                    step.SaveToTextFile($"stp{itc}t{ilPSP.Environment.NumThreads}.txt");
-                    CurrentLin.OperatorMatrix.ToMsrMatrix().SaveToFile($"mtx{itc}t{ilPSP.Environment.NumThreads}.bin");
-                    CurrentLin.OperatorMatrix.SaveToTextFileSparse($"mtx{itc}t{ilPSP.Environment.NumThreads}.txt");
-
-                    var __CurSol = VectorIO.LoadFromTextFile($"sol{itc}.txt");
-                    var __CurRes = VectorIO.LoadFromTextFile($"res{itc}.txt");
-                    var __step = VectorIO.LoadFromTextFile($"stp{itc}.txt");
-
-                    var _CurrentLin = CurrentLin.OperatorMatrix.ToMsrMatrix();
-                    var __CurrentLin = MsrMatrix.LoadFromFile($"mtx{itc}.bin", _CurrentLin.MPI_Comm, _CurrentLin.RowPartitioning, _CurrentLin.ColPartition);
-                    MsrMatrix err = _CurrentLin.CloneAs();
-                    err.Acc(-1, __CurrentLin);
-                    {
-                        var g = CurrentLin.BaseGridProblemMapping.GridDat;
-                        var b = new Basis(g, 0);
-                        var rhsDiff = new SinglePhaseField(b, "rhsDiff");
-                        var stpDiff = new SinglePhaseField(b, "stpDiff");
-                        var mtxOffDiagDiff = new SinglePhaseField(b, "mtxOffDiagDiff");
-                        var mtxDiagDiff = new SinglePhaseField(b, "mtxDiagDiff");
-
-                        var blocking = CurrentLin.OperatorMatrix._RowPartitioning;
-                        for(int j = 0; j < blocking.LocalNoOfBlocks; j++) {
-                            long BlkI0 = blocking.GetBlockI0(j);
-                            int BlkSz = blocking.GetBlockLen(j);
-
-                            double acc_rhsDiff = 0;
-                            double acc_stpDiff = 0;
-                            double acc_mtxDiagDiff = 0;
-                            double acc_mtxOffDiagDiff = 0;
-
-                            for(int iRow = (int)BlkI0;  iRow < (BlkI0 + BlkSz); iRow++) {
-                                acc_stpDiff += step[iRow].Pow2();
-                                acc_rhsDiff += CurRes[iRow].Pow2();
-
-                                var row = err.GetRow(iRow);
-                                for(int k = 0; k < row.entries.Length; k++) {
-                                    if(row.colIdx[k] >= BlkI0 && row.colIdx[k] < BlkI0 + BlkSz) {
-                                        acc_mtxDiagDiff += row.entries[k].Pow2();
-                                    } else {
-                                        acc_mtxOffDiagDiff += row.entries[k].Pow2();
-                                    }
-                                }
-                            }
-
-                            rhsDiff.SetMeanValue(j, acc_rhsDiff.Sqrt());
-                            stpDiff.SetMeanValue(j, acc_stpDiff.Sqrt());
-                            mtxDiagDiff.SetMeanValue(j, acc_mtxDiagDiff.Sqrt());
-                            mtxOffDiagDiff.SetMeanValue(j, acc_mtxOffDiagDiff.Sqrt());
-                        }
-
-                        Tecplot.Tecplot.PlotFields(new DGField[] { rhsDiff, stpDiff, mtxDiagDiff, mtxOffDiagDiff }, "fuck" + itc, 0.0, 0);
-
-                    }
-
-
-                    Console.WriteLine($"--------------- {itc} sol  : " + CurSol.L2Distance(__CurSol));
-                    Console.WriteLine($"--------------- {itc} res  : " + CurRes.L2Distance(__CurRes));
-                    Console.WriteLine($"--------------- {itc} stp  : " + step.L2Distance(__step));
-                    Console.WriteLine($"--------------- {itc} lin  : " + err.FrobeniusNorm());
-                }
-                */
-
+         
                 tr.Info("Using Globalization: " + Globalization);
                 switch (Globalization) {
                     case GlobalizationOption.Dogleg:

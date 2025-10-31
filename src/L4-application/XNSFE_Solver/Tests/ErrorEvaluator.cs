@@ -23,7 +23,7 @@ using BoSSS.Application.XNSE_Solver.Tests;
 namespace BoSSS.Application.XNSFE_Solver.Tests
 {
 
-    class XHeatErrorEvaluator<T> : ErrorEvaluator where T: XNSE_Control, new() {
+    class XHeatErrorEvaluator<T> : ErrorEvaluator where T : XNSE_Control, new() {
 
         public XHeatErrorEvaluator(IApplication solver) : base(solver) {
 
@@ -45,7 +45,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests
             double L2Error = 0;
             Dictionary<string, double> L2Error_Species = new Dictionary<string, double>();
 
-            foreach (var spc in solver.LsTrk.SpeciesNames) {
+            foreach(var spc in solver.LsTrk.SpeciesNames) {
 
                 SpeciesId spId = solver.LsTrk.GetSpeciesId(spc);
                 var scheme = SchemeHelper.GetVolumeQuadScheme(spId);
@@ -53,7 +53,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests
                 string temperatureName = VariableNames.Temperature;
                 ConventionalDGField temperature = ((XDGField)solver.CurrentStateVector.Mapping.Single(Field => Field.Identification == temperatureName)).GetSpeciesShadowField(spc);
                 var rule = scheme.Compile(solver.GridData, order);
-                
+
                 double IdV = temperature.LxError(exactTemperature[spc].Vectorize(time), (X, a, b) => (a - b).Pow2(), rule);
                 L2Error += IdV;
                 L2Error_Species.Add(spc, L2Error.Sqrt());
@@ -64,14 +64,14 @@ namespace BoSSS.Application.XNSFE_Solver.Tests
 
             L2Error = L2Error.Sqrt();
             solver.QueryHandler.ValueQuery("L2err_" + VariableNames.Temperature, L2Error, true);
-            return L2Error;            
+            return L2Error;
         }
 
         public double ComputeEnergyError(Func<double, double> exactEnergy, double time) {
             int D = solver.GridData.SpatialDimension;
 
             int order = 0;
-            if (solver.LsTrk.GetCachedOrders().Count > 0) {
+            if(solver.LsTrk.GetCachedOrders().Count > 0) {
                 order = solver.LsTrk.GetCachedOrders().Max();
             } else {
                 order = 1;
@@ -81,10 +81,10 @@ namespace BoSSS.Application.XNSFE_Solver.Tests
 
             double TotalEnergy = 0;
 
-            foreach (var spc in solver.LsTrk.SpeciesNames) {
+            foreach(var spc in solver.LsTrk.SpeciesNames) {
 
                 double c, rho;
-                switch (spc) {
+                switch(spc) {
                     case "A": { c = solver.Control.ThermalParameters.c_A; rho = solver.Control.ThermalParameters.rho_A; break; }
                     case "B": { c = solver.Control.ThermalParameters.c_B; rho = solver.Control.ThermalParameters.rho_B; break; }
                     default: { throw new ArgumentException(); }
@@ -100,10 +100,10 @@ namespace BoSSS.Application.XNSFE_Solver.Tests
                 double E = 0.0;
                 CellQuadrature.GetQuadrature(new int[] { 1 }, solver.LsTrk.GridDat, rule,
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
-                    temperature.Evaluate(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1,-1,0));
+                    temperature.Evaluate(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
                 },
                 delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                    for (int i = 0; i < Length; i++)
+                    for(int i = 0; i < Length; i++)
                         E += c * rho * ResultsOfIntegration[i, 0];
                 }).Execute();
                 TotalEnergy += E;
@@ -117,16 +117,16 @@ namespace BoSSS.Application.XNSFE_Solver.Tests
         /// Computes the L2 Error of the actual solution against the exact solution in the control object 
         /// (<see cref="XNSE_Control.ExactSolutionTemperature"/>.
         /// </summary>
-        public override double[] ComputeL2Error(double time, XNSE_Control control) {
+        public override double[] ComputeL2Error(double time, AppControl control) {
             double[] Ret = new double[1];
 
-            var fcontrol = control as XNSFE_Control;
-
-            if (fcontrol?.ExactSolutionTemperature != null) {
-                double error = ComputeTemperatureError(fcontrol.ExactSolutionTemperature, time);
+            var ExactSolutionTemperature = base.GetExactSolution(control, VariableNames.Temperature);
+            if(ExactSolutionTemperature != null) {
+                double error = ComputeTemperatureError(ExactSolutionTemperature, time);
                 Ret[0] = error;
             }
-            
+
+
             return Ret;
         }
     }
