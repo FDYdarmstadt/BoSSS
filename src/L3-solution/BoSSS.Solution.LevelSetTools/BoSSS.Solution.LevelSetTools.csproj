@@ -39,7 +39,7 @@
   <ItemGroup>
     <Compile Remove="ExtVelSolver_FastMarching.cs" />
     <Compile Remove="FourierLevelSet\FLS_Timestepper_AB.cs" />
-    <Compile Remove="SemiLagrangianLevelSet\Properties\AssemblyInfo.cs" />
+	<!--<Compile Remove="SemiLagrangianLevelSet\Properties\AssemblyInfo.cs" />-->
   </ItemGroup>
   <ItemGroup>
     <!--PackageReference Include="System.Drawing.Common" Version="5.0.3" /-->
