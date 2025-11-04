@@ -34,6 +34,233 @@ using BoSSS.Foundation.Grid.Classic;
 namespace BoSSS.Foundation.Grid.Aggregation {
 
     /// <summary>
+    /// Parallel, deterministic R-tree coarsener (cut by global tree level).
+    /// </summary>
+    public static class RTreeParallelCoarsening {
+
+        public static AggregationGridData CoarsenByLevel(IGridData gd, int aggCellCountLikeBefore) {
+            using(new FuncTrace()) {
+                int D = gd.SpatialDimension;
+                int M = 1 << D;
+
+                long Nloc = gd.CellPartitioning.LocalLength;
+                long Ntot = Nloc.MPISum();
+
+                long targetSize = Math.Max(2, aggCellCountLikeBefore);
+                long G = Math.Max(1, Ntot / targetSize);
+
+                double ratio = Math.Max(1.0, (double)Ntot / (double)G);
+                int extractLevel = 1 + (int)Math.Ceiling(Math.Log(ratio, M));
+
+                extractLevel = Math.Max(1, extractLevel).MPIBroadcast(0);
+
+                var entries = BuildLeafEntriesDeterministic(gd, out var _);
+                var root = BulkLoad_STR_GlobalAware(entries, M);
+
+                var groups = ExtractAggregatesAtLevel(root, extractLevel)
+                             .Select(n => CollectLeaves(n).ToArray())
+                             .ToArray();
+
+                Debug_Assignments(groups, gd.iLogicalCells.NoOfLocalUpdatedCells);
+
+                var ag = new AggregationGrid(gd.Grid, groups);
+                if(!object.ReferenceEquals(ag.GridData.Grid, ag))
+                    throw new ApplicationException("internal error in mesh coarsening");
+                return ag.GridData;
+            }
+        }
+
+        // -------------------- R-tree node --------------------
+        private class Node {
+            public BoundingBox BB;
+            public List<Node> Children;      // internal
+            public List<int> LeafIds;        // leaf = base-cell local indices
+            public bool IsLeaf => Children == null || Children.Count == 0;
+            public int LeafCount;            // cached leaves in subtree
+            public int FirstLeafId;          // min leaf id in subtree (for deterministic tie-break)
+        }
+
+        // -------------------- Deterministic leaf creation --------------------
+        private sealed class LeafEntry {
+            public BoundingBox BB;
+            public int jLoc;
+            public ulong morton;
+            public long jGlob;
+        }
+
+        private static List<Node> BuildLeafEntriesDeterministic(IGridData gd, out Func<int, long> globalIdOfLocal) {
+            int D = gd.SpatialDimension;
+            int J = gd.iLogicalCells.NoOfLocalUpdatedCells;
+            var part = gd.CellPartitioning;
+
+            globalIdOfLocal = j => part.i0 + j;
+
+            var list = new List<LeafEntry>(J);
+            var bb = new BoundingBox(D);
+            for(int j = 0; j < J; j++) {
+                bb.Clear();
+                gd.iLogicalCells.GetCellBoundingBox(j, bb);
+                var c = new double[D];
+                for(int d = 0; d < D; d++) c[d] = 0.5 * (bb.Min[d] + bb.Max[d]);
+
+                list.Add(new LeafEntry {
+                    BB = (BoundingBox)bb.Clone(),
+                    jLoc = j,
+                    morton = MortonKey(c),
+                    jGlob = part.i0 + j
+                });
+            }
+
+            list.Sort((a, b) => {
+                int s = a.morton.CompareTo(b.morton);
+                if(s != 0) return s;
+                for(int d = 0; d < D; d++) {
+                    s = Cmp(a.BB.Min[d], b.BB.Min[d]);
+                    if(s != 0) return s;
+                }
+                return a.jGlob.CompareTo(b.jGlob);
+            });
+
+            var nodes = new List<Node>(J);
+            foreach(var e in list) {
+                nodes.Add(new Node {
+                    BB = (BoundingBox)e.BB.Clone(),
+                    LeafIds = new List<int> { e.jLoc },
+                    LeafCount = 1,
+                    FirstLeafId = e.jLoc
+                });
+            }
+            return nodes;
+        }
+
+        private static int Cmp(double x, double y) {
+            bool xn = double.IsNaN(x), yn = double.IsNaN(y);
+            if(xn | yn) return xn == yn ? 0 : (xn ? 1 : -1); // NaN last
+            return x.CompareTo(y);
+        }
+
+        private static double Clamp01(double v) { return v < 0 ? 0 : (v > 1 ? 1 : v); }
+
+        private static ulong MortonKey(double[] c) {
+            int D = c.Length;
+            uint x = (uint)(Clamp01(c[0]) * 4294967295.0);
+            uint y = (uint)((D > 1 ? Clamp01(c[1]) : 0.0) * 4294967295.0);
+            uint z = (uint)((D > 2 ? Clamp01(c[2]) : 0.0) * 4294967295.0);
+            return Interleave(x, y, z);
+        }
+
+        private static ulong Interleave(uint x, uint y, uint z) {
+            ulong _x = Part1By2(x);
+            ulong _y = Part1By2(y) << 1;
+            ulong _z = Part1By2(z) << 2;
+            return _x | _y | _z;
+        }
+        private static ulong Part1By2(uint n) {
+            ulong x = n;
+            x = (x | (x << 32)) & 0x1F00000000FFFF;
+            x = (x | (x << 16)) & 0x1F0000FF0000FF;
+            x = (x | (x << 8)) & 0x100F00F00F00F00F;
+            x = (x | (x << 4)) & 0x10C30C30C30C30C3;
+            x = (x | (x << 2)) & 0x1249249249249249;
+            return x;
+        }
+
+        // -------------------- STR-like bulk load with deterministic axis split --------------------
+        private static Node BulkLoad_STR_GlobalAware(List<Node> entries, int M) {
+            if(entries.Count <= M) {
+                if(entries.Count == 1) return entries[0];
+                var p = new Node { Children = new List<Node>(entries), BB = UnionBB(entries) };
+                p.LeafCount = entries.Sum(e => e.LeafCount);
+                p.FirstLeafId = entries.Min(e => e.FirstLeafId);
+                return p;
+            }
+
+            var bbAll = UnionBB(entries);
+            int axis = LongestAxis(bbAll);
+
+            entries.Sort((a, b) => {
+                int s = Cmp(a.BB.Min[axis], b.BB.Min[axis]);
+                if(s != 0) return s;
+                int na = (axis + 1) % a.BB.D;
+                s = Cmp(a.BB.Min[na], b.BB.Min[na]);
+                if(s != 0) return s;
+                return a.FirstLeafId.CompareTo(b.FirstLeafId);
+            });
+
+            var parents = new List<Node>();
+            for(int i = 0; i < entries.Count; i += M) {
+                var slice = entries.GetRange(i, Math.Min(M, entries.Count - i));
+                var p = new Node { Children = slice, BB = UnionBB(slice) };
+                p.LeafCount = slice.Sum(e => e.LeafCount);
+                p.FirstLeafId = slice.Min(e => e.FirstLeafId);
+                parents.Add(p);
+            }
+            return BulkLoad_STR_GlobalAware(parents, M);
+        }
+
+        private static BoundingBox UnionBB(List<Node> nodes) {
+            int D = nodes[0].BB.D;
+            var u = new BoundingBox(D);
+            foreach(var n in nodes) u.AddBB(n.BB);
+            return u;
+        }
+
+        private static int LongestAxis(BoundingBox bb) {
+            int D = bb.D;
+            int axis = 0;
+            double maxLen = -1.0;
+            for(int d = 0; d < D; d++) {
+                double len = bb.Max[d] - bb.Min[d];
+                if(len > maxLen) { maxLen = len; axis = d; }
+            }
+            return axis;
+        }
+
+        // -------------------- Level cut --------------------
+        private static IEnumerable<Node> ExtractAggregatesAtLevel(Node root, int level) {
+            var q = new Queue<(Node n, int d)>();
+            q.Enqueue((root, 1));
+            while(q.Count > 0) {
+                var (n, d) = q.Dequeue();
+                if(d == level || n.IsLeaf) {
+                    yield return n;
+                    continue;
+                }
+                foreach(var c in n.Children) q.Enqueue((c, d + 1));
+            }
+        }
+
+        private static List<int> CollectLeaves(Node n) {
+            if(n.IsLeaf) return new List<int>(n.LeafIds);
+            var acc = new List<int>(n.LeafCount);
+            var st = new Stack<Node>();
+            st.Push(n);
+            while(st.Count > 0) {
+                var cur = st.Pop();
+                if(cur.IsLeaf) acc.AddRange(cur.LeafIds);
+                else foreach(var c in cur.Children) st.Push(c);
+            }
+            return acc;
+        }
+
+        // -------------------- Debug --------------------
+        [Conditional("DEBUG")]
+        private static void Debug_Assignments(int[][] groups, int J) {
+            var mark = new BitArray(J);
+            foreach(var g in groups)
+                foreach(var j in g) {
+                    Debug.Assert(j >= 0 && j < J);
+                    Debug.Assert(!mark[j], $"Cell {j} assigned twice.");
+                    mark[j] = true;
+                }
+            for(int j = 0; j < J; j++)
+                Debug.Assert(mark[j], $"Cell {j} unassigned.");
+        }
+    }
+
+
+
+    /// <summary>
     /// R-tree–style, geometry-driven coarsening with identical public interfaces.
     /// </summary>
     public static class RTreeCoarseningAlgorithms {
@@ -323,7 +550,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                     // *** FIXED TYPE: returns AggregationGridData in both branches ***
                     AggregationGridData grid =
                         (strategy == AggStrategy.RTree)
-                        ? RTreeCoarseningAlgorithms.Coarsen(grid2coarsen, (int)Math.Pow(2, D))
+                        ? RTreeParallelCoarsening.CoarsenByLevel(grid2coarsen, (int)Math.Pow(2, D))
                         : CoarseningAlgorithms.Coarsen(grid2coarsen, (int)Math.Pow(2, D));
 
                     double aimred = 1 / (Math.Pow(2, D)) * 2;
@@ -334,7 +561,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
                         grid2coarsen = grid;
                         grid = (strategy == AggStrategy.RTree)
-                            ? RTreeCoarseningAlgorithms.Coarsen(grid2coarsen, (int)Math.Pow(2, D))
+                            ? RTreeParallelCoarsening.CoarsenByLevel(grid2coarsen, (int)Math.Pow(2, D))
                             : CoarseningAlgorithms.Coarsen(grid2coarsen, (int)Math.Pow(2, D));
 
                         // AggregationGridData has this method
