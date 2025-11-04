@@ -1048,10 +1048,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     using(new BlockTrace("block_solve_level", tr)) {
                         var tt = new Stopwatch();
                         tt.Start();
-                        Console.WriteLine($"Schwarz iteration {iIter + 1}/{FixedNoOfIterations} on level {m_MgOp.LevelIndex} with TPLDirectSolve={TPLDirectSolve}");
+                        tr.Info($"Schwarz iteration {iIter + 1}/{FixedNoOfIterations} on level {m_MgOp.LevelIndex} with TPLDirectSolve={TPLDirectSolve}");
 
                         if (TPLDirectSolve) {
-                            // --- 1. Initialize sequentially (MPI operations considered not thread-safe) ---
+                            // --- 1. Initialize sequentially ---
                             var initData = new (bool skip, double[] xLo, double[] bLo, double[] xExt, double[] bExt)[NoParts];
 
                             for(int iPart = 0; iPart < NoParts; iPart++) {
@@ -1072,7 +1072,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
 
                             tt.Stop();
-                        Console.WriteLine($"  time for block solves: {tt.Elapsed.TotalSeconds:0.###} s with {ilPSP.Environment.NumThreads} threads");
+                        tr.Info($"  time for block solves: {tt.Elapsed.TotalSeconds:0.###} s with {ilPSP.Environment.NumThreads} threads");
                     }
 
                     using (new BlockTrace("schwarz_sync", tr)) {

@@ -2545,8 +2545,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			if (targetRank < 0) return;
 			int tag = (TpLevel << 16) | Iter;
 			csMPI.Raw.Irecv(_recvPtr, 1, csMPI.Raw._DATATYPE.BYTE, targetRank, (signalTag + tag), thisComm, out RecvRequest);
+            CurrentTrace.InfoToConsole = false;
             CurrentTrace.Info($"Waiting signal on rank {thisCommRank} from {targetRank} on {thisComm} with size {thisCommsize} on TpLevel{TpLevel} with task {myTask}");
-
+            CurrentTrace.InfoToConsole = true;
             byte completionSignal = _recvBuffer[0];
 
 			//if (completionSignal == 1)
