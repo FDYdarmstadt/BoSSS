@@ -165,7 +165,6 @@ namespace BoSSS.Foundation.Grid {
         ///   A <see cref="Chunk"/> with <see cref="Chunk.i0"/>==<em>v</em>-1 and <see cref="Chunk.Len"/>==1;
         /// - entry <em>i</em> is negative number <em>v</em>:
         ///   A <see cref="Chunk"/> with <see cref="Chunk.i0"/>== -<em>v</em>-1 and <see cref="Chunk.Len"/>==<see cref="Sequence"/>[<em>i</em>+1];
-        /// </list>
         /// </summary>
         protected int[] Sequence;
 

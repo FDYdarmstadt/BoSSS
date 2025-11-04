@@ -1,20 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-
-using ilPSP.Utils;
-using BoSSS.Foundation;
+﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution;
-using BoSSS.Solution.Utils;
 using BoSSS.Solution.LoadBalancing;
-using ilPSP;
 using BoSSS.Solution.Tecplot;
-using System.Diagnostics;
+using BoSSS.Solution.Utils;
+using ilPSP;
+using ilPSP.Utils;
 using NUnit.Framework;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 
 
 
@@ -35,7 +35,9 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             //BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_2Dvs3D(3, CutCellQuadratureMethod.Classic);
             // BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_2D(3, CutCellQuadratureMethod.Classic);
             //BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_2D(order, quadratureType);
-            BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_2D(order, CutCellQuadratureMethod.Saye);
+
+            //BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_3D(order, CutCellQuadratureMethod.Saye);
+            BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_3D(order, CutCellQuadratureMethod.Saye);
 
             BoSSS.Solution.Application.FinalizeMPI();
         }
@@ -180,10 +182,10 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         public void CompareTotalSurface() {
             double D = this.Grid.SpatialDimension;
 
-            foreach(var spcName in LsTrk.SpeciesNames) {
-                var spc = LsTrk.GetSpeciesId(spcName);
-                (CellMask.GetFullMask(GridData)).SaveToTextFile($"InterfaceArea{spcName}.csv", false, (double[] CoordGlobal, int LogicalItemIndex, int GeomItemIndex) => this.latestCCM.InterfaceArea[spc][LogicalItemIndex]);
-            }
+            //foreach(var spcName in LsTrk.SpeciesNames) {
+            //    var spc = LsTrk.GetSpeciesId(spcName);
+            //    (CellMask.GetFullMask(GridData)).SaveToTextFile($"InterfaceArea{spcName}.csv", false, (double[] CoordGlobal, int LogicalItemIndex, int GeomItemIndex) => this.latestCCM.InterfaceArea[spc][LogicalItemIndex]);
+            //}
 
             CompareTotal("Cut Cell surface", this.TotalIntegral_SurfaceSpecies, spcId => this.latestCCM.InterfaceArea[spcId].Sum(), threshold_totSurface, this.MeshScaling.Pow(D - 1));
         }
@@ -935,9 +937,13 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             }
             var X0 = new double[this.Grid.SpatialDimension]; X0[0] = R;
             Debug.Assert(Phi1_ana(X0).Abs() <= 1.0e-8);
+            double Phi2_ana(double[] X) {
+                double y = X[1];
+                return -y;
+            }
 
             Phi1.ProjectField(Phi1_ana);
-            Phi2.ProjectField(((x, y) => -y));
+            Phi2.ProjectField(Phi2_ana);
 
             string[,] speciesTable = new string[2, 2];
             speciesTable[0, 0] = "A";
@@ -978,23 +984,31 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             // volume and area of level-set
             // ============================
 
-            double surf3D = 4.0 * 2 * Math.PI * zWidht; // mantle of a cylinder
-            double vol3D_B = 4.0 * 4.0 * Math.PI * zWidht; // volume of a cylinder
-            TotalIntegral_SurfaceSpecies.Add("A", surf3D);
-            TotalIntegral_SurfaceSpecies.Add("B", surf3D);
+            double surf3D = 4.0 * 2 * Math.PI * 0.5 * zWidht; // mantle of a half-cylinder
+            double vol3D_B = 4.0 * 4.0 * Math.PI * 0.5 * zWidht; // volume of a half-cylinder
+            TotalIntegral_SurfaceSpecies.Add("A", surf3D + 6*zWidht);
+            TotalIntegral_SurfaceSpecies.Add("B", surf3D + 8*zWidht);
+            TotalIntegral_SurfaceSpecies.Add("C", 14*zWidht);
 
-            TotalIntegral_Volume4Species.Add("A", 14 * 14 * zWidht - vol3D_B); // total mesh volume - cylinder volume
+
+            TotalIntegral_Volume4Species.Add("A", 14 * 7 * zWidht - vol3D_B); // half mesh volume - cylinder volume
             TotalIntegral_Volume4Species.Add("B", vol3D_B);
+            TotalIntegral_Volume4Species.Add("C", 14 * 7 * zWidht); // lower half
 
-            double line3D = (4.0 * 2 * Math.PI) * noOfZnodes; // 4 circles in xy-planes
-            using(var _2D = new TestSetupSingleLevset2D()) {
+            double line3D_A = (4.0 * 2 * Math.PI * 0.5 + 6) * noOfZnodes; // `noOfZnodes` half-circles in xy-planes + 2*3
+            double line3D_B = (4.0 * 2 * Math.PI * 0.5 + 8) * noOfZnodes; // `noOfZnodes` half-circles in xy-planes + 8
+            double line3D_C = 14 * noOfZnodes;  // `noOfZnodes` lines from left to right
+            using(var _2D = new TestSetupTwoLevSets2D()) {
                 _2D.Init();
                 _2D.RunSolverMode();
 
-                line3D += _2D.latestCCM.CutLineLengthEdge[_2D.LsTrk.GetSpeciesId("A")].Sum() * zWidht;
+                line3D_A += _2D.latestCCM.CutLineLengthEdge[_2D.LsTrk.GetSpeciesId("A")].Sum() * zWidht;
+                line3D_B += _2D.latestCCM.CutLineLengthEdge[_2D.LsTrk.GetSpeciesId("B")].Sum() * zWidht;
+                line3D_C += _2D.latestCCM.CutLineLengthEdge[_2D.LsTrk.GetSpeciesId("C")].Sum() * zWidht;
             }
-            TotalIntegral_CutLine.Add("A", line3D);
-            TotalIntegral_CutLine.Add("B", line3D);
+            TotalIntegral_CutLine.Add("A", line3D_A);
+            TotalIntegral_CutLine.Add("B", line3D_B);
+            TotalIntegral_CutLine.Add("C", line3D_C);
 
 
             TotalIntegral_IntersectionLine.Add("A", 2 * zWidht);
@@ -1162,18 +1176,6 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         protected override double threshold_totSurface {
             get {
 
-                if(QuadratureType == CutCellQuadratureMethod.Classic) {
-                    if(this.CutCellQuadratureOrder <= 4) {
-                        return 3e-3;
-                    } else if(this.CutCellQuadratureOrder <= 7) {
-                        return 1e-5;
-                    } else if(this.CutCellQuadratureOrder <= 8) {
-                        return 1e-7;
-                    } else {
-                        return 5e-8;
-                    }
-                }
-
                 if(QuadratureType == CutCellQuadratureMethod.Saye) {
                     if(this.CutCellQuadratureOrder <= 3) {
                         return 1e-1;
@@ -1211,17 +1213,6 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         protected override double threshold_totVolume {
             get {
 
-                if(QuadratureType == CutCellQuadratureMethod.Classic) {
-                    if(this.CutCellQuadratureOrder <= 4) {
-                        return 3e-3;
-                    } else if(this.CutCellQuadratureOrder <= 7) {
-                        return 1e-5;
-                    } else {
-                        return 3e-8;
-                    }
-                }
-
-
                 if(QuadratureType == CutCellQuadratureMethod.Saye) {
                     if(this.CutCellQuadratureOrder <= 4) {
                         return 4e-2;
@@ -1254,19 +1245,6 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
         protected override double threshold_totCutline {
             get {
-                if(QuadratureType == CutCellQuadratureMethod.Classic) {
-                    if(this.CutCellQuadratureOrder <= 4) {
-                        return 5e-2;
-                    } else if(this.CutCellQuadratureOrder <= 6) {
-                        return 1e-4;
-                    } else if(this.CutCellQuadratureOrder <= 7) {
-                        return 5e-5;
-                    } else if(this.CutCellQuadratureOrder <= 8) {
-                        return 2e-5;
-                    } else {
-                        return 5e-6;
-                    }
-                }
 
                 if(QuadratureType == CutCellQuadratureMethod.Saye) {
                     if(this.CutCellQuadratureOrder <= 3) {
@@ -1302,15 +1280,13 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         }
 
 
-        double threshold_2dvs3d {
+        protected override double threshold_2dvs3d {
             get {
-                if(QuadratureType == CutCellQuadratureMethod.Classic) {
-                    if(this.CutCellQuadratureOrder <= 4)
-                        return 1.0e-4;
-
-                    return 1.0e-7;
-                }
-
+                //if(QuadratureType == CutCellQuadratureMethod.Classic) {
+                //    if(this.CutCellQuadratureOrder <= 4)
+                //        return 1.0e-4;
+                //    return 1.0e-7;
+                //}
 
                 return 1.0e-10;
             }

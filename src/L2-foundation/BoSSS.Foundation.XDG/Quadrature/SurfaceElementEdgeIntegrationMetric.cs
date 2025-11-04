@@ -110,38 +110,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
             TempBuffer.FreeTempBuffer(iTangentsBuf);
 
-
             return metric;
-
-            //var metrics = m_levelSetData.GetLevelSetNormalReferenceToPhysicalMetrics(qr.Nodes, jCell0, L);
-
-            //int NoOfNodes = qr.NoOfNodes;
-            //Debug.Assert(metrics.Dimension == 2);
-            //Debug.Assert(metrics.GetLength(0) == L);
-            //Debug.Assert(metrics.GetLength(1) == qr.NoOfNodes);
-
-            //if(gridData.iGeomCells.IsCellAffineLinear(jCell0)) {
-            //    //
-            //    // note: implemented in the refactoring to reproduce the original implementation,
-            //    // without any mathematical consideration put in place
-            //    //
-
-            //    var cellJacDet = gridData.iGeomCells.JacobiDet;
-
-            //    for(int i = 0; i < L; i++) {
-            //        for(int k = 0; k < NoOfNodes; k++) {
-            //            metrics[i, k] = cellJacDet[i + jCell0] / metrics[i, k];
-            //        }
-            //    }
-
-
-            //} else {
-            //    throw new NotSupportedException("todo");
-            //}
-
-
-            //return metrics;
-            //return gridData.JacobianDeterminat.GetValue_Cell(qr.Nodes, jCell0, L);
         }
     }
 }

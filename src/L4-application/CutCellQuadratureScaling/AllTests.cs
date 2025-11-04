@@ -123,7 +123,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 #else
             [Values(3, 4, 7, 8, 9, 10)] int quadOrder,
 #endif
-            [Values(CutCellQuadratureMethod.Classic, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadType) {
+            [Values(CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod cutCellQuadType) {
             DoTests_2Dvs3D(
                 () => new TestSetupTwoLevSets2D(1.0, quadOrder, cutCellQuadType),
                 () => new TestSetupTwoLevSets3D(1, quadOrder, cutCellQuadType));
@@ -139,14 +139,12 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 #else
             [Values(3, 4, 7, 8, 9, 10)] int quadOrder,
 #endif
-            [Values(CutCellQuadratureMethod.Classic, CutCellQuadratureMethod.OneStepGauss, CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadType) {
+            [Values(CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod cutCellQuadType) {
 
             DoTests(
                 () => new TestSetupTwoLevSets2D(1.0, quadOrder, cutCellQuadType),
                 () => new TestSetupTwoLevSets2D(0.5, quadOrder, cutCellQuadType));
         }
-
-        /*
 
         [Test]
         public static void TwoLevelSets_3D(
@@ -155,35 +153,13 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 #else
             [Values(3, 4, 7, 8, 9, 10)] int quadOrder,
 #endif
-            [Values(CutCellQuadratureMethod.Classic, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadType) {
-            using(var Ref = new TestSetupSingleLevset3D(1.0, quadOrder, cutCellQuadType)) {
-                Ref.Init();
-                Ref.Control.ImmediatePlotPeriod = 1;
-                Ref.Control.SuperSampling = 3;
-                Ref.RunSolverMode();
+            [Values(CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod cutCellQuadType) {
 
-                Ref.CompareTotalSurface();
-                Ref.CompareTotalVolume();
-                Ref.CompareTotalCutLine();
-
-                using(var Test = new TestSetupSingleLevset3D(0.5, quadOrder, cutCellQuadType)) {
-                    Test.Init();
-                    Test.RunSolverMode();
-
-                    Test.CompareTotalSurface();
-                    Test.CompareTotalVolume();
-                    Test.CompareTotalCutLine();
-
-                    Test.CompareSurfaceTo(Ref);
-                    Test.CompareVolumeTo(Ref);
-                    Test.CompareEdgeAreaTo(Ref);
-                    Test.CompareCutLineTo(Ref);
-                }
-
-            }
-
+            DoTests(
+                () => new TestSetupTwoLevSets3D(1.0, quadOrder, cutCellQuadType),
+                () => new TestSetupTwoLevSets3D(0.5, quadOrder, cutCellQuadType));
         }
-        */
+
 
 
     }

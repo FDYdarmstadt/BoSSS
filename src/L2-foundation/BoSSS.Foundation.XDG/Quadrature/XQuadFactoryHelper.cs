@@ -54,7 +54,23 @@ namespace BoSSS.Foundation.XDG {
             : base(lsDatas) {
 
             if(momentFittingVariant == CutCellQuadratureMethod.Algoim)
-                throw new ArgumentException("for Algoim, a dedicated factory (XQuadFactoryHelperAlgoim) must be used");
+                throw new ArgumentException("for Algoim, a dedicated factory (XQuadFactoryHelperAlgoim) must be used", nameof(momentFittingVariant));
+
+            if(momentFittingVariant == CutCellQuadratureMethod.OneStepGauss 
+                || momentFittingVariant == CutCellQuadratureMethod.OneStepGaussAndStokes 
+                || momentFittingVariant == CutCellQuadratureMethod.TwoStepStokesAndGauss
+                || momentFittingVariant == CutCellQuadratureMethod.ExactCircle) {
+                if(lsDatas.Length > 1)
+                    throw new ArgumentException($"cut cell quadrature method '{momentFittingVariant}' does not support more than one level-set.", nameof(momentFittingVariant));
+                if(lsDatas[0].GridDat.SpatialDimension != 2)
+                    throw new ArgumentException($"cut cell quadrature method '{momentFittingVariant}' only supports 2D.", nameof(momentFittingVariant));
+            }
+
+            if(momentFittingVariant == CutCellQuadratureMethod.Classic) {
+                if(lsDatas.Length > 1)
+                    throw new ArgumentException($"cut cell quadrature method '{momentFittingVariant}' does not support more than one level-set.", nameof(momentFittingVariant));
+            }
+
 
             this.CutCellQuadratureType = momentFittingVariant;
             
@@ -650,7 +666,7 @@ namespace BoSSS.Foundation.XDG {
 
 
         /// <summary>
-        /// Generates a quadrature rule factory the intersection of levelset0 and levelset1 where levelset0 = levelset1 = 0
+        /// Generates a quadrature rule factory the intersection of <paramref name="levSetIndex0"/>-th and <paramref name="levSetIndex1"/>-th level-set.
         /// This is a point in 2D, a line in 3D.
         /// </summary>
         public override IQuadRuleFactory<QuadRule> GetIntersectionRuleFactory(int levSetIndex0, int levSetIndex1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
