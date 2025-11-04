@@ -14,17 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Platform;
+using BoSSS.Platform.Utils;
+using ilPSP;
+using ilPSP.LinSolvers;
+using ilPSP.LinSolvers.PARDISO;
+using ilPSP.Tracing;
+using ilPSP.Utils;
+using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using ilPSP.LinSolvers;
-using ilPSP;
-using ilPSP.Utils;
-using BoSSS.Platform;
-using MPI.Wrappers;
-using BoSSS.Platform.Utils;
-using ilPSP.Tracing;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -60,6 +61,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
             InitImpl(op);
         }
 
+        ICoordinateMapping MgMap;
+
+        public bool UsePARDISO = false; // this was just a test to see if PARDISO is faster with factorization but it is not :) there is probably no need to make this true again
+
         void InitImpl(IOperatorMappingPair op) {
             using(new FuncTrace()) {
                 if(object.ReferenceEquals(op, this.m_MultigridOp))
@@ -68,7 +73,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     this.Dispose();
 
                 BlockMsrMatrix M = op.OperatorMatrix;
-                var MgMap = op.DgMapping;
+                MgMap = op.DgMapping;
                 this.m_MultigridOp = op;
 
 
@@ -98,20 +103,47 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int Jloc = MgMap.LocalNoOfBlocks;
                 long j0 = MgMap.FirstBlock;
                 MultidimensionalArray temp = null;
+                MsrMatrix tempMtx = null;
+
+                if(UsePARDISO)
+                    solvers = new PARDISOSolver[Jloc];
+                    
                 for(int j = 0; j < Jloc; j++) {
                     long jBlock = j + j0;
                     int Nblk = MgMap.GetBlockLen(jBlock);
                     long i0 = MgMap.GetBlockI0(jBlock);
 
-                    if(temp == null || temp.NoOfCols != Nblk)
-                        temp = MultidimensionalArray.Create(Nblk, Nblk);
+                    if(UsePARDISO) {
+                        if(tempMtx == null || tempMtx.NoOfRows != Nblk)
+                            tempMtx = new MsrMatrix(
+                                new Partitioning(Nblk, csMPI.Raw._COMM.SELF),
+                                new Partitioning(Nblk, csMPI.Raw._COMM.SELF)
+                            );
 
-                    M.ReadBlock(i0, i0, temp);
-                    Diag.AccBlock(i0, i0, 1.0, temp, 0.0);
+                        
 
-                    temp.InvertInPlace();
+                        var inds = Enumerable.Range((int)i0, Nblk).Select(s => (long)s);
+                        M.AccSubMatrixTo(1.0, tempMtx, inds, default(long[]), inds, default(long[]));
 
-                    invDiag.AccBlock(i0, i0, 1.0, temp, 0.0);
+
+                        var slv_iBlk = new PARDISOSolver() {
+                            CacheFactorization = true,
+                            UseDoublePrecision = false,
+                            Parallelism = Parallelism.SEQ
+                        };
+
+                        slv_iBlk.DefineMatrix(tempMtx);
+                        solvers[j] = slv_iBlk;
+                    } else {
+                        if(temp == null || temp.NoOfCols != Nblk)
+                            temp = MultidimensionalArray.Create(Nblk, Nblk);
+
+                        M.ReadBlock(i0, i0, temp);
+                        Diag.AccBlock(i0, i0, 1.0, temp, 0.0);
+
+                        temp.InvertInPlace();
+                        invDiag.AccBlock(i0, i0, 1.0, temp, 0.0);
+                    }
                 }
 #if DEBUG
             invDiag.CheckForNanOrInfM(typeof(BlockJacobi).Name + ", computing diagonal inverse: ");
@@ -128,6 +160,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         BlockMsrMatrix Diag;
         BlockMsrMatrix invDiag;
+        PARDISOSolver[] solvers;
         //double[] diag;
 
 
@@ -195,22 +228,42 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                 //xl.ScaleV(1.0 - omega);
-                invDiag.SpMV(omega, ql, 1.0 - omega, xl);
+                if(UsePARDISO) {
+                    int Jloc = MgMap.LocalNoOfBlocks;
+                    long j0 = MgMap.FirstBlock;
+                    double[] itSolv = new double[xl.Count];
 
-                //for(int i = 0; i < L; i++) {
-                //    xl[i] = omega * ((ql[i] + diag[i] * xl[i]) / diag[i]) 
-                //        + (1.0 - omega) * xl[i];
-                //}
+                    ilPSP.Environment.ParallelFor(0, Jloc, j => {
+                        long jBlock = j + j0;
+                        int Nblk = MgMap.GetBlockLen(jBlock);
+                        int i0 = (int)MgMap.GetBlockI0(jBlock);
+                        int offset = (int)MgMap.i0;
+                        int local_i0 = i0 - offset;
+                        var xBlock = new double[Nblk];
+                        var bBlock = ql.GetSubVector(local_i0, Nblk);
+                        solvers[j].Solve(xBlock, bBlock);
+                        itSolv.SetSubVector(xBlock, local_i0, Nblk);
+                    });
+
+                    xl.ScaleV(1.0 - omega);
+                    xl.AccV(omega, itSolv);
+                } else {
+                    invDiag.SpMV(omega, ql, 1.0 - omega, xl);
+                }
+                    //for(int i = 0; i < L; i++) {
+                    //    xl[i] = omega * ((ql[i] + diag[i] * xl[i]) / diag[i]) 
+                    //        + (1.0 - omega) * xl[i];
+                    //}
 
 
 
-                //if(this.IterationCallback != null) {
-                //    double[] _xl = xl.ToArray();
-                //    double[] _bl = bl.ToArray();
-                //    Mtx.SpMV(-1.0, _xl, 1.0, _bl);
-                //    this.IterationCallback(iIter + 1, _xl, _bl, this.m_MultigridOp);
-                //}
-            }
+                    //if(this.IterationCallback != null) {
+                    //    double[] _xl = xl.ToArray();
+                    //    double[] _bl = bl.ToArray();
+                    //    Mtx.SpMV(-1.0, _xl, 1.0, _bl);
+                    //    this.IterationCallback(iIter + 1, _xl, _bl, this.m_MultigridOp);
+                    //}
+                }
         }
 
         bool m_Converged = false;
