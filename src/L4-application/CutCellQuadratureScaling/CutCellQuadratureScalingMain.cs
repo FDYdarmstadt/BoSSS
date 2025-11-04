@@ -874,41 +874,6 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         }
 
 
-        /*
-        public void CompareSurfaceTo2D(TestSetupSingleLevset2D othr) {
-            CompareTo2D("Level Set Surface", othr, test => test.latestCCM.InterfaceArea, -1);
-        }
-       
-        public void CompareVolumeTo2D(TestSetupSingleLevset2D othr) {
-            CompareTo2D("Level Set Volume", othr, test => test.latestCCM.CutCellVolumes, 0);
-        }
-
-        public void CompareIntersectionLineTo2D(TestSetupSingleLevset2D othr) {
-            CompareTo2D("Intersection Line Length", othr, test => test.latestCCM.IntersectionLength, -2);
-        }
-
-        private void CompareTo2D(string name, TestSetupSingleLevset2D othr, Func<TestSetupBase, IDictionary<SpeciesId, MultidimensionalArray>> propertySelector, int ScalingExponent) {
-            double D = othr.Grid.SpatialDimension;
-            if(D != 2)
-                throw new ApplicationException();
-
-            foreach(string Species in this.LsTrk.SpeciesNames) {
-                var SpcId_this = this.LsTrk.GetSpeciesId(Species);
-                var SpcId_othr = othr.LsTrk.GetSpeciesId(Species);
-
-                var totArea_this = propertySelector(this)[SpcId_this].Sum() / (zWidht * MeshScaling);
-                var totArea_othr = propertySelector(othr)[SpcId_othr].Sum();
-
-                double absErr = (totArea_othr * (this.MeshScaling.Pow(D - ScalingExponent)) - totArea_this * (othr.MeshScaling.Pow(D - ScalingExponent))).Abs();
-                double relErr = absErr / (totArea_this.Abs() + totArea_othr.Abs());
-
-                Console.WriteLine($"{name}, species {Species} absolute error : {absErr:g7}");
-                Console.WriteLine($"{name}, species {Species} relative error : {relErr:g7}");
-
-                Assert.Less(relErr, threshold_2dvs3d, $"relative {name} error above threshold for species {Species}");
-            }
-        }
-        */
     }
 
 
