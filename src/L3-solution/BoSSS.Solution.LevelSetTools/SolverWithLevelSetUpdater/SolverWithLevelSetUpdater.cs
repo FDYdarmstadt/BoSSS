@@ -603,21 +603,14 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 base.RegisterField(f);
             }
 
-            // enforce continuity
-            // ------------------
+            // enforce continuity 
+            // (by updating the level-sets with dt = 0)
+            // ----------------------------------------
 
             if (L == null) {
                 var pair1 = LsUpdater.LevelSets.First().Value;
                 var oldCoords1 = pair1.DGLevelSet.CoordinateVector.ToArray();
-//<<<<<<< HEAD
-//                this.LsUpdater.Update(Operator.DomainVar, this.CurrentState.Fields.ToArray(), Operator.ParameterVar, this.Timestepping.Parameters.ToArray(),
-//                   restartTime, 0.0, 1.0, false); // enforces the continuity projection upon the initial level set//
-//                double dist1 = pair1.DGLevelSet.CoordinateVector.L2Distance(oldCoords1);
-//                if (dist1 != 0)
-//                    throw new Exception("illegal modification of DG level-set when evolving for dt = 0.");
-//                this.LsUpdater.Update(Operator.DomainVar, this.CurrentState.Fields.ToArray(), Operator.ParameterVar, this.Timestepping.Parameters.ToArray(),
-//                    0, 0.0, 1.0, false); // und doppelt hält besser ;)
-//=======
+
                 CellMask Near = this.LsTrk.Regions.GetSpeciesRestrictedNearMask4LevSet(0, 1);
                 double res1 = this.LsUpdater.Update(Operator.DomainVar, this.CurrentState.Fields.ToArray(), Operator.ParameterVar, this.Timestepping.Parameters.ToArray(),
                     restartTime, 0.0, 1.0, false); // enforces the continuity projection upon the initial level set
@@ -637,7 +630,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 double res2 = this.LsUpdater.Update(Operator.DomainVar, this.CurrentState.Fields.ToArray(), Operator.ParameterVar, this.Timestepping.Parameters.ToArray(),
                     restartTime, 0.0, 1.0, false); // und doppelt hält besser ;)
 
-//>>>>>>> 6ab09b433bf93b7ea650d8120fdc7ed4928e29a6
                 double dist2 = pair1.DGLevelSet.CoordinateVector.L2Distance(oldCoords1);
                 if (dist2 != 0)
                     throw new Exception("illegal modification of DG level-set when evolving for dt = 0.");

@@ -25,11 +25,11 @@ namespace HangingNodesTests {
     public class HangingNodesTestMain {
         static void Main(string[] args) {
             // mpiexec -n 2 dotnet HangingNodesTests.dll
-            //Console.WriteLine("Starting Hanging Nodes Test!");
-            //BoSSS.Solution.Application.InitMPI(num_threads: 1);
+            Console.WriteLine("Starting Hanging Nodes Test!");
+            BoSSS.Solution.Application.InitMPI(num_threads: 1);
             //HangingNodesTests.HangingNodesTestMain.Test1Phase(CutCellQuadratureMethod.Saye);
-            //HangingNodesTests.HangingNodesTestMain.Test3Phase(CutCellQuadratureMethod.Saye);
-            //Assert.IsFalse(true, "remove me");
+            HangingNodesTests.HangingNodesTestMain.Test3Phase(CutCellQuadratureMethod.Saye);
+            Assert.IsFalse(true, "remove me");
             BoSSS.Solution.Application.InitMPI();
 
             // to test individual setups
@@ -168,22 +168,26 @@ namespace HangingNodesTests {
                     C.SuperSampling = 4;
 
                     using(var solver = new XNSFE()) {
-                        try {
+                        //try {
                             solver.Init(C);
                             solver.RunSolverMode();
 
                             MomentumRes.Add(solver.CurrentResidual.Fields.Take(3).Sum(f => f.L2Norm()).MPISum());
                             TemperatureRes.Add(solver.CurrentResidual.Fields[3].L2Norm().MPISum());
                             CheckLengthScales(solver, "sz" + size + "ph" + phase + "setup" + s + "ccqm" + ((int)ccqm));
-                        } catch(Exception e) {
-                            Console.Error.WriteLine("MPI" + ilPSP.Environment.MPIEnv.MPI_Rank + "of" + ilPSP.Environment.MPIEnv.MPI_Size + ": " + desc + " : failed");
-                            Console.Error.WriteLine(e.Message);
-                            Console.Error.WriteLine(e.StackTrace);
-                            TemperatureRes.Add(-1.0);
-                            MomentumRes.Add(-1.0);
-                        }
+                        //} catch(Exception e) {
+                        //    Console.Error.WriteLine("MPI" + ilPSP.Environment.MPIEnv.MPI_Rank + "of" + ilPSP.Environment.MPIEnv.MPI_Size + ": " + desc + " : failed");
+                        //    Console.Error.WriteLine(e.Message);
+                        //    Console.Error.WriteLine(e.StackTrace);
+                        //    TemperatureRes.Add(-1.0);
+                        //    MomentumRes.Add(-1.0);
+                        //}
                     }
+
+                    break;
                 }
+
+                break;
             }
 
            
@@ -201,6 +205,9 @@ namespace HangingNodesTests {
             for (int i = 0; i < TemperatureRes.Count; i++) {
                 Assert.Less(TemperatureRes[i].Abs(), 1e-6, "Temperature Residual too high.");
             }
+
+
+            Assert.IsFalse(true, "remove testcode above. im talking about the breaks!");
         }
 
     }

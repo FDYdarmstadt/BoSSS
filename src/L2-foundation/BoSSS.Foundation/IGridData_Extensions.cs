@@ -751,34 +751,7 @@ namespace BoSSS.Foundation.Grid {
         /// Returns an edge mask which contains all boundary cells.
         /// </summary>
         public static EdgeMask GetBoundaryEdgeMask(this IGridData gdat) {
-
-            int E = gdat.iLogicalEdges.Count;
-            BitArray boundaryEdges = new BitArray(E);
-            BitArray boundaryCellsEdges = new BitArray(E);
-
-            int[,] C2E = gdat.iLogicalEdges.CellIndices;
-
-            // loop over all Edges
-            for (int e = 0; e < E; e++) {
-                int Cel1 = C2E[e, 0];
-                int Cel2 = C2E[e, 1];
-
-                if (Cel2 < 0) {
-                    // edge is located on the computational domain boundary
-                    boundaryEdges[e] = true;
-                }
-            }
-
-            return new EdgeMask(gdat, boundaryEdges);
-        }
-
-
-
-        /// <summary>
-        /// Returns a mask which contains all boundary edges
-        /// </summary>
-        static public EdgeMask GetBoundaryEdges(this IGridData gdat) {
-            if (gdat is GridData gdat2)
+            if(gdat is GridData gdat2)
                 return gdat2.BoundaryEdges;
 
             int E = gdat.iLogicalEdges.Count;
@@ -788,11 +761,11 @@ namespace BoSSS.Foundation.Grid {
             int[,] CellIndices = gdat.iLogicalEdges.CellIndices;
 
             // loop over all Edges
-            for (int e = 0; e < E; e++) {
+            for(int e = 0; e < E; e++) {
                 //int Cel1 = CellIndices[e, 0];
                 int Cel2 = CellIndices[e, 1];
 
-                if (Cel2 < 0) {
+                if(Cel2 < 0) {
                     // edge is located on the computational domain boundary
                     boundaryEdges[e] = true;
 
@@ -801,6 +774,8 @@ namespace BoSSS.Foundation.Grid {
 
             return new EdgeMask(gdat, boundaryEdges, MaskType.Logical);
         }
+
+
 
 
         /// <summary>

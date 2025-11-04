@@ -275,9 +275,14 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             /// </summary>
             internal void EnforceContinuity() {
 
-                EnforceContinuityWithPreEnforcer();
+                EnforceContinuityWithPreEnforcer(); // performs continuity projection on union of old and new cut-cells
+                bool isClosed = IsInterfaceClosed(); // in some cases, the continuity projection might modify the level-set so, that it leaves the cut-cell domain
 
-                if(enforcer.myOption != ContinuityProjectionOption.None && !IsInterfaceClosed()) {
+                if(enforcer.myOption != ContinuityProjectionOption.None && !isClosed) {
+                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    // continuity projection on near-band, because continuity projection on cut-cells left some hole in the level-set
+                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    
                     Console.WriteLine("Enforce continuity on nearband");
                     //EnforceContinuityWithPreEnforcer(ContinuityProjectionOption.ConstrainedDG);
 

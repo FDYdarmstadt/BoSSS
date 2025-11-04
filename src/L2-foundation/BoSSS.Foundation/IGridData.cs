@@ -587,9 +587,9 @@ namespace BoSSS.Foundation.Grid {
         /// Which edges (see <see cref="ILogicalEdgeData.CellIndices"/>) bound to which cells? 
         /// - 1st index: local cell index <em>j</em>, only local updated
         /// - 2nd index: collection, order is arbitrary; 
-        /// - content <em>e</em>: If <em>e</em> is positive, then cell <em>j</em> is the first
-        ///   (IN) cell of edge <em>e - 1</em>. Otherwise, if <em>e</em> is
-        ///   negative, then cell <em>j</em> is the second (OUT) cell of edge <em>-e - 1</em>.
+        /// - content: <em>e</em>: edge index, plus an information wheter <em>j</em> is actually the IN- or the OUT-cell with respect to edge <em>e</em>.
+        ///    - If <em>e</em> is positive, then cell <em>j</em> is the first (IN) cell of edge <em>e - 1</em>. 
+        ///    - Otherwise, if <em>e</em> is negative, then cell <em>j</em> is the second (OUT) cell of edge <em>-e - 1</em>.
         /// </summary>
         /// <remarks>
         /// Note: the second index does NOT correlate with the face index

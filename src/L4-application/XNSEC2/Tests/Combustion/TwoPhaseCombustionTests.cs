@@ -153,7 +153,7 @@ namespace BoSSS.Application.XNSEC {
                         return et;
                     });
                     var gDat = new GridData(grd);
-                    var em1 = gDat.GetBoundaryEdges();
+                    var em1 = gDat.GetBoundaryEdgeMask();
                     em1.SaveToTextFile("alledges2.csv", false, (double[] CoordGlobal, int LogicalItemIndex, int GeomItemIndex) => (double)gDat.iGeomEdges.EdgeTags[GeomItemIndex]);
                     return grd;
                 };

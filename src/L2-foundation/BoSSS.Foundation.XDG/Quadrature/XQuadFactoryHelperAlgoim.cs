@@ -218,9 +218,9 @@ namespace BoSSS.Foundation.XDG {
 			var algoimFactory = DoubleCutFactories[KrefVol];
 			var cellBoundaryFac = algoimFactory.GetCellBoundarySurfaceFactory(jumps);
 
-			var cutDom1 = m_LevelSetDatas[levSetIndex0].Region.GetCutCellMask4LevSet(levSetIndex0);
-			var cutDom2 = m_LevelSetDatas[levSetIndex1].Region.GetCutCellMask4LevSet(levSetIndex1);
-			var cutDom = cutDom1.Intersect(cutDom2).ToGeometicalMask();
+			var cutDom1 = m_LevelSetDatas[levSetIndex0].Region.GetCutCellMask4LevSet(levSetIndex0).ToGeometicalMask();
+			var cutDom2 = m_LevelSetDatas[levSetIndex1].Region.GetCutCellMask4LevSet(levSetIndex1).ToGeometicalMask();
+			var cutDom = cutDom1.Intersect(cutDom2);
 			var _cutDom = cutDom.Intersect(m_LevelSetDatas[levSetIndex0].GridDat.Cells.GetCells4Refelement(KrefVol));
 
 

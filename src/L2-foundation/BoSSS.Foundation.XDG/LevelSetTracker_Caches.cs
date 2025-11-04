@@ -531,7 +531,6 @@ namespace BoSSS.Foundation.XDG {
 
                 protected override void ComputeValues(NodeSet NS, int j0, int Len, MultidimensionalArray output) {
                     LevelSet LevSet = (LevelSet)(this.m_owner.GetLevSet());
-
                     var BasisHessian = LevSet.Basis.Evaluate2ndDeriv(NS);
 
                     Debug.Assert(output.GetLength(0) == Len);

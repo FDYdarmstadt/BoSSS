@@ -443,8 +443,9 @@ namespace BoSSS.Foundation.Grid {
         /// </summary>
         public EdgeMask AllEdges() {
             int[][] C2E = this.GridData.iLogicalCells.Cells2Edges;
+            int[][] Edge_Log2Geom = this.GridData.iLogicalEdges.EdgeToParts;
 
-            HashSet<int> edges = new HashSet<int>();
+            HashSet<int> edgesPlusOne = new HashSet<int>();
 
             foreach (int jCell in this.ItemEnum) {
                 int cell;
@@ -454,11 +455,30 @@ namespace BoSSS.Foundation.Grid {
                     cell = jCell;
                 }
                 int[] Edges = C2E[cell];
-                foreach(int e in Edges) {
-                    edges.Add(Math.Abs(e));
+                if(base.MaskType == MaskType.Logical) {
+                    // must return a logical mask => go with logical edge indices
+                    foreach(int e in Edges) {
+                        edgesPlusOne.Add(Math.Abs(e));
+                    }
+                } else if(base.MaskType == MaskType.Geometrical) {
+                    // must return a geometrical mask => convert logical edge indices to geometrical ones first
+                    foreach(int e in Edges) {
+                        if(Edge_Log2Geom != null && Edge_Log2Geom[e] != null) {
+                            foreach(int ee in Edge_Log2Geom[e])
+                                edgesPlusOne.Add(Math.Abs(ee));
+                        } else {
+                            // logical and geometrical edge indices are equal
+                            edgesPlusOne.Add(Math.Abs(e));
+                        }
+                    }
+
+
+                } else {
+                    throw new NotImplementedException($"unknown mask type: {base.MaskType}");
                 }
             }
-            int[] sequence = edges.ToArray();
+            int[] sequence = edgesPlusOne.ToArray(); // note: all edge indices in this array are shifted by +1, because `EdgeToParts` is!
+            //                                          but this is exactly what is required as a `sequence` for the `EdgeMask`ctor
             return new EdgeMask(this.GridData, sequence, base.MaskType);
         }
 
