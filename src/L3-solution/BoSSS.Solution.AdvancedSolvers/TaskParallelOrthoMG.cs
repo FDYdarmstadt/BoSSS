@@ -1359,6 +1359,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// entry point for the TaskParallelOrthoMG (finest level)
         /// </summary>
         public void Init(MultigridOperator op) {
+            Debugger.Launch();
 			if (op.OperatorMatrix.MPI_Comm != csMPI.Raw._COMM.WORLD)
 				throw new Exception("Task parallel OrthoMG (finest level) should be initiated with an operator in world communicator");
 
@@ -2488,8 +2489,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 		const int signalTag = 2;
 
-		MPI_Request RecvRequest;
-		bool IsEndSignalSent = false;
+		MPI_Request RecvRequest = csMPI.Raw.MiscConstants.MPI_REQUEST_NULL;
+        MPI_Request SendRequest = csMPI.Raw.MiscConstants.MPI_REQUEST_NULL;
+        bool IsEndSignalSent = false;
 
 		static readonly byte[] _signalBuffer = { 1 };
 		static readonly GCHandle _signalHandle = GCHandle.Alloc(_signalBuffer, GCHandleType.Pinned);
@@ -2508,28 +2510,44 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			}
 		}
 
-		void SendSignal(bool InitiateSignal, int Iter) {
+        void SendSignal(bool InitiateSignal, int Iter) {
 			if (!AdvancedParallelism) return;
 			if (!InitiateSignal && IsEndSignalSent) return;
 
 			int targetRank = GetTargetRankForSignal();
 			if (targetRank < 0) return;
 			int tag = (TpLevel << 16) | Iter;
-			csMPI.Raw.Isend(_signalPtr, 1,	csMPI.Raw._DATATYPE.BYTE, targetRank, (signalTag+ tag), thisComm, out MPI_Request req);
+			csMPI.Raw.Isend(_signalPtr, 1,	csMPI.Raw._DATATYPE.BYTE, targetRank, (signalTag+ tag), thisComm, out MPI_Request reqSendRequest);
 			//CurrentTrace.Info($"Sent signal from {thisCommRank} to {targetRank} on {thisComm} with size {thisCommsize} on TpLevel{TpLevel}");
 
 			IsEndSignalSent = true;
 			return;
 		}
 
-		void ListenSignal(int Iter) {
+
+        /// <summary>
+        /// This method tries to ensure that the send operation is completed.
+        /// When using high number of cores, it is observed that the send operation may not be completed.
+        /// By this method, at least the buffers are controlled.
+        /// </summary>
+        void ProgressSend() {
+            if(SendRequest != csMPI.Raw.MiscConstants.MPI_REQUEST_NULL) {
+                bool done;
+                csMPI.Raw.Test(ref SendRequest, out done, out MPI_Status status);
+                if(done) SendRequest = csMPI.Raw.MiscConstants.MPI_REQUEST_NULL;
+            }
+        }
+
+
+        void ListenSignal(int Iter) {
 			if (!AdvancedParallelism) return;
 			int targetRank = GetTargetRankForSignal();
 			if (targetRank < 0) return;
 			int tag = (TpLevel << 16) | Iter;
 			csMPI.Raw.Irecv(_recvPtr, 1, csMPI.Raw._DATATYPE.BYTE, targetRank, (signalTag + tag), thisComm, out RecvRequest);
+            CurrentTrace.Info($"Waiting signal on rank {thisCommRank} from {targetRank} on {thisComm} with size {thisCommsize} on TpLevel{TpLevel} with task {myTask}");
 
-			byte completionSignal = _recvBuffer[0];
+            byte completionSignal = _recvBuffer[0];
 
 			//if (completionSignal == 1)
 			//	CurrentTrace.Info($"Got signal on rank {thisCommRank} from {targetRank} on {thisComm} with size {thisCommsize} on TpLevel{TpLevel}");
@@ -2539,7 +2557,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			if (!AdvancedParallelism) return true; //if not enabled, bypass this feature by returning true
 			bool done = false;
 			int targetRank = GetTargetRankForSignal();
-			if (targetRank > -1)  csMPI.Raw.Test(ref RecvRequest, out done, out MPI_Status status);
+
+            if (targetRank > -1 && RecvRequest == csMPI.Raw.MiscConstants.MPI_REQUEST_NULL)
+                CurrentTrace.Error($"CheckSignal called on rank {thisCommRank} but no RecvRequest is posted for targetRank {targetRank} on {thisComm} with size {thisCommsize} on TpLevel{TpLevel}");
+
+            if(RecvRequest != csMPI.Raw.MiscConstants.MPI_REQUEST_NULL) {
+                csMPI.Raw.Test(ref RecvRequest, out done, out MPI_Status status);
+                if(done) RecvRequest = csMPI.Raw.MiscConstants.MPI_REQUEST_NULL; // mark completed
+            }
+            //if (targetRank > -1)  csMPI.Raw.Test(ref RecvRequest, out done, out MPI_Status status);
 
 			done = done.MPIOr(subComm);
 			return done;
@@ -2565,12 +2591,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 if(AdvancedParallelism) {
                     SendSignal(true, iIter);
+                    ProgressSend();
                     bool done = CheckSignal();
                     int k = 0;
                     while(!done) { //until the coarse solver is done
                         RunAllSmoothers(); // Pre-smoother modifies PreCorr based on Res
 
                         k++;
+                        ProgressSend();
                         done = CheckSignal();
                     }
                     CurrentTrace.Info($"{string.Concat(Enumerable.Repeat("-", TpLevel))} OrthoMG, current level={TpLevel}, " +
@@ -2595,13 +2623,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 				if (AdvancedParallelism) {
 					SendSignal(true, iIter);
-					bool done = CheckSignal();
+                    ProgressSend();
+                    bool done = CheckSignal();
 					int k = 0;
 					while (!done) { //until the coarse solver is done
 						RunAllSmoothers(); // Pre-smoother modifies PreCorr based on Res
 
 						k++;
-						done = CheckSignal();
+                        ProgressSend();
+                        done = CheckSignal();
 					}
 					CurrentTrace.Info($"{string.Concat(Enumerable.Repeat("-", TpLevel))} OrthoMG, current level={TpLevel}, " +
 					$"iteration={iIter} - All smoothers cycled extra {k}-times while waiting the coarse solver");
@@ -2669,20 +2699,24 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 				if (AdvancedParallelism) {
 					SendSignal(true, iIter);
-
-					if (CoarserLevelSolver is TaskParallelOrthoMG TpCoarse) {
-						int k = 0;
-						bool done = CheckSignal();
-						while (!done) {
-							CoarserLevelSolver.Solve(XCoarse, ResCoarse);
-							k++;
-							done = CheckSignal();
-						}
+                    ProgressSend();
+                    bool done = CheckSignal();
+                    if(CoarserLevelSolver is TaskParallelOrthoMG TpCoarse) {
+                        int k = 0;
+                        while(!done) {
+                            CoarserLevelSolver.Solve(XCoarse, ResCoarse);
+                            k++;
+                            ProgressSend();
+                            done = CheckSignal();
+                        }
 
                         trace.InfoToConsole = CurrentTrace.InfoToConsole;
                         trace.Info($"{string.Concat(Enumerable.Repeat("-", TpLevel))} OrthoMG, current level={TpLevel}, " +
-						$"iteration={iIter} - Coarse cycled extra {k}-times while waiting the smoother");
-					}
+                        $"iteration={iIter} - Coarse cycled extra {k}-times while waiting the smoother");
+                    } else {
+                        trace.Info($"{string.Concat(Enumerable.Repeat("-", TpLevel))} OrthoMG, current level={TpLevel}, " +
+                        $"iteration={iIter} - Coarse solver returned without cycling (direct solver)");
+                    }
 				}
 
                 // Prolongate the correction back to the fine grid
