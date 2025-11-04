@@ -109,11 +109,8 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
         public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int order) {
             List<ChunkRulePair<QuadRule>> rules = new List<ChunkRulePair<QuadRule>>();
-            //ConcurrentDictionary<int, QuadRule> tempRules = new ConcurrentDictionary<int, QuadRule>();
 
-            //Parallel.ForEach(mask.ItemEnum, delegate (int j) {
             foreach (int j in mask.ItemEnum) {
-                //for (int j = chunk.i0; j < chunk.JE; ++j) {
                 try {
                     QuadRule rule = GetQuadRule(j, order);
                     if (rule.NoOfNodes == 0) {
@@ -267,9 +264,8 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             QuadRule q = QuadRule.CreateBlank(Domain, rule.Count, Domain.SpatialDimension);
             t.Transform(globalNodes, q.Nodes);
 
-            double jacobianDeterminant = Math.Abs(t.Matrix.Determinant());
             for (int i = 0; i < rule.Count; ++i) {
-                q.Weights[i] = rule[i].Weight;// * jacobianDeterminant;
+                q.Weights[i] = rule[i].Weight;
             }
             q.Nodes.LockForever();
             return q;
@@ -357,20 +353,13 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             HyperRectangle codomain = new HyperRectangle(grid.SpatialDimension);
             codomain.Dimension = grid.SpatialDimension;
             for (int i = 0; i < codomain.Dimension; ++i) {
-                codomain.Center[i] = 0.0; // grid.Cells.CellCenter[jCell, i];
-                codomain.Diameters[i] = 2.0; // grid.Cells.Transformation[jCell, i, i] * 2;
+                codomain.Center[i] = 0.0;
+                codomain.Diameters[i] = 2.0;
             }
             return codomain;
         }
 
         public QuadRule MapFromCodomainToDomain(QuadratureRule rule, int jCell) {
-            //MultidimensionalArray globalNodes = MultidimensionalArray.Create(rule.Count, dim);
-            //for (int i = 0; i < rule.Count; ++i) {
-            //    for (int d = 0; d < dim; ++d) {
-            //        globalNodes[i, d] = rule[i].Point[d];
-            //    }
-            //}
-            
             QuadRule q = QuadRule.CreateBlank(Domain, rule.Count, dim);
             for(int i = 0; i < rule.Count; ++i) {
                 for(int d = 0; d < dim; ++d) {
@@ -379,10 +368,8 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             }
             q.Nodes.LockForever();
 
-            //grid.TransformGlobal2Local(globalNodes, q.Nodes, jCell, null);
-            //double jacobianDeterminant = grid.Cells.JacobiDet[jCell];
             for (int i = 0; i < rule.Count; ++i) {
-                q.Weights[i] = rule[i].Weight;// / jacobianDeterminant;
+                q.Weights[i] = rule[i].Weight;
             }
             return q;
         }
@@ -394,26 +381,15 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
     class GlobalCellFunction : IScalarFunction {
 
-        //MultidimensionalArray evaluation;
-        //MultidimensionalArray gradient;
-        //MultidimensionalArray hessian;
-
         readonly LevelSetData levelSet;
         readonly RefElement Kref;
-
-        //readonly GridData grid;
         readonly int jCell;
 
         public GlobalCellFunction(LevelSetData levelSet, int jCell) {
             this.jCell = jCell;
             this.M = levelSet.GridDat.SpatialDimension;
             this.Kref = levelSet.GridDat.iGeomCells.GetRefElement(jCell);
-
-            //this.grid = levelSet.GridDat;
             this.levelSet = levelSet;
-            //evaluation = MultidimensionalArray.Create(1, 1);
-            //gradient = MultidimensionalArray.Create(1, 1, M);
-            //hessian = MultidimensionalArray.Create(1, 1, M, M);
         }
 
         //Spatial Dimension
@@ -422,7 +398,6 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         public double Evaluate(Tensor1 x) {
             NodeSet X = FromGlobalToReferenceNodeSet(x);
             var _evaluation = levelSet.GetLevSetValues(X, jCell, 1);
-            //levelSet.Evaluate(jCell, 1, X, evaluation);
             return _evaluation[0, 0];
         }
 
@@ -430,8 +405,6 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             NodeSet X = FromGlobalToReferenceNodeSet(x);
             var _evaluation = levelSet.GetLevSetValues(X, jCell, 1);
             var _gradient = levelSet.GetLevelSetReferenceGradients(X, jCell, 1);
-            //levelSet.Evaluate(jCell, 1, X, evaluation);
-            //levelSet.EvaluateGradient(jCell, 1, X, gradient);
             return (_evaluation[0, 0], ToTensor1(_gradient));
         }
 
@@ -441,19 +414,10 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             var _evaluation = levelSet.GetLevSetValues(X, jCell, 1);
             var _gradient = levelSet.GetLevelSetReferenceGradients(X, jCell, 1);
             var _hessian = levelSet.GetLevelSetReferenceHessian(X, jCell, 1);
-            //levelSet.Evaluate(jCell, 1, X, evaluation);
-            //levelSet.EvaluateGradient(jCell, 1, X, gradient);
-            //levelSet.EvaluateHessian(jCell, 1, X, hessian);
             return (_evaluation[0, 0], ToTensor1(_gradient), ToTensor2(_hessian));
         }
 
         NodeSet FromGlobalToReferenceNodeSet(Tensor1 x) {
-            //MultidimensionalArray XGlobal = MultidimensionalArray.Create(1, x.M);
-            //for (int i = 0; i < x.M; ++i) {
-            //    XGlobal[0, i] = x[i];
-            //}
-            //MultidimensionalArray XReference = MultidimensionalArray.Create(1, x.M);
-            //grid.TransformGlobal2Local(XGlobal, XReference, jCell, null);
             NodeSet n = new NodeSet(Kref, 1, x.M, false);
             for(int i = 0; i < x.M; ++i) {
                 n[0, i] = x[i];

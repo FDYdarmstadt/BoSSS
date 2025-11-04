@@ -27,7 +27,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
                 Console.WriteLine("--------------------- Test calculation ---------------------");
                 using(var Test = genTst()) {
-                    Console.WriteLine($"test scaling is {Ref.MeshScaling}");
+                    Console.WriteLine($"test scaling is {Test.MeshScaling}");
                     Test.Init();
                     Test.RunSolverMode();
 
