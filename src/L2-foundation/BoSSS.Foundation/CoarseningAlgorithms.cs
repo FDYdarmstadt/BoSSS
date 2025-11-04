@@ -43,25 +43,23 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 int D = gd.SpatialDimension;
                 int M = 1 << D;
 
-                long Nloc = gd.CellPartitioning.LocalLength;
-                long Ntot = Nloc.MPISum();
+                // current fine count
+                int J = gd.iLogicalCells.NoOfLocalUpdatedCells;
 
-                long targetSize = Math.Max(2, aggCellCountLikeBefore);
-                long G = Math.Max(1, Ntot / targetSize);
-
-                double ratio = Math.Max(1.0, (double)Ntot / (double)G);
-                int extractLevel = 1 + (int)Math.Ceiling(Math.Log(ratio, M));
-
-                extractLevel = Math.Max(1, extractLevel).MPIBroadcast(0);
+                // desired coarse count for this step (≈ factor M reduction)
+                int desired = Math.Max(1, (int)Math.Ceiling((double)J / M));
 
                 var entries = BuildLeafEntriesDeterministic(gd, out var _);
                 var root = BulkLoad_STR_GlobalAware(entries, M);
 
-                var groups = ExtractAggregatesAtLevel(root, extractLevel)
+                // choose the deepest level whose node count is < J and as close as possible to 'desired'
+                int cutLevel = SelectCutLevelByCount(root, desired, J);
+
+                var groups = ExtractAggregatesAtLevel(root, cutLevel)
                              .Select(n => CollectLeaves(n).ToArray())
                              .ToArray();
 
-                Debug_Assignments(groups, gd.iLogicalCells.NoOfLocalUpdatedCells);
+                Debug_Assignments(groups, J);
 
                 var ag = new AggregationGrid(gd.Grid, groups);
                 if(!object.ReferenceEquals(ag.GridData.Grid, ag))
@@ -69,6 +67,33 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 return ag.GridData;
             }
         }
+
+        private static int SelectCutLevelByCount(Node root, int desired, int currentJ) {
+            // BFS: count nodes per level (level 1 = root)
+            var counts = new List<int>();
+            var q = new Queue<(Node n, int d)>();
+            q.Enqueue((root, 1));
+            while(q.Count > 0) {
+                var (n, d) = q.Dequeue();
+                if(counts.Count < d) counts.Add(0);
+                counts[d - 1]++;
+                if(!n.IsLeaf) foreach(var c in n.Children) q.Enqueue((c, d + 1));
+            }
+
+            // find a level with reduction (< currentJ) and closest to 'desired'
+            int bestLevel = counts.Count; // deepest by default
+            int bestScore = int.MaxValue;
+            for(int L = 1; L <= counts.Count; L++) {
+                int nAtL = counts[L - 1];
+                if(nAtL >= currentJ) continue; // no reduction
+                int score = Math.Abs(nAtL - desired);
+                if(score < bestScore) { bestScore = score; bestLevel = L; }
+            }
+
+            // fallback: if nothing reduces (shouldn’t happen), use deepest level
+            return bestLevel;
+        }
+
 
         // -------------------- R-tree node --------------------
         private class Node {
@@ -528,12 +553,12 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// <param name="strategy">coarsening strategy</param>
         /// <returns></returns>
         public static AggregationGridData[] CreateSequence(IGridData GridDat, int MaxDepth = -1,
-                                                           AggStrategy strategy = AggStrategy.RTree) {
+                                                           AggStrategy strategy = AggStrategy.Adjacency) {
             using(new FuncTrace()) {
+                Console.WriteLine("Creating multigrid hierarchy with max depth " + MaxDepth + " using " + strategy + " coarsening.");
                 MPICollectiveWatchDog.Watch();
                 int D = GridDat.SpatialDimension;
                 MaxDepth = MaxDepth >= 0 ? MaxDepth : int.MaxValue;
-
                 var aggGrids = new List<AggregationGridData>();
                 aggGrids.Add(ZeroAggregation(GridDat));
 
