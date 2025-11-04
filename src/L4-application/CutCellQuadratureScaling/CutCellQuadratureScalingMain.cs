@@ -181,12 +181,6 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         /// </summary>
         public void CompareTotalSurface() {
             double D = this.Grid.SpatialDimension;
-
-            //foreach(var spcName in LsTrk.SpeciesNames) {
-            //    var spc = LsTrk.GetSpeciesId(spcName);
-            //    (CellMask.GetFullMask(GridData)).SaveToTextFile($"InterfaceArea{spcName}.csv", false, (double[] CoordGlobal, int LogicalItemIndex, int GeomItemIndex) => this.latestCCM.InterfaceArea[spc][LogicalItemIndex]);
-            //}
-
             CompareTotal("Cut Cell surface", this.TotalIntegral_SurfaceSpecies, spcId => this.latestCCM.InterfaceArea[spcId].Sum(), threshold_totSurface, this.MeshScaling.Pow(D - 1));
         }
 
@@ -195,6 +189,10 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         /// </summary>
         public void CompareTotalCutLine() {
             double D = this.Grid.SpatialDimension;
+            foreach(var spcName in LsTrk.SpeciesNames) {
+                var spc = LsTrk.GetSpeciesId(spcName);
+                (EdgeMask.GetFullMask(GridData, MaskType.Logical)).SaveToTextFile($"CutLine{spcName}.csv", false, (double[] X, int jL, int jG) => this.latestCCM.CutLineLengthEdge[spc][jL]);
+            }
             CompareTotal("Cut Cell boundary line", this.TotalIntegral_CutLine, spcId => this.latestCCM.CutLineLengthEdge[spcId].Sum(), threshold_totCutline, this.MeshScaling.Pow(D - 2));
         }
 

@@ -23,7 +23,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                 Ref.CompareTotalCutLine();
                 Ref.CompareTotalSurface();
                 Ref.CompareTotalVolume();
-                Ref.CompareIntersectionLine();
+                if(Ref.LsTrk.NoOfLevelSets > 1)
+                    Ref.CompareIntersectionLine();
 
                 Console.WriteLine("--------------------- Test calculation ---------------------");
                 using(var Test = genTst()) {
@@ -39,7 +40,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                     Test.CompareVolumeTo(Ref);
                     Test.CompareEdgeAreaTo(Ref);
                     Test.CompareCutLineTo(Ref);
-                    Test.CompareIntersectionLineTo(Ref);
+                    if(Ref.LsTrk.NoOfLevelSets > 1)
+                        Test.CompareIntersectionLineTo(Ref);
                 }
 
             }
