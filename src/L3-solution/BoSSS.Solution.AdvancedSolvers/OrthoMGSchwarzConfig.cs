@@ -545,31 +545,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // Set termination criterion for respective level
                     // ==============================================
 
-                    if (levelSolver is IProgrammableTermination _levelSolver) { 
-                        if (iLevel == 0) {
+                    if (levelSolver is IProgrammableTermination _levelSolver) {
+                        if(iLevel == 0) {
                             (_levelSolver).TerminationCriterion = this.DefaultTermination;
                             //if(maxDG > 3)
                             //    _levelSolver.config.NoOfPostSmootherSweeps = 6;
-                        } else if (iLevel == 1) {
+                        } else if(iLevel == 1) {
 
-                          
+
                             (_levelSolver).TerminationCriterion = delegate (int i, double r0, double r) {
-                                var ret = ((i <= 1 || r > r0 * 0.01) && (r0 > MachineEpsilon || r > MachineEpsilon), true);
+                                var ret = ((i <= 1 || r > r0 * 0.1) && (r0 > MachineEpsilon || r > MachineEpsilon) && (i <= 20), true);
                                 return ret;
                             };
 
-                            /*
-                            
-
-                            //smoother1.config.Overlap = 0;
-
-                            _levelSolver.AdditionalPostSmoothers = new ISolverSmootherTemplate[] {
-                              altSmooth3
-                                };
-                            */
-
                         } else {
-                            (_levelSolver).TerminationCriterion = (i, r0, r) => (i <= 1 && (r0 > MachineEpsilon || r > MachineEpsilon), true);
+                            (_levelSolver).TerminationCriterion = (i, r0, r) => ((i <= 2 || r > r0 * 0.5) && (r0 > MachineEpsilon || r > MachineEpsilon), true);
                         }            
                     }
                     SolverChain.Add(levelSolver);
