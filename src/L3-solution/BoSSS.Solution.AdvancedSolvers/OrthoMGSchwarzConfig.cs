@@ -378,29 +378,29 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         ISolverSmootherTemplate GetAlternateSmoother() {
-            var altSmooth3 = new SoftGMRES();
-            altSmooth3.MaxKrylovDim = 30;
-            altSmooth3.TerminationCriterion = (iIter, r0, ri) => {
-                double tol = 1e-2;
-                bool notTerminate = iIter <= 32 && ri > tol * r0 && (r0 > MachineEpsilon || ri > MachineEpsilon);
-                bool success = ri <= tol * r0;
-                return (notTerminate, success);
-            };
-            altSmooth3.Precond = new BlockJacobi() { NoOfIterations = 1};
-
-            //BlockJacobi altSmooth = new BlockJacobi() {
-            //    //NoOfIterations = 30,
-            //    omega = 1.5,
-            //};
-
-            //altSmooth.TerminationCriterion = (iIter, r0, ri) => {
+            //var altSmooth3 = new SoftGMRES();
+            //altSmooth3.MaxKrylovDim = 30;
+            //altSmooth3.TerminationCriterion = (iIter, r0, ri) => {
             //    double tol = 1e-2;
-            //    bool notTerminate = iIter <= 250 && ri > tol * r0 && (r0 > MachineEpsilon || ri > MachineEpsilon);
+            //    bool notTerminate = iIter <= 32 && ri > tol * r0 && (r0 > MachineEpsilon || ri > MachineEpsilon);
             //    bool success = ri <= tol * r0;
             //    return (notTerminate, success);
             //};
+            //altSmooth3.Precond = new BlockJacobi() { NoOfIterations = 1};
 
-            return altSmooth3;
+            BlockJacobi altSmooth = new BlockJacobi() {
+                //NoOfIterations = 30,
+                omega = 1,
+            };
+
+            altSmooth.TerminationCriterion = (iIter, r0, ri) => {
+                double tol = 1e-1;
+                bool notTerminate = iIter <= 5 && ri > tol * r0 && (r0 > MachineEpsilon || ri > MachineEpsilon);
+                bool success = ri <= tol * r0;
+                return (notTerminate, success);
+            };
+
+            return altSmooth;
         }
 
 
