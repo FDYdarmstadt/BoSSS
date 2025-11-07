@@ -108,14 +108,24 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             return q;
         }
 
-        AffineTrafo FromCodomainToDomain(int jEdge) {
+        int GetInOrOutCell(int jEdge) {
+            if(grid.iGeomEdges.IsEdgeConformalWithCell1(jEdge))
+                return 0;
+            if(grid.iGeomEdges.IsEdgeConformalWithCell2(jEdge))
+                return 1;
+            throw new NotSupportedException($"Unfortunately, edge {jEdge} is nether conformal with IN- or OUT-edge, i.e., has hanging nodes on both sides of the edge - unable to generate cut-edge-quadrature rule");
+        }
 
-            byte iFace = grid.Edges.FaceIndices[jEdge, 0];
+
+
+        AffineTrafo FromCodomainToDomain(int jEdge) {
+            int inot = GetInOrOutCell(jEdge);
+            byte iFace = grid.Edges.FaceIndices[jEdge, inot;
             NodeSet faceCenter = CellDomain.GetFaceCenter(iFace);
             int emptyDim = EmptyDim(faceCenter);
             Selection edgeToCell = new Selection(emptyDim);
 
-            AffineTrafo T = grid.Edges.Edge2CellTrafos[grid.Edges.Edge2CellTrafoIndex[jEdge, 0]];
+            AffineTrafo T = grid.Edges.Edge2CellTrafos[grid.Edges.Edge2CellTrafoIndex[jEdge, inot]];
             AffineTrafo t = new AffineTrafo(Domain.SpatialDimension);
             HyperRectangle codomain = Codomain(jEdge);
 
@@ -138,8 +148,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
         }
 
         IVectorFunction FromCodomainToEmbeddedCodomain(int jEdge) {
-            int jCell = grid.Edges.CellIndices[jEdge, 0];
-            byte iFace = grid.Edges.FaceIndices[jEdge, 0];
+            int inot = GetInOrOutCell(jEdge);
+            int jCell = grid.Edges.CellIndices[jEdge, inot];
+            byte iFace = grid.Edges.FaceIndices[jEdge, inot];
             NodeSet faceCenter = CellDomain.GetFaceCenter(iFace);
             int emptyDim = EmptyDim(faceCenter);
 
