@@ -57,15 +57,15 @@ namespace BoSSS.Foundation.XDG {
                 || momentFittingVariant == CutCellQuadratureMethod.OneStepGaussAndStokes 
                 || momentFittingVariant == CutCellQuadratureMethod.TwoStepStokesAndGauss
                 || momentFittingVariant == CutCellQuadratureMethod.ExactCircle) {
-                if(lsDatas.Length > 1)
-                    throw new ArgumentException($"cut cell quadrature method '{momentFittingVariant}' does not support more than one level-set.", nameof(momentFittingVariant));
+                //if(lsDatas.Length > 1)
+                //    throw new ArgumentException($"cut cell quadrature method '{momentFittingVariant}' does not support more than one level-set.", nameof(momentFittingVariant));
                 if(lsDatas[0].GridDat.SpatialDimension != 2)
                     throw new ArgumentException($"cut cell quadrature method '{momentFittingVariant}' only supports 2D.", nameof(momentFittingVariant));
             }
 
             if(momentFittingVariant == CutCellQuadratureMethod.Classic) {
-                if(lsDatas.Length > 1)
-                    throw new ArgumentException($"cut cell quadrature method '{momentFittingVariant}' does not support more than one level-set.", nameof(momentFittingVariant));
+                //if(lsDatas.Length > 1)
+                //    throw new ArgumentException($"cut cell quadrature method '{momentFittingVariant}' does not support more than one level-set.", nameof(momentFittingVariant));
             }
 
 
