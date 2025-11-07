@@ -370,8 +370,8 @@ namespace BoSSS.Foundation.XDG {
             m_DataHistories = _DataHistories.ToList().AsReadOnly();
             m_LevelSetHistories = _LevelSetHistories.ToList().AsReadOnly();
             m_RegionsHistory = new HistoryStack<LevelSetRegions>(new LevelSetRegions(this));
-            m_QuadFactoryHelpersHistory = new HistoryStack<Dictionary<CutCellQuadratureMethod, XQuadFactoryHelperBase>>(
-                new Dictionary<CutCellQuadratureMethod, XQuadFactoryHelperBase>());
+            m_QuadFactoryHelpersHistory = new HistoryStack<Dictionary<(CutCellQuadratureMethod, int), XQuadFactoryHelperBase>>(
+                new Dictionary<(CutCellQuadratureMethod, int), XQuadFactoryHelperBase>());
             m_XDGSpaceMetricsHistory = new HistoryStack<Dictionary<Tuple<SpeciesId[], CutCellQuadratureMethod, int>, XDGSpaceMetrics>>(NewXDGSpaceMetricsCache());
 
             this.IncreaseHistoryLength(1); // at least one previous time-step is required to support update of XDG fields
@@ -1019,7 +1019,7 @@ namespace BoSSS.Foundation.XDG {
 
             m_RegionsHistory.Push((r1) => r1.CloneAs(), (r1, r0) => r1);
 
-            m_QuadFactoryHelpersHistory.Push((r1) => new Dictionary<CutCellQuadratureMethod, XQuadFactoryHelperBase>(), (r1, r0) => r1);
+            m_QuadFactoryHelpersHistory.Push((r1) => new Dictionary<(CutCellQuadratureMethod, int), XQuadFactoryHelperBase>(), (r1, r0) => r1);
 
             m_XDGSpaceMetricsHistory.Push((r1) => NewXDGSpaceMetricsCache(), (r1,r0) => r1);
 

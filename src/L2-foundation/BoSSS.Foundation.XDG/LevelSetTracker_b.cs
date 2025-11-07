@@ -31,7 +31,7 @@ namespace BoSSS.Foundation.XDG {
 
     partial class LevelSetTracker {
 
-        HistoryStack<Dictionary<CutCellQuadratureMethod, XQuadFactoryHelperBase>> m_QuadFactoryHelpersHistory = null;
+        HistoryStack<Dictionary<(CutCellQuadratureMethod method, int QuadOrder),  XQuadFactoryHelperBase>> m_QuadFactoryHelpersHistory = null;
 
         /// <summary>
         /// Central 'factory' for creating Level Set - related quadrature.
@@ -39,28 +39,29 @@ namespace BoSSS.Foundation.XDG {
         /// <remarks>
         /// The centralized approach should avoid multiple creation of the same quadrature rule.
         /// </remarks>
-        XQuadFactoryHelperBase GetXQuadFactoryHelper(CutCellQuadratureMethod variant, int HistoryIndex = 1) {
+        XQuadFactoryHelperBase GetXQuadFactoryHelper(CutCellQuadratureMethod variant, int QuadOrder, int HistoryIndex = 1) {
             var dict = m_QuadFactoryHelpersHistory[HistoryIndex];
 
-           
-            if(variant == CutCellQuadratureMethod.Algoim) {
-                if(!dict.ContainsKey(variant)) {
-                    dict[variant] = new XQuadFactoryHelperAlgoim(
+            var key = (variant, QuadOrder);
+
+            if(!dict.ContainsKey(key)) {
+
+                XQuadFactoryHelperBase qfHelper;
+                if(variant == CutCellQuadratureMethod.Algoim) {
+                    qfHelper = new XQuadFactoryHelperAlgoim(
                         this.DataHistories.Select(hist => hist[HistoryIndex]).ToArray());
-                }
-
-                return dict[variant];
-
-            } else {
-
-                if(!dict.ContainsKey(variant)) {
-                    dict[variant] = new XQuadFactoryHelper(
+                } else {
+                    qfHelper = new XQuadFactoryHelper(
                         this.DataHistories.Select(hist => hist[HistoryIndex]).ToArray(),
                         variant);
                 }
+                qfHelper.CreateRulesAndMPIExchgange(QuadOrder);
 
-                return dict[variant];
+                dict.Add(key, qfHelper);
             }
+                
+
+            return dict[key];
         }
 
 
@@ -153,7 +154,7 @@ namespace BoSSS.Foundation.XDG {
             if (!dict.ContainsKey(key)) {
                 dict.Add(key,
                     new XDGSpaceMetrics(this,
-                        GetXQuadFactoryHelper(CutCellsQuadType, HistoryIndex),
+                        GetXQuadFactoryHelper(CutCellsQuadType, CutCellsQuadOrder, HistoryIndex),
                         CutCellsQuadOrder,
                         _Spc,
                         HistoryIndex

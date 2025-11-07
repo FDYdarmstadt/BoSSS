@@ -14,16 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.RefElements;
+using ilPSP;
+using ilPSP.Utils;
+using MPI.Wrappers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.Linq;
-using BoSSS.Foundation.Grid;
-using ilPSP;
-using BoSSS.Foundation.Grid.RefElements;
-using MPI.Wrappers;
-using ilPSP.Utils;
 
 namespace BoSSS.Foundation.Quadrature {
 
@@ -235,6 +236,10 @@ namespace BoSSS.Foundation.Quadrature {
                 int L = cellBndRule.Length;
 
                 for(int iChunk = 0; iChunk < L; iChunk++) {
+                    if(cellBndRule[iChunk].Rule.OrderOfPrecision < order)
+                        throw new ArithmeticException($"Requested quadrature rule of degree {order}, but rule reports order {cellBndRule[iChunk].Rule.OrderOfPrecision}.");
+
+
                     int j0 = cellBndRule[iChunk].Chunk.i0;
                     int JE = cellBndRule[iChunk].Chunk.JE;
                     for (int jCell = j0; jCell < JE; jCell++) {
