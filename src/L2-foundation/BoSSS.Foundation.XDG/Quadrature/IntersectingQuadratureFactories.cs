@@ -11,7 +11,7 @@ using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
 using BoSSS.Platform.LinAlg;
 
-namespace BoSSS.Foundation.XDG.Quadrature {
+namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
     internal static class IntersectingQuadratureFactories {
 
         static Symbol ToSymbol(JumpTypes sign) {

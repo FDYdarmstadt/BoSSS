@@ -3,7 +3,7 @@ using ilPSP;
 using IntersectingQuadrature.Tensor;
 using static BoSSS.Foundation.XDG.LevelSetTracker;
 
-namespace BoSSS.Foundation.XDG.Quadrature {
+namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
     class GlobalCellFunction : IScalarFunction {
 
         readonly LevelSetData levelSet;

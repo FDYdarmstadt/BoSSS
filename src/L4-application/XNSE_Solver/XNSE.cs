@@ -563,7 +563,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             if(this.Control.AdvancedDiscretizationOptions.DoubleCutSpecialQuadrature)
-                BoSSS.Foundation.XDG.Quadrature.BruteForceSettingsOverride.doubleCutCellOverride = true;
+                BoSSS.Foundation.XDG.Quadrature.BruteForce.BruteForceSettingsOverride.doubleCutCellOverride = true;
 
             for(int d = 0; d < D; ++d) {
                 // so far only no slip!

@@ -8,7 +8,7 @@ using System;
 using System.Collections.Generic;
 using static BoSSS.Foundation.XDG.LevelSetTracker;
 
-namespace BoSSS.Foundation.XDG.Quadrature {
+namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
     internal class IntersectingRuleFactory : IQuadRuleFactory<QuadRule> {
 
         readonly IFunctionMap map;

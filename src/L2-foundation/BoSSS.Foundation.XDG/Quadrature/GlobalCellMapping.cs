@@ -6,7 +6,7 @@ using IntersectingQuadrature.Tensor;
 using System;
 using static BoSSS.Foundation.XDG.LevelSetTracker;
 
-namespace BoSSS.Foundation.XDG.Quadrature {
+namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
 
     class GlobalCellMapping : IFunctionMap {
 

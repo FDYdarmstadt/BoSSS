@@ -37,6 +37,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             //BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_2D(order, quadratureType);
 
             //BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_3D(order, CutCellQuadratureMethod.Saye);
+            //BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_2D(order, CutCellQuadratureMethod.Saye);
             BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_3D(order, CutCellQuadratureMethod.Saye);
 
             BoSSS.Solution.Application.FinalizeMPI();
@@ -189,10 +190,10 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         /// </summary>
         public void CompareTotalCutLine() {
             double D = this.Grid.SpatialDimension;
-            foreach(var spcName in LsTrk.SpeciesNames) {
-                var spc = LsTrk.GetSpeciesId(spcName);
-                (EdgeMask.GetFullMask(GridData, MaskType.Logical)).SaveToTextFile($"CutLine{spcName}.csv", false, (double[] X, int jL, int jG) => this.latestCCM.CutLineLengthEdge[spc][jL]);
-            }
+            //foreach(var spcName in LsTrk.SpeciesNames) {
+            //    var spc = LsTrk.GetSpeciesId(spcName);
+            //    (EdgeMask.GetFullMask(GridData, MaskType.Logical)).SaveToTextFile($"CutLine{spcName}.csv", false, (double[] X, int jL, int jG) => this.latestCCM.CutLineLengthEdge[spc][jL]);
+            //}
             CompareTotal("Cut Cell boundary line", this.TotalIntegral_CutLine, spcId => this.latestCCM.CutLineLengthEdge[spcId].Sum(), threshold_totCutline, this.MeshScaling.Pow(D - 2));
         }
 

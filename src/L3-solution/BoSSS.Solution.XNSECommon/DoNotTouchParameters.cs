@@ -242,43 +242,7 @@ namespace BoSSS.Solution.XNSECommon {
         [DataMember]
         public ViscosityMode ViscosityMode = ViscosityMode.FullySymmetric;
 
-       
-        /*
-        /// <summary>
-        /// Turn the use of ghost penalties on or off, see <br/>
-        /// @article{massjung_unfitted_2012,
-        ///         title = {An {Unfitted} {Discontinuous} {Galerkin} {Method} {Applied} to {Elliptic} {Interface} {Problems}},
-        ///         volume = {50},
-        ///         issn = {0036-1429, 1095-7170},
-        ///         url = {http://epubs.siam.org/doi/abs/10.1137/090763093},
-        ///         doi = {10.1137/090763093},
-        ///         language = {en},
-        ///         number = {6},
-        ///         urldate = {2014-11-03},
-        ///         journal = {SIAM Journal on Numerical Analysis},
-        ///         author = {Massjung, Ralf},
-        ///         month = jan,
-        ///         year = {2012},
-        ///         pages = {3134--3162}
-        /// }
-        /// </summary>
-        [DataMember]
-        public bool UseGhostPenalties = false;
-        
-        /// <summary>
-        /// Continuity equation: work with div(-) resp. -div(-)
-        /// </summary>
-        [DataMember]
-        public double ContiSign = -1.0;
-
-        /// <summary>
-        /// scale continuity equation with one over density
-        /// </summary>
-        [DataMember]
-        public bool RescaleConti = false;
-        */
-
-        /// <summary>
+             /// <summary>
         /// stabilization parameter for Local-Lax-Friedrichs flux, phase A
         /// </summary>
         [DataMember]
@@ -302,13 +266,6 @@ namespace BoSSS.Solution.XNSECommon {
         [DataMember]
         public double PenaltySafety = 4;
 
-        /*
-        /// <summary>
-        /// 
-        /// </summary>
-        [DataMember]
-        public double CellAgglomerationThreshold = 0.1;
-        */
 
         /// <summary>
         /// characteristic velocity scale for the Dong boundary condition term
@@ -376,7 +333,8 @@ namespace BoSSS.Solution.XNSECommon {
         public bool CurvatureNeeded = false;
 
         /// <summary>
-        /// Expert options regarding the evaluation of the curvature.
+        /// Expert options regarding the evaluation of the curvature;
+        /// only effectve if <see cref="SST_isotropicMode"/> is set to <see cref="SurfaceStressTensor_IsotropicMode.Curvature_Projected"/>
         /// </summary>
         [DataMember]
         public LevelSetTools.CurvatureAlgorithms.FilterConfiguration FilterConfiguration = LevelSetTools.CurvatureAlgorithms.FilterConfiguration.NoFilter;
@@ -461,7 +419,7 @@ namespace BoSSS.Solution.XNSECommon {
         public double StressPenalty = 1.0;
 
         /// <summary>
-        /// double cut cell special handling override <see cref="BoSSS.Foundation.XDG.Quadrature.BruteForceSettingsOverride"/>
+        /// double cut cell special handling override <see cref="BoSSS.Foundation.XDG.Quadrature.BruteForce.BruteForceSettingsOverride"/>
         /// </summary>
         [DataMember]
         public bool DoubleCutSpecialQuadrature = false;

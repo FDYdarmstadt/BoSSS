@@ -1591,6 +1591,40 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
+
+        static CellQuadratureScheme DefaultCouplingSchemeProvider(LevelSetTracker lsTrk, int iLevSet, SpeciesId SpeciesA, SpeciesId SpeciesB, CellMask IntegrationDomain, XQuadSchemeHelper SchemeHelper, int quadOrder, int TrackerHistory) {
+            CellQuadratureScheme SurfIntegration = SchemeHelper.GetLevelSetquadScheme(iLevSet, SpeciesA, IntegrationDomain);
+            return SurfIntegration;
+
+        }
+
+        public Func<LevelSetTracker, int, SpeciesId, SpeciesId, CellMask, XQuadSchemeHelper, int, int, CellQuadratureScheme> m_CouplingQuadraturSchemeProvider;
+
+        /// <summary>
+        /// - 1st argument: `lsTrk` --  current level-set tracker
+        /// - 2nd argument: `iLevSet` -- level set over which should be integrated
+        /// - 3rd argument: `SpeciesA` -- species on one side of the level-set over which should be integrated, one of <see cref="Species"/>
+        /// - 4th argument: `SpeciesB` -- species on second side of the level-set over which should be integrated, one of <see cref="Species"/>
+        /// - 5th argument: `IntegrationDomain` -- restriction of the integration domain
+        /// - 6th argument: `SchemeHelper` -- a default <see cref="XQuadSchemeHelper"/>
+        /// - 7th argument: `quadOrder` -- quadrature order
+        /// - 7th argument: `TrackerHistory` -- level-set resp. tracker history.
+        /// </summary>
+        public Func<LevelSetTracker, int, SpeciesId, SpeciesId, CellMask, XQuadSchemeHelper, int, int, CellQuadratureScheme> CouplingQuadraturSchemeProvider {
+            get {
+                if(m_CouplingQuadraturSchemeProvider == null)
+                    m_CouplingQuadraturSchemeProvider = DefaultCouplingSchemeProvider;
+                return m_CouplingQuadraturSchemeProvider;
+            }
+            set {
+                if(IsCommitted)
+                    throw new NotSupportedException("not allowed to change after Commit");
+                m_CouplingQuadraturSchemeProvider = value;
+            }
+        }
+
+
+
         #endregion
 
         #region Ghost_quadSchemeProvider

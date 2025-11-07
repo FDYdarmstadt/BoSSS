@@ -4,7 +4,7 @@ using ilPSP;
 using System;
 using System.Collections;
 
-namespace BoSSS.Foundation.XDG.Quadrature {
+namespace BoSSS.Foundation.XDG.Quadrature.BruteForce {
 
     internal interface IScheme {
         RefElement ReferenceElement { get; }

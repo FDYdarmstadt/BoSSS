@@ -9,7 +9,7 @@ using IntersectingQuadrature.Tensor;
 using System;
 using static BoSSS.Foundation.XDG.LevelSetTracker;
 
-namespace BoSSS.Foundation.XDG.Quadrature {
+namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
     class GlobalEdgeMapping : IFunctionMap {
 
         class Selection {
@@ -51,10 +51,10 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 default:
                 throw new NotImplementedException();
             }
-            center = MultidimensionalArray.Create(1, dim);
+            //center = MultidimensionalArray.Create(1, dim);
         }
 
-        MultidimensionalArray center;
+        //MultidimensionalArray center;
 
         int EmptyDim(MultidimensionalArray center) {
             double max = double.MinValue;
@@ -72,18 +72,18 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             HyperRectangle codomain = new HyperRectangle(Domain.SpatialDimension);
             codomain.Dimension = Domain.SpatialDimension;
 
-            int jCell = grid.Edges.CellIndices[jEdge, 0];
-            byte iFace = grid.Edges.FaceIndices[jEdge, 0];
-            NodeSet faceCenter = CellDomain.GetFaceCenter(iFace);
-            int emptyDim = EmptyDim(faceCenter);
+            //int jCell = grid.Edges.CellIndices[jEdge, 0];
+            //byte iFace = grid.Edges.FaceIndices[jEdge, 0];
+            //NodeSet faceCenter = CellDomain.GetFaceCenter(iFace);
+            //int emptyDim = EmptyDim(faceCenter);
 
-            grid.TransformLocal2Global(faceCenter, center, jCell);
-            Selection edgeToCell = new Selection(emptyDim);
+            //grid.TransformLocal2Global(faceCenter, center, jCell);
+            //Selection edgeToCell = new Selection(emptyDim);
 
             for(int i = 0; i < Domain.SpatialDimension; ++i) {
-                int j = edgeToCell.FromSubIndexToIndex(i);
-                codomain.Center[i] = center[0, j];
-                codomain.Diameters[i] = grid.Cells.Transformation[jCell, j, j] * 2;
+                //int j = edgeToCell.FromSubIndexToIndex(i);
+                codomain.Center[i] = 0.0; // center[0, j];
+                codomain.Diameters[i] = 2.0; // grid.Cells.Transformation[jCell, j, j] * 2;
             }
             return codomain;
         }
@@ -143,7 +143,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             NodeSet faceCenter = CellDomain.GetFaceCenter(iFace);
             int emptyDim = EmptyDim(faceCenter);
 
-            grid.TransformLocal2Global(faceCenter, center, jCell);
+            //grid.TransformLocal2Global(faceCenter, center, jCell);
             Selection edgeToCell = new Selection(emptyDim);
 
             Tensor2 m = Tensor2.Zeros(CellDomain.SpatialDimension, Domain.SpatialDimension);
@@ -153,7 +153,8 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             }
 
             Tensor1 affine = Tensor1.Zeros(CellDomain.SpatialDimension);
-            affine[emptyDim] = center[0, emptyDim];
+            //affine[emptyDim] = center[0, emptyDim];
+            affine[emptyDim] = faceCenter[0, emptyDim];
 
             LinearVectorPolynomial t = new LinearVectorPolynomial(affine, m);
             return t;

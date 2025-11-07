@@ -243,11 +243,14 @@ namespace BoSSS.Foundation.XDG {
         /// For each cut background-cell $ K_j $, the surface element is $ K_j \cap \mathfrak{I} $ and its boundaries is  $ \partial K_j \cap \mathfrak{I} $; 
         /// Therefore, one need to integrate over the line integrals:
         /// \[
-        ///    \int_{\partial K_j \cap \mathfrak{I} } \ldots \mathrm{dl} .
+        ///    \int_{\partial K_j \cap \mathfrak{I}_i \cap \partial \mathfrak{s} } \ldots \mathrm{dl} ,
         /// \]
+        /// where $ i $ is the level set index <paramref name="iLevSet"/>
+        /// and $ \partial \mathfrak{s} $ is the bounary of species <paramref name="sp"/>.
+        /// 
         /// These rules are used, e.g., by the (edge parts of) surface element operator <see cref="XDifferentialOperatorMk2.SurfaceElementOperator_Ls0"/>
         /// </summary>
-        public EdgeQuadratureScheme Get_SurfaceElement_EdgeQuadScheme(SpeciesId sp, int iLevSet) {
+        public EdgeQuadratureScheme Get_SurfaceElement_EdgeQuadScheme(SpeciesId sp, int iLevSet, CellMask cellRestriction = null) {
             var tracker = this.XDGSpaceMetrics.Tracker;
             IGridData gdat = tracker.GridDat;
             var levSetRegions = this.XDGSpaceMetrics.LevelSetRegions;
@@ -265,6 +268,7 @@ namespace BoSSS.Foundation.XDG {
 
             EdgeMask allRelevantEdges;
             {
+                /*
                 CellMask cellBoundaryLayer = null;
 
                 foreach(var other_spc in tracker.SpeciesIdS) {
@@ -278,26 +282,18 @@ namespace BoSSS.Foundation.XDG {
                         cellBoundaryLayer = cellBoundaryLayer.Union(cellBoundaryLayer_otherSpecies);
 
                 }
+                */
+                CellMask cellBoundaryLayer = levSetRegions.GetSpeciesMask(sp).Intersect(levSetRegions.GetCutCellMask4LevSet(iLevSet));
+                if(cellRestriction != null)
+                    cellBoundaryLayer = cellBoundaryLayer.Intersect(cellRestriction);
 
+                cellBoundaryLayer.SaveToTextFile($"CellBndy-{tracker.GetSpeciesName(sp)}{iLevSet}.csv", false);
 
                 allRelevantEdges = InnerAndDomainBoundary(cellBoundaryLayer);
             }
-
-
-
-
-            var speciesEdges = this.m_SpeciesSubgrid_InnerAndDomainEdges[sp];
-            /*
-            var innerCutCellEdges = levSetRegions.GetCutCellSubgrid4LevSet(iLevSet).InnerEdgesMask;
-            var boundaryCutCellEdges = ExecutionMask.Intersect(
-                levSetRegions.GetCutCellSubgrid4LevSet(iLevSet).BoundaryEdgesMask, 
-                tracker.GridDat.BoundaryEdges);
-            var allRelevantEdges = ExecutionMask.Intersect(
-                this.m_SpeciesSubgrid_InnerAndDomainEdges[sp],
-                ExecutionMask.Union(innerCutCellEdges, boundaryCutCellEdges));
-            */
             allRelevantEdges = allRelevantEdges.ToGeometicalMask();
-           
+            allRelevantEdges.SaveToTextFile($"EdgeBndy-{tracker.GetSpeciesName(sp)}{iLevSet}.csv", false);
+
 
 
 
@@ -389,11 +385,10 @@ namespace BoSSS.Foundation.XDG {
             }
 
             //Handle doubly cut cells
-
-            /*
-            for(int jLevSet = 0; jLevSet < XDGSpaceMetrics.NoOfLevelSets; ++jLevSet) {
+            for(int jLevSet = 0; jLevSet < XDGSpaceMetrics.NoOfLevelSets; jLevSet++) {
                 if(iLevSet != jLevSet) {
-                    if(!SpeciesAreSeparatedByLevSet(jLevSet, sp, sp)) {
+                    //if(!SpeciesAreSeparatedByLevSet(jLevSet, sp, sp)) 
+                    {
                         for(int iKrefEdge = 0; iKrefEdge < gdat.iGeomEdges.EdgeRefElements.Length; iKrefEdge++) {
                             var KrefEdge = gdat.iGeomEdges.EdgeRefElements[iKrefEdge];
 
@@ -418,16 +413,19 @@ namespace BoSSS.Foundation.XDG {
                     }
                 }
             }
-            */
+            
             
             return edgeQrIns;
         }
 
         /// <summary>
-        /// Interior quadrature for the surface elements, i.e. for each cut background-cell $` K_j `$ a quadrature to approximate
-        /// ```math
-        ///    \oint_{K_j \cap \mathfrak{I} } \ldots \mathrm{dS} .
-        /// ```
+        /// Interior quadrature for the surface elements, i.e. for each cut background-cell $ K_j $ a quadrature to approximate
+        /// \[
+        ///    \int_{ K_j \cap \mathfrak{I}_i \cap \partial \mathfrak{s} } \ldots \mathrm{dS} ,
+        /// \]
+        /// where $ i $ is the level set index <paramref name="iLevSet"/>
+        /// and $ \partial \mathfrak{s} $ is the bounary of species <paramref name="sp"/>.        
+        /// 
         /// These rules are used, e.g., by the (volume parts of) surface element operator <see cref="XDifferentialOperatorMk2.SurfaceElementOperator_Ls0"/>
         /// </summary>
         public CellQuadratureScheme Get_SurfaceElement_VolumeQuadScheme(SpeciesId sp, int iLevSet) {
@@ -1081,7 +1079,7 @@ namespace BoSSS.Foundation.XDG {
                             RefElement Kref = XDGSpaceMetrics.GridDat.Grid.RefElements[iKref];
                             var _cutDom = cutCells.Intersect(XDGSpaceMetrics.GridDat.Cells.GetCells4Refelement(iKref));
 
-                            //handle rules for cells/edges where two levelsets are present
+                            //handle rules for cells/edges where two level sets are present
                             for (int jLevSet = iLevSet + 1; jLevSet < XDGSpaceMetrics.NoOfLevelSets; ++jLevSet) {
                                 if (!SpeciesAreSeparatedByLevSet(jLevSet, sp, sp)) {
                                     CellMask doublyCut = GetDoubleCutCells(iLevSet, jLevSet).Intersect(_cutDom);
@@ -1238,13 +1236,12 @@ namespace BoSSS.Foundation.XDG {
                 //handle rules for cells/edges where two levelsets are present
 
                 CellMask modIntegrationDom = IntegrationDom;
-                for (int jLevSet = 0; jLevSet < XDGSpaceMetrics.NoOfLevelSets; ++jLevSet) {
+                for (int jLevSet = 0; jLevSet < XDGSpaceMetrics.NoOfLevelSets; ++jLevSet) { // loop over all other level-sets...
                     if (jLevSet != iLevSet) {
                         CellMask doublyCut = GetDoubleCutCells(iLevSet, jLevSet);
                         if (doublyCut.NoOfItemsLocally > 0) {
                             modIntegrationDom = modIntegrationDom.Except(doublyCut);
 
-                            //Ist das so in Ordnung? Scheint keine Invariante zu verletzen.
                             var jmpA = IdentifyWingA(jLevSet, spA);
                             //Debug.Assert(jmpA == IdentifyWing(jLevSet, spB));
                             if (iLevSet == 1) {
