@@ -22,6 +22,7 @@ using BoSSS.Foundation.XDG.Quadrature;
 using BoSSS.Foundation.XDG.Quadrature.HMF;
 using ilPSP;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -186,55 +187,41 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         private Dictionary<SpeciesId, EdgeMask> m_SpeciesSubgrid_InnerAndDomainEdges = new Dictionary<SpeciesId, EdgeMask>();
 
-
-
-        /*EdgeMask AllEdges() {
-            int[][] C2E = this.GridData.iLogicalCells.Cells2Edges;
-            int[][] Edge_Log2Geom = this.GridData.iLogicalEdges.EdgeToParts;
-
-            HashSet<int> edgesPlusOne = new HashSet<int>();
-
-            foreach(int jCell in this.ItemEnum) {
-                int cell;
-                if(base.MaskType == MaskType.Geometrical && this.GridData.iGeomCells.GeomCell2LogicalCell != null) {
-                    cell = this.GridData.iGeomCells.GeomCell2LogicalCell[jCell];
-                } else {
-                    cell = jCell;
-                }
-                int[] Edges = C2E[cell];
-                if(base.MaskType == MaskType.Logical) {
-                    // must return a logical mask => go with logical edge indices
-                    foreach(int e in Edges) {
-                        edgesPlusOne.Add(Math.Abs(e));
-                    }
-                } else if(base.MaskType == MaskType.Geometrical) {
-                    // must return a geometrical mask => convert logical edge indices to geometrical ones first
-                    foreach(int e in Edges) {
-                        if(Edge_Log2Geom != null && Edge_Log2Geom[e] != null) {
-                            foreach(int ee in Edge_Log2Geom[e])
-                                edgesPlusOne.Add(Math.Abs(ee));
-                        } else {
-                            // logical and geometrical edge indices are equal
-                            edgesPlusOne.Add(Math.Abs(e));
-                        }
-                    }
-
-
-                } else {
-                    throw new NotImplementedException($"unknown mask type: {base.MaskType}");
-                }
-            }
-            int[] sequence = edgesPlusOne.ToArray(); // note: all edge indices in this array are shifted by +1, because `EdgeToParts` is!
-            //                                          but this is exactly what is required as a `sequence` for the `EdgeMask`ctor
-            return new EdgeMask(this.GridData, sequence, base.MaskType);
-        }*/
-
-
         EdgeMask InnerAndDomainBoundary(CellMask cells) {
-            var subGrd = new SubGrid(cells);
-            var innerEdges = subGrd.InnerEdgesMask;
-            var bndy = cells.GridData.GetBoundaryEdgeMask().Intersect(subGrd.BoundaryEdgesMask);
-            return bndy.Union(innerEdges);
+            //var subGrd = new SubGrid(cells);
+            //var innerEdges = subGrd.InnerEdgesMask;
+            //var bndy = cells.GridData.GetBoundaryEdgeMask().Intersect(subGrd.BoundaryEdgesMask);
+            //return bndy.Union(innerEdges);
+
+            if(cells.MaskType != MaskType.Logical)
+                throw new ArgumentException("expecting a logical cell mask", nameof(cells));
+            
+            
+
+            var bCells = cells.GetBitMask();
+            
+            int[,] E2C = cells.GridData.iLogicalEdges.CellIndices;
+            var bCellMask = cells.GetBitMask();
+            int NoOfEdges = cells.GridData.iLogicalEdges.Count;
+            var bEdgeMask = new BitArray(NoOfEdges);
+
+
+
+            for(int iEdge = 0; iEdge < NoOfEdges; iEdge++) {
+                if(E2C[iEdge, 1] >= 0) {
+                    // inner egde: both cells must be part of the bit-mask
+                    if(bCellMask[E2C[iEdge, 0]] && bCellMask[E2C[iEdge, 1]])
+                        bEdgeMask[iEdge] = true;
+                } else {
+                    // boundary edge: only in-cell must be part of the mask
+                    if(bCellMask[E2C[iEdge, 0]])
+                        bEdgeMask[iEdge] = true;
+                }
+
+
+            }
+
+            return new EdgeMask(cells.GridData, bEdgeMask, mt: MaskType.Logical);
         }
 
 
@@ -258,45 +245,15 @@ namespace BoSSS.Foundation.XDG {
             if(!this.SpeciesList.Contains(sp))
                 throw new ArgumentException($"Given species (id = {tracker.GetSpeciesName(sp)}) is not supported.");
 
-
-            Console.WriteLine("             ********************* testcode active !!!!");
-
-
-            //if(iLevSet == 1 && this.XDGSpaceMetrics.Tracker.GetSpeciesName(sp) == "A") {
-            //    Console.WriteLine("3478o326874683276");
-            //}
-
             EdgeMask allRelevantEdges;
             {
-                /*
-                CellMask cellBoundaryLayer = null;
-
-                foreach(var other_spc in tracker.SpeciesIdS) {
-                    if(other_spc == sp) 
-                        continue;
-
-                    var cellBoundaryLayer_otherSpecies = levSetRegions.GetSpeciesMask(other_spc).Intersect(levSetRegions.GetSpeciesMask(sp));
-                    if(cellBoundaryLayer == null)
-                        cellBoundaryLayer = cellBoundaryLayer_otherSpecies;
-                    else
-                        cellBoundaryLayer = cellBoundaryLayer.Union(cellBoundaryLayer_otherSpecies);
-
-                }
-                */
                 CellMask cellBoundaryLayer = levSetRegions.GetSpeciesMask(sp).Intersect(levSetRegions.GetCutCellMask4LevSet(iLevSet));
                 if(cellRestriction != null)
                     cellBoundaryLayer = cellBoundaryLayer.Intersect(cellRestriction);
 
-                cellBoundaryLayer.SaveToTextFile($"CellBndy-{tracker.GetSpeciesName(sp)}{iLevSet}.csv", false);
-
                 allRelevantEdges = InnerAndDomainBoundary(cellBoundaryLayer);
             }
             allRelevantEdges = allRelevantEdges.ToGeometicalMask();
-            allRelevantEdges.SaveToTextFile($"EdgeBndy-{tracker.GetSpeciesName(sp)}{iLevSet}.csv", false);
-
-
-
-
 
             var edgeQrIns = new EdgeQuadratureScheme(
                 scaling: new SurfaceElementEdgeIntegrationMetric(this.XDGSpaceMetrics.LevelSetData[iLevSet]),

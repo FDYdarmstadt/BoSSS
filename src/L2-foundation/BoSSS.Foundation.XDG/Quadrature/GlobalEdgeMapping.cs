@@ -120,7 +120,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
 
         AffineTrafo FromCodomainToDomain(int jEdge) {
             int inot = GetInOrOutCell(jEdge);
-            byte iFace = grid.Edges.FaceIndices[jEdge, inot;
+            byte iFace = grid.Edges.FaceIndices[jEdge, inot];
             NodeSet faceCenter = CellDomain.GetFaceCenter(iFace);
             int emptyDim = EmptyDim(faceCenter);
             Selection edgeToCell = new Selection(emptyDim);
