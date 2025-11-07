@@ -1706,12 +1706,6 @@ namespace BoSSS.Solution.XNSECommon {
         /// <summary>
         /// Checks the special Stokes theorem in cut-cell <param name="jCell"></param> with the given test field <param name="testField"></param>
         /// </summary>
-        /// <param name="jCell"></param>
-        /// <param name="LsTrk"></param>
-        /// <param name="spcId_A"></param>
-        /// <param name="testField"></param>
-        /// <param name="order"></param>
-        /// <returns></returns>
         public static (double error, double stokesAtInterface, double stokesAtEdges) CheckStokesForCell(int jCell, LevelSetTracker LsTrk, VectorField<SinglePhaseField> testField, int order) {
 
             GridData grdDat = LsTrk.GridDat;
@@ -1757,18 +1751,9 @@ namespace BoSSS.Solution.XNSECommon {
             ).Execute();
 
             // =========================================================
-            BitArray edgeIntDomBA = new BitArray(grdDat.iGeomEdges.Count);
-            var jCell2Edges = grdDat.Cells.Cells2Edges[jCell];
-            foreach (int iE in jCell2Edges) {
-                if (iE < 0)
-                    edgeIntDomBA[(-iE) - 1] = true;
-                else
-                    edgeIntDomBA[iE - 1] = true;
-            }
-            EdgeMask edgeIntDom = new EdgeMask(grdDat, edgeIntDomBA);
+            var mask = (new CellMask(grdDat, Chunk.GetSingleElementChunk(jCell)));
+            EdgeQuadratureScheme SurfaceElement_BoundaryEdge = schemeHelper.Get_SurfaceElement_EdgeQuadScheme(LsTrk.GetSpeciesId("A"), 0, mask);
 
-            var testFactory = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), order).XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(0, LsTrk.GridDat.Grid.RefElements[0]);
-            EdgeQuadratureScheme SurfaceElement_BoundaryEdge = new EdgeQuadratureScheme(testFactory, edgeIntDom);
 
             double stokesAtEdges = 0.0;
             EdgeQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
@@ -1785,29 +1770,18 @@ namespace BoSSS.Solution.XNSECommon {
                             // Console.WriteLine($"jCell {jCell} OUT on edge {i0 + i} - change direction");
                             EdgeNormal.ScaleV(-1.0);
                         }
-                        // Console.WriteLine($"normal at Edge {i0+i} : ({EdgeNormal[0]}, {EdgeNormal[1]})");
-                        // Console.WriteLine($"normal at Edge {i0+i} : ({EdgeNormal[0]}, {EdgeNormal[1]}, , {EdgeNormal[2]})");
 
-                        // Console.WriteLine($"edge {i0 + i} - number of nodes {qN}");
+
                         int trf = (LsTrk.GridDat.Edges.CellIndices[i0 + i, 0] == jCell) ? LsTrk.GridDat.Edges.Edge2CellTrafoIndex[i0 + i, 0] : LsTrk.GridDat.Edges.Edge2CellTrafoIndex[i0 + i, 1];
                         NodeSet VolNodes = QR.Nodes.GetVolumeNodeSet(LsTrk.GridDat, trf, false);
-                        // Console.WriteLine($"volume node: ({VolNodes[0, 0]}, {VolNodes[0, 1]})");  
-
+                        
                         var LsNormals = LsTrk.DataHistories[0].Current.GetLevelSetNormals(VolNodes, jCell, length);
-                        // var phiGrad = MultidimensionalArray.Create(length, qN, D);
-                        // ((LevelSet)LsTrk.LevelSets[0]).EvaluateGradient(jCell, length, VolNodes, phiGrad);
-
                         for (int d = 0; d < D; d++) {
 
                             var fEval = MultidimensionalArray.Create(length, qN);
                             testField[d].Evaluate(jCell, length, VolNodes, fEval);
 
                             for (int qn = 0; qn < qN; qn++) {
-                                // Console.WriteLine($"LevelSet normal at Edge {i0+i}: ({LsNormals[i, qn, 0]}, {LsNormals[i, qn, 1]})");
-                                // Console.WriteLine($"LevelSet normal at Edge {i0+i}: ({LsNormals[i, qn, 0]}, {LsNormals[i, qn, 1]}, {LsNormals[i, qn, 2]})");
-                                // double[] LsNormal = new double[] { phiGrad[i, qn, 0], phiGrad[i, qn, 1] };
-                                // LsNormal.Normalize();
-                                // Console.WriteLine($"PhiGrad normal at Edge {i0+i}: ({LsNormal[0]}, {LsNormal[1]})");
 
                                 double[] LsTangent = new double[D];
                                 for (int d1 = 0; d1 < D; d1++) {
@@ -1822,25 +1796,6 @@ namespace BoSSS.Solution.XNSECommon {
                                 }
                                 LsTangent = LsTangent.Normalize();
 
-                                // double tangentCheck = GenericBlas.InnerProd(LsTangent, LsNormals.ExtractSubArrayShallow(i, qn, -1).To1DArray());
-                                // Console.WriteLine($"LsTangent * LsNormals = {tangentCheck}");                       
-
-                                // if (D != 2) 
-                                //     throw new ArgumentException();
-
-                                // double[] LsTangent = new double[2];
-
-                                // LsTangent[0] = -LsNormals[i, qn, 1];
-                                // LsTangent[1] = LsNormals[i, qn, 0];
-
-                                // if (GenericBlas.InnerProd(LsTangent, EdgeNormal) < 0.0) {
-                                //     // Console.WriteLine($"LsTangent change direction");
-                                //     // LsTangent.ScaleV(-1.0);
-                                //     Console.WriteLine($"LsTangent NOT pointing outward!");
-                                // }
-
-                                // Console.WriteLine($"LS tangent: ({LsTangent[0]}, {LsTangent[1]})");  
-                                // Console.WriteLine($"LS tangent: ({LsTangent[0]}, {LsTangent[1]} , {LsTangent[2]})");  
                                 EvalResult[i, qn, 0] += LsTangent[d] * fEval[i, qn];
                             }
                         }
