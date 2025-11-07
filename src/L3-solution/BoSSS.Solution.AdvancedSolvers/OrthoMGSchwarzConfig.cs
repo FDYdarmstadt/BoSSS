@@ -551,16 +551,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             //if(maxDG > 3)
                             //    _levelSolver.config.NoOfPostSmootherSweeps = 6;
                         } else if(iLevel == 1) {
-
-
                             (_levelSolver).TerminationCriterion = delegate (int i, double r0, double r) {
                                 var ret = ((i <= 1 || r > r0 * 0.1) && (r0 > MachineEpsilon || r > MachineEpsilon) && (i <= 20), true);
+                                // do at least one iteration until r < 0.1 r0 or max. 20 iterations, with safeguard for tiny residuals
                                 return ret;
                             };
 
                         } else {
-                            (_levelSolver).TerminationCriterion = (i, r0, r) => ((i <= 2 || r > r0 * 0.5) && (r0 > MachineEpsilon || r > MachineEpsilon), true);
-                        }            
+                            (_levelSolver).TerminationCriterion = (i, r0, r) => ((i <= 2) && (i <= 1 || r > r0 * 0.5) && (r0 > MachineEpsilon || r > MachineEpsilon), true);
+                            // at least one and at most two iterations until r < 0.5 r0, with safeguard for tiny residuals
+                        }
                     }
                     SolverChain.Add(levelSolver);
 
