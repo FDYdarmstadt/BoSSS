@@ -1,6 +1,7 @@
 ﻿using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.Quadrature;
+using ilPSP;
 using IntersectingQuadrature;
 using IntersectingQuadrature.Tensor;
 using System;
@@ -60,7 +61,14 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
         }
 
         public IScalarFunction MapFromDomainToCodomain(LevelSetData levelSet, int jCell) {
-            return new GlobalCellFunction(levelSet, jCell);
+            if(levelSet.LevelSet is LevelSet DGlevelSet) {
+                int deg = DGlevelSet.Basis.Degree;
+                int D = grid.SpatialDimension;
+                return new GlobalCellFunctionOptimized(levelSet, jCell, D.ForLoop(d => deg));
+                //return new GlobalCellFunction(levelSet, jCell);
+            } else {
+                return new GlobalCellFunction(levelSet, jCell);
+            }
         }
     }
 }

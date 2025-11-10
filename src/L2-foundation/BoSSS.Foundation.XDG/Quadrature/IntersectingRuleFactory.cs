@@ -1,4 +1,5 @@
 ﻿using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.Quadrature;
 using ilPSP;
@@ -6,6 +7,7 @@ using IntersectingQuadrature;
 using IntersectingQuadrature.Tensor;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using static BoSSS.Foundation.XDG.LevelSetTracker;
 
 namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
@@ -50,16 +52,17 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
                     rules.Add(new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(j), rule));
                 } catch(Exception e) {
 
-                    var grid = mask.GridData.Grid as BoSSS.Foundation.Grid.Classic.GridCommons;
-                    Console.Error.WriteLine("Cell: ");
-                    Console.Error.WriteLine(grid.Cells[j].ToString());
+                    var grid = mask.GridData.Grid as GridCommons;
+                    if(grid != null) {
+                        Console.Error.WriteLine("Cell: ");
+                        Console.Error.WriteLine(grid.Cells[j].ToString());
 
-                    var lsAlpah = (alpha.LevelSet as DGField);
-                    Console.Error.WriteLine("DG coordinates of level set alpha: " + lsAlpah.Coordinates.GetRow(j).ToConcatString("[", ", ", "]"));
+                        var lsAlpah = (alpha.LevelSet as DGField);
+                        Console.Error.WriteLine("DG coordinates of level set alpha: " + lsAlpah.Coordinates.GetRow(j).ToConcatString("[", ", ", "]"));
 
-                    var lsBeta = (beta.LevelSet as DGField);
-                    Console.Error.WriteLine("DG coordinates of level set beta: " + lsBeta.Coordinates.GetRow(j).ToConcatString("[", ", ", "]"));
-
+                        var lsBeta = (beta.LevelSet as DGField);
+                        Console.Error.WriteLine("DG coordinates of level set beta: " + lsBeta.Coordinates.GetRow(j).ToConcatString("[", ", ", "]"));
+                    }
 
                     throw e;
                 }
@@ -73,9 +76,13 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             IScalarFunction b = map.MapFromDomainToCodomain(beta, j);
             (int nodeCount, int subdivisions) = Convert(order);
 
+            Stopwatch stw = new Stopwatch();
+
             QuadratureRule ruleQ;
             try {
+                stw.Start();
                 ruleQ = finder.FindRule(a, signAlpha, b, signBeta, domain, nodeCount, subdivisions);
+                stw.Stop();
             } catch(Exception e) {
                 Console.WriteLine(e);
                 throw new Exception($"IntersectingQuadrature failed for input nodeCount={nodeCount}, subdivisions={subdivisions}, map={map} ");
