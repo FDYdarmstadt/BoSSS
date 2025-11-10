@@ -278,7 +278,7 @@ namespace BoSSS.Foundation {
                     if (coördOffset == 0 && Coördinates.GetLength(0) == 1)
                         Coördinates_j = Coördinates;
                     else
-                        Coördinates_j = Coördinates.ExtractSubArrayShallow(new int[] { coördOffset, 0 }, new int[] { coördOffset, N - 1 });
+                        Coördinates_j = Coördinates.ExtractSubArrayShallow([coördOffset, 0], [coördOffset, N - 1]);
 
                     GradientRef.Multiply(scale0, Coördinates_j, BasisGradValues, 0.0, ref mp_jke_jm_kme);  // gradient in reference coördinates
                     ResultAcc.Multiply(1.0, InvJacobi, GradientRef, ResultPreScale, ref mp_jkd_ed_jke);

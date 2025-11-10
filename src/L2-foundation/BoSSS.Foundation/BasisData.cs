@@ -17,12 +17,8 @@ limitations under the License.
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using BoSSS.Foundation.Caching;
-using BoSSS.Platform;
 using ilPSP;
-using ilPSP.Utils;
-using BoSSS.Foundation.Grid.RefElements;
 
 namespace BoSSS.Foundation.Grid {
 
@@ -399,7 +395,7 @@ namespace BoSSS.Foundation.Grid {
             int N = output.GetLength(2);
             Debug.Assert(BasisValRef.GetLength(1) >= N);
             if(BasisValRef.GetLength(1) > N)
-                BasisValRef = BasisValRef.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { NodeSet.NoOfNodes - 1, N - 1 });
+                BasisValRef = BasisValRef.ExtractSubArrayShallow([0, 0], [NodeSet.NoOfNodes - 1, N - 1]);
 
             bool AffineLinear = m_Owner.iGeomCells.IsCellAffineLinear(j0);
 #if DEBUG
@@ -432,7 +428,7 @@ namespace BoSSS.Foundation.Grid {
 
                 MultidimensionalArray Trafo = this.OrthonormalizationTrafo.GetValue_Cell(j0, Len, degree);
                 if(Trafo.GetLength(1) != N)
-                    Trafo = Trafo.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { Len - 1, N - 1, N - 1 });
+                    Trafo = Trafo.ExtractSubArrayShallow([0, 0, 0], [Len - 1, N - 1, N - 1]);
 
                 output.Multiply(1.0, BasisValRef, Trafo, 0.0, "jkn", "km", "jmn");
             }
@@ -469,7 +465,7 @@ namespace BoSSS.Foundation.Grid {
 
             Debug.Assert(resRef.GetLength(1) >= N);
             if(resRef.GetLength(1) > N)
-                resRef = resRef.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { NodeSet.NoOfNodes - 1, N - 1, D - 1 });
+                resRef = resRef.ExtractSubArrayShallow([0, 0, 0], [NodeSet.NoOfNodes - 1, N - 1, D - 1]);
 
 
             bool AffineLinear = m_Owner.iGeomCells.IsCellAffineLinear(j0);
@@ -500,7 +496,7 @@ namespace BoSSS.Foundation.Grid {
             } else {
                 var weights = this.OrthonormalizationTrafo.GetValue_Cell(j0, Len, degree);
                 if(weights.GetLength(1) != N)
-                    weights = weights.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { Len - 1, N - 1, N - 1 });
+                    weights = weights.ExtractSubArrayShallow([0, 0, 0], [Len - 1, N - 1, N - 1]);
 
                 MultidimensionalArray JacInverse = this.m_Owner.InverseJacobian.GetValue_Cell(NodeSet, j0, Len);
                 output.Multiply(1.0, JacInverse, weights, resRef, 0.0, "jknd", "jked", "jmn", "kme");
@@ -537,7 +533,7 @@ namespace BoSSS.Foundation.Grid {
             Debug.Assert(gbv.GetLength(2) == D);
             Debug.Assert(gbv.GetLength(3) == D);
             if(gbv.GetLength(1) > N)
-                gbv = gbv.ExtractSubArrayShallow(new int[] { 0, 0, 0, 0 }, new int[] { NodeSet.NoOfNodes - 1, N - 1, D - 1, D - 1 });
+                gbv = gbv.ExtractSubArrayShallow([0, 0, 0, 0], [NodeSet.NoOfNodes - 1, N - 1, D - 1, D - 1]);
 
             bool AffineLinear = m_Owner.iGeomCells.IsCellAffineLinear(j0);
 #if DEBUG

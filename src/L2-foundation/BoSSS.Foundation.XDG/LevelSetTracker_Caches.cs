@@ -13,15 +13,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
+using log4net.Core;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using BoSSS.Foundation.Grid.Classic;
-using System.Collections.ObjectModel;
 
 namespace BoSSS.Foundation.XDG {
     partial class LevelSetTracker {
@@ -260,37 +261,53 @@ namespace BoSSS.Foundation.XDG {
                 }
 
                 private void ComputeValuesField(LevelSet levelSet, NodeSet NS, int j0, int Len, MultidimensionalArray output) {
-                    int D = levelSet.Basis.GridDat.SpatialDimension;
+                    int D = levelSet.GridDat.SpatialDimension;
                     MultidimensionalArray grad = levelSet.Basis.EvaluateGradient(NS);
                     int noOfNodes = grad.GetLength(0);
+                    var iGeomCells = levelSet.GridDat.iGeomCells;
+                    var Scaling = levelSet.GridDat.ChefBasis.Scaling;
+                    var orthoTrafo = levelSet.GridDat.ChefBasis.OrthonormalizationTrafo;
 
-                    //unsafe {
-                    //    fixed (double* pGrad = &grad.Storage[0], pRes = &output.Storage[0]) {
-                    //        double* pResCur = pRes;
-                    //        double* pGradCur = pGrad;
-                    //        for(int i = 0; i < Len; i++) {
-                    //            for(int j = 0; j < noOfNodes; j++) {
-                    //                //double norm = 0.0;
-                    //                for(int d = 0; d < D; d++) {
-                    //                    for(int k = 0; k < levelSet.Basis.MinimalLength; k++) {
-                    //                        *(pResCur + d) += levelSet.Coordinates[i + j0, k] * *(pGradCur + grad.Index(j, k, d));
-                    //                    }
-                    //                }
-
-                    //                pResCur += D;
-                    //            }
-                    //        }
-                    //    }
-                    //}
+                    var mdaCoordinate = levelSet.Coordinates as MultidimensionalArray;
+                    MultidimensionalArray mdaCoordinate_j = null;
 
                     // Reference implementation
-                    for (int i = 0; i < Len; i++) {
-                        for (int j = 0; j < noOfNodes; j++) {
-                            for (int d = 0; d < D; d++) {
-                                for (int k = 0; k < levelSet.Basis.MinimalLength; k++) {
-                                    output[i, j, d] += levelSet.Coordinates[i + j0, k] * grad[j, k, d];
+                    for (int j = 0; j < Len; j++) {
+                        int jCell = j + j0;
+                        bool AffineLinear = iGeomCells.IsCellAffineLinear(j0);
+                        int Np = levelSet.Basis.GetLength(jCell);
+
+                        if(mdaCoordinate == null) {
+                            if(mdaCoordinate_j == null || mdaCoordinate_j.GetLength(0) != Np)
+                                mdaCoordinate_j = MultidimensionalArray.Create(Np);
+                            mdaCoordinate_j.SetVector(levelSet.Coordinates.GetRow(jCell));
+                        } else {
+                            mdaCoordinate_j = mdaCoordinate.ExtractSubArrayShallow([jCell, 0], [jCell - 1, Np - 1]);
+                        }
+
+                        if(AffineLinear) {
+                            /*
+                            for(int k = 0; k < noOfNodes; k++) {
+                                for(int d = 0; d < D; d++) {
+                                    for(int n = 0; n < levelSet.Basis.MinimalLength; n++) {
+                                        output[j, k, d] += levelSet.Coordinates[j + j0, n] * grad[k, n, d];
+                                    }
+                                    output[j, k, d] *= Scaling[jCell];
                                 }
                             }
+                            */
+                            output.ExtractSubArrayShallow(j, -1, -1).Multiply(Scaling[jCell], grad, mdaCoordinate_j, 0.0, "kd", "knd", "n");
+                       } else {
+                            var trafo = orthoTrafo.GetValue_Cell(jCell, 1, levelSet.Basis.Degree).ExtractSubArrayShallow(0, -1, -1);
+
+                            // apply orthonormalization in non-affine/curved cells
+                            var grad_trf = ilPSP.TempBuffer.GetTempMultidimensionalarray(out var iBuf, grad.Lengths);
+                            grad_trf.Multiply(1.0, grad, trafo, 0.0, "knd", "kmd", "mn");
+
+                            output.ExtractSubArrayShallow(j, -1, -1).Multiply(1.0, grad_trf, mdaCoordinate_j, 0.0, "kd", "knd", "n");
+
+
+                            ilPSP.TempBuffer.FreeTempBuffer(iBuf);
                         }
                     }
                 }
@@ -428,26 +445,28 @@ namespace BoSSS.Foundation.XDG {
                 }
 
                 protected override void ComputeValues(NodeSet NS, int j0, int Len, MultidimensionalArray output) {
-                    MultidimensionalArray gradient =
-                        m_owner.m_LevelSetReferenceGradientsCache.GetValue_Cell(NS, j0, Len);
-                    gradient.Storage.CopyTo(output.Storage, 0);
+                    MultidimensionalArray gradient = m_owner.m_LevelSetReferenceGradientsCache.GetValue_Cell(NS, j0, Len);
+                    output.Set(gradient);
+                    int D = gradient.GetLength(2);
+                    int I = gradient.GetLength(0);
+                    int J = gradient.GetLength(1);
 
-                    for(int i = 0; i < gradient.GetLength(0); i++) {
-                        for(int j = 0; j < gradient.GetLength(1); j++) {
-                            double normOfGradient = 0.0;
-                            for(int d = 0; d < gradient.GetLength(2); d++) {
-                                normOfGradient += gradient[i, j, d] * gradient[i, j, d];
+                    for(int i = 0; i < I; i++) {
+                        for(int j = 0; j < J; j++) {
+                            double normOfGradient_squared = 0.0;
+                            for(int d = 0; d < D; d++) {
+                                normOfGradient_squared += gradient[i, j, d].Pow2();
                             }
 
                             // Avoid NaN. Normal is zero in this case
-                            if(normOfGradient == 0.0) {
+                            if(normOfGradient_squared == 0.0) {
                                 continue;
                             }
 
-                            normOfGradient = Math.Sqrt(normOfGradient);
+                            double One_over_normOfGradient = 1.0/Math.Sqrt(normOfGradient_squared);
 
-                            for(int d = 0; d < gradient.GetLength(2); d++) {
-                                output[i, j, d] = gradient[i, j, d] / normOfGradient;
+                            for(int d = 0; d < D; d++) {
+                                output[i, j, d] = gradient[i, j, d] * One_over_normOfGradient;
                             }
                         }
                     }
@@ -483,33 +502,27 @@ namespace BoSSS.Foundation.XDG {
                 MultidimensionalArray refGradients = GetLevelSetReferenceGradients(NS, j0, Len);
                 int noOfNodes = physGradients.GetLength(1);
                 int D = m_owner.GridDat.Grid.SpatialDimension;
-                var OneOverSqrt_AbsJacobiDet = m_owner.GridDat.ChefBasis.Scaling;
                 MultidimensionalArray result = MultidimensionalArray.Create(Len, noOfNodes);
 
                 for(int i = 0; i < Len; i++) { // loop over cells...
                     int jCell = j0 + i;
 
-                    if(m_owner.GridDat.Cells.IsCellAffineLinear(jCell)) { // loop over nodes...
-                        double sc = OneOverSqrt_AbsJacobiDet[jCell];
-                        for(int j = 0; j < noOfNodes; j++) {
-                            double normPhys = 0.0;
-                            double normRef = 0.0;
+                    for(int j = 0; j < noOfNodes; j++) { // loop over nodes...
+                        double normPhys = 0.0;
+                        double normRef = 0.0;
 
-                            for(int d = 0; d < D; d++) {
-                                normPhys += physGradients[i, j, d] * physGradients[i, j, d];
-                                normRef += refGradients[i, j, d] * refGradients[i, j, d];
-                            }
-
-                            if (Math.Abs(normPhys) < 1e-15) {
-                                Console.WriteLine($"WARNING: commented out exception");
-                                normPhys = 1.0;
-                            }
-                            result[i, j] = Math.Sqrt(normRef / normPhys) * sc;
+                        for(int d = 0; d < D; d++) {
+                            normPhys += physGradients[i, j, d].Pow2();
+                            normRef += refGradients[i, j, d].Pow2();
                         }
-                    } else {
 
-                        throw new NotImplementedException("nonlinear cell: todo");
+                        if(Math.Abs(normPhys) < 1e-15) {
+                            Console.Error.WriteLine($"WARNING: commented out exception");
+                            normPhys = 1.0;
+                        }
+                        result[i, j] = Math.Sqrt(normRef / normPhys);
                     }
+
                 }
 
 
@@ -528,7 +541,7 @@ namespace BoSSS.Foundation.XDG {
                 }
 
 
-
+                /*
                 protected override void ComputeValues(NodeSet NS, int j0, int Len, MultidimensionalArray output) {
                     LevelSet LevSet = (LevelSet)(this.m_owner.GetLevSet());
                     var BasisHessian = LevSet.Basis.Evaluate2ndDeriv(NS);
@@ -544,9 +557,101 @@ namespace BoSSS.Foundation.XDG {
                     int K = output.GetLength(1); // No of nodes
                     Debug.Assert(K == BasisHessian.GetLength(0));
 
-                    var Coordinates = ((MultidimensionalArray)LevSet.Coordinates).ExtractSubArrayShallow(new int[] { j0, 0 }, new int[] { j0 + Len - 1, N - 1 });
+                    var Coordinates = ((MultidimensionalArray)LevSet.Coordinates).ExtractSubArrayShallow([j0, 0], [j0 + Len - 1, N - 1]);
                     output.Multiply(1.0, BasisHessian, Coordinates, 0.0, "jkdr", "kndr", "jn");
                 }
+                */
+
+                protected override void ComputeValues(NodeSet N, int j0, int Len, MultidimensionalArray output) {
+                    LevelSet levelSetField = m_owner.GetLevSet() as LevelSet;
+                    if(levelSetField == null) {
+                        //ComputeValuesNonField(m_owner.GetLevSet(), N, j0, Len, output);
+                        throw new NotImplementedException();
+                    } else {
+                        ComputeValuesField(levelSetField, N, j0, Len, output);
+                    }
+                }
+                               
+
+                private void ComputeValuesField(LevelSet levelSet, NodeSet NS, int j0, int Len, MultidimensionalArray output) {
+                    int D = levelSet.GridDat.SpatialDimension;
+                    var Hessian = levelSet.Basis.Evaluate2ndDeriv(NS);
+                    int noOfNodes = Hessian.GetLength(0);
+                    var iGeomCells = levelSet.GridDat.iGeomCells;
+                    var Scaling = levelSet.GridDat.ChefBasis.Scaling;
+                    var orthoTrafo = levelSet.GridDat.ChefBasis.OrthonormalizationTrafo;
+
+                    var mdaCoordinate = levelSet.Coordinates as MultidimensionalArray;
+                    MultidimensionalArray mdaCoordinate_j = null;
+
+
+                   
+                    // Reference implementation
+                    for(int j = 0; j < Len; j++) {
+                        int jCell = j + j0;
+                        bool AffineLinear = iGeomCells.IsCellAffineLinear(j0);
+                        int Np = levelSet.Basis.GetLength(jCell);
+
+                        if(mdaCoordinate == null) {
+                            if(mdaCoordinate_j == null || mdaCoordinate_j.GetLength(0) != Np)
+                                mdaCoordinate_j = MultidimensionalArray.Create(Np);
+                            mdaCoordinate_j.SetVector(levelSet.Coordinates.GetRow(jCell));
+                        } else {
+                            mdaCoordinate_j = mdaCoordinate.ExtractSubArrayShallow([jCell, 0], [jCell - 1, Np - 1]);
+                        }
+
+                        if(AffineLinear) {
+                            output.ExtractSubArrayShallow(j, -1, -1, -1).Multiply(Scaling[jCell], Hessian, mdaCoordinate_j, 0.0, "kde", "knde", "n");
+                        } else {
+                            var trafo = orthoTrafo.GetValue_Cell(jCell, 1, levelSet.Basis.Degree).ExtractSubArrayShallow(0, -1, -1);
+
+                            // apply orthonormalization in non-affine/curved cells
+                            var Hessian_trf = ilPSP.TempBuffer.GetTempMultidimensionalarray(out var iBuf, Hessian.Lengths);
+                            Hessian_trf.Multiply(1.0, Hessian, trafo, 0.0, "knde", "kmde", "mn");
+
+                            output.ExtractSubArrayShallow(j, -1, -1, -1).Multiply(1.0, Hessian_trf, mdaCoordinate_j, 0.0, "kde", "knde", "n");
+
+
+                            ilPSP.TempBuffer.FreeTempBuffer(iBuf);
+                        }
+                    }
+                }
+
+                /*
+                private void ComputeValuesNonField(ILevelSet levelSet, NodeSet NS, int j0, int Len, MultidimensionalArray output) {
+                    int noOfNodes = NS.NoOfNodes;
+                    int D = NS.SpatialDimension;
+                    var R = m_owner.m_owner.GridDat.Cells.Transformation;
+                    var JacDet = m_owner.m_owner.GridDat.ChefBasis.Scaling;
+                    var Cells = m_owner.m_owner.GridDat.Cells;
+
+                    MultidimensionalArray physGradient = m_owner.GetLevelSetGradients(NS, j0, Len);
+                    for(int i = 0; i < Len; i++) {
+                        int jCell = j0 + i;
+                        if(Cells.IsCellAffineLinear(jCell)) {
+                            double det = JacDet[j0 + i];
+
+                            for(int j = 0; j < noOfNodes; j++) {
+                                for(int d = 0; d < D; d++) {
+                                    double r = 0.0;
+                                    for(int dd = 0; dd < D; dd++) {
+                                        r += R[i + j0, dd, d] * physGradient[i, j, dd];
+                                    }
+
+                                    output[i, j, d] = r / det;
+                                }
+                            }
+                        } else {
+                            throw new NotImplementedException("todo: nonlinear cell");
+                        }
+                    }
+                }
+                */
+
+
+
+
+
 
                 protected override MultidimensionalArray Allocate(int j0, int Len, NodeSet N) {
                     return MultidimensionalArray.Create(Len, N.NoOfNodes, N.SpatialDimension, N.SpatialDimension);

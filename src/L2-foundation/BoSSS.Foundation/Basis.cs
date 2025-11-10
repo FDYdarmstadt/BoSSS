@@ -364,7 +364,7 @@ namespace BoSSS.Foundation {
             if (Values.GetLength(1) == N)
                 return Values;
             else
-                return Values.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { Ns.NoOfNodes - 1, N - 1 });
+                return Values.ExtractSubArrayShallow([0, 0], [Ns.NoOfNodes - 1, N - 1]);
         }
 
 
@@ -386,7 +386,7 @@ namespace BoSSS.Foundation {
             if (Values.GetLength(1) == N)
                 return Values;
             else
-                return Values.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { Ns.NoOfNodes - 1, N - 1, D - 1 });
+                return Values.ExtractSubArrayShallow([0, 0, 0], [Ns.NoOfNodes - 1, N - 1, D - 1]);
         }
 
 
@@ -415,7 +415,7 @@ namespace BoSSS.Foundation {
             if (Values.GetLength(1) == N)
                 return Values;
             else
-                return Values.ExtractSubArrayShallow(new int[] { 0, 0, 0, 0 }, new int[] { Ns.NoOfNodes - 1, N - 1, D - 1, D - 1 });
+                return Values.ExtractSubArrayShallow([0, 0, 0, 0], [Ns.NoOfNodes - 1, N - 1, D - 1, D - 1]);
 
         }
 
@@ -448,7 +448,7 @@ namespace BoSSS.Foundation {
             if (Values.GetLength(2) == N)
                 return Values;
             else
-                return Values.ExtractSubArrayShallow(new int[] { 0, 0, 0, 0, 0 }, new int[] { Len - 1, Nodes.NoOfNodes - 1, N - 1, D - 1, D - 1 });
+                return Values.ExtractSubArrayShallow([0, 0, 0, 0, 0], [Len - 1, Nodes.NoOfNodes - 1, N - 1, D - 1, D - 1]);
 
         }
 
@@ -469,7 +469,7 @@ namespace BoSSS.Foundation {
                 int M = ret.GetLength(1);
                 int N = ret.GetLength(2);
 
-                ret = ret.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { Len - 1, M - 1, N - 1 });
+                ret = ret.ExtractSubArrayShallow([0, 0, 0], [Len - 1, M - 1, N - 1]);
             }
             return ret;
         }
@@ -498,8 +498,8 @@ namespace BoSSS.Foundation {
 
 
                 ret = (
-                    ret.Item1.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { Len - 1, M - 1, N - 1 }),
-                    ret.Item2.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { Len - 1, M - 1, N - 1 }));
+                    ret.Item1.ExtractSubArrayShallow([0, 0, 0], [Len - 1, M - 1, N - 1]),
+                    ret.Item2.ExtractSubArrayShallow([0, 0, 0], [Len - 1, M - 1, N - 1]));
             }
             return ret;
         }
@@ -525,7 +525,7 @@ namespace BoSSS.Foundation {
                 int N = ret.GetLength(2);
                 int D = ret.GetLength(3);
 
-                ret = ret.ExtractSubArrayShallow(new int[] { 0, 0, 0, 0 }, new int[] { Len - 1, M - 1, N - 1, D - 1 });
+                ret = ret.ExtractSubArrayShallow([0, 0, 0, 0], [Len - 1, M - 1, N - 1, D - 1]);
             }
             return ret;
         }
@@ -551,8 +551,8 @@ namespace BoSSS.Foundation {
                 int D = ret.Item1.GetLength(3);
 
                 ret = (
-                    ret.Item1.ExtractSubArrayShallow(new int[] { 0, 0, 0, 0 }, new int[] { Len - 1, M - 1, N - 1, D - 1 }),
-                    ret.Item2.ExtractSubArrayShallow(new int[] { 0, 0, 0, 0 }, new int[] { Len - 1, M - 1, N - 1, D - 1 }));
+                    ret.Item1.ExtractSubArrayShallow([0, 0, 0, 0], [Len - 1, M - 1, N - 1, D - 1]),
+                    ret.Item2.ExtractSubArrayShallow([0, 0, 0, 0], [Len - 1, M - 1, N - 1, D - 1]));
             }
             return ret;
         }
