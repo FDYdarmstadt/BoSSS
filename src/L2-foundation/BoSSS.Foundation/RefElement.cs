@@ -14,16 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.Quadrature;
+using BoSSS.Platform;
+using BoSSS.Platform.LinAlg;
+using ilPSP;
+using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using BoSSS.Foundation.Quadrature;
-using BoSSS.Platform;
-using BoSSS.Platform.LinAlg;
-using ilPSP.Utils;
-using ilPSP;
-using BoSSS.Foundation.Grid.Classic;
+using System.Threading;
 
 namespace BoSSS.Foundation.Grid.RefElements {
 
@@ -384,13 +385,13 @@ namespace BoSSS.Foundation.Grid.RefElements {
 
         /// <summary>
         /// Square-root of the Gramian determinant of the face-to-volume
-        /// transformation, see <see cref="GetFaceTrafo"/>. <br/>
-        /// index: face index
+        /// transformation, see <see cref="GetFaceTrafo"/>. 
+        /// - index: face index
         /// </summary>
         public virtual double[] FaceTrafoGramianSqrt {
             get {
-                if (m_FaceTrafoGramianSqrt == null) {
-                    m_FaceTrafoGramianSqrt = new double[this.NoOfFaces];
+                LazyInitializer.EnsureInitialized(ref m_FaceTrafoGramianSqrt, delegate() {
+                    var _FaceTrafoGramianSqrt = new double[this.NoOfFaces];
                     int D = this.SpatialDimension;
 
                     MultidimensionalArray Transpose = MultidimensionalArray.Create(D - 1, D);
@@ -404,9 +405,10 @@ namespace BoSSS.Foundation.Grid.RefElements {
                         Trafo.Matrix.TransposeTo(Transpose);
                         Product.Clear();
                         Product.GEMM(1.0, Transpose, Trafo.Matrix, 0.0);
-                        m_FaceTrafoGramianSqrt[l] = Math.Sqrt(Product.Determinant());
+                        _FaceTrafoGramianSqrt[l] = Math.Sqrt(Product.Determinant());
                     }
-                }
+                    return _FaceTrafoGramianSqrt;
+                });
 
                 return m_FaceTrafoGramianSqrt;
             }
@@ -425,24 +427,24 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// </summary>
         public int[][] VertexIndicesToFaces {
             get {
-                if (m_VertexIndicesToFaces == null) {
+                LazyInitializer.EnsureInitialized(ref m_VertexIndicesToFaces, delegate () {
                     int NF = this.NoOfFaces;
 
-                    m_VertexIndicesToFaces = new int[NoOfVertices][];
+                    var _VertexIndicesToFaces = new int[NoOfVertices][];
 
                     var V2F = this.FaceToVertexIndices;
-                    for (int iFace = 0; iFace < this.NoOfFaces; iFace++) {
-                        for (int k = 0; k < V2F.GetLength(1); k++) {
+                    for(int iFace = 0; iFace < this.NoOfFaces; iFace++) {
+                        for(int k = 0; k < V2F.GetLength(1); k++) {
                             int I = V2F[iFace, k];
 
-                            if (m_VertexIndicesToFaces[iFace] == null)
-                                m_VertexIndicesToFaces[iFace] = new int[0];
+                            if(_VertexIndicesToFaces[iFace] == null)
+                                _VertexIndicesToFaces[iFace] = new int[0];
 
-                            iFace.AddToArray(ref m_VertexIndicesToFaces[I]);
+                            iFace.AddToArray(ref _VertexIndicesToFaces[I]);
                         }
                     }
-
-                }
+                    return _VertexIndicesToFaces;
+                });
                 return m_VertexIndicesToFaces;
             }
         }
@@ -460,24 +462,24 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// </summary>
         public int[][] VertexIndicesToCoFaces {
             get {
-                if (m_VertexIndicesToCoFaces == null) {
+                LazyInitializer.EnsureInitialized(ref m_VertexIndicesToCoFaces, delegate () {
                     int NF = this.NoOfFaces;
 
-                    m_VertexIndicesToCoFaces = new int[NoOfVertices][];
+                    var _VertexIndicesToCoFaces = new int[NoOfVertices][];
 
                     var V2F = this.CoFaceVerticeIndices;
-                    for (int iCoFace = 0; iCoFace < this.NoOfFaces; iCoFace++) {
-                        for (int k = 0; k < V2F.GetLength(1); k++) {
+                    for(int iCoFace = 0; iCoFace < this.NoOfFaces; iCoFace++) {
+                        for(int k = 0; k < V2F.GetLength(1); k++) {
                             int I = V2F[iCoFace, k];
 
-                            if (m_VertexIndicesToCoFaces[iCoFace] == null)
-                                m_VertexIndicesToCoFaces[iCoFace] = new int[0];
+                            if(_VertexIndicesToCoFaces[iCoFace] == null)
+                                _VertexIndicesToCoFaces[iCoFace] = new int[0];
 
-                            iCoFace.AddToArray(ref m_VertexIndicesToCoFaces[I]);
+                            iCoFace.AddToArray(ref _VertexIndicesToCoFaces[I]);
                         }
                     }
-
-                }
+                    return _VertexIndicesToCoFaces;
+                });
                 return m_VertexIndicesToCoFaces;
             }
         }
@@ -500,14 +502,13 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// </summary>
         public int[,] FaceToVertexIndices {
             get {
-                if (m_FaceToVertexIndices == null)
-                    InitFaceVerticesIndex();
+                LazyInitializer.EnsureInitialized(ref m_FaceToVertexIndices, InitFaceVerticesIndex);
                 return (int[,])m_FaceToVertexIndices.Clone();
             }
         }
 
-        private void InitFaceVerticesIndex() {
-            m_FaceToVertexIndices = new int[this.NoOfFaces, this.FaceRefElement.NoOfVertices];
+        private int[,] InitFaceVerticesIndex() {
+            var _FaceToVertexIndices = new int[this.NoOfFaces, this.FaceRefElement.NoOfVertices];
 
             for (int FaceIndex = 0; FaceIndex < this.NoOfFaces; FaceIndex++) {
 
@@ -535,7 +536,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
                        
 
                         if(dist < 1.0e-6) {
-                            m_FaceToVertexIndices[FaceIndex, f] = j;
+                            _FaceToVertexIndices[FaceIndex, f] = j;
                             f++;
 
                         } else {
@@ -552,6 +553,8 @@ namespace BoSSS.Foundation.Grid.RefElements {
 
             }
 
+            return _FaceToVertexIndices;
+
         }
 
         /// <summary>
@@ -562,8 +565,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// </summary>
         public NodeSet FaceCenters {
             get {
-                if (m_FaceCenters == null)
-                    InitFaceCenters();
+                LazyInitializer.EnsureInitialized(ref m_FaceCenters, InitFaceCenters);
                 return m_FaceCenters;
             }
         }
@@ -575,12 +577,13 @@ namespace BoSSS.Foundation.Grid.RefElements {
             if(iFace < 0 || iFace >= this.NoOfFaces)
                 throw new ArgumentException("face index out of range.");
 
-            if(m_FaceCenterPF == null) {
-                m_FaceCenterPF = new NodeSet[this.NoOfFaces];
-                for(int iF = 0; iF < m_FaceCenterPF.Length; iF++) {
-                    m_FaceCenterPF[iF] = new NodeSet(this, this.FaceCenters.GetRow(iF), false);
+            LazyInitializer.EnsureInitialized(ref m_FaceCenterPF, delegate () {
+                var _FaceCenterPF = new NodeSet[this.NoOfFaces];
+                for(int iF = 0; iF < _FaceCenterPF.Length; iF++) {
+                    _FaceCenterPF[iF] = new NodeSet(this, this.FaceCenters.GetRow(iF), false);
                 }
-            }
+                return _FaceCenterPF;
+            });
             return m_FaceCenterPF[iFace];
         }
 
@@ -599,8 +602,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// </summary>
         public MultidimensionalArray FaceNormals {
             get {
-                if (m_FaceNormals == null)
-                    InitFaceNormals();
+                LazyInitializer.EnsureInitialized(ref m_FaceNormals, InitFaceNormals);
                 return m_FaceNormals;
             }
         }
@@ -617,53 +619,56 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// </summary>
         private MultidimensionalArray m_FaceNormals;
 
-        private void InitFaceCenters() {
+        private NodeSet InitFaceCenters() {
             int[,] ev = FaceToVertexIndices;
             int D = SpatialDimension;
             int N = ev.GetLength(1);
 
-            m_FaceCenters = new NodeSet(this, ev.GetLength(0), D, false);
+            var _FaceCenters = new NodeSet(this, ev.GetLength(0), D, false);
 
             // loop over all edges ...
-            for (int m = 0; m < m_FaceCenters.GetLength(0); m++) {
+            for (int m = 0; m < _FaceCenters.GetLength(0); m++) {
 
                 // loop over the vertices of all edges ...
                 for (int n = 0; n < N; n++) {
 
                     for (int d = 0; d < D; d++)
-                        m_FaceCenters[m, d] += Vertices[ev[m, n], d];
+                        _FaceCenters[m, d] += Vertices[ev[m, n], d];
 
                 }
 
                 for (int d = 0; d < D; d++)
-                    m_FaceCenters[m, d] *= 1.0 / ((double)N);
+                    _FaceCenters[m, d] *= 1.0 / ((double)N);
             }
 
-            m_FaceCenters.LockForever();
+            _FaceCenters.LockForever();
+            return _FaceCenters;
         }
 
-        private void InitFaceNormals() {
+        private MultidimensionalArray InitFaceNormals() {
             var ec = FaceCenters;
             int D = SpatialDimension;
 
             // RefElements are zero-centered -> vectors to edge centers are
             // already normal to the faces
-            m_FaceNormals = MultidimensionalArray.Create(ec.Lengths);
-            m_FaceNormals.Set(ec);
+            var _FaceNormals = MultidimensionalArray.Create(ec.Lengths);
+            _FaceNormals.Set(ec);
 
             // loop over all edges ...
             for (int m = 0; m < m_FaceCenters.GetLength(0); m++) {
 
                 double len = 0;
                 for (int d = 0; d < D; d++) {
-                    len += m_FaceNormals[m, d] * m_FaceNormals[m, d];
+                    len += _FaceNormals[m, d] * _FaceNormals[m, d];
                 }
                 len = 1.0 / Math.Sqrt(len);
 
                 for (int d = 0; d < D; d++) {
-                    m_FaceNormals[m, d] *= len;
+                    _FaceNormals[m, d] *= len;
                 }
             }
+
+            return _FaceNormals;
         }
 
         /// <summary>
@@ -718,16 +723,18 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// Returns the vertices of the <paramref name="iFace"/>--th face.
         /// </summary>
         public NodeSet GetFaceVertices(int iFace) {
-            if(m_FaceVertices == null) {
-                m_FaceVertices = new NodeSet[this.NoOfFaces];
+            LazyInitializer.EnsureInitialized(ref m_FaceVertices, delegate () {
+                var _FaceVertices = new NodeSet[this.NoOfFaces];
                 int D = this.SpatialDimension;
                 int K = this.FaceRefElement.NoOfVertices;
-                for(int iF = 0; iF < m_FaceVertices.Length; iF++) {
-                    m_FaceVertices[iF] = new NodeSet(this, K, D, true);
-                    this.TransformFaceCoordinates(iF, this.FaceRefElement.Vertices, m_FaceVertices[iF]);
-                    this.m_FaceVertices[iF].LockForever();
+                for(int iF = 0; iF < _FaceVertices.Length; iF++) {
+                    _FaceVertices[iF] = new NodeSet(this, K, D, true);
+                    this.TransformFaceCoordinates(iF, this.FaceRefElement.Vertices, _FaceVertices[iF]);
+                    _FaceVertices[iF].LockForever();
                 }
-            }
+                return _FaceVertices;
+            });
+            
             return m_FaceVertices[iFace];
         }
 

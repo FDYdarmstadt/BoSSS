@@ -21,6 +21,7 @@ using ilPSP;
 using BoSSS.Platform.LinAlg;
 using System.Diagnostics;
 using ilPSP.Utils;
+using System.Threading;
 
 namespace BoSSS.Foundation.Grid.RefElements {
 
@@ -36,7 +37,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
             public int iFace1 = -1;
         }
 
-        void InitCoFaces() {
+        Tuple<int[,], int[,]> InitCoFaces() {
             int D = this.SpatialDimension;
 
 
@@ -139,43 +140,46 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 throw new NotSupportedException("unknown spatial dimension");
             }
 
+            int[,] _CoFaceVerticeIndices, _CoFacesToFaceIndices;
 
             // Assemble final data structures
             // ==============================
             if(D == 0) {
-                m_CoFaceVerticeIndices = new int[0, 0];
-                m_CoFacesToFaceIndices = new int[0, 2];
+                _CoFaceVerticeIndices = new int[0, 0];
+                _CoFacesToFaceIndices = new int[0, 2];
             } else {
                 Debug.Assert(FaceRefElement.FaceRefElement.NoOfVertices == D - 1);
-                m_CoFaceVerticeIndices = new int[CoFaceList.Count, D - 1];
-                m_CoFacesToFaceIndices = new int[CoFaceList.Count, 2];
+                _CoFaceVerticeIndices = new int[CoFaceList.Count, D - 1];
+                _CoFacesToFaceIndices = new int[CoFaceList.Count, 2];
 
                 for (int iCoFace = 0; iCoFace < CoFaceList.Count; iCoFace++) {
                     var CF = CoFaceList[iCoFace];
-                    Debug.Assert(CF.iVtx.Length == m_CoFaceVerticeIndices.GetLength(1));
+                    Debug.Assert(CF.iVtx.Length == _CoFaceVerticeIndices.GetLength(1));
 
-                    for (int i = 0; i < m_CoFaceVerticeIndices.GetLength(1); i++) {
-                        m_CoFaceVerticeIndices[iCoFace, i] = CF.iVtx[i];
+                    for (int i = 0; i < _CoFaceVerticeIndices.GetLength(1); i++) {
+                        _CoFaceVerticeIndices[iCoFace, i] = CF.iVtx[i];
                     }
 
                     if(CF.iFace0 == CF.iFace1)
                         throw new ApplicationException("error in algorithm");
 
                     if (CF.iFace0 < CF.iFace1) {
-                        m_CoFacesToFaceIndices[iCoFace, 0] = CF.iFace0;
-                        m_CoFacesToFaceIndices[iCoFace, 1] = CF.iFace1;
+                        _CoFacesToFaceIndices[iCoFace, 0] = CF.iFace0;
+                        _CoFacesToFaceIndices[iCoFace, 1] = CF.iFace1;
                     } else {
-                        m_CoFacesToFaceIndices[iCoFace, 0] = CF.iFace1;
-                        m_CoFacesToFaceIndices[iCoFace, 1] = CF.iFace0;
+                        _CoFacesToFaceIndices[iCoFace, 0] = CF.iFace1;
+                        _CoFacesToFaceIndices[iCoFace, 1] = CF.iFace0;
                     }
                 }
             }
+
+
+            return new Tuple<int[,], int[,]>(_CoFaceVerticeIndices, _CoFacesToFaceIndices);
         }
 
+        //Lazy<(int[,] CoFaceVerticeIndices, int[,] CoFacesToFaceIndices)> m_CoFace = new Lazy<(int[,] CoFaceVerticeIndices, int[,] CoFacesToFaceIndices)>(InitCoFaces, true);
 
-        int[,] m_CoFaceVerticeIndices;
-
-        int[,] m_CoFacesToFaceIndices;
+        Tuple<int[,],int[,]> m_CoFace__CoFaceVerticeIndices_CoFacesToFaceIndices; // (int[,] CoFaceVerticeIndices, int[,] CoFacesToFaceIndices)
 
         /// <summary>
         /// Vertex indices of the co-faces;
@@ -184,9 +188,8 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// </summary>
         public int[,] CoFaceVerticeIndices {
             get {
-                if (m_CoFaceVerticeIndices == null)
-                    InitCoFaces();
-                return m_CoFaceVerticeIndices.CloneAs();
+                LazyInitializer.EnsureInitialized(ref m_CoFace__CoFaceVerticeIndices_CoFacesToFaceIndices, InitCoFaces);
+                return m_CoFace__CoFaceVerticeIndices_CoFacesToFaceIndices.Item1.CloneAs();
             }
         }
 
@@ -200,9 +203,8 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// </remarks>
         public int[,] CoFaceToFaceIndices {
             get {
-                if (m_CoFacesToFaceIndices == null)
-                    InitCoFaces();
-                return m_CoFacesToFaceIndices.CloneAs();
+                LazyInitializer.EnsureInitialized(ref m_CoFace__CoFaceVerticeIndices_CoFacesToFaceIndices, InitCoFaces);
+                return m_CoFace__CoFaceVerticeIndices_CoFacesToFaceIndices.Item2.CloneAs();
             }
         }
 
@@ -214,26 +216,29 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// </summary>
         public int[,] FaceToCoFaceIndices {
             get {
-                if(m_FaceToCoFaceIndices == null) {
+
+                LazyInitializer.EnsureInitialized(ref m_FaceToCoFaceIndices, delegate () {
+
                     int[,] cf2fi = CoFaceToFaceIndices;
-                    int[,] cf2ff= CoFaceToFaceFaceIndex;
+                    int[,] cf2ff = CoFaceToFaceFaceIndex;
 
 
-                    m_FaceToCoFaceIndices = new int[this.NoOfFaces, this.FaceRefElement.NoOfFaces];
-                    m_FaceToCoFaceIndices.SetAll(-1);
+                    var _FaceToCoFaceIndices = new int[this.NoOfFaces, this.FaceRefElement.NoOfFaces];
+                    _FaceToCoFaceIndices.SetAll(-1);
                     for(int iCoFace = 0; iCoFace < this.NoOfCoFaces; iCoFace++) {
                         for(int iInOt = 0; iInOt < 2; iInOt++) {
                             int iFace = cf2fi[iCoFace, iInOt];
                             int iFaceFace = cf2ff[iCoFace, iInOt];
 
-                            m_FaceToCoFaceIndices[iFace, iFaceFace] = iCoFace;
+                            _FaceToCoFaceIndices[iFace, iFaceFace] = iCoFace;
                         }
                     }
 
-                    if(m_FaceToCoFaceIndices.Reshape(false).Any(i => i < 0))
+                    if(_FaceToCoFaceIndices.Reshape(false).Any(i => i < 0))
                         throw new Exception("internal error");
 
-                }
+                    return _FaceToCoFaceIndices;
+                });
                 return m_FaceToCoFaceIndices.CloneAs();
             }
         }
@@ -267,18 +272,19 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 }
 
 
-                if(m_CoFaceToFaceFaceIndex == null) {
+                LazyInitializer.EnsureInitialized(ref m_CoFaceToFaceFaceIndex, delegate () {
+                    int[,] _CoFaceToFaceFaceIndex;
                     if(this.SpatialDimension <= 1) {
-                        m_CoFaceToFaceFaceIndex = new int[0, 2];
+                        _CoFaceToFaceFaceIndex = new int[0, 2];
                     } else {
                         var cfvtx = CoFaceVerticeIndices;
                         var cvf2f = CoFaceToFaceIndices;
                         int NoOfCoFaces = cfvtx.GetLength(0);
-                        m_CoFaceToFaceFaceIndex = new int[NoOfCoFaces, 2];
+                        _CoFaceToFaceFaceIndex = new int[NoOfCoFaces, 2];
 
                         var CoFaceRefElement = FaceRefElement.FaceRefElement;
                         Debug.Assert(CoFaceRefElement.NoOfVertices == cfvtx.GetLength(1));
-                       
+
 
                         for(int iCoFace = 0; iCoFace < NoOfCoFaces; iCoFace++) {
 
@@ -305,18 +311,18 @@ namespace BoSSS.Foundation.Grid.RefElements {
 
                                 if(iFaceFaceFound < 0)
                                     throw new ApplicationException("error in algorithm (2)");
-                                m_CoFaceToFaceFaceIndex[iCoFace, iInOt] = iFaceFaceFound;
+                                _CoFaceToFaceFaceIndex[iCoFace, iInOt] = iFaceFaceFound;
 
                             }
                         }
 
                         // check:
                         for(int iCoFace = 0; iCoFace < NoOfCoFaces; iCoFace++) {
-                            int iFace0 = m_CoFacesToFaceIndices[iCoFace, 0];
-                            int iCoFc0 = m_CoFaceToFaceFaceIndex[iCoFace, 0];
+                            int iFace0 = m_CoFace__CoFaceVerticeIndices_CoFacesToFaceIndices.Item2[iCoFace, 0];
+                            int iCoFc0 = _CoFaceToFaceFaceIndex[iCoFace, 0];
 
-                            int iFace1 = m_CoFacesToFaceIndices[iCoFace, 1];
-                            int iCoFc1 = m_CoFaceToFaceFaceIndex[iCoFace, 1];
+                            int iFace1 = m_CoFace__CoFaceVerticeIndices_CoFacesToFaceIndices.Item2[iCoFace, 1];
+                            int iCoFc1 = _CoFaceToFaceFaceIndex[iCoFace, 1];
 
                             var Vtx0 = this.GetFaceTrafo(iFace0).Transform(FaceRefElement.GetFaceTrafo(iCoFc0).Transform(CoFaceRefElement.Vertices));
                             var Vtx1 = this.GetFaceTrafo(iFace0).Transform(FaceRefElement.GetFaceTrafo(iCoFc0).Transform(CoFaceRefElement.Vertices));
@@ -335,7 +341,8 @@ namespace BoSSS.Foundation.Grid.RefElements {
 
                         }
                     }
-                }
+                    return _CoFaceToFaceFaceIndex;
+                });
 
                 return m_CoFaceToFaceFaceIndex.CloneAs();
             }
@@ -379,17 +386,18 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// face index
         /// </param>
         public AffineManifold GetFacePlane(int iFace) {
-            if (m_FacePlanes == null) {
-                m_FacePlanes = new AffineManifold[this.NoOfFaces];
+            LazyInitializer.EnsureInitialized(ref m_FacePlanes, delegate () {
+                var _FacePlanes = new AffineManifold[this.NoOfFaces];
 
                 var fCen = this.FaceCenters;
                 var fNor = this.FaceNormals;
-                for (int iF = 0; iF < this.NoOfFaces; iF++) {
-                    m_FacePlanes[iF] = new AffineManifold(fNor.GetRow(iF), fCen.GetRow(iF));
-                    Debug.Assert(m_FacePlanes[iF].Normal.AbsSquare() > 0.0);
-                    Debug.Assert(m_FacePlanes[iF].PointDistance(fCen.GetRow(iF)).Abs() < 1.0e-6);
+                for(int iF = 0; iF < this.NoOfFaces; iF++) {
+                    _FacePlanes[iF] = new AffineManifold(fNor.GetRow(iF), fCen.GetRow(iF));
+                    Debug.Assert(_FacePlanes[iF].Normal.AbsSquare() > 0.0);
+                    Debug.Assert(_FacePlanes[iF].PointDistance(fCen.GetRow(iF)).Abs() < 1.0e-6);
                 }
-            }
+                return _FacePlanes;
+            });
 
             Debug.Assert(m_FacePlanes[iFace].Normal.Dim == this.SpatialDimension);
             Debug.Assert(m_FacePlanes[iFace].Normal.AbsSquare() > 0.0);
