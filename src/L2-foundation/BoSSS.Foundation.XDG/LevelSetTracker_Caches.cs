@@ -385,7 +385,7 @@ namespace BoSSS.Foundation.XDG {
                     Debug.Assert(gradient.GetLength(1) == output.GetLength(1));
                     Debug.Assert(gradient.GetLength(2) == output.GetLength(2));
                     Debug.Assert(output.GetLength(0) == Len);
-                    output.Set(gradient.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { Len - 1, gradient.GetLength(1) - 1, gradient.GetLength(2) - 1 }));
+                    output.Set(gradient.ExtractSubArrayShallow([0, 0, 0], [Len - 1, gradient.GetLength(1) - 1, gradient.GetLength(2) - 1]));
 
                     int N = gradient.GetLength(1);
                     int D = gradient.GetLength(2);

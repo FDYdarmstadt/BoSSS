@@ -64,7 +64,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             if(levelSet.LevelSet is LevelSet DGlevelSet) {
                 int deg = DGlevelSet.Basis.Degree;
                 int D = grid.SpatialDimension;
-                return new GlobalCellFunctionOptimized(levelSet, jCell, D.ForLoop(d => deg));
+                return new GlobalCellFunctionOptimized(levelSet, jCell, D.ForLoop(d => deg + 1));
                 //return new GlobalCellFunction(levelSet, jCell);
             } else {
                 return new GlobalCellFunction(levelSet, jCell);

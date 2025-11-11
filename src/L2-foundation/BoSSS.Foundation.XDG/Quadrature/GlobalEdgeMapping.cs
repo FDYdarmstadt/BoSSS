@@ -142,9 +142,16 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
         public IScalarFunction MapFromDomainToCodomain(LevelSetData levelSet, int jEdge) {
             int jCell = grid.Edges.CellIndices[jEdge, 0];
             IScalarFunction globalLevelSet = new GlobalCellFunction(levelSet, jCell);
+            //IScalarFunction globalLevelSet = new GlobalCellFunctionOptimized(levelSet, jCell);
             IVectorFunction T = FromCodomainToEmbeddedCodomain(jEdge);
             IScalarFunction alpha = new ScalarComposition(globalLevelSet, T);
-            return alpha;
+            if(levelSet.LevelSet is LevelSet dgLevelSet) {
+                int degree = dgLevelSet.Basis.Degree;
+                var opt_alpha = new GlobalCellFunctionOptimized(grid.iGeomEdges.EdgeRefElements[grid.iGeomEdges.GetRefElementIndex(jEdge)], alpha, degree);
+                return opt_alpha;
+            } else {
+                return alpha;
+            }
         }
 
         IVectorFunction FromCodomainToEmbeddedCodomain(int jEdge) {

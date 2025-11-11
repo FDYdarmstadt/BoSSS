@@ -1,12 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
+using BoSSS.Foundation.Quadrature;
 using BoSSS.Platform.LinAlg;
 using ilPSP;
 using IntersectingQuadrature.Tensor;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Text;
 
 namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
 
@@ -19,10 +21,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
     /// </summary>
     class GlobalCellFunctionOptimized : IScalarFunction {
 
-        readonly LevelSetTracker.LevelSetData levelSet;
+#if DEBUG
         readonly RefElement Kref;
-        readonly int jCell;
-
+#endif
         // Polynomial sizes per axis (n = degree+1)
         readonly int[] n;
         // Chebyshev coefficients (tensor): c[k1], c[k1,k2], or c[k1,k2,k3]
@@ -44,7 +45,44 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
         public readonly Stopwatch stwH = new Stopwatch();
 
 
-        //readonly GlobalCellFunction reference; 
+        readonly IScalarFunction reference;
+
+
+
+        /// <summary></summary>
+        public GlobalCellFunctionOptimized(RefElement Kref, IScalarFunction other, int degree) : this(Kref, Kref.SpatialDimension.ForLoop(d => degree + 1)) {
+#if DEBUG
+            reference = other;
+#endif
+
+            // 1) Build tensor NodeSet of all CL nodes & Sample BoSSS
+            Tensor1[] xk = BuildTensors();
+            MultidimensionalArray V = MultidimensionalArray.Create(1, xk.Length);
+            for(int k = 0; k < xk.Length; k++) {
+                V[0, k] = other.Evaluate(xk[k]);
+            }
+
+            // 2) compute internal coefficients
+            ConstructorCommon(V);
+
+#if DEBUG
+            // check if we recover the nodal values
+            {
+
+                MultidimensionalArray val_this = MultidimensionalArray.Create(1, xk.Length);
+                for(int k = 0; k < xk.Length; k++) {
+                    
+
+                    val_this[0, k] = Evaluate(xk[k]);
+
+                }
+
+                if(val_this.L2Dist(V) > 1.0e-10)
+                    throw new ArithmeticException("mismatch between nodal values and interpolation");
+
+            }
+#endif
+        }
 
 
         /// <summary></summary>
@@ -54,20 +92,49 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
         /// </param>
         /// <param name="jCell"></param>
         /// <param name="levelSet"></param>
-        public GlobalCellFunctionOptimized(LevelSetTracker.LevelSetData levelSet, int jCell, int[] nPerAxis) {
-            this.levelSet = levelSet;
-            this.jCell = jCell;
-            this.M = levelSet.GridDat.SpatialDimension;
-            this.Kref = levelSet.GridDat.iGeomCells.GetRefElement(jCell);
-            //reference = new GlobalCellFunction(levelSet, jCell);
+        public GlobalCellFunctionOptimized(LevelSetTracker.LevelSetData levelSet, int jCell, int[] nPerAxis) : this(levelSet.GridDat.iGeomCells.GetRefElement(jCell), nPerAxis) {
 
+            reference = new GlobalCellFunction(levelSet, jCell);
+
+            // 1) Build tensor NodeSet of all CL nodes & Sample BoSSS
+            NodeSet X = BuildTensorNodeSet();
+            MultidimensionalArray V = levelSet.GetLevSetValues(X, jCell, 1);
+
+            // 2) compute internal coefficients
+            ConstructorCommon(V);
+
+            // check if we recover the nodal values
+#if DEBUG
+            {
+
+                MultidimensionalArray val_this = MultidimensionalArray.Create(1, X.NoOfNodes);
+                for(int k = 0; k < X.NoOfNodes; k++) {
+                    Tensor1 xk = Tensor1.Zeros(M);
+                    for(int d = 0; d < M; d++) {
+                        xk[d] = X[k, d];
+                    }
+
+
+                    val_this[0, k] = Evaluate(xk);
+
+                }
+
+                if(val_this.L2Dist(V) > 1.0e-10)
+                    throw new ArithmeticException("mismatch between nodal values and interpolation");
+
+            }
+#endif
+        }
+
+
+        GlobalCellFunctionOptimized(RefElement Kref, int[] nPerAxis) {
+            this.Kref = Kref;
+            this.M = Kref.SpatialDimension;
 
             if(nPerAxis == null || nPerAxis.Length != M)
                 throw new ArgumentException("nPerAxis must be provided with length equal to spatial dimension M.");
-
-            // Sanity: tensor-product reference only
             if(!IsTensorProductRefElement(Kref))
-                throw new NotSupportedException("This fast path assumes a tensor-product reference element ([-1,1]^d).");
+                throw new NotSupportedException("This fast path assumes a tensor-product reference element ([-1,1]^D).");
 
             n = (int[])nPerAxis.Clone();
             stride = new int[M];
@@ -82,25 +149,24 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             nodesCL = new double[M][];
             for(int d = 0; d < M; ++d)
                 nodesCL[d] = ChebLobatto(n[d]);
+        }
 
-            // 1) Build tensor NodeSet of all CL nodes
-            NodeSet X = BuildTensorNodeSet(nodesCL);
 
-            // 2) Sample BoSSS once (batched)
-            //    Shape from BoSSS is typically [K, 1]; read as V[i]
-            MultidimensionalArray V = levelSet.GetLevSetValues(X, jCell, 1);
 
-            // 3) Move samples into a dense tensor 'F' (flattened)
+        private void ConstructorCommon(MultidimensionalArray V) {
+            // 1) Move samples into a dense tensor 'F' (flattened)
+            int total = coeff.Length;
             double[] F = new double[total];
             for(int k = 0; k < total; ++k)
                 F[k] = V[0, k];
 
-            // 4) Separable DCT-I along each axis to produce Chebyshev coefficients
+            // 2) Separable DCT-I along each axis to produce Chebyshev coefficients
             //    In-place transforms on 'F' into 'coeff'.
             Array.Copy(F, coeff, total);
-            for(int d = 0; d < M; ++d)
-                DCT1_AlongAxis_InPlace(coeff, n, stride, d);
-            NormalizeChebyshevCoeffsInPlace();
+            for(int ax = 0; ax < M; ++ax) {
+                DCT1_AlongAxis_InPlace(coeff, n, stride, ax);
+                HalfEndpointsAlongAxisInPlace(coeff, n, stride, ax); // <-- add this
+            }
         }
 
         // --------------------------
@@ -114,11 +180,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             EvalCounterV++;
             stwV.Stop();
 
-            /*
-            var valRef = reference.Evaluate(x);
-            if(Math.Abs(valRef - val) > 1.0e-10)
-                throw new ArithmeticException("optimized version sux");
-            */
+            
             return val;
         }
 
@@ -141,21 +203,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             EvalCounterG++;
             stwG.Stop();
 
-            /*
+#if DEBUG            
             var valgradRef = reference.EvaluateAndGradient(x);
             if(Math.Abs(valgradRef.evaluation - val) > 1.0e-10) {
-                
-                Tensor1 x2 = Tensor1.Zeros(M);
-                x2[0] = 0.1234;
-                x2[1] = -0.3467;
-
-                EvalGrad2D(x2, out double val2, out double gx2, out double gy2);
-
-                var ref2 = reference.EvaluateAndGradient(x2);
-
-
-
-
                 throw new ArithmeticException("optimized version sux 1");
             }
             var gradDist = (valgradRef.gradient - grad);
@@ -164,23 +214,11 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
                 abs_gradDist += gradDist[i].Abs();
             }
             if(abs_gradDist > 1.0e-10) {
-
-                Tensor1 x2 = Tensor1.Zeros(M);
-                x2[0] = 0.1234;
-                x2[1] = -0.3467;
-
-                EvalGrad2D(x2, out double val2, out double gx2, out double gy2);
-
-                var ref2 = reference.EvaluateAndGradient(x2);
-
-
-
-
                 throw new ArithmeticException("optimized version sux 2");
             }
+#endif
 
 
-            */
             return (val, grad);
         }
 
@@ -214,7 +252,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             EvalCounterH++;
             stwH.Stop();
 
-            /*
+#if DEBUG            
             var valgradRef = reference.EvaluateAndGradientAndHessian(x);
             if(Math.Abs(valgradRef.evaluation - val) > 1.0e-10)
                 throw new ArithmeticException("optimized version sux 1b");
@@ -234,9 +272,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             }
             if(abs_hessDist > 1.0e-10)
                 throw new ArithmeticException("optimized version sux 3b");
+#endif
 
-
-            */
             return (val, grad, hess);
         }
 
@@ -309,27 +346,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
         // 2D evaluation
         // ---------------
 
-        /*
-        double Eval2D(Tensor1 x) {
-            double x0 = x[0], x1 = x[1];
-            int n0 = n[0], n1 = n[1];
-
-            var T0 = new double[n0]; var U0 = new double[Math.Max(1, n0 - 1)];
-            var T1 = new double[n1]; var U1 = new double[Math.Max(1, n1 - 1)];
-            Build_T_and_U(x0, n0, T0, U0);
-            Build_T_and_U(x1, n1, T1, U1);
-
-            // Contract: s = sum_{k0,k1} c[k0,k1] T0[k0] T1[k1]
-            double s = 0.0;
-            int idx = 0;
-            for(int k0 = 0; k0 < n0; ++k0) {
-                double a = 0.0;
-                for(int k1 = 0; k1 < n1; ++k1, ++idx)
-                    a += coeff[idx] * T1[k1];
-                s += a * T0[k0];
-            }
-            return s;
-        }*/
+       
 
         double Eval2D(Tensor1 x) {
             double x0 = x[0], x1 = x[1];
@@ -351,32 +368,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             return s;
         }
 
-        /*
-        void EvalGrad2D(Tensor1 x, out double f, out double fx, out double fy) {
-            double x0 = x[0], x1 = x[1];
-            int n0 = n[0], n1 = n[1];
-
-            var T0 = new double[n0]; var U0 = new double[Math.Max(1, n0 - 1)];
-            var T1 = new double[n1]; var U1 = new double[Math.Max(1, n1 - 1)];
-            Build_T_and_U(x0, n0, T0, U0);
-            Build_T_and_U(x1, n1, T1, U1);
-
-            double s = 0.0, sx = 0.0, sy = 0.0;
-            int idx = 0;
-            for(int k0 = 0; k0 < n0; ++k0) {
-                // along axis-1
-                double a = 0.0, ay = 0.0;
-                for(int k1 = 0; k1 < n1; ++k1, ++idx) {
-                    double c = coeff[idx];
-                    a += c * T1[k1];
-                    if(k1 > 0) ay += c * (k1 * U1[k1 - 1]);
-                }
-                s += a * T0[k0];
-                if(k0 > 0) sx += (k0 * U0[k0 - 1]) * a;
-                sy += T0[k0] * ay;
-            }
-            f = s; fx = sx; fy = sy;
-        }*/
+    
 
         void EvalGrad2D(Tensor1 x, out double f, out double fx, out double fy) {
             double x0 = x[0], x1 = x[1];
@@ -404,48 +396,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
         }
 
 
-
-
-        /*
-        void EvalGradHess2D(Tensor1 x, out double f,
-                            out double fx, out double fy,
-                            out double fxx, out double fxy, out double fyy) {
-            double x0 = x[0], x1 = x[1];
-            int n0 = n[0], n1 = n[1];
-
-            var T0 = new double[n0]; var U0 = new double[Math.Max(1, n0 - 1)];
-            var dU0 = new double[Math.Max(1, n0 - 1)];
-            var T1 = new double[n1]; var U1 = new double[Math.Max(1, n1 - 1)];
-            var dU1 = new double[Math.Max(1, n1 - 1)];
-            Build_T_U_dU(x0, n0, T0, U0, dU0);
-            Build_T_U_dU(x1, n1, T1, U1, dU1);
-
-            double s = 0.0, sx = 0.0, sy = 0.0, sxx = 0.0, sxy = 0.0, syy = 0.0;
-            int idx = 0;
-            for(int k0 = 0; k0 < n0; ++k0) {
-                double a = 0.0, ay = 0.0, ayy = 0.0;
-                for(int k1 = 0; k1 < n1; ++k1, ++idx) {
-                    double c = coeff[idx];
-                    a += c * T1[k1];
-                    if(k1 > 0) {
-                        double ky = k1 * U1[k1 - 1];
-                        ay += c * ky;
-                        ayy += c * k1 * dU1[k1 - 1];
-                    }
-                }
-                s += a * T0[k0];
-                sy += T0[k0] * ay;
-                syy += T0[k0] * ayy;
-
-                if(k0 > 0) {
-                    double kxU = k0 * U0[k0 - 1];
-                    sx += kxU * a;
-                    sxy += kxU * ay;
-                    sxx += (k0 * dU0[k0 - 1]) * a;
-                }
-            }
-            f = s; fx = sx; fy = sy; fxx = sxx; fxy = sxy; fyy = syy;
-        }*/
 
         // ---------------
         // 3D evaluation
@@ -754,37 +704,49 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void NormalizeChebyshevCoeffsInPlace() {
-            int total = coeff.Length;
-            if(M == 1) {
-                // 1D: halve the k=0 term
-                if(n[0] > 0) coeff[0] *= 0.5;
-                return;
-            }
+       
 
-            // General d-D (up to 3D here)
-            for(int lin = 0; lin < total; ++lin) {
-                int t = lin;
-                int mZeros = 0;
-                // decode indices in the same (last-axis-fastest) order as 'stride'
-                for(int d = M - 1; d >= 0; --d) {
-                    int kd = t % n[d];
-                    if(kd == 0) mZeros++;
-                    t /= n[d];
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static void HalfEndpointsAlongAxisInPlace(double[] a, int[] ext, int[] stride, int ax) {
+            int N = ext[ax];
+            if(N <= 1) return;
+
+            int step = stride[ax];
+
+            // Mixed-radix counter over all dims except 'ax'
+            int D = ext.Length;
+            var idx = new int[D];
+
+            while(true) {
+                // base offset for this line (k_ax = 0)
+                int baseOff = 0;
+                for(int d = 0; d < D; ++d)
+                    baseOff += idx[d] * stride[d];
+
+                // scale k_ax = 0
+                a[baseOff] *= 0.5;
+
+                // scale k_ax = N-1
+                a[baseOff + (N - 1) * step] *= 0.5;
+
+                // advance idx (skip axis 'ax')
+                int d2;
+                for(d2 = D - 1; d2 >= 0; --d2) {
+                    if(d2 == ax) continue;
+                    if(++idx[d2] < ext[d2]) break;
+                    idx[d2] = 0;
                 }
-                if(mZeros == 1) coeff[lin] *= 0.5;
-                else if(mZeros == 2) coeff[lin] *= 0.25;
-                else if(mZeros == 3) coeff[lin] *= 0.125; // 3D
-                                                          // else mZeros==0 => no scaling
+                if(d2 < 0) break;
             }
         }
+
+
 
         // -------------------------
         // NodeSet assembly (tensor)
         // -------------------------
 
-        NodeSet BuildTensorNodeSet(double[][] perAxisNodes) {
+        NodeSet BuildTensorNodeSet() {
             // total nodes
             int K = 1;
             for(int d = 0; d < M; ++d) K *= n[d];
@@ -802,12 +764,41 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
                 }
                 for(int d = 0; d < M; ++d) {
                     // Reference element assumed [-1,1]^d
-                    X[k, d] = perAxisNodes[d][idx[d]];
+                    X[k, d] = this.nodesCL[d][idx[d]];
                 }
             }
             X.LockForever();
             return X;
         }
+
+        Tensor1[] BuildTensors() {
+            // total nodes
+            int K = 1;
+            for(int d = 0; d < M; ++d) 
+                K *= n[d];
+
+            var ret = new Tensor1[K];
+
+            // Fill tensor grid in row-major order: k = k0*n1*n2 + k1*n2 + k2 ...
+            int[] idx = new int[M];
+            for(int k = 0; k < K; ++k) {
+                // decode multi-index
+                int t = k;
+                for(int d = M - 1; d >= 0; --d) {
+                    idx[d] = t % n[d];
+                    t /= n[d];
+                }
+                ret[k] = Tensor1.Zeros(M);
+                for(int d = 0; d < M; ++d) {
+                    // Reference element assumed [-1,1]^d
+                    ret[k][d] = nodesCL[d][idx[d]];
+                }
+            }
+
+            return ret;
+        }
+
+
 
         static bool IsTensorProductRefElement(RefElement Kref) {
            if(Kref.GetType() == typeof(Line))
