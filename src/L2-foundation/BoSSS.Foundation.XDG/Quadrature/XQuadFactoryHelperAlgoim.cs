@@ -301,7 +301,7 @@ namespace BoSSS.Foundation.XDG {
 
         public override IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
             CheckIfVolElement(KrefVol);
-            JumpTypes[] jumps = new JumpTypes[] { jmp1, jmp1 };
+            JumpTypes[] jumps = [jmp1, jmp1];
             jumps[levSetIndex0] = JumpTypes.Implicit;
 
 			if (!DoubleCutFactories.ContainsKey(KrefVol))

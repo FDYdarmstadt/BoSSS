@@ -28,6 +28,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -394,6 +395,11 @@ namespace BoSSS.Foundation.XDG {
             var spdom = XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask(sp);
             var IntegrationDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet).Intersect(spdom);
 
+
+            return GetLevelSetquadScheme(iLevSet, sp, IntegrationDom);
+            /*
+
+
             var LevSetQrIns = new CellQuadratureScheme(
                 scaling: new LevelSetIntegrationMetric(this.XDGSpaceMetrics.LevelSetData[iLevSet]),
                 UseDefaultFactories:false, domain:IntegrationDom);
@@ -474,6 +480,7 @@ namespace BoSSS.Foundation.XDG {
             
 
             return LevSetQrIns;
+            */
         }
 
 
@@ -1074,52 +1081,30 @@ namespace BoSSS.Foundation.XDG {
             return OutCellMask;
         }
 
+
         /// <summary>
-        /// Quadrature scheme for the integration over the level-set, i.e. for each cut background-cell \f$ K_j \f$ a quadrature to approximate
+        /// Quadrature scheme for the integration over the level-set <paramref name="iLevSet"/>, i.e. for each cut background-cell \f$ K_j \f$ a quadrature to approximate
         /// \f[
-        ///    \oint_{K_j \cap \mathfrak{I} } \ldots \mathrm{dS} .
+        ///    \oint_{K_j \cap \mathfrak{I} \cap \partial \mathfrak{A} } \ldots \mathrm{dS} ,
         /// \f]
+        /// where \f$ \mathfrak{A} \f$ is the first species in <see cref="SpeciesList"/>.
         /// </summary>
         public CellQuadratureScheme GetLevelSetquadScheme(int iLevSet, CellMask IntegrationDom, int? fixedOrder = null) {
-            if (IntegrationDom.MaskType == MaskType.Logical)
-                IntegrationDom = IntegrationDom.ToGeometicalMask();
-
-            CellQuadratureScheme LevSetQrIns = new CellQuadratureScheme(
-                scaling: new LevelSetIntegrationMetric(this.XDGSpaceMetrics.LevelSetData[iLevSet]),
-                UseDefaultFactories: false, domain: IntegrationDom);
-
-            foreach (var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
-                var surfaceFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, Kref);
-                LevSetQrIns.AddFactoryDomainPair(surfaceFactory, (CellMask)null, fixedOrder);
-            }
-
-            
-            if(this.XDGSpaceMetrics.Tracker.Regions.LevSetCoincidingFaces != null) {
-                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                // Special case handling:
-                // Some  level-set is (more-or-less) exactly on a cell edge;
-                // therefore, we need some stable handling of such cases;
-                // in the respective cells, the level-set surface quadrature will be overwritten
-                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-
-                foreach(var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
-                    int iKref = Array.IndexOf(XDGSpaceMetrics.GridDat.iGeomCells.RefElements, Kref);
-
-                    var mask = LevelSetOnEdgeRuleFactory.ComputeMask(XDGSpaceMetrics.Tracker, iLevSet, iKref);
-                    var fact = new LevelSetOnEdgeRuleFactory(Kref, this.XDGSpaceMetrics.LevelSetData[iLevSet]);
-                    LevSetQrIns.AddFactoryDomainPair(fact, mask, fixedOrder);
-                }
-            }
-
-
-            return LevSetQrIns;
+            return GetLevelSetquadScheme(iLevSet, this.SpeciesList.First(), IntegrationDom, fixedOrder);
         }
 
+        /// <summary>
+        /// Quadrature scheme for the integration over the level-set <paramref name="iLevSet"/>, i.e. for each cut background-cell \f$ K_j \f$ a quadrature to approximate
+        /// \f[
+        ///    \oint_{K_j \cap \mathfrak{I} \cap \partial \mathfrak{A} } \ldots \mathrm{dS} ,
+        /// \f]
+        /// where \f$ \mathfrak{A} \f$ is the domain of species <paramref name="spA"/>.
+        /// </summary>
         public CellQuadratureScheme GetLevelSetquadScheme(int iLevSet, SpeciesId spA, CellMask IntegrationDom, int? fixedOrder = null) {
             if (IntegrationDom.MaskType == MaskType.Logical)
                 IntegrationDom = IntegrationDom.ToGeometicalMask();
-
+            if(XDGSpaceMetrics.GridDat.Grid.RefElements.Length > 1)
+                throw new NotImplementedException("more than one reference element is currently not supported");
 
             var gdat = XDGSpaceMetrics.GridDat;
 
@@ -1129,8 +1114,6 @@ namespace BoSSS.Foundation.XDG {
 
             // "ordinary" cut cells for level set `iLevSet`
             // ============================================
-
-
             foreach(var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
                 var surfaceFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, Kref);
 
@@ -1146,49 +1129,11 @@ namespace BoSSS.Foundation.XDG {
                     }
                 }
 
-
                 LevSetQrIns.AddFactoryDomainPair(surfaceFactory, modIntegrationDom, fixedOrder);
-            }
-
-            // special case: level set `iLevSet` (might) coincide with some edges
-            // ===================================================================
-
-
-            if(this.XDGSpaceMetrics.Tracker.Regions.LevSetCoincidingFaces != null) {
-                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                // Special case handling:
-                // Some  level-set is (more-or-less) exactly on a cell edge;
-                // therefore, we need some stable handling of such cases;
-                // in the respective cells, the level-set surface quadrature will be overwritten
-                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-
-                foreach(var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
-                    int iKref = Array.IndexOf(XDGSpaceMetrics.GridDat.iGeomCells.RefElements, Kref);
-
-                    CellMask modIntegrationDom = IntegrationDom;
-                    for(int jLevSet = 0; jLevSet < XDGSpaceMetrics.NoOfLevelSets; jLevSet++) {
-                        if(jLevSet != iLevSet) {
-                            CellMask doublyCut = GetDoubleCutCells(iLevSet, jLevSet);
-                            if(doublyCut.NoOfItemsLocally > 0) {
-                                modIntegrationDom = modIntegrationDom.Except(doublyCut);
-
-                            }
-                        }
-                    }
-
-
-                    var mask = LevelSetOnEdgeRuleFactory.ComputeMask(XDGSpaceMetrics.Tracker, iLevSet, iKref);
-                    var fact = new LevelSetOnEdgeRuleFactory(Kref, this.XDGSpaceMetrics.LevelSetData[iLevSet]);
-                    LevSetQrIns.AddFactoryDomainPair(fact, mask.Intersect(modIntegrationDom), fixedOrder);
-
-                }
             }
 
             // special case: double-cut cut cells
             // ===================================
-
-
             foreach(var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
                 //handle rules for cells/edges where two levelsets are present
 
@@ -1219,13 +1164,49 @@ namespace BoSSS.Foundation.XDG {
                         }
                     }
                 }
-
-               
             }
 
-            
-            
-            
+            // special case: level set `iLevSet` (might) coincide with some edges
+            // ===================================================================
+
+
+            if(this.XDGSpaceMetrics.Tracker.Regions.LevSetCoincidingFaces != null) {
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                // Special case handling:
+                // Some  level-set is (more-or-less) exactly on a cell edge;
+                // therefore, we need some stable handling of such cases;
+                // in the respective cells, the level-set surface quadrature will be overwritten
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+                foreach(var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
+                    int iKref = Array.IndexOf(XDGSpaceMetrics.GridDat.iGeomCells.RefElements, Kref);
+                    
+                    var coincidingCells = LevelSetOnEdgeRuleFactory.ComputeMask(XDGSpaceMetrics.Tracker, iLevSet, iKref);
+                    var mask = coincidingCells.Intersect(IntegrationDom);
+
+
+
+
+                    CellMask modIntegrationDom = IntegrationDom;
+                    for(int jLevSet = 0; jLevSet < XDGSpaceMetrics.NoOfLevelSets; jLevSet++) {
+                        if(jLevSet != iLevSet) {
+                            CellMask doublyCut = GetDoubleCutCells(iLevSet, jLevSet);
+                            if(doublyCut.NoOfItemsLocally > 0) {
+                                modIntegrationDom = modIntegrationDom.Except(doublyCut);
+
+                            }
+                        }
+                    }
+
+
+                    var fact = new LevelSetOnEdgeRuleFactory(Kref, this.XDGSpaceMetrics.LevelSetData[iLevSet]);
+                    LevSetQrIns.AddFactoryDomainPair(fact, mask, fixedOrder);
+
+                }
+            }
+
+
 
             return LevSetQrIns;
         }

@@ -34,7 +34,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
         }
 
         public int[] GetCachedRuleOrders() {
-            throw new NotImplementedException();
+            return new int[0];
         }
 
         public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int order) {
@@ -76,16 +76,12 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             IScalarFunction b = map.MapFromDomainToCodomain(beta, j);
             (int nodeCount, int subdivisions) = Convert(order);
 
-            Stopwatch stw = new Stopwatch();
-
             QuadratureRule ruleQ;
             try {
-                stw.Start();
                 ruleQ = finder.FindRule(a, signAlpha, b, signBeta, domain, nodeCount, subdivisions);
-                stw.Stop();
             } catch(Exception e) {
                 Console.WriteLine(e);
-                throw new Exception($"IntersectingQuadrature failed for input nodeCount={nodeCount}, subdivisions={subdivisions}, map={map} ");
+                throw new ArithmeticException($"IntersectingQuadrature failed for input nodeCount={nodeCount}, subdivisions={subdivisions}, map={map} ");
             }
 
             QuadRule q = map.MapFromCodomainToDomain(ruleQ, j);

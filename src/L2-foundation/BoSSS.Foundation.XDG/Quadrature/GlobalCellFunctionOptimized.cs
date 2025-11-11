@@ -21,9 +21,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
     /// </summary>
     class GlobalCellFunctionOptimized : IScalarFunction {
 
-#if DEBUG
         readonly RefElement Kref;
-#endif
         // Polynomial sizes per axis (n = degree+1)
         readonly int[] n;
         // Chebyshev coefficients (tensor): c[k1], c[k1,k2], or c[k1,k2,k3]
@@ -45,7 +43,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
         public readonly Stopwatch stwH = new Stopwatch();
 
 
+#if DEBUG
         readonly IScalarFunction reference;
+#endif
 
 
 
@@ -93,8 +93,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
         /// <param name="jCell"></param>
         /// <param name="levelSet"></param>
         public GlobalCellFunctionOptimized(LevelSetTracker.LevelSetData levelSet, int jCell, int[] nPerAxis) : this(levelSet.GridDat.iGeomCells.GetRefElement(jCell), nPerAxis) {
-
+#if DEBUG
             reference = new GlobalCellFunction(levelSet, jCell);
+#endif
 
             // 1) Build tensor NodeSet of all CL nodes & Sample BoSSS
             NodeSet X = BuildTensorNodeSet();
@@ -203,7 +204,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             EvalCounterG++;
             stwG.Stop();
 
-#if DEBUG            
+#if DEBUG
             var valgradRef = reference.EvaluateAndGradient(x);
             if(Math.Abs(valgradRef.evaluation - val) > 1.0e-10) {
                 throw new ArithmeticException("optimized version sux 1");
@@ -252,7 +253,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             EvalCounterH++;
             stwH.Stop();
 
-#if DEBUG            
+#if DEBUG
             var valgradRef = reference.EvaluateAndGradientAndHessian(x);
             if(Math.Abs(valgradRef.evaluation - val) > 1.0e-10)
                 throw new ArithmeticException("optimized version sux 1b");

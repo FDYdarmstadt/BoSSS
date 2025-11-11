@@ -40,7 +40,7 @@ namespace BoSSS.Foundation.XDG {
                     throw new NotImplementedException();
 
 
-                var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new SpeciesId[] { spc }, HMForder, 1).XQuadSchemeHelper;
+                var SchemeHelper = LsTrk.GetXDGSpaceMetrics([spc], HMForder, 1).XQuadSchemeHelper;
                         // new XQuadSchemeHelper(LsTrk, momentFittingVariant);
 
                 // Classic HMF uses order+1 for Surface Integrals and additionally 1 order higher for the HMF system
@@ -48,7 +48,7 @@ namespace BoSSS.Foundation.XDG {
                 if (SchemeHelper.CutCellQuadratureMethod == CutCellQuadratureMethod.Classic)
                     HMForder -= 2;
 
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, spc, LsTrk.Regions.GetCutCellMask());
 
                 double force = 0;
 
