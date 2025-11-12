@@ -13,6 +13,11 @@ using System.Text;
 
 namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
 
+
+    /// <summary>
+    /// Generation of quadrature rules for level-sets which coincide with cell faces,
+    /// centrally triggered by <see cref="LevelSetTracker.LevelSetRegions.LevSetCoincidingFaces"/>
+    /// </summary>
     internal class InterfaceIntegration : IQuadRuleFactory<QuadRule> {
 
 

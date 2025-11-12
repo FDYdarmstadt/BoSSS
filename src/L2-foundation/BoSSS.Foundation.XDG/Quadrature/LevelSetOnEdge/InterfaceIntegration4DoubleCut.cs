@@ -13,6 +13,12 @@ using System.Linq;
 using System.Text;
 
 namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
+
+    /// <summary>
+    /// Generation of quadrature rules for level-sets which coincide with cell faces,
+    /// centrally triggered by <see cref="LevelSetTracker.LevelSetRegions.LevSetCoincidingFaces"/>
+    /// and are furthermore cut/trimmed by a second level-set.
+    /// </summary>
     internal class InterfaceIntegration4DoubleCut : InterfaceIntegration {
         public InterfaceIntegration4DoubleCut(RefElement _RefElement, LevelSetTracker.LevelSetData levelSetData, 
             IQuadRuleFactory<QuadRule> __edgeSchemeForTrimmingLevelSet, EdgeMask __dblCutEdges,
@@ -47,11 +53,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
         bool IsSpeciesPresentAtNodes(NodeSet Ns, int jCell) {
             int NoOfLevSets = LevelSetDataS.Length;
             var LevelSetValues = MultidimensionalArray.Create(NoOfLevSets, Ns.NoOfNodes);
-
-            var Xglobal = LevelSetDataS[0].GridDat.GlobalNodes.GetValue_Cell(Ns, jCell);
-            if(Xglobal[0, 0].Abs() <= 0.001 && Xglobal[0, 1] < 0)
-                Console.WriteLine("dsjlkjdskljskjcjckjxhjdhhjdsacsahdchbjb");
-
 
             for(int iLevSet = 0; iLevSet < NoOfLevSets; iLevSet++) {
                 if(iLevSet != IndexOfCoincidingLevelSet) {

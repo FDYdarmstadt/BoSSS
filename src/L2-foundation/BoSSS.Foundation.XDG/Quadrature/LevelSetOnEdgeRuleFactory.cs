@@ -10,6 +10,7 @@ using System.Linq;
 
 
 namespace BoSSS.Foundation.XDG.Quadrature {
+    /*
     /// <summary>
     /// Generation of quadrature rules for level-sets which coincide with cell faces,
     /// centrally triggered by
@@ -82,7 +83,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             return ret;
         }
     }
-
+    */
 
     /// <summary>
     /// Generation of quadrature rules for level-sets which coincide with cell faces,
@@ -203,7 +204,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
     }
 
 
-
+    /*
     class SurfaceElementBounaryFactoryForCoincidingEdges : IQuadRuleFactory<QuadRule> {
 
 
@@ -541,5 +542,5 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         }
     }
 
-
+    */
 }
