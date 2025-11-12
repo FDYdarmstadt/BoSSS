@@ -875,10 +875,10 @@ namespace BoSSS.Foundation.XDG {
         /// Consider two level sets "Phi_0" and "Phi_1" (with level set indices 0 and
         /// 1, respectively) and three species "a", "b" and "c". Consider the
         /// following <see cref="SpeciesTable"/>:
-        /// [0, 0] = "a"
-        /// [0, 1] = "b"
-        /// [1, 0] = "c"
-        /// [1, 1] = "c"
+        /// - [0, 0] = "a"
+        /// - [0, 1] = "b"
+        /// - [1, 0] = "c"
+        /// - [1, 1] = "c"
         /// That is, if "Phi_0" and "Phi_1" are both negative, we have species "a". If
         /// "Phi_0" is negative and "Phi_1" is positive, we have "b". If "Phi_0" is
         /// positive, we have "c", irrespective of the value of "Phi_1". Thus,

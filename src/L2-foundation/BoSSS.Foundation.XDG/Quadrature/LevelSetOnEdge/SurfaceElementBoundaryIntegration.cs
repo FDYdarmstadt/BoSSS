@@ -272,7 +272,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
 
                             //var codes = new LevelSetSignCode[NoOfLevSets];
                             bool completelyEmty = true, completelyFull = true;
-                            for(int k = 0; k < NoOfLevSets; k++) {
+                            for(int k = 0; k < cellTest.NoOfNodes; k++) {
                                 var code = LevelSetSignCode.ComputeLevelSetBytecode(LevelSetValues.GetColumn(k));
                                 bool nonvoid = Array.IndexOf(this.m_allSignCodes, code) >= 0;
 

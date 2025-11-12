@@ -216,7 +216,6 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// </summary>
         public int[,] FaceToCoFaceIndices {
             get {
-
                 LazyInitializer.EnsureInitialized(ref m_FaceToCoFaceIndices, delegate () {
 
                     int[,] cf2fi = CoFaceToFaceIndices;

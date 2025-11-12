@@ -584,7 +584,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
             LazyInitializer.EnsureInitialized(ref m_FaceCenterPF, delegate () {
                 var _FaceCenterPF = new NodeSet[this.NoOfFaces];
                 for(int iF = 0; iF < _FaceCenterPF.Length; iF++) {
-                    _FaceCenterPF[iF] = new NodeSet(this, this.FaceCenters.GetRow(iF), false);
+                    _FaceCenterPF[iF] = new NodeSet(this, this.FaceCenters.GetRow(iF), true);
                 }
                 return _FaceCenterPF;
             });

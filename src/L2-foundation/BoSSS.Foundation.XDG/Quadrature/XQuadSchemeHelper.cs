@@ -144,8 +144,6 @@ namespace BoSSS.Foundation.XDG {
                     this.m_CutEdges[iKref, iLevSet] = cutEdges;
                 }
             }
-
-
         }
 
         /// <summary>
@@ -301,7 +299,7 @@ namespace BoSSS.Foundation.XDG {
             }
 
 
-            if(this.XDGSpaceMetrics.Tracker.Regions.LevSetCoincidingFaces != null || this.XDGSpaceMetrics.Tracker.Regions.LevSetCoincidingCoFaces != null) {
+            if(this.XDGSpaceMetrics.LevelSetRegions.LevSetCoincidingFaces != null || this.XDGSpaceMetrics.LevelSetRegions.LevSetCoincidingCoFaces != null) {
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // Special case handling:
                 // Some  level-set is (more-or-less) exactly on a cell edge;
@@ -319,11 +317,11 @@ namespace BoSSS.Foundation.XDG {
                     Debug.Assert(IntegrationDom.MaskType == MaskType.Geometrical);
                     var fact = new Quadrature.LevelSetOnEdge.SurfaceElementBoundaryIntegration(
                         edgeKref,
-                        XDGSpaceMetrics.Tracker.DataHistories.Select(hi => hi.Current).ToArray(),
+                        XDGSpaceMetrics.LevelSetData.ToArray(),
                         XDGSpaceMetrics.Tracker.GetLevelSetSignCodes(sp),
                         iLevSet,
-                        this.XDGSpaceMetrics.Tracker.Regions.LevSetCoincidingFaces,
-                        this.XDGSpaceMetrics.Tracker.Regions.LevSetCoincidingCoFaces
+                        this.XDGSpaceMetrics.LevelSetRegions.LevSetCoincidingFaces,
+                        this.XDGSpaceMetrics.LevelSetRegions.LevSetCoincidingCoFaces
                         );
                     edgeQrIns.AddFactoryDomainPair(fact, IntegrationDom);
 
@@ -385,7 +383,7 @@ namespace BoSSS.Foundation.XDG {
             // special single cut cells
             // ========================
 
-            if(this.XDGSpaceMetrics.Tracker.Regions.LevSetCoincidingFaces != null) {
+            if(this.XDGSpaceMetrics.LevelSetRegions.LevSetCoincidingFaces != null) {
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // Special case handling:
                 // Some  level-set is (more-or-less) exactly on a cell edge;
@@ -1131,7 +1129,7 @@ namespace BoSSS.Foundation.XDG {
             // special case: level set `iLevSet` (might) coincide with some edges
             // ===================================================================
 
-            if(this.XDGSpaceMetrics.Tracker.Regions.LevSetCoincidingFaces != null) {
+            if(this.XDGSpaceMetrics.LevelSetRegions.LevSetCoincidingFaces != null) {
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // Special case handling:
                 // Some  level-set is (more-or-less) exactly on a cell edge;
@@ -1164,20 +1162,19 @@ namespace BoSSS.Foundation.XDG {
 
                                 var dblCutEdges = this.GetCutEdges(KrefEdge, jLevSet);
 
-                                var fact_dbl_cut = new Quadrature.LevelSetOnEdge.InterfaceIntegration4DoubleCut(Kref, this.XDGSpaceMetrics.LevelSetData[iLevSet], trimming_factory, dblCutEdges);
+                                var fact_dbl_cut = new Quadrature.LevelSetOnEdge.InterfaceIntegration4DoubleCut(
+                                    Kref, 
+                                    this.XDGSpaceMetrics.LevelSetData[iLevSet], 
+                                    trimming_factory, dblCutEdges,
+                                    XDGSpaceMetrics.LevelSetData.ToArray(),
+                                    XDGSpaceMetrics.Tracker.GetLevelSetSignCodes(spA));
+
                                 LevSetQrIns.AddFactoryDomainPair(fact_dbl_cut, doublyCut_onEdge, fixedOrder);
                             }
                         }
                     }
-
-
-                    
-
                 }
             }
-
-
-
             return LevSetQrIns;
         }
 
