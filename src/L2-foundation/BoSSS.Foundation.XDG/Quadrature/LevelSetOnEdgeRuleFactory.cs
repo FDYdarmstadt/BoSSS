@@ -7,12 +7,204 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 
-namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
-    
-    
-    internal class SurfaceElementBoundaryIntegration : IQuadRuleFactory<QuadRule> {
+
+namespace BoSSS.Foundation.XDG.Quadrature {
+    /// <summary>
+    /// Generation of quadrature rules for level-sets which coincide with cell faces,
+    /// centrally triggered by
+    /// <see cref="LevelSetTracker.LevelSetRegions.LevSetCoincidingFaces"/>
+    /// </summary>
+    class LevelSetOnEdgeRuleFactory : IQuadRuleFactory<QuadRule> {
+
+
+        static public CellMask ComputeMask(LevelSetTracker tracker, int iLevelSet, int iKref) {
+            var CoincidFaces = tracker.Regions.LevSetCoincidingFaces;
+            var gdat = tracker.GridDat;
+
+            if(CoincidFaces == null) {
+                return CellMask.GetEmptyMask(gdat, MaskType.Geometrical);
+            }
+
+            int J = gdat.iGeomCells.NoOfLocalUpdatedCells;
+            BitArray bitMask = new BitArray(J);
+
+            for(int j = 0; j < J; j++) {
+                if(gdat.iGeomCells.GetRefElementIndex(j) != iKref)
+                    continue;
+
+                if(CoincidFaces[j] == null)
+                    continue;
+
+                foreach(var t in CoincidFaces[j]) {
+                    if(t.iLevSet == iLevelSet)
+                        bitMask[j] = true;
+                }
+
+            }
+
+
+            return new CellMask(gdat, bitMask, MaskType.Geometrical);
+        }
+
+
+
+        public LevelSetOnEdgeRuleFactory(RefElement _RefElement, LevelSetTracker.LevelSetData levelSetData) {
+            RefElement = _RefElement;
+            m_LevelSetData = levelSetData;
+            m_LevelSetOnEdgeRule = new LevelSetOnEdgeRule(m_LevelSetData);
+        }
+
+        public RefElement RefElement {
+            get;
+            private set;
+        }
+
+        readonly LevelSetTracker.LevelSetData m_LevelSetData;
+
+        public int[] GetCachedRuleOrders() {
+            return new int[0];
+        }
+
+        readonly LevelSetOnEdgeRule m_LevelSetOnEdgeRule;
+
+        public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int order) {
+            if(mask.MaskType != MaskType.Geometrical) {
+                throw new ArgumentException($"wrong type of mask ({mask.MaskType})");
+            }
+
+            var ret = new List<ChunkRulePair<QuadRule>>();
+
+            foreach(int jCell in mask.ItemEnum) {
+                ret.Add(m_LevelSetOnEdgeRule.SurfaceQuadRule(order, jCell));
+            }
+
+            return ret;
+        }
+    }
+
+
+    /// <summary>
+    /// Generation of quadrature rules for level-sets which coincide with cell faces,
+    /// centrally triggered by
+    /// <see cref="LevelSetTracker.LevelSetRegions.LevSetCoincidingFaces"/>
+    /// </summary>
+    class LevelSetBoundaryOnEdgeRuleFactory : IQuadRuleFactory<CellBoundaryQuadRule> {
+
+
+        static IEnumerable<int> GeometricalCellFace2Edges(IGridData gdat, int jCellGeom, int iFace) {
+
+            int jCellLog;
+            if(gdat.iGeomCells.GeomCell2LogicalCell != null)
+                jCellLog = gdat.iGeomCells.GeomCell2LogicalCell[jCellGeom];
+            else
+                jCellLog = jCellGeom;
+
+
+            int[] LogEdges = gdat.iLogicalCells.Cells2Edges[jCellLog];
+
+            var ret = new List<int>();
+            foreach(int __iLogEdge in LogEdges) {
+                int iLogEdge = Math.Abs(__iLogEdge) - 1;
+
+                foreach(int iGeomEdge in gdat.GetGeometricEdgeIndices(iLogEdge)) {
+                    int match = -1;
+                    if(gdat.iGeomEdges.CellIndices[iGeomEdge, 0] == jCellGeom)
+                        match = 0;
+                    else if(gdat.iGeomEdges.CellIndices[iGeomEdge, 1] == jCellGeom)
+                        match = 1;
+
+                    if(match >= 0) {
+                        if(gdat.iGeomEdges.FaceIndices[iGeomEdge, match] == iFace) {
+                            ret.Add(iGeomEdge);
+                        }
+
+                    }
+                }
+            }
+
+            return ret;
+
+
+
+
+        }
+
+        static public EdgeMask ComputeMask(LevelSetTracker tracker, int iLevelSet, int iKref) {
+            var CoincidFaces = tracker.Regions.LevSetCoincidingFaces;
+            IGridData gdat = tracker.GridDat;
+
+            if(CoincidFaces == null) {
+                return EdgeMask.GetEmptyMask(gdat, MaskType.Geometrical);
+            }
+
+            int J = gdat.iGeomCells.NoOfLocalUpdatedCells;
+            int E = gdat.iGeomEdges.Count; ;
+            BitArray bitMask = new BitArray(E);
+
+            for(int j = 0; j < J; j++) {
+                if(CoincidFaces[j] == null)
+                    continue;
+
+
+                foreach(var t in CoincidFaces[j]) {
+                    if(t.iLevSet == iLevelSet) {
+
+                        foreach(var e in GeometricalCellFace2Edges(gdat, j, t.iFace)) {
+                            if(gdat.iGeomEdges.GetRefElementIndex(e) == iKref) {
+
+                                bitMask[e] = true;
+                            }
+                        }
+
+                    }
+                }
+
+            }
+
+
+            return new EdgeMask(gdat, bitMask, MaskType.Geometrical);
+        }
+
+
+        public LevelSetBoundaryOnEdgeRuleFactory(RefElement _RefElement, LevelSetTracker.LevelSetData levelSetData) {
+            RefElement = _RefElement;
+            m_LevelSetData = levelSetData;
+            m_LevelSetOnEdgeRule = new LevelSetOnEdgeRule(m_LevelSetData);
+        }
+
+        public RefElement RefElement {
+            get;
+            private set;
+        }
+
+        readonly LevelSetTracker.LevelSetData m_LevelSetData;
+
+        public int[] GetCachedRuleOrders() {
+            return new int[0];
+        }
+
+        readonly LevelSetOnEdgeRule m_LevelSetOnEdgeRule;
+
+        public IEnumerable<IChunkRulePair<CellBoundaryQuadRule>> GetQuadRuleSet(ExecutionMask mask, int order) {
+            if(mask.MaskType != MaskType.Geometrical) {
+                throw new ArgumentException($"wrong type of mask ({mask.MaskType})");
+            }
+
+            var ret = new List<ChunkRulePair<CellBoundaryQuadRule>>();
+
+            foreach(int jCell in mask.ItemEnum) {
+                ret.Add(m_LevelSetOnEdgeRule.BoundaryLineRule(order, jCell));
+                Debug.Assert(ret.Last().Rule.NumbersOfNodesPerFace != null, "Not a valid boundary rule");
+            }
+
+            return ret;
+        }
+    }
+
+
+
+    class SurfaceElementBounaryFactoryForCoincidingEdges : IQuadRuleFactory<QuadRule> {
 
 
         /// <summary>
@@ -129,7 +321,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
 
 
 
-        public SurfaceElementBoundaryIntegration(RefElement _RefElement, LevelSetTracker.LevelSetData[] __levelSetDataS, LevelSetSignCode[] __allSignCodes, int __iLevSet, (int iLevSet, int iFace)[][] __LevSetCoincidingFaces, (int iLevSet, int iFace)[][] __LevSetCoincidingCoFaces) {
+        public SurfaceElementBounaryFactoryForCoincidingEdges(RefElement _RefElement, LevelSetTracker.LevelSetData[] __levelSetDataS, LevelSetSignCode[] __allSignCodes, int __iLevSet, (int iLevSet, int iFace)[][] __LevSetCoincidingFaces, (int iLevSet, int iFace)[][] __LevSetCoincidingCoFaces) {
             RefElement = _RefElement;
             if(Array.IndexOf(__levelSetDataS[0].GridDat.iGeomEdges.EdgeRefElements, this.RefElement) < 0) {
                 throw new ArgumentException($"{_RefElement} is not an edge reference element of the grid.");
@@ -213,7 +405,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
                     if(this.LevSetCoincidingFaces != null && this.LevSetCoincidingFaces[jCell] != null) {
                         if(this.LevSetCoincidingFaces[jCell].Any(tt => (tt.iLevSet == this.m_iLevSet && tt.iFace == iCellFace))) {
                             // ++++++++++++++++++++++++++++++++++++++++++++++++++++
-                            // entire face coincides with the level-set
+                            // entire face coincides wit the level-set
                             // in this case, we don't want any co-co-dim quadrature 
                             // ++++++++++++++++++++++++++++++++++++++++++++++++++++
                             bFound = true;
@@ -221,6 +413,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
                             break;
                         }
                     }
+
+                    //var gdat.iGeomCells.GetRefElement(jCell);
 
                     if(this.LevSetCoincidingCoFaces != null && this.LevSetCoincidingCoFaces[jCell] != null) {
                         foreach(var tt in this.LevSetCoincidingCoFaces[jCell]) {
@@ -346,5 +540,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
             return new int[0];
         }
     }
+
 
 }

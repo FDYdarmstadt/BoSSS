@@ -13,130 +13,6 @@ using System.Text;
 
 namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
 
-    /*
-    public static class Misc {
-
-
-       
-
-
-        /// <summary>
-        /// on which edges this class can actually provide working quadrature rules?
-        /// </summary>
-        static public EdgeMask ComputeEdgeMask(LevelSetTracker tracker, int iLevelSet, int iKrefEdge) {
-            var CoincidFaces = tracker.Regions.LevSetCoincidingFaces;
-            var CoincidCoFcs = tracker.Regions.LevSetCoincidingCoFaces;
-            IGridData gdat = tracker.GridDat;
-
-            if(CoincidFaces == null && CoincidCoFcs == null) {
-                return EdgeMask.GetEmptyMask(gdat, MaskType.Geometrical);
-            }
-
-            int J = gdat.iGeomCells.NoOfLocalUpdatedCells;
-            int E = gdat.iGeomEdges.Count;
-            BitArray bitMask = new BitArray(E);
-
-            for(int j = 0; j < J; j++) {
-                if(CoincidFaces != null && CoincidFaces[j] != null) {
-                    foreach(var t in CoincidFaces[j]) {
-                        if(t.iLevSet == iLevelSet) {
-
-                            foreach(var e in GeometricalCellFace2Edges(gdat, j, t.iFace)) {
-                                if(gdat.iGeomEdges.GetRefElementIndex(e) == iKrefEdge) {
-
-                                    bitMask[e] = true;
-                                }
-                            }
-
-                        }
-                    }
-                }
-
-                if(CoincidCoFcs != null && CoincidCoFcs[j] != null) {
-                    foreach(var t in CoincidCoFcs[j]) {
-                        if(t.iLevSet == iLevelSet) {
-                            foreach(var e in GeometricalCellCoFace2Edges(gdat, j, t.iCoFace)) {
-                                if(gdat.iGeomEdges.GetRefElementIndex(e) == iKrefEdge) {
-
-                                    bitMask[e] = true;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-
-            return new EdgeMask(gdat, bitMask, MaskType.Geometrical);
-        }
-
-        /// <summary>
-        /// conversion (<paramref name="jCellGeom"/>,<paramref name="iFace"/>) to grid edges
-        /// </summary>
-        static IEnumerable<int> GeometricalCellFace2Edges(IGridData gdat, int jCellGeom, int iFace) {
-
-            int jCellLog;
-            if(gdat.iGeomCells.GeomCell2LogicalCell != null)
-                jCellLog = gdat.iGeomCells.GeomCell2LogicalCell[jCellGeom];
-            else
-                jCellLog = jCellGeom;
-
-
-            int[] LogEdges = gdat.iLogicalCells.Cells2Edges[jCellLog];
-
-            var ret = new List<int>();
-            foreach(int __iLogEdge in LogEdges) {
-                int iLogEdge = Math.Abs(__iLogEdge) - 1;
-
-                foreach(int iGeomEdge in gdat.GetGeometricEdgeIndices(iLogEdge)) {
-                    int match = -1;
-                    if(gdat.iGeomEdges.CellIndices[iGeomEdge, 0] == jCellGeom)
-                        match = 0;
-                    else if(gdat.iGeomEdges.CellIndices[iGeomEdge, 1] == jCellGeom)
-                        match = 1;
-
-                    if(match >= 0) {
-                        if(gdat.iGeomEdges.FaceIndices[iGeomEdge, match] == iFace) {
-                            ret.Add(iGeomEdge);
-                        }
-
-                    }
-                }
-            }
-
-            return ret;
-
-
-
-
-        }
-
-        /// <summary>
-        /// conversion (<paramref name="jCellGeom"/>,<paramref name="iCoFace"/>) to grid edges
-        /// </summary>
-        static IEnumerable<int> GeometricalCellCoFace2Edges(IGridData gdat, int jCellGeom, int iCoFace) {
-
-            int jCellLog;
-            if(gdat.iGeomCells.GeomCell2LogicalCell != null)
-                jCellLog = gdat.iGeomCells.GeomCell2LogicalCell[jCellGeom];
-            else
-                jCellLog = jCellGeom;
-
-
-            var Kref = gdat.iGeomCells.GetRefElement(jCellGeom);
-            int face0 = Kref.CoFaceToFaceIndices[iCoFace, 0];
-            int face1 = Kref.CoFaceToFaceIndices[iCoFace, 1];
-
-
-
-            return GeometricalCellFace2Edges(gdat, jCellGeom, face0).SetUnion(GeometricalCellFace2Edges(gdat, jCellGeom, face1));
-        }
-
-
-    }
-    */
-
-
     internal class InterfaceIntegration : IQuadRuleFactory<QuadRule> {
 
 
@@ -207,6 +83,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
             RefElement = _RefElement;
             m_LevelSetData = levelSetData;
             grddat = levelSetData.GridDat;
+
+            if(!grddat.iGeomCells.RefElements.Contains(RefElement))
+                throw new ArgumentException("expecting a cell reference element", nameof(_RefElement));
         }
 
         public RefElement RefElement {
@@ -247,6 +126,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
             throw new Exception("Face does not have registered special Face");
         }
 
+       
+
         /// <summary>
         /// **This is a special case: level-set coincides with a cell-face; 
         /// cell is either full or empty:**
@@ -268,6 +149,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
         public ChunkRulePair<QuadRule> SurfaceQuadRule(int intOrder, int jCell) {
             int SpecialFace = GetSpecialFaceIndex(jCell);
             RefElement refElement = grddat.iGeomCells.GetRefElement(jCell);
+            if(refElement != this.RefElement)
+                throw new NotSupportedException("Reference element mismatch");
             int D = refElement.SpatialDimension;
 
             bool EmptyOrFool; // true: full rule; false: empty rule
@@ -279,14 +162,17 @@ namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
                 // Level-Set integration should happen in `jCell`
                 // +++++++++++++++++++++++++++++++++++++++++++++++
 
-                var FaceRule = refElement.FaceRefElement.GetQuadratureRule(intOrder);
+                QuadRule FaceRule = GetFaceRule(jCell, SpecialFace, intOrder);
+                if(FaceRule.RefElement != refElement.FaceRefElement)
+                    throw new NotSupportedException("Expecting a face reference element");
+
                 int K = FaceRule.NoOfNodes;
                 NodeSet VolumeNodes = new NodeSet(refElement, K, D, true);
                 refElement.TransformFaceCoordinates(SpecialFace, FaceRule.Nodes, VolumeNodes);
                 VolumeNodes.LockForever();
 
                 double gTrF = refElement.FaceTrafoGramianSqrt[SpecialFace];
-                
+
                 QuadRule qr_l = new QuadRule() {
                     OrderOfPrecision = FaceRule.OrderOfPrecision,
                     Weights = MultidimensionalArray.Create(K),
@@ -312,6 +198,11 @@ namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
                 surfaceRule = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(jCell), empty);
             }
             return surfaceRule;
+        }
+
+        protected virtual QuadRule GetFaceRule(int jCell, int iFace, int intOrder) {
+            RefElement refElement = grddat.iGeomCells.GetRefElement(jCell);
+            return refElement.FaceRefElement.GetQuadratureRule(intOrder);
         }
 
         private bool IsNotEmpty(int jCell) {
@@ -355,7 +246,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
             return EmptyOrFool;
         }
     }
-
 
 
 

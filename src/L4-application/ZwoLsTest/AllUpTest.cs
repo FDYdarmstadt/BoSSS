@@ -62,7 +62,7 @@ namespace BoSSS.Application.ZwoLsTest {
         /// </summary>
         [Test]
         static public void SerialVersusParallelRun(
-            [Values(CutCellQuadratureMethod.OneStepGauss, CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod quadVariant)
+            [Values(CutCellQuadratureMethod.OneStepGauss, CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod quadVariant)
          {
 
             double AggTresh = 0.3;
