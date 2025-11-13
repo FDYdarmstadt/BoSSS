@@ -55,8 +55,7 @@ namespace BoSSS.Foundation.XDG {
 
             if(momentFittingVariant == CutCellQuadratureMethod.OneStepGauss 
                 || momentFittingVariant == CutCellQuadratureMethod.OneStepGaussAndStokes 
-                || momentFittingVariant == CutCellQuadratureMethod.TwoStepStokesAndGauss
-                || momentFittingVariant == CutCellQuadratureMethod.ExactCircle) {
+                || momentFittingVariant == CutCellQuadratureMethod.TwoStepStokesAndGauss) {
                 //if(lsDatas.Length > 1)
                 //    throw new ArgumentException($"cut cell quadrature method '{momentFittingVariant}' does not support more than one level-set.", nameof(momentFittingVariant));
                 if(lsDatas[0].GridDat.SpatialDimension != 2)
@@ -473,8 +472,7 @@ namespace BoSSS.Foundation.XDG {
                                 break;
                             }
 
-                        case CutCellQuadratureMethod.TwoStepStokesAndGauss:
-                        case CutCellQuadratureMethod.ExactCircle: {
+                        case CutCellQuadratureMethod.TwoStepStokesAndGauss: {
 
                                 m_VolumeFactory[levSetIndex] = (new LevelSetVolumeQuadRuleFactory2b(Kref,
                                         this.m_LevelSetDatas[levSetIndex],
@@ -490,13 +488,6 @@ namespace BoSSS.Foundation.XDG {
                             m_VolumeFactory[levSetIndex] = comboFactory.GetVolumeFactory();
                             m_SurfaceFactory[levSetIndex] = comboFactory.GetSurfaceFactory();
                             break;
-                        //case CutCellQuadratureMethod.Algoim:
-                        //    var algoimComboFactory = new Quadrature.Algoim.AlgoimFactories(
-                        //            this.m_LevelSetDatas[levSetIndex],
-                        //            Kref);
-                        //    m_VolumeFactory[levSetIndex] = algoimComboFactory.GetVolumeFactory();
-                        //    m_SurfaceFactory[levSetIndex] = algoimComboFactory.GetSurfaceFactory();
-                        //    break;
                         default:
                             throw new NotSupportedException(String.Format(
                                 "Variant {0} not implemented.", CutCellQuadratureType));
@@ -514,14 +505,6 @@ namespace BoSSS.Foundation.XDG {
                                 new LineSegment.SafeGuardedNewtonMethod(1e-14));
                         break;
                     }
-                    //case CutCellQuadratureMethod.Algoim: {
-                    //    var algoimComboFactory = new Quadrature.Algoim.AlgoimFactories(
-                    //            this.m_LevelSetDatas[levSetIndex],
-                    //            Kref,
-                    //            true);
-                    //    ret = algoimComboFactory.GetVolumeFactory();
-                    //    break;
-                    //}
                     default: {
                         ret = new ComplementaryRuleFactory(GetVolRuleFactory(levSetIndex, JumpTypes.Heaviside, Kref));
                         break;
@@ -607,9 +590,6 @@ namespace BoSSS.Foundation.XDG {
                             _DoCheck: CheckQuadRules)).GetSurfaceFactory();
                         break;
                     }
-                    case CutCellQuadratureMethod.ExactCircle: {
-                        return new ExactCircleLevelSetIntegration(levSetIndex, this.m_LevelSetDatas[levSetIndex].GridDat, Kref);
-                    }
                     case CutCellQuadratureMethod.Saye: {
                         var comboFactory = Quadrature.Saye.SayeFactories.SayeGaussRule_Combo(
                                 this.m_LevelSetDatas[levSetIndex],
@@ -618,14 +598,6 @@ namespace BoSSS.Foundation.XDG {
                         m_SurfaceFactory[levSetIndex] = comboFactory.GetSurfaceFactory();
                         break;
                     }
-                    //case CutCellQuadratureMethod.Algoim: {
-                    //    var algoimComboFactory = new Quadrature.Algoim.AlgoimFactories(
-                    //            this.m_LevelSetDatas[levSetIndex],
-                    //            Kref);
-                    //    m_VolumeFactory[levSetIndex] = algoimComboFactory.GetVolumeFactory();
-                    //    m_SurfaceFactory[levSetIndex] = algoimComboFactory.GetSurfaceFactory();
-                    //    break;
-                    //}
                     default: {
                         throw new NotSupportedException(String.Format(
                             "Variant {0} not implemented.", CutCellQuadratureType));

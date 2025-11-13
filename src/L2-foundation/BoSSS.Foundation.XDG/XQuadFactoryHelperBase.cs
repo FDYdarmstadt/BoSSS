@@ -45,10 +45,10 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         TwoStepStokesAndGauss = 3,
 
-        /// <summary>
-        /// Only for debugging purpose, see <see cref="ExactCircleLevelSetIntegration"/>, <see cref="ExactCircleLevelSetIntegration.RADIUS"/>
-        /// </summary>
-        ExactCircle = 4,
+        ///// <summary>
+        ///// Only for debugging purpose, see <see cref="ExactCircleLevelSetIntegration"/>, <see cref="ExactCircleLevelSetIntegration.RADIUS"/>
+        ///// </summary>
+        //ExactCircle = 4,
 
         /// <summary>
         /// Gaussian quadrature rules for <see cref="Square"/> and <see cref="Cube"/> elements,
