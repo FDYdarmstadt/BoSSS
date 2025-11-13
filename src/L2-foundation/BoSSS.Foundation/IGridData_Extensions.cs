@@ -226,6 +226,41 @@ namespace BoSSS.Foundation.Grid {
             }
         }
 
+
+        /// <summary>
+        /// Returns the logical cell indices corresponding to a given set of geometrical cell indices <paramref name="GeomCells"/>.
+        /// For standard grids, this is an identity mapping (i.e., there is a 1-to-1 relation between geometrical and logical cells and both indices are equal).
+        /// For aggregation or adaptive grids, this uses the <c>GeomCell2LogicalCell</c> mapping.
+        /// </summary>
+        /// <param name="g">The grid data object.</param>
+        /// <param name="GeomCells">The geometrical cell index.</param>
+        /// <returns>
+        /// a collection of logical cell indices related to geometrical cells <paramref name="GeomCells"/>; for standard grids, this is always identical to <paramref name="GeomCells"/>.
+        /// </returns>
+        public static IEnumerable<int> GetLogicalCellIndices(this IGridData g, IEnumerable<int> GeomCells) {
+            if(g is Classic.GridData)
+                return GeomCells;
+            
+            var LogNeighs = new HashSet<int>();
+            foreach(int jGeomNeigh in GeomCells) {
+                LogNeighs.Add(g.GetLogicalCellIndex(jGeomNeigh));
+            }
+            return LogNeighs.ToArray();
+        }
+
+        /// <summary>
+        /// Returns an enumeration over all geometrical cells which the logical cell <paramref name="jLog"/> consists of
+        /// </summary>
+        public static IEnumerable<int> GetGeometricalCellIndices(this IGridData g, int jLog) {
+            if(g.iLogicalCells.AggregateCellToParts == null)
+                return [jLog];
+            if(g.iLogicalCells.AggregateCellToParts[jLog] == null)
+                return [jLog];
+            return g.iLogicalCells.AggregateCellToParts[jLog];
+        }
+
+
+
         /// <summary>
         /// Returns a geometrical cell indices (<see cref="IGeometricalCellsData"/>) for a logical cell index <paramref name="j"/>.
         /// </summary>
@@ -572,6 +607,48 @@ namespace BoSSS.Foundation.Grid {
             return new Logical2Geom_Enumable() { j0 = e, Len = 1, Log2Geom = g.iLogicalEdges.EdgeToParts };
         }
 
+        /// <summary>
+        /// Returns all geometrical edges that bound to geometrical cell <paramref name="jCellGeom"/>
+        /// </summary>
+        public static IEnumerable<int> GetGeometricalEdgesForCells(this IGridData g, int jCellGeom) {
+#if !DEBUG
+            if(g is Classic.GridData cg)
+                return cg.Cells.Cells2Edges[jCellGeom].Select(edge_enc => Math.Abs(edge_enc) - 1);
+#endif
+            int[] LogicalEdges = g.iLogicalCells.Cells2Edges[g.GetLogicalCellIndex(jCellGeom)];
+
+            var Log2GeomEdges = g.iLogicalEdges.EdgeToParts;
+            var Edge2Cell = g.iGeomEdges.CellIndices;
+
+            var ret = new HashSet<int>();
+            foreach(int iEdgeLog_enc in LogicalEdges) {
+
+                int iEdgeLog = Math.Abs(iEdgeLog_enc) - 1;
+                //int inOt = iEdgeLog > 0 ? 0 : 1;
+
+                int[] GeomEdges = null;
+                if(Log2GeomEdges == null || Log2GeomEdges[iEdgeLog] == null) {
+                    GeomEdges = [iEdgeLog];
+                } else {
+                    GeomEdges = Log2GeomEdges[iEdgeLog];
+                }
+
+                foreach(int iEdgeGeom in GeomEdges) {
+                    if(Edge2Cell[iEdgeGeom, 0] == jCellGeom || Edge2Cell[iEdgeGeom, 1] == jCellGeom)
+                        ret.Add(iEdgeGeom);
+                }
+            }
+
+#if DEBUG
+            if(g is Classic.GridData cg) {
+                if(!cg.Cells.Cells2Edges[jCellGeom].Select(edge_enc => Math.Abs(edge_enc) - 1).SetEquals(ret))
+                    throw new ApplicationException("Error in algorithm or grid data structure.");
+
+            }
+#endif
+
+            return ret;
+        }
 
 
         /// <summary>
@@ -903,7 +980,7 @@ namespace BoSSS.Foundation.Grid {
         /// <param name="jCell">
         /// a local cell index in the range of locally updated cells
         /// </param>
-        /// <param name="CellNeighBours">
+        /// <param name="NeighborCells">
         /// a collection of neighbor cells (local indices);
         /// </param>
         /// <param name="ConectingEntities">
@@ -921,7 +998,7 @@ namespace BoSSS.Foundation.Grid {
             this IGridData g,
             int jCell,
             GetCellNeighbours_Mode mode,
-            out int[] CellNeighBours,
+            out int[] NeighborCells,
             out int[] ConectingEntities) {
 
             if (jCell < 0 || jCell >= g.iLogicalCells.NoOfLocalUpdatedCells)
@@ -951,6 +1028,7 @@ namespace BoSSS.Foundation.Grid {
                                 ret2.Add(iVtx);
 
                                 foreach (int jN in VerticeIndex2Cell[iVtx]) {
+                                    
                                     if (jN != jCell) {
                                         if (!ret.Contains(jN))
                                             ret.Add(jN);
@@ -966,7 +1044,7 @@ namespace BoSSS.Foundation.Grid {
                     throw new NotImplementedException();
             }
 
-            CellNeighBours = ret.ToArray();
+            NeighborCells = ret.ToArray();
             ConectingEntities = ret2.ToArray();
         }
 
