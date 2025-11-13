@@ -38,6 +38,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Solution.Queries;
 using NUnit.Framework.Constraints;
 using System.Runtime.InteropServices.ComTypes;
+using BoSSS.Solution.Tecplot;
 
 
 namespace BoSSS.Solution.XdgTimestepping {
@@ -1537,18 +1538,62 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
                     double[] Affine;
-                    this.AssembleMatrixCallback(out BlockMsrMatrix System, out Affine, out BlockMsrMatrix MaMa, CurrentStateMapping.Fields.ToArray(), false, out var dummy);
-                    Debug.Assert(System == null);
-
-                   
-                    base.Residuals.Clear();
-                    base.Residuals.SetV(Affine, -1.0);
-
-                    
-                    success = true;
                     //DifferentialOperator.onlyfordebugging_DoVolume = true;
                     //DifferentialOperator.onlyfordebugging_DoEdge = true;
 
+
+                    //var fieldsToPlot = new List<DGField>();
+                    //var vecsToAgglom = new List<(SpeciesId spc, CoordinateVector vec)>();
+                    //XDifferentialOperatorMk2.m_plotShit = delegate (double[] vec, Basis[] bs, string name, SpeciesId spid) {
+                    //    SinglePhaseField[] flds = bs.Select2((b, idx) => new SinglePhaseField(b, name + idx)).ToArray();
+                    //    var coord_vec = new CoordinateVector(flds);
+                    //    coord_vec.SetV(vec);
+                    //    fieldsToPlot.AddRange(flds);
+
+                    //    SinglePhaseField[] flds2 = bs.Select2((b, idx) => new SinglePhaseField(b, name + idx + "-agg")).ToArray();
+                    //    var coord_vec2 = new CoordinateVector(flds2);
+                    //    coord_vec2.SetV(vec);
+                    //    fieldsToPlot.AddRange(flds2);
+                    //    vecsToAgglom.Add((spid, coord_vec2));
+
+                    //};
+
+                    this.AssembleMatrixCallback(out BlockMsrMatrix System, out Affine, out BlockMsrMatrix MaMa, CurrentStateMapping.Fields.ToArray(), false, out var dummy);
+                    Debug.Assert(System == null);
+
+                    //{
+                    //    var AffB4Agg = Affine.CloneAs();
+                    //    m_CurrentAgglomeration.ManipulateMatrixAndRHS(default(BlockMsrMatrix), Affine, base.Residuals.Mapping, null);
+                    //    double diff = AffB4Agg.L2Distance(Affine);
+                    //    m_CurrentAgglomeration.Extrapolate(Affine, base.Residuals.Mapping);
+
+                    //    foreach(var t in vecsToAgglom) {
+                    //        m_CurrentAgglomeration.GetAgglomerator(t.spc).ManipulateRHS(t.vec, t.vec.Mapping);
+                    //    }
+                    //}
+
+                    //base.Residuals.Clear();
+                    //base.Residuals.SetV(Affine, -1.0);
+
+                    //{
+                    //    foreach(var spc in this.m_LsTrk.SpeciesNames) {
+                    //        var spcResiduals = base.Residuals.Fields.Select(f => (f as XDGField).GetSpeciesShadowField(spc)).ToArray();
+
+                    //        fieldsToPlot.AddRange(spcResiduals);
+                    //    }
+
+                    //    fieldsToPlot.AddRange(base.Residuals.Fields);
+                    //}
+
+
+                    //Tecplot.Tecplot.PlotFields(fieldsToPlot, "allResis", 0.0, 3);
+
+
+                   
+                    
+
+                    
+                    success = true;
 #if DEBUG
                     {
                         this.AssembleMatrixCallback(out BlockMsrMatrix checkSystem, out double[] checkAffine, out BlockMsrMatrix MaMa1, CurrentStateMapping.Fields.ToArray(), true, out var dummy2);

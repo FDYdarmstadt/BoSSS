@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -29,14 +28,7 @@ using MPI.Wrappers;
 using BoSSS.Foundation.Comm;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
-using BoSSS.Foundation.Quadrature.FluxQuadCommon;
-
-using static BoSSS.Foundation.DifferentialOperator;
-using BoSSS.Foundation.Quadrature.NonLin;
-using BoSSS.Foundation.Quadrature.Linear;
-using System.Transactions;
 using NUnit.Framework;
-using System.Reflection;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -283,6 +275,7 @@ namespace BoSSS.Foundation.XDG {
                                 var SpeciesBuilder = t4.Item2;
                                 var _mtx = t4.Item3;
                                 var vec = t4.Item4;
+                               
 
 
                                 if(SpeciesBuilder.ContainsKey(SpeciesId)) {
@@ -396,6 +389,8 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
+        //public static Action<double[], Basis[], string, SpeciesId> m_plotShit;
+
 
         /// <summary>
         /// Only for debugging;  can be used to turn surface integration in spatial operators off.
@@ -407,9 +402,6 @@ namespace BoSSS.Foundation.XDG {
         /// Explicit evaluation of (nonlinear and linear) XDG operators
         /// </summary>
         public class XEvaluatorNonlin : XEvaluatorBase, IEvaluatorNonLin {
-
-
-
             internal XEvaluatorNonlin(XDifferentialOperatorMk2 ownr,
                 LevelSetTracker lsTrk,
                 CoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
@@ -434,50 +426,6 @@ namespace BoSSS.Foundation.XDG {
                 private set;
             }
 
-            /*
-            static void Diagnosis(UnsetteledCoordinateMapping mapping, double[] resi, double[] resiB4, string suffix) {
-                var ResiFields = mapping.BasisS.Select(b => new XDGField(b as XDGBasis)).ToArray();
-                var ResiVector = new CoordinateVector(ResiFields);
-                var LsTrk = ResiFields[0].Basis.Tracker;
-                ResiVector.SetV(resi);
-                ResiVector.AccV(-1.0, resiB4);
-
-                int J = LsTrk.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
-                var cutBitMask = LsTrk.Regions.GetCutCellMask().GetBitMask();
-                int NoOfCutCells = LsTrk.Regions.GetCutCellMask().NoOfItemsLocally;
-
-                MultidimensionalArray Residuals = null;
-                int k = 0;
-                for(int j = 0; j < J; j++) {
-                    var resi0_j = ResiFields[0].Coordinates.GetRow(j);
-                    if(!cutBitMask[j]) {
-                        //if(resi0_j.L2Norm() > 1.0e-10)
-                        //    throw new Exception();
-                        continue;
-                    }
-                    if(j % 2 == 0)
-                        continue;
-
-                    if(Residuals == null) {
-                        Residuals = MultidimensionalArray.Create(NoOfCutCells / 2, resi0_j.Length);
-                    }
-
-                    Residuals.SetRow(k, resi0_j);
-                    k++;
-
-                    //Console.WriteLine($"j = {j} cut = {cutBitMask[j]}:" + resi0_j.L2Norm());
-                    //Console.WriteLine(resi0_j.ToConcatString("[", "; ", "]"));
-                }
-
-
-                Console.WriteLine("--------------------- " + suffix + " ------------  ");
-                Console.WriteLine("          " + Residuals.GetRow(1).L2Dist(Residuals.GetRow(2)) + "\t\t" + Residuals.GetRow(2).L2Dist(Residuals.GetRow(3)));
-
-
-
-
-                Residuals.SaveToTextFile("MomXcoord." + suffix + ".txt");
-            }*/
 
             public void Evaluate<Tout>(double alpha, double beta, Tout output, double[] outputBndEdge = null) where Tout : IList<double> {
                 if(base.MPITtransceive == true)
@@ -507,7 +455,7 @@ namespace BoSSS.Foundation.XDG {
                     // ---------------------
 
                     void BulkIntegrator(IEvaluatorNonLin eval, SpeciesId spId, SpeciesFrameVector<Tout> vec) {
-                        if(spId != default(SpeciesId))
+                        if(spId != default)
                             NotifySpecies((DifferentialOperator)(eval.Owner), this.m_lsTrk, spId);
 
                         if(trx != null) {
@@ -548,10 +496,48 @@ namespace BoSSS.Foundation.XDG {
                                 var SpeciesEval = t3.Item2;
                                 var vec = t3.Item3;
 
+                                //var vecB4 = vec.ToArray();
+
+
                                 if(SpeciesEval.ContainsKey(SpeciesId)) {
                                     var eval = SpeciesEval[SpeciesId];
                                     BulkIntegrator(eval, SpeciesId, vec);
                                 }
+
+                                //if(SpeciesEval.ContainsKey(SpeciesId)) {
+                                //    var eval = SpeciesEval[SpeciesId];
+                                //    var ThisInt = vec.ToArray();
+                                //    ThisInt.AccV(-1.0, vecB4);
+
+                                //    string[] names = ["vol", "ghost", "surfelm", "contact"];
+
+                                //    if(m_plotShit != null) {
+                                //        m_plotShit(ThisInt, eval.CodomainMapping.BasisS.ToArray(), $"bulkintegration{lsTrk.GetSpeciesName(SpeciesId)}-{names[t3.Item1-1]}-", SpeciesId);
+
+
+                                //    }
+                                //}
+
+
+                                //var vecRef = VectorIO.LoadFromTextFile($"C:\\tmp\\bulk_integration{lsTrk.GetSpeciesName(SpeciesId)}{t3.Item1}.txt");
+                                //double dist = vec.L2Dist(vecRef);
+                                //Console.WriteLine($" ###########  dist bulk {lsTrk.GetSpeciesName(SpeciesId)}{t3.Item1} " + dist);
+
+                                //if(SpeciesEval.ContainsKey(SpeciesId) && dist > 0.1) {
+                                //    var eval = SpeciesEval[SpeciesId];
+                                    
+                                    
+                                //    var distVec = new CoordinateVector(eval.CodomainMapping.BasisS.Select( b => new SinglePhaseField(b)).ToArray());
+                                //    distVec.SetV(vec);
+                                //    distVec.AccV(-1.0, vecRef);
+
+                                //    for(int j = 0; j < distVec.Mapping.GridDat.iLogicalCells.NoOfLocalUpdatedCells; j++) {
+                                //        double cellNorm = distVec.Fields[0].Coordinates.GetRow(j).L2Norm();
+                                //        if(cellNorm > 0.001) {
+                                //            Console.WriteLine($"           cell {j}: {cellNorm}");
+                                //        }
+                                //    }
+                                //}
                             }
                         }
                     }
@@ -560,7 +546,7 @@ namespace BoSSS.Foundation.XDG {
                         using(new BlockTrace("bulk_integration_tracedg", tr)) {
                             var vec = new SpeciesFrameVector<Tout>(output, this.TraceDgCodomFrame);
 
-                            BulkIntegrator(TraceBulkEval, default(SpeciesId), vec);
+                            BulkIntegrator(TraceBulkEval, default, vec);
                         }
                     }
 
