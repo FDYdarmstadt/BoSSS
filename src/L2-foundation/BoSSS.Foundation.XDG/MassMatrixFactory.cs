@@ -166,7 +166,7 @@ namespace BoSSS.Foundation.XDG {
                 var _basisS = mapping.BasisS.ToArray();
                 var ctx = _basisS[0].GridDat;
                 int J = ctx.iLogicalCells.NoOfLocalUpdatedCells;
-                if(!object.ReferenceEquals(this.XDGSpaceMetrics.Tracker.GridDat, ctx))
+                if(!object.ReferenceEquals(this.XDGSpaceMetrics.GridDat, ctx))
                     throw new ArgumentException("grid object mismatch");
                 if (!M.RowPartitioning.EqualsPartition(mapping))
                     throw new ArgumentException("Mismatch in row mapping.");

@@ -1,4 +1,5 @@
 ﻿using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.Quadrature;
 using ilPSP;
@@ -80,10 +81,10 @@ namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
         /// <summary>
         /// on which edges this class can actually provide working quadrature rules?
         /// </summary>
-        static public EdgeMask ComputeMask(LevelSetTracker tracker, int iLevelSet, int iKrefEdge) {
-            var CoincidFaces = tracker.Regions.LevSetCoincidingFaces;
-            var CoincidCoFcs = tracker.Regions.LevSetCoincidingCoFaces;
-            IGridData gdat = tracker.GridDat;
+        static public EdgeMask ComputeMask(LevelSetTracker.LevelSetRegions regions, int iLevelSet, int iKrefEdge) {
+            var CoincidFaces = regions.LevSetCoincidingFaces;
+            var CoincidCoFcs = regions.LevSetCoincidingCoFaces;
+            IGridData gdat = regions.GridDat;
 
             if(CoincidFaces == null && CoincidCoFcs == null) {
                 return EdgeMask.GetEmptyMask(gdat, MaskType.Geometrical);
@@ -161,6 +162,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
         /// </summary>
         internal (int iLevSet, int iCoFace)[][] LevSetCoincidingCoFaces;
 
+        
 
         public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int order) {
             if(!(mask is EdgeMask edgeMask)) {
@@ -196,6 +198,16 @@ namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
                 if(gdat.iGeomEdges.GetRefElementIndex(iEdge) != iKref)
                     throw new ArgumentException("mask violates the element");
 
+                if(!gdat.iGeomEdges.IsEdgeConformal(iEdge, 0)) {
+                    // in-cell is non-conformal => hope for the out-cell
+
+                    int jCell2 = Edge2Cell[iEdge, 1];
+                    if(jCell2 < 0 || jCell2 >= J)
+                        throw new NotSupportedException("unable to obtain quadrature rule, since the inner ");
+                }
+
+                    
+                    
                 bool bFound = false;
                 for(int inOt = 0; inOt < 2; inOt++) { // loop over both cells bound to edge `iEdge`
                     if(bFound)
@@ -208,13 +220,27 @@ namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
                     if(!gdat.iGeomEdges.IsEdgeConformal(iEdge, inOt))
                         continue;
 
+                    
+
+
                     int iCellFace = Edge2Face[iEdge, inOt];
 
                     if(this.LevSetCoincidingFaces != null && this.LevSetCoincidingFaces[jCell] != null) {
                         if(this.LevSetCoincidingFaces[jCell].Any(tt => (tt.iLevSet == this.m_iLevSet && tt.iFace == iCellFace))) {
                             // ++++++++++++++++++++++++++++++++++++++++++++++++++++
                             // entire face coincides with the level-set
-                            // in this case, we don't want any co-co-dim quadrature 
+                            // in this case, we don't want any co-co-dim quadrature
+                            // 
+                            //           coinciding face
+                            //    =====*=================*===== Level-Set
+                            //         |                 |
+                            //         |                 |
+                            //         |    Cell         |
+                            //         |                 |
+                            //         -------------------
+                            //
+                            //    the edge elements (*) should be assigned to the 
+                            //    two VERTICAL edges
                             // ++++++++++++++++++++++++++++++++++++++++++++++++++++
                             bFound = true;
                             compRule[cnt] = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(iEdge), emptyFaceRule);
@@ -246,6 +272,25 @@ namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
                             // we have a edge that is NOT coinciding with the level-set,
                             // but an entire co-edge coincides with the level-set.
                             // Now, the question is, whether the quad-rule should be full or empty 
+                            //
+                            //       
+                            //
+                            //                   Level-Set       
+                            //       Species B   /               
+                            //           -------*   Species A             
+                            //           |     /|                
+                            //           |    / |     
+                            //           |   /  |     Whether an edge is assigned an empty rule or non-empty rule is determined on basis of the species:           
+                            //           |  /   |      Note that this factory is always created for some particular species;
+                            //           | /    |      If the edge is within the domain of the respective species, the quadrature rule will be non-empty.
+                            //   cell 2  |/ cl 3|      If the edge is on the opposite side, an empty quadrature rule will be assigned.
+                            //      ---- *------|                
+                            //   cell 1 /|cell 4|      This means: for species A, the coupling is: cell 1 <-> cell 4 <-> cell 3
+                            //         / |      |                  for species A, the coupling is: cell 1 <-> cell 2 <-> cell 3
+                            //        /  |-------
+                            //
+                            //   
+                            //
 
                             var KrefVol = gdat.iGeomCells.GetRefElement(jCell);
                             Debug.Assert(KrefVol.FaceRefElement == this.RefElement);
@@ -291,26 +336,16 @@ namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
                                 bFound = true;
 
                                 int iFaceOfEdge = KrefVol.CoFaceToFaceFaceIndex[iCoFace, inOtCoface];
-                                //#if DEBUG
-                                //                                Vector A = this.RefElement.FaceCenters.GetRowPt(iFaceOfEdge);
-
-                                //#endif
-
-
-
-                                //var __Trafo = this.RefElement.GetFaceTrafo(iFace);
+  
                                 double scale = this.RefElement.FaceTrafoGramianSqrt[iFaceOfEdge];
-                                //var fullRule = new NodeSet(this.RefElement, __Trafo.Transform(fulCoFaceRule.Nodes), false);
-                                //fullRule.LockForever();
 
                                 var volNodes = KrefVol.GetCoFaceTrafo(iCoFace).Transform(fulCoFaceRule.Nodes);
                                 var fullRule2 = new NodeSet(this.RefElement, Edge2CellTrafo.TransformInverse(volNodes), false);
                                 fullRule2.LockForever();
 
-                                // if the `volNodes` are really in the plane defined by edge `iEdge`, the `Edge2CellTrafo` (which reduces the spatial dimension by 1) is still an identity
+                                // if the `volNodes` are really in the plane defined by edge `iEdge`,
+                                // the `Edge2CellTrafo` (which reduces the spatial dimension by 1) is still an identity
                                 Debug.Assert(volNodes.L2Dist(Edge2CellTrafo.Transform(fullRule2)) < 1.0e-8, "Nodes probably not on the right edge.");
-
-
 
                                 var __weights = fulCoFaceRule.Weights.CloneAs();
                                 __weights.Scale(scale);

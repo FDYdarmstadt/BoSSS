@@ -24,9 +24,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
         /// <summary>
         /// Returns all cells which have faces that conincide with the level-set
         /// </summary>
-        static public CellMask ComputeCellMask(LevelSetTracker tracker, int iLevelSet, int iKref) {
-            var CoincidFaces = tracker.Regions.LevSetCoincidingFaces;
-            var gdat = tracker.GridDat;
+        static public CellMask ComputeCellMask(LevelSetTracker.LevelSetRegions Regions, int iLevelSet, int iKref) {
+            var CoincidFaces = Regions.LevSetCoincidingFaces;
+            var gdat = Regions.GridDat;
 
             if(CoincidFaces == null) {
                 return CellMask.GetEmptyMask(gdat, MaskType.Geometrical);
@@ -134,10 +134,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
        
 
         /// <summary>
-        /// **This is a special case: level-set coincides with a cell-face; 
-        /// cell is either full or empty:**
-        /// 
-        /// Call this function when the <see cref="IsSpecialCell"/> returns true.
+        /// **This is a special case: level-set coincides with a cell-face; cell is either full or empty:**
         /// 
         /// Note:
         /// Only one of the two cells on the special edge should have a surface rule, the other cell should be empty

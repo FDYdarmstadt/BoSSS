@@ -895,5 +895,20 @@ namespace ilPSP {
                 return stw.ToString();
             }
         }
+
+        /// <summary>
+        /// like the ordinary select, but also provides an index
+        /// </summary>
+        public static IEnumerable<TResult> Select2<TSource, TResult>(this IEnumerable<TSource> enu, Func<TSource, int, TResult> selector_with_index) {
+            var res = new List<TResult>();
+            int idx = 0;
+            foreach(TSource obj in enu) {
+                TResult res_idx = selector_with_index(obj, idx);
+                res.Add(res_idx);
+                idx++;
+            }
+            return res.ToArray();
+        }
+
     }
 }
