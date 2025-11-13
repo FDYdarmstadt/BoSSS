@@ -73,8 +73,8 @@ namespace HangingNodesTests {
         /// </summary>
         [Test]
         public static void Test1Phase([Values(CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod ccqm) {
-            double[] sizes = new double[] { 1e0, 1e-3 };
-            byte[] setup = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+            double[] sizes = [1e0, 1e-3];
+            byte[] setup = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
             RunTest(sizes, setup, 1, ccqm);
         }
 
@@ -83,8 +83,8 @@ namespace HangingNodesTests {
         /// </summary>
         [Test]
         public static void Test2Phase([Values(CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod ccqm) {
-            double[] sizes = new double[] { 1e0, 1e-3 };
-            byte[] setup = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+            double[] sizes = [1e0, 1e-3];
+            byte[] setup = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
             RunTest(sizes, setup, 2, ccqm);
         }
 
@@ -93,8 +93,8 @@ namespace HangingNodesTests {
         /// </summary>
         [Test]
         public static void Test3Phase([Values(CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod ccqm) {
-            double[] sizes = new double[] { 1e0, 1e-3 };
-            byte[] setup = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+            double[] sizes = [1e0, 1e-3];
+            byte[] setup = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
             RunTest(sizes, setup, 3, ccqm);
         }
 
@@ -146,8 +146,8 @@ namespace HangingNodesTests {
 
 
         private static void RunTest(double[] sizes, byte[] setup, int phase, CutCellQuadratureMethod ccqm) {
-            csMPI.Raw.Comm_Size(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out int procs);
-            csMPI.Raw.Comm_Rank(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out int rank);
+            int procs = csMPI.Size_World;
+            int rank = csMPI.Rank_World;
 
             List<double> TemperatureRes = new List<double>();
             List<double> MomentumRes = new List<double>();
@@ -183,11 +183,7 @@ namespace HangingNodesTests {
                             MomentumRes.Add(-1.0);
                         }
                     }
-
-                    break;
                 }
-
-                break;
             }
 
            
