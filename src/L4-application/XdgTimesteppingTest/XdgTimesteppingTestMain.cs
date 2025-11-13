@@ -197,13 +197,6 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
                             this.Phi.ProjectField(X => this.Control.Phi(X, Time));
 
-                            // HMF hacks
-                            if ((this.Control.CircleRadius != null) != (this.Control.CutCellQuadratureType == CutCellQuadratureMethod.ExactCircle))
-                                throw new ApplicationException("Illegal HMF configuration.");
-                            if (this.Control.CircleRadius != null) {
-                                ExactCircleLevelSetIntegration.RADIUS = new double[] { this.Control.CircleRadius(Time) };
-                            }
-
                             if (CallCount == 0) {
                                 this.LsTrk.UpdateTracker(Time);
                             } else {
@@ -641,12 +634,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                     m_owner.LsTrk.UpdateTracker(phystime + dt, incremental: true);
                     m_owner.UpdateMarkerFields();
 
-                    // HMF hacks
-                    if((m_owner.Control.CircleRadius != null) != (m_owner.Control.CutCellQuadratureType == CutCellQuadratureMethod.ExactCircle))
-                        throw new ApplicationException("Illegal HMF configuration.");
-                    if(m_owner.Control.CircleRadius != null) {
-                        ExactCircleLevelSetIntegration.RADIUS = new double[] { m_owner.Control.CircleRadius(phystime + dt) };
-                    }
+                    
                 } else {
                     throw new NotImplementedException();
                 }
@@ -687,11 +675,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         (double totErr, double phaseAerr, double phaseBerr, double JmpL2Err) ComputeL2Error(double PhysTime, bool OverWriteIfExistent = false) {
             Console.WriteLine("Phystime = " + PhysTime);
 
-            if ((this.Control.CircleRadius != null) != (this.Control.CutCellQuadratureType == CutCellQuadratureMethod.ExactCircle))
-                throw new ApplicationException("Illegal HMF configuration.");
-            if (this.Control.CircleRadius != null) {
-                ExactCircleLevelSetIntegration.RADIUS = new double[] { this.Control.CircleRadius(PhysTime) };
-            }
+            
 
             int order = Math.Max(this.u.Basis.Degree * 3, 3);
             XQuadSchemeHelper schH = LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), order).XQuadSchemeHelper;
