@@ -1542,55 +1542,11 @@ namespace BoSSS.Solution.XdgTimestepping {
                     //DifferentialOperator.onlyfordebugging_DoEdge = true;
 
 
-                    //var fieldsToPlot = new List<DGField>();
-                    //var vecsToAgglom = new List<(SpeciesId spc, CoordinateVector vec)>();
-                    //XDifferentialOperatorMk2.m_plotShit = delegate (double[] vec, Basis[] bs, string name, SpeciesId spid) {
-                    //    SinglePhaseField[] flds = bs.Select2((b, idx) => new SinglePhaseField(b, name + idx)).ToArray();
-                    //    var coord_vec = new CoordinateVector(flds);
-                    //    coord_vec.SetV(vec);
-                    //    fieldsToPlot.AddRange(flds);
-
-                    //    SinglePhaseField[] flds2 = bs.Select2((b, idx) => new SinglePhaseField(b, name + idx + "-agg")).ToArray();
-                    //    var coord_vec2 = new CoordinateVector(flds2);
-                    //    coord_vec2.SetV(vec);
-                    //    fieldsToPlot.AddRange(flds2);
-                    //    vecsToAgglom.Add((spid, coord_vec2));
-
-                    //};
-
                     this.AssembleMatrixCallback(out BlockMsrMatrix System, out Affine, out BlockMsrMatrix MaMa, CurrentStateMapping.Fields.ToArray(), false, out var dummy);
                     Debug.Assert(System == null);
 
-                    //{
-                    //    var AffB4Agg = Affine.CloneAs();
-                    //    m_CurrentAgglomeration.ManipulateMatrixAndRHS(default(BlockMsrMatrix), Affine, base.Residuals.Mapping, null);
-                    //    double diff = AffB4Agg.L2Distance(Affine);
-                    //    m_CurrentAgglomeration.Extrapolate(Affine, base.Residuals.Mapping);
-
-                    //    foreach(var t in vecsToAgglom) {
-                    //        m_CurrentAgglomeration.GetAgglomerator(t.spc).ManipulateRHS(t.vec, t.vec.Mapping);
-                    //    }
-                    //}
-
-                    //base.Residuals.Clear();
-                    //base.Residuals.SetV(Affine, -1.0);
-
-                    //{
-                    //    foreach(var spc in this.m_LsTrk.SpeciesNames) {
-                    //        var spcResiduals = base.Residuals.Fields.Select(f => (f as XDGField).GetSpeciesShadowField(spc)).ToArray();
-
-                    //        fieldsToPlot.AddRange(spcResiduals);
-                    //    }
-
-                    //    fieldsToPlot.AddRange(base.Residuals.Fields);
-                    //}
-
-
-                    //Tecplot.Tecplot.PlotFields(fieldsToPlot, "allResis", 0.0, 3);
-
-
-                   
-                    
+                    base.Residuals.Clear();
+                    base.Residuals.SetV(Affine, -1.0);
 
                     
                     success = true;
@@ -1608,11 +1564,6 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                         double distL2 = GenericBlas.L2DistPow2(checkResidual, base.Residuals).MPISum().Sqrt();
                         double refL2 = (new double[] { GenericBlas.L2NormPow2(m_Stack_u[0]), GenericBlas.L2NormPow2(checkResidual), GenericBlas.L2NormPow2(base.Residuals) }).MPISum().Max().Sqrt();
-
-                        //if (distL2 >= refL2 * 1.0e-5) {
-                        //    double __distL2 = GenericBlas.L2DistPow2(checkAffine, base.Residuals).MPISum().Sqrt();
-                        //}
-                        //Tecplot.Tecplot.PlotFields(base.Residuals.Fields.Cat(m_Stack_u[0].Fields), "resi", 0.0, 2);
 
                         Assert.LessOrEqual(distL2, refL2 * 1.0e-5, "Significant difference between linearized and non-linear evaluation.");
 
@@ -1636,44 +1587,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         m_ResLogger.CustomValue(0.0, "LevelSet");
                     }
 
-                    /*
-                    {
-                        var Fields = CurrentStateMapping.Fields.ToArray();
-
-                        int J = this.m_LsTrk.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
-                        var cutBitMask = this.m_LsTrk.Regions.GetCutCellMask().GetBitMask();
-                        int NoOfCutCells = this.m_LsTrk.Regions.GetCutCellMask().NoOfItemsLocally;
-                        MultidimensionalArray Residuals = null, Coordinates = null;
-                        int k  = 0;
-                        for(int j = 0; j < J; j++) {
-                            var resi0_j = ResidualFields[0].Coordinates.GetRow(j);
-                            var coord_j = Fields[0].Coordinates.GetRow(j);
-                            if(!cutBitMask[j]) {
-                                if(resi0_j.L2Norm() > 1.0e-10)
-                                    throw new Exception();
-                                continue;
-                            }
-                            if(j%2 == 0)
-                                continue;
-
-                            if(Residuals == null) {
-                                Residuals = MultidimensionalArray.Create(NoOfCutCells / 2, resi0_j.Length);
-                                Coordinates = MultidimensionalArray.Create(NoOfCutCells / 2, resi0_j.Length);
-                            }
-
-                            Residuals.SetRow(k, resi0_j);
-                            Coordinates.SetRow(k, coord_j);
-                            k++;
-
-                            Console.WriteLine($"j = {j} cut = {cutBitMask[j]}:" + resi0_j.L2Norm());
-                            Console.WriteLine(coord_j.ToConcatString("[", "; ", "]"));
-                            Console.WriteLine(resi0_j.ToConcatString("[", "; ", "]"));
-                        }
-
-                        Residuals.SaveToTextFile("MomXcoord.txt");
-                        Coordinates.SaveToTextFile("VelXcoord.txt");
-                    }
-                    */
+                    
 
 
 
@@ -1720,9 +1634,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                         throw new ApplicationException("Expecting exactly one call to 'UpdateTracker(...)' in 'UpdateLevelset(...)'.");
 
                     // in the case of splitting, the fields must be extrapolated 
-                    //var newCCM = this.UpdateCutCellMetrics();
-                    //var SplittingAgg = new MultiphaseCellAgglomerator(newCCM, 0.0, true, false, true, new CutCellMetrics[] { oldCCM }, new double[] { 0.0 });
-                    //SplittingAgg.Extrapolate(this.CurrentStateMapping);
                     Debug.Assert(m_LsTrk.HistoryLength >= 1);
                     var SplittingAgg = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder,
                         __AgglomerationTreshold: 0.0, AgglomerateNewborn: true, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true,
@@ -1736,13 +1647,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // ======
                 // return 
                 // ======
-                //string path = Directory.GetCurrentDirectory();
-                //var dinfo = Directory.CreateDirectory(Path.Combine(path, "plots"));
-                //if(!dinfo.Exists)
-                //    dinfo.Create();
-                //ExecuteWaterfallAnalysis(dinfo.FullName);
-                //CreateFAMatrices(dinfo.FullName);
-
 
                 m_CurrentPhystime = phystime + dt;
 

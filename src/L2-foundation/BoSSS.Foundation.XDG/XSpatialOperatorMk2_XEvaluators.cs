@@ -389,9 +389,6 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        //public static Action<double[], Basis[], string, SpeciesId> m_plotShit;
-
-
         /// <summary>
         /// Only for debugging;  can be used to turn surface integration in spatial operators off.
         /// </summary>
@@ -496,48 +493,11 @@ namespace BoSSS.Foundation.XDG {
                                 var SpeciesEval = t3.Item2;
                                 var vec = t3.Item3;
 
-                                //var vecB4 = vec.ToArray();
-
 
                                 if(SpeciesEval.ContainsKey(SpeciesId)) {
                                     var eval = SpeciesEval[SpeciesId];
                                     BulkIntegrator(eval, SpeciesId, vec);
                                 }
-
-                                //if(SpeciesEval.ContainsKey(SpeciesId)) {
-                                //    var eval = SpeciesEval[SpeciesId];
-                                //    var ThisInt = vec.ToArray();
-                                //    ThisInt.AccV(-1.0, vecB4);
-
-                                //    string[] names = ["vol", "ghost", "surfelm", "contact"];
-
-                                //    if(m_plotShit != null) {
-                                //        m_plotShit(ThisInt, eval.CodomainMapping.BasisS.ToArray(), $"bulkintegration{lsTrk.GetSpeciesName(SpeciesId)}-{names[t3.Item1-1]}-", SpeciesId);
-
-
-                                //    }
-                                //}
-
-
-                                //var vecRef = VectorIO.LoadFromTextFile($"C:\\tmp\\bulk_integration{lsTrk.GetSpeciesName(SpeciesId)}{t3.Item1}.txt");
-                                //double dist = vec.L2Dist(vecRef);
-                                //Console.WriteLine($" ###########  dist bulk {lsTrk.GetSpeciesName(SpeciesId)}{t3.Item1} " + dist);
-
-                                //if(SpeciesEval.ContainsKey(SpeciesId) && dist > 0.1) {
-                                //    var eval = SpeciesEval[SpeciesId];
-                                    
-                                    
-                                //    var distVec = new CoordinateVector(eval.CodomainMapping.BasisS.Select( b => new SinglePhaseField(b)).ToArray());
-                                //    distVec.SetV(vec);
-                                //    distVec.AccV(-1.0, vecRef);
-
-                                //    for(int j = 0; j < distVec.Mapping.GridDat.iLogicalCells.NoOfLocalUpdatedCells; j++) {
-                                //        double cellNorm = distVec.Fields[0].Coordinates.GetRow(j).L2Norm();
-                                //        if(cellNorm > 0.001) {
-                                //            Console.WriteLine($"           cell {j}: {cellNorm}");
-                                //        }
-                                //    }
-                                //}
                             }
                         }
                     }

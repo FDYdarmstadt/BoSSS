@@ -121,6 +121,13 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
 		abstract class AlgoimDoubleCutBaseFactory<TQuadRule> : IQuadRuleFactory<TQuadRule> where TQuadRule : QuadRule {
             internal AlgoimDoubleCutFactories m_Owner;
 
+            /// <summary>
+            /// cache for computed rules
+            /// - key: quadrature order
+            /// - values: quadrature rules
+            ///   - 1st index: species index defined by <see cref="GetSpecies"/>
+            ///   - 2nd index: enumeration over the items of <see cref="allDoubleCutCells"/>
+            /// </summary>
             internal Dictionary<int, ChunkRulePair<TQuadRule>[][]> m_Rules;
 
             internal JumpTypes[] m_Jumps;
@@ -159,16 +166,21 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
             public IEnumerable<IChunkRulePair<TQuadRule>> GetQuadRuleSet(ExecutionMask mask, int RequestedOrder) {
                 if (!(mask is CellMask))
                     throw new ArgumentException("Expecting a cell mask.");
+                if(mask.MaskType != MaskType.Geometrical)
+                    throw new ArgumentException("expecting a geometrical mask.");
 
-				if (!m_Rules.ContainsKey(RequestedOrder)) {
-						CalculateQuadRuleSetSingle(RequestedOrder);
-				}
+                if(!m_Rules.ContainsKey(RequestedOrder)) {
+                    CalculateQuadRuleSetSingle(RequestedOrder);
+                }
 
 				//which part of the quadRule (a quadRule for a cell is returned for all species/permutation. This is to indicate which one we need)
 				int speciesIndex = GetSpecies(); 
 
 				// check if all the mask or a submask is requested
 				if (mask.NoOfItemsLocally == allDoubleCutCells.NoOfItemsLocally) {
+                    if(mask.Except(allDoubleCutCells).NoOfItemsLocally > 0)
+                        throw new ArgumentException("requested quadrature rules outside of supported range;");
+
 					return m_Rules[RequestedOrder][speciesIndex];
 				} else {
 					var Rule = m_Rules[RequestedOrder][speciesIndex];
@@ -195,20 +207,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
 					return Ret;
 				}
             }
-
-            /*
-			/// <summary>
-			/// Metrics for surface rules (since surface and volume rules are handled in the same loop we need to scale surface rules)
-			/// </summary>
-			/// <param name="quadRule"></param>
-			/// <param name="jCell"></param>
-			internal void ApplyMetrics(TQuadRule quadRule, int jCell) {
-				var metrics = lsData[0].GetLevelSetNormalReferenceToPhysicalMetrics(quadRule.Nodes, jCell, 1);
-				for (int k = 0; k < quadRule.Weights.Length; k++) {
-					quadRule.Weights[k] /= metrics[0, k];
-				}
-			}
-            */
 
             /// <summary>
             /// Get array index of the species requested for Algoim data. 
@@ -285,21 +283,21 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
 				return (n, sizes, x, y);
 			}
 
-			internal void CalculateQuadRuleSetSingle(int RequestedOrder) {
-				List<ChunkRulePair<TQuadRule>>[] ret = new List<ChunkRulePair<TQuadRule>>[4];
+            internal void CalculateQuadRuleSetSingle(int RequestedOrder) {
+                List<ChunkRulePair<TQuadRule>>[] ret = new List<ChunkRulePair<TQuadRule>>[4];
 
-				foreach (int cell in allDoubleCutCells.ItemEnum) {
+                foreach(int cell in allDoubleCutCells.ItemEnum) {
                     var quadRules = GetNodesAndWeights(cell, RequestedOrder);
-                    for(int q=0; q<quadRules.Length; q++) { 
-						if (ret[q] == null) 
-							ret[q] = new List<ChunkRulePair<TQuadRule>>();
+                    for(int q = 0; q < quadRules.Length; q++) {
+                        if(ret[q] == null)
+                            ret[q] = new List<ChunkRulePair<TQuadRule>>();
                         quadRules[q].OrderOfPrecision = RequestedOrder;
-					    ret[q].Add(new ChunkRulePair<TQuadRule>(Chunk.GetSingleElementChunk(cell), quadRules[q]));
-					}
-				}
-                var retArray = ret.Select(list => list.ToArray()).ToArray();
-				m_Rules.Add(RequestedOrder, retArray);
-			}
+                        ret[q].Add(new ChunkRulePair<TQuadRule>(Chunk.GetSingleElementChunk(cell), quadRules[q]));
+                    }
+                }
+                var retArray = ret.Select(list => list?.ToArray() ?? new ChunkRulePair<TQuadRule>[0]).ToArray();
+                m_Rules.Add(RequestedOrder, retArray);
+            }
 
 			/// <summary>
 			/// Get the quadrature nodes and weights for a cell. (either surface or volume, declared at the instantiation of the factory)
