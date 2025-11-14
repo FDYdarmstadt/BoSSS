@@ -2428,6 +2428,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // Check termination
                     var termState = TerminationCriterion(iIter, iter0_resNorm, resNorm);
                     if(!termState.bNotTerminate) {
+                        iIter--; // to have the correct number of iterations
                         Converged = termState.bSuccess;
                         break;
                     }
