@@ -140,10 +140,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
         }
 
         public IScalarFunction MapFromDomainToCodomain(LevelSetData levelSet, int jEdge) {
-            int jCell = grid.Edges.CellIndices[jEdge, 0];
+            IVectorFunction T = FromCodomainToEmbeddedCodomain(jEdge, out int jCell);
             IScalarFunction globalLevelSet = new GlobalCellFunction(levelSet, jCell);
-            //IScalarFunction globalLevelSet = new GlobalCellFunctionOptimized(levelSet, jCell);
-            IVectorFunction T = FromCodomainToEmbeddedCodomain(jEdge);
             IScalarFunction alpha = new ScalarComposition(globalLevelSet, T);
             if(levelSet.LevelSet is LevelSet dgLevelSet) {
                 int degree = dgLevelSet.Basis.Degree;
@@ -154,9 +152,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             }
         }
 
-        IVectorFunction FromCodomainToEmbeddedCodomain(int jEdge) {
+        IVectorFunction FromCodomainToEmbeddedCodomain(int jEdge, out int jCell) {
             int inot = GetInOrOutCell(jEdge);
-            int jCell = grid.Edges.CellIndices[jEdge, inot];
+            jCell = grid.Edges.CellIndices[jEdge, inot];
             byte iFace = grid.Edges.FaceIndices[jEdge, inot];
             NodeSet faceCenter = CellDomain.GetFaceCenter(iFace);
             int emptyDim = EmptyDim(faceCenter);
