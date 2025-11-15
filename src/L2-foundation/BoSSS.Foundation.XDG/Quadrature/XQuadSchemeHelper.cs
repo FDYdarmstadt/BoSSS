@@ -29,6 +29,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using static BoSSS.Foundation.XDG.LevelSetTracker;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -115,7 +116,7 @@ namespace BoSSS.Foundation.XDG {
             // (this becomes even more unpredictable due to the on-demand-pattern in which most members of the Subgrid-class are implemented);
 
             //
-            foreach (var spId in this.SpeciesList) {
+            foreach(var spId in this.SpeciesList) {
                 SubGrid spSgrd = this.XDGSpaceMetrics.LevelSetRegions.GetSpeciesSubGrid(spId);
 
                 this.m_SpeciesSubgrid_InnerAndDomainEdges.Add(
@@ -130,21 +131,37 @@ namespace BoSSS.Foundation.XDG {
             int NoOfLs = this.XDGSpaceMetrics.NoOfLevelSets;
 
             this.m_CutEdges = new EdgeMask[KrefsEdges.Length, NoOfLs];
-            for (int iLevSet = 0; iLevSet < NoOfLs; iLevSet++) {
+            for(int iLevSet = 0; iLevSet < NoOfLs; iLevSet++) {
                 var cutCellSubGrid = this.XDGSpaceMetrics.LevelSetRegions.GetCutCellSubgrid4LevSet(iLevSet);
                 var innerCut = cutCellSubGrid.InnerEdgesMask;
                 var boundaryCut = cutCellSubGrid.AllEdgesMask.Intersect(gdat.GetBoundaryEdgeMask());
 
                 EdgeMask cutEdges = innerCut.Union(boundaryCut).ToGeometicalMask();
 
-                for (int iKref = 0; iKref < KrefsEdges.Length; iKref++) {
+                for(int iKref = 0; iKref < KrefsEdges.Length; iKref++) {
                     cutEdges = cutEdges.Intersect(gdat.GetEdges4RefElement(iKref));
 
                     Debug.Assert(cutEdges.MaskType == MaskType.Geometrical);
                     this.m_CutEdges[iKref, iLevSet] = cutEdges;
                 }
             }
+
+            // intersection of species boundary and level-set
+            // ==============================================
+            CellBoundaryLayer_Bitmask = new Dictionary<(SpeciesId sp, int iLevSet), BitArray>();
+            foreach(var spId in this.SpeciesList) {
+                for(int iLevSet = 0; iLevSet < NoOfLs; iLevSet++) {
+                    CellMask cellBoundaryLayer = this.XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask(spId).Intersect(this.XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet));
+                    CellBoundaryLayer_Bitmask.Add((spId, iLevSet), cellBoundaryLayer.GetBitMaskWithExternal());
+                }
+            }
         }
+
+        /// <summary>
+        /// intersection of species boundary and level-set;
+        /// To include also external/ghost cells, this must be initialized in the constructor
+        /// </summary>
+        Dictionary<(SpeciesId sp, int iLevSet), BitArray> CellBoundaryLayer_Bitmask;
 
         /// <summary>
         /// All edges which are cut by a level-set.
@@ -186,41 +203,54 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         private Dictionary<SpeciesId, EdgeMask> m_SpeciesSubgrid_InnerAndDomainEdges = new Dictionary<SpeciesId, EdgeMask>();
 
-        EdgeMask InnerAndDomainBoundary(CellMask cells) {
+        EdgeMask InnerAndDomainBoundary(CellMask cellRestriction, SpeciesId sp, int iLevSet) {
             //var subGrd = new SubGrid(cells);
             //var innerEdges = subGrd.InnerEdgesMask;
             //var bndy = cells.GridData.GetBoundaryEdgeMask().Intersect(subGrd.BoundaryEdgesMask);
             //return bndy.Union(innerEdges);
 
-            if(cells.MaskType != MaskType.Logical)
-                throw new ArgumentException("expecting a logical cell mask", nameof(cells));
+            if(cellRestriction != null && cellRestriction.MaskType != MaskType.Logical)
+                throw new ArgumentException("expecting a logical cell mask", nameof(cellRestriction));
             
+            var bCellRstm = cellRestriction?.GetBitMask();
+            var bCellMask = this.CellBoundaryLayer_Bitmask[(sp, iLevSet)];
             
-
-            var bCells = cells.GetBitMask();
-            
-            int[,] E2C = cells.GridData.iLogicalEdges.CellIndices;
-            var bCellMask = cells.GetBitMask();
-            int NoOfEdges = cells.GridData.iLogicalEdges.Count;
+            int[,] E2C = this.XDGSpaceMetrics.GridDat.iLogicalEdges.CellIndices;
+            int NoOfEdges = this.XDGSpaceMetrics.GridDat.iLogicalEdges.Count;
             var bEdgeMask = new BitArray(NoOfEdges);
+            int Jup = this.XDGSpaceMetrics.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
 
 
 
             for(int iEdge = 0; iEdge < NoOfEdges; iEdge++) {
-                if(E2C[iEdge, 1] >= 0) {
+                int jCell0 = E2C[iEdge, 0];
+                int jCell1 = E2C[iEdge, 1];
+
+                if(bCellRstm != null) {
+                    if(jCell1 >= 0)
+                        if(bCellRstm[jCell0] == false && bCellRstm[jCell1] == false)
+                            continue;
+
+                    if(jCell1 < 0 || jCell1 >= Jup)
+                        if(bCellRstm[jCell0] == false)
+                            continue;
+                }
+
+
+                if(jCell1 >= 0) {
                     // inner egde: both cells must be part of the bit-mask
-                    if(bCellMask[E2C[iEdge, 0]] && bCellMask[E2C[iEdge, 1]])
+                    if(bCellMask[jCell0] && bCellMask[jCell1])
                         bEdgeMask[iEdge] = true;
                 } else {
                     // boundary edge: only in-cell must be part of the mask
-                    if(bCellMask[E2C[iEdge, 0]])
+                    if(bCellMask[jCell0])
                         bEdgeMask[iEdge] = true;
                 }
 
 
             }
 
-            return new EdgeMask(cells.GridData, bEdgeMask, mt: MaskType.Logical);
+            return new EdgeMask(this.XDGSpaceMetrics.GridDat, bEdgeMask, mt: MaskType.Logical);
         }
 
 
@@ -232,7 +262,7 @@ namespace BoSSS.Foundation.XDG {
         ///    \int_{\partial K_j \cap \mathfrak{I}_i \cap \partial \mathfrak{s} } \ldots \mathrm{dl} ,
         /// \]
         /// where $ i $ is the level set index <paramref name="iLevSet"/>
-        /// and $ \partial \mathfrak{s} $ is the bounary of species <paramref name="sp"/>.
+        /// and $ \partial \mathfrak{s} $ is the boundary of species <paramref name="sp"/>.
         /// 
         /// These rules are used, e.g., by the (edge parts of) surface element operator <see cref="XDifferentialOperatorMk2.SurfaceElementOperator_Ls0"/>
         /// </summary>
@@ -246,11 +276,11 @@ namespace BoSSS.Foundation.XDG {
 
             EdgeMask allRelevantEdges;
             {
-                CellMask cellBoundaryLayer = levSetRegions.GetSpeciesMask(sp).Intersect(levSetRegions.GetCutCellMask4LevSet(iLevSet));
-                if(cellRestriction != null)
-                    cellBoundaryLayer = cellBoundaryLayer.Intersect(cellRestriction);
+                //CellMask cellBoundaryLayer = levSetRegions.GetSpeciesMask(sp).Intersect(levSetRegions.GetCutCellMask4LevSet(iLevSet));
+                //if(cellRestriction != null)
+                //    cellBoundaryLayer = cellBoundaryLayer.Intersect(cellRestriction);
 
-                allRelevantEdges = InnerAndDomainBoundary(cellBoundaryLayer);
+                allRelevantEdges = InnerAndDomainBoundary(cellRestriction, sp, iLevSet);
             }
             allRelevantEdges = allRelevantEdges.ToGeometicalMask();
 
