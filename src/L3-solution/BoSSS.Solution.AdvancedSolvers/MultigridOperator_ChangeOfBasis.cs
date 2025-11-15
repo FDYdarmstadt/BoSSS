@@ -415,7 +415,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                         tr.Error($"Got exception {e.GetType().Name} ({e.Message}) when trying to pre-condition cell j = {jCell}, item #{i} ({conf})");
                                         ExtractBlock(_i0s, _Lns, true, MassMatrix, ref tmp.MassBlock[i]);
                                         ExtractBlock(_i0s, _Lns, true, OpMatrix, ref tmp.OperatorBlock[i]);
-                                        tmp.MassBlock[i].SaveToTextFile("CobFailMass_" + i + "  -" + jCell + ".txt");
+                                        tmp.MassBlock[i].SaveToTextFile("CobFailMass_" + i + "-" + jCell + ".txt");
                                         tmp.OperatorBlock[i].SaveToTextFile("CobFailOperator_" + i + "-" + jCell + ".txt");
                                         mask_failedCells[jCell] = true;
                                         someFailed = true;

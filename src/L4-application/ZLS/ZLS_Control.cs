@@ -1,5 +1,7 @@
 ﻿using BoSSS.Application.XNSE_Solver;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +9,6 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 using ZwoLevelSetSolver.SolidPhase;
-using Newtonsoft.Json;
 
 
 namespace ZwoLevelSetSolver {
@@ -26,7 +27,7 @@ namespace ZwoLevelSetSolver {
             Option_LevelSetEvolution2 = BoSSS.Solution.LevelSetTools.LevelSetEvolution.StokesExtension;
             AdvancedDiscretizationOptions.ViscosityMode = BoSSS.Solution.XNSECommon.ViscosityMode.FullySymmetric;
             AdvancedDiscretizationOptions.PenaltySafety = 1;
-
+            base.StokesExtentionUseBCmap = StokesExtentionBoundaryOption.ZeroFlux;
             base.CutCellQuadratureType = BoSSS.Foundation.XDG.CutCellQuadratureMethod.Saye;
         }
 

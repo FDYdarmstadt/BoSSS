@@ -784,8 +784,15 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             var InnerParameterFields = Combine(ParameterVarFields, this.lsParameterFields);
             double residual = 0;
 
+            //if(dt > 0) {
+            //    Console.WriteLine("Testcode jkkjxhvckjhvkjhvbkjxykjvcjxyvnxkcjy nvb kjyvhxckj ykjxyhvndfjfjadhgfvjdsaxcdvfhjdcovk njldlkvfd. vb");
+            //}
+
             UpdateParameters(DomainVarFields, InnerParameterFields, time);
-            //Tecplot.Tecplot.PlotFields( new DGField[] {lsUpdaters["Phi"].phaseInterface.DGLevelSet, lsUpdaters["Phi"].phaseInterface.CGLevelSet, }, "LevsetBeforeUpdate", time, 3);
+            //if(dt > 0) {
+            //    DGField[] LevelSetFields = lsUpdaters.Values.Select(lsu => lsu.phaseInterface.C0LevelSet).Concat(lsUpdaters.Values.Select(lsu => lsu.phaseInterface.DGLevelSet)).ToArray();
+            //    Tecplot.Tecplot.PlotFields(LevelSetFields, "LevsetBeforeUpdate", time, 3);
+            //}
             foreach (SingleLevelSetUpdater updater in lsUpdaters.Values) {
                 var resi_x = updater.UpdateLevelSet(
                     DomainVarFields,
@@ -797,8 +804,13 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
                 residual += resi_x.Abs();
             }
-            //Tecplot.Tecplot.PlotFields( new DGField[] { lsUpdaters["Phi"].phaseInterface.DGLevelSet, lsUpdaters["Phi"].phaseInterface.CGLevelSet, }, "LevsetAfterUpdate", time, 3);
-            //Tecplot.Tecplot.PlotFields(new DGField[] { InnerParameterFields["VelocityX@Phi"], InnerParameterFields["VelocityY@Phi"] }, "Velocity@Phi_AfterFirstUpdate", time, 3);
+            //if(dt > 0) {
+            //    DGField[] LevelSetFields = lsUpdaters.Values.Select(lsu => lsu.phaseInterface.C0LevelSet).Concat(lsUpdaters.Values.Select(lsu => lsu.phaseInterface.DGLevelSet)).ToArray();
+            //    LevelSetFields = LevelSetFields.Concat(InnerParameterFields.Select(ipf => ipf.Value)).ToArray();
+
+            //    Tecplot.Tecplot.PlotFields(LevelSetFields, "LevsetAfterUpdate", time, 3);
+            //    Console.WriteLine("so what");
+            //}
             Tracker.UpdateTracker(time + dt, -1, incremental: true);
             UpdateParameters(DomainVarFields, InnerParameterFields, time + dt); // update parameters after change of level-set.
             //Tecplot.Tecplot.PlotFields(new DGField[] { InnerParameterFields["VelocityX@Phi"], InnerParameterFields["VelocityY@Phi"] }, "Velocity@Phi_AfterSecondUpdate", time, 3);
