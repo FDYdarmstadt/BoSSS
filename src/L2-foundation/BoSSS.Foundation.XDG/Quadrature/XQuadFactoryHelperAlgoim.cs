@@ -30,6 +30,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Xml;
 using static BoSSS.Foundation.XDG.XQuadFactoryHelperBase;
 
 namespace BoSSS.Foundation.XDG {
@@ -183,8 +184,10 @@ namespace BoSSS.Foundation.XDG {
                 allFactories = allFactories.Cat(m_SurfaceElement_BoundaryRuleFactory2.Values);
                 allFactories = allFactories.Cat(m_EdgeRuleFactory1.Values);
                 allFactories = allFactories.Cat(m_EdgeRuleFactory2.Values);
+                int idx = 0;
                 foreach(EdgeRuleFromCellBoundaryFactory f in allFactories) {
                     f.CreateRulesAndMPIExchgange(__quadorder);
+                    idx++;
                 }
             }
         }
@@ -214,39 +217,43 @@ namespace BoSSS.Foundation.XDG {
             if(!m_SurfaceElement_BoundaryRuleFactory1.ContainsKey(key)) {
                 var KrefVol = gdat.iGeomCells.RefElements.Single();
 
-                if(D == 2) {
-                    if(LineAndPoint_in2D == null)
-                        LineAndPoint_in2D = new LineAndPointQuadratureFactory[this.m_LevelSetDatas.Length];
-
-                    if(LineAndPoint_in2D[levSetIndex] == null) {
-                        LineAndPoint_in2D[levSetIndex] = new LineAndPointQuadratureFactory(
-                            KrefVol,
-                            this.m_LevelSetDatas[levSetIndex],
-                            true);
-                    }
-
-                    m_SurfaceElement_BoundaryRuleFactory1.Add((levSetIndex, iKref),
-                        new EdgeRuleFromCellBoundaryFactory(gdat, D > 2, KrefEdge,
-                            [LineAndPoint_in2D[levSetIndex].GetPointFactory()],
-                            maxDom));
-                } else {
-                    CheckIfVolElement(KrefVol);
-
-
-
+                
                     m_SurfaceElement_BoundaryRuleFactory1.Add((levSetIndex, iKref),
                         new EdgeRuleFromCellBoundaryFactory(gdat, D > 2, KrefEdge,
                             [_GetSurfaceElement_BoundaryRuleFactory(levSetIndex, KrefVol)],
                             maxDom));
-                }
             }
 
             return m_SurfaceElement_BoundaryRuleFactory1[key];
         }
 
         public override IQuadRuleFactory<CellBoundaryQuadRule> _GetSurfaceElement_BoundaryRuleFactory(int levSetIndex, RefElement KrefVol) {
-            var algoimFactory = new AlgoimFactories(m_LevelSetDatas[levSetIndex], KrefVol);
-            return algoimFactory.GetCellBoundarySurfaceFactory();
+            CheckIfVolElement(KrefVol);
+            int D = gdat.SpatialDimension;
+
+            if(D == 2) {
+                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                // 2D branch;
+                // these do not seem to work correctly with our Algoim wrappers
+                // until this is fixed (which will likely never happen)
+                // we just use our own lib
+                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                if(LineAndPoint_in2D == null)
+                    LineAndPoint_in2D = new LineAndPointQuadratureFactory[this.m_LevelSetDatas.Length];
+
+                if(LineAndPoint_in2D[levSetIndex] == null) {
+                    LineAndPoint_in2D[levSetIndex] = new LineAndPointQuadratureFactory(
+                        KrefVol,
+                        this.m_LevelSetDatas[levSetIndex],
+                        true);
+                }
+
+                return LineAndPoint_in2D[levSetIndex].GetPointFactory();
+            } else {
+                var algoimFactory = new AlgoimFactories(m_LevelSetDatas[levSetIndex], KrefVol);
+                return algoimFactory.GetCellBoundarySurfaceFactory();
+            }
         }
 
 
@@ -257,40 +264,47 @@ namespace BoSSS.Foundation.XDG {
 			CheckIfVolElement(KrefVol);
             var KrefEdge = gdat.iGeomEdges.EdgeRefElements.Single();
             int iKrefEdge = 0;
+            int D = KrefVol.SpatialDimension;
 
-            var key = (levSetIndex0, levSetIndex1, jmp1, iKrefEdge);
-
-            if(!m_SurfaceElement_BoundaryRuleFactory2.ContainsKey(key)) {
-
-                JumpTypes[] jumps = new JumpTypes[] { jmp1, jmp1 };
-                jumps[levSetIndex0] = JumpTypes.Implicit;
-                if(!DoubleCutFactories.ContainsKey(KrefVol))
-                    DoubleCutFactories.Add(KrefVol, new AlgoimDoubleCutFactories(m_LevelSetDatas, KrefVol));
-
-                var algoimFactory = DoubleCutFactories[KrefVol];
-                var cellBoundaryFac = algoimFactory.GetCellBoundarySurfaceFactory(jumps);
-
-                var cutDom1 = m_LevelSetDatas[levSetIndex0].Region.GetCutCellMask4LevSet(levSetIndex0).ToGeometicalMask();
-                var cutDom2 = m_LevelSetDatas[levSetIndex1].Region.GetCutCellMask4LevSet(levSetIndex1).ToGeometicalMask();
-                var cutDom = cutDom1.Intersect(cutDom2);
-                var _cutDom = cutDom.Intersect(m_LevelSetDatas[levSetIndex0].GridDat.Cells.GetCells4Refelement(KrefVol));
+            if(D == 2) {
+                return Quadrature.Intersecting.IntersectingQuadratureFactories.EdgePoint(m_LevelSetDatas[levSetIndex0], m_LevelSetDatas[levSetIndex1], jmp1);
+            } else {
 
 
+                var key = (levSetIndex0, levSetIndex1, jmp1, iKrefEdge);
 
-                var maxDom = m_CutEdges4LevelSet[levSetIndex0].Intersect(m_CutEdges4LevelSet[levSetIndex1]);
-                if(gdat.iGeomCells.RefElements.Length > 1)
-                    maxDom = maxDom.Intersect(gdat.iGeomEdges.GetEdges4RefElement(KrefEdge));
+                if(!m_SurfaceElement_BoundaryRuleFactory2.ContainsKey(key)) {
+
+                    JumpTypes[] jumps = new JumpTypes[] { jmp1, jmp1 };
+                    jumps[levSetIndex0] = JumpTypes.Implicit;
+                    if(!DoubleCutFactories.ContainsKey(KrefVol))
+                        DoubleCutFactories.Add(KrefVol, new AlgoimDoubleCutFactories(m_LevelSetDatas, KrefVol));
+
+                    var algoimFactory = DoubleCutFactories[KrefVol];
+                    var cellBoundaryFac = algoimFactory.GetCellBoundarySurfaceFactory(jumps);
+
+                    var cutDom1 = m_LevelSetDatas[levSetIndex0].Region.GetCutCellMask4LevSet(levSetIndex0).ToGeometicalMask();
+                    var cutDom2 = m_LevelSetDatas[levSetIndex1].Region.GetCutCellMask4LevSet(levSetIndex1).ToGeometicalMask();
+                    var cutDom = cutDom1.Intersect(cutDom2);
+                    var _cutDom = cutDom.Intersect(m_LevelSetDatas[levSetIndex0].GridDat.Cells.GetCells4Refelement(KrefVol));
 
 
-                var r = new EdgeRuleFromCellBoundaryFactory(gdat, gdat.SpatialDimension > 2,
-                                                            KrefEdge,
-                                                            [cellBoundaryFac],
-                                                            maxDom);
 
-                m_SurfaceElement_BoundaryRuleFactory2.Add(key, r);
+                    var maxDom = m_CutEdges4LevelSet[levSetIndex0].Intersect(m_CutEdges4LevelSet[levSetIndex1]);
+                    if(gdat.iGeomCells.RefElements.Length > 1)
+                        maxDom = maxDom.Intersect(gdat.iGeomEdges.GetEdges4RefElement(KrefEdge));
+
+
+                    var r = new EdgeRuleFromCellBoundaryFactory(gdat, gdat.SpatialDimension > 2,
+                                                                KrefEdge,
+                                                                [cellBoundaryFac],
+                                                                maxDom);
+
+                    m_SurfaceElement_BoundaryRuleFactory2.Add(key, r);
+                }
+
+                return m_SurfaceElement_BoundaryRuleFactory2[key];
             }
-
-			return m_SurfaceElement_BoundaryRuleFactory2[key];
 		}
 
         public override IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex, RefElement Kref) {
