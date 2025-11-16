@@ -623,11 +623,13 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
 			CellBoundaryQuadRule CombineEdgeRules(QuadRule[] rules) {
 				int numberOfNodes = 0;
 				foreach (QuadRule rule in rules) {
-					numberOfNodes += rule.NoOfNodes;
+					numberOfNodes += rule?.NoOfNodes ?? 0;
 				}
 				CellBoundaryQuadRule combinedRule = CellBoundaryQuadRule.CreateEmpty(RefElement, numberOfNodes, spaceDim, RefElement.NoOfFaces);
 				int subarrayPointer = 0;
 				for (int i = 0; i < rules.Length; ++i) {
+                    if(rules[i] == null)
+                        continue;
 					int subNumberOfNodes = rules[i].NoOfNodes;
 					combinedRule.NumbersOfNodesPerFace[i] = subNumberOfNodes;
 					for (int j = 0; j < subNumberOfNodes; ++j) {
@@ -646,6 +648,11 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
 				//we have two indices: first one is for the species (e.g., A, B or between A-B and A-C) and second one for edge index (e.g., top, bottom)
 				QuadRule[][] allEdgesAndSpecies = new QuadRule[noOfSpeciesPermutations][];
 				int noOfEdges = RefElement.NoOfFaces;
+                for(int i = 0; i < allEdgesAndSpecies.Length; i++) {
+                    allEdgesAndSpecies[i] = new QuadRule[noOfEdges];
+                }
+
+
 				for (int e = 0; e < noOfEdges; e++) {
 					var retAllSpecies = GetNodesAndWeightsOnEdge(jCell, RequestedOrder, e); //edge specific query (notice that this is not the global edge index but only the type of edges as in RefElement)
 					for (int specI = 0; specI < retAllSpecies.Length; specI++) {
