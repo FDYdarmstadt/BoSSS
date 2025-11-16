@@ -1759,7 +1759,7 @@ namespace BoSSS.Solution.XNSECommon {
             EdgeQuadratureScheme SurfaceElement_BoundaryEdge;
             {
                 var mask = (new CellMask(grdDat, Chunk.GetSingleElementChunk(jCell))).GetAllLocalEdgesMask();
-                EdgeQuadratureScheme __SurfaceElement_BoundaryEdge = schemeHelper.Get_SurfaceElement_EdgeQuadScheme(LsTrk.GetSpeciesId("A"), LsTrk.GetSpeciesId("A"), 0);
+                EdgeQuadratureScheme __SurfaceElement_BoundaryEdge = schemeHelper.Get_SurfaceElement_EdgeQuadScheme(LsTrk.GetSpeciesId("A"), LsTrk.GetSpeciesId("B"), 0);
                 SurfaceElement_BoundaryEdge = new EdgeQuadratureScheme(__SurfaceElement_BoundaryEdge.IntegrationMetric, false, mask);
                 foreach(var fdp in __SurfaceElement_BoundaryEdge.FactoryChain) {
                     SurfaceElement_BoundaryEdge.AddFactory(fdp.RuleFactory, fdp.Domain);
