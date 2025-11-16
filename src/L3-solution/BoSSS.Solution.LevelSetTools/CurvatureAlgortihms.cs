@@ -1503,8 +1503,11 @@ namespace BoSSS.Solution.LevelSetTools {
             */
 
             CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, CutCellsGrid.VolumeMask);
-            EdgeQuadratureScheme eqs = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(lsTrk.GetSpeciesId("A"), 0);
-            
+            EdgeQuadratureScheme eqs = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(lsTrk.GetSpeciesId("A"), lsTrk.GetSpeciesId("B"), 0);
+            if(lsTrk.NoOfLevelSets > 1)
+                throw new NotSupportedException("todo -- maybe missing contact line contributions.");
+
+
             // =============================
             // compute force vector in cell.
             // =============================

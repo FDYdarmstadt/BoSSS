@@ -854,34 +854,40 @@ namespace BoSSS.Foundation.XDG {
                                     Params_4Species, DomFld_4Species);
                             }
 
-                            //Only for ls0 so far:
-                            //Add species, if it is separated from another species by level set 0
-                            //For species not separated by ls0, nothing happens
+                            // Only for ls0 so far:
+                            // Add species, if it is separated from another species by level set 0
+                            // For species not separated by ls0, nothing happens
                             var levelSetSpecies = lsTrk.GetSpeciesSeparatedByLevSet(0);
                             if(levelSetSpecies.Contains(lsTrk.GetSpeciesName(SpeciesId))) {
                                 if(m_Xowner.SurfaceElementOperator_Ls0.TotalNoOfComponents > 0) {
-                                    EdgeQuadratureScheme SurfaceElement_Edge = m_Xowner.SurfaceElement_EdgeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
-                                    CellQuadratureScheme SurfaceElement_volume = m_Xowner.SurfaceElement_VolumeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
-                                    if(onlyfordebugging_RuleDiagnosis) {
+                                    foreach(var speciesB in levelSetSpecies) {
+                                        var speciesBId = lsTrk.GetSpeciesId(speciesB);
+                                        if(SpeciesId == speciesBId)
+                                            continue;
 
-                                        //if(GridData.MpiRank == 1)
-                                        //    Debugger.Launch();
-                                        var coEdgRule = SurfaceElement_Edge.Compile(GridData, quadOrder);
-                                        var coVolRole = SurfaceElement_volume.Compile(GridData, quadOrder);
+                                        EdgeQuadratureScheme SurfaceElement_Edge = m_Xowner.SurfaceElement_EdgeQuadraturSchemeProvider(lsTrk, SpeciesId, speciesBId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
+                                        CellQuadratureScheme SurfaceElement_volume = m_Xowner.SurfaceElement_VolumeQuadraturSchemeProvider(lsTrk, SpeciesId, speciesBId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
+                                        if(onlyfordebugging_RuleDiagnosis) {
 
-                                        string suffix = $"{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}of{this.GridData.MpiSize}";
-                                        coVolRole.SaveToTextFileCell(GridData, $"surfaceElementOperator_volume_{suffix}.csv");
-                                        coEdgRule.SaveToTextFileEdge(GridData, $"surfaceElementOperator_edge_{suffix}.csv");
+                                            //if(GridData.MpiRank == 1)
+                                            //    Debugger.Launch();
+                                            var coEdgRule = SurfaceElement_Edge.Compile(GridData, quadOrder);
+                                            var coVolRole = SurfaceElement_volume.Compile(GridData, quadOrder);
 
-                                        coVolRole.ToVtpFilesCell(GridData, $"surfaceElementOperator_volume_{suffix}");
-                                        coEdgRule.ToVtpFilesEdge(GridData, $"surfaceElementOperator_edge_{suffix}");
+                                            string suffix = $"{lsTrk.GetSpeciesName(SpeciesId)}{speciesB}-ls{0}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}of{this.GridData.MpiSize}";
+                                            coVolRole.SaveToTextFileCell(GridData, $"surfaceElementOperator_volume_{suffix}.csv");
+                                            coEdgRule.SaveToTextFileEdge(GridData, $"surfaceElementOperator_edge_{suffix}.csv");
 
-                                        SurfaceElement_volume.Compile(GridData, 0).SumOfWeightsToTextFileVolume(GridData, $"wgtSumSurfaceElementOperator_volume_{suffix}.csv");
+                                            coVolRole.ToVtpFilesCell(GridData, $"surfaceElementOperator_volume_{suffix}");
+                                            coEdgRule.ToVtpFilesEdge(GridData, $"surfaceElementOperator_edge_{suffix}");
+
+                                            SurfaceElement_volume.Compile(GridData, 0).SumOfWeightsToTextFileVolume(GridData, $"wgtSumSurfaceElementOperator_volume_{suffix}.csv");
+                                        }
+
+                                        ctorSurfaceElementSpeciesIntegrator(SpeciesId, quadOrder, SurfaceElement_volume, SurfaceElement_Edge, DomainFrame_WithTraceDg, CodomFrame_WithTraceDg,
+                                            CodomFrame_WithTraceDg.FrameMap.BasisS.Select(b => b.MaximalLength > 0).ToArray(),
+                                            Params_4Species, DomFld_4Species);
                                     }
-
-                                    ctorSurfaceElementSpeciesIntegrator(SpeciesId, quadOrder, SurfaceElement_volume, SurfaceElement_Edge, DomainFrame_WithTraceDg, CodomFrame_WithTraceDg,
-                                        CodomFrame_WithTraceDg.FrameMap.BasisS.Select(b => b.MaximalLength > 0).ToArray(),
-                                        Params_4Species, DomFld_4Species);
                                 }
                         
 

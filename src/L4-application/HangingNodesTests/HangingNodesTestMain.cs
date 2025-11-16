@@ -27,8 +27,8 @@ namespace HangingNodesTests {
             // mpiexec -n 2 dotnet HangingNodesTests.dll
             Console.WriteLine("Starting Hanging Nodes Test!");
             BoSSS.Solution.Application.InitMPI(num_threads: 1);
-            HangingNodesTests.HangingNodesTestMain.Test1Phase(CutCellQuadratureMethod.Algoim);
-            //HangingNodesTests.HangingNodesTestMain.Test3Phase(CutCellQuadratureMethod.Saye);
+            //HangingNodesTests.HangingNodesTestMain.Test1Phase(CutCellQuadratureMethod.Algoim);
+            HangingNodesTests.HangingNodesTestMain.Test3Phase(CutCellQuadratureMethod.Saye);
             Assert.IsFalse(true, "remove me");
             BoSSS.Solution.Application.InitMPI();
 

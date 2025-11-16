@@ -2244,17 +2244,22 @@ namespace BoSSS.Application.XRheology_Solver {
             // surface
             double surface = 0.0;
             //CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
-            var surfElemVol = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(spcId, 0);
-            CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
-                surfElemVol.Compile(LsTrk.GridDat, this.m_HMForder),
-                delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
-                    EvalResult.SetAll(1.0);
-                },
-                delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                    for (int i = 0; i < Length; i++)
-                        surface += ResultsOfIntegration[i, 0];
-                }
-            ).Execute();
+            foreach(var sp2 in LsTrk.SpeciesIdS) {
+                if(spcId == sp2)
+                    continue;
+                var surfElemVol = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(spcId, sp2, 0);
+             
+                CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
+                    surfElemVol.Compile(LsTrk.GridDat, this.m_HMForder),
+                    delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+                        EvalResult.SetAll(1.0);
+                    },
+                    delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+                        for(int i = 0; i < Length; i++)
+                            surface += ResultsOfIntegration[i, 0];
+                    }
+                ).Execute();
+            }
 
             return new double[] { volume, surface };
 
@@ -2268,7 +2273,9 @@ namespace BoSSS.Application.XRheology_Solver {
             if (this.LsTrk.GridDat.SpatialDimension == 3) {
 
                 var metrics = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder);
+                CL_length += metrics.CutCellMetrics.CutLineLengthEdge[this.LsTrk.GetSpeciesId("A")].Sum();
 
+                /*
                 XQuadSchemeHelper SchemeHelper = metrics.XQuadSchemeHelper;
                 EdgeQuadratureScheme SurfaceElement_Edge = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(this.LsTrk.GetSpeciesId("A"), 0);
 
@@ -2302,6 +2309,7 @@ namespace BoSSS.Application.XRheology_Solver {
                             CL_length += ResultsOfIntegration[i, 0];
                     }
                 ).Execute();
+                */
             }
 
             return CL_length;

@@ -1244,7 +1244,9 @@ namespace BoSSS.Solution.XNSECommon {
             }
 
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;
-            EdgeQuadratureScheme eqs = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(LsTrk.GetSpeciesId("A"), 0); // GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            EdgeQuadratureScheme eqs = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(LsTrk.GetSpeciesId("A"), LsTrk.GetSpeciesId("B"), 0); // GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            if(LsTrk.NoOfLevelSets > 1)
+                throw new NotSupportedException("todo -- maybe missing level-set intersection line contributions.");
             EdgeQuadrature.GetQuadrature(new int[] { D }, LsTrk.GridDat,
                 eqs.Compile(LsTrk.GridDat, order),
                 delegate (int e0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
@@ -1319,7 +1321,10 @@ namespace BoSSS.Solution.XNSECommon {
             List<double[]> surfTvectrosOT = new List<double[]>();
 
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;
-            EdgeQuadratureScheme eqs = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(LsTrk.GetSpeciesId("A"), 0); // GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            EdgeQuadratureScheme eqs = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(LsTrk.GetSpeciesId("A"), LsTrk.GetSpeciesId("B"), 0); // GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            if(LsTrk.NoOfLevelSets > 1)
+                throw new NotSupportedException("todo -- maybe missing level-set intersection line contributions.");
+
             EdgeQuadrature.GetQuadrature(new int[] { D }, LsTrk.GridDat,
                 eqs.Compile(LsTrk.GridDat, order),
                 delegate (int e0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
@@ -1751,9 +1756,17 @@ namespace BoSSS.Solution.XNSECommon {
             ).Execute();
 
             // =========================================================
-            var mask = (new CellMask(grdDat, Chunk.GetSingleElementChunk(jCell)));
-            EdgeQuadratureScheme SurfaceElement_BoundaryEdge = schemeHelper.Get_SurfaceElement_EdgeQuadScheme(LsTrk.GetSpeciesId("A"), 0, mask);
+            EdgeQuadratureScheme SurfaceElement_BoundaryEdge;
+            {
+                var mask = (new CellMask(grdDat, Chunk.GetSingleElementChunk(jCell))).GetAllLocalEdgesMask();
+                EdgeQuadratureScheme __SurfaceElement_BoundaryEdge = schemeHelper.Get_SurfaceElement_EdgeQuadScheme(LsTrk.GetSpeciesId("A"), LsTrk.GetSpeciesId("A"), 0);
+                SurfaceElement_BoundaryEdge = new EdgeQuadratureScheme(__SurfaceElement_BoundaryEdge.IntegrationMetric, false, mask);
+                foreach(var fdp in __SurfaceElement_BoundaryEdge.FactoryChain) {
+                    SurfaceElement_BoundaryEdge.AddFactory(fdp.RuleFactory, fdp.Domain);
+                }
 
+            }
+            
 
             double stokesAtEdges = 0.0;
             EdgeQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,

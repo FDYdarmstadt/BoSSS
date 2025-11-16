@@ -551,7 +551,7 @@ namespace BoSSS.Foundation.XDG {
                                         var LsDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevelSet);
                                         var IntegrationDom = LsDom.Intersect(SpeciesCommonDom);
 
-                                        var cutLineScheme = schH.Get_SurfaceElement_EdgeQuadScheme(SpeciesA, iLevelSet, IntegrationDom);
+                                        var cutLineScheme = schH.Get_SurfaceElement_EdgeQuadScheme(SpeciesA, SpeciesB, iLevelSet);
                                         var cutLineRule = cutLineScheme.Compile(gd, this.CutCellQuadratureOrder);
 
                                         MultidimensionalArray edgMeas = MultidimensionalArray.Create(EE);

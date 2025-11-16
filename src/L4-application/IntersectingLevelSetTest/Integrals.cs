@@ -164,9 +164,14 @@ namespace IntersectingLevelSetTest {
         static double EvaluateSurfaceBoundary(LevelSetTracker lsTrkr, int quadOrder, XQuadSchemeHelper schemes, SpeciesId id) {
             double integral = 0;
             for (int i = 0; i < lsTrkr.NoOfLevelSets; ++i) {
-                EdgeQuadratureScheme surfScheme = schemes.Get_SurfaceElement_EdgeQuadScheme(id, i);
-                var surf = EdgeQuadrature(surfScheme.Compile(lsTrkr.GridDat, quadOrder), lsTrkr.GridDat);
-                integral += surf.Sum();
+                foreach(SpeciesId id2 in lsTrkr.SpeciesIdS) {
+                    if(id2 == id) 
+                        continue;
+
+                    EdgeQuadratureScheme surfScheme = schemes.Get_SurfaceElement_EdgeQuadScheme(id, id2, i);
+                    var surf = EdgeQuadrature(surfScheme.Compile(lsTrkr.GridDat, quadOrder), lsTrkr.GridDat);
+                    integral += surf.Sum();
+                }
             }
             return integral;
         }

@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections;
@@ -520,7 +521,7 @@ namespace BoSSS.Foundation.Grid {
                 return false;
             }
 
-            return Enumerable.SequenceEqual(o.Sequence, this.Sequence);
+            return this.ItemEnum.SetEquals(o.ItemEnum);
         }
 
         /// <summary>

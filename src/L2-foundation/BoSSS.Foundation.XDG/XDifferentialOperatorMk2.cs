@@ -14,23 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-
+using BoSSS.Foundation.Comm;
+using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Quadrature;
+using BoSSS.Foundation.Quadrature.FluxQuadCommon;
 using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.Tracing;
 using ilPSP.Utils;
 using MPI.Wrappers;
-
-using BoSSS.Foundation.Comm;
-using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.Quadrature;
-using BoSSS.Foundation.Quadrature.FluxQuadCommon;
-
+using NUnit.Framework;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using static BoSSS.Foundation.DifferentialOperator;
 
 
@@ -220,6 +218,7 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Non-coupling surface terms; originally intended to implement the flux-form of the surface tension.
+        ///
         /// **Note: This only considers the 0-th level-set.**
         /// </summary>
         public DifferentialOperator SurfaceElementOperator_Ls0 {
@@ -228,8 +227,19 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// Non-coupling contact-line terms.
-        /// **Note: This only considers the 0-th level-set.**
+        /// Contact-line terms, applied for each species.
+        ///
+        /// **Note: This only considers the 0-th level-set with all other level-sets and all other species boundaries**, i.e., 
+        /// \[
+        ///   \sum_\mathfrak{s} \sum_{i>0} 
+        ///     \int_{ \mathfrak{I}_0 \cap \mathfrak{I}_i \cap \partial \mathfrak{s}} 
+        ///       \ldots
+        ///     \mathrm{dl} ,
+        /// \]
+        /// where 
+        /// - $ \mathfrak{I}_i $ is the i-th (zero-) level-set
+        /// - $ \mathfrak{s} $ is the domain of the respective species from <see cref="Species"/>.
+        /// For the integrand (i.e., everything in $ \ldots $ , only values for species  $ \mathfrak{s} $ are available, therefore the contact line terms do not support direct coupling beteen species.
         /// </summary>
         public DifferentialOperator ContactLineOperator_Ls0 {
             get;
@@ -1661,24 +1671,25 @@ namespace BoSSS.Foundation.XDG {
         #endregion
 
         #region SurfElement_quadSchemeProvider
-        static EdgeQuadratureScheme DefaultSurfElementEQSprovider(LevelSetTracker lsTrk, SpeciesId spc, XQuadSchemeHelper SchemeHelper, int quadOrder, int TrackerHistory) {
-            var edgeScheme = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(spc, 0);
+        static EdgeQuadratureScheme DefaultSurfElementEQSprovider(LevelSetTracker lsTrk, SpeciesId spcA, SpeciesId spcB, XQuadSchemeHelper SchemeHelper, int quadOrder, int TrackerHistory) {
+            var edgeScheme = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(spcA, spcB, 0);
             return edgeScheme;
         }
 
 
-        Func<LevelSetTracker, SpeciesId, XQuadSchemeHelper, int, int, EdgeQuadratureScheme> m_SurfaceElementEdgeQuadraturSchemeProvider;
+        Func<LevelSetTracker, SpeciesId, SpeciesId, XQuadSchemeHelper, int, int, EdgeQuadratureScheme> m_SurfaceElementEdgeQuadraturSchemeProvider;
 
         /// <summary>
         /// User-customizable factory, to specify the edge quadrature for the <see cref="SurfaceElementOperator_Ls0"/>, see also <see cref="QuadOrderFunction"/>
         /// - 1st argument: current level-set tracker
         /// - 2nd argument: species which should be integrated, one of <see cref="Species"/>
-        /// - 3rd argument: a default <see cref="XQuadSchemeHelper"/>
-        /// - 4th argument: quadrature order
-        /// - 5th argument: level-set resp. tracker history.
+        /// - 3rd argument: neighbor species
+        /// - 4th argument: a default <see cref="XQuadSchemeHelper"/>
+        /// - 5th argument: quadrature order
+        /// - 6th argument: level-set resp. tracker history.
         /// - return: quadrature scheme        
         /// </summary>
-        public Func<LevelSetTracker, SpeciesId, XQuadSchemeHelper, int, int, EdgeQuadratureScheme> SurfaceElement_EdgeQuadraturSchemeProvider {
+        public Func<LevelSetTracker, SpeciesId, SpeciesId, XQuadSchemeHelper, int, int, EdgeQuadratureScheme> SurfaceElement_EdgeQuadraturSchemeProvider {
             get {
                 if(m_SurfaceElementEdgeQuadraturSchemeProvider == null)
                     m_SurfaceElementEdgeQuadraturSchemeProvider = DefaultSurfElementEQSprovider;
@@ -1691,25 +1702,26 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        CellQuadratureScheme DefaultSurfElmCQSprovider(LevelSetTracker lsTrk, SpeciesId spc, XQuadSchemeHelper SchemeHelper, int quadOrder, int TrackerHistory) {
-            var volScheme = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(spc, 0);
+        CellQuadratureScheme DefaultSurfElmCQSprovider(LevelSetTracker lsTrk, SpeciesId spcA, SpeciesId spcB, XQuadSchemeHelper SchemeHelper, int quadOrder, int TrackerHistory) {
+            var volScheme = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(spcA, spcB, 0);
             return volScheme;
         }
 
 
 
-        Func<LevelSetTracker, SpeciesId, XQuadSchemeHelper, int, int, CellQuadratureScheme> m_SurfaceElement_VolumeQuadraturSchemeProvider;
+        Func<LevelSetTracker, SpeciesId, SpeciesId, XQuadSchemeHelper, int, int, CellQuadratureScheme> m_SurfaceElement_VolumeQuadraturSchemeProvider;
 
         /// <summary>
         /// User-customizable factory, to specify the cell/volume quadrature, see also <see cref="QuadOrderFunction"/>
         /// - 1st argument: current level-set tracker
         /// - 2nd argument: species which should be integrated, one of <see cref="Species"/>
-        /// - 3rd argument: a default <see cref="XQuadSchemeHelper"/>
-        /// - 4th argument: quadrature order
-        /// - 5th argument: level-set resp. tracker history.
+        /// - 3rd argument: neighbor species
+        /// - 4th argument: a default <see cref="XQuadSchemeHelper"/>
+        /// - 5th argument: quadrature order
+        /// - 6th argument: level-set resp. tracker history.
         /// - return: quadrature scheme
         /// </summary>
-        public Func<LevelSetTracker, SpeciesId, XQuadSchemeHelper, int, int, CellQuadratureScheme> SurfaceElement_VolumeQuadraturSchemeProvider {
+        public Func<LevelSetTracker, SpeciesId, SpeciesId, XQuadSchemeHelper, int, int, CellQuadratureScheme> SurfaceElement_VolumeQuadraturSchemeProvider {
             get {
                 if(m_SurfaceElement_VolumeQuadraturSchemeProvider == null)
                     m_SurfaceElement_VolumeQuadraturSchemeProvider = DefaultSurfElmCQSprovider;
@@ -1761,17 +1773,6 @@ namespace BoSSS.Foundation.XDG {
             var r = new CoefficientSet() {
                 GrdDat = lstrk.GridDat
             };
-            /*
-            if(g is Grid.Classic.GridData cgdat) {
-                r.CellLengthScales = cgdat.Cells.CellLengthScale;
-                r.EdgeLengthScales = cgdat.Edges.h_min_Edge;
-
-            } else {
-                Console.Error.WriteLine("Rem: still missing cell length scales for grid type " + g.GetType().FullName);
-            }
-
-            todo();
-            */
 
             foreach(var kv in UserDefinedValues[lstrk.GetSpeciesName(spc)]) {
                 r.UserDefinedValues.Add(kv.Key, kv.Value);
