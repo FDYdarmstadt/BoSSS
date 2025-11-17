@@ -553,7 +553,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// <param name="strategy">coarsening strategy</param>
         /// <returns></returns>
         public static AggregationGridData[] CreateSequence(IGridData GridDat, int MaxDepth = -1,
-                                                           AggStrategy strategy = AggStrategy.Adjacency) {
+                                                           AggStrategy strategy = AggStrategy.RTree) {
             using(new FuncTrace()) {
                 Console.WriteLine("Creating multigrid hierarchy with max depth " + MaxDepth + " using " + strategy + " coarsening.");
                 MPICollectiveWatchDog.Watch();
