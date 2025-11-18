@@ -44,7 +44,7 @@ namespace IntersectingLevelSetTest {
             Assert.That(edge, Is.EqualTo(1).Within(1e-8));
             Assert.That(volume, Is.EqualTo(0.25).Within(1e-8));
             Assert.That(surface, Is.EqualTo(1).Within(1e-8));
-            Assert.That(intersection, Is.EqualTo(2).Within(1e-8));
+            Assert.That(intersection, Is.EqualTo(1).Within(1e-8));
         }
 
         //Only works for resolution = 1, scaling required in eval method 

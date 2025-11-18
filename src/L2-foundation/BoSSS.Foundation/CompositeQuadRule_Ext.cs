@@ -157,6 +157,18 @@ namespace BoSSS.Foundation {
         /// <paramref name="compositeRule"/> into a text file
         /// </summary>
         public static void SaveToTextFileCell(this ICompositeQuadRule<QuadRule> compositeRule, IGridData gridData, string filename, bool writeHeader = true) {
+            _SaveToTextFileCell<QuadRule>(compositeRule, gridData, filename, writeHeader);
+        }
+
+        /// <summary>
+        /// Saves the location and weight associated with each node in
+        /// <paramref name="compositeRule"/> into a text file
+        /// </summary>
+        public static void SaveToTextFileCellBoundary(this ICompositeQuadRule<CellBoundaryQuadRule> compositeRule, IGridData gridData, string filename, bool writeHeader = true) {
+            _SaveToTextFileCell<CellBoundaryQuadRule>(compositeRule, gridData, filename, writeHeader);
+        }
+
+        static void _SaveToTextFileCell<Q>(this ICompositeQuadRule<Q> compositeRule, IGridData gridData, string filename, bool writeHeader = true) where Q : QuadRule {
             int D = gridData.SpatialDimension;
 
             using(var file = new StreamWriter(filename)) {

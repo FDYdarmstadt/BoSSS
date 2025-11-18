@@ -6,10 +6,13 @@ using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG.Quadrature.HMF;
 using ilPSP;
 using ilPSP.Utils;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.Linq;
+using System.Security.Policy;
 
 namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
 	/// <summary>
@@ -105,7 +108,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
 			};
 			//factory.useMetrics = true;
 			factory.m_CalculateQuadRule = ilPSP.Utils.Algoim.GetSurfaceQuadratureRules;
-			return factory;
+            factory.m_CalculateQuadRuleSingle = ilPSP.Utils.Algoim.GetSurfaceQuadratureRules;
+
+            return factory;
 		}
 
 		public IQuadRuleFactory<CellBoundaryQuadRule> GetCellBoundaryVolumeFactory(JumpTypes[] jumps) {
@@ -149,6 +154,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
             // only valid for single quadrature rule calculations (either surface or volume)
             internal GetQuadratureRule m_CalculateQuadRule;
             internal delegate UnsafeAlgoim.QuadScheme[] GetQuadratureRule(int dim, int p1, int p2, int q, int[] sizes1, int[] sizes2, double[] coordinates1, double[] coordinates2, double[] LSvalues1, double[] LSvalues2);
+
+            
+
 
             public LevelSetTracker.LevelSetData[] lsData => m_Owner.lsData;
 
@@ -246,41 +254,60 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
 			}
 
 			/// <summary>
-			/// slight modified version to query points on the edge
+			/// slight modified version to query points on the face
 			/// </summary>
 			/// <param name="lsData"></param>
 			/// <param name="jCell"></param>
-			/// <param name="edgeIndex"></param>
+			/// <param name="faceIndex"></param>
 			/// <returns></returns>
-			internal (int, int[], double[], double[]) CreatePhiDataForEdge(LevelSetTracker.LevelSetData lsData, int jCell, int edgeIndex) {
+			internal (int, int[], double[], double[], int sign) CreatePhiDataForFace(LevelSetTracker.LevelSetData lsData, int jCell, int faceIndex) {
 				//number of nodes in 1d for level set interpolation = degree + 1
 				int n = (lsData.LevelSet as LevelSet).Basis.Degree + 1;
 
 				//create Chebyshev nodes (must be identical with Algoim, otherwise leads to interpolation errors for high orders)
 				double[] points = GenericBlas.ChebyshevNodesSecondKind(-1.0, 1.0, n);
 
-				int numberOfCombinations = (int)Math.Pow(points.Length, ruleDim); //Cartesian pair product for the points
+				int numberOfCombinations = points.Length.Pow(ruleDim); //Cartesian pair product for the points
 				MultidimensionalArray combinationsOnEdge = MultidimensionalArray.CreateCartesianPairProduct(points, ruleDim);
 
 				// Transform edge based coordinates to cell based coordinates (to query level sets)
 				MultidimensionalArray combinations = MultidimensionalArray.Create(numberOfCombinations, spaceDim);  // to transform edge coordinates to cell, create an array in the original space dim
-				RefElement.TransformFaceCoordinates(edgeIndex, combinationsOnEdge, combinations);
+				RefElement.TransformFaceCoordinates(faceIndex, combinationsOnEdge, combinations);
 
 				NodeSet NS = new NodeSet(RefElement, combinations, false);
 				var ret = lsData.GetLevSetValues(NS, jCell, 1);
 
 				//Convert to 1D Array for the Wrapper
 				double[] y = new double[ret.Length];
-				for (int i = 0; i < ret.Length; i++)
-					y[i] = ret[0, i];
+                bool isPos = false;
+                bool isNeg = false;
+                for(int i = 0; i < ret.Length; i++) {
+                    double yi = ret[0, i];
+                    if(yi < 0)
+                        isNeg = true;
+                    if(yi > 0)
+                        isPos = true;
+                    y[i] = yi;
+                }
+                int sign;
+                if(isPos == true && isNeg == true) {
+                    sign = 0;
+                } else if(isPos == true && isNeg == false) {
+                    sign = +1;
+                } else if(isPos == false && isNeg == true) {
+                    sign = -1;
+                } else {
+                    // (isPos == false && isNeg == false) 
+                    throw new ArithmeticException($"level-set is exactly zero - should have been caught by the special case handling for level-sets which coincide with mesh edges; level-set-values are between {y.Min()} and {y.Max()}");
+                }
 
-				// create the double array for the coordinates that level set are queried (1D version, for details see AlgoimWrapper)
-				double[] x = Enumerable.Repeat(points, spaceDim).SelectMany(i => i).ToArray();
+                // create the double array for the coordinates that level set are queried (1D version, for details see AlgoimWrapper)
+                double[] x = Enumerable.Repeat(points, spaceDim).SelectMany(i => i).ToArray();
 
 				// create the double array for the number of points in each coordinate
 				int[] sizes = Enumerable.Repeat(points.Length, spaceDim).ToArray();
 
-				return (n, sizes, x, y);
+				return (n, sizes, x, y, sign);
 			}
 
             internal void CalculateQuadRuleSetSingle(int RequestedOrder) {
@@ -378,6 +405,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
                     quadRuleArray[2 * i] = negativeRule;
                     quadRuleArray[2 * i + 1] = positiveRule;
                 }
+
                 return quadRuleArray;
             }
 
@@ -551,8 +579,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
 			}
 
 			CellBoundaryQuadRule[] GetNodesAndWeightsOnEdge(int jCell, int RequestedOrder, int edgeIndex) {
-				(int n1, int[] sizes1, double[] x1, double[] y1) = CreatePhiDataForEdge(lsData[0], jCell, edgeIndex);
-				(int n2, int[] sizes2, double[] x2, double[] y2) = CreatePhiDataForEdge(lsData[1], jCell, edgeIndex);
+				(int n1, int[] sizes1, double[] x1, double[] y1, int signPhi1) = CreatePhiDataForFace(lsData[0], jCell, edgeIndex);
+				(int n2, int[] sizes2, double[] x2, double[] y2, int signPhi2) = CreatePhiDataForFace(lsData[1], jCell, edgeIndex);
 
 				// get the quadrature rule from the wrapper
 				UnsafeAlgoim.QuadScheme[] qsArray = m_CalculateQuadRule(ruleDim, n1, n2, RequestedOrder, sizes1, sizes2, x1, x2, y1, y2);
@@ -599,7 +627,11 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
 
 		class AlgoimDoubleCutCellBoundarySurfFactory : AlgoimDoubleCutBaseFactory<CellBoundaryQuadRule> {
 
-			override internal int GetSpecies() {
+            internal GetQuadratureRuleSingle m_CalculateQuadRuleSingle;
+            internal delegate UnsafeAlgoim.QuadScheme GetQuadratureRuleSingle(int dim, int p, int q, int[] lengths, double[] x, double[] y);
+
+
+            override internal int GetSpecies() {
 				if (m_Jumps[0] == JumpTypes.Implicit && m_Jumps[1] == JumpTypes.OneMinusHeaviside)
 					return 0;
 				else if (m_Jumps[0] == JumpTypes.Implicit && m_Jumps[1] == JumpTypes.Heaviside)
@@ -645,16 +677,16 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
 			}
 
 			internal override CellBoundaryQuadRule[] GetNodesAndWeights(int jCell, int RequestedOrder) {
-				//we have two indices: first one is for the species (e.g., A, B or between A-B and A-C) and second one for edge index (e.g., top, bottom)
+				//we have two indices: first one is for the species (e.g., A, B or between A-B and A-C) and second one for face index (e.g., top, bottom)
 				QuadRule[][] allEdgesAndSpecies = new QuadRule[noOfSpeciesPermutations][];
-				int noOfEdges = RefElement.NoOfFaces;
+				int noOfFaces = RefElement.NoOfFaces;
                 for(int i = 0; i < allEdgesAndSpecies.Length; i++) {
-                    allEdgesAndSpecies[i] = new QuadRule[noOfEdges];
+                    allEdgesAndSpecies[i] = new QuadRule[noOfFaces];
                 }
 
 
-				for (int e = 0; e < noOfEdges; e++) {
-					var retAllSpecies = GetNodesAndWeightsOnEdge(jCell, RequestedOrder, e); //edge specific query (notice that this is not the global edge index but only the type of edges as in RefElement)
+				for (int e = 0; e < noOfFaces; e++) {
+					var retAllSpecies = GetNodesAndWeightsOnFace(jCell, RequestedOrder, e); //edge specific query (notice that this is not the global edge index but only the type of edges as in RefElement)
 					for (int specI = 0; specI < retAllSpecies.Length; specI++) {
 						allEdgesAndSpecies[specI][e] = retAllSpecies[specI];
 					}
@@ -665,50 +697,191 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
 					var combinedEdgeRules = CombineEdgeRules(allEdgesAndSpecies[specI]);
 					ret[specI] = combinedEdgeRules;
 				}
-				return ret;
+                return ret;
 			}
 
-			CellBoundaryQuadRule[] GetNodesAndWeightsOnEdge(int jCell, int RequestedOrder, int edgeIndex) {
-				(int n1, int[] sizes1, double[] x1, double[] y1) = CreatePhiDataForEdge(lsData[0], jCell, edgeIndex);
-				(int n2, int[] sizes2, double[] x2, double[] y2) = CreatePhiDataForEdge(lsData[1], jCell, edgeIndex);
+			CellBoundaryQuadRule[] GetNodesAndWeightsOnFace(int jCell, int RequestedOrder, int faceIndex) {
+				(int n1, int[] sizes1, double[] x1, double[] y1, int signPhi1) = CreatePhiDataForFace(lsData[0], jCell, faceIndex);
+				(int n2, int[] sizes2, double[] x2, double[] y2, int signPhi2) = CreatePhiDataForFace(lsData[1], jCell, faceIndex);
 
-				// get the quadrature rule from the wrapper
-				UnsafeAlgoim.QuadScheme[] qsArray = m_CalculateQuadRule(ruleDim, n1, n2, RequestedOrder, sizes1, sizes2, x1, x2, y1, y2);
-				CellBoundaryQuadRule[] quadRuleArray = new CellBoundaryQuadRule[qsArray.Length];
+                //Returned rules need to be categorized as ls0=0 ls1<0; ls0=0 ls1>0; ls0<0 ls1=0; ls0>0 ls1=0 
+                CellBoundaryQuadRule[] quadRuleArray = new CellBoundaryQuadRule[4]; //for all possible combinations of level sets with each other
 
-				for (int i = 0; i < qsArray.Length; i++) { //for each permutation/species
-					var qs = qsArray[i];
+                if(signPhi1 == 0 && signPhi2 == 0) {
 
-					// If quadrature rule is empty, return.
-					if (qs.length < 1) {
-						quadRuleArray[i] = CreateEmptyQuadRule();
-						continue;
-					}
+                    // get the quadrature rule from the wrapper
+                    UnsafeAlgoim.QuadScheme[] qsArray = m_CalculateQuadRule(ruleDim, n1, n2, RequestedOrder, sizes1, sizes2, x1, x2, y1, y2);
+                    
+                    for(int i = 0; i < qsArray.Length; i++) { //for each permutation/species
+                        var qs = qsArray[i];
 
-					// Create rule (edge based)
-					QuadRule quadRuleOnEdge = QuadRule.CreateBlank(RefElement.FaceRefElement, qs.length, qs.dimension);
-					SetNodesAndWeight(qs, quadRuleOnEdge);
+                        // If quadrature rule is empty, continue.
+                        if(qs.length < 1) {
+                            quadRuleArray[2 * i] = CreateEmptyQuadRule();
+                            quadRuleArray[2 * i + 1] = CreateEmptyQuadRule();
+                            continue;
+                        }
 
-					// Algoim returns an edge based rule, it must be converted to a CellBoundaryQuadRule (cell based coordinates)
-					CellBoundaryQuadRule quadRule = CellBoundaryQuadRule.CreateEmpty(RefElement, qs.length, spaceDim, RefElement.NoOfFaces);
-					quadRule.Weights = quadRuleOnEdge.Weights;
-					RefElement.TransformFaceCoordinates(edgeIndex, quadRuleOnEdge.Nodes, quadRule.Nodes); // to transform edge rule back to cell coordinates (since we are creating CellBoundaryQuadRule, cell based rule)
-					quadRule.Nodes.LockForever();
+                        // Create rule (edge based)
+                        QuadRule quadRuleOnEdge = QuadRule.CreateBlank(RefElement.FaceRefElement, qs.length, qs.dimension);
+                        SetNodesAndWeight(qs, quadRuleOnEdge);
 
-					//if (useMetrics) {
-					//	var metrics = lsData[0].GetLevelSetNormalReferenceToPhysicalMetrics(quadRule.Nodes, jCell, 1);
-					//	for (int k = 0; k < qs.length; k++)
-					//		quadRule.Weights[k] /= metrics[0, k];
-					//}
+                        // Algoim returns an edge based rule, it must be converted to a CellBoundaryQuadRule (cell based coordinates)
+                        CellBoundaryQuadRule quadRule = TransfromFromFace2Cell(faceIndex, qs, quadRuleOnEdge);
 
-					quadRuleArray[i] = quadRule;
-				}
+                        var (negativeRule, positiveRule) = DivideQuadRules(lsData[1 - i], jCell, quadRule); //1-i: the other level set since we have two level sets
+                        quadRuleArray[2 * i] = negativeRule;
+                        quadRuleArray[2 * i + 1] = positiveRule;
+                    }
 
-				return quadRuleArray;
-			}
+                    
 
-			CellBoundaryQuadRule CreateEmptyQuadRule() {
-				CellBoundaryQuadRule quadRuleEmpty = CellBoundaryQuadRule.CreateEmpty(RefElement, 1, spaceDim, RefElement.NoOfFaces);
+                } else if(signPhi1 == 0 && signPhi2 != 0) {
+                    // ++++++++++++++++++++++++++++++++++++++
+                    // second level-set is empty on this face
+                    // ++++++++++++++++++++++++++++++++++++++
+
+                    UnsafeAlgoim.QuadScheme qs = m_CalculateQuadRuleSingle(ruleDim, n1, RequestedOrder, sizes1, x1, y1);
+
+                    CellBoundaryQuadRule quadRule;
+                    if(qs.length < 1) {
+                        quadRule = CreateEmptyQuadRule();
+                    } else {
+                        // Create rule (edge based)
+                        QuadRule quadRuleOnEdge = QuadRule.CreateBlank(RefElement.FaceRefElement, qs.length, qs.dimension);
+                        SetNodesAndWeight(qs, quadRuleOnEdge);
+
+                        // Algoim returns an edge based rule, it must be converted to a CellBoundaryQuadRule (cell based coordinates)
+                        quadRule = TransfromFromFace2Cell(faceIndex, qs, quadRuleOnEdge);
+                    }
+
+                    quadRuleArray[2] = CreateEmptyQuadRule();
+                    quadRuleArray[3] = CreateEmptyQuadRule();
+
+                    if(signPhi2 > 0) {
+                        // ls1>0
+                        quadRuleArray[0] = CreateEmptyQuadRule();
+                        quadRuleArray[1] = quadRule;
+                    } else {
+                        // ls1<0
+                        quadRuleArray[0] = quadRule;
+                        quadRuleArray[1] = CreateEmptyQuadRule(); 
+                    }
+
+                } else if(signPhi1 != 0 && signPhi2 == 0) {
+                    // ++++++++++++++++++++++++++++++++++++++
+                    // first level-set is empty on this face
+                    // ++++++++++++++++++++++++++++++++++++++
+
+                    UnsafeAlgoim.QuadScheme qs = m_CalculateQuadRuleSingle(ruleDim, n2, RequestedOrder, sizes2, x2, y2);
+
+                    CellBoundaryQuadRule quadRule;
+                    if(qs.length < 1) {
+                        quadRule = CreateEmptyQuadRule();
+                    } else {
+                        // Create rule (edge based)
+                        QuadRule quadRuleOnEdge = QuadRule.CreateBlank(RefElement.FaceRefElement, qs.length, qs.dimension);
+                        SetNodesAndWeight(qs, quadRuleOnEdge);
+
+                        // Algoim returns an edge based rule, it must be converted to a CellBoundaryQuadRule (cell based coordinates)
+                        quadRule = TransfromFromFace2Cell(faceIndex, qs, quadRuleOnEdge);
+                    }
+
+                    quadRuleArray[0] = CreateEmptyQuadRule();
+                    quadRuleArray[1] = CreateEmptyQuadRule();
+
+                    if(signPhi1 > 0) {
+                        // ls0>0
+                        quadRuleArray[2] = CreateEmptyQuadRule();
+                        quadRuleArray[3] = quadRule;
+                    } else {
+                        // ls0<0
+                        quadRuleArray[2] = quadRule;
+                        quadRuleArray[3] = CreateEmptyQuadRule();
+                    }
+
+
+                } else if(signPhi1 != 0 && signPhi2 != 0) {
+                    // ++++++++++++++++++++++++++++++++++++++
+                    // both level-set are empty on this face
+                    // ++++++++++++++++++++++++++++++++++++++
+
+
+                    quadRuleArray[0] = CreateEmptyQuadRule();
+                    quadRuleArray[1] = CreateEmptyQuadRule();
+                    quadRuleArray[2] = CreateEmptyQuadRule();
+                    quadRuleArray[3] = CreateEmptyQuadRule();
+                }
+
+                return quadRuleArray;
+
+                CellBoundaryQuadRule TransfromFromFace2Cell(int faceIndex, UnsafeAlgoim.QuadScheme qs, QuadRule quadRuleOnEdge) {
+                    CellBoundaryQuadRule quadRule = CellBoundaryQuadRule.CreateEmpty(RefElement, qs.length, spaceDim, RefElement.NoOfFaces);
+                    quadRule.Weights = quadRuleOnEdge.Weights;
+                    RefElement.TransformFaceCoordinates(faceIndex, quadRuleOnEdge.Nodes, quadRule.Nodes); // to transform edge rule back to cell coordinates (since we are creating CellBoundaryQuadRule, cell based rule)
+                    quadRule.NumbersOfNodesPerFace[faceIndex] = quadRule.Weights.Length;
+                    quadRule.Nodes.LockForever();
+                    return quadRule;
+                }
+            }
+
+            /// <summary>
+            /// Divides the quadrature rule depending on the value of level set into two
+            /// </summary>
+            /// <param name="lsData"></param>
+            /// <param name="jCell"></param>
+            /// <param name="quadRule"></param>
+            /// <returns></returns>
+            private (CellBoundaryQuadRule negativeRule, CellBoundaryQuadRule positiveRule) DivideQuadRules(LevelSetTracker.LevelSetData lsData, int jCell, CellBoundaryQuadRule quadRule) {
+                //weight and nodes at negative level set values
+                List<double> negativeWeight = new List<double>();
+                List<double[]> negativeNodes = new List<double[]>();
+                //weight and nodes at positive level set values
+                List<double> positiveWeight = new List<double>();
+                List<double[]> positiveNodes = new List<double[]>();
+                int NoofFaces = quadRule.NumbersOfNodesPerFace.Length;
+                int[] negative_NumbersOfNodesPerFace = new int[NoofFaces];
+                int[] positive_NumbersOfNodesPerFace = new int[NoofFaces];
+
+                var ret = lsData.GetLevSetValues(quadRule.Nodes, jCell, 1);
+                int k = 0;
+                for(int iFace = 0; iFace < quadRule.NumbersOfNodesPerFace.Length; iFace++) {
+                    for(int i = 0; i < quadRule.NumbersOfNodesPerFace[iFace]; i++) {
+                        var ls = ret[0, k];
+                        if(ls < 0) {
+                            negativeWeight.Add(quadRule.Weights[i]);
+                            negativeNodes.Add(quadRule.Nodes.GetRow(i));
+                            negative_NumbersOfNodesPerFace[iFace]++;
+                        } else if(ls > 0) {
+                            positiveWeight.Add(quadRule.Weights[i]);
+                            positiveNodes.Add(quadRule.Nodes.GetRow(i));
+                            positive_NumbersOfNodesPerFace[iFace]++;
+                        }
+                        k++;
+                    }
+                }
+                CellBoundaryQuadRule negRule = CellBoundaryQuadRule.CreateEmpty(RefElement, negativeWeight.Count(), spaceDim, NoofFaces);
+                for(int n = 0; n < negativeWeight.Count(); n++) {
+                    negRule.Weights[n] = negativeWeight[n];
+                    negRule.Nodes.SetRow(n, negativeNodes[n]);
+                }
+                negRule.NumbersOfNodesPerFace = negative_NumbersOfNodesPerFace;
+                negRule.Nodes.LockForever();
+                CellBoundaryQuadRule posRule = CellBoundaryQuadRule.CreateEmpty(RefElement, positiveWeight.Count(), spaceDim, NoofFaces);
+                for(int n = 0; n < positiveWeight.Count(); n++) {
+                    posRule.Weights[n] = positiveWeight[n];
+                    posRule.Nodes.SetRow(n, positiveNodes[n]);
+                }
+                negRule.NumbersOfNodesPerFace = negative_NumbersOfNodesPerFace;
+                posRule.Nodes.LockForever();
+                Debug.Assert(positiveWeight.Count() + negativeWeight.Count() == ret.Length);
+                return (negRule, posRule);
+            }
+
+
+
+            CellBoundaryQuadRule CreateEmptyQuadRule() {
+				CellBoundaryQuadRule quadRuleEmpty = CellBoundaryQuadRule.CreateEmpty(RefElement, 0, spaceDim, RefElement.NoOfFaces);
 				quadRuleEmpty.Nodes.LockForever();
 				return quadRuleEmpty;
 			}

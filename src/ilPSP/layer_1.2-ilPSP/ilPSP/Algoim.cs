@@ -470,7 +470,9 @@ namespace ilPSP.Utils {
         }
 
         public unsafe _GetSurfaceSchemeTwoLS getUnmanagedSurfaceSchemeTwoLS {
-            get { return GetSurfaceSchemeTwoLS; }
+            get { 
+                return GetSurfaceSchemeTwoLS; 
+            }
         }
 
 		public unsafe _GetComboSchemeTwoLS getUnmanagedComboSchemeTwoLS {
@@ -617,10 +619,10 @@ namespace ilPSP.Utils {
 
 		/// <summary>
 		/// Returns the volume quadrature rules for the given parameters
-		/// First element is for level set 1 < 0 and level set 2 < 0
-		/// Second element is for level set 1 < 0 and level set 2 > 0
-		/// Third element is for level set 1 > 0 and level set 2 < 0
-        /// Fourth element is for level set 1 > 0 and level set 2 > 0
+		/// - First element is for level set 1 < 0 and level set 2 < 0
+		/// - Second element is for level set 1 < 0 and level set 2 > 0
+		/// - Third element is for level set 1 > 0 and level set 2 < 0
+        /// - Fourth element is for level set 1 > 0 and level set 2 > 0
 		/// </summary>
 		/// <param name="dim">dimension of space</param>
 		/// <param name="dim">dimension of space</param>
@@ -753,8 +755,8 @@ namespace ilPSP.Utils {
 
 		public static QuadScheme[] GetSurfaceQuadratureRulesTwoLSTest(int quadOrder = 5) {
 
-			Func<double, double, double> LS1 = (x1, x2) => (-x2); // a linear line at y=0, positive under it: R^2 -> R, i.e., (x1,x2) -> y
-			Func<double, double, double> LS2 = (x1, x2) => (x1 - x2); // a linear line at x=y, positive under it: R^2 -> R, i.e., (x1,x2) -> y
+            Func<double, double, double> LS1 = (x1, x2) => (-x2); // a linear line at y=0, positive under it: R^2 -> R, i.e., (x1,x2) -> y
+            Func<double, double, double> LS2 = (x1, x2) => (x1 - x2); // a linear line at x=y, positive under it: R^2 -> R, i.e., (x1,x2) -> y
 
 			int n = 2; // number of points in one axis (degree + 1) 
 			int spaceDim = 2;
@@ -787,7 +789,7 @@ namespace ilPSP.Utils {
 			
             QuadScheme[] retArray = new QuadScheme[2];
 			unsafe { 
-			QuadSchemeUnmanaged* retC = m_Algoim.getUnmanagedSurfaceSchemeTwoLS(spaceDim, n, n, quadOrder, sA, sB, xA, xB, yA, yB);
+			    QuadSchemeUnmanaged* retC = m_Algoim.getUnmanagedSurfaceSchemeTwoLS(spaceDim, n, n, quadOrder, sA, sB, xA, xB, yA, yB);
 
 				for (int k = 0; k < 2; ++k) {
 					var scheme = retC[k];
@@ -803,8 +805,8 @@ namespace ilPSP.Utils {
 
 		public static QuadScheme[] GetVolumeQuadratureRulesTwoLSTest() {
 
-			Func<double, double, double> LS1 = (x1, x2) => (-x2); // a linear line at y=0, positive under it: R^2 -> R, i.e., (x1,x2) -> y
-			Func<double, double, double> LS2 = (x1, x2) => (x1 - x2); // a linear line at x=y, positive under it: R^2 -> R, i.e., (x1,x2) -> y
+            Func<double, double, double> LS1 = (x1, x2) => (-x2); // a linear line at y=0, positive under it: R^2 -> R, i.e., (x1,x2) -> y
+            Func<double, double, double> LS2 = (x1, x2) => (x1 - x2); // a linear line at x=y, positive under it: R^2 -> R, i.e., (x1,x2) -> y
 
 			int n = 2; // number of points in one axis (degree + 1) 
 			int spaceDim = 2;
