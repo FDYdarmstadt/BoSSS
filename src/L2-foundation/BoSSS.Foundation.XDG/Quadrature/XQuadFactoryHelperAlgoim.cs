@@ -194,7 +194,10 @@ namespace BoSSS.Foundation.XDG {
 
 
         public override IQuadRuleFactory<QuadRule> GetIntersectionRuleFactory(int levSetIndex0, int levSetIndex1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
-            throw new NotImplementedException();
+            //
+            // use our own implementation, since level-set intersection is not available in Algoim (?)
+            //
+            return Quadrature.Intersecting.IntersectingQuadratureFactories.Intersection(m_LevelSetDatas[levSetIndex0], m_LevelSetDatas[levSetIndex1]);
         }
 
         Quadrature.HMF.LineAndPointQuadratureFactory[] LineAndPoint_in2D = null;
