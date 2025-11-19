@@ -63,9 +63,6 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
-            //InitMPI();
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.BcTest_PressureOutletTest(2, 1, 0.1, CutCellQuadratureMethod.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, false);
-            //throw new Exception("remove");
             {
                 XNSE._Main(args, false, delegate () {
                     var p = new XNSE();
@@ -618,6 +615,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using(var f = new FuncTrace()) {
+                Console.WriteLine();
                 if((int)this.Control.TimeSteppingScheme >= 100 && this.Control.TimesteppingMode != AppControl._TimesteppingMode.Steady) {
 
                     // this is a RK scheme, set here the maximum 
@@ -631,32 +629,35 @@ namespace BoSSS.Application.XNSE_Solver {
                     // this is a BDF or non-adaptive scheme, use the base implementation, i.e. the fixed timestep
                     dt = base.GetTimestep();
                 }
+                Console.WriteLine($"Starting time step {TimestepNo}, t = {phystime:g4}, dt = {dt:g4} ...");
 
-                int NoOfCutCells = this.LsTrk.Regions.GetNearFieldMask(1).NoOfItemsLocally;
-                int NoOfCells = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
-                int NoOfCutCells_Min = NoOfCutCells.MPIMin();
-                int NoOfCutCells_Max = NoOfCutCells.MPIMax();
-                int NoOfCells_Min = NoOfCells.MPIMin();
-                int NoOfCells_Max = NoOfCells.MPIMax();
-                int NoOfCutCellsTot = NoOfCutCells.MPISum();
-                long NoOfCellsTot = this.GridData.CellPartitioning.TotalLength;
-                double AvgCutCells = NoOfCutCellsTot / (double)this.MPISize;
-                double AvgCells = NoOfCellsTot / (double)this.MPISize;
-                double RelCellsInbalance = (double)(NoOfCells_Max - NoOfCells_Min) / NoOfCells_Max;
-                double RelCutCellsInbalance = NoOfCutCells_Max == 0 ? 0 : (double)(NoOfCutCells_Max - NoOfCutCells_Min) / NoOfCutCells_Max;
+                {
+                    int NoOfCutCells = this.LsTrk.Regions.GetNearFieldMask(1).NoOfItemsLocally;
+                    int NoOfCells = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+                    int NoOfCutCells_Min = NoOfCutCells.MPIMin();
+                    int NoOfCutCells_Max = NoOfCutCells.MPIMax();
+                    int NoOfCells_Min = NoOfCells.MPIMin();
+                    int NoOfCells_Max = NoOfCells.MPIMax();
+                    int NoOfCutCellsTot = NoOfCutCells.MPISum();
+                    long NoOfCellsTot = this.GridData.CellPartitioning.TotalLength;
+                    double AvgCutCells = NoOfCutCellsTot / (double)this.MPISize;
+                    double AvgCells = NoOfCellsTot / (double)this.MPISize;
+                    double RelCellsInbalance = (double)(NoOfCells_Max - NoOfCells_Min) / NoOfCells_Max;
+                    double RelCutCellsInbalance = NoOfCutCells_Max == 0 ? 0 : (double)(NoOfCutCells_Max - NoOfCutCells_Min) / NoOfCutCells_Max;
 
-                Console.WriteLine($"All Cells: min={NoOfCells_Min} max={NoOfCells_Max} avg={AvgCells:G5} inb={RelCellsInbalance:G4} tot={NoOfCellsTot}");
-                Console.WriteLine($"Cut Cells: min={NoOfCutCells_Min} max={NoOfCutCells_Max} avg={AvgCutCells:G5} inb={RelCutCellsInbalance:G4}, tot={NoOfCutCellsTot}");
+                    f.Info($"All Cells: min={NoOfCells_Min} max={NoOfCells_Max} avg={AvgCells:G5} inb={RelCellsInbalance:G4} tot={NoOfCellsTot}");
+                    f.Info($"Cut Cells: min={NoOfCutCells_Min} max={NoOfCutCells_Max} avg={AvgCutCells:G5} inb={RelCutCellsInbalance:G4}, tot={NoOfCutCellsTot}");
 
-                if(ImbalanceTrack != null) ImbalanceTrack.Add((RelCellsInbalance, RelCutCellsInbalance));
+                    if(ImbalanceTrack != null) 
+                        ImbalanceTrack.Add((RelCellsInbalance, RelCutCellsInbalance));
 
+                }
 
                 if(!this.Control.InitialRampUpValues.IsNullOrEmpty()) {
                     SetRampUpValue(TimestepNo, phystime);
                 }
 
 
-                Console.WriteLine($"Starting time step {TimestepNo}, t = {phystime:g4}, dt = {dt:g4} ...");
                 bool success = Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
 
                 Console.WriteLine($"Done with time step {TimestepNo}; solver success: {success}");
