@@ -142,7 +142,7 @@ namespace IntersectingLevelSetTest {
         static double EvaluateSurface(LevelSetTracker lsTrkr, int quadOrder, XQuadSchemeHelper schemes, SpeciesId id) {
             double integral = 0;
             for (int i = 0; i < lsTrkr.NoOfLevelSets; ++i) {
-                CellQuadratureScheme surfScheme = schemes.GetLevelSetquadScheme(i, id, lsTrkr.Regions.GetCutCellMask4LevSet(i));
+                CellQuadratureScheme surfScheme = schemes.GetLevelSetQuadScheme(i, id, lsTrkr.Regions.GetCutCellMask4LevSet(i));
                 var surf = CellQuadrature(surfScheme.Compile(lsTrkr.GridDat, quadOrder), lsTrkr.GridDat);
                 integral += surf.Sum();
             }

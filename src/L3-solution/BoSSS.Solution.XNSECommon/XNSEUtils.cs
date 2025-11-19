@@ -307,7 +307,7 @@ namespace BoSSS.Solution.XNSECommon {
 
             //var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, LsTrk.GetSpeciesId("A"));
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, momentFittingOrder, 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
 
             double mini = double.MaxValue, maxi = double.MinValue;
 
@@ -364,7 +364,7 @@ namespace BoSSS.Solution.XNSECommon {
 
             //var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, LsTrk.GetSpeciesId("A"));
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new SpeciesId[] { LsTrk.GetSpeciesId("A") }, momentFittingOrder, 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
 
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 cqs.Compile(LsTrk.GridDat, momentFittingOrder),
@@ -388,7 +388,7 @@ namespace BoSSS.Solution.XNSECommon {
             ScalarFunctionEx ErrFunc = GetVelocityJumpErrFunc(U, true, true);
 
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), momentFittingOrder, 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
 
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 cqs.Compile(LsTrk.GridDat, momentFittingOrder),
@@ -549,7 +549,7 @@ namespace BoSSS.Solution.XNSECommon {
 
                 //var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, );
                 var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, momentFittingOrder, 1).XQuadSchemeHelper;
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.GetSpeciesId("A"), LsTrk.Regions.GetCutCellMask());
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.GetSpeciesId("A"), LsTrk.Regions.GetCutCellMask());
 
                 CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                     cqs.Compile(LsTrk.GridDat, momentFittingOrder),
@@ -574,7 +574,7 @@ namespace BoSSS.Solution.XNSECommon {
             double[] STF_Norm = new double[D];
 
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, momentFittingOrder, 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
 
             CellQuadrature.GetQuadrature(new int[] { D }, LsTrk.GridDat,
                 cqs.Compile(LsTrk.GridDat, momentFittingOrder),
@@ -801,7 +801,7 @@ namespace BoSSS.Solution.XNSECommon {
             double[] momBal_Norm = new double[D];
 
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, momentFittingOrder, 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
 
             CellQuadrature.GetQuadrature(new int[] { D }, LsTrk.GridDat,
                 cqs.Compile(LsTrk.GridDat, momentFittingOrder),
@@ -837,7 +837,7 @@ namespace BoSSS.Solution.XNSECommon {
 
                 int order = ((U[d].Basis.Degree - 1) + (P.Basis.Degree) + err[d].Basis.Degree + 2);
                 var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, order, 1).XQuadSchemeHelper;
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
 
                 CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                     cqs.Compile(LsTrk.GridDat, order),
@@ -1215,7 +1215,7 @@ namespace BoSSS.Solution.XNSECommon {
             int order  = (quadRuleOrder < 0) ? 1 : quadRuleOrder;
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;
 
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 cqs.Compile(LsTrk.GridDat, order),
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
@@ -1593,7 +1593,7 @@ namespace BoSSS.Solution.XNSECommon {
             // ========================================================
             double gaussInVolume = 0.0;
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
-                schemeHelper.GetLevelSetquadScheme(0, cellIntDom, order).Compile(LsTrk.GridDat, order),
+                schemeHelper.GetLevelSetQuadScheme(0, cellIntDom, order).Compile(LsTrk.GridDat, order),
                 delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
 
                     int qN = QR.NoOfNodes;
@@ -1622,7 +1622,7 @@ namespace BoSSS.Solution.XNSECommon {
             // =========================================================
             double gaussAtInterface = 0.0;
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
-                schemeHelper.GetLevelSetquadScheme(0, cellIntDom).Compile(LsTrk.GridDat, order),
+                schemeHelper.GetLevelSetQuadScheme(0, cellIntDom).Compile(LsTrk.GridDat, order),
                 delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
 
                     int qN = QR.NoOfNodes;
@@ -1723,7 +1723,7 @@ namespace BoSSS.Solution.XNSECommon {
             // ========================================================
             double stokesAtInterface = 0.0;
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
-                schemeHelper.GetLevelSetquadScheme(0, cellIntDom, order).Compile(LsTrk.GridDat, order),
+                schemeHelper.GetLevelSetQuadScheme(0, cellIntDom, order).Compile(LsTrk.GridDat, order),
                 delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
 
                     int qN = QR.NoOfNodes;

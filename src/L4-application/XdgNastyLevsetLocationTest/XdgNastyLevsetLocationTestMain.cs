@@ -130,7 +130,7 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
 
                     var volSchemeA = schemes.GetVolumeQuadScheme(this.LsTrk.GetSpeciesId("A"), IntegrationDomain: cutCells);
                     var volSchemeB = schemes.GetVolumeQuadScheme(this.LsTrk.GetSpeciesId("B"), IntegrationDomain: cutCells);
-                    CellQuadratureScheme surfScheme = schemes.GetLevelSetquadScheme(0, cutCells);
+                    CellQuadratureScheme surfScheme = schemes.GetLevelSetQuadScheme(0, cutCells);
                     var edgeSchemeA = schemes.GetEdgeQuadScheme(this.LsTrk.GetSpeciesId("A"));
                     var edgeSchemeB = schemes.GetEdgeQuadScheme(this.LsTrk.GetSpeciesId("B"));
 

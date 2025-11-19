@@ -123,7 +123,7 @@ namespace CNS.IBM {
             });
 
             // Evaluator for boundary conditions at level set zero contour
-            CellQuadratureScheme boundaryVolumeScheme = speciesMap.QuadSchemeHelper.GetLevelSetquadScheme(
+            CellQuadratureScheme boundaryVolumeScheme = speciesMap.QuadSchemeHelper.GetLevelSetQuadScheme(
                 0, cutCells, control.LevelSetQuadratureOrder);
 
             this.boundaryEvaluator = new Lazy<IEvaluatorNonLin>(delegate() {

@@ -48,7 +48,7 @@ namespace BoSSS.Foundation.XDG {
                 if (SchemeHelper.CutCellQuadratureMethod == CutCellQuadratureMethod.Classic)
                     HMForder -= 2;
 
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, spc, LsTrk.Regions.GetCutCellMask());
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, spc, LsTrk.Regions.GetCutCellMask());
 
                 double force = 0;
 

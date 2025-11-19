@@ -393,7 +393,7 @@ namespace XESF.Variables {
                 double Jump_NORM = 0.0;
 
                 var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new SpeciesId[] { LsTrk.GetSpeciesId("L") }, quadDregree, HistoryIndex: 1).XQuadSchemeHelper;
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(iLevSet: 1, IntegrationDom: LsTrk.Regions.GetCutCellMask4LevSet(LevSetIdx: 1));
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(iLevSet: 1, IntegrationDom: LsTrk.Regions.GetCutCellMask4LevSet(LevSetIdx: 1));
 
                 CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                     cqs.Compile(LsTrk.GridDat, quadDregree),
@@ -460,7 +460,7 @@ namespace XESF.Variables {
                 }
 
                 var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new SpeciesId[] { LsTrk.GetSpeciesId(left), LsTrk.GetSpeciesId(right) }, quadDregree, HistoryIndex: 1).XQuadSchemeHelper;
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(iLevSet: levelSetIndex, IntegrationDom: LsTrk.Regions.GetCutCellMask4LevSet(LevSetIdx: levelSetIndex));
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(iLevSet: levelSetIndex, IntegrationDom: LsTrk.Regions.GetCutCellMask4LevSet(LevSetIdx: levelSetIndex));
 
                 CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                     cqs.Compile(LsTrk.GridDat, quadDregree),
@@ -543,7 +543,7 @@ namespace XESF.Variables {
                 }
 
                 var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new SpeciesId[] { LsTrk.GetSpeciesId(left), LsTrk.GetSpeciesId(right) }, quadDregree, HistoryIndex: 1).XQuadSchemeHelper;
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(iLevSet: levelSetIndex, IntegrationDom: LsTrk.Regions.GetCutCellMask4LevSet(LevSetIdx: levelSetIndex));
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(iLevSet: levelSetIndex, IntegrationDom: LsTrk.Regions.GetCutCellMask4LevSet(LevSetIdx: levelSetIndex));
 
                 CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                     cqs.Compile(LsTrk.GridDat, quadDregree),
@@ -626,7 +626,7 @@ namespace XESF.Variables {
                 }
 
                 var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new SpeciesId[] { LsTrk.GetSpeciesId(left), LsTrk.GetSpeciesId(right) }, quadDregree, HistoryIndex: 1).XQuadSchemeHelper;
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(iLevSet: levelSetIndex, IntegrationDom: LsTrk.Regions.GetCutCellMask4LevSet(LevSetIdx: levelSetIndex));
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(iLevSet: levelSetIndex, IntegrationDom: LsTrk.Regions.GetCutCellMask4LevSet(LevSetIdx: levelSetIndex));
 
                 CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                     cqs.Compile(LsTrk.GridDat, quadDregree),
@@ -710,7 +710,7 @@ namespace XESF.Variables {
                 }
 
                 var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new SpeciesId[] { LsTrk.GetSpeciesId(left), LsTrk.GetSpeciesId(right) }, quadDregree, HistoryIndex: 1).XQuadSchemeHelper;
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(iLevSet: levelSetIndex, IntegrationDom: LsTrk.Regions.GetCutCellMask4LevSet(LevSetIdx: levelSetIndex));
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(iLevSet: levelSetIndex, IntegrationDom: LsTrk.Regions.GetCutCellMask4LevSet(LevSetIdx: levelSetIndex));
 
                 CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                     cqs.Compile(LsTrk.GridDat, quadDregree),
@@ -794,7 +794,7 @@ namespace XESF.Variables {
                 }
 
                 var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new SpeciesId[] { LsTrk.GetSpeciesId(left), LsTrk.GetSpeciesId(right) }, quadDregree, HistoryIndex: 1).XQuadSchemeHelper;
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(iLevSet: levelSetIndex, IntegrationDom: LsTrk.Regions.GetCutCellMask4LevSet(LevSetIdx: levelSetIndex));
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(iLevSet: levelSetIndex, IntegrationDom: LsTrk.Regions.GetCutCellMask4LevSet(LevSetIdx: levelSetIndex));
 
                 CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                     cqs.Compile(LsTrk.GridDat, quadDregree),
@@ -882,7 +882,7 @@ namespace XESF.Variables {
                 }
 
                 var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new SpeciesId[] { LsTrk.GetSpeciesId(left), LsTrk.GetSpeciesId(right) }, quadDregree, HistoryIndex: 1).XQuadSchemeHelper;
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(iLevSet: levelSetIndex, IntegrationDom: LsTrk.Regions.GetCutCellMask4LevSet(LevSetIdx: levelSetIndex));
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(iLevSet: levelSetIndex, IntegrationDom: LsTrk.Regions.GetCutCellMask4LevSet(LevSetIdx: levelSetIndex));
 
                 CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                     cqs.Compile(LsTrk.GridDat, quadDregree),
@@ -1186,7 +1186,7 @@ namespace XESF.Variables {
             }
 
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new SpeciesId[] { LsTrk.GetSpeciesId(left), LsTrk.GetSpeciesId(right) }, quadDregree, HistoryIndex: 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(iLevSet: levelSetIndex, IntegrationDom: LsTrk.Regions.GetCutCellMask4LevSet(LevSetIdx: levelSetIndex));
+            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(iLevSet: levelSetIndex, IntegrationDom: LsTrk.Regions.GetCutCellMask4LevSet(LevSetIdx: levelSetIndex));
 
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 cqs.Compile(LsTrk.GridDat, quadDregree),
@@ -1284,7 +1284,7 @@ namespace XESF.Variables {
             }
 
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new SpeciesId[] { LsTrk.GetSpeciesId(left), LsTrk.GetSpeciesId(right) }, quadDregree, HistoryIndex: 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(iLevSet: levelSetIndex, IntegrationDom: LsTrk.Regions.GetCutCellMask4LevSet(LevSetIdx: levelSetIndex));
+            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(iLevSet: levelSetIndex, IntegrationDom: LsTrk.Regions.GetCutCellMask4LevSet(LevSetIdx: levelSetIndex));
 
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 cqs.Compile(LsTrk.GridDat, quadDregree),

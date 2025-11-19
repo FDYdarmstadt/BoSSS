@@ -650,7 +650,7 @@ namespace BoSSS.Application.LsTest {
         public double ComputeContourError(int iLevSet) {
 
             var SchemeHelper = solver.LsTrk.GetXDGSpaceMetrics(solver.LsTrk.SpeciesIdS.ToArray(), solver.QuadOrder(), 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(iLevSet, solver.LsTrk.Regions.GetCutCellMask4LevSet(iLevSet));
+            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(iLevSet, solver.LsTrk.Regions.GetCutCellMask4LevSet(iLevSet));
             int Norm = 2;
             var t_exactPhi = exactPhi[iLevSet].CloneAs();
             t_exactPhi.AccLaidBack(-1.0, solver.LsUpdater.LevelSets[VariableNames.LevelSetCGidx(iLevSet)].C0LevelSet);

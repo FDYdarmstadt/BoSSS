@@ -655,7 +655,11 @@ namespace BoSSS.Solution {
                 Console.Write("rm");
                 foreach (var pltFile in dir.GetFiles("*.plt").Concat(dir.GetFiles("*.curve"))) {
                     Console.Write(" " + pltFile.Name);
-                    pltFile.Delete();
+                    try {
+                        pltFile.Delete();
+                    } catch (IOException ioe) {
+                        Console.Error.WriteLine(ioe.Message);
+                    }
                 }
                 Console.WriteLine(";");
             }

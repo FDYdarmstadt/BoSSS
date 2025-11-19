@@ -207,7 +207,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             var GridData = LsTrk.GridDat;
             var helper = LsTrk.GetXDGSpaceMetrics(speciesIds, QuadOrder, 1).XQuadSchemeHelper;
 
-            var surfScheme = helper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            var surfScheme = helper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
 
             for(int iSpc = 0; iSpc < 2; iSpc++) {
                 // ++++++++++++++++++++++++++++++++++++++++++++++

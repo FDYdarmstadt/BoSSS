@@ -489,7 +489,7 @@ namespace BoSSS.Foundation.XDG {
             //var IntegrationDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet).Intersect(spdom);
             var IntegrationDom = this.LevelSetSeparationLayer[(spA, spB, iLevSet)];
 
-            return GetLevelSetquadScheme(iLevSet, spA, IntegrationDom);
+            return GetLevelSetQuadScheme(iLevSet, spA, IntegrationDom);
         }
 
 
@@ -1143,6 +1143,17 @@ namespace BoSSS.Foundation.XDG {
         }
 
 
+        /*
+        public CellQuadratureScheme bal(int iLevSet) {
+            var CutCells = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet);
+
+            foreach(var Kref in gdat.iGeomCells.RefElements) {
+                this.XDGSpaceMetrics.XQuadFactoryHelper._GetSurfaceElement_BoundaryRuleFactory()
+            }
+        }
+        */
+
+
         /// <summary>
         /// Quadrature scheme for the integration over the level-set <paramref name="iLevSet"/>, i.e. for each cut background-cell \f$ K_j \f$ a quadrature to approximate
         /// \f[
@@ -1150,8 +1161,8 @@ namespace BoSSS.Foundation.XDG {
         /// \f]
         /// where \f$ \mathfrak{A} \f$ is the first species in <see cref="SpeciesList"/>.
         /// </summary>
-        public CellQuadratureScheme GetLevelSetquadScheme(int iLevSet, CellMask IntegrationDom, int? fixedOrder = null) {
-            return GetLevelSetquadScheme(iLevSet, this.SpeciesList.First(), IntegrationDom, fixedOrder);
+        public CellQuadratureScheme GetLevelSetQuadScheme(int iLevSet, CellMask IntegrationDom, int? fixedOrder = null) {
+            return GetLevelSetQuadScheme(iLevSet, this.SpeciesList.First(), IntegrationDom, fixedOrder);
         }
 
         /// <summary>
@@ -1161,7 +1172,7 @@ namespace BoSSS.Foundation.XDG {
         /// \f]
         /// where \f$ \mathfrak{A} \f$ is the domain of species <paramref name="spA"/>.
         /// </summary>
-        public CellQuadratureScheme GetLevelSetquadScheme(int iLevSet, SpeciesId spA, CellMask IntegrationDom, int? fixedOrder = null) {
+        public CellQuadratureScheme GetLevelSetQuadScheme(int iLevSet, SpeciesId spA, CellMask IntegrationDom, int? fixedOrder = null) {
             if (IntegrationDom.MaskType == MaskType.Logical)
                 IntegrationDom = IntegrationDom.ToGeometicalMask();
             if(gdat.iGeomCells.RefElements.Length > 1)

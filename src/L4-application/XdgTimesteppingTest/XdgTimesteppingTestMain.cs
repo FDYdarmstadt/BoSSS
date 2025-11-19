@@ -712,7 +712,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             var CC = LsTrk.Regions.GetCutCellMask();
             uNumJump.Acc(+1.0, uNum_A, CC);
             uNumJump.Acc(-1.0, uNum_B, CC);
-            double JmpL2Err = uNumJump.L2Error(uJmp_Ex.Vectorize(PhysTime), order, schH.GetLevelSetquadScheme(0, CC));
+            double JmpL2Err = uNumJump.L2Error(uJmp_Ex.Vectorize(PhysTime), order, schH.GetLevelSetQuadScheme(0, CC));
             double totErr = Math.Sqrt(uA_Err.Pow2() + uB_Err.Pow2());
 
             base.QueryHandler.ValueQuery("uA_Err", uA_Err, OverWriteIfExistent);

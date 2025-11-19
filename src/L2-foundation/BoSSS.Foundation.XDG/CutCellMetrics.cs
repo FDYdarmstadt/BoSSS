@@ -220,7 +220,7 @@ namespace BoSSS.Foundation.XDG {
                                     var LsDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet);
                                     var IntegrationDom = LsDom.Intersect(SpeciesCommonDom);
 
-                                    CellQuadratureScheme SurfIntegration = schH.GetLevelSetquadScheme(iLevSet, SpeciesA, IntegrationDom);
+                                    CellQuadratureScheme SurfIntegration = schH.GetLevelSetQuadScheme(iLevSet, SpeciesA, IntegrationDom);
                                     var chunRulePairList = SurfIntegration.Compile(gd, this.CutCellQuadratureOrder);
                                     chunRulePairList.ToVtpFilesCell(gd, "surfQuadFor" + SpeciesA.ToString(XDGSpaceMetrics.Tracker) + "-" + SpeciesB.ToString(XDGSpaceMetrics.Tracker) + HMFvariant);
                                 }
@@ -378,7 +378,7 @@ namespace BoSSS.Foundation.XDG {
                                         var LsDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet);
                                         var IntegrationDom = LsDom.Intersect(SpeciesCommonDom);
 
-                                        CellQuadratureScheme SurfIntegration = schH.GetLevelSetquadScheme(iLevSet, SpeciesA, IntegrationDom);
+                                        CellQuadratureScheme SurfIntegration = schH.GetLevelSetQuadScheme(iLevSet, SpeciesA, IntegrationDom);
                                         var rule = SurfIntegration.Compile(gd, this.CutCellQuadratureOrder);
 
                                         BoSSS.Foundation.Quadrature.CellQuadrature.GetQuadrature(

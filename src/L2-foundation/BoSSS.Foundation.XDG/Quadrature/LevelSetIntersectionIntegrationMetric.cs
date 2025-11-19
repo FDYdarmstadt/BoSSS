@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Text;
 using static BoSSS.Foundation.XDG.LevelSetTracker;
 
-namespace BoSSS.Foundation.XDG {
+namespace BoSSS.Foundation.XDG.Quadrature {
 
 
     /// <summary>

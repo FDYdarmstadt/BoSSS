@@ -167,7 +167,7 @@ namespace BoSSS.Application.XNSE_Solver.Logging {
                 int qOrder = SolverMainOverride.QuadOrder();
 
                 var schemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS, qOrder).XQuadSchemeHelper;
-                var scheme = schemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask4LevSet(0).Intersect(LsTrk.Regions.GetSpeciesMask("A")));
+                var scheme = schemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask4LevSet(0).Intersect(LsTrk.Regions.GetSpeciesMask("A")));
 
                 int dim = SH_dim(MaxL, RotSymmetric);
 

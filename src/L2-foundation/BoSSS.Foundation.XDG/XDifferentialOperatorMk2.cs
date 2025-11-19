@@ -1603,7 +1603,7 @@ namespace BoSSS.Foundation.XDG {
 
 
         static CellQuadratureScheme DefaultCouplingSchemeProvider(LevelSetTracker lsTrk, int iLevSet, SpeciesId SpeciesA, SpeciesId SpeciesB, CellMask IntegrationDomain, XQuadSchemeHelper SchemeHelper, int quadOrder, int TrackerHistory) {
-            CellQuadratureScheme SurfIntegration = SchemeHelper.GetLevelSetquadScheme(iLevSet, SpeciesA, IntegrationDomain);
+            CellQuadratureScheme SurfIntegration = SchemeHelper.GetLevelSetQuadScheme(iLevSet, SpeciesA, IntegrationDomain);
             return SurfIntegration;
 
         }

@@ -241,14 +241,14 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             switch(NoOfLevelSets) {
                 case 1: {
                     int CGlevelSetDegree = (Control.FieldOptions[lsNames[0].DgLs].Degree >= 0) ? Control.FieldOptions[lsNames[0].ContLs].Degree : -1;
-                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, Control.LS_TrackerWidth,
+                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, this.QuadOrder, Control.LS_TrackerWidth,
                         (string[])this.SpeciesTable,
                         this.GetLsUpdaterInputFields,
                         DGlevelSets[0], lsNames[0].ContLs, Control.LSContiProjectionMethod, CGlevelSetDegree);
                     break;
                 }
                 case 2: {
-                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, Control.LS_TrackerWidth,
+                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, this.QuadOrder, Control.LS_TrackerWidth,
                         (string[,])this.SpeciesTable,
                         DGlevelSets[0], lsNames[0].ContLs, Control.LSContiProjectionMethod,
                         DGlevelSets[1], lsNames[1].ContLs, Control.LSContiProjectionMethod2);
