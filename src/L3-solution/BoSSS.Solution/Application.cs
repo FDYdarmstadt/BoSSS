@@ -332,8 +332,8 @@ namespace BoSSS.Solution {
 
             ReadBatchModeConnectorConfig();
 
-            System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
-
+            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+            CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
             return _MustFinalizeMPI;
         }
