@@ -51,6 +51,7 @@ using System.Numerics;
 using System.Reflection.Emit;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
+using System.Security.Cryptography;
 using System.Security.Policy;
 using System.Text;
 using System.Threading;
@@ -2576,14 +2577,46 @@ namespace BoSSS.Solution.AdvancedSolvers {
         private double[] ApplySmoothers(double[] XforSmoother, double[] ResforSmoother, double[] X0forSmoother, double[] Res0forSmoother, int iIter) {
             using(var trace = new FuncTrace("SmootherTpLvl" + TpLevel)) {
                 int i = 0;
+                int PostSmootherArithmeticExceptionCount = 0;
                 void RunAllSmoothers() {
                     foreach(var smoother in Smoothers) {
-                        double[] PreCorrSmoother = new double[smootherPermutation.LengthAfterPermutation]; //XforSmoother;
-                        smoother.Solve(PreCorrSmoother, ResforSmoother);
+                        bool fail = false;
+                        double[] PostCorrSmoother = new double[smootherPermutation.LengthAfterPermutation]; //XforSmoother;
+                        
+                        try {
+                            smoother.Solve(PostCorrSmoother, ResforSmoother);
+                        } catch(ArithmeticException ae) {
+                            CurrentTrace.Error($"Smoother fail on Rank {m_OpMapPair.DgMapping.MpiRank}: " + ae.ToString());
+                            fail = true;
+                        }
 
-                        var resNorm = ortho.AddSolAndMinimizeResidual(ref PreCorrSmoother, XforSmoother, X0forSmoother, Res0forSmoother, ResforSmoother, "Tp-smoother" + TpLevel);
-                        WriteDebug(iIter, resNorm, "Tp-smootherS" + i);
-                        i++;
+                        fail |= PostCorrSmoother.ContainsNanOrInf();
+                        fail = fail.MPIOr();
+
+                        if(fail) {
+                            PostSmootherArithmeticExceptionCount++;
+                            Console.Error.WriteLine("Post-Smoother " + smoother.GetType().Name + " produces NAN/INF at sweep " + i + " for " + PostSmootherArithmeticExceptionCount + "-th time.");
+
+                            if(ResforSmoother.ContainsNanOrInf()) {
+                                Console.WriteLine("... so does RHS");
+                                throw new ArithmeticException("Post-Smoother " + smoother.GetType().Name + " produces NAN/INF at sweep " + i + " RHS already corrupted.");
+                            } else
+                                Console.WriteLine("... although RHS is regular");
+
+                            if(PostSmootherArithmeticExceptionCount < 20) {
+                                PostCorrSmoother = null;
+                                Smoothers.ForEach(s => s.Dispose());
+                                InitSmoothers();
+                            } else {
+                                throw new ArithmeticException("Post-Smoother " + smoother.GetType().Name + " produces NAN/INF at sweep " + i);
+                            }
+
+                        } else { 
+                            var resNorm = ortho.AddSolAndMinimizeResidual(ref PostCorrSmoother, XforSmoother, X0forSmoother, Res0forSmoother, ResforSmoother, "Tp-smoother" + TpLevel);
+                            WriteDebug(iIter, resNorm, "Tp-smootherS" + i);
+                            i++;
+                        }
+
                     }
                 }
 
@@ -2642,39 +2675,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				return X;
 			}
 		}
-
-        private double[] ApplySmoothers2(double[] X, double[] B, int iIter) {
-            using(var trace = new FuncTrace("SmootherTpLvl" + TpLevel)) {
-                List<double[]> Xsolutions = new List<double[]>();
-                void RunAllSmoothers() {
-                    foreach(var smoother in Smoothers) {
-                        smoother.Solve(X, B);
-
-                    }
-                }
-
-                RunAllSmoothers(); // Apply smoothers
-
-                for(int sweep = 1; sweep < this.config.MinimumNoOfPostSmootherSweeps; sweep++)
-                    RunAllSmoothers();
-
-                if(AdvancedParallelism) {
-                    SendSignal(true, iIter);
-                    bool done = CheckSignal();
-                    int k = 0;
-                    while(!done) { //until the coarse solver is done
-                        RunAllSmoothers(); // Pre-smoother modifies PreCorr based on Res
-
-                        k++;
-                        done = CheckSignal();
-                    }
-                    CurrentTrace.Info($"{string.Concat(Enumerable.Repeat("-", TpLevel))} OrthoMG, current level={TpLevel}, " +
-                    $"iteration={iIter} - All smoothers cycled extra {k}-times while waiting the coarse solver");
-                }
-
-                return X;
-            }
-        }
 
         /// <summary>
         /// Solve the coarse grid problem
