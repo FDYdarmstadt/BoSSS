@@ -41,9 +41,7 @@ namespace XESF.Tests {
         public static void XDG_SWF_TwoLs() {
             BoSSS.Solution.Application.InitMPI(num_threads: 1); //fails if more than 1 thread is chosen problem with OpenMP
 
-            BoSSS.Foundation.XDG.XQuadFactoryHelper.__Plot = delegate(IEnumerable<DGField> f) {
-                Tecplot.PlotFields(f.ToArray(), "bullshit", 0.0, 3);    
-            };   
+       
 
             Console.WriteLine("!!!!!!!!!!!!!!!! WARNING: OPENMP Parallelization turned off !!!!!!!!!!!!");
             BoSSS.Solution.Application.DeleteOldPlotFiles();
