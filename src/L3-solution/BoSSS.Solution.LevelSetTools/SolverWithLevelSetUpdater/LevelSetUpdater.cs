@@ -302,13 +302,17 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     CellMask PosFF = Tracker.Regions.GetLevelSetWing(phaseInterface.LevelSetIndex, +1).VolumeMask;
 
                     enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.C0LevelSet, Near1, PosFF);
+
+                    CellMask RemainingNear1 = Tracker.Regions.GetNearMask4LevSet(phaseInterface.LevelSetIndex, 1).Except(Near1);
+                    phaseInterface.C0LevelSet.Clear(RemainingNear1);
+                    phaseInterface.C0LevelSet.AccLaidBack(1.0, phaseInterface.DGLevelSet, RemainingNear1);
                 }
             }
 
             /// <summary>
             /// The Pre-Enforcer ensures that the projection is performed on new cut-cells in case of a moving interface
             /// </summary>
-            internal void EnforceContinuityWithPreEnforcer() {
+            internal void EnforceContinuityWithPreEnforcer(ContinuityProjectionOption ProjOpt = ContinuityProjectionOption.None) {
 
                 LevelSetTracker Tracker = phaseInterface.Tracker;
                 CellMask Near1 = Tracker.Regions.GetSpeciesRestrictedNearMask4LevSet(phaseInterface.LevelSetIndex, 1);
@@ -318,7 +322,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     phaseInterface.C0LevelSet.Basis,
                     phaseInterface.DGLevelSet.Basis,
                     Tracker.GridDat,
-                    enforcer.myOption);
+                    ProjOpt);
 
                 LevelSet preCGLevelSet = phaseInterface.C0LevelSet.CloneAs();
 
@@ -335,7 +339,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 }
             }
 
-            static int counter = 1;
+            //static int counter = 1;
 
             /// <summary>
             /// Checks for inner contact points/lines, on the boundary of the cut-cell domain.
@@ -346,6 +350,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             /// </summary>
             /// <returns></returns>
             internal bool IsInterfaceClosed(out CellMask AdditionalCellsToIncludeInContinuityProjection) {
+
+                //if(this.phaseInterface.LevelSetIndex == 0) {
+                //    AdditionalCellsToIncludeInContinuityProjection = null;
+                //    return true;
+                //}
+
                 using(var tr = new FuncTrace()) {
                     LevelSet preCGLevelSet = phaseInterface.C0LevelSet.CloneAs();
                     using(LevelSetTracker LsTrk = new LevelSetTracker(phaseInterface.Tracker.GridDat, phaseInterface.Tracker.CutCellQuadratureType, 1, ["A", "B"], preCGLevelSet)) { // to be removed...
@@ -448,23 +458,23 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                             AdditionalCellsToIncludeInContinuityProjection = null;
                         }
 
-                        if(isClosedGlob == false) {
+                        //if(isClosedGlob == false) {
 
-                            var ccMarker = new SinglePhaseField(new Basis(gdat, 0), "ccMarker");
-                            foreach(int jCell in ccmask.ItemEnum) {
-                                ccMarker.SetMeanValue(jCell, 1);
-                            }
-                            var outMarker = new SinglePhaseField(new Basis(gdat, 0), "outMarker");
-                            foreach(int jCell in AdditionalCellsToIncludeInContinuityProjection.ItemEnum) {
-                                outMarker.SetMeanValue(jCell, 1);
-                            }
+                        //    var ccMarker = new SinglePhaseField(new Basis(gdat, 0), "ccMarker");
+                        //    foreach(int jCell in ccmask.ItemEnum) {
+                        //        ccMarker.SetMeanValue(jCell, 1);
+                        //    }
+                        //    var outMarker = new SinglePhaseField(new Basis(gdat, 0), "outMarker");
+                        //    foreach(int jCell in AdditionalCellsToIncludeInContinuityProjection.ItemEnum) {
+                        //        outMarker.SetMeanValue(jCell, 1);
+                        //    }
 
-                            ccBoundaryRule.SaveToTextFileCellBoundary(gdat, "bdnyrule-" + counter + ".csv", writeHeader: false);
-                            Tecplot.Tecplot.PlotFields([preCGLevelSet, ccMarker, outMarker], "outshit-" + counter, 0.0, 3);
+                        //    ccBoundaryRule.SaveToTextFileCellBoundary(gdat, "bdnyrule-" + counter + ".csv", writeHeader: false);
+                        //    Tecplot.Tecplot.PlotFields([preCGLevelSet, ccMarker, outMarker], "outshit-" + counter, 0.0, 3);
 
-                            counter++;
+                        //    counter++;
 
-                        }
+                        //}
 
                         return isClosedGlob;
 
