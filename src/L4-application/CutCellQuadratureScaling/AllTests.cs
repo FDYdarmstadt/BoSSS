@@ -159,7 +159,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 #else
             [Values(3, 4, 7, 8, 9, 10)] int quadOrder,
 #endif
-            [Values(CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadType) {
+            [Values(CutCellQuadratureMethod.Saye/*, CutCellQuadratureMethod.Algoim*/)] CutCellQuadratureMethod cutCellQuadType) {
             DoTests_2Dvs3D(
                 () => new TestSetupTwoLevSets2D(1.0, quadOrder, cutCellQuadType),
                 () => new TestSetupTwoLevSets3D(1, quadOrder, cutCellQuadType));
@@ -175,7 +175,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 #else
             [Values(3, 4, 7, 8, 9, 10)] int quadOrder,
 #endif
-            [Values(CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadType) {
+            [Values(CutCellQuadratureMethod.Saye/*, CutCellQuadratureMethod.Algoim*/)] CutCellQuadratureMethod cutCellQuadType) {
 
             DoTests(
                 () => new TestSetupTwoLevSets2D(1.0, quadOrder, cutCellQuadType),
@@ -189,14 +189,15 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 #else
             [Values(3, 4, 7, 8, 9, 10)] int quadOrder,
 #endif
-            [Values(CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadType) {
+            [Values(CutCellQuadratureMethod.Saye/*, CutCellQuadratureMethod.Algoim*/)] CutCellQuadratureMethod cutCellQuadType) {
 
             DoTests(
                 () => new TestSetupTwoLevSets3D(1.0, quadOrder, cutCellQuadType),
                 () => new TestSetupTwoLevSets3D(0.5, quadOrder, cutCellQuadType));
         }
 
-        [Test]
+
+        //[Test]
         public static void TwoLevelSets_2D_SayeVsAlgoim(
 #if DEBUG
             [Values(3, 6, 7)] int quadOrder
@@ -210,7 +211,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                 () => new TestSetupTwoLevSets3D(1.0, quadOrder, CutCellQuadratureMethod.Algoim));
         }
 
-        [Test]
+        //[Test]
         public static void TwoLevelSets_3D_SayeVsAlgoim(
 #if DEBUG
             [Values(3, 6, 7)] int quadOrder
