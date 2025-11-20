@@ -19,6 +19,7 @@ using MathNet.Numerics.Interpolation;
 using System.Linq;
 using NUnit.Framework;
 using System.Diagnostics.Metrics;
+using BoSSS.Solution.Tecplot;
 
 namespace XESF.Tests {
     [TestFixture]
@@ -39,6 +40,11 @@ namespace XESF.Tests {
         [Test]
         public static void XDG_SWF_TwoLs() {
             BoSSS.Solution.Application.InitMPI(num_threads: 1); //fails if more than 1 thread is chosen problem with OpenMP
+
+            BoSSS.Foundation.XDG.XQuadFactoryHelper.__Plot = delegate(IEnumerable<DGField> f) {
+                Tecplot.PlotFields(f.ToArray(), "bullshit", 0.0, 3);    
+            };   
+
             Console.WriteLine("!!!!!!!!!!!!!!!! WARNING: OPENMP Parallelization turned off !!!!!!!!!!!!");
             BoSSS.Solution.Application.DeleteOldPlotFiles();
             using(var p = new XESFMain()) {
@@ -60,11 +66,16 @@ namespace XESF.Tests {
                     agg: 0.4,
                     globalization: ApplicationWithIDT.GlobalizationStrategy.LineSearch
                     );
+                C.CutCellQuadratureType = CutCellQuadratureMethod.Algoim;
                 p.Init(C);
                 p.RunSolverMode();
                 var tol1 = 1e-07;
                 var tol2 = 1e-07;
-                Assert.IsTrue((p.obj_f_vec.MPI_L2Norm() < tol2 && p.ResidualVector.MPI_L2Norm() < tol1), $"the L2 Error is greater than {tol1} (Residual {p.ResidualVector.MPI_L2Norm()}, Enriched Residual {p.obj_f_vec.MPI_L2Norm()}");
+                //Assert.IsTrue((p.obj_f_vec.MPI_L2Norm() < tol2 && p.ResidualVector.MPI_L2Norm() < tol1), $"the L2 Error is greater than {tol1} (Residual {p.ResidualVector.MPI_L2Norm()}, Enriched Residual {p.obj_f_vec.MPI_L2Norm()}");
+
+                Assert.Less(p.obj_f_vec.MPI_L2Norm(), tol2, $"the enriched residual is greater than {tol2} (Residual {p.ResidualVector.MPI_L2Norm()}, Enriched Residual {p.obj_f_vec.MPI_L2Norm()}");
+                Assert.Less(p.ResidualVector.MPI_L2Norm() , tol1, $"the residual is greater than {tol1} (Residual {p.ResidualVector.MPI_L2Norm()}, Enriched Residual {p.obj_f_vec.MPI_L2Norm()}");
+
             }
         }
         #endregion

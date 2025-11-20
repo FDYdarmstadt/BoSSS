@@ -2747,7 +2747,9 @@ namespace ApplicationWithIDT {
         /// <summary>
         /// This method serves as a globalization to this solver. Starting with the computed step s^{IN} and depending on the globalization chosen a new step s
         /// is computed which either satisfies the condition of sufficient decrease
-        /// $$ f_m(z_k +s) \leq f_m(z_k) + s^T f_M'(z_k), $$ 
+        /// \[
+        ///    f_m(z_k +s) \leq f_m(z_k) + s^T f_M'(z_k), 
+        /// \]
         /// or was shortened by $alpha_min$.
         /// 
         /// The globalization strategies implemented so far:
