@@ -489,7 +489,7 @@ namespace BoSSS.Foundation.XDG {
             //var IntegrationDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet).Intersect(spdom);
             var IntegrationDom = this.LevelSetSeparationLayer[(spA, spB, iLevSet)];
 
-            return GetLevelSetQuadScheme(iLevSet, spA, IntegrationDom);
+            return GetLevelSetQuadScheme(iLevSet, spA, spB, IntegrationDom);
         }
 
 
@@ -1067,10 +1067,7 @@ namespace BoSSS.Foundation.XDG {
 
                 CellMask CellMask = GetCellMask(sp, IntegrationDomain);
 
-                // Debugging Code
-                //if (IntegrationDomain != null) {
-                //    CellMask.ToTxtFile("VolDom-" + this.lsTrk.GridDat.MyRank + "of" + this.lsTrk.GridDat.Size + ".csv", false);
-                //}
+               
 
                 // default rule for "normal" cells
                 var volQrIns = (new CellQuadratureScheme(UseDefaultFactories, CellMask));
@@ -1154,6 +1151,10 @@ namespace BoSSS.Foundation.XDG {
         */
 
 
+
+
+
+
         /// <summary>
         /// Quadrature scheme for the integration over the level-set <paramref name="iLevSet"/>, i.e. for each cut background-cell \f$ K_j \f$ a quadrature to approximate
         /// \f[
@@ -1162,21 +1163,26 @@ namespace BoSSS.Foundation.XDG {
         /// where \f$ \mathfrak{A} \f$ is the first species in <see cref="SpeciesList"/>.
         /// </summary>
         public CellQuadratureScheme GetLevelSetQuadScheme(int iLevSet, CellMask IntegrationDom, int? fixedOrder = null) {
-            return GetLevelSetQuadScheme(iLevSet, this.SpeciesList.First(), IntegrationDom, fixedOrder);
+
+            var PossibleSpecies = Tracker.GetSpeciesSeparatedByLevSet(iLevSet).Select(Tracker.GetSpeciesId);
+
+            return GetLevelSetQuadScheme(iLevSet, PossibleSpecies.First(), PossibleSpecies.ElementAt(1), IntegrationDom, fixedOrder);
         }
 
         /// <summary>
         /// Quadrature scheme for the integration over the level-set <paramref name="iLevSet"/>, i.e. for each cut background-cell \f$ K_j \f$ a quadrature to approximate
         /// \f[
-        ///    \oint_{K_j \cap \mathfrak{I} \cap \partial \mathfrak{A} } \ldots \mathrm{dS} ,
+        ///    \oint_{K_j \cap \mathfrak{I} \cap \partial \mathfrak{A} \cap \partial \mathfrak{b} } \ldots \mathrm{dS} ,
         /// \f]
-        /// where \f$ \mathfrak{A} \f$ is the domain of species <paramref name="spA"/>.
+        /// where \f$ \mathfrak{A} \f$ and \f$ \mathfrak{B} \f$  are the domains of species <paramref name="spA"/> and <paramref name="spB"/>, respectively.
         /// </summary>
-        public CellQuadratureScheme GetLevelSetQuadScheme(int iLevSet, SpeciesId spA, CellMask IntegrationDom, int? fixedOrder = null) {
+        public CellQuadratureScheme GetLevelSetQuadScheme(int iLevSet, SpeciesId spA, SpeciesId spB, CellMask IntegrationDom, int? fixedOrder = null) {
             if (IntegrationDom.MaskType == MaskType.Logical)
                 IntegrationDom = IntegrationDom.ToGeometicalMask();
             if(gdat.iGeomCells.RefElements.Length > 1)
                 throw new NotImplementedException("more than one reference element is currently not supported");
+
+            
 
 
             CellQuadratureScheme LevSetQrIns = new CellQuadratureScheme(
@@ -1215,7 +1221,10 @@ namespace BoSSS.Foundation.XDG {
                         if (doublyCut.NoOfItemsLocally > 0) {
                             modIntegrationDom = modIntegrationDom.Except(doublyCut);
 
-                            var jmpA = IdentifyWingA(jLevSet, spA);
+                            //var jmpA = IdentifyWingA(jLevSet, spA);
+                            var jmpA = GetTrimmingLevelSetSign(jLevSet);
+
+
                             //Debug.Assert(jmpA == IdentifyWing(jLevSet, spB));
                             if (iLevSet == 1) {
                                 if(gdat.iGeomEdges.EdgeRefElements.Length > 1)
@@ -1266,7 +1275,8 @@ namespace BoSSS.Foundation.XDG {
                             var doublyCut_onEdge = doublyCut.Intersect(mask);
 
                             if(doublyCut_onEdge.NoOfItemsLocally > 0) {
-                                var jmpA = IdentifyWingA(jLevSet, spA);
+                                //var jmpA = IdentifyWingA(jLevSet, spA);
+                                var jmpA = GetTrimmingLevelSetSign(jLevSet);
 
                                 var KrefEdge = gdat.iGeomEdges.EdgeRefElements.Single();
                                 var trimming_factory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetEdgeRuleFactory(jLevSet, jmpA, KrefEdge);
@@ -1287,6 +1297,20 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
             return LevSetQrIns;
+
+            JumpTypes bool2JumpType(bool b) => b ? JumpTypes.Heaviside : JumpTypes.OneMinusHeaviside;
+
+            JumpTypes GetTrimmingLevelSetSign(int iTrimmingLevSet) {
+                var spnA = Tracker.GetSpeciesName(spA);
+                var spnB = Tracker.GetSpeciesName(spB);
+                var SignsA = Tracker.GetLevelSetSignCodes(spnA).Select(sign_code => sign_code.GetSign(iTrimmingLevSet));
+                if(SignsA.Count() == 1)
+                    return bool2JumpType(SignsA.Single());
+                var SignsB = Tracker.GetLevelSetSignCodes(spnB).Select(sign_code => sign_code.GetSign(iTrimmingLevSet));
+                if(SignsB.Count() == 1)
+                    return bool2JumpType(SignsB.Single());
+                throw new ApplicationException($"unable to determine required jump type/sign of trimming level-set {iTrimmingLevSet} for integration over Species {spnA}-{spnB} intersection and level-set {iLevSet}.");
+            }
         }
 
         /// <summary>
@@ -1296,7 +1320,7 @@ namespace BoSSS.Foundation.XDG {
 
 
             // test parameters
-            var jmp = Foundation.XDG.Quadrature.HMF.JumpTypes.Heaviside;
+            var jmp = Foundation.XDG.Quadrature.JumpTypes.Heaviside;
             var sch = this.XDGSpaceMetrics.XQuadFactoryHelper;
             var spNm = this.XDGSpaceMetrics.LevelSetRegions.GetSpeciesName(spc);
             //var spId = LsTrk.GetSpeciesId(spNm);

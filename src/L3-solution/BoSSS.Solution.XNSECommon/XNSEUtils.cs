@@ -548,8 +548,8 @@ namespace BoSSS.Solution.XNSECommon {
                 };
 
                 //var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, );
-                var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, momentFittingOrder, 1).XQuadSchemeHelper;
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.GetSpeciesId("A"), LsTrk.Regions.GetCutCellMask());
+                var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A"), LsTrk.GetSpeciesId("B") }, momentFittingOrder, 1).XQuadSchemeHelper;
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
 
                 CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                     cqs.Compile(LsTrk.GridDat, momentFittingOrder),

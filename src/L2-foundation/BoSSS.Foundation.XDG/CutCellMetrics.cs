@@ -182,6 +182,8 @@ namespace BoSSS.Foundation.XDG {
 
                 var volScheme = schH.GetVolumeQuadScheme(spc);
                 var chunRulePairList = volScheme.Compile(gd, this.CutCellQuadratureOrder);
+                chunRulePairList.SaveToTextFileCell(gd, $"volume-{spc.ToString(XDGSpaceMetrics.Tracker)}-{this.XDGSpaceMetrics.CutCellQuadratureType}-p{this.CutCellQuadratureOrder}.csv");
+
 
                 chunRulePairList.ToVtpFilesCell(gd, "volQuadFor" + spc.ToString(XDGSpaceMetrics.Tracker) + HMFvariant);
             }
@@ -220,8 +222,15 @@ namespace BoSSS.Foundation.XDG {
                                     var LsDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet);
                                     var IntegrationDom = LsDom.Intersect(SpeciesCommonDom);
 
-                                    CellQuadratureScheme SurfIntegration = schH.GetLevelSetQuadScheme(iLevSet, SpeciesA, IntegrationDom);
+                                    CellQuadratureScheme SurfIntegration = schH.GetLevelSetQuadScheme(iLevSet, SpeciesA, SpeciesB, IntegrationDom);
                                     var chunRulePairList = SurfIntegration.Compile(gd, this.CutCellQuadratureOrder);
+                                    //chunRulePairList.SaveToTextFileCell(gd, $"interface-ls{iLevSet}-{SpeciesA.ToString(XDGSpaceMetrics.Tracker)}{SpeciesB.ToString(XDGSpaceMetrics.Tracker)}-{this.XDGSpaceMetrics.CutCellQuadratureType}-p{this.CutCellQuadratureOrder}.csv");
+
+                                    //double _sum = chunRulePairList.Select(crp => crp.Rule.Weights.Sum()*crp.Chunk.Len).Sum();
+                                    //Console.WriteLine($" --- interface-ls{iLevSet}-{SpeciesA.ToString(XDGSpaceMetrics.Tracker)}{SpeciesB.ToString(XDGSpaceMetrics.Tracker)}-{this.XDGSpaceMetrics.CutCellQuadratureType}-p{this.CutCellQuadratureOrder}: " + _sum);
+
+
+
                                     chunRulePairList.ToVtpFilesCell(gd, "surfQuadFor" + SpeciesA.ToString(XDGSpaceMetrics.Tracker) + "-" + SpeciesB.ToString(XDGSpaceMetrics.Tracker) + HMFvariant);
                                 }
                             }
@@ -251,9 +260,9 @@ namespace BoSSS.Foundation.XDG {
                 //var schH = this.XDGSpaceMetrics.XQuadSchemeHelper;
 
                 // collect all per-cell-metrics in the same MultidimArry, for MPI-exchange (only 1 exchange instead of three, saving some overhead)
-                // 1st index: cell
-                // 2nd index: species
-                // 3rd index: 0 for interface surface per cell, 1 for cut-cell-volume, 2 for cut-cell surface
+                // - 1st index: cell
+                // - 2nd index: species
+                // - 3rd index: 0 for interface surface per cell, 1 for cut-cell-volume, 2 for cut-cell surface
                 double[] vec_cellMetrics = new double[JE * NoSpc * 3];
                 MultidimensionalArray cellMetrics = MultidimensionalArray.CreateWrapper(vec_cellMetrics, JE, NoSpc, 3);
 
@@ -378,8 +387,9 @@ namespace BoSSS.Foundation.XDG {
                                         var LsDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet);
                                         var IntegrationDom = LsDom.Intersect(SpeciesCommonDom);
 
-                                        CellQuadratureScheme SurfIntegration = schH.GetLevelSetQuadScheme(iLevSet, SpeciesA, IntegrationDom);
+                                        CellQuadratureScheme SurfIntegration = schH.GetLevelSetQuadScheme(iLevSet, SpeciesA, SpeciesB, IntegrationDom);
                                         var rule = SurfIntegration.Compile(gd, this.CutCellQuadratureOrder);
+
 
                                         BoSSS.Foundation.Quadrature.CellQuadrature.GetQuadrature(
                                             [1], gd,

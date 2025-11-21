@@ -54,24 +54,37 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                 Ref.Init();
                 Ref.RunSolverMode();
 
-                
+
+
 
                 Console.WriteLine("--------------------- Test calculation ---------------------");
                 using(var Test = genTst()) {
-                    Console.WriteLine($"test scaling is {Test.MeshScaling}, using {Ref.QuadratureType}");
+                    Console.WriteLine($"test scaling is {Test.MeshScaling}, using {Test.QuadratureType}");
                     Test.Init();
                     Test.RunSolverMode();
                     Test.DoPlot();
 
+                    Console.WriteLine();
+                    Console.WriteLine($"   ##### Reference - versus - Test: ");
                     Test.CompareElementCutLineTo(Ref);
-                    Test.CompareElementVolumeTo(Ref);
                     Test.CompareElementSurfaceTo(Ref);
+                    Test.CompareElementVolumeTo(Ref);
                     if(Test.LsTrk.NoOfLevelSets > 1)
                         Test.CompareElementIntersectionLineTo(Ref);
 
+                    Console.WriteLine();
+                    Console.WriteLine($"   ##### reference calculation {Ref.QuadratureType} ");
+                    Ref.CompareTotalCutLine();
+                    Ref.CompareTotalSurface();
+                    Ref.CompareTotalVolume();
+                    if(Ref.LsTrk.NoOfLevelSets > 1)
+                        Ref.CompareIntersectionLine();
+
+                    Console.WriteLine();
+                    Console.WriteLine($"   ##### test calculation {Test.QuadratureType} ");
                     Test.CompareTotalCutLine();
-                    Test.CompareTotalVolume();
                     Test.CompareTotalSurface();
+                    Test.CompareTotalVolume();
                     if(Test.LsTrk.NoOfLevelSets > 1)
                         Test.CompareIntersectionLine();
                 }
@@ -159,7 +172,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 #else
             [Values(3, 4, 7, 8, 9, 10)] int quadOrder,
 #endif
-            [Values(CutCellQuadratureMethod.Saye/*, CutCellQuadratureMethod.Algoim*/)] CutCellQuadratureMethod cutCellQuadType) {
+            [Values(CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadType) {
             DoTests_2Dvs3D(
                 () => new TestSetupTwoLevSets2D(1.0, quadOrder, cutCellQuadType),
                 () => new TestSetupTwoLevSets3D(1, quadOrder, cutCellQuadType));
@@ -175,7 +188,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 #else
             [Values(3, 4, 7, 8, 9, 10)] int quadOrder,
 #endif
-            [Values(CutCellQuadratureMethod.Saye/*, CutCellQuadratureMethod.Algoim*/)] CutCellQuadratureMethod cutCellQuadType) {
+            [Values(CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadType) {
 
             DoTests(
                 () => new TestSetupTwoLevSets2D(1.0, quadOrder, cutCellQuadType),
@@ -189,7 +202,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 #else
             [Values(3, 4, 7, 8, 9, 10)] int quadOrder,
 #endif
-            [Values(CutCellQuadratureMethod.Saye/*, CutCellQuadratureMethod.Algoim*/)] CutCellQuadratureMethod cutCellQuadType) {
+            [Values(CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadType) {
 
             DoTests(
                 () => new TestSetupTwoLevSets3D(1.0, quadOrder, cutCellQuadType),
@@ -197,7 +210,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         }
 
 
-        //[Test]
+        [Test]
         public static void TwoLevelSets_2D_SayeVsAlgoim(
 #if DEBUG
             [Values(3, 6, 7)] int quadOrder
@@ -207,11 +220,11 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         ) {
 
             DoTests_ElementWise(
-                () => new TestSetupTwoLevSets3D(1.0, quadOrder, CutCellQuadratureMethod.Saye),
-                () => new TestSetupTwoLevSets3D(1.0, quadOrder, CutCellQuadratureMethod.Algoim));
+                () => new TestSetupTwoLevSets2D(1.0, quadOrder, CutCellQuadratureMethod.Saye),
+                () => new TestSetupTwoLevSets2D(1.0, quadOrder, CutCellQuadratureMethod.Algoim));
         }
 
-        //[Test]
+        [Test]
         public static void TwoLevelSets_3D_SayeVsAlgoim(
 #if DEBUG
             [Values(3, 6, 7)] int quadOrder

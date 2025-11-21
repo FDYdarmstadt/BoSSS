@@ -661,7 +661,7 @@ namespace BoSSS.Foundation.XDG {
                     int[] jSub2jCell = Result.jSub2jCell;
                     int[] jCell2jSub = Result.jCell2jSub;
                     // get quad scheme
-                    CellQuadratureScheme scheme = schemeHelper.GetLevelSetQuadScheme(0, homie.SpeciesList.First(), Result.IntegrationDomain);
+                    CellQuadratureScheme scheme = schemeHelper.GetLevelSetQuadScheme(0, Result.IntegrationDomain);
 
                     // result storage
                     var MassMatrixBlocksSpc = Result.MassMatrixBlocks;

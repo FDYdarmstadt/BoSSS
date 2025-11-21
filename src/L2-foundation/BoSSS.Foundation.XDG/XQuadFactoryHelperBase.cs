@@ -1,14 +1,9 @@
 ﻿using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.Quadrature;
-using BoSSS.Foundation.XDG.Quadrature.HMF;
+using BoSSS.Foundation.XDG.Quadrature;
 using ilPSP;
-using log4net.Core;
 using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Text;
 
 namespace BoSSS.Foundation.XDG {
 

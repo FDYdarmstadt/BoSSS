@@ -739,7 +739,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// Returns the species that are speratated by Level Set <paramref name="levSetIdx"/>, as defined in <see cref="m_SpeciesTable"/>. 
+        /// Returns the species that are separated by Level Set <paramref name="levSetIdx"/>, as defined in <see cref="m_SpeciesTable"/>. 
         /// </summary>
         /// <param name="levSetIdx"></param>
         /// <returns></returns>

@@ -298,10 +298,8 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         /// <param name="deg"></param>
         /// <param name="levelSetIndex">Integer value for the level set</param>
         public void CompileLevelsetQuadRules(int deg, int levelSetIndex = 0) {
-            var spcA = lsTrk.GetSpeciesId("A");
-
-            var metrics = lsTrk.GetXDGSpaceMetrics(new SpeciesId[] { spcA }, deg);
-            var scheme = metrics.XQuadSchemeHelper.GetLevelSetQuadScheme(levelSetIndex, spcA, lsTrk.Regions.GetCutCellMask4LevSet(levelSetIndex));
+            var metrics = lsTrk.GetXDGSpaceMetrics();
+            var scheme = metrics.XQuadSchemeHelper.GetLevelSetQuadScheme(levelSetIndex, lsTrk.Regions.GetCutCellMask4LevSet(levelSetIndex));
             var rules = scheme.Compile(grd.GridData, deg);
 
             rulesInterface = rules;
@@ -413,12 +411,10 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         /// <exception cref="NotSupportedException"></exception>
         public void WriteSrfQuadRules(int deg) {
 
-            var spcA = lsTrk.GetSpeciesId("A");
-
             int iLevSet = 0;
 
-            var metrics = lsTrk.GetXDGSpaceMetrics(new SpeciesId[] { spcA }, deg);
-            var scheme = metrics.XQuadSchemeHelper.GetLevelSetQuadScheme(iLevSet, spcA, lsTrk.Regions.GetCutCellMask4LevSet(iLevSet));
+            var metrics = lsTrk.GetXDGSpaceMetrics();
+            var scheme = metrics.XQuadSchemeHelper.GetLevelSetQuadScheme(iLevSet, lsTrk.Regions.GetCutCellMask4LevSet(iLevSet));
             var rule = scheme.Compile(grd.GridData, deg);
 
             var JacobiDet = grd.GridData.iGeomCells.JacobiDet;

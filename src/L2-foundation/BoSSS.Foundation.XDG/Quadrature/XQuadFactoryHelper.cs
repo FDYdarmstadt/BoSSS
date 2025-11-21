@@ -20,6 +20,7 @@ using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG.Quadrature.HMF;
 using BoSSS.Foundation.XDG.Quadrature.Saye;
+using BoSSS.Foundation.XDG.Quadrature;
 using ilPSP;
 using ilPSP.Tracing;
 using ilPSP.Utils;

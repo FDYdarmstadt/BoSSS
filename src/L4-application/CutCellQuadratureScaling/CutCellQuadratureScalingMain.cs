@@ -25,8 +25,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
     /// </summary>
     static class CutCellQuadratureScalingMain {
 
-        static CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Classic;
-        static int order = 6;
+        //static CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Classic;
+        //static int order = 6;
 
         public static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI(args);
@@ -73,7 +73,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         internal CutCellMetrics latestCCM;
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
-            latestCCM = LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS, CutCellQuadratureOrder).CutCellMetrics;
+            int upgrade = QuadratureType == CutCellQuadratureMethod.Algoim ? 5 : 0;
+            latestCCM = LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS, CutCellQuadratureOrder + upgrade).CutCellMetrics;
             base.TerminationKey = true;
             return -1;
         }
@@ -225,24 +226,6 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         /// of level-set surface integrals in 2D/3D;
         /// </summary>
         public void CompareTotalSurfaceTo(TestSetupBase othr) {
-            /*double D = this.Grid.SpatialDimension;
-
-            foreach(string Species in this.LsTrk.SpeciesNames) {
-                var SpcId_this = this.LsTrk.GetSpeciesId(Species);
-                var SpcId_othr = othr.LsTrk.GetSpeciesId(Species);
-
-                var Area_this = this.latestCCM.InterfaceArea[SpcId_this];
-                var Area_othr = othr.latestCCM.InterfaceArea[SpcId_othr];
-                var Area_err = Area_othr*(this.MeshScaling.Pow(D - 1)) - Area_this* (othr.MeshScaling.Pow(D - 1));
-
-                double absErr = Area_err.L2Norm();
-                double relErr = absErr / (Area_this.L2Norm() + Area_othr.L2Norm());
-
-                Console.WriteLine($"Level Set Surface, species {Species} absolute error : {absErr:g7}");
-                Console.WriteLine($"Level Set Surface, species {Species} relative error : {relErr:g7}");
-
-                Assert.Less(relErr, threshold_scaling, $"relative surface error above threshold for species {Species}" );
-            }*/
             CompareTotalTo("Interface Area", othr, (t, spid) => t.latestCCM.InterfaceArea[spid], this.threshold_scaling, -1);
         }
 
@@ -252,26 +235,6 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         /// scaling of volume integrals in 2D/3D;
         /// </summary>
         public void CompareTotalVolumeTo(TestSetupBase othr) {
-            /*double D = this.Grid.SpatialDimension;
-            
-            foreach (string Species in this.LsTrk.SpeciesNames) {
-                var SpcId_this = this.LsTrk.GetSpeciesId(Species);
-                var SpcId_othr = othr.LsTrk.GetSpeciesId(Species);
-
-
-                var Vol_this = this.latestCCM.CutCellVolumes[SpcId_this];
-                var Vol_othr = othr.latestCCM.CutCellVolumes[SpcId_othr];
-                // Areas should scale with MeshScaling^SpatialDimension
-                var Vol_err = Vol_othr*(this.MeshScaling.Pow(D)) - Vol_this*(othr.MeshScaling.Pow(D));
-
-                double absErr = Vol_err.L2Norm();
-                double relErr = absErr / (Vol_this.L2Norm() + Vol_othr.L2Norm());
-
-                Console.WriteLine($"Cut Cell Volume, species {Species} absolute error : {absErr:g7}");
-                Console.WriteLine($"Cut Cell Volume, species {Species} relative error : {relErr:g7}");
-
-                Assert.Less(relErr, threshold_scaling, $"relative volume error above threshold for species {Species}");
-            }*/
             CompareTotalTo("Cut Volume", othr, (t, spid) => t.latestCCM.CutCellVolumes[spid], this.threshold_scaling, 0);
         }
 
@@ -282,25 +245,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         /// scaling of cell edge area integrals in 2D/3D;
         /// </summary>
         public void CompareTotalEdgeAreaTo(TestSetupBase othr) {
-            /*double D = this.Grid.SpatialDimension;
-            
-            foreach (string Species in this.LsTrk.SpeciesNames) {
-                var SpcId_this = this.LsTrk.GetSpeciesId(Species);
-                var SpcId_othr = othr.LsTrk.GetSpeciesId(Species);
-
-                var Area_this = this.latestCCM.CutEdgeAreas[SpcId_this];
-                var Area_othr = othr.latestCCM.CutEdgeAreas[SpcId_othr];
-                var Area_err = Area_othr*(this.MeshScaling.Pow(D - 1)) - Area_this*(othr.MeshScaling.Pow(D - 1));
-
-                double absErr = Area_err.L2Norm();
-                double relErr = absErr / (Area_this.L2Norm() + Area_othr.L2Norm());
-
-                Console.WriteLine($"Cut Edge area, species {Species} absolute error : {absErr:g7}");
-                Console.WriteLine($"Cut Edge area, species {Species} relative error : {relErr:g7}");
-
-                Assert.Less(relErr, threshold_scaling, $"relative edge area error above threshold for species {Species}");
-            }*/
-            CompareTotalTo("Cut Edge", othr, (t, spid) => t.latestCCM.CutEdgeAreas[spid], this.threshold_scaling, -1);
+             CompareTotalTo("Cut Edge", othr, (t, spid) => t.latestCCM.CutEdgeAreas[spid], this.threshold_scaling, -1);
         }
 
 
@@ -310,25 +255,6 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         /// of surface element edges
         /// </summary>
         public void CompareTotalCutLineTo(TestSetupBase othr) {
-            /*double D = this.Grid.SpatialDimension;
-
-            foreach(string Species in this.LsTrk.SpeciesNames) {
-                var SpcId_this = this.LsTrk.GetSpeciesId(Species);
-                var SpcId_othr = othr.LsTrk.GetSpeciesId(Species);
-
-                var Area_this = this.latestCCM.CutLineLength[SpcId_this];
-                var Area_othr = othr.latestCCM.CutLineLength[SpcId_othr];
-                //
-                var Area_err = Area_othr * (this.MeshScaling.Pow(D - 2)) - Area_this * (othr.MeshScaling.Pow(D - 2));
-
-                double absErr = Area_err.L2Norm();
-                double relErr = absErr / (Area_this.L2Norm() + Area_othr.L2Norm());
-
-                Console.WriteLine($"Cut line measure, species {Species} absolute error : {absErr:g7}");
-                Console.WriteLine($"Cut line measure, species {Species} relative error : {relErr:g7}");
-
-                Assert.Less(relErr, threshold_scaling, $"relative cut line length error above threshold for species {Species}");
-            }*/
             CompareTotalTo("Cut Line", othr, (t, spid) => t.latestCCM.CutLineLength[spid], this.threshold_scaling, -2);
         }
 
@@ -338,25 +264,6 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         /// of intersection lines
         /// </summary>
         public void CompareTotalIntersectionLineTo(TestSetupBase othr) {
-            /*double D = this.Grid.SpatialDimension;
-
-            foreach(string Species in this.LsTrk.SpeciesNames) {
-                var SpcId_this = this.LsTrk.GetSpeciesId(Species);
-                var SpcId_othr = othr.LsTrk.GetSpeciesId(Species);
-
-                var Area_this = this.latestCCM.IntersectionLength[SpcId_this];
-                var Area_othr = othr.latestCCM.IntersectionLength[SpcId_othr];
-                //
-                var Area_err = Area_othr * (this.MeshScaling.Pow(D - 2)) - Area_this * (othr.MeshScaling.Pow(D - 2));
-
-                double absErr = Area_err.L2Norm();
-                double relErr = absErr / (Area_this.L2Norm() + Area_othr.L2Norm());
-
-                Console.WriteLine($"Intersection line measure, species {Species} absolute error : {absErr:g7}");
-                Console.WriteLine($"Intersection line measure, species {Species} relative error : {relErr:g7}");
-
-                Assert.Less(relErr, threshold_scaling, $"relative intersection line length error above threshold for species {Species}");
-            }*/
             CompareTotalTo("Intersection Line", othr, (t, spid) => t.latestCCM.IntersectionLength[spid], this.threshold_scaling, -2);
         }
 
@@ -391,6 +298,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         /// of level-set surface integrals in 2D/3D;
         /// </summary>
         public void CompareElementSurfaceTo(TestSetupBase othr) {
+            //this.latestCCM.WriteSurfaceRulesToVtp();
+            //othr.latestCCM.WriteSurfaceRulesToVtp();
             CompareElementTo("Interface Area", othr, (t, spid) => t.latestCCM.InterfaceArea[spid], this.threshold_scaling, -1);
         }
 
@@ -400,6 +309,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         /// scaling of volume integrals in 2D/3D;
         /// </summary>
         public void CompareElementVolumeTo(TestSetupBase othr) {
+            //this.latestCCM.WriteVolumeRulesToVtp();
+            //othr.latestCCM.WriteVolumeRulesToVtp();
             CompareElementTo("Cut Volume", othr, (t, spid) => t.latestCCM.CutCellVolumes[spid], this.threshold_scaling, 0);
         }
 
@@ -510,6 +421,10 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         protected IGrid CreateOrLoadGrid_2D() {
             double[] xNodes = GenericBlas.Linspace(-7, +7, 8);
             double[] yNodes = GenericBlas.Linspace(-7, +7, 8);
+            //double dx = xNodes[1] - xNodes[0];
+            //xNodes[1] -= dx * 0.3;
+            //xNodes[6] -= dx * 0.3;
+
             xNodes.ScaleV(MeshScaling);
             yNodes.ScaleV(MeshScaling);
 
@@ -525,6 +440,10 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             double[] xNodes = GenericBlas.Linspace(-7, +7, 8);
             double[] yNodes = GenericBlas.Linspace(-7, +7, 8);
             double[] zNodes = GenericBlas.Linspace(-3, -3 + zWidht, noOfZnodes);
+            double dx = xNodes[1] - xNodes[0];
+            xNodes[1] -= dx * 0.3;
+            xNodes[6] -= dx * 0.3;
+
             xNodes.ScaleV(MeshScaling);
             yNodes.ScaleV(MeshScaling);
             zNodes.ScaleV(MeshScaling);
