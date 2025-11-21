@@ -453,12 +453,14 @@ namespace BoSSS.Application.BoSSSpad {
             //}
             
             using (var str = new StringWriter()) {
-                str.Write($"srun {base.DotnetRuntime} "); // when using SLURM, `srun` is recommended instead of `mpiexec`
-                //if (MPIcores > 1) {
-                //    str.Write($"mpiexec -n {MPIcores} {base.DotnetRuntime} ");
-                //} else {
-                //    str.Write($"{base.DotnetRuntime} ");
-                //}
+                int GCCores = 0;
+                if(GCCores < 1) {
+                    // when using SLURM, `srun` is recommended instead of `mpiexec`
+                    str.Write($"srun --cpu-bind=cores --mem-bind=local {base.DotnetRuntime} ");
+                } else {
+                    // specify dedicated cores for GC
+                    str.Write($"srun --cpu-bind=cores --mem-bind=local {base.DotnetRuntime} ");
+                }
 
                 str.Write(jobpath_unix + "/" + myJob.EntryAssemblyName);
                 //str.Write(" ");

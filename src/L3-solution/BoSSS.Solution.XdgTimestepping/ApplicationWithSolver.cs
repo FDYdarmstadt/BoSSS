@@ -521,6 +521,15 @@ namespace BoSSS.Solution.XdgTimestepping {
             if (restartFields == null || restartFields.Length == 0)
                 return null;
 
+                Console.WriteLine($"[WARN] No restart data for historyIndex={historyIndex}, skipping save.");
+                Console.WriteLine(
+                    $"[DEBUG] timeStep={timeStepInt}, historyIndex={historyIndex}, " +
+                    $"restartFieldsLen={(Timestepping.m_BDF_Timestepper?.GetRestartInfos()?.Length ?? -1)}, " +
+                    $"S={Timestepping.m_BDF_Timestepper?.GetNumberOfStages}"
+                );
+                return null;  // TODO Check
+            }
+
             var tsn = new TimestepNumber(new int[] { timeStepInt - historyIndex, 1 });
             double time = physTime - (historyIndex * this.Control.GetFixedTimestep());
 
