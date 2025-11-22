@@ -1215,7 +1215,7 @@ namespace BoSSS.Foundation.XDG {
                 //handle rules for cells/edges where two levelsets are present
 
                 CellMask modIntegrationDom = IntegrationDom;
-                for (int jLevSet = 0; jLevSet < XDGSpaceMetrics.NoOfLevelSets; ++jLevSet) { // loop over all other level-sets...
+                for (int jLevSet = 0; jLevSet < XDGSpaceMetrics.NoOfLevelSets; ++jLevSet) { // loop over all other 'trimming' level-sets...
                     if (jLevSet != iLevSet) {
                         CellMask doublyCut = GetDoubleCutCells(iLevSet, jLevSet);
                         if (doublyCut.NoOfItemsLocally > 0) {
@@ -1224,11 +1224,16 @@ namespace BoSSS.Foundation.XDG {
                             //var jmpA = IdentifyWingA(jLevSet, spA);
                             var jmpA = GetTrimmingLevelSetSign(jLevSet);
 
+                            var twoLSFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, jLevSet, jmpA, Kref, null);
+                            LevSetQrIns.AddFactoryDomainPair(twoLSFactory, doublyCut, fixedOrder);
+
+                            /*
+
+                            if(gdat.iGeomEdges.EdgeRefElements.Length > 1)
+                                    throw new NotImplementedException("Not implemented for more than one edge ref element");
 
                             //Debug.Assert(jmpA == IdentifyWing(jLevSet, spB));
                             if (iLevSet == 1) {
-                                if(gdat.iGeomEdges.EdgeRefElements.Length > 1)
-                                    throw new NotImplementedException("Not implemented for more than one edge ref element");
 
                                 var backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetEdgeRuleFactory(jLevSet, jmpA, gdat.iGeomEdges.EdgeRefElements[0]);
 
@@ -1241,6 +1246,7 @@ namespace BoSSS.Foundation.XDG {
                                 var twoLSFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, jLevSet, jmpA, Kref, backupFactory);
                                 LevSetQrIns.AddFactoryDomainPair(twoLSFactory, doublyCut, fixedOrder);
                             }
+                            */
                         }
                     }
                 }

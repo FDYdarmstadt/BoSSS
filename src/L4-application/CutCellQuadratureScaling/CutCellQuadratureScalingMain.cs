@@ -36,7 +36,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             //BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSet_2Dvs3D(3, CutCellQuadratureMethod.Saye);
             //            BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_3D(3, CutCellQuadratureMethod.Algoim);
             //BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_2D(10, CutCellQuadratureMethod.Algoim);
-            BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_3D_SayeVsAlgoim(3);
+            BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_3D_SayeVsAlgoim(3, 0);
 
             BoSSS.Solution.Application.FinalizeMPI();
         }
@@ -58,13 +58,14 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
     /// </summary>
     abstract class TestSetupBase : BoSSS.Solution.Application {
 
-        public TestSetupBase(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye) {
+        public TestSetupBase(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye, int meshVariation = 0) {
             this.MeshScaling = meshScaling;
             this.CutCellQuadratureOrder = cutCellQuadratureOrder;
             this.QuadratureType = quadratureType;
+            this.MeshVariation = meshVariation;
         }
 
-
+        protected readonly int MeshVariation = 0;
         public readonly double MeshScaling = 1.0;
         public readonly int CutCellQuadratureOrder = 2;
 
@@ -421,9 +422,23 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         protected IGrid CreateOrLoadGrid_2D() {
             double[] xNodes = GenericBlas.Linspace(-7, +7, 8);
             double[] yNodes = GenericBlas.Linspace(-7, +7, 8);
-            //double dx = xNodes[1] - xNodes[0];
-            //xNodes[1] -= dx * 0.3;
-            //xNodes[6] -= dx * 0.3;
+            switch(MeshVariation) {
+                case 0: break;
+                case 1: {
+                    double dx = xNodes[1] - xNodes[0];
+                    xNodes[1] -= dx * 0.3;
+                    xNodes[6] -= dx * 0.3;
+                    yNodes[3] -= dx * 0.1;
+                    break;
+                }
+                case 2: {
+                    ArrayTools.AddToArray(0, ref yNodes);
+                    Array.Sort(yNodes);
+                    break;
+                }
+                default:
+                throw new NotImplementedException("unknown mesh variation");
+            }
 
             xNodes.ScaleV(MeshScaling);
             yNodes.ScaleV(MeshScaling);
@@ -440,9 +455,23 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             double[] xNodes = GenericBlas.Linspace(-7, +7, 8);
             double[] yNodes = GenericBlas.Linspace(-7, +7, 8);
             double[] zNodes = GenericBlas.Linspace(-3, -3 + zWidht, noOfZnodes);
-            double dx = xNodes[1] - xNodes[0];
-            xNodes[1] -= dx * 0.3;
-            xNodes[6] -= dx * 0.3;
+            switch(MeshVariation) {
+                case 0: break;
+                case 1: {
+                    double dx = xNodes[1] - xNodes[0];
+                    xNodes[1] -= dx * 0.3;
+                    xNodes[6] -= dx * 0.3;
+                    yNodes[3] -= dx * 0.1;
+                    break;
+                }
+                case 2: {
+                    ArrayTools.AddToArray(0, ref yNodes);
+                    Array.Sort(yNodes);
+                    break;
+                }
+                default:
+                throw new NotImplementedException("unknown mesh variation");
+            }
 
             xNodes.ScaleV(MeshScaling);
             yNodes.ScaleV(MeshScaling);
@@ -499,8 +528,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
     abstract class TestSetupSingleLevSetBase : TestSetupBase {
 
-        public TestSetupSingleLevSetBase(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye)
-            : base(meshScaling, cutCellQuadratureOrder, quadratureType) { }
+        public TestSetupSingleLevSetBase(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye, int meshVariation = 0)
+            : base(meshScaling, cutCellQuadratureOrder, quadratureType, meshVariation) { }
 
 
 
@@ -560,7 +589,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             TotalIntegral_Volume4Species.Add("B", vol3D_B);
 
             double line3D = (4.0 * 2 * Math.PI) * noOfZnodes; // 4 circles in xy-planes
-            using(var _2D = new TestSetupSingleLevset2D()) {
+            using(var _2D = new TestSetupSingleLevset2D(meshScaling:1, cutCellQuadratureOrder:this.CutCellQuadratureOrder, quadratureType:this.QuadratureType, meshVariation: MeshVariation)) {
                 _2D.Init();
                 _2D.RunSolverMode();
 
@@ -579,8 +608,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
     class TestSetupSingleLevset2D : TestSetupSingleLevSetBase {
 
-        public TestSetupSingleLevset2D(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye)
-            : base(meshScaling, cutCellQuadratureOrder, quadratureType) { }
+        public TestSetupSingleLevset2D(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye, int meshVariation = 0)
+            : base(meshScaling, cutCellQuadratureOrder, quadratureType, meshVariation) { }
 
 
 
@@ -721,8 +750,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
     /// </summary>
     class TestSetupSingleLevset3D : TestSetupSingleLevSetBase {
 
-        public TestSetupSingleLevset3D(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye)
-            : base(meshScaling, cutCellQuadratureOrder, quadratureType) {
+        public TestSetupSingleLevset3D(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye, int meshVariation = 0)
+            : base(meshScaling, cutCellQuadratureOrder, quadratureType, meshVariation) {
            
         }
 
@@ -912,8 +941,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
     abstract class TestSetupTwoLevSetsBase : TestSetupBase {
 
-        public TestSetupTwoLevSetsBase(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye)
-            : base(meshScaling, cutCellQuadratureOrder, quadratureType) { }
+        public TestSetupTwoLevSetsBase(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye, int meshVariation = 0)
+            : base(meshScaling, cutCellQuadratureOrder, quadratureType, meshVariation) { }
 
 
 
@@ -994,7 +1023,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             double line3D_A = (4.0 * 2 * Math.PI * 0.5 + 6) * noOfZnodes; // `noOfZnodes` half-circles in xy-planes + 2*3
             double line3D_B = (4.0 * 2 * Math.PI * 0.5 + 8) * noOfZnodes; // `noOfZnodes` half-circles in xy-planes + 8
             double line3D_C = 14 * noOfZnodes;  // `noOfZnodes` lines from left to right
-            using(var _2D = new TestSetupTwoLevSets2D()) {
+            using(var _2D = new TestSetupTwoLevSets2D(cutCellQuadratureOrder:this.CutCellQuadratureOrder, quadratureType: this.QuadratureType, meshVariation:this.MeshVariation)) {
                 _2D.Init();
                 _2D.RunSolverMode();
 
@@ -1016,8 +1045,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
     class TestSetupTwoLevSets2D : TestSetupTwoLevSetsBase {
 
-        public TestSetupTwoLevSets2D(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye)
-            : base(meshScaling, cutCellQuadratureOrder, quadratureType) { }
+        public TestSetupTwoLevSets2D(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye, int meshVariation = 0)
+            : base(meshScaling, cutCellQuadratureOrder, quadratureType, meshVariation) { }
 
 
 
@@ -1158,8 +1187,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
     /// </summary>
     class TestSetupTwoLevSets3D : TestSetupTwoLevSetsBase {
 
-        public TestSetupTwoLevSets3D(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye)
-            : base(meshScaling, cutCellQuadratureOrder, quadratureType) {
+        public TestSetupTwoLevSets3D(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye, int meshVariation = 0)
+            : base(meshScaling, cutCellQuadratureOrder, quadratureType, meshVariation) {
 
         }
 

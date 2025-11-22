@@ -117,15 +117,17 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         [Test]
         public static void OneLevelSet_2D(
 #if DEBUG
+            [Values(0)] int meshVariation,
             [Values(3, 6, 7)] int quadOrder,
 #else
+            [Values(0, 1, 2)] int meshVariation,
             [Values(3, 4, 7, 8, 9, 10)] int quadOrder,
 #endif
             [Values(CutCellQuadratureMethod.Classic, CutCellQuadratureMethod.OneStepGauss, CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadType) {
 
             DoTests(
-                () => new TestSetupSingleLevset2D(1.0, quadOrder, cutCellQuadType),
-                () => new TestSetupSingleLevset2D(0.5, quadOrder, cutCellQuadType));
+                () => new TestSetupSingleLevset2D(1.0, quadOrder, cutCellQuadType, meshVariation),
+                () => new TestSetupSingleLevset2D(0.5, quadOrder, cutCellQuadType, meshVariation));
 
         }
 
@@ -133,15 +135,17 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         [Test]
         public static void OneLevelSet_3D(
 #if DEBUG
+            [Values(0)] int meshVariation,
             [Values(3, 6, 7)] int quadOrder,
 #else
+            [Values(0, 1, 2)] int meshVariation,
             [Values(3, 4, 7, 8, 9, 10)] int quadOrder,
 #endif
             [Values(CutCellQuadratureMethod.Classic, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadType) {
 
             DoTests(
-               () => new TestSetupSingleLevset3D(1.0, quadOrder, cutCellQuadType),
-               () => new TestSetupSingleLevset3D(0.5, quadOrder, cutCellQuadType));
+               () => new TestSetupSingleLevset3D(1.0, quadOrder, cutCellQuadType, meshVariation),
+               () => new TestSetupSingleLevset3D(0.5, quadOrder, cutCellQuadType, meshVariation));
         }
 
         /// <summary>
@@ -151,14 +155,16 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         [Test]
         public static void OneLevelSet_2Dvs3D(
 #if DEBUG
+            [Values(0)] int meshVariation,
             [Values(3, 6, 7)] int quadOrder,
 #else
+            [Values(0, 1, 2)] int meshVariation,
             [Values(3, 4, 7, 8, 9, 10)] int quadOrder,
 #endif
             [Values(CutCellQuadratureMethod.Classic, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadType) {
             DoTests_2Dvs3D(
-                () => new TestSetupSingleLevset2D(1.0, quadOrder, cutCellQuadType),
-                () => new TestSetupSingleLevset3D(1, quadOrder, cutCellQuadType));
+                () => new TestSetupSingleLevset2D(1.0, quadOrder, cutCellQuadType, meshVariation),
+                () => new TestSetupSingleLevset3D(1, quadOrder, cutCellQuadType, meshVariation));
         }
 
         /// <summary>
@@ -168,14 +174,16 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         [Test]
         public static void TwoLevelSet_2Dvs3D(
 #if DEBUG
+            [Values(0)] int meshVariation,
             [Values(3, 6, 7)] int quadOrder,
 #else
+            [Values(0, 1, 2)] int meshVariation,
             [Values(3, 4, 7, 8, 9, 10)] int quadOrder,
 #endif
             [Values(CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadType) {
             DoTests_2Dvs3D(
-                () => new TestSetupTwoLevSets2D(1.0, quadOrder, cutCellQuadType),
-                () => new TestSetupTwoLevSets3D(1, quadOrder, cutCellQuadType));
+                () => new TestSetupTwoLevSets2D(1.0, quadOrder, cutCellQuadType, meshVariation),
+                () => new TestSetupTwoLevSets3D(1, quadOrder, cutCellQuadType, meshVariation));
         }
 
 
@@ -184,58 +192,69 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         [Test]
         public static void TwoLevelSets_2D(
 #if DEBUG
+            [Values(0)] int meshVariation,
             [Values(3, 6, 7)] int quadOrder,
 #else
+            [Values(0, 1, 2)] int meshVariation,
             [Values(3, 4, 7, 8, 9, 10)] int quadOrder,
 #endif
+
             [Values(CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadType) {
 
             DoTests(
-                () => new TestSetupTwoLevSets2D(1.0, quadOrder, cutCellQuadType),
-                () => new TestSetupTwoLevSets2D(0.5, quadOrder, cutCellQuadType));
+                () => new TestSetupTwoLevSets2D(1.0, quadOrder, cutCellQuadType, meshVariation),
+                () => new TestSetupTwoLevSets2D(0.5, quadOrder, cutCellQuadType, meshVariation));
         }
 
         [Test]
         public static void TwoLevelSets_3D(
 #if DEBUG
+            [Values(0)] int meshVariation,
             [Values(3, 6, 7)] int quadOrder,
 #else
+            [Values(0, 1, 2)] int meshVariation,
             [Values(3, 4, 7, 8, 9, 10)] int quadOrder,
 #endif
+
             [Values(CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadType) {
 
             DoTests(
-                () => new TestSetupTwoLevSets3D(1.0, quadOrder, cutCellQuadType),
-                () => new TestSetupTwoLevSets3D(0.5, quadOrder, cutCellQuadType));
+                () => new TestSetupTwoLevSets3D(1.0, quadOrder, cutCellQuadType, meshVariation),
+                () => new TestSetupTwoLevSets3D(0.5, quadOrder, cutCellQuadType, meshVariation));
         }
 
 
         [Test]
         public static void TwoLevelSets_2D_SayeVsAlgoim(
 #if DEBUG
+            [Values(0)] int meshVariation,
             [Values(3, 6, 7)] int quadOrder
 #else
+            [Values(0, 1, 2)] int meshVariation,
             [Values(3, 4, 7, 8, 9, 10)] int quadOrder
 #endif
         ) {
 
             DoTests_ElementWise(
-                () => new TestSetupTwoLevSets2D(1.0, quadOrder, CutCellQuadratureMethod.Saye),
-                () => new TestSetupTwoLevSets2D(1.0, quadOrder, CutCellQuadratureMethod.Algoim));
+                () => new TestSetupTwoLevSets2D(1.0, quadOrder, CutCellQuadratureMethod.Saye, meshVariation),
+                () => new TestSetupTwoLevSets2D(1.0, quadOrder, CutCellQuadratureMethod.Algoim, meshVariation));
         }
 
         [Test]
         public static void TwoLevelSets_3D_SayeVsAlgoim(
 #if DEBUG
+            [Values(0)] int meshVariation,
             [Values(3, 6, 7)] int quadOrder
 #else
+            [Values(0, 1, 2)] int meshVariation,
             [Values(3, 4, 7, 8, 9, 10)] int quadOrder
 #endif
+
         ) {
 
             DoTests_ElementWise(
-                () => new TestSetupTwoLevSets3D(1.0, quadOrder, CutCellQuadratureMethod.Saye),
-                () => new TestSetupTwoLevSets3D(1.0, quadOrder, CutCellQuadratureMethod.Algoim));
+                () => new TestSetupTwoLevSets3D(1.0, quadOrder, CutCellQuadratureMethod.Saye, meshVariation),
+                () => new TestSetupTwoLevSets3D(1.0, quadOrder, CutCellQuadratureMethod.Algoim, meshVariation));
         }
 
 
