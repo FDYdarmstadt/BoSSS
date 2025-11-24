@@ -15,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using static ilPSP.Utils.UnsafeAlgoim;
 
 
 
@@ -30,13 +31,16 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
         public static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI(args);
+            ilPSP.Utils.Algoim.TwoLsIsFucked1();
+            //ilPSP.Utils.Algoim.TwoLsIsSuperFucked1();
+
 
             //BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_2D(3, CutCellQuadratureMethod.Algoim);
             //BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_3D(3, CutCellQuadratureMethod.Algoim);
             //BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSet_2Dvs3D(3, CutCellQuadratureMethod.Saye);
             //            BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_3D(3, CutCellQuadratureMethod.Algoim);
             //BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_2D(10, CutCellQuadratureMethod.Algoim);
-            BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_3D_SayeVsAlgoim(3, 0);
+            BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_3D(1, 3, CutCellQuadratureMethod.Algoim);
 
             BoSSS.Solution.Application.FinalizeMPI();
         }
@@ -963,8 +967,10 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             var X0 = new double[this.Grid.SpatialDimension]; X0[0] = R;
             Debug.Assert(Phi1_ana(X0).Abs() <= 1.0e-8);
             double Phi2_ana(double[] X) {
-                double y = X[1];
-                return -y;
+                double y = X[1] / this.MeshScaling;
+                double phi = - y;
+                //double phi = y.Pow2() * 0.05 - y;
+                return phi;
             }
 
             Phi1.ProjectField(Phi1_ana);
