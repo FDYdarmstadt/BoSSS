@@ -446,7 +446,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
                     }
                     quadRule.Nodes.LockForever();
 
-                    
+                    /*
                     if(this.RefElement.SpatialDimension == 3) {
                         // Create quadrature rule and copy from the scheme
                         //var qs_alt = qsArray_alt[i];
@@ -475,7 +475,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
                         //test_alt.chunkRulePairs.Add(new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(jCell), quadRule_alt));
                         //ICompositeQuadRule_Ext.SaveToTextFileCell(test_alt, lsData[0].Region.GetCutCellMask().GridData, "j" + jCell + "_" + i + "_alt.csv", false);
 
-                    }
+                    }*/
                     
 
                     //ApplyMetrics(quadRule, jCell);
@@ -562,10 +562,11 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
 				(int n1, int[] sizes1, double[] x1, double[] y1) = CreatePhiData(lsData[0], jCell);
 				(int n2, int[] sizes2, double[] x2, double[] y2) = CreatePhiData(lsData[1], jCell);
 
+                /*
                 if(this.RefElement.SpatialDimension == 3) {
                     base.GetMonomialExpression(lsData[0], jCell);
                     base.GetMonomialExpression(lsData[1], jCell);
-                }
+                }*/
 
                 // get the quadrature rule from the wrapper
                 UnsafeAlgoim.QuadScheme[] qsArray = m_CalculateQuadRule(spaceDim, n1, n2, RequestedOrder, sizes1, sizes2, x1, x2, y1, y2);

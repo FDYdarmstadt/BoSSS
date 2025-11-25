@@ -46,6 +46,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
     }
 
+    /*
     /// <summary>
     /// Implementation of <see cref="CurvatureBasedSurfaceTension"/> for use in <see cref="XSpatialOperatorMk2.SurfaceElementOperator_Ls0"/>
     /// </summary>
@@ -56,10 +57,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="_d">spatial direction</param>
-        /// <param name="_D">spatial dimension</param>
-        /// <param name="LsTrk"></param>
-        /// <param name="_sigma">surface-tension constant</param>
         public CurvatureBasedSurfaceTension_SurfaceOperator(int _d, int _D, double _sigma) {
             //m_LsTrk = LsTrk;
             if (_d >= _D)
@@ -89,7 +86,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             // only parameter dependent, leave this empty
-            return new IEquationComponent[] { this };
+            Console.WriteLine(" !!!!!!!!!!!!!!!   This or nix ????????????????????");
+            return new IEquationComponent[] { };
+            //return new IEquationComponent[] { this };
         }
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
@@ -109,7 +108,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             return Flx * V;
         }
     }
-
+    */
 
     /// <summary>
     /// Represents the artificial surface force (usually only used in manufactured solutions).
@@ -345,6 +344,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             // only parameter dependent, leave this empty
+            //Console.WriteLine(" !!!!!!!!!!!!!!!   This or nix ????????????????????");
+            //return new IEquationComponent[] { };
             return new IEquationComponent[] { this };
         }
 

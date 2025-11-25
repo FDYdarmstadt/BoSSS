@@ -519,8 +519,12 @@ namespace BoSSS.Foundation.XDG {
                 throw new NotSupportedException("CopyTo value type -- probably not the expected result! (Using vector struct in CopyTo(...) - operation?)");
 #endif
                 int L = this.Count;
-                for(int i = 0; i < L; i++)
-                    array[i + arrayIndex] = this[i];
+                for(int i = 0; i < L; i++) {
+                    int idx_full = fr.Frame2Full_Loc(i);
+                    if(idx_full >= 0) {
+                        array[i + arrayIndex] = m_Full[idx_full];
+                    }
+                }
             }
 
             /// <summary>
@@ -1416,6 +1420,8 @@ namespace BoSSS.Foundation.XDG {
                    this.CodomainVar,
                    this.QuadOrderFunction,
                    this.Species.ToArray());
+
+            JacobianOp.AgglomerationThreshold = this.AgglomerationThreshold;
 
             JacobianOp.FluxesAreNOTMultithreadSafe = this.FluxesAreNOTMultithreadSafe;
 

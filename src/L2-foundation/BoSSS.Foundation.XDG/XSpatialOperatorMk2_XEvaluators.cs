@@ -122,15 +122,17 @@ namespace BoSSS.Foundation.XDG {
             }
 
 
+
             /// <summary>
             /// creates a matrix builder
             /// </summary>
             protected override void ctorTraceDGBulkIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, bool[] RowSwitch, DGField[] Params, DGField[] DomFld) {
 
-                //Here so far, all the implmentations of traceDg are based on single spc. (Theoritically we don't need it) But in order to use XDG ready-to-use
+                // Here so far, all the implementations of traceDg are based on single spc. (Theoretically, we don't need it)
+                // But in order to use XDG ready-to-use
                 // features, i need to specify the spc name. I cannot pass null to the spc name otherwise the following MatrixBuilder will cause problem.
-                //Maybe i need to refactor it one day....
-                //var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner, RowSwitch, this.m_lsTrk, null, quadOrder, eqs, cqs, this.TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
+                // Maybe i need to refactor it one day....
+                // var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner, RowSwitch, this.m_lsTrk, null, quadOrder, eqs, cqs, this.TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
                 string spcName = m_lsTrk.GetSpeciesName(SpeciesId);
 
                 var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner, RowSwitch, this.m_lsTrk, spcName, quadOrder, eqs, cqs, this.TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
@@ -170,6 +172,7 @@ namespace BoSSS.Foundation.XDG {
             protected override DGField[] GetTrxFields() {
                 return base.Parameters.ToArray();
             }
+
 
             /// <summary>
             /// computation of operator matrix, currently only two species are supported
@@ -266,39 +269,56 @@ namespace BoSSS.Foundation.XDG {
                             var _mtx_noTdg = Matrix != null ? mtx_noTdg : default(SpeciesFrameMatrix<M>);
                             SpeciesFrameVector<V> vec_noTdg = vec_spc_noTdg[iSpecies];
 
-                            var SpeciesBuilders = new[] { (1, SpeciesBulkMtxBuilder, mtx_noTdg, vec_noTdg), 
-                                                          (2, SpeciesGhostEdgeBuilder, mtx_noTdg, vec_noTdg), 
-                                                          (3, SpeciesSurfElmBuilder, mtx_incTdg, vec_incTdg), 
+                            var SpeciesBuilders = new[] { (1, SpeciesBulkMtxBuilder, mtx_noTdg, vec_noTdg),
+                                                          (2, SpeciesGhostEdgeBuilder, mtx_noTdg, vec_noTdg),
+                                                          (3, SpeciesSurfElmBuilder, mtx_incTdg, vec_incTdg),
                                                           (4, SpeciesContactLineBuilder, mtx_incTdg, vec_incTdg) };
 
                             foreach(var t4 in SpeciesBuilders) {
                                 var SpeciesBuilder = t4.Item2;
                                 var _mtx = t4.Item3;
                                 var vec = t4.Item4;
-                               
 
+                                if(onlyfordebugging_DoBulk == false && (t4.Item1 == 1 || t4.Item1 == 2)) {
+                                    Console.WriteLine("skipping bulk and ghost " + t4.Item1);
+                                    continue;
+                                }
+
+                                if(onlyfordebugging_DoContactline == false && t4.Item1 == 4) {
+                                    Console.WriteLine("skipping contact line " + t4.Item1);
+                                    continue;
+                                }
+                                if(onlyfordebugging_DoSurfaceelm == false && t4.Item1 == 3) {
+                                    Console.WriteLine("skipping surface element " + t4.Item1);
+                                    continue;
+                                }
 
                                 if(SpeciesBuilder.ContainsKey(SpeciesId)) {
-                                        var builder = SpeciesBuilder[SpeciesId];
-                                        BulkIntegrator(builder, SpeciesId, _mtx, vec);
-                                    }
-
+                                    var builder = SpeciesBuilder[SpeciesId];
+                                    BulkIntegrator(builder, SpeciesId, _mtx, vec);
                                 }
                             }
-
+                        }
                     }
+
                     
-
                     if(base.AnyTraceDG_Codomn || base.AnyTraceDG_Domain) {
-                        using(new BlockTrace("bulk_integration_tracedg", tr)) {
-                            var mtx = new SpeciesFrameMatrix<M>(Matrix, this.TraceDgCodomFrame, this.TraceDgDomainFrame);
-                            var vec = (AffineOffset != null) ?
-                                      (new SpeciesFrameVector<V>(AffineOffset, this.TraceDgCodomFrame))
-                                      :
-                                      null;
+                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                        // integrate equation components in the normal operator, which are applied to trace DG
+                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                        if(onlyfordebugging_DoTraceDG) {
+                            using(new BlockTrace("bulk_integration_tracedg", tr)) {
+                                var mtx = new SpeciesFrameMatrix<M>(Matrix, this.TraceDgCodomFrame, this.TraceDgDomainFrame);
+                                var vec = (AffineOffset != null) ?
+                                          (new SpeciesFrameVector<V>(AffineOffset, this.TraceDgCodomFrame))
+                                          :
+                                          null;
 
-                            BulkIntegrator(TraceBulkMtxBuilder, default(SpeciesId), mtx, vec);
+                                BulkIntegrator(TraceBulkMtxBuilder, default(SpeciesId), mtx, vec);
 
+                            }
+                        } else {
+                            Console.WriteLine("skipping TraceDG");
                         }
                     }
 
@@ -390,10 +410,30 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// Only for debugging;  can be used to turn surface integration in spatial operators off.
+        /// Only for debugging; can be used to turn surface integration in spatial operators off.
         /// </summary>
-
         static bool onlyfordebugging_DoSurface = true;
+
+        /// <summary>
+        /// Only for debugging; can be used to turn bulk component integration in spatial operators off.
+        /// </summary>
+        static bool onlyfordebugging_DoBulk = true;
+
+        /// <summary>
+        /// Only for debugging; can be used to turn contact line contribution (<see cref="ContactLineOperator_Ls0"/>) in spatial operators off.
+        /// </summary>
+        static bool onlyfordebugging_DoContactline = true;
+
+        /// <summary>
+        /// Only for debugging; can be used to turn surface element contribution (<see cref="SurfaceElementOperator_Ls0"/>) in spatial operators off.
+        /// </summary>
+        static bool onlyfordebugging_DoSurfaceelm = true;
+
+        /// <summary>
+        /// Only for debugging; can be used to turn trace DG integration in spatial operators off.
+        /// </summary>
+        static bool onlyfordebugging_DoTraceDG = true;
+
 
         /// <summary>
         /// Explicit evaluation of (nonlinear and linear) XDG operators
@@ -493,6 +533,21 @@ namespace BoSSS.Foundation.XDG {
                                 var SpeciesEval = t3.Item2;
                                 var vec = t3.Item3;
 
+                                if(onlyfordebugging_DoBulk == false && (t3.Item1 == 1 || t3.Item1 == 2)) {
+                                    Console.WriteLine("skipping bulk and ghost " + t3.Item1);
+                                    continue;
+                                }
+
+                                if(onlyfordebugging_DoContactline == false && t3.Item1 == 4) {
+                                    Console.WriteLine("skipping contact line " + t3.Item1);
+                                    continue;
+                                }
+                                if(onlyfordebugging_DoSurfaceelm == false && t3.Item1 == 3) {
+                                    Console.WriteLine("skipping surface element " + t3.Item1);
+                                    continue;
+                                }
+
+
 
                                 if(SpeciesEval.ContainsKey(SpeciesId)) {
                                     var eval = SpeciesEval[SpeciesId];
@@ -503,10 +558,15 @@ namespace BoSSS.Foundation.XDG {
                     }
 
                     if(base.AnyTraceDG_Codomn || base.AnyTraceDG_Domain) {
-                        using(new BlockTrace("bulk_integration_tracedg", tr)) {
-                            var vec = new SpeciesFrameVector<Tout>(output, this.TraceDgCodomFrame);
+                        if(onlyfordebugging_DoTraceDG) {
 
-                            BulkIntegrator(TraceBulkEval, default, vec);
+                            using(new BlockTrace("bulk_integration_tracedg", tr)) {
+                                var vec = new SpeciesFrameVector<Tout>(output, this.TraceDgCodomFrame);
+
+                                BulkIntegrator(TraceBulkEval, default, vec);
+                            }
+                        } else {
+                            Console.WriteLine("skipping TraceDG");
                         }
                     }
 
@@ -576,6 +636,8 @@ namespace BoSSS.Foundation.XDG {
 #endif
                             }
 
+                        } else {
+                            Console.WriteLine("skipping level-set surface integration");
                         }
                     }
 
@@ -662,7 +724,7 @@ namespace BoSSS.Foundation.XDG {
             /// creates an evaluator
             /// </summary>
             protected override void ctorTraceDGBulkIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, bool[] RowSwitch, DGField[] Params, DGField[] DomFld) {
-                //Here so far, all the implmentations of traceDg are based on single spc. (Theoritically we don't need it) But in order to use XDG ready-to-use
+                //Here so far, all the implementations of traceDg are based on single spc. (Theoretically we don't need it) But in order to use XDG ready-to-use
                 // features, i need to specify the spc name. I cannot pass null to the spc name otherwise the following MatrixBuilder will cause problem.
                 //Maybe i need to refactor it one day....
                 //var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner, RowSwitch, this.m_lsTrk, null, quadOrder, eqs, cqs, this.TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
@@ -725,7 +787,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// Write quadrature rules to text file, for debugging
             /// </summary>
-            static private bool onlyfordebugging_RuleDiagnosis = false;
+            static bool onlyfordebugging_RuleDiagnosis = false;
 
             /// <summary>
             /// ctor
@@ -774,7 +836,7 @@ namespace BoSSS.Foundation.XDG {
                         throw new ArgumentException("grid data mismatch");
                     m_lsTrk = lsTrk;
                     m_Xowner = ownr;
-                    ReqSpecies = ownr.Species.Select(spcNmn => lsTrk.GetSpeciesId(spcNmn)).ToArray();
+                    ReqSpecies = ownr.Species.Select(lsTrk.GetSpeciesId).ToArray();
 
                     this.UsedQuadOrder = quadOrder;
                     this.TrackerHistoryIndex = __TrackerHistoryIndex;
@@ -813,7 +875,7 @@ namespace BoSSS.Foundation.XDG {
 
                             var CodomFrame_WithTraceDg = new FrameBase(TrackerRegions, SpeciesId, CodomainMapping, false, FrameBase_TraceDGhandling.DG_XDG_and_TraceDG);
                             var DomainFrame_WithTraceDg = new FrameBase(TrackerRegions, SpeciesId, DomainMapping, true, FrameBase_TraceDGhandling.DG_XDG_and_TraceDG);
-                            SpeciesCodomFrame_WithTraceDg .Add(SpeciesId, CodomFrame_WithTraceDg);
+                            SpeciesCodomFrame_WithTraceDg.Add(SpeciesId, CodomFrame_WithTraceDg);
                             SpeciesDomainFrame_WithTraceDg.Add(SpeciesId, DomainFrame_WithTraceDg);
 
                             // quadrature rules
@@ -889,25 +951,22 @@ namespace BoSSS.Foundation.XDG {
                                             Params_4Species, DomFld_4Species);
                                     }
                                 }
-                        
+                            }
 
-                                if(m_Xowner.ContactLineOperator_Ls0.TotalNoOfComponents > 0) {
-                                    EdgeQuadratureScheme ContactLine_Edge = new EdgeQuadratureScheme(false, EdgeMask.GetEmptyMask(GridData));
-                                    CellQuadratureScheme ContactLine_Volume = m_Xowner.ContactLine_VolumeQuadratureSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
-                                    if(onlyfordebugging_RuleDiagnosis) {
-                                        string suffix = $"{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}of{this.GridData.MpiSize}";
+                            if(m_Xowner.ContactLineOperator_Ls0.TotalNoOfComponents > 0) {
+                                EdgeQuadratureScheme ContactLine_Edge = new EdgeQuadratureScheme(false, EdgeMask.GetEmptyMask(GridData));
+                                CellQuadratureScheme ContactLine_Volume = m_Xowner.ContactLine_VolumeQuadratureSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
+                                if(onlyfordebugging_RuleDiagnosis) {
+                                    string suffix = $"{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}of{this.GridData.MpiSize}";
 
-                                        ContactLine_Volume.SaveToTextFileCell(GridData, quadOrder, $"contactLineOperator_{suffix}.csv");
-                                        ContactLine_Volume.Compile(GridData, quadOrder).ToVtpFilesCell(GridData, $"contactLineOperator_{suffix}");
-                                    }
-                                    ctorContactLineSpeciesIntegrator(SpeciesId, quadOrder, ContactLine_Volume, ContactLine_Edge, DomainFrame_WithTraceDg, CodomFrame_WithTraceDg,
-                                        CodomFrame_WithTraceDg.FrameMap.BasisS.Select(b => b.MaximalLength > 0).ToArray(),
-                                        Params_4Species, DomFld_4Species);
+                                    ContactLine_Volume.SaveToTextFileCell(GridData, quadOrder, $"contactLineOperator_{suffix}.csv");
+                                    ContactLine_Volume.Compile(GridData, quadOrder).ToVtpFilesCell(GridData, $"contactLineOperator_{suffix}");
                                 }
+                                ctorContactLineSpeciesIntegrator(SpeciesId, quadOrder, ContactLine_Volume, ContactLine_Edge, DomainFrame_WithTraceDg, CodomFrame_WithTraceDg,
+                                    CodomFrame_WithTraceDg.FrameMap.BasisS.Select(b => b.MaximalLength > 0).ToArray(),
+                                    Params_4Species, DomFld_4Species);
                             }
                         }
-
-
                     }
 
 
@@ -1142,7 +1201,6 @@ namespace BoSSS.Foundation.XDG {
             /// </summary>
             //abstract protected void ctorTraceDGBulkIntegrator(int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, bool[] RowSwitch, DGField[] Params, DGField[] DomFld);
             abstract protected void ctorTraceDGBulkIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, bool[] RowSwitch, DGField[] Params, DGField[] DomFld);
-
 
 
             /// <summary>

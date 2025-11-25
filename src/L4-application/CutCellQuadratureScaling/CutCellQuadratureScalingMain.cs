@@ -32,15 +32,14 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         public static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI(args);
             ilPSP.Utils.Algoim.TwoLsIsFucked1();
-            //ilPSP.Utils.Algoim.TwoLsIsSuperFucked1();
+            ilPSP.Utils.Algoim.TwoLsIsSuperFucked1();
 
 
-            //BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_2D(3, CutCellQuadratureMethod.Algoim);
-            //BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_3D(3, CutCellQuadratureMethod.Algoim);
+            //BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_2D(0, 3, CutCellQuadratureMethod.Algoim);
+            //BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_3D(0, 3, CutCellQuadratureMethod.Algoim);
             //BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSet_2Dvs3D(3, CutCellQuadratureMethod.Saye);
             //            BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_3D(3, CutCellQuadratureMethod.Algoim);
-            //BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_2D(10, CutCellQuadratureMethod.Algoim);
-            BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_3D(1, 3, CutCellQuadratureMethod.Algoim);
+            //BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_3D(1, 3, CutCellQuadratureMethod.Algoim);
 
             BoSSS.Solution.Application.FinalizeMPI();
         }
@@ -78,8 +77,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         internal CutCellMetrics latestCCM;
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
-            int upgrade = QuadratureType == CutCellQuadratureMethod.Algoim ? 5 : 0;
-            latestCCM = LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS, CutCellQuadratureOrder + upgrade).CutCellMetrics;
+            //int upgrade = QuadratureType == CutCellQuadratureMethod.Algoim ? 5 : 0;
+            latestCCM = LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS, CutCellQuadratureOrder).CutCellMetrics;
             base.TerminationKey = true;
             return -1;
         }

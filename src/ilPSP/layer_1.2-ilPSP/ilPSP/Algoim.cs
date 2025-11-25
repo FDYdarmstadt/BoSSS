@@ -1022,11 +1022,11 @@ namespace ilPSP.Utils {
 
         
         public static void TwoLsIsFucked1() {
-            // Func<double, double, double, double> LS1 = (x, y, z) => (x * (0.5000000000000009) + x * x * (-0.062499999999999264) + y * y * (-0.06249999999999994));
-            Func<double, double, double, double> LS1 = (x, y, z) => -x;
+            Func<double, double, double, double> LS1 = (x, y, z) => (x * (0.5000000000000009) + x * x * (-0.062499999999999264) + y * y * (-0.06249999999999994));
+            //Func<double, double, double, double> LS1 = (x, y, z) => -x;
             Func<double, double, double, double> LS2 = (x, y, z) => (y * (-1.0));
 
-            int n = 5; // number of points in one axis (degree + 1) 
+            int n = 3; // number of points in one axis (degree + 1) 
             int spaceDim = 3;
             int degree = 8;
 
@@ -1132,13 +1132,13 @@ namespace ilPSP.Utils {
             int[] sA = { n, n, n };
             int[] sB = sA;   //same for sB
 
-            QuadScheme[] retArray = new QuadScheme[2];
+            QuadScheme[] retArray = new QuadScheme[4];
             unsafe {
                 // app does not survive the following call:
                 QuadSchemeUnmanaged* retC = m_Algoim.getUnmanagedVolumeSchemeTwoLS(spaceDim, n, n, degree, sA, sB, xA, xB, yA, yB);
 
-                /*
-                for(int k = 0; k < 2; ++k) {
+                
+                for(int k = 0; k < 4; ++k) {
 
 
 
@@ -1148,8 +1148,8 @@ namespace ilPSP.Utils {
                     retArray[k] = ret;
                     ret.OutputQuadratureRuleAsVtpXML("AlgoimVolTwoLSTestP" + degree + "_" + k + ".vtp");
 
-                    double totSum = ret.weights.Sum();
-                    double negSum = 0, posSum = 0;
+                    //double totSum = ret.weights.Sum();
+                    //double negSum = 0, posSum = 0;
                     for(int iNode = 0; iNode < ret.length; ++iNode) {
                         double x = ret.nodes[iNode * 3 + 0];
                         double y = ret.nodes[iNode * 3 + 1];
@@ -1157,17 +1157,19 @@ namespace ilPSP.Utils {
 
                         var phi = k == 0 ? LS2(x, y, z) : LS1(x, y, z);
 
-                        if(phi > 0)
-                            posSum += ret.weights[iNode];
-                        else
-                            negSum += ret.weights[iNode];
+                        //if(phi > 0)
+                        //    posSum += ret.weights[iNode];
+                        //else
+                        //    negSum += ret.weights[iNode];
                     }
 
-                    if((negSum - posSum).Abs() > 1.0e-5)
-                        throw new ArithmeticException("negative and positive sum are expected to be equal");
+                    //if((negSum - posSum).Abs() > 1.0e-5)
+                    //    throw new ArithmeticException("negative and positive sum are expected to be equal");
+
 
                 }
-                */
+                double[] sums = retArray.Select(qr => qr.weights.Sum()).ToArray();
+                
             }
         }
 
