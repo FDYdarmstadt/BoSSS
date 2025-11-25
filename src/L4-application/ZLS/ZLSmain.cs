@@ -15,12 +15,13 @@ namespace ZwoLevelSetSolver {
     class ZLSmain {
 
         static void Main(string[] args) {
-            BoSSS.Solution.Application.InitMPI();
+            BoSSS.Solution.Application.InitMPI(num_threads:1);
             BoSSS.Solution.Application.DeleteOldPlotFiles();
 
-            RunSolver(args);
+            //RunSolver(args);
             //ConditionNumberScaling();
             //Tests.SolidOnlyTests.RotationConvergenceTest(2);
+            Tests.ThreePhaseTests.ThreePhaseContactLine_TensionBalance(true);
 
             BoSSS.Solution.Application.FinalizeMPI();
         }

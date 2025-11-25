@@ -561,8 +561,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             CurrentLin.OperatorMatrix.SpMV(-1.0, in_U, 1.0, out_Resi);
 
             double L2_out_Resi = out_Resi.L2Norm();
-            Console.WriteLine($" ++++++++++++++  Newton Linearizes Residual: U={L2_in_U} RHS={L2_RHS} RHS-MTX*U={L2_out_Resi}");
-
         }
 
         /// <summary>
