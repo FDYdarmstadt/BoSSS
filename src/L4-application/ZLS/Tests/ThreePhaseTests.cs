@@ -11,8 +11,8 @@ namespace ZwoLevelSetSolver.Tests {
     public static class ThreePhaseTests {
 
 
-
-        public static void ThreePhaseContactLine_TensionBalance([Values(false, true)] bool UseGravity) {
+        [Test]
+        public static void ThreePhaseContactLine_TensionBalance([Values(true)] bool UseGravity) {
 
 
             var C = ZwoLevelSetSolver.ControlFiles.Droplet.Wiki(p: 4, AMRlvl: 2, SlipLength: 0);
