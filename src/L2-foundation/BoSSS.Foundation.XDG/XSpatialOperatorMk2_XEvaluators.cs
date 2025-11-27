@@ -851,6 +851,7 @@ namespace BoSSS.Foundation.XDG {
                     {
                         foreach(var SpeciesId in ReqSpecies) {
                             int iSpecies = Array.IndexOf(ReqSpecies, SpeciesId);
+                            string speciesName = lsTrk.GetSpeciesName(SpeciesId);
 
                             // parameters for species
                             // ----------------------
@@ -890,7 +891,7 @@ namespace BoSSS.Foundation.XDG {
                                     var edgeRule = edgeScheme.Compile(this.GridData, quadOrder);
                                     var volRule = cellScheme.Compile(this.GridData, quadOrder);
 
-                                    string suffix = $"{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}of{this.GridData.MpiSize}";
+                                    string suffix = $"{speciesName}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}of{this.GridData.MpiSize}";
                                     edgeRule.SaveToTextFileEdge(GridData, $"Edge-{suffix}.csv");
                                     edgeRule.ToVtpFilesEdge(GridData, $"Edge-{suffix}");
                                     edgeRule.SumOfWeightsToTextFileEdge(this.GridData, $"WgtSumEdge-{suffix}.csv");
@@ -920,8 +921,8 @@ namespace BoSSS.Foundation.XDG {
                             // Add species, if it is separated from another species by level set 0
                             // For species not separated by ls0, nothing happens
                             var levelSetSpecies = lsTrk.GetSpeciesSeparatedByLevSet(0);
-                            if(levelSetSpecies.Contains(lsTrk.GetSpeciesName(SpeciesId))) {
-                                if(m_Xowner.SurfaceElementOperator_Ls0.TotalNoOfComponents > 0) {
+                            if(levelSetSpecies.Contains(speciesName)) {
+                                if(m_Xowner.NoOfFilteredComponents(m_Xowner.SurfaceElementOperator_Ls0, speciesName) > 0) {
                                     foreach(var speciesB in levelSetSpecies) {
                                         var speciesBId = lsTrk.GetSpeciesId(speciesB);
                                         if(SpeciesId == speciesBId)
@@ -936,7 +937,7 @@ namespace BoSSS.Foundation.XDG {
                                             var coEdgRule = SurfaceElement_Edge.Compile(GridData, quadOrder);
                                             var coVolRole = SurfaceElement_volume.Compile(GridData, quadOrder);
 
-                                            string suffix = $"{lsTrk.GetSpeciesName(SpeciesId)}{speciesB}-ls{0}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}of{this.GridData.MpiSize}";
+                                            string suffix = $"{speciesName}{speciesB}-ls{0}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}of{this.GridData.MpiSize}";
                                             coVolRole.SaveToTextFileCell(GridData, $"surfaceElementOperator_volume_{suffix}.csv");
                                             coEdgRule.SaveToTextFileEdge(GridData, $"surfaceElementOperator_edge_{suffix}.csv");
 
@@ -953,11 +954,12 @@ namespace BoSSS.Foundation.XDG {
                                 }
                             }
 
-                            if(m_Xowner.ContactLineOperator_Ls0.TotalNoOfComponents > 0) {
+
+                            if(m_Xowner.NoOfFilteredComponents(m_Xowner.ContactLineOperator_Ls0, speciesName) > 0) {
                                 EdgeQuadratureScheme ContactLine_Edge = new EdgeQuadratureScheme(false, EdgeMask.GetEmptyMask(GridData));
                                 CellQuadratureScheme ContactLine_Volume = m_Xowner.ContactLine_VolumeQuadratureSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
                                 if(onlyfordebugging_RuleDiagnosis) {
-                                    string suffix = $"{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}of{this.GridData.MpiSize}";
+                                    string suffix = $"{speciesName}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}of{this.GridData.MpiSize}";
 
                                     ContactLine_Volume.SaveToTextFileCell(GridData, quadOrder, $"contactLineOperator_{suffix}.csv");
                                     ContactLine_Volume.Compile(GridData, quadOrder).ToVtpFilesCell(GridData, $"contactLineOperator_{suffix}");

@@ -31,9 +31,10 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
         public static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI(args);
-            ilPSP.Utils.Algoim.TwoLsIsFucked1();
-            ilPSP.Utils.Algoim.TwoLsIsSuperFucked1();
+            //ilPSP.Utils.Algoim.TwoLsIsFucked1();
+            //ilPSP.Utils.Algoim.TwoLsIsSuperFucked1();
 
+            BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_2D(2, 8, CutCellQuadratureMethod.Algoim);
 
             //BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_2D(0, 3, CutCellQuadratureMethod.Algoim);
             //BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_3D(0, 3, CutCellQuadratureMethod.Algoim);
@@ -1156,9 +1157,9 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                     } else if(this.CutCellQuadratureOrder <= 7) {
                         return 5e-5;
                     } else if(this.CutCellQuadratureOrder <= 9) {
-                        return 8e-6;
+                        return 3e-5;
                     } else if(this.CutCellQuadratureOrder <= 10) {
-                        return 8e-7;
+                        return 3e-6;
                     } else {
                         return 1e-8;
                     }

@@ -536,7 +536,21 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         }
     }
 
-    public abstract class IBM_ContactLine {
+    public abstract class IBM_ContactLine : ISpeciesFilter {
+
+        protected IBM_ContactLine(string _ValidSpecies) {
+            ValidSpecies = _ValidSpecies;
+        }
+
+        public string ValidSpecies {
+            get;
+            private set;
+        }
+
+        virtual public IList<string> ArgumentOrdering => new string[0];
+        
+        abstract public IList<string> ParameterOrdering { get; }
+
         protected Vector FluidSurfaceNormal(ref CommonParamsVol cpv) {
             return SurfaceNormal(cpv.Parameters, cpv.D, 0);
         }
@@ -611,7 +625,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         int D;
         int iLevSet;
 
-        public Curvature_LaplaceBeltrami_Contactline(int d, int D, int iLevSet) {
+        public Curvature_LaplaceBeltrami_Contactline(int d, int D, int iLevSet, string _ValidSpecies) : base(_ValidSpecies) {
             this.d = d;
             this.D = D;
             this.iLevSet = iLevSet;
@@ -619,7 +633,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         public TermActivationFlags VolTerms => TermActivationFlags.V;
 
-        public virtual IList<string> ParameterOrdering {
+        public override IList<string> ParameterOrdering {
             get {
                 string[] parameters = VariableNames.NormalVector(D);
                 parameters = parameters.Cat(VariableNames.AsLevelSetVariable(NSECommon.VariableNames.LevelSetCGidx(iLevSet), VariableNames.NormalVector(D)));
@@ -628,8 +642,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             }
         }
 
-        public IList<string> ArgumentOrdering => new string[0];
-
+        
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             Vector EdgeNormal = SolidSurfaceNormal(ref cpv);
             Vector SurfaceNormal_IN = FluidSurfaceNormal(ref cpv);
@@ -661,7 +674,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         double sigma;
         double theta_e;
 
-        public SurfaceTension_GNBC_Contactline(int d, int D, double theta_e, double sigma, int iLevSet) {
+        public SurfaceTension_GNBC_Contactline(int d, int D, double theta_e, double sigma, int iLevSet, string _ValidSpecies) : base(_ValidSpecies) {
             this.comp = d;
             this.D = D;
             this.iLevSet = iLevSet;
@@ -671,7 +684,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         public TermActivationFlags VolTerms => TermActivationFlags.V;
 
-        public virtual IList<string> ParameterOrdering {
+        public override IList<string> ParameterOrdering {
             get {
                 string[] parameters = VariableNames.NormalVector(D);
                 parameters = parameters.Cat(VariableNames.AsLevelSetVariable(NSECommon.VariableNames.LevelSetCGidx(iLevSet), VariableNames.NormalVector(D)));
@@ -679,8 +692,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             }
         }
 
-        public IList<string> ArgumentOrdering => new string[0];
-
+        
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             Vector EdgeNormal = SolidSurfaceNormal(ref cpv);
             Vector SurfaceNormal_IN = FluidSurfaceNormal(ref cpv);

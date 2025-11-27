@@ -184,9 +184,37 @@ namespace BoSSS.Foundation.XDG {
             return r;
         }
 
+        private int NoOfFilteredComponents(IDifferentialOperator op, string species) {
+            //, bool[] RowSwitch, LevelSetTracker lsTrk, string species, int order, EdgeQuadratureScheme eqs, CellQuadratureScheme cqs, int TrackerHistory, IDictionary< SpeciesId, MultidimensionalArray > CellLenScales, IDictionary<SpeciesId, MultidimensionalArray> EdgLenScales
+
+            int Ret = 0;
+            int iRow = -1;
+            foreach(string comps in op.CodomainVar) { // loop over rows
+                iRow++;
+
+                foreach(IEquationComponent iec in op.EquationComponents[comps]) {
+                    //m_SpatialOperator.EquationComponents[comps].Add(iec);
+
+                    if(iec is ISpeciesFilter fiec && fiec.ValidSpecies != null && species.IsNonEmpty()) {
+                        string spcNmn = fiec.ValidSpecies;
+
+                        if(!this.Species.Contains(spcNmn)) {
+                            throw new ArgumentException("error in equation components for key \"" + comps + "\" SpeciesId defined in ISpeciesFilter is not given in m_Species");
+                        }
+
+                        if(species.Equals(fiec.ValidSpecies)) {
+                            Ret++;
+                        }
+                    } else {
+                        // no species filter defined: per default, valid for all species.
+                        Ret++;
+                    }
+                }
+            }
+            return Ret;
+        }
 
 
-  
 
         //==========================================================================================================================
         // Taken from old XSpatialOperator

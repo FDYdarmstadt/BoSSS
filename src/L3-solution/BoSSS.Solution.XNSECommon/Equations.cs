@@ -908,7 +908,8 @@ namespace BoSSS.Solution.XNSECommon {
             this.phaseA = phaseA;
             this.phaseB = phaseB;
             codomainName = BoSSS.Solution.NSECommon.EquationNames.MomentumEquationComponent(d);
-            AddContactLineComponent(new Curvature_LaplaceBeltrami_Contactline(d, D, iLevSet));
+            AddContactLineComponent(new Curvature_LaplaceBeltrami_Contactline(d, D, iLevSet, phaseA));
+            AddContactLineComponent(new Curvature_LaplaceBeltrami_Contactline(d, D, iLevSet, phaseB));
 
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.NormalVector(D)
                 .Cat(BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(NSECommon.VariableNames.LevelSetCGidx(iLevSet), NSECommon.VariableNames.NormalVector(D)))
@@ -937,7 +938,8 @@ namespace BoSSS.Solution.XNSECommon {
             double sigma = physParams.Sigma;
 
             codomainName = BoSSS.Solution.NSECommon.EquationNames.MomentumEquationComponent(d);
-            AddContactLineComponent(new SurfaceTension_GNBC_Contactline(d, D, theta_e, sigma, iLevSet));
+            AddContactLineComponent(new SurfaceTension_GNBC_Contactline(d, D, theta_e, sigma, iLevSet, phaseA));
+            AddContactLineComponent(new SurfaceTension_GNBC_Contactline(d, D, theta_e, sigma, iLevSet, phaseB));
 
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.NormalVector(D)
                 .Cat(BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(NSECommon.VariableNames.LevelSetCGidx(iLevSet), NSECommon.VariableNames.NormalVector(D))));
