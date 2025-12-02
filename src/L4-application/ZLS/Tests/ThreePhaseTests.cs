@@ -15,15 +15,15 @@ namespace ZwoLevelSetSolver.Tests {
         public static void ThreePhaseContactLine_TensionBalance([Values(true)] bool UseGravity) {
 
 
-            var C = ZwoLevelSetSolver.ControlFiles.Droplet.Wiki(p: 4, AMRlvl: 2, SlipLength: 0);
+            var C = ZwoLevelSetSolver.ControlFiles.Droplet.Wiki(p: 4, AMRlvl: 2, SlipLength: 0, useGravity: UseGravity);
             C.NoOfTimesteps = 1;
             
-            if(UseGravity == false) {
-                // turn off gravity
-                var toRemove = C.InitialValues.Keys.Where(name => name.StartsWith("Gravity")).ToArray();
-                foreach(var name in toRemove) 
-                    C.InitialValues.Remove(name);
-            }
+            //if(UseGravity == false) {
+            //    // turn off gravity
+            //    var toRemove = C.InitialValues.Keys.Where(name => name.StartsWith("Gravity")).ToArray();
+            //    foreach(var name in toRemove) 
+            //        C.InitialValues.Remove(name);
+            //}
            
 
             using(var S = new ZLS()) {

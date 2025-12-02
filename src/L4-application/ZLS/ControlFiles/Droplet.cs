@@ -245,7 +245,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
         }
 
 
-        public static ZLS_Control Wiki(int p = 4, int AMRlvl = 2, double SlipLength = 0) {
+        public static ZLS_Control Wiki(int p = 4, int AMRlvl = 2, double SlipLength = 0, bool useGravity = true) {
+            // --control "cs:ZwoLevelSetSolver.ControlFiles.Droplet.Wiki()"
             ZLS_Control C = new ZLS_Control(p);
             C.ImmediatePlotPeriod = 1;
             C.SuperSampling = 3;
@@ -393,7 +394,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
             //C.InitialValues_Evaluators.Add("Pressure#B", X => 0.0);
             //C.AddInitialValue("GravityY#A", new Formula($"X => -9.8", false));
             //C.AddInitialValue("GravityY#B", new Formula($"X => -9.8", false));
-            C.AddInitialValue("GravityY#C", new Formula($"X => -9.8", false));
+            if(useGravity)
+                C.AddInitialValue("GravityY#C", new Formula($"X => -9.8", false));
 
 
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);

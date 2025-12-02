@@ -448,11 +448,13 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
         protected virtual void DefineConvective(int d, int dimension, double rhoA, double rhoB, double LFFA, double LFFB, bool material, IncompressibleBoundaryCondMap boundaryMap, bool isMovingMesh) {
-            //if (!isMovingMesh) {
+            if(!isMovingMesh) {
                 var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF(d, dimension, rhoA, rhoB, LFFA, LFFB, material, boundaryMap, isMovingMesh);
                 AddComponent(conv);
-            //}
-            // when moving mesh, nothing to do here
+            } else {
+                // when moving mesh, nothing to do here
+                // (convective flux across moving frame is zero)
+            }
         }
     }
 

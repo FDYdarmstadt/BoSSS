@@ -915,7 +915,7 @@ namespace ilPSP.LinSolvers {
         }
 
         /// <summary>
-        /// The Infinity-Norm (maximum absolute row sum norm) of this matrix;
+        /// The Infinity-Norm (two-norm over all entries) of this matrix;
         /// </summary>
         /// <returns></returns>
         static public double FrobeniusNorm(this IMutableMatrixEx M) {
