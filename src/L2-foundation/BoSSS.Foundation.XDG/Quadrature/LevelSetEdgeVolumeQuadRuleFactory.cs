@@ -26,6 +26,8 @@ using ilPSP.Utils;
 using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
+using System.Collections;
+using System.Security.Policy;
 
 namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
@@ -241,6 +243,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                 var result = new List<ChunkRulePair<CellBoundaryQuadRule>>(mask.NoOfItemsLocally);
                 CellBoundaryQuadRule[] optimizedRules = GetOptimizedRules((CellMask)mask, order);
+
                 int n = 0;
                 foreach (int cell in mask.ItemEnum) {
                     if (cache.ContainsKey(cell)) {
@@ -267,7 +270,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// </summary>
         public RefElement RefElement {
             get {
-                return LevelSetData.GridDat.Grid.RefElements[0];
+                return LevelSetData.GridDat.Grid.RefElements.Single();
             }
         }
 
@@ -313,6 +316,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     new LambdaLevelSetSurfaceQuadrature(this, edgeSurfaceRuleFactory, maxLambdaDegree, mask);
                 surfaceQuadrature.Execute();
                 MultidimensionalArray surfaceResults = surfaceQuadrature.Results;
+                MultidimensionalArray faceMeasures = surfaceQuadrature.FaceMeasures;
 
                 int noOfRhs = 0;
                 int[,] rhsIndexMap = new int[mask.NoOfItemsLocally, noOfFaces];
@@ -339,6 +343,28 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 faceIsCut |= surfaceResults[iSubGrid, e, k].Abs() > 1e-9;
                             }
 
+                            if(faceIsCut == false) {
+                                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                                // face is detected to be not cut so far, 
+                                // but just testing for the results from `LambdaLevelSetSurfaceQuadrature` 
+                                // might be wrong for symmetric situations; 
+                                // the face might still be cut
+                                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                                var Kref = LevelSetData.GridDat.iGeomCells.GetRefElement(cell);
+                                double faceVol = Kref.FaceRefElement.Volume;
+                                faceVol *= Kref.FaceTrafoGramianSqrt[e];
+
+
+                                double faceVolFrac = faceMeasures[iSubGrid, e] / faceVol;
+
+                                if(faceVolFrac.Abs() > 1.0e-9 && (faceVolFrac - 1.0).Abs() > 1.0e-9)
+                                    // face is neiter empty nor ful, so it must be a cut face.
+                                    faceIsCut = true;
+                                    
+
+                            }
+
                             //edgeIsCut = tracker.EdgeIsCut[cell, e];
 
                             if (!faceIsCut) {
@@ -358,16 +384,13 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 }
 
                                 int sign = numPos - numNeg;
-
+                                    
                                 if (sign == 0) {
-                                    //CellMask cellMark = new CellMask(mask.GridData, Chunk.GetSingleElementChunk(cell), MaskType.Logical);
-                                    ////cellMark.SaveToTextFile("FuckedCell.csv", false);
-                                    //int iEdge = mask.GridData.CellToEdge(cell, e);
+                                    //int iEdge = mask.GridData.GetEdgesForFace(cell, e, out _, out _);
                                     //EdgeMask edgMask = new EdgeMask(mask.GridData, Chunk.GetSingleElementChunk(iEdge));
-                                    ////edgMask.SaveToTextFile("FuckedEdge.csv", false);
-                                    //Console.WriteLine($"numpos: {numPos}, numNeg: {numNeg}");
-                                    throw new ArithmeticException($"Could not determine sign of face {e} of cell {cell}");
-                                    //Console.WriteLine($"WARNING: commented out exception: Could not determine sign of face {e} of cell {cell}");
+                                    //edgMask.SaveToTextFile("FuckedEdge.csv", false);
+                                    //Console.Error.WriteLine($"HMF.LevelSetEdgeVolumeQuadRueFactory: Unable to determine sign of face {e} of cell {cell}; numpos: {numPos}, numNeg: {numNeg}");
+                                    throw new ArithmeticException($"Unable to determine sign of face {e} of cell {cell}");
                                 }
 
                                 switch (jumpType) {
@@ -855,6 +878,14 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             /// </summary>
             public MultidimensionalArray Results;
 
+            /// <summary>
+            /// Measure of respective face
+            /// - 1st index: item index within execution mask provided with constructor
+            /// - 2nd index: cell face index
+            /// </summary>
+            public MultidimensionalArray FaceMeasures;
+
+
 
             static ICompositeQuadRule<CellBoundaryQuadRule> ExecuteFactory(IQuadRuleFactory<CellBoundaryQuadRule> surfaceRuleFactory, CellMask mask, int maxLambdaDegree) {
                 var scheme = new CellBoundaryQuadratureScheme(surfaceRuleFactory, mask);
@@ -892,7 +923,36 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     noOfItemsLocally,
                     gridData.iGeomCells.RefElements.Max(Kref => Kref.NoOfFaces),
                     IntegralCompDim[0]);
+                FaceMeasures = MultidimensionalArray.Create(
+                    noOfItemsLocally,
+                    gridData.iGeomCells.RefElements.Max(Kref => Kref.NoOfFaces));
+
+
+
                 base.Execute();
+
+                int cnt = 0;
+                foreach(var crp in base.m_compositeRule) {
+                    var rule = crp.Rule;
+                    int NoOfFaces = rule.NumbersOfNodesPerFace.Length;
+                    for(int i = 0; i < crp.Chunk.Len; i++) {
+                        int jCell = i + crp.Chunk.i0;
+                        var Kref = gridData.iGeomCells.GetRefElement(jCell);
+
+                        int k = 0;
+                        for(int iFace = 0; iFace < NoOfFaces; iFace++) {
+                            int NumbersOfNodesPerFace_iFace = rule.NumbersOfNodesPerFace[iFace];
+                            double acc = 0;
+                            for(int _k = 0; _k < NumbersOfNodesPerFace_iFace; _k++) {
+                                acc += rule.Weights[k];
+                                k++;
+                            }
+                            FaceMeasures[cnt, iFace] = acc;
+                        }
+
+                        cnt++;
+                    }
+                }
             }
 
 
@@ -937,8 +997,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 for (int d = 0; d < D; d++) {
                                     EvalResult[i, nodeIndex, k] += lambdaValues[nodeIndex, k, d] * levelSetNormals[j, d];
                                 }
-
-                                //EvalResult[i, nodeIndex, k] *= metrics[j];
                             }
                         }
                     }
@@ -952,10 +1010,11 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             /// </summary>
             protected override void SaveIntegrationResults(int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
                 for (int i = 0; i < Length; i++) {
-                    //int cell = i0 + i;
+                    int jCell = i0 + i;
+                    var Kref = gridData.iGeomCells.GetRefElement(jCell);
                     iSubGrid++;
 
-                    for (int e = 0; e < owner.LevelSetData.GridDat.Grid.RefElements[0].NoOfFaces; e++) {
+                    for (int e = 0; e < Kref.NoOfFaces; e++) {
                         for (int k = 0; k < IntegralCompDim[0]; k++) {
                             Results[iSubGrid, e, k] = ResultsOfIntegration[i, e, k];
                         }
