@@ -831,8 +831,10 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                 if (QuadratureType == CutCellQuadratureMethod.Classic) {
                     if (this.CutCellQuadratureOrder <= 4) {
                         return 3e-3;
-                    } else  if (this.CutCellQuadratureOrder <= 7) {
+                    } else if (this.CutCellQuadratureOrder <= 7) {
                         return 1e-5;
+                    } else if (this.CutCellQuadratureOrder <= 9) {
+                        return 1e-7;
                     } else {
                         return 3e-8;
                     }
