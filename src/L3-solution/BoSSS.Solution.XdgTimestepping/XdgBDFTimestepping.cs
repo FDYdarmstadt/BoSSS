@@ -224,6 +224,16 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         /// <summary>
+        /// Get the number of stages for the current number of populatedStackDepth 
+        /// </summary>
+        public int GetNumberOfCurrentStages {
+            get {
+                int Smax = m_TSCchain[0].S;
+                return m_TSCchain[Smax - m_PopulatedStackDepth].S;
+            }
+        }
+
+        /// <summary>
         /// DG coefficient mapping for the test- and trial-space.
         /// </summary>
         public override CoordinateMapping CurrentStateMapping {
