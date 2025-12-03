@@ -34,7 +34,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             //ilPSP.Utils.Algoim.TwoLsIsFucked1();
             //ilPSP.Utils.Algoim.TwoLsIsSuperFucked1();
 
-            BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_2D(1, 8, CutCellQuadratureMethod.Classic);
+            BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_2D(2, 3, CutCellQuadratureMethod.OneStepGaussAndStokes);
             //BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_2D(2, 8, CutCellQuadratureMethod.Algoim);
 
             //BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_2D(0, 3, CutCellQuadratureMethod.Algoim);
@@ -574,8 +574,14 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             TotalIntegral_Volume4Species.Add("A", 14 * 14 - vol2D_B);
             TotalIntegral_Volume4Species.Add("B", vol2D_B);
 
-            TotalIntegral_CutLine.Add("A", 16);
-            TotalIntegral_CutLine.Add("B", 16);
+            if(base.MeshVariation == 2) {
+                // one additional mesh node in y-direction at y = 0
+                TotalIntegral_CutLine.Add("A", 18);
+                TotalIntegral_CutLine.Add("B", 18);
+            } else {
+                TotalIntegral_CutLine.Add("A", 16);
+                TotalIntegral_CutLine.Add("B", 16);
+            }
 
             TotalIntegral_IntersectionLine.Add("A", 0);
             TotalIntegral_IntersectionLine.Add("B", 0);
