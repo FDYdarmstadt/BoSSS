@@ -34,7 +34,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             //ilPSP.Utils.Algoim.TwoLsIsFucked1();
             //ilPSP.Utils.Algoim.TwoLsIsSuperFucked1();
 
-            BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_2D(2, 8, CutCellQuadratureMethod.Algoim);
+            BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_2D(1, 8, CutCellQuadratureMethod.Classic);
+            //BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_2D(2, 8, CutCellQuadratureMethod.Algoim);
 
             //BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_2D(0, 3, CutCellQuadratureMethod.Algoim);
             //BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_3D(0, 3, CutCellQuadratureMethod.Algoim);
@@ -628,6 +629,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                         return 3e-3;
                     } else if (this.CutCellQuadratureOrder <= 7) {
                         return 1e-5;
+                    } else if (this.CutCellQuadratureOrder <= 9) {
+                        return 5e-7;
                     } else {
                         return 5e-8;
                     }
@@ -691,6 +694,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                         return 3e-3;
                     } else if (this.CutCellQuadratureOrder <= 7) {
                         return 1e-5;
+                    } else if (this.CutCellQuadratureOrder <= 8) {
+                        return 5e-5;
                     } else {
                         return 3e-8;
                     }
