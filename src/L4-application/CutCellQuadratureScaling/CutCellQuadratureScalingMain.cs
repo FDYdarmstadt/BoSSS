@@ -34,15 +34,15 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             //ilPSP.Utils.Algoim.TwoLsIsFucked1();
             //ilPSP.Utils.Algoim.TwoLsIsSuperFucked1();
 
-            BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_2D(2, 3, CutCellQuadratureMethod.OneStepGaussAndStokes);
-            //BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_2D(2, 8, CutCellQuadratureMethod.Algoim);
+            var cube = BoSSS.Foundation.Grid.RefElements.Cube.Instance;
 
-            //BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_2D(0, 3, CutCellQuadratureMethod.Algoim);
-            //BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_3D(0, 3, CutCellQuadratureMethod.Algoim);
-            //BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSet_2Dvs3D(3, CutCellQuadratureMethod.Saye);
-            //            BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_3D(3, CutCellQuadratureMethod.Algoim);
-            //BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_3D(1, 3, CutCellQuadratureMethod.Algoim);
+            foreach
 
+
+
+
+            BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_3D(2, 3, CutCellQuadratureMethod.Saye);
+            
             BoSSS.Solution.Application.FinalizeMPI();
         }
     }
@@ -455,11 +455,11 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             return grd;
         }
 
-        protected IGrid CreateOrLoadGrid_3D(double zWidht) {
+        protected IGrid CreateOrLoadGrid_3D(double zWidth) {
             const int noOfZnodes = 4;
             double[] xNodes = GenericBlas.Linspace(-7, +7, 8);
             double[] yNodes = GenericBlas.Linspace(-7, +7, 8);
-            double[] zNodes = GenericBlas.Linspace(-3, -3 + zWidht, noOfZnodes);
+            double[] zNodes = GenericBlas.Linspace(-3, -3 + zWidth, noOfZnodes);
             switch(MeshVariation) {
                 case 0: break;
                 case 1: {
@@ -470,7 +470,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                     break;
                 }
                 case 2: {
-                    ArrayTools.AddToArray(0, ref yNodes);
+                    ArrayTools.AddToArray(0.0, ref yNodes);
                     Array.Sort(yNodes);
                     break;
                 }
@@ -484,7 +484,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             GridCommons grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
 
 
-            ReferenceResults_3D(zWidht, noOfZnodes);
+            ReferenceResults_3D(zWidth, noOfZnodes);
 
 
             return grd;
@@ -526,6 +526,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         }
 
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
+            Tecplot.PlotFields(this.LsTrk.LevelSets.Select(f => f as DGField).ToArray().Cat(SpeciesMarkers.Values), "CutCellQuadratureScaling-Mesh", timestepNo.MajorNumber, 0);
             Tecplot.PlotFields(this.LsTrk.LevelSets.Select(f => f as DGField).ToArray().Cat(SpeciesMarkers.Values), "CutCellQuadratureScaling", timestepNo.MajorNumber, superSampling);
         }
     }
@@ -785,7 +786,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                     } else if (this.CutCellQuadratureOrder <= 7) {
                         return 1e-5;
                     } else if (this.CutCellQuadratureOrder <= 8) {
-                        return 1e-7;
+                        return 3e-7;
                     } else {
                         return 5e-8;
                     }
@@ -833,6 +834,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                         return 3e-3;
                     } else  if (this.CutCellQuadratureOrder <= 7) {
                         return 1e-5;
+                    } else  if (this.CutCellQuadratureOrder <= 8) {
+                        return 6e-8;
                     } else {
                         return 3e-8;
                     }

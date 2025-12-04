@@ -14,24 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using BoSSS.Foundation.Comm;
+using BoSSS.Foundation.Grid.Aggregation;
+using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.IO;
 using BoSSS.Platform;
 using BoSSS.Platform.Utils.Geom;
 using ilPSP;
+using ilPSP.Connectors;
 using ilPSP.LinSolvers;
 using ilPSP.Tracing;
 using ilPSP.Utils;
 using log4net;
 using MPI.Wrappers;
-using BoSSS.Foundation.Grid.RefElements;
-using ilPSP.Connectors;
-using BoSSS.Foundation.Grid.Aggregation;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading;
 
 namespace BoSSS.Foundation.Grid.Classic {
 
@@ -532,11 +533,12 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </summary>
         public Caching.CacheLogic_CNs GlobalNodes {
             get {
-                if(m_GlobalNodes == null) {
-                    m_GlobalNodes = new Caching.CacheLogicImplBy_CNs(this,
-                        this.TransformLocal2Global,
-                        (Len, NoNodes) => new int[] { Len, NoNodes, this.SpatialDimension });
-                }
+                LazyInitializer.EnsureInitialized(ref m_GlobalNodes,
+                    delegate () {
+                        return new Caching.CacheLogicImplBy_CNs(this,
+                            this.TransformLocal2Global,
+                            (Len, NoNodes) => new int[] { Len, NoNodes, this.SpatialDimension });
+                    });
                 return m_GlobalNodes;
             }
         }

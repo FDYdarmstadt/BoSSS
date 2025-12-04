@@ -1226,27 +1226,6 @@ namespace BoSSS.Foundation.XDG {
 
                             var twoLSFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, jLevSet, jmpA, Kref, null);
                             LevSetQrIns.AddFactoryDomainPair(twoLSFactory, doublyCut, fixedOrder);
-
-                            /*
-
-                            if(gdat.iGeomEdges.EdgeRefElements.Length > 1)
-                                    throw new NotImplementedException("Not implemented for more than one edge ref element");
-
-                            //Debug.Assert(jmpA == IdentifyWing(jLevSet, spB));
-                            if (iLevSet == 1) {
-
-                                var backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetEdgeRuleFactory(jLevSet, jmpA, gdat.iGeomEdges.EdgeRefElements[0]);
-
-                                //var _doublyCut = doublyCut.Intersect(gdat.GetEdges4RefElement(Kref, KrefEdge));
-                                var twoLSFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, jLevSet, jmpA, Kref, backupFactory);
-                                LevSetQrIns.AddFactoryDomainPair(twoLSFactory, doublyCut, fixedOrder);
-
-                            } else {
-                                var backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, Kref);
-                                var twoLSFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, jLevSet, jmpA, Kref, backupFactory);
-                                LevSetQrIns.AddFactoryDomainPair(twoLSFactory, doublyCut, fixedOrder);
-                            }
-                            */
                         }
                     }
                 }
