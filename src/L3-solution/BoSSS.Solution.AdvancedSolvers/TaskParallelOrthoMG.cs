@@ -2591,7 +2591,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
 
                         fail |= PostCorrSmoother.ContainsNanOrInf();
-                        fail = fail.MPIOr();
+                        fail = fail.MPIOr(subComm);
 
                         if(fail) {
                             PostSmootherArithmeticExceptionCount++;
