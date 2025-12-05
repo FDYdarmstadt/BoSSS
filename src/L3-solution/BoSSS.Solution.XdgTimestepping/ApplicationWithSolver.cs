@@ -914,14 +914,6 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
             using (new FuncTrace()) {
-
-                var MGColoring = new SinglePhaseField[base.MultigridSequence.Length];
-                for(int iLevel = 0; iLevel < base.MultigridSequence.Length; iLevel++) {
-                    MGColoring[iLevel] = new SinglePhaseField(new Basis(this.GridData, 0), "MGColoring_level_" + iLevel);
-                    base.MultigridSequence[iLevel].ColorDGField(MGColoring[iLevel]);
-                    this.RegisterField(MGColoring[iLevel]);
-                }
-
                 // Cells Numbers - Local
                 var CellNumbers = this.m_RegisteredFields.Where(s => s.Identification == "CellNumbers").SingleOrDefault();
                 if (CellNumbers == null) {
@@ -1015,7 +1007,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
                 LvSetDist.Clear();
                 LvSetDist.AccLevelSetDist(1, this.LsTrk, 1);
-                PlotShadowfields = true;
+
 
                 if (PlotShadowfields) {
                     List<DGField> Fields2Plot = new List<DGField>();
