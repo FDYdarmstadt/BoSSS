@@ -248,11 +248,22 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
 
         public static IQuadRuleFactory<CellBoundaryQuadRule> SayeGaussRule_EdgeVolume3D(
             LevelSetTracker.LevelSetData _lsData,
-            IRootFindingAlgorithm RootFinder) {
+            IRootFindingAlgorithm RootFinder,
+            JumpTypes jumpType
+            ) {
+            SayeGaussRule_Cube.QuadratureMode qm;
+            if(jumpType == JumpTypes.Heaviside)
+                qm = SayeGaussRule_Cube.QuadratureMode.PositiveVolume;
+            else if(jumpType == JumpTypes.OneMinusHeaviside)
+                qm = SayeGaussRule_Cube.QuadratureMode.PositiveVolume;
+            else
+                throw new ArgumentOutOfRangeException();
+
+
             ISayeGaussEdgeRule rule = new SayeGaussRule_EdgeCube(
-                _lsData,
-                RootFinder,
-                SayeGaussRule_Cube.QuadratureMode.PositiveVolume);
+                    _lsData,
+                    RootFinder,
+                    qm);
             return new SayeGaussEdgeRuleFactory(rule);
         }
 

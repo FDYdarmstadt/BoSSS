@@ -312,7 +312,7 @@ namespace BoSSS.Foundation.XDG {
                             if(CellFaceVolume_in3D == null)
                                 CellFaceVolume_in3D = new SayeGaussEdgeRuleFactory[this.m_LevelSetDatas.Length, NoOfKref];
                             CellFaceVolume_in3D[levSetIndex, iKref] = SayeFactories.SayeGaussRule_EdgeVolume3D(
-                                this.m_LevelSetDatas[levSetIndex], rootFindingAlgorithm);
+                                this.m_LevelSetDatas[levSetIndex], rootFindingAlgorithm, jumpType);
                             //if (CellFaceVolume_in3D == null)
                             //    CellFaceVolume_in3D = new SayeGaussEdgeRuleFactory[this.m_LevelSetDatas.Length];
                             //CellFaceVolume_in3D[levSetIndex] = SayeFactories.SayeGaussRule_EdgeVolume3D(
@@ -357,7 +357,7 @@ namespace BoSSS.Foundation.XDG {
 
             CheckJmp(jmp);
 
-            if (D == 2) {
+            if(D == 2) {
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // In 2D, we use the `EdgeRuleFromCellBoundaryFactory` for both `JumpTypes.Heaviside` and `JumpTypes.OneMinusHeaviside`, i.e., for both sub-domains
                 // (this means, for both sub-domains, we have nodes which are within the sub-domain and therefore only positive weights, at least for Saye-Rules)
@@ -365,15 +365,15 @@ namespace BoSSS.Foundation.XDG {
 
                 var key = (levSetIndex, jmp, iKref);
 
-                if (!m_EdgeRuleFactory1.ContainsKey(key)) {
+                if(!m_EdgeRuleFactory1.ContainsKey(key)) {
                     var maxDom = this.m_CutEdges4LevelSet[levSetIndex];
-                    if (gdat.iGeomCells.RefElements.Length > 1)
+                    if(gdat.iGeomCells.RefElements.Length > 1)
                         maxDom = maxDom.Intersect(gdat.Edges.GetEdges4RefElement(KrefEdge));
 
-                
+
                     m_EdgeRuleFactory1.Add(key, new EdgeRuleFromCellBoundaryFactory(gdat, true,
                                                                                     KrefEdge,
-                                                                                    gdat.iGeomCells.RefElements.Select( KrefVol => GetCellFaceFactory(levSetIndex, KrefVol, jmp)),
+                                                                                    gdat.iGeomCells.RefElements.Select(KrefVol => GetCellFaceFactory(levSetIndex, KrefVol, jmp)),
                                                                                     maxDom));
                     //var r = new EdgeRuleFromCellBoundaryFactory(gdat, true,
                     //    GetCellFaceFactory(levSetIndex, KrefVol, jmp),
@@ -381,6 +381,11 @@ namespace BoSSS.Foundation.XDG {
                 }
                 return m_EdgeRuleFactory1[key];
             } else {
+
+
+
+
+
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // In 3D, we use the `ComplementaryRuleFactory` for `JumpTypes.OneMinusHeaviside`
                 // (this means, we have negative weights and nodes outside of the sub-domain;
@@ -389,12 +394,15 @@ namespace BoSSS.Foundation.XDG {
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-                if (jmp == JumpTypes.Heaviside) {
+
+
+
+                if(jmp == JumpTypes.Heaviside) {
                     var key = (levSetIndex, JumpTypes.Heaviside, iKref);
 
-                    if (!m_EdgeRuleFactory1.ContainsKey(key)) {
+                    if(!m_EdgeRuleFactory1.ContainsKey(key)) {
                         var maxDom = this.m_CutEdges4LevelSet[levSetIndex];
-                        if (gdat.iGeomCells.RefElements.Length > 1)
+                        if(gdat.iGeomCells.RefElements.Length > 1)
                             maxDom = maxDom.Intersect(gdat.Edges.GetEdges4RefElement(KrefEdge));
 
                         m_EdgeRuleFactory1.Add(key, new EdgeRuleFromCellBoundaryFactory(gdat, true,
@@ -408,12 +416,14 @@ namespace BoSSS.Foundation.XDG {
                     //    m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex).ToGeometicalMask());
                     //return r;
 
-                } else if (jmp == JumpTypes.OneMinusHeaviside) {
+                } else if(jmp == JumpTypes.OneMinusHeaviside) {
 
                     return new ComplementaryRuleFactory(GetEdgeRuleFactory(levSetIndex, JumpTypes.Heaviside, KrefEdge));
-                } else
+                } else {
                     throw new ArgumentOutOfRangeException("unsupported jump type");
+                }
             }
+
         }
 
         /// <summary>

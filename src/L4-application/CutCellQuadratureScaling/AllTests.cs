@@ -20,6 +20,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                 Ref.Init();
                 Ref.RunSolverMode();
 
+                Ref.FurtherChecks();
                 Ref.CompareTotalCutLine();
                 Ref.CompareTotalVolume();
                 Ref.CompareTotalSurface();

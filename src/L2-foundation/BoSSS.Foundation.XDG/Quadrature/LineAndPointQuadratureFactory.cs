@@ -1282,13 +1282,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// - if <paramref name="Simplex"/> is 2D (quad or triangle), the edges
         /// - if <paramref name="Simplex"/> is 3D (cube or tetra) the edges of the faces (aka. geometrical edges, aka. co-face)
         /// </summary>
-        /// <param name="segmentSort"></param>
-        /// <param name="Simplex"></param>
-        /// <param name="RootFindingAlgorithm"></param>
-        /// <param name="levelSetData"></param>
-        /// <param name="LevelSetIndex"></param>
-        /// <returns></returns>
-        /// <exception cref="ApplicationException"></exception>
         static private LineSegment[] GetReferenceLineSegments(out int[] segmentSort, RefElement Simplex, LineSegment.IRootFindingAlgorithm RootFindingAlgorithm, LevelSetTracker.LevelSetData levelSetData, int LevelSetIndex) {
             Stack<RefElement> simplexHierarchy = new Stack<RefElement>();
             RefElement currentSimplex = Simplex;

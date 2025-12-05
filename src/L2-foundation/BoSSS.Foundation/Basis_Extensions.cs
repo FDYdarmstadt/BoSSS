@@ -282,8 +282,8 @@ namespace BoSSS.Foundation {
 
         /// <summary>
         /// Indices of Coefficients lying on faces of the refelement
-        ///     1st index: Refelement
-        ///     2nd index: Face
+        /// - 1st index: Refelement
+        /// - 2nd index: Face
         /// </summary>
         public List<int>[][] FaceCoefficients {
             get;

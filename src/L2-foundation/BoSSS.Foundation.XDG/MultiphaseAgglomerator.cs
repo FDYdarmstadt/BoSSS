@@ -83,7 +83,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public CutCellQuadratureMethod HMFvariant {
             get {
-                return NonAgglomeratedMetrics.HMFvariant;
+                return NonAgglomeratedMetrics.CutCellQuadratureType;
             }
         }
 

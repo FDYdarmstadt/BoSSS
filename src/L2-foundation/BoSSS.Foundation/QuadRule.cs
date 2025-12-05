@@ -112,7 +112,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// </summary>
         public int SpatialDim {
             get {
-                if (OrderOfPrecision == int.MaxValue) {
+                if (this.Nodes.RefElement.SpatialDimension == 0) {
                     return 0;
                 } else {
                     return Nodes.GetLength(1);
