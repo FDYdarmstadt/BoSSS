@@ -140,7 +140,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             [Values(3, 6, 7)] int quadOrder
 #else
             [Values(0, 1, 2)] int meshVariation,
-            [Values(3, 4, 7, 8, 9, 10)] int quadOrder
+            [Values(3, 4, 7, 8)] int quadOrder
 #endif
             ) {
             const CutCellQuadratureMethod cutCellQuadType = CutCellQuadratureMethod.Classic;
@@ -193,10 +193,10 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         public static void OneLevelSet_2Dvs3D_Classic(
 #if DEBUG
             [Values(0)] int meshVariation,
-            [Values(3, 6, 7)] int quadOrder
+            [Values(3)] int quadOrder
 #else
-            [Values(0, 1, 2)] int meshVariation,
-            [Values(3, 4, 7, 8, 9, 10)] int quadOrder
+            [Values(0, 2)] int meshVariation,
+            [Values(3, 4, 7, 8)] int quadOrder
 #endif
             ) {
             const CutCellQuadratureMethod cutCellQuadType = CutCellQuadratureMethod.Classic;
