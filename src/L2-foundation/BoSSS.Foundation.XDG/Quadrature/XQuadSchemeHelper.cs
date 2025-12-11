@@ -1071,7 +1071,7 @@ namespace BoSSS.Foundation.XDG {
         /// \[
         ///    \oint_{K_j \cap \mathfrak{I} \cap \partial \mathfrak{A} } \ldots \mathrm{dS} ,
         /// \]
-        /// where \f$ \mathfrak{A} \f$ is the first species in <see cref="SpeciesList"/>.
+        /// where $ \mathfrak{A} $ is the first species in <see cref="SpeciesList"/>.
         /// </summary>
         public CellQuadratureScheme GetLevelSetQuadScheme(int iLevSet, CellMask IntegrationDom, int? fixedOrder = null) {
 
@@ -1085,7 +1085,7 @@ namespace BoSSS.Foundation.XDG {
         /// \[
         ///    \oint_{K_j \cap \mathfrak{I} \cap \partial \mathfrak{A} \cap \partial \mathfrak{b} } \ldots \mathrm{dS} ,
         /// \]
-        /// where \f$ \mathfrak{A} \f$ and \f$ \mathfrak{B} \f$  are the domains of species <paramref name="spA"/> and <paramref name="spB"/>, respectively.
+        /// where $ \mathfrak{A} $ and $ \mathfrak{B} $  are the domains of species <paramref name="spA"/> and <paramref name="spB"/>, respectively.
         /// </summary>
         /// <remarks>
         /// Note that the ordering of <paramref name="spA"/> and <paramref name="spB"/> are not irrelevant,

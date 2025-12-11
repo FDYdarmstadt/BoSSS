@@ -220,7 +220,7 @@ namespace BoSSS.Foundation.XDG {
         /// This are point integrals in 2D and line integrals in 3D.
         /// 
         /// Internally, this method uses the <see cref="EdgeRuleFromCellBoundaryFactory"/>
-        /// to split up a cell boundary quadrature for $`     \int_{ \partial K \cap \mathfrak{I} \textrm{dl}  `$ 
+        /// to split up a cell boundary quadrature for $  \int_{ \partial K \cap \mathfrak{I} } \ldots \textrm{dl}  $ 
         /// into the respective edges.
         /// </summary>
         /// <returns>
