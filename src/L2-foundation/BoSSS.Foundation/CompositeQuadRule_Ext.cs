@@ -309,6 +309,37 @@ namespace BoSSS.Foundation {
             }
         }
 
+        /// <summary>
+        /// Saves the sum over all weights, for each cell of a <paramref name="compositeRule"/>, into a text file
+        /// </summary>
+        public static void SaveWeightSumToTextFileCell(this ICompositeQuadRule<QuadRule> compositeRule, IGridData gridData, string filename, bool writeHeader = true) {
+            int D = gridData.SpatialDimension;
+
+            using(var file = new StreamWriter(filename)) {
+                if(writeHeader) {
+                    string[] dimensions = new string[] { "x", "y", "z" };
+                    file.WriteLine(String.Format(
+                        "cell\t{0}\tWeightSum",
+                        dimensions.Take(D).Aggregate((s, t) => s + "\t" + t)));
+                }
+
+                foreach(IChunkRulePair<QuadRule> pair in compositeRule) {
+                    foreach(var cell in pair.Chunk.Elements.AsSmartEnumerable()) {
+                        file.Write(cell.Value);
+
+                        Vector center = gridData.iGeomCells.GetCenter(cell.Value);
+                        for(int d = 0; d < D; d++) {
+                            file.Write("\t{0}", (center[d]).ToString("E", NumberFormatInfo.InvariantInfo));
+                        }
+                        file.Write("\t{0}", pair.Rule.Weights.Sum().ToString("E", NumberFormatInfo.InvariantInfo));
+                        file.WriteLine();
+                    }
+
+                    file.Flush();
+                }
+            }
+        }
+
 
 
         /// <summary>

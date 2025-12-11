@@ -131,13 +131,14 @@ namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
 
 
 
-        public SurfaceElementBoundaryIntegration(RefElement _RefElement, LevelSetTracker.LevelSetData[] __levelSetDataS, LevelSetSignCode[] __allSignCodes, int __iLevSet, (int iLevSet, int iFace)[][] __LevSetCoincidingFaces, (int iLevSet, int iFace)[][] __LevSetCoincidingCoFaces) {
+        public SurfaceElementBoundaryIntegration(RefElement _RefElement, LevelSetTracker.LevelSetData[] __levelSetDataS, LevelSetSignCode[] __allSignCodes_PrimarySpecies, LevelSetSignCode[] __allSignCodes_OtherSpecies, int __iLevSet, (int iLevSet, int iFace)[][] __LevSetCoincidingFaces, (int iLevSet, int iFace)[][] __LevSetCoincidingCoFaces) {
             RefElement = _RefElement;
             if(Array.IndexOf(__levelSetDataS[0].GridDat.iGeomEdges.EdgeRefElements, this.RefElement) < 0) {
                 throw new ArgumentException($"{_RefElement} is not an edge reference element of the grid.");
             }
             m_LevelSetDataS = __levelSetDataS;
-            m_allSignCodes = __allSignCodes;
+            m_allSignCodes_PrimarySpecies = __allSignCodes_PrimarySpecies;
+            m_allSignCodes_OtherSpecies = __allSignCodes_OtherSpecies;
             m_iLevSet = __iLevSet;
             LevSetCoincidingFaces = __LevSetCoincidingFaces;
             LevSetCoincidingCoFaces = __LevSetCoincidingCoFaces;
@@ -151,7 +152,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
         }
 
         readonly LevelSetTracker.LevelSetData[] m_LevelSetDataS;
-        readonly LevelSetSignCode[] m_allSignCodes;
+        readonly LevelSetSignCode[] m_allSignCodes_PrimarySpecies;
+        readonly LevelSetSignCode[] m_allSignCodes_OtherSpecies;
         readonly int m_iLevSet;
 
         /// <summary>
@@ -177,12 +179,20 @@ namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
             var gdat = mask.GridData;
             int iKref = Array.IndexOf(gdat.iGeomEdges.EdgeRefElements, this.RefElement);
 
+            int OrderForNodalChecks = Math.Max(order * 2, this.m_LevelSetDataS.Select(ls => (ls.LevelSet as SinglePhaseField)?.Basis?.Degree ?? 0).Max() * 2) + 1;
+            NodeSet CoFaceTestNodes;
+            if(gdat.SpatialDimension > 2) {
+                RefElement.FaceRefElement.GetNodeSet(OrderForNodalChecks, out CoFaceTestNodes, out _, out _);
+            } else {
+                CoFaceTestNodes = RefElement.FaceRefElement.Center;
+            }
+
             var fulCoFaceRule = RefElement.FaceRefElement.GetQuadratureRule(order);
             var emptyFaceRule = QuadRule.CreateBlank(RefElement, 1, Math.Max(RefElement.SpatialDimension, 1), true);
             emptyFaceRule.OrderOfPrecision = order;
             emptyFaceRule.Nodes.LockForever();
 
-            var edgeTest = RefElement.GetQuadratureRule(order);
+            var edgeTest = RefElement.GetQuadratureRule(OrderForNodalChecks);
 
 
             int[,] Edge2Cell = gdat.iGeomEdges.CellIndices;
@@ -223,7 +233,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
                     if(!gdat.iGeomEdges.IsEdgeConformal(iEdge, inOt))
                         continue;
 
-                    
+
 
 
                     int iCellFace = Edge2Face[iEdge, inOt];
@@ -238,8 +248,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
                             //    =====*=================*===== Level-Set
                             //         |                 |
                             //         |                 |
-                            //         |    Cell         |
-                            //         |                 |
+                            //         |    Cell         |  
+                            //         | <.............. |  <........ edges to which node '*' should be assigned to
                             //         -------------------
                             //
                             //    the edge elements (*) should be assigned to the 
@@ -295,7 +305,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
                             //   
                             //
 
-                            
+
 
                             var KrefVol = gdat.iGeomCells.GetRefElement(jCell);
                             Debug.Assert(KrefVol.FaceRefElement == this.RefElement);
@@ -308,38 +318,41 @@ namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
                             var Edge2CellTrafo = gdat.iGeomEdges.Edge2CellTrafos[TrafoIdx];
 
 
-                            NodeSet GetCellNodes(MultidimensionalArray edgeNodes) {
+                            NodeSet GetCellNodesFromEdge(MultidimensionalArray edgeNodes) {
                                 var cellTest = new NodeSet(KrefVol, Edge2CellTrafo.Transform(edgeNodes), false);
                                 cellTest.LockForever();
 
                                 return cellTest;
                             }
-                          
 
-                            void CheckLevelSets(out bool _completelyEmty, out bool _completelyFull, NodeSet cellTest, double LsEps = 0) {
-                                var LevelSetValues = MultidimensionalArray.Create(NoOfLevSets, cellTest.NoOfNodes);
+                            NodeSet GetCellNodesFromCoFace(MultidimensionalArray coFaceNodes) {
+                                var cellTest = new NodeSet(KrefVol, KrefVol.GetCoFaceTrafo(iCoFace).Transform(coFaceNodes), false);
+                                cellTest.LockForever();
+
+                                return cellTest;
+                            }
+
+                            MultidimensionalArray EvaluateLevelSets(NodeSet cellNodes) {
+                                var LevelSetValues = MultidimensionalArray.Create(NoOfLevSets, cellNodes.NoOfNodes);
                                 for(int iLevSet = 0; iLevSet < NoOfLevSets; iLevSet++) {
                                     LevelSetValues.ExtractSubArrayShallow(iLevSet, -1).Set(
-                                        this.m_LevelSetDataS[iLevSet].GetLevSetValues(cellTest, jCell, 1).ExtractSubArrayShallow(0, -1)
+                                        this.m_LevelSetDataS[iLevSet].GetLevSetValues(cellNodes, jCell, 1).ExtractSubArrayShallow(0, -1)
                                         );
                                 }
+                                return LevelSetValues;
+                            }
+
+
+                            void CheckLevelSets(out bool _completelyEmty, out bool _completelyFull, NodeSet cellTest) {
+                                var LevelSetValues = EvaluateLevelSets(cellTest);
 
                                 _completelyEmty = true;
                                 _completelyFull = true;
                                 for(int k = 0; k < cellTest.NoOfNodes; k++) {
                                     var code = LevelSetSignCode.ComputeLevelSetBytecode(LevelSetValues.GetColumn(k));
-                                    bool nonvoid = Array.IndexOf(this.m_allSignCodes, code) >= 0;
+                                    bool nonvoid = Array.IndexOf(this.m_allSignCodes_PrimarySpecies, code) >= 0;
 
-                                    if(LsEps != 0) {
-                                        var LsModVals = LevelSetValues.GetColumn(k);
-                                        LsModVals[m_iLevSet] += LsEps;
-                                        var code3 = LevelSetSignCode.ComputeLevelSetBytecode(LsModVals);
-                                        nonvoid |= Array.IndexOf(this.m_allSignCodes, code3) >= 0;
-                                        
-                                        LsModVals[m_iLevSet] -= 2*LsEps;
-                                        var code4 = LevelSetSignCode.ComputeLevelSetBytecode(LsModVals);
-                                        nonvoid |= Array.IndexOf(this.m_allSignCodes, code4) >= 0;
-                                    }
+                                    
 
                                     _completelyFull &= nonvoid;
                                     _completelyEmty &= (!nonvoid);
@@ -347,148 +360,226 @@ namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
                             }
 
 
-                            CheckLevelSets(out bool completelyFull, out bool completelyEmty, GetCellNodes(edgeTest.Nodes));
+
+                            bool DoesLevelSetChangeSign(int jLevSet) {
+                                var vlaues = this.m_LevelSetDataS[jLevSet].GetLevSetValues(GetCellNodesFromCoFace(CoFaceTestNodes), jCell, 1);
+                                bool isPos = false;
+                                bool isNeg = false;
+                                for(int k = 0; k < CoFaceTestNodes.NoOfNodes; k++) {
+                                    double vk = vlaues[0, k];
+                                    isPos |= vk > 0;
+                                    isNeg |= vk < 0;
+                                }
+                                return isPos && isNeg;
+                            }
 
 
-                            if(completelyFull && completelyEmty) {
-                                // ++++++++++++++++++++++++++
-                                // something really weird
-                                // ++++++++++++++++++++++++++
-                                //EdgeMask em = new EdgeMask(gdat, Chunk.GetSingleElementChunk(iEdge), MaskType.Logical);
-                                //em.SaveToTextFile("fubar2.csv", WriteHeader: false);
-                                throw new ArithmeticException("cannot decide");
-                            } else if(!completelyEmty && !completelyFull) {
+                            bool[] LevelSetChangesSign = new bool[m_LevelSetDataS.Length];
+                            for(int jLs = 0; jLs < m_LevelSetDataS.Length; jLs++) {
+                                if(jLs != this.m_iLevSet)
+                                    LevelSetChangesSign[jLs] = DoesLevelSetChangeSign(jLs);
+                            }
+
+   
+                            CheckLevelSets(out bool completelyEmty, out bool completelyFull, GetCellNodesFromEdge(edgeTest.Nodes));
+
+
+
+                            if(m_LevelSetDataS.Length > 1 && LevelSetChangesSign.Any(b => b)) {
                                 // ++++++++++++++++++++++++++
                                 // double-cut 
                                 // should only happen in 3D, so the Co-Face element is a Line
                                 // this line must be split up into empty and non-empty parts
                                 // ++++++++++++++++++++++++++
 
-                                if(this.RefElement.FaceRefElement != Line.Instance)
-                                    throw new ApplicationException();
-
-
-                                var LineInVol = KrefVol.GetCoFaceTrafo(iCoFace).Transform(this.RefElement.FaceRefElement.Vertices);
-                                //var global = gdat.TransformLocal2Global(LineInVol, jCell);
-                                //global.SaveToTextFile("line.csv");
-
-                                if(this.m_LevelSetDataS.Length != 2)
-                                    throw new NotSupportedException("should not happen with one level-set, more than 2 level-sets currently not supported.");
-                                ILevelSet otherLevelSet;
-                                if(this.m_iLevSet == 0)
-                                    otherLevelSet = m_LevelSetDataS[1].LevelSet;
-                                else
-                                    otherLevelSet = m_LevelSetDataS[0].LevelSet;
-
-                                Vector lineStart = LineInVol.GetRowPt(0);
-                                Vector lineEnd = LineInVol.GetRowPt(1);
-
-                                var FullCoFace = new HMF.LineSegment(3, KrefVol, lineStart, lineEnd);
-                                FullCoFace.ProjectBasisPolynomials((otherLevelSet as LevelSet).Basis);
-                                var roots = FullCoFace.GetRoots(otherLevelSet, jCell, gdat.iGeomCells.GetRefElementIndex(jCell));
-
-                                var parts = FullCoFace.Split(roots);
                                 
-                                bool IsPartNonEmpty(LineSegment ls) {
-                                    var center = 0.5 * (ls.Start + ls.End);
-                                    CheckLevelSets(out _, out bool nonVoid, new NodeSet(KrefVol, center, false), 1.0);
-                                    return nonVoid;
-                                }
 
-                                var nonEmpty_parts = parts.Where(IsPartNonEmpty).ToArray();
-                                if(nonEmpty_parts.Length <= 0) {
+                                if(completelyEmty) {
+                                    // ++++++++++++++++++++++++++
+                                    // empty - assign empty rule
+                                    // ++++++++++++++++++++++++++
+
+
                                     compRule[cnt] = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(iEdge), emptyFaceRule);
-                                    bFound = true;
                                     Debug.Assert(compRule[cnt].Rule.SpatialDim == this.RefElement.SpatialDimension, "produced a quadrature rule with wrong spatial dimension");
+                                    bFound = true;
                                     break;
-                                } 
 
-                                MultidimensionalArray volNodes = MultidimensionalArray.Create(nonEmpty_parts.Length*fulCoFaceRule.NoOfNodes, KrefVol.SpatialDimension);
-                                MultidimensionalArray __weights = MultidimensionalArray.Create(volNodes.GetLength(0));
 
-                                //gdat.TransformLocal2Global(LineInVol, jCell).SaveToTextFile("lineInVol.csv");
-                                int k = 0;
-                                foreach(var part in nonEmpty_parts) {
-                                    double metric = Math.Abs(part.EndCoord - part.StartCoord)/2.0;
 
-                                    for(int i = 0; i < fulCoFaceRule.NoOfNodes; i++) {
-                                        double alpha = fulCoFaceRule.Nodes[i, 0];
-                                        double beta = (alpha + 1) * (part.EndCoord - part.StartCoord) / 2.0 + part.StartCoord;
+                                } else {
+                                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                                    // actually a double-cut co-face with the primary level-set coinciding
+                                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                                        var volNode = (beta + 1) * (lineEnd - lineStart) * 0.5 + lineStart;
+                                    if(this.RefElement.FaceRefElement != Line.Instance)
+                                        throw new ApplicationException();
 
-                                        volNodes.SetRowPt(k, volNode);
-                                        __weights[k] = fulCoFaceRule.Weights[k] * metric;
 
-                                        k++;
+                                    var LineInVol = KrefVol.GetCoFaceTrafo(iCoFace).Transform(this.RefElement.FaceRefElement.Vertices);
+                                    //var global = gdat.TransformLocal2Global(LineInVol, jCell);
+                                    //global.SaveToTextFile("line.csv");
+
+                                    if(this.m_LevelSetDataS.Length != 2)
+                                        throw new NotSupportedException("should not happen with one level-set, more than 2 level-sets currently not supported.");
+                                    ILevelSet otherLevelSet;
+                                    if(this.m_iLevSet == 0)
+                                        otherLevelSet = m_LevelSetDataS[1].LevelSet;
+                                    else
+                                        otherLevelSet = m_LevelSetDataS[0].LevelSet;
+
+                                    Vector lineStart = LineInVol.GetRowPt(0);
+                                    Vector lineEnd = LineInVol.GetRowPt(1);
+
+                                    var FullCoFace = new HMF.LineSegment(3, KrefVol, lineStart, lineEnd);
+                                    FullCoFace.ProjectBasisPolynomials((otherLevelSet as LevelSet).Basis);
+                                    var roots = FullCoFace.GetRoots(otherLevelSet, jCell, gdat.iGeomCells.GetRefElementIndex(jCell));
+
+                                    var parts = FullCoFace.Split(roots);
+
+                                    bool IsPartNonEmpty(LineSegment ls) {
+                                        var center = 0.5 * (ls.Start + ls.End);
+
+                                        var LsModVals = EvaluateLevelSets(new NodeSet(KrefVol, center, false)).GetColumn(0);
+
+                                        bool ContainsA = false, ContainsB = false;
+                                        {
+                                            LsModVals[m_iLevSet] += 1;
+                                            var code3 = LevelSetSignCode.ComputeLevelSetBytecode(LsModVals);
+                                            ContainsA |= Array.IndexOf(this.m_allSignCodes_PrimarySpecies, code3) >= 0;
+                                            ContainsB |= Array.IndexOf(this.m_allSignCodes_OtherSpecies, code3) >= 0;
+
+                                            LsModVals[m_iLevSet] -= 2 ;
+                                            var code4 = LevelSetSignCode.ComputeLevelSetBytecode(LsModVals);
+                                            ContainsA |= Array.IndexOf(this.m_allSignCodes_PrimarySpecies, code4) >= 0;
+                                            ContainsB |= Array.IndexOf(this.m_allSignCodes_OtherSpecies, code4) >= 0;
+                                        }
+
+                                        return ContainsA && ContainsB;
                                     }
+
+                                    var nonEmpty_parts = parts.Where(IsPartNonEmpty).ToArray();
+                                    if(nonEmpty_parts.Length <= 0) {
+                                        compRule[cnt] = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(iEdge), emptyFaceRule);
+                                        bFound = true;
+                                        Debug.Assert(compRule[cnt].Rule.SpatialDim == this.RefElement.SpatialDimension, "produced a quadrature rule with wrong spatial dimension");
+                                        break;
+                                    }
+
+                                    MultidimensionalArray volNodes = MultidimensionalArray.Create(nonEmpty_parts.Length * fulCoFaceRule.NoOfNodes, KrefVol.SpatialDimension);
+                                    MultidimensionalArray __weights = MultidimensionalArray.Create(volNodes.GetLength(0));
+
+                                    //gdat.TransformLocal2Global(LineInVol, jCell).SaveToTextFile("lineInVol.csv");
+                                    int k = 0;
+                                    foreach(var part in nonEmpty_parts) {
+                                        double metric = Math.Abs(part.EndCoord - part.StartCoord) / 2.0;
+
+                                        for(int i = 0; i < fulCoFaceRule.NoOfNodes; i++) {
+                                            double alpha = fulCoFaceRule.Nodes[i, 0];
+                                            double beta = (alpha + 1) * (part.EndCoord - part.StartCoord) / 2.0 + part.StartCoord;
+
+                                            var volNode = (beta + 1) * (lineEnd - lineStart) * 0.5 + lineStart;
+
+                                            volNodes.SetRowPt(k, volNode);
+                                            __weights[k] = fulCoFaceRule.Weights[i] * metric;
+
+                                            k++;
+                                        }
+                                    }
+
+                                    //gdat.TransformLocal2Global(volNodes, jCell).SaveToTextFile("line.csv");
+
+                                    var fullRule3 = new NodeSet(this.RefElement, Edge2CellTrafo.TransformInverse(volNodes), false);
+                                    fullRule3.LockForever();
+                                    compRule[cnt] = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(iEdge),
+                                        new QuadRule() {
+                                            Nodes = fullRule3,
+                                            Weights = __weights,
+                                            OrderOfPrecision = fulCoFaceRule.OrderOfPrecision
+                                        });
+                                    Debug.Assert(compRule[cnt].Rule.SpatialDim == this.RefElement.SpatialDimension, "produced a quadrature rule with wrong spatial dimension");
+                                    bFound = true;
+                                    break;
                                 }
 
-                                //gdat.TransformLocal2Global(volNodes, jCell).SaveToTextFile("line.csv");
-
-                                var fullRule3 = new NodeSet(this.RefElement, Edge2CellTrafo.TransformInverse(volNodes), false);
-                                fullRule3.LockForever();
-                                compRule[cnt] = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(iEdge),
-                                    new QuadRule() {
-                                        Nodes = fullRule3,
-                                        Weights = __weights,
-                                        OrderOfPrecision = fulCoFaceRule.OrderOfPrecision
-                                    });
-                                Debug.Assert(compRule[cnt].Rule.SpatialDim == this.RefElement.SpatialDimension, "produced a quadrature rule with wrong spatial dimension");
-                                bFound = true;
-                                break;
-                            } else if(completelyEmty) {
-                                // ++++++++++++++++++++++++++
-                                // empty - assign empty rule
-                                // ++++++++++++++++++++++++++
-
-
-                                compRule[cnt] = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(iEdge), emptyFaceRule);
-                                Debug.Assert(compRule[cnt].Rule.SpatialDim == this.RefElement.SpatialDimension, "produced a quadrature rule with wrong spatial dimension");
-                                bFound = true;
-                                break;
                             } else {
-                                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                                // not empty - assign boundary integral of surface element to this edge
-                                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                                // ++++++++++++++++++++++++++
+                                // single-cut 
+                                // the CoFace is either full or empty
+                                // ++++++++++++++++++++++++++
+
+                                
 
 
-                                int iFaceOfEdge = KrefVol.CoFaceToFaceFaceIndex[iCoFace, inOtCoface];
-                                double scale = this.RefElement.FaceTrafoGramianSqrt[iFaceOfEdge];
-
-                                var volNodes = KrefVol.GetCoFaceTrafo(iCoFace).Transform(fulCoFaceRule.Nodes);
-                                var fullRule2 = new NodeSet(this.RefElement, Edge2CellTrafo.TransformInverse(volNodes), false);
-                                fullRule2.LockForever();
-
-                                // if the `volNodes` are really in the plane defined by edge `iEdge`,
-                                // the `Edge2CellTrafo` (which reduces the spatial dimension by 1) is still an identity
-                                //Debug.Assert(volNodes.L2Dist(Edge2CellTrafo.Transform(fullRule2)) < 1.0e-8, "Nodes probably not on the right edge.");
-                                if(volNodes.L2Dist(Edge2CellTrafo.Transform(fullRule2)) >= 1.0e-8) {
-                                    throw new ArithmeticException("Nodes probably not on the right edge.");
-                                }
-
-                                var __weights = fulCoFaceRule.Weights.CloneAs();
-                                __weights.Scale(scale);
+                                if(completelyFull && completelyEmty) {
+                                    // ++++++++++++++++++++++++++
+                                    // something really weird
+                                    // ++++++++++++++++++++++++++
+                                    //EdgeMask em = new EdgeMask(gdat, Chunk.GetSingleElementChunk(iEdge), MaskType.Logical);
+                                    //em.SaveToTextFile("fubar2.csv", WriteHeader: false);
+                                    throw new ArithmeticException("cannot decide");
+                                } else if(!completelyEmty && !completelyFull) {
+                                    // ++++++++++++++++++++++++++
+                                    // should also not happen
+                                    // ++++++++++++++++++++++++++
+                                    //EdgeMask em = new EdgeMask(gdat, Chunk.GetSingleElementChunk(iEdge), MaskType.Logical);
+                                    //em.SaveToTextFile("fubar2.csv", WriteHeader: false);
+                                    throw new ArithmeticException("cannot decide");
 
 
-                                compRule[cnt] = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(iEdge),
-                                    new QuadRule() {
-                                        Nodes = fullRule2,
-                                        Weights = __weights,
-                                        OrderOfPrecision = fulCoFaceRule.OrderOfPrecision
+                                } else if(completelyEmty) {
+                                    // ++++++++++++++++++++++++++
+                                    // empty - assign empty rule
+                                    // ++++++++++++++++++++++++++
+
+
+                                    compRule[cnt] = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(iEdge), emptyFaceRule);
+                                    Debug.Assert(compRule[cnt].Rule.SpatialDim == this.RefElement.SpatialDimension, "produced a quadrature rule with wrong spatial dimension");
+                                    bFound = true;
+                                    break;
+                                } else {
+                                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                                    // not empty - assign boundary integral of surface element to this edge
+                                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+                                    int iFaceOfEdge = KrefVol.CoFaceToFaceFaceIndex[iCoFace, inOtCoface];
+                                    double scale = this.RefElement.FaceTrafoGramianSqrt[iFaceOfEdge];
+
+                                    var volNodes = KrefVol.GetCoFaceTrafo(iCoFace).Transform(fulCoFaceRule.Nodes);
+                                    var fullRule2 = new NodeSet(this.RefElement, Edge2CellTrafo.TransformInverse(volNodes), false);
+                                    fullRule2.LockForever();
+
+                                    // if the `volNodes` are really in the plane defined by edge `iEdge`,
+                                    // the `Edge2CellTrafo` (which reduces the spatial dimension by 1) is still an identity
+                                    //Debug.Assert(volNodes.L2Dist(Edge2CellTrafo.Transform(fullRule2)) < 1.0e-8, "Nodes probably not on the right edge.");
+                                    if(volNodes.L2Dist(Edge2CellTrafo.Transform(fullRule2)) >= 1.0e-8) {
+                                        throw new ArithmeticException("Nodes probably not on the right edge.");
                                     }
-                                    );
-                                Debug.Assert(compRule[cnt].Rule.SpatialDim == this.RefElement.SpatialDimension, "produced a quadrature rule with wrong spatial dimension");
-                                bFound = true;
-                                break;
-                            } 
-                            //else {
-                            //    throw new ArithmeticException("should never reach this point");
-                            //}
+
+                                    var __weights = fulCoFaceRule.Weights.CloneAs();
+                                    __weights.Scale(scale);
+
+
+                                    compRule[cnt] = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(iEdge),
+                                        new QuadRule() {
+                                            Nodes = fullRule2,
+                                            Weights = __weights,
+                                            OrderOfPrecision = fulCoFaceRule.OrderOfPrecision
+                                        }
+                                        );
+                                    Debug.Assert(compRule[cnt].Rule.SpatialDim == this.RefElement.SpatialDimension, "produced a quadrature rule with wrong spatial dimension");
+                                    bFound = true;
+                                    break;
+                                }
+                                //else {
+                                //    throw new ArithmeticException("should never reach this point");
+                                //}
+                            }
+
                         }
 
                     }
-
                 }
 
                 if(bFound == false) {
@@ -503,6 +594,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.LevelSetOnEdge {
 
             return compRule;
         }
+
+        
 
         public int[] GetCachedRuleOrders() {
             return new int[0];

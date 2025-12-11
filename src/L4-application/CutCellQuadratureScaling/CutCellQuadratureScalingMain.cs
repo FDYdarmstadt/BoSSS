@@ -1191,10 +1191,13 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                 SurfElmEdge_1AC.SaveWeightSumToTextFileEdge(this.GridData, "SurfElmEdgeSum_1AC.csv", false);
                 SurfElmEdge_1CB.SaveWeightSumToTextFileEdge(this.GridData, "SurfElmEdgeSum_1CB.csv", false);
 
-
                 SurfElmVol_0AB.SaveToTextFileCell(this.GridData, "SurfElmVol_0AB.csv", false);
                 SurfElmVol_1AC.SaveToTextFileCell(this.GridData, "SurfElmVol_1AC.csv", false);
                 SurfElmVol_1CB.SaveToTextFileCell(this.GridData, "SurfElmVol_1CB.csv", false);
+
+                SurfElmVol_0AB.SaveWeightSumToTextFileCell(this.GridData, "SurfElmVolSum_0AB.csv", false);
+                SurfElmVol_1AC.SaveWeightSumToTextFileCell(this.GridData, "SurfElmVolSum_1AC.csv", false);
+                SurfElmVol_1CB.SaveWeightSumToTextFileCell(this.GridData, "SurfElmVolSum_1CB.csv", false);
 
                 Vol_A.SaveToTextFileCell(this.GridData, "Vol_A.csv", false);
                 Vol_B.SaveToTextFileCell(this.GridData, "Vol_B.csv", false);

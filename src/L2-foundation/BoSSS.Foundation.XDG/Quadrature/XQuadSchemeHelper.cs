@@ -327,7 +327,6 @@ namespace BoSSS.Foundation.XDG {
             return new EdgeMask(cells.GridData, bEdgeMask, mt: MaskType.Logical);
         }
 
-
         /// <summary>
         /// Edge quadrature for the surface elements, i.e., a $D-2$ dimensional integral.
         /// For each cut background-cell $K_j$, the surface element is $K_j \cap \mathfrak{I}$ and its boundaries is  $\partial K_j \cap \mathfrak{I}$; 
@@ -342,35 +341,21 @@ namespace BoSSS.Foundation.XDG {
         /// 
         /// These rules are used, e.g., by the (edge parts of) surface element operator <see cref="XDifferentialOperatorMk2.SurfaceElementOperator_Ls0"/>
         /// </summary>
+        /// <remarks>
+        /// Note that the ordering of <paramref name="spA"/> and <paramref name="spB"/> are not irrelevant,
+        /// but only if the level-set <paramref name="iLevSet"/> coincides with an edge between two cells.
+        /// In such a case, the quadrature will be assigned to the cell which contains a higher fraction of species <paramref name="spA"/>.
+        /// (The volume fraction of each species in such cases should be either 1.0 or 0.0)
+        /// </remarks>
         public EdgeQuadratureScheme Get_SurfaceElement_EdgeQuadScheme(SpeciesId spA, SpeciesId spB, int iLevSet) {
             var tracker = this.XDGSpaceMetrics.Tracker;
             IGridData gdat = tracker.GridDat;
             var levSetRegions = this.XDGSpaceMetrics.LevelSetRegions;
 
-
-            //CellMask cellRestriction = null;
-
             if(!this.SpeciesList.Contains(spA))
                 throw new ArgumentException($"Given species (id = {tracker.GetSpeciesName(spA)}) is not supported.");
 
             EdgeMask allRelevantEdges = SurfaceElementEdges[(spA, spB, iLevSet)];
-            /*{
-                var allRelevantEdges2 = __InnerAndDomainBoundary(cellRestriction, sp, iLevSet);
-
-
-                CellMask cellBoundaryLayer = levSetRegions.GetSpeciesMask(sp).Intersect(levSetRegions.GetCutCellMask4LevSet(iLevSet));
-                if(cellRestriction != null)
-                    cellBoundaryLayer = cellBoundaryLayer.Intersect(cellRestriction);
-
-                allRelevantEdges = InnerAndDomainBoundary(cellBoundaryLayer);
-
-
-                if(!allRelevantEdges2.Equals(allRelevantEdges)) {
-                    allRelevantEdges.SaveToTextFile("edgesCorr.csv");
-                    allRelevantEdges2.SaveToTextFile("edgesWrong.csv");
-                    throw new ApplicationException("ich hasse dich");
-                }
-            }*/
             allRelevantEdges = allRelevantEdges.ToGeometicalMask();
 
             var edgeQrIns = new EdgeQuadratureScheme(
@@ -450,7 +435,8 @@ namespace BoSSS.Foundation.XDG {
                     var fact = new Quadrature.LevelSetOnEdge.SurfaceElementBoundaryIntegration(
                         edgeKref,
                         XDGSpaceMetrics.LevelSetData.ToArray(),
-                        XDGSpaceMetrics.Tracker.GetLevelSetSignCodes(spA),
+                        XDGSpaceMetrics.Tracker.GetLevelSetSignCodes(spA), // species A is the dominating one, i.e., we want the non-zero rules in cells with species A
+                        XDGSpaceMetrics.Tracker.GetLevelSetSignCodes(spB), 
                         iLevSet,
                         this.XDGSpaceMetrics.LevelSetRegions.LevSetCoincidingFaces,
                         this.XDGSpaceMetrics.LevelSetRegions.LevSetCoincidingCoFaces
@@ -477,14 +463,17 @@ namespace BoSSS.Foundation.XDG {
         /// 
         /// These rules are used, e.g., by the (volume parts of) surface element operator <see cref="XDifferentialOperatorMk2.SurfaceElementOperator_Ls0"/>
         /// </summary>
+        /// <remarks>
+        /// Note that the ordering of <paramref name="spA"/> and <paramref name="spB"/> are not irrelevant,
+        /// but only if the level-set <paramref name="iLevSet"/> coincides with an edge between two cells.
+        /// In such a case, the quadrature will be assigned to the cell which contains a higher fraction of species <paramref name="spA"/>.
+        /// (The volume fraction of each species in such cases should be either 1.0 or 0.0)
+        /// </remarks>
         public CellQuadratureScheme Get_SurfaceElement_VolumeQuadScheme(SpeciesId spA, SpeciesId spB, int iLevSet) {
             if (!this.SpeciesList.Contains(spA))
                 throw new ArgumentException("Given species (id = " + spA.cntnt + ") is not supported.");
-            //Default behaviour: If Species are not divided by Level Set, function should not be called
-            //Debug.Assert(!SpeciesAreSeparatedByLevSet(iLevSet, sp, sp));
 
-            //var spdom = XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask(sp);
-            //var IntegrationDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet).Intersect(spdom);
+
             var IntegrationDom = this.LevelSetSeparationLayer[(spA, spB, iLevSet)];
 
             return GetLevelSetQuadScheme(iLevSet, spA, spB, IntegrationDom);
@@ -1098,6 +1087,12 @@ namespace BoSSS.Foundation.XDG {
         /// \]
         /// where \f$ \mathfrak{A} \f$ and \f$ \mathfrak{B} \f$  are the domains of species <paramref name="spA"/> and <paramref name="spB"/>, respectively.
         /// </summary>
+        /// <remarks>
+        /// Note that the ordering of <paramref name="spA"/> and <paramref name="spB"/> are not irrelevant,
+        /// but only if the level-set <paramref name="iLevSet"/> coincides with an edge between two cells.
+        /// In such a case, the quadrature will be assigned to the cell which contains a higher fraction of species <paramref name="spA"/>.
+        /// (The volume fraction of each species in such cases should be either 1.0 or 0.0)
+        /// </remarks>
         public CellQuadratureScheme GetLevelSetQuadScheme(int iLevSet, SpeciesId spA, SpeciesId spB, CellMask IntegrationDom, int? fixedOrder = null) {
             if (IntegrationDom.MaskType == MaskType.Logical)
                 IntegrationDom = IntegrationDom.ToGeometicalMask();
