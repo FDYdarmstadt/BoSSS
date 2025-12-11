@@ -38,10 +38,9 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             //ilPSP.Utils.Algoim.TwoLsIsFucked1();
             //ilPSP.Utils.Algoim.TwoLsIsSuperFucked1();
 
-            
+            BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_2D_SayeVsAlgoim(0, 3);
 
-            BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_3D(2, 3, CutCellQuadratureMethod.Saye);
-            
+
             BoSSS.Solution.Application.FinalizeMPI();
         }
     }
@@ -305,7 +304,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         public void CompareElementSurfaceTo(TestSetupBase othr) {
             //this.latestCCM.WriteSurfaceRulesToVtp();
             //othr.latestCCM.WriteSurfaceRulesToVtp();
-            CompareElementTo("Interface Area", othr, (t, spid) => t.latestCCM.InterfaceArea[spid], this.threshold_scaling, -1);
+            CompareElementTo("Interface Area", othr, (t, spid) => t.latestCCM.InterfaceArea[spid], this.threshold_totSurface, -1);
         }
 
         /// <summary>
@@ -316,7 +315,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         public void CompareElementVolumeTo(TestSetupBase othr) {
             //this.latestCCM.WriteVolumeRulesToVtp();
             //othr.latestCCM.WriteVolumeRulesToVtp();
-            CompareElementTo("Cut Volume", othr, (t, spid) => t.latestCCM.CutCellVolumes[spid], this.threshold_scaling, 0);
+            CompareElementTo("Cut Volume", othr, (t, spid) => t.latestCCM.CutCellVolumes[spid], this.threshold_totVolume, 0);
         }
 
         /// <summary>
@@ -325,7 +324,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         /// scaling of cell edge area integrals in 2D/3D;
         /// </summary>
         public void CompareElementEdgeAreaTo(TestSetupBase othr) {
-            CompareElementTo("Cut Edge", othr, (t, spid) => t.latestCCM.CutEdgeAreas[spid], this.threshold_scaling, -1);
+            CompareElementTo("Cut Edge", othr, (t, spid) => t.latestCCM.CutEdgeAreas[spid], this.threshold_totSurface, -1);
         }
 
         /// <summary>
@@ -334,7 +333,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         /// of surface element edges
         /// </summary>
         public void CompareElementCutLineTo(TestSetupBase othr) {
-            CompareElementTo("Cut Line", othr, (t, spid) => t.latestCCM.CutLineLength[spid], this.threshold_scaling, -2);
+            CompareElementTo("Cut Line", othr, (t, spid) => t.latestCCM.CutLineLength[spid], this.threshold_totCutline, -2);
         }
 
         /// <summary>
@@ -343,7 +342,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         /// of intersection lines
         /// </summary>
         public void CompareElementIntersectionLineTo(TestSetupBase othr) {
-            CompareElementTo("Intersection Line", othr, (t, spid) => t.latestCCM.IntersectionLength[spid], this.threshold_scaling, -2);
+            CompareElementTo("Intersection Line", othr, (t, spid) => t.latestCCM.IntersectionLength[spid], this.threshold_totIntersectionLine, -2);
         }
 
         private void CompareElementTo(string name, TestSetupBase othr, Func<TestSetupBase, SpeciesId, MultidimensionalArray> getRes, double __threshold, int scaling_D) {
