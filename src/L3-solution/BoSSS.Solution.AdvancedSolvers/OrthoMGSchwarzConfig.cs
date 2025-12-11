@@ -377,30 +377,40 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        ISolverSmootherTemplate GetAlternateSmoother() {
-            //var altSmooth3 = new SoftGMRES();
-            //altSmooth3.MaxKrylovDim = 30;
-            //altSmooth3.TerminationCriterion = (iIter, r0, ri) => {
-            //    double tol = 1e-2;
-            //    bool notTerminate = iIter <= 32 && ri > tol * r0 && (r0 > MachineEpsilon || ri > MachineEpsilon);
-            //    bool success = ri <= tol * r0;
-            //    return (notTerminate, success);
-            //};
-            //altSmooth3.Precond = new BlockJacobi() { NoOfIterations = 1};
+        /// <summary>
+        /// Notice that there are two options: one can either use a SoftGMRES with smoother where BlockJacobi is used as preconditioner
+        /// Directly can apply BlockJacobi (Used for the paper on TaskParallel MG)
+        /// </summary>
+        /// <param name="DirectlyBlockJacobi"></param>
+        /// <returns></returns>
+        ISolverSmootherTemplate GetAlternateSmoother(bool DirectlyBlockJacobi) {
+            if(DirectlyBlockJacobi) {
+                BlockJacobi altSmooth = new BlockJacobi() {
+                    //NoOfIterations = 30,
+                    omega = 1,
+                };
 
-            BlockJacobi altSmooth = new BlockJacobi() {
-                //NoOfIterations = 30,
-                omega = 1,
-            };
+                altSmooth.TerminationCriterion = (iIter, r0, ri) => {
+                    double tol = 1e-1;
+                    bool notTerminate = iIter <= 5 && ri > tol * r0 && (r0 > MachineEpsilon || ri > MachineEpsilon);
+                    bool success = ri <= tol * r0;
+                    return (notTerminate, success);
+                };
 
-            altSmooth.TerminationCriterion = (iIter, r0, ri) => {
-                double tol = 1e-1;
-                bool notTerminate = iIter <= 5 && ri > tol * r0 && (r0 > MachineEpsilon || ri > MachineEpsilon);
-                bool success = ri <= tol * r0;
-                return (notTerminate, success);
-            };
+                return altSmooth;
+            } else {
+                var altSmooth3 = new SoftGMRES();
+                altSmooth3.MaxKrylovDim = 30;
+                altSmooth3.TerminationCriterion = (iIter, r0, ri) => {
+                    double tol = 1e-2;
+                    bool notTerminate = iIter <= 32 && ri > tol * r0 && (r0 > MachineEpsilon || ri > MachineEpsilon);
+                    bool success = ri <= tol * r0;
+                    return (notTerminate, success);
+                };
+                altSmooth3.Precond = new BlockJacobi() { NoOfIterations = 1 };
+                return altSmooth3;
+            }
 
-            return altSmooth;
         }
 
 
@@ -525,11 +535,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         // If Schwarz smoother failed, fall back to GMRES+BlockJacobi
                         if(smoother1 is null) {
-                            var fallback = GetAlternateSmoother();
+                            var fallback = GetAlternateSmoother(false);
                                 tr.Info($"KcycleMultiSchwarz: lv {iLevel}, no Schwarz smoother; using GMRES+BlockJacobi.");
                                 smoother1 = fallback;
                         } else if(AlternateSmoother){
-                            var fallback = GetAlternateSmoother();
+                            var fallback = GetAlternateSmoother(AlternateSmoother);
                             tr.Info($"KcycleMultiSchwarz: lv {iLevel}, Alternating the smoother option is enabled. Using the alternative smoother exclusively.");
                             smoother1 = fallback;
                         }
