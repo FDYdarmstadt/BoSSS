@@ -627,9 +627,57 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        void CheckLinearizationStep(int itc, double[] _step, double[] curSol, CoordinateVector SolutionVec) {
+            var step = _step.CloneAs();
+            step.Normalize();
+
+
+            double[] bkup_SolutionVec = SolutionVec.ToArray();
+            double eps = GenericBlas.MachineEps.Sqrt();
+
+            // F0 = OpEval(curSol);
+            SolutionVec.Clear();
+            this.CurrentLin.TransformSolFrom(SolutionVec, curSol);
+            double[] F0 = new double[step.Length];
+            EvaluateOperator(1.0, SolutionVec.Fields, F0, 1.0);
+
+            // F0 = OpEval(curSol + step*eps);
+            var SolutionVec1 = SolutionVec.ToArray(); // == curSol
+            SolutionVec.Clear();
+            this.CurrentLin.TransformSolFrom(SolutionVec, step); // == step
+            SolutionVec.Scale(eps); // = step*eps
+            SolutionVec.AccV(1.0, SolutionVec1); // = curSol + step*eps
+            double[] F1 = new double[step.Length];
+            EvaluateOperator(1.0, SolutionVec.Fields, F1, 1.0);
+
+            // (1/eps)*(F1 - F0)
+            double[] Mxstep_aggSpace = new double[step.Length];
+            Mxstep_aggSpace.SetV(F1);
+            Mxstep_aggSpace.AccV(-1.0, F0);
+            Mxstep_aggSpace.ScaleV(1.0 / eps);
+
+            // 
+            double[] Mxstep_aggSpace_2 = new double[step.Length];
+            this.CurrentLin.OperatorMatrix.SpMV(1.0, step, 0.0, Mxstep_aggSpace_2);
+
+            //
+            var l2Dist = Mxstep_aggSpace.L2Distance(Mxstep_aggSpace_2);
+            var l2Dist_rel = l2Dist / Math.Max(Mxstep_aggSpace.L2Norm(), Mxstep_aggSpace_2.L2Norm());
+            Console.WriteLine($" $$$$$ dist fin diff/matrix: {l2Dist_rel:0.##e-00}   ( {l2Dist:0.##e-00} / max{{{Mxstep_aggSpace.L2Norm():0.##e-00}, {Mxstep_aggSpace_2.L2Norm():0.##e-00}}})");
+
+
+            var curSol_dg = this.CurrentLin.ProlongateSolToDg(curSol, "solution");
+            var findiff_dg = this.CurrentLin.ProlongateSolToDg(Mxstep_aggSpace, "findiff");
+            var jacdir = this.CurrentLin.ProlongateSolToDg(Mxstep_aggSpace_2, "JacDir");
+            var diff = this.CurrentLin.ProlongateSolToDg(Mxstep_aggSpace.Minus(Mxstep_aggSpace_2), "Difference");
+
+            Tecplot.Tecplot.PlotFields(ArrayTools.Cat(curSol_dg, findiff_dg, jacdir, diff), "JacobiCheck-" + itc, 0.0, 3);
+
+            // restore inital state of solution vector
+            SolutionVec.SetV(bkup_SolutionVec);
+        }
+
         public static Action<DGField[]> DiagnosticFunction;
-
-
         private void NewtonStep(CoordinateVector SolutionVec, int itc, double[] CurSol, double[] CurRes, double HomotopyValue, ref double norm_CurRes, ref double TrustRegionDelta) {
             using (var tr = new FuncTrace()) {
                 tr.InfoToConsole = false;

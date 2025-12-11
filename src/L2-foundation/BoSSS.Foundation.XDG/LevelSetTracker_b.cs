@@ -95,9 +95,13 @@ namespace BoSSS.Foundation.XDG {
 
             return hs;
         }
+              
 
         /// <summary>
-        /// Cut Cell and Cut Edge metrics before agglomeration
+        /// Central object to obtain utilities for the XDG and TraceDG discretization, mainly:
+        /// - Cut Cell and Cut Edge metrics before agglomeration, c.f., <see cref="XDGSpaceMetrics.CutCellMetrics"/>
+        /// - XDG and TraceDG mass matrices: <see cref="XDGSpaceMetrics.MassMatrixFactory"/>
+        /// - cut cell quadrature, s.f. <see cref="XDGSpaceMetrics.XQuadSchemeHelper"/>, <see cref="XDGSpaceMetrics.XQuadFactoryHelper"/>
         /// </summary>
         public XDGSpaceMetrics GetXDGSpaceMetrics(int HistoryIndex = 1) {
             int CutCellsQuadOrder;

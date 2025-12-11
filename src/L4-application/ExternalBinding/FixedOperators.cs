@@ -842,7 +842,8 @@ namespace BoSSS.Application.ExternalBinding {
                     RealLevSet.Clear();
                     RealLevSet.Acc(1.0, c);
                     LevelSetUpdater lsu;
-                    lsu = new LevelSetUpdater(grd, CutCellQuadratureMethod.Classic,
+                    lsu = new LevelSetUpdater(grd, 
+                                              CutCellQuadratureMethod.Classic, () => RealLevSet.Basis.Degree*2,
                                               2, new string[] { "a", "b" },
                                               GetNamedInputFields,
                                               RealLevSet, "c", ContinuityProjectionOption.None);

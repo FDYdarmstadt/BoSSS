@@ -41,10 +41,10 @@ namespace BoSSS.Foundation {
 
         /// <summary>
         /// creates a <see cref="ScalarFunctionEx"/> which represents the comosition
-        /// \f$ T \circ f\f$ 
+        /// $T \circ f$ 
         /// </summary>
-        /// <param name="f">original function \f$ f\f$ </param>
-        /// <param name="T">transformation \f$ T\f$ </param>
+        /// <param name="f">original function $f$ </param>
+        /// <param name="T">transformation $T$ </param>
         /// <returns></returns>
         static public ScalarFunctionEx Map(this ScalarFunctionEx f, Func<double, double> T) {
             return (new Map1() { T = T, f = f }).Tf;

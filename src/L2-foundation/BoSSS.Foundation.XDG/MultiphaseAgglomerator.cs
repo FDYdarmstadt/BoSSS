@@ -81,9 +81,9 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// The kind of HMF which is be used for computing cell volumes.
         /// </summary>
-        public CutCellQuadratureMethod HMFvariant {
+        public CutCellQuadratureMethod CutCellQuadratureType {
             get {
-                return NonAgglomeratedMetrics.HMFvariant;
+                return NonAgglomeratedMetrics.CutCellQuadratureType;
             }
         }
 
@@ -816,7 +816,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// The volume over cut cell surface ratio, i.e. \f$ \frac{ | K^X |}{ | \partial K^X | } \f$, for each **agglomerated** cut-cell $K^X$.
+        /// The volume over cut cell surface ratio, i.e. $\frac{ | K^X |}{ | \partial K^X | }$, for each **agglomerated** cut-cell $K^X$.
         /// </summary>
         public Dictionary<SpeciesId, MultidimensionalArray> CellLengthScales {
             private set;

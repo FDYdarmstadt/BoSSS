@@ -182,9 +182,6 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             {
                 var BulkOp = GetBulkOperator();
                 BulkOp.GetMatrixBuilder(mapping, null, mapping).ComputeMatrix(opmtx, RHS);
-
-                Console.WriteLine($"   ##################  Stokes extension Ls{levelSetIndex}, RHS norm of bulk: " + RHS.L2Norm());
-
             }
 
             {
@@ -196,8 +193,6 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
 
                
                 builder.ComputeMatrix(opmtx, RHS);
-
-                Console.WriteLine($"   ##################  Stokes extension Ls{levelSetIndex}, RHS norm of interface: " + RHS.L2Norm());
             }
 
     

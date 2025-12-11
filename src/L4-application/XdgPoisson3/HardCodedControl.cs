@@ -36,7 +36,7 @@ namespace BoSSS.Application.XdgPoisson3 {
     public static class HardCodedControl {
 
         /// <summary>
-        /// A 45-degree interface in the 2D domain \f$ (-2,2)^2 \f$.
+        /// A 45-degree interface in the 2D domain $(-2,2)^2$.
         /// </summary>
         public static XdgPoisson3Control Schraeg() {
             // --control 'cs:BoSSS.Application.XdgPoisson3.HardCodedControl.Schraeg()'
@@ -89,7 +89,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         }
         
         /// <summary>
-        /// A circular interface in the 2D domain \f$ (3/2,3/2)^2 \f$.
+        /// A circular interface in the 2D domain $(3/2,3/2)^2$.
         /// </summary>
         public static XdgPoisson3Control Circle(int Resolution = 16, int p = 1, string DBPath = null, LinearSolverCode solver = LinearSolverCode.direct_pardiso) {
             //BoSSS.Application.XdgPoisson3.HardCodedControl.Circle(Resolution: 8);
@@ -452,7 +452,7 @@ namespace BoSSS.Application.XdgPoisson3 {
 
 
         /// <summary>
-        /// A spherical interface in the 3D domain \f$ (-2, 2)^3 \f$.
+        /// A spherical interface in the 3D domain $(-2, 2)^3$.
         /// </summary>
         public static XdgPoisson3Control Ball3D(int pDeg, int Res, LinearSolverCode solverCode = LinearSolverCode.direct_pardiso) {
             //--control "cs:BoSSS.Application.XdgPoisson3.HardCodedControl.Ball3D(2, 5)"
@@ -587,7 +587,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         */
 
         /// <summary>
-        /// A circular interface within the 2D domain \f$ (-1,1)^2 \f$, with Dirichlet boundary conditions at \f$ x = -1 \f$ and Neumann boundary conditions elsewhere.
+        /// A circular interface within the 2D domain $(-1,1)^2$, with Dirichlet boundary conditions at $x = -1$ and Neumann boundary conditions elsewhere.
         /// </summary>
         public static XdgPoisson3Control CircleNeum(int Resolution = 13) {
 

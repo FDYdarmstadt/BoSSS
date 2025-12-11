@@ -27,11 +27,11 @@ namespace BoSSS.Platform.LinAlg {
     /// represents an affine - linear transformation;
     /// </summary>
     /// <remarks> 
-    /// The transformation of some point \f$ \vec{x} \f$ into it's 
-    /// image \f$ \vec{y} \f$
+    /// The transformation of some point $\underline{x}$ into it's 
+    /// image $\underline{y}$
     /// is defined as
     /// 
-    /// <i>y</i> = <see cref="Matrix"/>*\f$ \vec{x} \f$ + <see cref="Affine"/>
+    /// <i>y</i> = <see cref="Matrix"/>*$\underline{x}$ + <see cref="Affine"/>
     /// </remarks>
     [Serializable]
     [DataContract]
@@ -241,7 +241,7 @@ namespace BoSSS.Platform.LinAlg {
         }
 
         /// <summary>
-        /// Inverse transformation; if dimension ans co-dimension do not match, a projection is performed
+        /// Inverse transformation; if dimension and co-dimension do not match, a projection is performed
         /// </summary>
         public void TransformInverse(MultidimensionalArray vtxIn, MultidimensionalArray vtxOut) {
             if(vtxOut.GetLength(1) != DomainDimension)
@@ -263,23 +263,99 @@ namespace BoSSS.Platform.LinAlg {
 
             MultidimensionalArray tmpOut = MultidimensionalArray.Create(vtxOut.NoOfCols, vtxOut.NoOfRows);
 
-            if(M != N) {
-                this.Matrix.LeastSquareSolve(tmpOut, tmp);
-            } else {
+            if(DomainDimension == CodomainDimension) {
                 this.Matrix.SolveEx(tmpOut, tmp);
+
+
+            } else if(DomainDimension < CodomainDimension) {
+                // ++++++++++++++++++
+                // preform projection
+                // ++++++++++++++++++
+
+                //
+                // project (x - o) onto the column space of M
+                //
+
+                var MtM = MultidimensionalArray.Create(M, M);
+                MtM.GEMM(1.0, this.Matrix, this.Matrix, 0.0, true, false);
+                
+                var rhs = MultidimensionalArray.Create(M, K);
+                rhs.GEMM(1.0, this.Matrix, tmp, 0.0, true, false);
+
+                MtM.SolveEx(tmpOut, rhs);
+            } else {
+                // ++++++++++++++++++
+                // preform injection
+                // ++++++++++++++++++
+
+                //
+                // forward transformation goes eg., form 3D -> 1D
+                //   => inverse trafo goes from 1D -> 3D
+                //  => must be designed so that     1D --inverse_trafo---> 3D ---forward_trafo---> 1D  is an identity
+                //
+                //  Let forward trafo be:     y = M*x + o
+                //  assume inverse trafo as:  x = X*(y - o)   with unknown matrix X
+                //
+                // insert inverse trafo into forward trafo:
+                //     y = M*X*(y - o) + o
+                //     y = M*X*y - M*X*o - o
+                //
+                //  => M*X should be the identity
+                //  => X = M^t * inv(M^t * M)
+                //
+
+
+                var tmp2 = MultidimensionalArray.Create(tmp.Lengths);
+                var MMt = MultidimensionalArray.Create(CodomainDimension, CodomainDimension);
+                MMt.GEMM(1.0, this.Matrix, this.Matrix, 0.0, false, true);
+                MMt.SolveEx(tmp2, tmp);
+
+
+                tmpOut.GEMM(1.0, this.Matrix, tmp2, 0.0, true, false);
+
             }
+
+            
             
             tmpOut.TransposeTo(vtxOut);
 
         }
 
         /// <summary>
-        /// Inverse transformation; if dimension ans co-dimension do not match, a projection is performed
+        /// Inverse transformation; if dimension and co-dimension do not match, a projection is performed
         /// </summary>
         public MultidimensionalArray TransformInverse(MultidimensionalArray vtx) {
             MultidimensionalArray vtxOt = MultidimensionalArray.Create(vtx.NoOfRows, this.DomainDimension);
             TransformInverse(vtx, vtxOt);
             return vtxOt;
+        }
+
+        /// <summary>
+        /// See <see cref="TransformInverse(MultidimensionalArray)"/>
+        /// </summary>
+        public Vector TransformInverse(Vector vtx) {
+            if(vtx.Dim != this.CodomainDimension)
+                throw new ArgumentException("dimension mismatch");
+
+            var _vtx = MultidimensionalArray.Create(1, this.CodomainDimension);
+            _vtx.SetRowPt(0, vtx);
+            var _trafo = TransformInverse(_vtx);
+
+            return _trafo.GetRowPt(0);
+        }
+
+        /// <summary>
+        /// See <see cref="TransformInverse(MultidimensionalArray)"/>
+        /// </summary>
+        public double[] TransformInverse(params double[] vtx) {
+            if(vtx.Length != this.CodomainDimension)
+                throw new ArgumentException("dimension mismatch");
+
+            var _vtx = MultidimensionalArray.Create(1, this.CodomainDimension);
+            _vtx.SetRow(0, vtx);
+            var _trafo = TransformInverse(_vtx);
+
+            return _trafo.GetRow(0);
         }
 
 
@@ -368,19 +444,19 @@ namespace BoSSS.Platform.LinAlg {
         /// that maps the vectors in the <paramref name="preimage"/> to <paramref name="image"/>;
         /// </summary>
         /// <param name="preimage">
-        /// The preimage: \f$  (D+1) \f$  vectors of dimension \f$ D \f$;
+        /// The preimage: $(D+1)$  vectors of dimension $D$;
         /// <list type="bullet">
-        ///   <item>1st index: vector/vertex index, length is \f$ D+1 \f$</item>
+        ///   <item>1st index: vector/vertex index, length is $D+1$</item>
         ///   <item>2nd index: spatial dimension, lenght is D</item>
         /// </list>
         /// Tip: use <see cref="ilPSP.Utils.ArrayTools.Transpose{t}(t[,],t[,])"/>
         /// if the sequence of indices is not appropriate;
         /// </param>
         /// <param name="image">
-        /// The image: \f$  (D+1) \f$ vectors of dimension \f$ D \f$;
+        /// The image: $(D+1)$ vectors of dimension $D$;
         /// <list type="bullet">
-        ///   <item>1st index: vector/vertex index, length is \f$ D + 1\f$</item>
-        ///   <item>2nd index: spatial dimension, length is \f$ D \f$</item>
+        ///   <item>1st index: vector/vertex index, length is $D + 1$</item>
+        ///   <item>2nd index: spatial dimension, length is $D$</item>
         /// </list>
         /// </param>
         public static AffineTrafo FromPoints(MultidimensionalArray preimage, MultidimensionalArray image) {

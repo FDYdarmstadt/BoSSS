@@ -253,14 +253,44 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
 				return (n, sizes, x, y);
 			}
 
-			/// <summary>
-			/// slight modified version to query points on the face
-			/// </summary>
-			/// <param name="lsData"></param>
-			/// <param name="jCell"></param>
-			/// <param name="faceIndex"></param>
-			/// <returns></returns>
-			internal (int, int[], double[], double[], int sign) CreatePhiDataForFace(LevelSetTracker.LevelSetData lsData, int jCell, int faceIndex) {
+            protected void GetMonomialExpression(LevelSetTracker.LevelSetData lsData, int j) {
+                int N = 10; // 1,   x, y, z,   x*x, x*y, y*y, x*z, y*z, z*z 
+                int D = this.RefElement.SpatialDimension;
+                var Nodes = new NodeSet(this.RefElement, N, D, false);
+                var rnd = new Random(0);
+                for(int n = 0; n < N; n++) {
+                    for(int d = 0; d < D; d++) {
+                        Nodes[n, d] = rnd.NextDouble();
+                    }
+                }
+                Nodes.LockForever();
+
+                var lsVal = lsData.GetLevSetValues(Nodes, j, 1);
+
+                var LHS = MultidimensionalArray.Create(N, 10);
+                var RHS = new double[N];
+                for(int n = 0; n < N; n++) {
+                    var x = Nodes[n, 0];
+                    var y = Nodes[n, 1];
+                    var z = Nodes[n, 2];
+                    LHS.SetRow(n, new double[] { 1, x, y, z, x * x, x * y, y * y, x * z, y * z, z * z });
+                    RHS[n] = lsVal[0, n];
+                }
+
+                var MomomialCoeffs = LHS.Solve(RHS);
+
+                Console.WriteLine($"  1*({MomomialCoeffs[0]}) + x*({MomomialCoeffs[1]}) + y*({MomomialCoeffs[2]}) + z*({MomomialCoeffs[3]}) + x*x*({MomomialCoeffs[4]}) + x*y*({MomomialCoeffs[5]}) + y*y*({MomomialCoeffs[6]}) + x*z*({MomomialCoeffs[7]}) + y*z*({MomomialCoeffs[8]}) + z*z*({MomomialCoeffs[9]})");
+
+            }
+
+            /// <summary>
+            /// slight modified version to query points on the face
+            /// </summary>
+            /// <param name="lsData"></param>
+            /// <param name="jCell"></param>
+            /// <param name="faceIndex"></param>
+            /// <returns></returns>
+            internal (int, int[], double[], double[], int sign) CreatePhiDataForFace(LevelSetTracker.LevelSetData lsData, int jCell, int faceIndex) {
 				//number of nodes in 1d for level set interpolation = degree + 1
 				int n = (lsData.LevelSet as LevelSet).Basis.Degree + 1;
 
@@ -362,6 +392,11 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
                     throw new ArgumentOutOfRangeException();
             }
 
+            
+
+
+
+
             /// <summary>
             /// Get the quadrature nodes and weights for a cell. (either surface or volume, declared at the instantiation of the factory)
             /// </summary>
@@ -372,9 +407,21 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
                 (int n1, int[] sizes1, double[] x1, double[] y1) = CreatePhiData(lsData[0], jCell);
                 (int n2, int[] sizes2, double[] x2, double[] y2) = CreatePhiData(lsData[1], jCell);
 
+                
+
+
+
                 // get the quadrature rule from the wrapper
                 UnsafeAlgoim.QuadScheme[] qsArray = m_CalculateQuadRule(spaceDim, n1, n2, RequestedOrder, sizes1, sizes2, x1, x2, y1, y2);
                 Debug.Assert(qsArray.Length == 2);
+
+
+                /*
+                UnsafeAlgoim.QuadScheme[] qsArray_alt = null;
+                if(this.RefElement.SpatialDimension == 3)
+                    qsArray_alt = m_CalculateQuadRule(spaceDim, n2, n1, RequestedOrder, sizes2, sizes1, x2, x1, y2, y1);
+                */
+
 
                 //Returned rules need to be categorized as ls0=0 ls1<0; ls0=0 ls1>0; ls0<0 ls1=0; ls0>0 ls1=0 
                 QuadRule[] quadRuleArray = new QuadRule[4]; //for all possible combinations of level sets with each other
@@ -390,7 +437,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
                     // Create quadrature rule and copy from the scheme
                     QuadRule quadRule = QuadRule.CreateBlank(RefElement, qs.length, qs.dimension);
 
-                    for (int row = 0; row < qs.length; row++) {
+                    for(int row = 0; row < qs.length; row++) {
                         quadRule.Weights[row] = qs.weights[row];
                         for (int d = 0; d < qs.dimension; d++) { // map 1d array back to 2d
                             int ind = row * qs.dimension + d;
@@ -398,6 +445,38 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
                         }
                     }
                     quadRule.Nodes.LockForever();
+
+                    /*
+                    if(this.RefElement.SpatialDimension == 3) {
+                        // Create quadrature rule and copy from the scheme
+                        //var qs_alt = qsArray_alt[i];
+                        //QuadRule quadRule_alt = QuadRule.CreateBlank(RefElement, qs_alt.length, qs_alt.dimension);
+
+                        //for(int row = 0; row < qs_alt.length; row++) {
+                        //    quadRule_alt.Weights[row] = qs_alt.weights[row];
+                        //    for(int d = 0; d < qs_alt.dimension; d++) { // map 1d array back to 2d
+                        //        int ind = row * qs_alt.dimension + d;
+                        //        quadRule_alt.Nodes[row, d] = qs_alt.nodes[ind];
+                        //    }
+                        //}
+                        //quadRule_alt.Nodes.LockForever();
+
+                        GetMonomialExpression(lsData[0], jCell);
+                        GetMonomialExpression(lsData[1], jCell);
+
+
+
+                        var gd = this.allDoubleCutCells.GridData;
+                        var test = new CompositeQuadRule<QuadRule>(null, gd);
+                        test.chunkRulePairs.Add(new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(jCell), quadRule));
+                        ICompositeQuadRule_Ext.SaveToTextFileCell(test, lsData[0].Region.GetCutCellMask().GridData, "j" + jCell + "_" + i + ".csv", false);
+
+                        //var test_alt = new CompositeQuadRule<QuadRule>(null, gd);
+                        //test_alt.chunkRulePairs.Add(new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(jCell), quadRule_alt));
+                        //ICompositeQuadRule_Ext.SaveToTextFileCell(test_alt, lsData[0].Region.GetCutCellMask().GridData, "j" + jCell + "_" + i + "_alt.csv", false);
+
+                    }*/
+                    
 
                     //ApplyMetrics(quadRule, jCell);
 
@@ -427,7 +506,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
                 var ret = lsData.GetLevSetValues(quadRule.Nodes, jCell, 1);
                 for (int i = 0; i < ret.Length; i++) {
                     var ls = ret[0, i];
-                    if (ls < 0) {
+                    if (ls <= 0) {
                         negativeWeight.Add(quadRule.Weights[i]);
                         negativeNodes.Add(quadRule.Nodes.GetRow(i));
                     } else if (ls > 0) {
@@ -483,8 +562,14 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
 				(int n1, int[] sizes1, double[] x1, double[] y1) = CreatePhiData(lsData[0], jCell);
 				(int n2, int[] sizes2, double[] x2, double[] y2) = CreatePhiData(lsData[1], jCell);
 
-				// get the quadrature rule from the wrapper
-				UnsafeAlgoim.QuadScheme[] qsArray = m_CalculateQuadRule(spaceDim, n1, n2, RequestedOrder, sizes1, sizes2, x1, x2, y1, y2);
+                /*
+                if(this.RefElement.SpatialDimension == 3) {
+                    base.GetMonomialExpression(lsData[0], jCell);
+                    base.GetMonomialExpression(lsData[1], jCell);
+                }*/
+
+                // get the quadrature rule from the wrapper
+                UnsafeAlgoim.QuadScheme[] qsArray = m_CalculateQuadRule(spaceDim, n1, n2, RequestedOrder, sizes1, sizes2, x1, x2, y1, y2);
 				QuadRule[] quadRuleArray = new QuadRule[qsArray.Length];
                 for(int i=0; i < qsArray.Length; i++) { //for each permutation/species
                     var qs = qsArray[i];

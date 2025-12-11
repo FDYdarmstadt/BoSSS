@@ -705,7 +705,7 @@ namespace FreeXNSE {
 
                 double surfE = 0.0;
 
-                var scheme = SchemeHelper.GetLevelSetquadScheme(0, lsTrk.Regions.GetCutCellMask4LevSet(0));
+                var scheme = SchemeHelper.GetLevelSetQuadScheme(0, lsTrk.Regions.GetCutCellMask4LevSet(0));
                 CellQuadrature.GetQuadrature(new int[] { 1 }, lsTrk.GridDat,
                     scheme.Compile(lsTrk.GridDat, solver.QuadOrder()),
                     delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {

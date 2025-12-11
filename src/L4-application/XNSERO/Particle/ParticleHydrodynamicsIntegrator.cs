@@ -76,7 +76,7 @@ namespace BoSSS.Application.XNSERO_Solver {
 
             {
                 XQuadSchemeHelper SchemeHelper = LevelSetTracker.GetXDGSpaceMetrics(new[] { LevelSetTracker.GetSpeciesId(FluidSpecies) }, RequiredOrder, 1).XQuadSchemeHelper;
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(1, CutCells);
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(1, CutCells);
                 CellQuadrature.GetQuadrature(new int[] { SpatialDim + 1 }, LevelSetTracker.GridDat,
                     cqs.Compile(LevelSetTracker.GridDat, RequiredOrder),
                     delegate (int i0, int Length, QuadRule QR, MultidimensionalArray result) {

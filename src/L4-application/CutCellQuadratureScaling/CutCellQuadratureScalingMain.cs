@@ -3,7 +3,9 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.IO;
+using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
+using BoSSS.Platform.LinAlg;
 using BoSSS.Solution;
 using BoSSS.Solution.LoadBalancing;
 using BoSSS.Solution.Tecplot;
@@ -14,7 +16,10 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
+using System.IO;
 using System.Linq;
+using static ilPSP.Utils.UnsafeAlgoim;
 
 
 
@@ -25,14 +30,18 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
     /// </summary>
     static class CutCellQuadratureScalingMain {
 
-        static CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Classic;
-        static int order = 6;
+        //static CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Classic;
+        //static int order = 6;
 
         public static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI(args);
+            //ilPSP.Utils.Algoim.TwoLsIsFucked1();
+            //ilPSP.Utils.Algoim.TwoLsIsSuperFucked1();
 
-            BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_2D(3, CutCellQuadratureMethod.Saye);
+            
 
+            BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_3D(2, 3, CutCellQuadratureMethod.Saye);
+            
             BoSSS.Solution.Application.FinalizeMPI();
         }
     }
@@ -46,20 +55,21 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
     /// Therefore, a reference-integral-evaluation has to be created with a scaling (<see cref="MeshScaling"/>) of 1.
     /// Then, it needs to be compared to a different integral-evaluation has to be created with a non-unit scaling.
     /// This should be done using the methods
-    /// - <see cref="TestSetupBase.CompareVolumeTo"/>
-    /// - <see cref="TestSetupBase.CompareEdgeAreaTo"/>
-    /// - <see cref="TestSetupBase.CompareSurfaceTo"/>
-    /// - <see cref="TestSetupBase.CompareCutLineTo"/>
+    /// - <see cref="TestSetupBase.CompareTotalVolumeTo"/>
+    /// - <see cref="TestSetupBase.CompareTotalEdgeAreaTo"/>
+    /// - <see cref="TestSetupBase.CompareTotalSurfaceTo"/>
+    /// - <see cref="TestSetupBase.CompareTotalCutLineTo"/>
     /// </summary>
     abstract class TestSetupBase : BoSSS.Solution.Application {
 
-        public TestSetupBase(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye) {
+        public TestSetupBase(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye, int meshVariation = 0) {
             this.MeshScaling = meshScaling;
             this.CutCellQuadratureOrder = cutCellQuadratureOrder;
             this.QuadratureType = quadratureType;
+            this.MeshVariation = meshVariation;
         }
 
-
+        protected readonly int MeshVariation = 0;
         public readonly double MeshScaling = 1.0;
         public readonly int CutCellQuadratureOrder = 2;
 
@@ -68,6 +78,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         internal CutCellMetrics latestCCM;
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
+            //int upgrade = QuadratureType == CutCellQuadratureMethod.Algoim ? 5 : 0;
             latestCCM = LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS, CutCellQuadratureOrder).CutCellMetrics;
             base.TerminationKey = true;
             return -1;
@@ -213,30 +224,14 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             }
         }
 
+        #region comparison_to_other
         /// <summary>
         /// verifies linear/quadratic scaling 
         /// (<see cref="MeshScaling"/> to the power of the spatial dimension)
         /// of level-set surface integrals in 2D/3D;
         /// </summary>
-        public void CompareSurfaceTo(TestSetupBase othr) {
-            double D = this.Grid.SpatialDimension;
-
-            foreach(string Species in this.LsTrk.SpeciesNames) {
-                var SpcId_this = this.LsTrk.GetSpeciesId(Species);
-                var SpcId_othr = othr.LsTrk.GetSpeciesId(Species);
-
-                var Area_this = this.latestCCM.InterfaceArea[SpcId_this];
-                var Area_othr = othr.latestCCM.InterfaceArea[SpcId_othr];
-                var Area_err = Area_othr*(this.MeshScaling.Pow(D - 1)) - Area_this* (othr.MeshScaling.Pow(D - 1));
-
-                double absErr = Area_err.L2Norm();
-                double relErr = absErr / (Area_this.L2Norm() + Area_othr.L2Norm());
-
-                Console.WriteLine($"Level Set Surface, species {Species} absolute error : {absErr:g7}");
-                Console.WriteLine($"Level Set Surface, species {Species} relative error : {relErr:g7}");
-
-                Assert.Less(relErr, threshold_scaling, $"relative surface error above threshold for species {Species}" );
-            }
+        public void CompareTotalSurfaceTo(TestSetupBase othr) {
+            CompareTotalTo("Interface Area", othr, (t, spid) => t.latestCCM.InterfaceArea[spid], this.threshold_scaling, -1);
         }
 
         /// <summary>
@@ -244,27 +239,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         /// (<see cref="MeshScaling"/> to the power of the spatial dimension)
         /// scaling of volume integrals in 2D/3D;
         /// </summary>
-        public void CompareVolumeTo(TestSetupBase othr) {
-            double D = this.Grid.SpatialDimension;
-            
-            foreach (string Species in this.LsTrk.SpeciesNames) {
-                var SpcId_this = this.LsTrk.GetSpeciesId(Species);
-                var SpcId_othr = othr.LsTrk.GetSpeciesId(Species);
-
-
-                var Vol_this = this.latestCCM.CutCellVolumes[SpcId_this];
-                var Vol_othr = othr.latestCCM.CutCellVolumes[SpcId_othr];
-                // Areas should scale with MeshScaling^SpatialDimension
-                var Vol_err = Vol_othr*(this.MeshScaling.Pow(D)) - Vol_this*(othr.MeshScaling.Pow(D));
-
-                double absErr = Vol_err.L2Norm();
-                double relErr = absErr / (Vol_this.L2Norm() + Vol_othr.L2Norm());
-
-                Console.WriteLine($"Cut Cell Volume, species {Species} absolute error : {absErr:g7}");
-                Console.WriteLine($"Cut Cell Volume, species {Species} relative error : {relErr:g7}");
-
-                Assert.Less(relErr, threshold_scaling, $"relative volume error above threshold for species {Species}");
-            }
+        public void CompareTotalVolumeTo(TestSetupBase othr) {
+            CompareTotalTo("Cut Volume", othr, (t, spid) => t.latestCCM.CutCellVolumes[spid], this.threshold_scaling, 0);
         }
 
 
@@ -273,25 +249,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         /// (<see cref="MeshScaling"/> to the power of the spatial dimension - 1) 
         /// scaling of cell edge area integrals in 2D/3D;
         /// </summary>
-        public void CompareEdgeAreaTo(TestSetupBase othr) {
-            double D = this.Grid.SpatialDimension;
-            
-            foreach (string Species in this.LsTrk.SpeciesNames) {
-                var SpcId_this = this.LsTrk.GetSpeciesId(Species);
-                var SpcId_othr = othr.LsTrk.GetSpeciesId(Species);
-
-                var Area_this = this.latestCCM.CutEdgeAreas[SpcId_this];
-                var Area_othr = othr.latestCCM.CutEdgeAreas[SpcId_othr];
-                var Area_err = Area_othr*(this.MeshScaling.Pow(D - 1)) - Area_this*(othr.MeshScaling.Pow(D - 1));
-
-                double absErr = Area_err.L2Norm();
-                double relErr = absErr / (Area_this.L2Norm() + Area_othr.L2Norm());
-
-                Console.WriteLine($"Cut Edge area, species {Species} absolute error : {absErr:g7}");
-                Console.WriteLine($"Cut Edge area, species {Species} relative error : {relErr:g7}");
-
-                Assert.Less(relErr, threshold_scaling, $"relative edge area error above threshold for species {Species}");
-            }
+        public void CompareTotalEdgeAreaTo(TestSetupBase othr) {
+             CompareTotalTo("Cut Edge", othr, (t, spid) => t.latestCCM.CutEdgeAreas[spid], this.threshold_scaling, -1);
         }
 
 
@@ -300,26 +259,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         ///  (<see cref="MeshScaling"/> to the power of the spatial dimension - 2) 
         /// of surface element edges
         /// </summary>
-        public void CompareCutLineTo(TestSetupBase othr) {
-            double D = this.Grid.SpatialDimension;
-
-            foreach(string Species in this.LsTrk.SpeciesNames) {
-                var SpcId_this = this.LsTrk.GetSpeciesId(Species);
-                var SpcId_othr = othr.LsTrk.GetSpeciesId(Species);
-
-                var Area_this = this.latestCCM.CutLineLength[SpcId_this];
-                var Area_othr = othr.latestCCM.CutLineLength[SpcId_othr];
-                //
-                var Area_err = Area_othr * (this.MeshScaling.Pow(D - 2)) - Area_this * (othr.MeshScaling.Pow(D - 2));
-
-                double absErr = Area_err.L2Norm();
-                double relErr = absErr / (Area_this.L2Norm() + Area_othr.L2Norm());
-
-                Console.WriteLine($"Cut line measure, species {Species} absolute error : {absErr:g7}");
-                Console.WriteLine($"Cut line measure, species {Species} relative error : {relErr:g7}");
-
-                Assert.Less(relErr, threshold_scaling, $"relative cut line length error above threshold for species {Species}");
-            }
+        public void CompareTotalCutLineTo(TestSetupBase othr) {
+            CompareTotalTo("Cut Line", othr, (t, spid) => t.latestCCM.CutLineLength[spid], this.threshold_scaling, -2);
         }
 
         /// <summary>
@@ -327,28 +268,119 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         ///  (<see cref="MeshScaling"/> to the power of the spatial dimension - 2) 
         /// of intersection lines
         /// </summary>
-        public void CompareIntersectionLineTo(TestSetupBase othr) {
+        public void CompareTotalIntersectionLineTo(TestSetupBase othr) {
+            CompareTotalTo("Intersection Line", othr, (t, spid) => t.latestCCM.IntersectionLength[spid], this.threshold_scaling, -2);
+        }
+
+        private void CompareTotalTo(string name, TestSetupBase othr, Func<TestSetupBase, SpeciesId, MultidimensionalArray> getRes, double __threshold, int scaling_D) {
             double D = this.Grid.SpatialDimension;
 
             foreach(string Species in this.LsTrk.SpeciesNames) {
                 var SpcId_this = this.LsTrk.GetSpeciesId(Species);
                 var SpcId_othr = othr.LsTrk.GetSpeciesId(Species);
 
-                var Area_this = this.latestCCM.IntersectionLength[SpcId_this];
-                var Area_othr = othr.latestCCM.IntersectionLength[SpcId_othr];
+                var Area_this = getRes(this, SpcId_this);
+                var Area_othr = getRes(othr, SpcId_othr);
                 //
-                var Area_err = Area_othr * (this.MeshScaling.Pow(D - 2)) - Area_this * (othr.MeshScaling.Pow(D - 2));
+                var Area_err = Area_othr * (this.MeshScaling.Pow(D + scaling_D)) - Area_this * (othr.MeshScaling.Pow(D + scaling_D));
 
                 double absErr = Area_err.L2Norm();
                 double relErr = absErr / (Area_this.L2Norm() + Area_othr.L2Norm());
 
-                Console.WriteLine($"Intersection line measure, species {Species} absolute error : {absErr:g7}");
-                Console.WriteLine($"Intersection line measure, species {Species} relative error : {relErr:g7}");
+                Console.WriteLine($"{name} measure, species {Species} absolute error : {absErr:g7}");
+                Console.WriteLine($"{name} measure, species {Species} relative error : {relErr:g7}");
 
-                Assert.Less(relErr, threshold_scaling, $"relative intersection line length error above threshold for species {Species}");
+                Assert.Less(relErr, threshold_scaling, $"relative {name} error above threshold for species {Species}");
             }
         }
+        #endregion
 
+
+        #region comparison_to_other_perElement
+        /// <summary>
+        /// verifies linear/quadratic scaling 
+        /// (<see cref="MeshScaling"/> to the power of the spatial dimension)
+        /// of level-set surface integrals in 2D/3D;
+        /// </summary>
+        public void CompareElementSurfaceTo(TestSetupBase othr) {
+            //this.latestCCM.WriteSurfaceRulesToVtp();
+            //othr.latestCCM.WriteSurfaceRulesToVtp();
+            CompareElementTo("Interface Area", othr, (t, spid) => t.latestCCM.InterfaceArea[spid], this.threshold_scaling, -1);
+        }
+
+        /// <summary>
+        /// verifies quadratic/kubic 
+        /// (<see cref="MeshScaling"/> to the power of the spatial dimension)
+        /// scaling of volume integrals in 2D/3D;
+        /// </summary>
+        public void CompareElementVolumeTo(TestSetupBase othr) {
+            //this.latestCCM.WriteVolumeRulesToVtp();
+            //othr.latestCCM.WriteVolumeRulesToVtp();
+            CompareElementTo("Cut Volume", othr, (t, spid) => t.latestCCM.CutCellVolumes[spid], this.threshold_scaling, 0);
+        }
+
+        /// <summary>
+        /// verifies quadratic/linear 
+        /// (<see cref="MeshScaling"/> to the power of the spatial dimension - 1) 
+        /// scaling of cell edge area integrals in 2D/3D;
+        /// </summary>
+        public void CompareElementEdgeAreaTo(TestSetupBase othr) {
+            CompareElementTo("Cut Edge", othr, (t, spid) => t.latestCCM.CutEdgeAreas[spid], this.threshold_scaling, -1);
+        }
+
+        /// <summary>
+        /// verifies linear/constant scaling
+        ///  (<see cref="MeshScaling"/> to the power of the spatial dimension - 2) 
+        /// of surface element edges
+        /// </summary>
+        public void CompareElementCutLineTo(TestSetupBase othr) {
+            CompareElementTo("Cut Line", othr, (t, spid) => t.latestCCM.CutLineLength[spid], this.threshold_scaling, -2);
+        }
+
+        /// <summary>
+        /// verifies linear/constant scaling
+        ///  (<see cref="MeshScaling"/> to the power of the spatial dimension - 2) 
+        /// of intersection lines
+        /// </summary>
+        public void CompareElementIntersectionLineTo(TestSetupBase othr) {
+            CompareElementTo("Intersection Line", othr, (t, spid) => t.latestCCM.IntersectionLength[spid], this.threshold_scaling, -2);
+        }
+
+        private void CompareElementTo(string name, TestSetupBase othr, Func<TestSetupBase, SpeciesId, MultidimensionalArray> getRes, double __threshold, int scaling_D) {
+            double D = this.Grid.SpatialDimension;
+            string _name = name.Replace(" ", "_");
+            foreach(string Species in this.LsTrk.SpeciesNames) {
+                var SpcId_this = this.LsTrk.GetSpeciesId(Species);
+                var SpcId_othr = othr.LsTrk.GetSpeciesId(Species);
+
+                var Res_this = getRes(this, SpcId_this).To1DArray();
+                var Res_othr = getRes(othr, SpcId_othr).To1DArray();
+                //
+
+                double[] ElementError = Res_this.CloneAs();
+                ElementError.ScaleV(this.MeshScaling.Pow(D + scaling_D));
+                ElementError.AccV(-othr.MeshScaling.Pow(D + scaling_D), Res_othr);
+
+                var l2_err = ElementError.L2Norm();
+                Console.WriteLine($"Element-wise {name} error, species {Species}, l2 norm is: " + l2_err);
+
+                /*
+                int L = ElementError.Length;
+                if(L == this.GridData.iLogicalCells.Count) {
+
+                    CellMask.GetFullMask(this.GridData, MaskType.Logical).SaveToTextFile("error_" + _name + "_" + Species + ".csv", false, (double[] CoordGlobal, int LogicalItemIndex, int GeomItemIndex) => ElementError[LogicalItemIndex]);
+                } else {
+                    EdgeMask.GetFullMask(this.GridData, MaskType.Logical).SaveToTextFile("error_" + _name + "_" + Species + ".csv", false, (double[] CoordGlobal, int LogicalItemIndex, int GeomItemIndex) => ElementError[LogicalItemIndex]);
+                }
+                */
+
+
+                Assert.Less(l2_err, __threshold, $"relative {name} error above threshold for species {Species}");
+            }
+        }        
+        #endregion
+
+        #region comparison_2Dvs3D
         public void CompareSurfaceTo2D(TestSetupBase othr) {
             CompareTo2D("Level Set Surface", othr, test => test.latestCCM.InterfaceArea, -1);
         }
@@ -387,12 +419,30 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                 Assert.Less(relErr, threshold_2dvs3d, $"relative {name} error above threshold for species {Species}");
             }
         }
-
+        #endregion
 
 
         protected IGrid CreateOrLoadGrid_2D() {
             double[] xNodes = GenericBlas.Linspace(-7, +7, 8);
             double[] yNodes = GenericBlas.Linspace(-7, +7, 8);
+            switch(MeshVariation) {
+                case 0: break;
+                case 1: {
+                    double dx = xNodes[1] - xNodes[0];
+                    xNodes[1] -= dx * 0.3;
+                    xNodes[6] -= dx * 0.3;
+                    yNodes[3] -= dx * 0.1;
+                    break;
+                }
+                case 2: {
+                    ArrayTools.AddToArray(0, ref yNodes);
+                    Array.Sort(yNodes);
+                    break;
+                }
+                default:
+                throw new NotImplementedException("unknown mesh variation");
+            }
+
             xNodes.ScaleV(MeshScaling);
             yNodes.ScaleV(MeshScaling);
 
@@ -403,21 +453,46 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             return grd;
         }
 
-        protected IGrid CreateOrLoadGrid_3D(double zWidht) {
+        protected IGrid CreateOrLoadGrid_3D(double zWidth) {
             const int noOfZnodes = 4;
             double[] xNodes = GenericBlas.Linspace(-7, +7, 8);
             double[] yNodes = GenericBlas.Linspace(-7, +7, 8);
-            double[] zNodes = GenericBlas.Linspace(-3, -3 + zWidht, noOfZnodes);
+            double[] zNodes = GenericBlas.Linspace(-3, -3 + zWidth, noOfZnodes);
+            switch(MeshVariation) {
+                case 0: break;
+                case 1: {
+                    double dx = xNodes[1] - xNodes[0];
+                    xNodes[1] -= dx * 0.3;
+                    xNodes[6] -= dx * 0.3;
+                    yNodes[3] -= dx * 0.1;
+                    break;
+                }
+                case 2: {
+                    ArrayTools.AddToArray(0.0, ref yNodes);
+                    Array.Sort(yNodes);
+                    break;
+                }
+                default:
+                throw new NotImplementedException("unknown mesh variation");
+            }
+
             xNodes.ScaleV(MeshScaling);
             yNodes.ScaleV(MeshScaling);
             zNodes.ScaleV(MeshScaling);
             GridCommons grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
 
 
-            ReferenceResults_3D(zWidht, noOfZnodes);
+            ReferenceResults_3D(zWidth, noOfZnodes);
 
 
             return grd;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public virtual void FurtherChecks() {
+
         }
 
         protected abstract void ReferenceResults_3D(double zWidht, int noOfZnodes);
@@ -451,8 +526,12 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             }
         }
 
+        internal void DoPlot() {
+            PlotCurrentState(0, new TimestepNumber(), 3);
+        }
 
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
+            Tecplot.PlotFields(this.LsTrk.LevelSets.Select(f => f as DGField).ToArray().Cat(SpeciesMarkers.Values), "CutCellQuadratureScaling-Mesh", timestepNo.MajorNumber, 0);
             Tecplot.PlotFields(this.LsTrk.LevelSets.Select(f => f as DGField).ToArray().Cat(SpeciesMarkers.Values), "CutCellQuadratureScaling", timestepNo.MajorNumber, superSampling);
         }
     }
@@ -460,8 +539,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
     abstract class TestSetupSingleLevSetBase : TestSetupBase {
 
-        public TestSetupSingleLevSetBase(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye)
-            : base(meshScaling, cutCellQuadratureOrder, quadratureType) { }
+        public TestSetupSingleLevSetBase(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye, int meshVariation = 0)
+            : base(meshScaling, cutCellQuadratureOrder, quadratureType, meshVariation) { }
 
 
 
@@ -501,8 +580,14 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             TotalIntegral_Volume4Species.Add("A", 14 * 14 - vol2D_B);
             TotalIntegral_Volume4Species.Add("B", vol2D_B);
 
-            TotalIntegral_CutLine.Add("A", 16);
-            TotalIntegral_CutLine.Add("B", 16);
+            if(base.MeshVariation == 2) {
+                // one additional mesh node in y-direction at y = 0
+                TotalIntegral_CutLine.Add("A", 18);
+                TotalIntegral_CutLine.Add("B", 18);
+            } else {
+                TotalIntegral_CutLine.Add("A", 16);
+                TotalIntegral_CutLine.Add("B", 16);
+            }
 
             TotalIntegral_IntersectionLine.Add("A", 0);
             TotalIntegral_IntersectionLine.Add("B", 0);
@@ -521,7 +606,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             TotalIntegral_Volume4Species.Add("B", vol3D_B);
 
             double line3D = (4.0 * 2 * Math.PI) * noOfZnodes; // 4 circles in xy-planes
-            using(var _2D = new TestSetupSingleLevset2D()) {
+            using(var _2D = new TestSetupSingleLevset2D(meshScaling:1, cutCellQuadratureOrder:this.CutCellQuadratureOrder, quadratureType:this.QuadratureType, meshVariation: MeshVariation)) {
                 _2D.Init();
                 _2D.RunSolverMode();
 
@@ -540,8 +625,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
     class TestSetupSingleLevset2D : TestSetupSingleLevSetBase {
 
-        public TestSetupSingleLevset2D(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye)
-            : base(meshScaling, cutCellQuadratureOrder, quadratureType) { }
+        public TestSetupSingleLevset2D(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye, int meshVariation = 0)
+            : base(meshScaling, cutCellQuadratureOrder, quadratureType, meshVariation) { }
 
 
 
@@ -556,6 +641,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                         return 3e-3;
                     } else if (this.CutCellQuadratureOrder <= 7) {
                         return 1e-5;
+                    } else if (this.CutCellQuadratureOrder <= 9) {
+                        return 5e-7;
                     } else {
                         return 5e-8;
                     }
@@ -619,6 +706,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                         return 3e-3;
                     } else if (this.CutCellQuadratureOrder <= 7) {
                         return 1e-5;
+                    } else if (this.CutCellQuadratureOrder <= 8) {
+                        return 5e-5;
                     } else {
                         return 3e-8;
                     }
@@ -682,8 +771,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
     /// </summary>
     class TestSetupSingleLevset3D : TestSetupSingleLevSetBase {
 
-        public TestSetupSingleLevset3D(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye)
-            : base(meshScaling, cutCellQuadratureOrder, quadratureType) {
+        public TestSetupSingleLevset3D(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye, int meshVariation = 0)
+            : base(meshScaling, cutCellQuadratureOrder, quadratureType, meshVariation) {
            
         }
 
@@ -702,7 +791,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                     } else if (this.CutCellQuadratureOrder <= 7) {
                         return 1e-5;
                     } else if (this.CutCellQuadratureOrder <= 8) {
-                        return 1e-7;
+                        return 3e-7;
                     } else {
                         return 5e-8;
                     }
@@ -750,6 +839,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                         return 3e-3;
                     } else  if (this.CutCellQuadratureOrder <= 7) {
                         return 1e-5;
+                    } else  if (this.CutCellQuadratureOrder <= 8) {
+                        return 6e-8;
                     } else {
                         return 3e-8;
                     }
@@ -873,8 +964,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
     abstract class TestSetupTwoLevSetsBase : TestSetupBase {
 
-        public TestSetupTwoLevSetsBase(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye)
-            : base(meshScaling, cutCellQuadratureOrder, quadratureType) { }
+        public TestSetupTwoLevSetsBase(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye, int meshVariation = 0)
+            : base(meshScaling, cutCellQuadratureOrder, quadratureType, meshVariation) { }
 
 
 
@@ -895,8 +986,10 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             var X0 = new double[this.Grid.SpatialDimension]; X0[0] = R;
             Debug.Assert(Phi1_ana(X0).Abs() <= 1.0e-8);
             double Phi2_ana(double[] X) {
-                double y = X[1];
-                return -y;
+                double y = X[1] / this.MeshScaling;
+                double phi = - y;
+                //double phi = y.Pow2() * 0.05 - y;
+                return phi;
             }
 
             Phi1.ProjectField(Phi1_ana);
@@ -955,7 +1048,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             double line3D_A = (4.0 * 2 * Math.PI * 0.5 + 6) * noOfZnodes; // `noOfZnodes` half-circles in xy-planes + 2*3
             double line3D_B = (4.0 * 2 * Math.PI * 0.5 + 8) * noOfZnodes; // `noOfZnodes` half-circles in xy-planes + 8
             double line3D_C = 14 * noOfZnodes;  // `noOfZnodes` lines from left to right
-            using(var _2D = new TestSetupTwoLevSets2D()) {
+            using(var _2D = new TestSetupTwoLevSets2D(cutCellQuadratureOrder:this.CutCellQuadratureOrder, quadratureType: this.QuadratureType, meshVariation:this.MeshVariation)) {
                 _2D.Init();
                 _2D.RunSolverMode();
 
@@ -972,13 +1065,177 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             TotalIntegral_IntersectionLine.Add("B", 2 * zWidht);
             TotalIntegral_IntersectionLine.Add("C", 2 * zWidht);
         }
+
+        void NodesInSpeciesAdomain(IEnumerable<Vector> nodes, string message) {
+            var eps = Math.Sqrt(GenericBlas.MachineEps) * this.MeshScaling;
+            double R = 4.0 * this.MeshScaling;
+            foreach(var pt in nodes) {
+                Assert.IsTrue((pt.y >= -eps) && ((pt.x.Pow2() + pt.y.Pow2()).Sqrt() >= R - eps), $"Some quadrature point outside of domain A (testing: {message})");
+            }
+        }
+        void NodesInSpeciesBdomain(IEnumerable<Vector> nodes, string message) {
+            var eps = Math.Sqrt(GenericBlas.MachineEps) * this.MeshScaling;
+            double R = 4.0 * this.MeshScaling;
+            foreach(var pt in nodes) {
+                Assert.IsTrue((pt.y >= -eps) && ((pt.x.Pow2() + pt.y.Pow2()).Sqrt() <= R + eps), $"Some quadrature point outside of domain B (testing: {message})");
+            }
+        }
+        void NodesInSpeciesCdomain(IEnumerable<Vector> nodes, string message) {
+            var eps = Math.Sqrt(GenericBlas.MachineEps) * this.MeshScaling;
+            double R = 4.0 * this.MeshScaling;
+            foreach(var pt in nodes) {
+                Assert.IsTrue((pt.y <= +eps), $"Some quadrature point outside of domain C (testing: {message})");
+            }
+        }
+
+        void NodesIn0ABinterface(IEnumerable<Vector> nodes, string message) {
+            NodesInSpeciesAdomain(nodes, message);
+            NodesInSpeciesBdomain(nodes, message);
+        }
+
+        void NodesIn1ACinterface(IEnumerable<Vector> nodes, string message) {
+            NodesInSpeciesAdomain(nodes, message);
+            NodesInSpeciesCdomain(nodes, message);
+        }
+        void NodesIn1CBinterface(IEnumerable<Vector> nodes, string message) {
+            NodesInSpeciesBdomain(nodes, message);
+            NodesInSpeciesCdomain(nodes, message);
+        }
+
+        IEnumerable<Vector> GetNonEmptyNodesCell<Q>(ICompositeQuadRule<Q> compositeRule) where Q : QuadRule {
+            int D = this.GridData.SpatialDimension;
+
+            var ret = new List<Vector>();
+            foreach(IChunkRulePair<QuadRule> pair in compositeRule) {
+                if(pair.Rule.Weights.To1DArray().Any(wk => wk < 0)) {
+                    Console.WriteLine("got some rule with negative weights, probably from `ComplementaryRuleFactory`; ignoring this for test.");
+                    continue;
+                }
+
+
+                MultidimensionalArray globalNodes = this.GridData.GlobalNodes.GetValue_Cell(pair.Rule.Nodes, pair.Chunk.i0, pair.Chunk.Len);
+                foreach(var cell in pair.Chunk.Elements.AsSmartEnumerable()) {
+                    var cellNodes = globalNodes.ExtractSubArrayShallow(cell.Index, -1, -1);
+
+                    for(int n = 0; n < pair.Rule.NoOfNodes; n++) {
+
+                        var node = cellNodes.GetRowPt(n);
+                        if(pair.Rule.Weights[n] != 0.0)
+                            ret.Add(node);
+
+                    }
+                }
+
+            }
+
+            return ret;
+        }
+
+        IEnumerable<Vector> GetNonEmptyNodesEdge(ICompositeQuadRule<QuadRule> compositeRule) {
+            int D = this.GridData.SpatialDimension;
+
+            var ret = new List<Vector>();
+            foreach(IChunkRulePair<QuadRule> pair in compositeRule) {
+                if(pair.Rule.Weights.To1DArray().Any(wk => wk < 0)) {
+                    Console.WriteLine("got some rule with negative weights, probably from `ComplementaryRuleFactory`; ignoring this for test."); 
+                    continue;
+                }
+
+                MultidimensionalArray globalNodes = this.GridData.GlobalNodes.GetValue_EdgeSV(pair.Rule.Nodes, pair.Chunk.i0, pair.Chunk.Len);
+                foreach(var edge in pair.Chunk.Elements.AsSmartEnumerable()) {
+                    var edgeNodes = globalNodes.ExtractSubArrayShallow(edge.Index, -1, -1);
+                    for(int n = 0; n < pair.Rule.NoOfNodes; n++) {
+                        Vector node = edgeNodes.GetRowPt(n);
+                        if(pair.Rule.Weights[n] != 0.0)
+                            ret.Add(node);
+                    }
+                }
+            }
+            return ret;
+        }
+
+
+        public override void FurtherChecks() {
+            if(this.LsTrk.CutCellQuadratureType == CutCellQuadratureMethod.Saye
+                || this.LsTrk.CutCellQuadratureType == CutCellQuadratureMethod.Algoim) {
+                // other rules, e.g. HMF, produce nodes outside of the species domain (with negative weights), so these checks make no sense.
+
+                var spA = LsTrk.GetSpeciesId("A");
+                var spB = LsTrk.GetSpeciesId("B");
+                var spC = LsTrk.GetSpeciesId("C");
+
+                var schH = latestCCM.XDGSpaceMetrics.XQuadSchemeHelper;
+                int order = latestCCM.CutCellQuadratureOrder;
+
+                var SurfElmEdge_0AB = schH.Get_SurfaceElement_EdgeQuadScheme(spA, spB, 0).Compile(this.GridData, order);
+                var SurfElmEdge_1AC = schH.Get_SurfaceElement_EdgeQuadScheme(spA, spC, 1).Compile(this.GridData, order);
+                var SurfElmEdge_1CB = schH.Get_SurfaceElement_EdgeQuadScheme(spC, spB, 1).Compile(this.GridData, order);
+
+                var SurfElmVol_0AB = schH.Get_SurfaceElement_VolumeQuadScheme(spA, spB, 0).Compile(this.GridData, order);
+                var SurfElmVol_1AC = schH.Get_SurfaceElement_VolumeQuadScheme(spA, spC, 1).Compile(this.GridData, order);
+                var SurfElmVol_1CB = schH.Get_SurfaceElement_VolumeQuadScheme(spC, spB, 1).Compile(this.GridData, order);
+
+                var Vol_A = schH.GetVolumeQuadScheme(spA).Compile(this.GridData, order);
+                var Vol_B = schH.GetVolumeQuadScheme(spB).Compile(this.GridData, order);
+                var Vol_C = schH.GetVolumeQuadScheme(spC).Compile(this.GridData, order);
+
+                var Edg_A = schH.GetEdgeQuadScheme(spA).Compile(this.GridData, order);
+                var Edg_B = schH.GetEdgeQuadScheme(spB).Compile(this.GridData, order);
+                var Edg_C = schH.GetEdgeQuadScheme(spC).Compile(this.GridData, order);
+
+                SurfElmEdge_0AB.SaveToTextFileEdge(this.GridData, "SurfElmEdge_0AB.csv", false);
+                SurfElmEdge_1AC.SaveToTextFileEdge(this.GridData, "SurfElmEdge_1AC.csv", false);
+                SurfElmEdge_1CB.SaveToTextFileEdge(this.GridData, "SurfElmEdge_1CB.csv", false);
+
+                SurfElmEdge_0AB.SaveWeightSumToTextFileEdge(this.GridData, "SurfElmEdgeSum_0AB.csv", false);
+                SurfElmEdge_1AC.SaveWeightSumToTextFileEdge(this.GridData, "SurfElmEdgeSum_1AC.csv", false);
+                SurfElmEdge_1CB.SaveWeightSumToTextFileEdge(this.GridData, "SurfElmEdgeSum_1CB.csv", false);
+
+                SurfElmVol_0AB.SaveToTextFileCell(this.GridData, "SurfElmVol_0AB.csv", false);
+                SurfElmVol_1AC.SaveToTextFileCell(this.GridData, "SurfElmVol_1AC.csv", false);
+                SurfElmVol_1CB.SaveToTextFileCell(this.GridData, "SurfElmVol_1CB.csv", false);
+
+                SurfElmVol_0AB.SaveWeightSumToTextFileCell(this.GridData, "SurfElmVolSum_0AB.csv", false);
+                SurfElmVol_1AC.SaveWeightSumToTextFileCell(this.GridData, "SurfElmVolSum_1AC.csv", false);
+                SurfElmVol_1CB.SaveWeightSumToTextFileCell(this.GridData, "SurfElmVolSum_1CB.csv", false);
+
+                Vol_A.SaveToTextFileCell(this.GridData, "Vol_A.csv", false);
+                Vol_B.SaveToTextFileCell(this.GridData, "Vol_B.csv", false);
+                Vol_C.SaveToTextFileCell(this.GridData, "Vol_C.csv", false);
+
+                Edg_A.SaveToTextFileEdge(this.GridData, "Edg_A.csv", false);
+                Edg_B.SaveToTextFileEdge(this.GridData, "Edg_B.csv", false);
+                Edg_C.SaveToTextFileEdge(this.GridData, "Edg_C.csv", false);
+
+               
+
+
+                NodesIn0ABinterface(GetNonEmptyNodesEdge(SurfElmEdge_0AB), "surface element edge 0AB");
+                NodesIn1ACinterface(GetNonEmptyNodesEdge(SurfElmEdge_1AC), "surface element edge 1AC");
+                NodesIn1CBinterface(GetNonEmptyNodesEdge(SurfElmEdge_1CB), "surface element edge 1CB");
+
+                NodesIn0ABinterface(GetNonEmptyNodesCell(SurfElmVol_0AB), "surface element volume 0AB");
+                NodesIn1ACinterface(GetNonEmptyNodesCell(SurfElmVol_1AC), "surface element volume 1AC");
+                NodesIn1CBinterface(GetNonEmptyNodesCell(SurfElmVol_1CB), "surface element volume 1CB");
+
+                NodesInSpeciesAdomain(GetNonEmptyNodesCell(Vol_A), "volume A");
+                NodesInSpeciesBdomain(GetNonEmptyNodesCell(Vol_B), "volume A");
+                NodesInSpeciesCdomain(GetNonEmptyNodesCell(Vol_C), "volume A");
+
+                // Note: for 3D/Saye, still the complementary rule is used; therefore, we have nodes outside of the species
+                NodesInSpeciesAdomain(GetNonEmptyNodesEdge(Edg_A), "edge A");
+                NodesInSpeciesBdomain(GetNonEmptyNodesEdge(Edg_B), "edge A");
+                NodesInSpeciesCdomain(GetNonEmptyNodesEdge(Edg_C), "edge A");
+                
+            }
+        }
     }
 
 
     class TestSetupTwoLevSets2D : TestSetupTwoLevSetsBase {
 
-        public TestSetupTwoLevSets2D(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye)
-            : base(meshScaling, cutCellQuadratureOrder, quadratureType) { }
+        public TestSetupTwoLevSets2D(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye, int meshVariation = 0)
+            : base(meshScaling, cutCellQuadratureOrder, quadratureType, meshVariation) { }
 
 
 
@@ -1008,15 +1265,21 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                     }
                 }
 
-                //if(QuadratureType == CutCellQuadratureMethod.Algoim) {
-                //    if(this.CutCellQuadratureOrder <= 4) {
-                //        return 1e-2;
-                //    } else if(this.CutCellQuadratureOrder <= 7) {
-                //        return 1e-5;
-                //    } else {
-                //        return 4e-7;
-                //    }
-                //}
+                if(QuadratureType == CutCellQuadratureMethod.Algoim) {
+                    if(this.CutCellQuadratureOrder <= 4) {
+                        return 1e-2;
+                    } else if(this.CutCellQuadratureOrder <= 7) {
+                        return 3e-5;
+                    } else if(this.CutCellQuadratureOrder <= 8) {
+                        return 9e-6;
+                    } else if(this.CutCellQuadratureOrder <= 9) {
+                        return 4e-6;
+                    } else if(this.CutCellQuadratureOrder <= 10) {
+                        return 1e-6;
+                    } else {
+                        return 4e-7;
+                    }
+                }
 
 
                 //if(QuadratureType == CutCellQuadratureMethod.OneStepGauss) {
@@ -1071,15 +1334,19 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                     }
                 }
 
-                //if(QuadratureType == CutCellQuadratureMethod.Algoim) {
-                //    if(this.CutCellQuadratureOrder <= 4) {
-                //        return 1e-2;
-                //    } else if(this.CutCellQuadratureOrder <= 9) {
-                //        return 4e-6;
-                //    } else {
-                //        return 1e-8;
-                //    }
-                //}
+                if(QuadratureType == CutCellQuadratureMethod.Algoim) {
+                    if(this.CutCellQuadratureOrder <= 4) {
+                        return 1e-2;
+                    } else if(this.CutCellQuadratureOrder <= 7) {
+                        return 5e-5;
+                    } else if(this.CutCellQuadratureOrder <= 9) {
+                        return 3e-5;
+                    } else if(this.CutCellQuadratureOrder <= 10) {
+                        return 3e-6;
+                    } else {
+                        return 1e-8;
+                    }
+                }
 
                 //if(QuadratureType == CutCellQuadratureMethod.OneStepGauss) {
                 //    if(this.CutCellQuadratureOrder <= 4) {
@@ -1119,8 +1386,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
     /// </summary>
     class TestSetupTwoLevSets3D : TestSetupTwoLevSetsBase {
 
-        public TestSetupTwoLevSets3D(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye)
-            : base(meshScaling, cutCellQuadratureOrder, quadratureType) {
+        public TestSetupTwoLevSets3D(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye, int meshVariation = 0)
+            : base(meshScaling, cutCellQuadratureOrder, quadratureType, meshVariation) {
 
         }
 
@@ -1252,6 +1519,15 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         protected override double threshold_scaling {
             get {
                 if(QuadratureType == CutCellQuadratureMethod.Saye) {
+                    if(this.CutCellQuadratureOrder <= 4)
+                        return 1.0e-4;
+                    if(this.CutCellQuadratureOrder <= 7)
+                        return 1.0e-7;
+
+                    return 1.0e-8;
+                }
+
+                if(QuadratureType == CutCellQuadratureMethod.Algoim) {
                     if(this.CutCellQuadratureOrder <= 4)
                         return 1.0e-4;
                     if(this.CutCellQuadratureOrder <= 7)

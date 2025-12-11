@@ -7,6 +7,7 @@ using IntersectingQuadrature;
 using IntersectingQuadrature.Tensor;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using static BoSSS.Foundation.XDG.LevelSetTracker;
 
@@ -41,19 +42,28 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             List<ChunkRulePair<QuadRule>> rules = new List<ChunkRulePair<QuadRule>>();
 
             foreach(int j in mask.ItemEnum) {
+                QuadRule rule;
+                bool restore = ilPSP.Environment.StdOut.surpressStream0;
                 try {
-                    QuadRule rule = GetQuadRule(j, order);
+                    ilPSP.Environment.StdOut.surpressStream0 = true;
+                    rule = GetQuadRule(j, order);
                     if(rule.NoOfNodes == 0) {
                         rule = QuadRule.CreateBlank(RefElement, 1, RefElement.SpatialDimension);
                         rule.OrderOfPrecision = order;
                         rule.Nodes.LockForever();
                     }
-                    rule.OrderOfPrecision = order;
-                    rules.Add(new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(j), rule));
                 } catch(Exception e) {
+                    Console.Error.WriteLine("Intersecting Quadrature, cell " + j + ": " + e.Message + ", defaulting to empty rule");
+
+                    /*
+
 
                     var grid = mask.GridData.Grid as GridCommons;
                     if(grid != null) {
+
+                        XQuadFactoryHelper.Plot();
+
+
                         Console.Error.WriteLine("Cell: ");
                         Console.Error.WriteLine(grid.Cells[j].ToString());
 
@@ -64,8 +74,18 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
                         Console.Error.WriteLine("DG coordinates of level set beta: " + lsBeta.Coordinates.GetRow(j).ToConcatString("[", ", ", "]"));
                     }
 
-                    throw e;
+                    */
+                    //throw e;
+
+                    rule = QuadRule.CreateBlank(RefElement, 1, RefElement.SpatialDimension);
+                    rule.OrderOfPrecision = order;
+                    rule.Nodes.LockForever();
+                } finally {
+                    ilPSP.Environment.StdOut.surpressStream0 = restore;
                 }
+                rule.OrderOfPrecision = order;
+                rules.Add(new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(j), rule));
+
             }
             return rules;
         }

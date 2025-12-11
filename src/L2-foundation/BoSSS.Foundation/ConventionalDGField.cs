@@ -283,7 +283,7 @@ namespace BoSSS.Foundation {
         /// accumulates the derivative of DG field <paramref name="f"/> 
         /// (along the <paramref name="d"/>-th axis) times <paramref name="alpha"/>
         /// to this field, i.e. <br/>
-        /// this = this + <paramref name="alpha"/>* \f$ \frac{\partial}{\partial x_d} \f$ <paramref name="f"/>;
+        /// this = this + <paramref name="alpha"/>* $\frac{\partial}{\partial x_d}$ <paramref name="f"/>;
         /// </summary>
         /// <param name="f"></param>
         /// <param name="d">

@@ -109,7 +109,7 @@ namespace BoSSS.Solution.XNSECommon {
 
                 //var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, LsTrk.GetSpeciesId("A"));
                 var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, order, HistInd).XQuadSchemeHelper;
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.RegionsHistory[HistInd].GetCutCellMask());
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.RegionsHistory[HistInd].GetCutCellMask());
 
                 CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                     cqs.Compile(LsTrk.GridDat, order),
@@ -174,7 +174,7 @@ namespace BoSSS.Solution.XNSECommon {
             ScalarFunctionEx dilViscEnergyFunc = GetInterfaceDivergenceFunc(LsTrk, uI, true);
 
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, momentFittingOrder, 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
 
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 cqs.Compile(LsTrk.GridDat, momentFittingOrder),
@@ -278,7 +278,7 @@ namespace BoSSS.Solution.XNSECommon {
             ScalarFunctionEx shearViscEnergyFunc = GetInterfaceShearViscosityEnergyCRFunc(LsTrk, uI, false);
 
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, momentFittingOrder, 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
 
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 cqs.Compile(LsTrk.GridDat, momentFittingOrder),
@@ -978,7 +978,7 @@ namespace BoSSS.Solution.XNSECommon {
             ScalarFunctionEx energyBalFunc = GetEnergyBalanceFunc(P, U, Umean, C, muA, muB, sigma, true);
 
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, momentFittingOrder, 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
 
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 cqs.Compile(LsTrk.GridDat, momentFittingOrder),
@@ -1004,7 +1004,7 @@ namespace BoSSS.Solution.XNSECommon {
             ScalarFunctionEx ErrFunc = GetEnergyBalanceFunc(P, U, Umean, C, muA, muB, sigma, true);
 
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, momentFittingOrder, 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
 
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 cqs.Compile(LsTrk.GridDat, momentFittingOrder),
@@ -1078,7 +1078,7 @@ namespace BoSSS.Solution.XNSECommon {
             ScalarFunctionEx surfChangerateFunc = GetInterfaceDivergenceFunc(LsTrk, uI, false);
 
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, momentFittingOrder, 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
 
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 cqs.Compile(LsTrk.GridDat, momentFittingOrder),
@@ -1176,7 +1176,7 @@ namespace BoSSS.Solution.XNSECommon {
             ScalarFunctionEx EnergyJumpFunc = GetEnergyJumpFunc(LsTrk, Velocity, Pressure, muA, muB, Norm);
 
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, momentFittingorder, 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
 
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 cqs.Compile(LsTrk.GridDat, momentFittingorder),
@@ -1203,7 +1203,7 @@ namespace BoSSS.Solution.XNSECommon {
             double Changerate_Surface = 0.0;
 
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, momentFittingorder, 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
 
             ScalarFunctionEx SurfaceChangerate = GetInterfaceDivergenceFunc(LsTrk, uI, Norm);
 
@@ -1281,7 +1281,7 @@ namespace BoSSS.Solution.XNSECommon {
             double EnergyCurv = 0.0;
 
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, momentFittingorder, 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
 
             ScalarFunctionEx CurvEnergyFunc = GetCurvatureEnergyFunc(LsTrk, Curvature, sigma, uI, ExtVel, Norm);
 

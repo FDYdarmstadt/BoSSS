@@ -20,7 +20,7 @@ namespace HFSISolver.ContactLine {
             codomainName = BoSSS.Solution.NSECommon.EquationNames.MomentumEquationComponent(d);
             AddContactLineComponent(new LaplaceBeltramiEquilibriumForm(d, D, -1, "A"));
             AddContactLineComponent(new LaplaceBeltramiEquilibriumForm(d, D, -1, "B"));
-            AddContactLineComponent(new LaplaceBeltramiEquilibriumForm(d, D, 1, "C"));
+            AddContactLineComponent(new LaplaceBeltramiEquilibriumForm(d, D, 2, "C"));
 
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.NormalVector(D)

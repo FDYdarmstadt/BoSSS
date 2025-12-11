@@ -184,9 +184,37 @@ namespace BoSSS.Foundation.XDG {
             return r;
         }
 
+        private int NoOfFilteredComponents(IDifferentialOperator op, string species) {
+            //, bool[] RowSwitch, LevelSetTracker lsTrk, string species, int order, EdgeQuadratureScheme eqs, CellQuadratureScheme cqs, int TrackerHistory, IDictionary< SpeciesId, MultidimensionalArray > CellLenScales, IDictionary<SpeciesId, MultidimensionalArray> EdgLenScales
+
+            int Ret = 0;
+            int iRow = -1;
+            foreach(string comps in op.CodomainVar) { // loop over rows
+                iRow++;
+
+                foreach(IEquationComponent iec in op.EquationComponents[comps]) {
+                    //m_SpatialOperator.EquationComponents[comps].Add(iec);
+
+                    if(iec is ISpeciesFilter fiec && fiec.ValidSpecies != null && species.IsNonEmpty()) {
+                        string spcNmn = fiec.ValidSpecies;
+
+                        if(!this.Species.Contains(spcNmn)) {
+                            throw new ArgumentException("error in equation components for key \"" + comps + "\" SpeciesId defined in ISpeciesFilter is not given in m_Species");
+                        }
+
+                        if(species.Equals(fiec.ValidSpecies)) {
+                            Ret++;
+                        }
+                    } else {
+                        // no species filter defined: per default, valid for all species.
+                        Ret++;
+                    }
+                }
+            }
+            return Ret;
+        }
 
 
-  
 
         //==========================================================================================================================
         // Taken from old XSpatialOperator
@@ -519,8 +547,12 @@ namespace BoSSS.Foundation.XDG {
                 throw new NotSupportedException("CopyTo value type -- probably not the expected result! (Using vector struct in CopyTo(...) - operation?)");
 #endif
                 int L = this.Count;
-                for(int i = 0; i < L; i++)
-                    array[i + arrayIndex] = this[i];
+                for(int i = 0; i < L; i++) {
+                    int idx_full = fr.Frame2Full_Loc(i);
+                    if(idx_full >= 0) {
+                        array[i + arrayIndex] = m_Full[idx_full];
+                    }
+                }
             }
 
             /// <summary>
@@ -1417,6 +1449,8 @@ namespace BoSSS.Foundation.XDG {
                    this.QuadOrderFunction,
                    this.Species.ToArray());
 
+            JacobianOp.AgglomerationThreshold = this.AgglomerationThreshold;
+
             JacobianOp.FluxesAreNOTMultithreadSafe = this.FluxesAreNOTMultithreadSafe;
 
             if (this.TemporalOperator != null)
@@ -1603,7 +1637,7 @@ namespace BoSSS.Foundation.XDG {
 
 
         static CellQuadratureScheme DefaultCouplingSchemeProvider(LevelSetTracker lsTrk, int iLevSet, SpeciesId SpeciesA, SpeciesId SpeciesB, CellMask IntegrationDomain, XQuadSchemeHelper SchemeHelper, int quadOrder, int TrackerHistory) {
-            CellQuadratureScheme SurfIntegration = SchemeHelper.GetLevelSetquadScheme(iLevSet, SpeciesA, IntegrationDomain);
+            CellQuadratureScheme SurfIntegration = SchemeHelper.GetLevelSetQuadScheme(iLevSet, SpeciesA, SpeciesB, IntegrationDomain);
             return SurfIntegration;
 
         }

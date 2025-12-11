@@ -164,7 +164,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         public readonly double Density;
 
         /// <summary>
-        /// The momentum vector $\rho \vec{u}$.
+        /// The momentum vector $\rho \underline{u}$.
         /// </summary>
         public readonly Vector Momentum;
 
@@ -184,7 +184,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// <summary>
         /// Calculates the velocity from <see cref="Momentum"/> and <see cref="Density"/>.
         /// </summary>
-        /// <returns>$\vec{m} / \rho$</returns>
+        /// <returns>$\underline{m} / \rho$</returns>
         public Vector Velocity {
             get {
                 Debug.Assert(Momentum.Dim > 0);
@@ -196,7 +196,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
 
         /// <summary>
         /// Calculates the kinetic energy $K$ via
-        /// $K = \frac{1}{2} \frac{\vec{m} \cdot \vec{m}}{\rho}$
+        /// $K = \frac{1}{2} \frac{\underline{m} \cdot \underline{m}}{\rho}$
         /// </summary>
         public double KineticEnergy {
             get {
@@ -210,7 +210,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
 
         /// <summary>
         /// Calculates the specific kinetic energy \f$ k \f$ via
-        ///  \f$ k = \frac{1}{2} \vec{u} \cdot \vec{u} \f$
+        ///  \f$ k = \frac{1}{2} \underline{u} \cdot \underline{u} \f$
         /// </summary>
         public double SpecificKineticEnergy {
             get {
@@ -288,7 +288,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
 
         /// <summary>
         /// Calculates the Mach number Ma via
-        /// \f$ \mathrm{Ma} = \frac{\sqrt{\vec{u} \cdot \vec{u}}}{a}\f$ 
+        /// \f$ \mathrm{Ma} = \frac{\sqrt{\underline{u} \cdot \underline{u}}}{a}\f$ 
         /// where a is the speed of sound (<see cref="SpeedOfSound"/>).
         /// </summary>
         public double LocalMachNumber {

@@ -40,9 +40,9 @@ namespace ZwoLevelSetSolver.Boundary {
             double maxViscosity = Math.Max(viscosity, material.Viscosity);
             if(sliplength == 0.0) {
                 Console.Write("using no slip. ");
-                //AddComponent(new NoSlipVelocityPenaltyForm(fluidSpecies, solidSpecies, d, D, 1, maxViscosity, maxViscosity));
-                AddComponent(new NoSlipVelocityPenaltyFormNormal(fluidSpecies, solidSpecies, d, D, 1, maxViscosity, material.Lame2, sliplength));
-                AddComponent(new NoSlipVelocityPenaltyFormTangential(fluidSpecies, solidSpecies, d, D, 1, maxViscosity, material.Lame2, sliplength));
+                AddComponent(new NoSlipVelocityPenaltyForm(fluidSpecies, solidSpecies, d, D, 1, maxViscosity, maxViscosity));
+                //AddComponent(new NoSlipVelocityPenaltyFormNormal(fluidSpecies, solidSpecies, d, D, 1, maxViscosity, material.Lame2, sliplength));
+                //AddComponent(new NoSlipVelocityPenaltyFormTangential(fluidSpecies, solidSpecies, d, D, 1, maxViscosity, material.Lame2, sliplength));
             } else if(double.IsInfinity(sliplength)) {
                 Console.Write("using slip. Not implemented yet!!!");
                 AddComponent(new SlipVelocityPenaltyForm(fluidSpecies, solidSpecies, d, D, 1, maxViscosity, maxViscosity));

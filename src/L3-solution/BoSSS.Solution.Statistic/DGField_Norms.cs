@@ -333,11 +333,11 @@ namespace BoSSS.Solution.Statistic {
 
         /// <summary>
         /// L2 norm of a DG field, without the mean value (i.e. typically a norm used for hydrodynamic pressure, where the mean value is not relevant).
-        /// I.e., for some field $`f `$, we compute $ \left| f -  \langle f \rangle \right| $, where $` \langle f \rangle `$ is the average value;
+        /// I.e., for some field $f$, we compute $\left| f -  \langle f \rangle \right|$, where $\langle f \rangle$ is the average value;
         /// Therefore, we have the relation
-        /// ```math
+        /// \[
         ///   \left| f -  \langle f \rangle \right|^2 = \left| f \right|^2 - \langle f \rangle^2 | \Omega |
-        /// ```
+        /// \]
         /// </summary>
         static public double L2Norm_IgnoreMean(this DGField A, CellMask domain = null) {
 

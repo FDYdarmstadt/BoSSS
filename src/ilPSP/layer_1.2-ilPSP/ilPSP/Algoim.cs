@@ -42,21 +42,21 @@ namespace ilPSP.Utils {
         // https://connect.microsoft.com/VisualStudio/feedback/details/635365/runtimehelpers-initializearray-fails-on-64b-framework
         public static PlatformID[] GetPlatformID(Parallelism par) {
             switch (par) {
-                case Parallelism.SEQ: return new PlatformID[] { PlatformID.Win32NT, PlatformID.Win32NT, PlatformID.Win32NT, PlatformID.Unix };
+                case Parallelism.SEQ: return new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix };
                 default: throw new ArgumentOutOfRangeException();
             }
         }
 
         public static string[] GetLibname(Parallelism par) {
             switch (par) {
-                case Parallelism.SEQ: return new string[] { "Algoimwrapper.dll", "Algoimwrapper.dll", "Algoimwrapper.dll", "libBoSSSnative_seq.so" };
+                case Parallelism.SEQ: return new string[] { "Algoimwrapper.dll", "libBoSSSnative_seq.so" };
                 default: throw new ArgumentOutOfRangeException();
             }
         }
 
         public static GetNameMangling[] GetGetNameMangling(Parallelism par) {
             switch (par) {
-                case Parallelism.SEQ: return new GetNameMangling[] { DynLibLoader.BoSSS_Prefix, DynLibLoader.BoSSS_Prefix, DynLibLoader.BoSSS_Prefix, DynLibLoader.BoSSS_Prefix };
+                case Parallelism.SEQ: return new GetNameMangling[] { DynLibLoader.BoSSS_Prefix, DynLibLoader.BoSSS_Prefix };
                 default: throw new ArgumentOutOfRangeException();
             }
         }
@@ -1020,10 +1020,166 @@ namespace ilPSP.Utils {
 			return retArray;
 		}
 
-		internal static void ActivateSEQ() {
-            m_Algoim = m_seq_Algoim;
+        
+        public static void TwoLsIsFucked1() {
+            Func<double, double, double, double> LS1 = (x, y, z) => (x * (0.5000000000000009) + x * x * (-0.062499999999999264) + y * y * (-0.06249999999999994));
+            //Func<double, double, double, double> LS1 = (x, y, z) => -x;
+            Func<double, double, double, double> LS2 = (x, y, z) => (y * (-1.0));
+
+            int n = 3; // number of points in one axis (degree + 1) 
+            int spaceDim = 3;
+            int degree = 8;
+
+            //create Chebyshev nodes (must be identical with Algoim, otherwise leads to interpolation errors for high orders)
+            double[] pointsA = GenericBlas.ChebyshevNodesSecondKind(-1.0, 1.0, n);
+            double[] pointsB = pointsA; //same for B
+
+            //Cartesian pair product for the points
+            int numberOfCombinations = (int)Math.Pow(pointsA.Length, spaceDim);
+            MultidimensionalArray combinations = MultidimensionalArray.CreateCartesianPairProduct(pointsA, spaceDim);
+
+            // initiate arrays and assign values
+            double[] yA = new double[numberOfCombinations];
+            double[] yB = new double[numberOfCombinations];
+
+            for(int i = 0; i < numberOfCombinations; i++) {
+                yA[i] = LS1(combinations[i, 0], combinations[i, 1], combinations[i, 2]); // calculate the level set function y=LS(x) where x coordinate vector x=(x1, x2)
+                yB[i] = LS2(combinations[i, 0], combinations[i, 1], combinations[i, 2]); // calculate the level set function y=LS(x) where x coordinate vector x=(x1, x2)
+            }
+
+
+            double[] xA = new double[pointsA.Length * 3]; //same for xB
+            Array.Copy(pointsA, 0, xA, 0, pointsA.Length);
+            Array.Copy(pointsA, 0, xA, pointsA.Length, pointsA.Length);
+            Array.Copy(pointsA, 0, xA, pointsA.Length * 2, pointsA.Length);
+            double[] xB = xA;
+
+            int[] sA = { n, n, n };
+            int[] sB = sA;   //same for sB
+
+            QuadScheme[] retArray = new QuadScheme[2];
+            unsafe {
+                QuadSchemeUnmanaged* retC = m_Algoim.getUnmanagedSurfaceSchemeTwoLS(spaceDim, n, n, degree, sA, sB, xA, xB, yA, yB);
+
+                for(int k = 0; k < 2; ++k) {
+                    
+
+
+                    var scheme = retC[k];
+                    QuadScheme ret = new QuadScheme(scheme);
+                    scheme.FreeMemory();
+                    retArray[k] = ret;
+                    ret.OutputQuadratureRuleAsVtpXML("AlgoimVolTwoLSTestP" + degree + "_" + k + ".vtp");
+
+                    double totSum = ret.weights.Sum();
+                    double negSum = 0, posSum = 0;
+                    for(int iNode = 0; iNode < ret.length; ++iNode) {
+                        double x = ret.nodes[iNode * 3 + 0];
+                        double y = ret.nodes[iNode * 3 + 1];
+                        double z = ret.nodes[iNode * 3 + 2];
+
+                        var phi = k == 0 ? LS2(x, y, z) : LS1(x, y, z);
+
+                        if(phi > 0)
+                            posSum += ret.weights[iNode];
+                        else
+                            negSum += ret.weights[iNode];
+                    }
+
+                    if((negSum - posSum).Abs() > 1.0e-5)
+                        throw new ArithmeticException("negative and positive sum are expected to be equal");
+
+                }
+            }
         }
 
+        
+        public static void TwoLsIsSuperFucked1() {
+            Func<double, double, double, double> LS1 = (x, y, z) => (1 * (-0.15625000000000508) + x * (0.6987499999999991) + y * (0.013749999999994784) + z * (9.119497664838425E-15) + x * x * (-0.10562499999999121) + x * y * (1.2348678151111147E-14) + y * y * (-0.0756250000000045) + x * z * (-1.3768636507547957E-14) + y * z * (5.042739303817699E-15) + z * z * (-1.311533921364744E-16));
+            Func<double, double, double, double> LS2 = (x, y, z) => (1 * (0.10000000000000446) + x * (3.464783489933887E-15) + y * (-1.1000000000000052) + z * (-9.510070741873206E-15) + x * x * (-7.792146556307487E-15) + x * y * (-8.149043228980967E-15) + y * y * (8.073945795972057E-15) + x * z * (9.922952887082105E-15) + y * z * (-1.3359009991190304E-15) + z * z * (2.4806065697612995E-15));
+
+
+
+            
+            int n = 3; // number of points in one axis (degree + 1) 
+            int spaceDim = 3;
+            int degree = 8;
+
+            //create Chebyshev nodes (must be identical with Algoim, otherwise leads to interpolation errors for high orders)
+            double[] pointsA = GenericBlas.ChebyshevNodesSecondKind(-1.0, 1.0, n);
+            double[] pointsB = pointsA; //same for B
+
+            //Cartesian pair product for the points
+            int numberOfCombinations = (int)Math.Pow(pointsA.Length, spaceDim);
+            MultidimensionalArray combinations = MultidimensionalArray.CreateCartesianPairProduct(pointsA, spaceDim);
+
+            // initiate arrays and assign values
+            double[] yA = new double[numberOfCombinations];
+            double[] yB = new double[numberOfCombinations];
+
+            for(int i = 0; i < numberOfCombinations; i++) {
+                yA[i] = LS1(combinations[i, 0], combinations[i, 1], combinations[i, 2]); // calculate the level set function y=LS(x) where x coordinate vector x=(x1, x2)
+                yB[i] = LS2(combinations[i, 0], combinations[i, 1], combinations[i, 2]); // calculate the level set function y=LS(x) where x coordinate vector x=(x1, x2)
+            }
+
+
+            double[] xA = new double[pointsA.Length * 3]; //same for xB
+            Array.Copy(pointsA, 0, xA, 0, pointsA.Length);
+            Array.Copy(pointsA, 0, xA, pointsA.Length, pointsA.Length);
+            Array.Copy(pointsA, 0, xA, pointsA.Length * 2, pointsA.Length);
+            double[] xB = xA;
+
+            int[] sA = { n, n, n };
+            int[] sB = sA;   //same for sB
+
+            QuadScheme[] retArray = new QuadScheme[4];
+            unsafe {
+                // app does not survive the following call:
+                QuadSchemeUnmanaged* retC = m_Algoim.getUnmanagedVolumeSchemeTwoLS(spaceDim, n, n, degree, sA, sB, xA, xB, yA, yB);
+
+                
+                for(int k = 0; k < 4; ++k) {
+
+
+
+                    var scheme = retC[k];
+                    QuadScheme ret = new QuadScheme(scheme);
+                    scheme.FreeMemory();
+                    retArray[k] = ret;
+                    ret.OutputQuadratureRuleAsVtpXML("AlgoimVolTwoLSTestP" + degree + "_" + k + ".vtp");
+
+                    //double totSum = ret.weights.Sum();
+                    //double negSum = 0, posSum = 0;
+                    for(int iNode = 0; iNode < ret.length; ++iNode) {
+                        double x = ret.nodes[iNode * 3 + 0];
+                        double y = ret.nodes[iNode * 3 + 1];
+                        double z = ret.nodes[iNode * 3 + 2];
+
+                        var phi = k == 0 ? LS2(x, y, z) : LS1(x, y, z);
+
+                        //if(phi > 0)
+                        //    posSum += ret.weights[iNode];
+                        //else
+                        //    negSum += ret.weights[iNode];
+                    }
+
+                    //if((negSum - posSum).Abs() > 1.0e-5)
+                    //    throw new ArithmeticException("negative and positive sum are expected to be equal");
+
+
+                }
+                double[] sums = retArray.Select(qr => qr.weights.Sum()).ToArray();
+                
+            }
+        }
+
+        
+
+
+
+        internal static void ActivateSEQ() {
+            m_Algoim = m_seq_Algoim;
+        }
 
         /// <summary>
         /// static ctor

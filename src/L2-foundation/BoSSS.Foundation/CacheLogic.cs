@@ -28,7 +28,7 @@ using System.Collections.Concurrent;
 namespace BoSSS.Foundation.Caching {
 
     /// <summary>
-    /// Caches monomials ( e.g. \f$ x \f$, \f$ x y \f$, \f$ x y^2 \f$) for node sets. 
+    /// Caches monomials ( e.g. $x$, $x y$, $x y^2$) for node sets. 
     /// A global singleton, see <see cref="Instance"/>.
     /// </summary>
     public class MonomialCache : CacheLogic_NsP {

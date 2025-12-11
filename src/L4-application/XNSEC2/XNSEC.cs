@@ -653,11 +653,9 @@ namespace BoSSS.Application.XNSEC {
 
 
             if (Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
-                Console.WriteLine("Linearization Hint:" + LinearizationHint.GetJacobiOperator.ToString());
                 XOP.LinearizationHint = LinearizationHint.GetJacobiOperator;
             } else if (Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard){
-                Console.WriteLine("Linearization Hint:" + LinearizationHint.GetJacobiOperator.ToString());
-
+                
                 //throw new NotImplementedException("LowMach solver supports only Newton as NonLinearSolver");
             }
 

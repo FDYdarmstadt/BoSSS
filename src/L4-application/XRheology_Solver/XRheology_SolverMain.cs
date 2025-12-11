@@ -2394,7 +2394,7 @@ namespace BoSSS.Application.XRheology_Solver {
             // circularity
             double diamtr_c = Math.Sqrt(4 * area / Math.PI);
             double perimtr_b = 0.0;
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 cqs.Compile(LsTrk.GridDat, order),
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {

@@ -147,17 +147,18 @@ namespace BoSSS.Foundation.IO {
 
                 TextWriter tracertxt = null;
                 if (tracerfile != null) {
-                    //var zipper = new System.IO.Compression.GZipStream(tracerfile, System.IO.Compression.CompressionMode.Compress);
-                    //tracertxt = new StreamWriter(zipper);
-                    tracertxt = new StreamWriter(tracerfile);
+                    var zipper = new System.IO.Compression.GZipStream(tracerfile, System.IO.Compression.CompressionMode.Compress);
+                    tracertxt = new StreamWriter(zipper);
+                    //tracertxt = new StreamWriter(tracerfile);
                 }
 
                 if (tracertxt != null) {
-                    TextWriterAppender fa = new TextWriterAppender();
-                    fa.ImmediateFlush = true;
-                    //fa.Writer = Console.Out;
-                    fa.Writer = tracertxt;
-                    fa.Layout = new PatternLayout("%date %-5level %logger: %message%newline");
+                    TextWriterAppender fa = new TextWriterAppender {
+                        ImmediateFlush = true,
+                        //fa.Writer = Console.Out;
+                        Writer = tracertxt,
+                        Layout = new PatternLayout("%date %-5level %logger: %message%newline")
+                    };
                     fa.ActivateOptions();
                     BasicConfigurator.Configure(fa);
                     logger_output = fa;

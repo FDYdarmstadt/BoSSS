@@ -247,7 +247,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
 
         /// <summary>
         /// Correlates with <see cref="CoFaceToFaceIndices"/>:
-        /// For each co-face, the face index of the face reference element which it corresponds to.
+        /// For each co-face, the face index of the face on the face reference element which it corresponds to.
         /// - 1st index: co-face index <em>iCoFace</em> 
         /// - 2nd index: in {0,1}, corresponds to first and second face.
         /// </summary>

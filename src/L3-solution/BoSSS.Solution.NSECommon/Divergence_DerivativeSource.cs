@@ -124,9 +124,9 @@ namespace BoSSS.Solution.NSECommon {
 
         /// <summary>
         /// returns a penaltization of the velocity jump, i.e.
-        /// \f[ 
-        ///   -\frac{1}{2} \llbracket u_d \rrbracket \cdot \vec{n} \cdot \vec{e}_d,
-        /// \f]
+        /// \[ 
+        ///   -\frac{1}{2} [\![ u_d ]\!] \cdot \underline{n} \cdot \underline{e}_d,
+        /// \]
         /// where d is the velocity component index provided in the constructor
         /// </summary>
         protected override void InnerEdgeFlux(ref CommonParams inp, double[] Uin, double[] Uout, out double FluxInCell, out double FluxOutCell) {

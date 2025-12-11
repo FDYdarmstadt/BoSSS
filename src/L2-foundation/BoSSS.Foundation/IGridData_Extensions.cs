@@ -615,13 +615,13 @@ namespace BoSSS.Foundation.Grid {
             if(g is Classic.GridData cg)
                 return cg.Cells.Cells2Edges[jCellGeom].Select(edge_enc => Math.Abs(edge_enc) - 1);
 #endif
-            int[] LogicalEdges = g.iLogicalCells.Cells2Edges[g.GetLogicalCellIndex(jCellGeom)];
+            int[] LogicalEdges_enc = g.iLogicalCells.Cells2Edges[g.GetLogicalCellIndex(jCellGeom)];
 
             var Log2GeomEdges = g.iLogicalEdges.EdgeToParts;
             var Edge2Cell = g.iGeomEdges.CellIndices;
 
             var ret = new HashSet<int>();
-            foreach(int iEdgeLog_enc in LogicalEdges) {
+            foreach(int iEdgeLog_enc in LogicalEdges_enc) {
 
                 int iEdgeLog = Math.Abs(iEdgeLog_enc) - 1;
                 //int inOt = iEdgeLog > 0 ? 0 : 1;
@@ -648,6 +648,101 @@ namespace BoSSS.Foundation.Grid {
 #endif
 
             return ret;
+        }
+
+        /// <summary>
+        /// determines whether **geometrical** <paramref name="jCellGeom"/> is an IN or OUT-cell with respect to **geometrical** edge <paramref name="iEdgeGeom"/>.
+        /// </summary>
+        /// <param name="g"></param>
+        /// <param name="iEdgeGeom">
+        /// geometrical edge index
+        /// </param>
+        /// <param name="jCellGeom">
+        /// geometrical cell index
+        /// </param>
+        /// <returns>
+        /// - 0, if <paramref name="jCellGeom"/> is the IN-cell at edge <paramref name="iEdgeGeom"/>
+        /// - 1, if <paramref name="jCellGeom"/> is the OUT-cell at edge <paramref name="iEdgeGeom"/>
+        /// </returns>
+        public static int IsInOrOut_Geom(this IGridData g, int iEdgeGeom, int jCellGeom) {
+            var E2C = g.iLogicalEdges.CellIndices;
+            if(E2C[iEdgeGeom, 0] == jCellGeom)
+                return 0;
+            if(E2C[iEdgeGeom, 1] == jCellGeom)
+                return 1;
+            throw new ArgumentException($"logical edge {iEdgeGeom}, between cells [{E2C[iEdgeGeom, 0]},{E2C[iEdgeGeom, 1]}] does not connect to cell {jCellGeom}.");
+        }
+
+        /// <summary>
+        /// determines whether **logical** <paramref name="jCellLog"/> is an IN or OUT-cell with respect to **logical** edge <paramref name="iEdgeLog"/>.
+        /// </summary>
+        /// <param name="g"></param>
+        /// <param name="iEdgeLog">
+        /// geometrical edge index
+        /// </param>
+        /// <param name="jCellLog">
+        /// geometrical cell index
+        /// </param>
+        /// <returns>
+        /// - 0, if <paramref name="jCellLog"/> is the IN-cell at edge <paramref name="iEdgeLog"/>
+        /// - 1, if <paramref name="jCellLog"/> is the OUT-cell at edge <paramref name="iEdgeLog"/>
+        /// </returns>
+        public static int IsInOrOut(this IGridData g, int iEdgeLog, int jCellLog) {
+            var E2C = g.iLogicalEdges.CellIndices;
+            if(E2C[iEdgeLog, 0] == jCellLog)
+                return 0;
+            if(E2C[iEdgeLog, 1] == jCellLog)
+                return 1;
+            throw new ArgumentException($"logical edge {iEdgeLog}, between cells [{E2C[iEdgeLog, 0]},{E2C[iEdgeLog, 1]}] does not connect to cell {jCellLog}.");
+        }
+
+        /// <summary>
+        /// Returns all **geometrical** cells which are neighbors of geometrical cell <paramref name="jCellGeom"/> on face <paramref name="iFace"/>.
+        /// </summary>
+        /// <param name="g"></param>
+        /// <param name="jCellGeom">
+        /// geometrical cell index
+        /// </param>
+        /// <param name="iFace">
+        /// face with respect to the reference element, see <see cref="RefElement.NoOfFaces"/>
+        /// </param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        public static IEnumerable<int> GetGeometricalNeighborCells(this IGridData g, int jCellGeom, int iFace) {
+            if(jCellGeom < 0 || jCellGeom >= g.iGeomCells.NoOfLocalUpdatedCells)
+                throw new ArgumentOutOfRangeException(nameof(jCellGeom), "expecting a locally updated geometrical cell");
+            if(iFace < 0 || iFace >= g.iGeomCells.GetRefElement(jCellGeom).NoOfFaces)
+                throw new ArgumentOutOfRangeException(nameof(iFace), $"expecting a face index between 0 and {g.iGeomCells.GetRefElement(jCellGeom).NoOfFaces}, but got {iFace}");
+
+            //if(g is Classic.GridData g) {
+            //    return GetGeometricalNeighborCells_classic(g);
+            //}
+
+            //var edges_enc = g.Edges.Cells2Edges[jCellGeom];
+            var edges = g.GetGeometricalEdgesForCells(jCellGeom);
+            var E2F = g.iGeomEdges.FaceIndices;
+            var E2C = g.iGeomEdges.CellIndices;
+
+            var ret = new List<int>();
+
+            foreach(int iEdge in edges) {
+                //int iEdge = Math.Abs(e_enc) - 1;
+                int inOt_this = g.IsInOrOut_Geom(iEdge, jCellGeom);
+                int inOt_neig = 1 - inOt_this;
+
+                Debug.Assert(E2C[iEdge, inOt_this] == jCellGeom, "mismatch in cells-to-edges, in-cell");
+                if(E2C[iEdge, inOt_neig] < 0)
+                    continue;
+                if(E2F[iEdge, inOt_this] != iFace)
+                    continue;
+
+                ret.Add(E2C[iEdge, inOt_neig]);
+            }
+
+            return ret.ToArray();
+
+
+
         }
 
 
@@ -1258,11 +1353,11 @@ namespace BoSSS.Foundation.Grid {
             }
         }
 
-
+        
         /// <summary>
-        /// returns the logical edge index for a cell/face index pair
+        /// returns logical edges index for a cell/face index pair
         /// </summary>
-        /// <param name="jCell">
+        /// <param name="jCellGeom">
         /// local cell index
         /// </param>
         /// <param name="iFace">
@@ -1270,25 +1365,33 @@ namespace BoSSS.Foundation.Grid {
         /// </param>
         /// <param name="g"></param>
         /// <returns></returns>
-        static public int CellToEdge(this IGridData g, int jCell, int iFace) {
-            GridData gdat = (GridData)g;
+        static public IEnumerable<int> GeomCellToLogicalEdge(this IGridData g, int jCellGeom, int iFace) {
+            //GridData gdat = (GridData)g;
 
-            int[] EdgeCandidates = g.iLogicalCells.Cells2Edges[jCell];
+            int[] EdgeCandidates = g.iLogicalCells.Cells2Edges[GetLogicalCellIndex(g, jCellGeom)];
 
-            if (iFace < 0 || iFace >= gdat.Cells.GetRefElement(jCell).NoOfFaces)
+            if (iFace < 0 || iFace >= g.iGeomCells.GetRefElement(jCellGeom).NoOfFaces)
                 throw new ArgumentOutOfRangeException("illegal face index.");
 
-            foreach (int i in EdgeCandidates) {
-                int iEdge = Math.Abs(i) - 1;
-                int inOut = i > 0 ? 0 : 1;
+            var ret = new HashSet<int>();
 
-                if (gdat.Edges.FaceIndices[iEdge, inOut] == iFace) {
-                    return iEdge;
+            foreach (int _i in EdgeCandidates) {
+                int iEdgeLog = Math.Abs(_i) - 1;
+                foreach(int iEdgeGeom in GetGeometricEdgeIndices(g, iEdgeLog)) {
+
+                    int inOut = IsInOrOut_Geom(g, iEdgeGeom, jCellGeom);
+
+                    if(g.iGeomEdges.FaceIndices[iEdgeGeom, inOut] == iFace) {
+                        ret.Add(iEdgeLog);
+                    }
                 }
             }
 
-            throw new ApplicationException($"Unable to find edge for cell {jCell}, face {iFace}.");
+            if(ret.Count <= 0)
+                throw new ApplicationException($"Unable to find edge for cell {jCellGeom}, face {iFace}.");
+            return ret.ToArray();
         }
+        
 
         /// <summary>
         /// transforms vertices from the local coordinate system of cells <paramref name="jCell"/>

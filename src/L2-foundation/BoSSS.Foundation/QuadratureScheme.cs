@@ -297,6 +297,19 @@ namespace BoSSS.Foundation.Quadrature {
                         currentDomain = baseDomain.Intersect(factoryDomainPair.Domain);
                         Debug.Assert(currentDomain.Except(GetDomainForRefElement(RefElm, gridData)).NoOfItemsLocally <= 0);
                     }
+                    if(i < factoryDomainPairs.Count() - 1) {
+                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                        // exclude cells from later quadrature rule factories;
+                        // this avoid creating unnecessary rules, since rules form this factory might be overwritten anyway.
+                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                        for(int iOther = i + 1; iOther < factoryDomainPairs.Count(); iOther++) {
+                            var other = factoryDomainPairs.ElementAt(iOther);
+                            if(other.Domain != null)
+                                currentDomain = currentDomain.Except(other.Domain);
+                        }
+
+                    }
 
                     // check the type of factory
                     if(!RefElements.Contains(factoryDomainPair.RuleFactory.RefElement)) {
@@ -488,7 +501,8 @@ namespace BoSSS.Foundation.Quadrature {
                 private set;
             }
 
-#endregion
+            #endregion
+
         }
     }
 
