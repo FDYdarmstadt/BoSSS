@@ -653,7 +653,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 						rawOp, rawMaMa, leveledConfigs,
                         null);
 
-                        MultigridOp.m_RawOperatorMatrix = SchurMtx.ToBlockMsrMatrix(pressureMGmapping, pressureMGmapping);
+                        //MultigridOp.m_RawOperatorMatrix = SchurMtx.ToBlockMsrMatrix(pressureMGmapping, pressureMGmapping);
 
                         var OrthoMgConfig = new OrthoMGSchwarzConfig() {
                             TargetBlockSize = 100,
@@ -788,59 +788,59 @@ namespace BoSSS.Solution.AdvancedSolvers {
         
 
 
-        MultigridOperator CreateSubMGOp(MultigridOperator fullOp, int[] VariableIndices) {
+        //MultigridOperator CreateSubMGOp(MultigridOperator fullOp, int[] VariableIndices) {
 
 
-            SubBlockSelector selector = new SubBlockSelector(fullOp.Mapping);
-            selector.SetVariableSelector(VariableIndices);
-            var mask = new BlockMask(selector);
+        //    SubBlockSelector selector = new SubBlockSelector(fullOp.Mapping);
+        //    selector.SetVariableSelector(VariableIndices);
+        //    var mask = new BlockMask(selector);
 
-            var OpMtx = mask.GetSubBlockMatrix(fullOp.OperatorMatrix, fullOp.OperatorMatrix.MPI_Comm);
-            var MaMa = mask.GetSubBlockMatrix(fullOp.MassMatrix, fullOp.OperatorMatrix.MPI_Comm);
-
-
-            var ret = new MultigridOperator(GetSubBasesRecursive(fullOp),   
-                                        new UnsetteledCoordinateMapping(fullOp.BaseGridProblemMapping.BasisS.Where((b, idx) => VariableIndices.Contains(idx)).ToArray()),
-                                        OpMtx, MaMa,
-                                        fullOp.Config.Where((conf, idx) => VariableIndices.Contains(idx)).ToArray(),
-                                        null);
+        //    var OpMtx = mask.GetSubBlockMatrix(fullOp.OperatorMatrix, fullOp.OperatorMatrix.MPI_Comm);
+        //    var MaMa = mask.GetSubBlockMatrix(fullOp.MassMatrix, fullOp.OperatorMatrix.MPI_Comm);
 
 
+        //    var ret = new MultigridOperator(GetSubBasesRecursive(fullOp),   
+        //                                new UnsetteledCoordinateMapping(fullOp.BaseGridProblemMapping.BasisS.Where((b, idx) => VariableIndices.Contains(idx)).ToArray()),
+        //                                OpMtx, MaMa,
+        //                                fullOp.Config.Where((conf, idx) => VariableIndices.Contains(idx)).ToArray(),
+        //                                null);
 
-            MultigridOperator.ChangeOfBasisConfig[] GetTopLevel() {
-                var conf = new MultigridOperator.ChangeOfBasisConfig[VariableIndices.Length];
-                for(int iNewVar = 0; iNewVar < VariableIndices.Length; iNewVar++) {
-                    var newConf = new MultigridOperator.ChangeOfBasisConfig() {
-                        DegreeS = new int[] { fullOp.Degrees[VariableIndices[iNewVar]] },
-                        mode = MultigridOperator.Mode.Eye,
-                        VarIndex = Enumerable.Range(0, VariableIndices.Length).ToArray()
-                    };
-                }
+
+
+        //    MultigridOperator.ChangeOfBasisConfig[] GetTopLevel() {
+        //        var conf = new MultigridOperator.ChangeOfBasisConfig[VariableIndices.Length];
+        //        for(int iNewVar = 0; iNewVar < VariableIndices.Length; iNewVar++) {
+        //            var newConf = new MultigridOperator.ChangeOfBasisConfig() {
+        //                DegreeS = new int[] { fullOp.Degrees[VariableIndices[iNewVar]] },
+        //                mode = MultigridOperator.Mode.Eye,
+        //                VarIndex = Enumerable.Range(0, VariableIndices.Length).ToArray()
+        //            };
+        //        }
                                
-                return conf;
-            }
+        //        return conf;
+        //    }
 
 
 
 
 
 
-            IEnumerable<AggregationGridBasis[]> GetSubBasesRecursive(MultigridOperator level_op) {
-                List<AggregationGridBasis[]> result = new List<AggregationGridBasis[]>();
-                var level_subbasis = level_op.Mapping.AggBasis
-                    .Where((basis, idx) => VariableIndices.Contains(idx))
-                    .ToArray();
-                result.Add(level_subbasis);
+        //    IEnumerable<AggregationGridBasis[]> GetSubBasesRecursive(MultigridOperator level_op) {
+        //        List<AggregationGridBasis[]> result = new List<AggregationGridBasis[]>();
+        //        var level_subbasis = level_op.Mapping.AggBasis
+        //            .Where((basis, idx) => VariableIndices.Contains(idx))
+        //            .ToArray();
+        //        result.Add(level_subbasis);
 
-                if(level_op.CoarserLevel != null) {
-                    var coarser_bases = GetSubBasesRecursive(level_op.CoarserLevel);
-                    result.AddRange(coarser_bases);
-                } 
+        //        if(level_op.CoarserLevel != null) {
+        //            var coarser_bases = GetSubBasesRecursive(level_op.CoarserLevel);
+        //            result.AddRange(coarser_bases);
+        //        } 
 
-                return result;
-            }
+        //        return result;
+        //    }
 
-        }
+        //}
 
 
 
