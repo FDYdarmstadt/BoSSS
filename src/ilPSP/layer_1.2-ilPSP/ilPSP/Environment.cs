@@ -264,7 +264,7 @@ namespace ilPSP {
 
             BLAS.ActivateOMP();
             LAPACK.ActivateOMP();
-            PinOMPthreads();
+            PinOMPthreadsSometimes();
         }
 
         /*
@@ -616,9 +616,8 @@ namespace ilPSP {
 
         public static void InitThreading(bool LookAtEnvVar, int? NumThreadsOverride) {
             using(var tr = new FuncTrace()) {
-                tr.InfoToConsole = false;
-                StdoutOnlyOnRank0 = false;
-                //tr.StdoutOnAllRanks();
+                tr.InfoToConsole = true;
+                tr.StdoutOnAllRanks();
 
 
                 tr.Info($"MPI Rank {MPIEnv.MPI_Rank}: Value for OMP_PLACES: {System.Environment.GetEnvironmentVariable("OMP_PLACES")}");
@@ -787,9 +786,23 @@ namespace ilPSP {
                 } else {
                     DedicatedCPUsForThisRank = ReservedCPUs.ToArray();
                     // just hope for the best
-                    MKLservice.Dynamic = true;
+                    MKLservice.Dynamic = false;
                     MKLservice.SetNumThreads(NumThreads);
+                    //DisableOpenMP_becauseIsSlow = true;
                     tr.Warning("Reserved CPUs for all ranks are neither equal nor disjoint; some CPUs are owned by multiple ranks, some are exclusive; Pinning will be disabled.");
+
+/*
+                    int l = ReservedCPUs.Count();
+                    int r = MPIEnv.ProcessRankOnSMP;
+                    int s = MPIEnv.ProcessesOnMySMP;
+
+                    int i0 = (l * r) / s, iE = (l * (r + 1)) / s;
+
+                    DedicatedCPUsForThisRank = ReservedCPUs.ToArray().GetSubVector(i0, iE - i0);
+                    allequal = false;
+                    disjoint = true;
+*/
+
                 }
                 if(NumThreads > DedicatedCPUsForThisRank.Count()) {
                     NumThreads = Math.Max(1, DedicatedCPUsForThisRank.Count());
@@ -890,6 +903,8 @@ namespace ilPSP {
             if(PerformOMPthreadPinning) {
                 var cpus = DedicatedCPUsForThisRank.GetSubVector(DedicatedCPUsForThisRank.Length - NumThreads, NumThreads); // use the left-over CPUs **at the beginning** for spare; I assume that background threads rather grab those.
                 MKLservice.BindOMPthreads_1To1(cpus);
+            } else {
+                MKLservice.SetNumThreads(NumThreads);
             }
 
             /*{

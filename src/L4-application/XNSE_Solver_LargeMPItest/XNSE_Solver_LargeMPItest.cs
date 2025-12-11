@@ -639,8 +639,8 @@ namespace BoSSS.Application.XNSE_Solver {
             BoSSS.Solution.Application.InitMPI();
             Solution.Application.DeleteOldPlotFiles();
             //Debugger.Launch();
-            //BoSSS.Application.XNSE_Solver.XNSE_Solver_LargeMPItest.CurvatureBasedAMRTest_2D(GridPartType.METIS, 20, true);
-            BoSSS.Application.XNSE_Solver.XNSE_Solver_LargeMPItest.AMRtest_2D(GridPartType.none, 7);
+            BoSSS.Application.XNSE_Solver.XNSE_Solver_LargeMPItest.CurvatureBasedAMRTest_2D(GridPartType.METIS, 20, true);
+            //BoSSS.Application.XNSE_Solver.XNSE_Solver_LargeMPItest.AMRtest_2D(GridPartType.none, 7);
             BoSSS.Solution.Application.FinalizeMPI();
         }
 

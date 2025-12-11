@@ -90,7 +90,7 @@ namespace ilPSP {
 
         /// <summary>
         /// Setting/Getting the state of OpenMP dynamic thread allocation 
-        /// (internal control variable `omp_get_dynamic`, overrifed the bahavor of OMP_DYNAMIC environment variable)
+        /// (internal control variable `omp_get_dynamic`, overrides the behavior of OMP_DYNAMIC environment variable)
         /// </summary>
         public static bool Dynamic {
             get {
