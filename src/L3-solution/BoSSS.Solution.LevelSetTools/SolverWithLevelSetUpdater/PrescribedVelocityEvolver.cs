@@ -124,7 +124,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             }
 
             /// <summary>
-            /// `$ \vec{u} \varphi `$
+            /// `$ \underline{u} \varphi `$
             /// </summary>
             protected override void Flux(ref CommonParamsVol inp, double[] U, double[] output) {
                 for (int d = 0; d < inp.D; d++) {

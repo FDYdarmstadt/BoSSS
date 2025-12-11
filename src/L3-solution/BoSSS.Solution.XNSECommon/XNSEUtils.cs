@@ -263,12 +263,12 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
         /// <summary>
-        /// Projects a surface property \f$ f\f$  (see below) of some vector field <paramref name="U"/>,
+        /// Projects a surface property $f$  (see below) of some vector field <paramref name="U"/>,
         /// onto a single-phase field.
         /// </summary>
         /// <param name="OnlyNormalComponent">
-        /// if true, the norm of \f$ \llbracket \vec{u} \cdot \vec{n} \rrbracket =: f\f$  <br/>
-        /// if false, the norm of \f$ \llbracket \vec{u} \rrbracket =: f\f$  <br/>
+        /// if true, the norm of $[\![ \underline{u} \cdot \underline{n} ]\!] =: f$  <br/>
+        /// if false, the norm of $[\![ \underline{u} ]\!] =: f$  <br/>
         /// </param>
         /// <param name="U">
         /// some XDG vector field
@@ -340,12 +340,12 @@ namespace BoSSS.Solution.XNSECommon {
 
 
         /// <summary>
-        /// The surface norm, i.e. \f$ \oint_{\mathfrak{I}} f^2 \ \mathrm{dS}\f$  for the jump 
-        /// \f$ f\f$  (see below) of some vector field <paramref name="U"/>.
+        /// The surface norm, i.e. $\oint_{\mathfrak{I}} f^2 \ \mathrm{dS}$  for the jump 
+        /// $f$ (see below) of some vector field <paramref name="U"/>.
         /// </summary>
         /// <param name="OnlyNormalComponent">
-        /// if true, the norm of \f$ \llbracket \vec{u} \cdot \vec{n} \rrbracket =: f\f$  <br/>
-        /// if false, the norm of \f$ \llbracket \vec{u} \rrbracket =: f\f$  <br/>
+        /// if true, the norm of $[\![ \underline{u} \cdot \underline{n} ]\!] =: f$  <br/>
+        /// if false, the norm of $[\![ \underline{u} ]\!] =: f$  <br/>
         /// </param>
         /// <param name="U">
         /// some XDG vector field

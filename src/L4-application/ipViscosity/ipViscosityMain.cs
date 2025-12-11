@@ -69,14 +69,14 @@ namespace BoSSS.Application.ipViscosity {
 
         /// <summary>
         /// \f[ 
-        ///   - \operatorname{div} \left( \mu (\partial_d \vec{u}) \right)
+        ///   - \operatorname{div} \left( \mu (\partial_d \underline{u}) \right)
         /// \f]
         /// </summary>
         T2 = 0x2,
 
         /// <summary>
         /// \f[ 
-        ///    \frac{2}{3} \operatorname{div} \left( \mu \myMatrix{I} \operatorname{div} ( \vec{u} )  \right)
+        ///    \frac{2}{3} \operatorname{div} \left( \mu \boldsymbol{I} \operatorname{div} ( \underline{u} )  \right)
         /// \f]
         /// </summary>
         T3 = 0x4

@@ -27,11 +27,11 @@ namespace BoSSS.Platform.LinAlg {
     /// represents an affine - linear transformation;
     /// </summary>
     /// <remarks> 
-    /// The transformation of some point \f$ \vec{x} \f$ into it's 
-    /// image \f$ \vec{y} \f$
+    /// The transformation of some point $\underline{x}$ into it's 
+    /// image $\underline{y}$
     /// is defined as
     /// 
-    /// <i>y</i> = <see cref="Matrix"/>*\f$ \vec{x} \f$ + <see cref="Affine"/>
+    /// <i>y</i> = <see cref="Matrix"/>*$\underline{x}$ + <see cref="Affine"/>
     /// </remarks>
     [Serializable]
     [DataContract]
@@ -444,19 +444,19 @@ namespace BoSSS.Platform.LinAlg {
         /// that maps the vectors in the <paramref name="preimage"/> to <paramref name="image"/>;
         /// </summary>
         /// <param name="preimage">
-        /// The preimage: \f$  (D+1) \f$  vectors of dimension \f$ D \f$;
+        /// The preimage: $(D+1)$  vectors of dimension $D$;
         /// <list type="bullet">
-        ///   <item>1st index: vector/vertex index, length is \f$ D+1 \f$</item>
+        ///   <item>1st index: vector/vertex index, length is $D+1$</item>
         ///   <item>2nd index: spatial dimension, lenght is D</item>
         /// </list>
         /// Tip: use <see cref="ilPSP.Utils.ArrayTools.Transpose{t}(t[,],t[,])"/>
         /// if the sequence of indices is not appropriate;
         /// </param>
         /// <param name="image">
-        /// The image: \f$  (D+1) \f$ vectors of dimension \f$ D \f$;
+        /// The image: $(D+1)$ vectors of dimension $D$;
         /// <list type="bullet">
-        ///   <item>1st index: vector/vertex index, length is \f$ D + 1\f$</item>
-        ///   <item>2nd index: spatial dimension, length is \f$ D \f$</item>
+        ///   <item>1st index: vector/vertex index, length is $D + 1$</item>
+        ///   <item>2nd index: spatial dimension, length is $D$</item>
         /// </list>
         /// </param>
         public static AffineTrafo FromPoints(MultidimensionalArray preimage, MultidimensionalArray image) {

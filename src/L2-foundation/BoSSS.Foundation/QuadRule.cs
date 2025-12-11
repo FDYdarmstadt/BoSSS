@@ -32,6 +32,8 @@ namespace BoSSS.Foundation.Quadrature {
     /// </summary>
     public class QuadRule : ICloneable, IEquatable<QuadRule> {
 
+        public object Origin;
+
 
         /// <summary>
         /// Creates a empty (i.e. all entries set to 0.0) quadrature rule for filling by the user.

@@ -38,72 +38,9 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             //ilPSP.Utils.Algoim.TwoLsIsFucked1();
             //ilPSP.Utils.Algoim.TwoLsIsSuperFucked1();
 
-            /*
-            AffineTrafo _3Dto1D = new AffineTrafo(3, 1);
-            _3Dto1D.Matrix[0, 0] = 1;
-            _3Dto1D.Matrix[0, 1] = 1;
-            _3Dto1D.Matrix[0, 2] = 1;
-            _3Dto1D.Affine[0] = 10;
+            
 
-            var _1D = new Vector(8.9);
-            var _3D = _3Dto1D.TransformInverse(_1D);
-            var _1Dback = _3Dto1D.Transform(_3D);
-
-
-
-            var elm = BoSSS.Foundation.Grid.RefElements.Cube.Instance;
-            var cofaceelm = elm.FaceRefElement.FaceRefElement;
-            var fulFaceRule = elm.FaceRefElement.GetQuadratureRule(3);
-            var fulCoFaceRule = cofaceelm.GetQuadratureRule(3);
-
-            bool IsInPlane(AffineManifold a, MultidimensionalArray pts) {
-                double totDist = 0;
-                for(int i = 0; i < pts.NoOfRows; i++) {
-                    totDist += a.PointDistance(pts.GetRow(i)).Pow2();
-                }
-                return totDist <= 1.0e-10 * pts.NoOfRows;
-            }
-
-
-            for(int iFace = 0; iFace < elm.NoOfFaces; iFace++) {
-                var volNodes = elm.GetFaceTrafo(iFace).Transform(fulFaceRule.Nodes);
-
-                bool isInPlane = IsInPlane(elm.GetFacePlane(iFace), volNodes);
-                Console.WriteLine($"Face \t{iFace}: \tPoints are in Face 1? {isInPlane}");
-
-            }
-
-
-
-            for(int iCoFace = 0; iCoFace < elm.NoOfCoFaces; iCoFace++) {
-                var volNodes = elm.GetCoFaceTrafo(iCoFace).Transform(fulCoFaceRule.Nodes);
-
-                int iFace1 = elm.CoFaceToFaceIndices[iCoFace, 0];
-                int iFace2 = elm.CoFaceToFaceIndices[iCoFace, 1];
-
-                var faceNodes1 = elm.GetFaceTrafo(iFace1).TransformInverse(volNodes);
-                var faceNodes2 = elm.GetFaceTrafo(iFace2).TransformInverse(volNodes);
-
-                var volNodesTT1 = elm.GetFaceTrafo(iFace1).Transform(faceNodes1);
-                var volNodesTT2 = elm.GetFaceTrafo(iFace2).Transform(faceNodes2);
-
-                bool isInPlane1 = IsInPlane(elm.GetFacePlane(iFace1), volNodes);
-                bool isInPlane2 = IsInPlane(elm.GetFacePlane(iFace2), volNodes);
-                Console.WriteLine($"CoFace \t{iCoFace}: \tPoints are in Face 1? {isInPlane1}\tPoints are in Face 2? {isInPlane2}");
-
-                Console.WriteLine($" dist of inverse/forward transform, face 1: {volNodesTT1.L2Dist(volNodes)}");
-                Console.WriteLine($" dist of inverse/forward transform, face 2: {volNodesTT2.L2Dist(volNodes)}");
-
-
-                //var fullRule2 = new NodeSet(this.RefElement, Edge2CellTrafo.TransformInverse(volNodes), false);
-
-
-            }
-
-
-            */
-
-            BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_3D(0, 3, CutCellQuadratureMethod.Saye);
+            BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_3D(2, 3, CutCellQuadratureMethod.Saye);
             
             BoSSS.Solution.Application.FinalizeMPI();
         }
@@ -1129,40 +1066,40 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             TotalIntegral_IntersectionLine.Add("C", 2 * zWidht);
         }
 
-        void NodesInSpeciesAdomain(IEnumerable<Vector> nodes) {
+        void NodesInSpeciesAdomain(IEnumerable<Vector> nodes, string message) {
             var eps = Math.Sqrt(GenericBlas.MachineEps) * this.MeshScaling;
             double R = 4.0 * this.MeshScaling;
             foreach(var pt in nodes) {
-                Assert.IsTrue((pt.y >= -eps) && ((pt.x.Pow2() + pt.y.Pow2()).Sqrt() >= R - eps), "Some quadrature point outside of domain A");
+                Assert.IsTrue((pt.y >= -eps) && ((pt.x.Pow2() + pt.y.Pow2()).Sqrt() >= R - eps), $"Some quadrature point outside of domain A (testing: {message})");
             }
         }
-        void NodesInSpeciesBdomain(IEnumerable<Vector> nodes) {
+        void NodesInSpeciesBdomain(IEnumerable<Vector> nodes, string message) {
             var eps = Math.Sqrt(GenericBlas.MachineEps) * this.MeshScaling;
             double R = 4.0 * this.MeshScaling;
             foreach(var pt in nodes) {
-                Assert.IsTrue((pt.y >= -eps) && ((pt.x.Pow2() + pt.y.Pow2()).Sqrt() <= R + eps), "Some quadrature point outside of domain B");
+                Assert.IsTrue((pt.y >= -eps) && ((pt.x.Pow2() + pt.y.Pow2()).Sqrt() <= R + eps), $"Some quadrature point outside of domain B (testing: {message})");
             }
         }
-        void NodesInSpeciesCdomain(IEnumerable<Vector> nodes) {
+        void NodesInSpeciesCdomain(IEnumerable<Vector> nodes, string message) {
             var eps = Math.Sqrt(GenericBlas.MachineEps) * this.MeshScaling;
             double R = 4.0 * this.MeshScaling;
             foreach(var pt in nodes) {
-                Assert.IsTrue((pt.y <= +eps), "Some quadrature point outside of domain C");
+                Assert.IsTrue((pt.y <= +eps), $"Some quadrature point outside of domain C (testing: {message})");
             }
         }
 
-        void NodesIn0ABinterface(IEnumerable<Vector> nodes) {
-            NodesInSpeciesAdomain(nodes);
-            NodesInSpeciesBdomain(nodes);
+        void NodesIn0ABinterface(IEnumerable<Vector> nodes, string message) {
+            NodesInSpeciesAdomain(nodes, message);
+            NodesInSpeciesBdomain(nodes, message);
         }
 
-        void NodesIn1ACinterface(IEnumerable<Vector> nodes) {
-            NodesInSpeciesAdomain(nodes);
-            NodesInSpeciesCdomain(nodes);
+        void NodesIn1ACinterface(IEnumerable<Vector> nodes, string message) {
+            NodesInSpeciesAdomain(nodes, message);
+            NodesInSpeciesCdomain(nodes, message);
         }
-        void NodesIn1CBinterface(IEnumerable<Vector> nodes) {
-            NodesInSpeciesBdomain(nodes);
-            NodesInSpeciesCdomain(nodes);
+        void NodesIn1CBinterface(IEnumerable<Vector> nodes, string message) {
+            NodesInSpeciesBdomain(nodes, message);
+            NodesInSpeciesCdomain(nodes, message);
         }
 
         IEnumerable<Vector> GetNonEmptyNodesCell<Q>(ICompositeQuadRule<Q> compositeRule) where Q : QuadRule {
@@ -1170,6 +1107,12 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
             var ret = new List<Vector>();
             foreach(IChunkRulePair<QuadRule> pair in compositeRule) {
+                if(pair.Rule.Weights.To1DArray().Any(wk => wk < 0)) {
+                    Console.WriteLine("got some rule with negative weights, probably from `ComplementaryRuleFactory`; ignoring this for test.");
+                    continue;
+                }
+
+
                 MultidimensionalArray globalNodes = this.GridData.GlobalNodes.GetValue_Cell(pair.Rule.Nodes, pair.Chunk.i0, pair.Chunk.Len);
                 foreach(var cell in pair.Chunk.Elements.AsSmartEnumerable()) {
                     var cellNodes = globalNodes.ExtractSubArrayShallow(cell.Index, -1, -1);
@@ -1193,6 +1136,10 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
             var ret = new List<Vector>();
             foreach(IChunkRulePair<QuadRule> pair in compositeRule) {
+                if(pair.Rule.Weights.To1DArray().Any(wk => wk < 0)) {
+                    Console.WriteLine("got some rule with negative weights, probably from `ComplementaryRuleFactory`; ignoring this for test."); 
+                    continue;
+                }
 
                 MultidimensionalArray globalNodes = this.GridData.GlobalNodes.GetValue_EdgeSV(pair.Rule.Nodes, pair.Chunk.i0, pair.Chunk.Len);
                 foreach(var edge in pair.Chunk.Elements.AsSmartEnumerable()) {
@@ -1224,45 +1171,59 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                 var SurfElmEdge_1AC = schH.Get_SurfaceElement_EdgeQuadScheme(spA, spC, 1).Compile(this.GridData, order);
                 var SurfElmEdge_1CB = schH.Get_SurfaceElement_EdgeQuadScheme(spC, spB, 1).Compile(this.GridData, order);
 
-                NodesIn0ABinterface(GetNonEmptyNodesEdge(SurfElmEdge_0AB));
-                NodesIn1ACinterface(GetNonEmptyNodesEdge(SurfElmEdge_1AC));
-                NodesIn1CBinterface(GetNonEmptyNodesEdge(SurfElmEdge_1CB));
-
                 var SurfElmVol_0AB = schH.Get_SurfaceElement_VolumeQuadScheme(spA, spB, 0).Compile(this.GridData, order);
                 var SurfElmVol_1AC = schH.Get_SurfaceElement_VolumeQuadScheme(spA, spC, 1).Compile(this.GridData, order);
                 var SurfElmVol_1CB = schH.Get_SurfaceElement_VolumeQuadScheme(spC, spB, 1).Compile(this.GridData, order);
-
-                NodesIn0ABinterface(GetNonEmptyNodesCell(SurfElmVol_0AB));
-                NodesIn1ACinterface(GetNonEmptyNodesCell(SurfElmVol_1AC));
-                NodesIn1CBinterface(GetNonEmptyNodesCell(SurfElmVol_1CB));
 
                 var Vol_A = schH.GetVolumeQuadScheme(spA).Compile(this.GridData, order);
                 var Vol_B = schH.GetVolumeQuadScheme(spB).Compile(this.GridData, order);
                 var Vol_C = schH.GetVolumeQuadScheme(spC).Compile(this.GridData, order);
 
-                Vol_A.SaveToTextFileCell(this.GridData, "Vol_A.csv", false);
-                Vol_B.SaveToTextFileCell(this.GridData, "Vol_B.csv", false);
-                Vol_C.SaveToTextFileCell(this.GridData, "Vol_C.csv", false);
-
-
-                NodesInSpeciesAdomain(GetNonEmptyNodesCell(Vol_A));
-                NodesInSpeciesBdomain(GetNonEmptyNodesCell(Vol_B));
-                NodesInSpeciesCdomain(GetNonEmptyNodesCell(Vol_C));
-
                 var Edg_A = schH.GetEdgeQuadScheme(spA).Compile(this.GridData, order);
                 var Edg_B = schH.GetEdgeQuadScheme(spB).Compile(this.GridData, order);
                 var Edg_C = schH.GetEdgeQuadScheme(spC).Compile(this.GridData, order);
+
+                SurfElmEdge_0AB.SaveToTextFileEdge(this.GridData, "SurfElmEdge_0AB.csv", false);
+                SurfElmEdge_1AC.SaveToTextFileEdge(this.GridData, "SurfElmEdge_1AC.csv", false);
+                SurfElmEdge_1CB.SaveToTextFileEdge(this.GridData, "SurfElmEdge_1CB.csv", false);
+
+                SurfElmEdge_0AB.SaveWeightSumToTextFileEdge(this.GridData, "SurfElmEdgeSum_0AB.csv", false);
+                SurfElmEdge_1AC.SaveWeightSumToTextFileEdge(this.GridData, "SurfElmEdgeSum_1AC.csv", false);
+                SurfElmEdge_1CB.SaveWeightSumToTextFileEdge(this.GridData, "SurfElmEdgeSum_1CB.csv", false);
+
+
+                SurfElmVol_0AB.SaveToTextFileCell(this.GridData, "SurfElmVol_0AB.csv", false);
+                SurfElmVol_1AC.SaveToTextFileCell(this.GridData, "SurfElmVol_1AC.csv", false);
+                SurfElmVol_1CB.SaveToTextFileCell(this.GridData, "SurfElmVol_1CB.csv", false);
+
+                Vol_A.SaveToTextFileCell(this.GridData, "Vol_A.csv", false);
+                Vol_B.SaveToTextFileCell(this.GridData, "Vol_B.csv", false);
+                Vol_C.SaveToTextFileCell(this.GridData, "Vol_C.csv", false);
 
                 Edg_A.SaveToTextFileEdge(this.GridData, "Edg_A.csv", false);
                 Edg_B.SaveToTextFileEdge(this.GridData, "Edg_B.csv", false);
                 Edg_C.SaveToTextFileEdge(this.GridData, "Edg_C.csv", false);
 
-                if(this.GridData.SpatialDimension <= 2) {
-                    // Note: for 3D/Saye, still the complementary rule is used; therefore, we have nodes outside of the species
-                    NodesInSpeciesAdomain(GetNonEmptyNodesEdge(Edg_A));
-                    NodesInSpeciesBdomain(GetNonEmptyNodesEdge(Edg_B));
-                    NodesInSpeciesCdomain(GetNonEmptyNodesEdge(Edg_C));
-                }
+               
+
+
+                NodesIn0ABinterface(GetNonEmptyNodesEdge(SurfElmEdge_0AB), "surface element edge 0AB");
+                NodesIn1ACinterface(GetNonEmptyNodesEdge(SurfElmEdge_1AC), "surface element edge 1AC");
+                NodesIn1CBinterface(GetNonEmptyNodesEdge(SurfElmEdge_1CB), "surface element edge 1CB");
+
+                NodesIn0ABinterface(GetNonEmptyNodesCell(SurfElmVol_0AB), "surface element volume 0AB");
+                NodesIn1ACinterface(GetNonEmptyNodesCell(SurfElmVol_1AC), "surface element volume 1AC");
+                NodesIn1CBinterface(GetNonEmptyNodesCell(SurfElmVol_1CB), "surface element volume 1CB");
+
+                NodesInSpeciesAdomain(GetNonEmptyNodesCell(Vol_A), "volume A");
+                NodesInSpeciesBdomain(GetNonEmptyNodesCell(Vol_B), "volume A");
+                NodesInSpeciesCdomain(GetNonEmptyNodesCell(Vol_C), "volume A");
+
+                // Note: for 3D/Saye, still the complementary rule is used; therefore, we have nodes outside of the species
+                NodesInSpeciesAdomain(GetNonEmptyNodesEdge(Edg_A), "edge A");
+                NodesInSpeciesBdomain(GetNonEmptyNodesEdge(Edg_B), "edge A");
+                NodesInSpeciesCdomain(GetNonEmptyNodesEdge(Edg_C), "edge A");
+                
             }
         }
     }

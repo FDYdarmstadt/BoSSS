@@ -501,7 +501,8 @@ namespace BoSSS.Foundation.Quadrature {
                 private set;
             }
 
-#endregion
+            #endregion
+
         }
     }
 

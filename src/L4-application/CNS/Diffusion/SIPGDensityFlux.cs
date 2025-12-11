@@ -24,7 +24,7 @@ using BoSSS.Solution.CompressibleFlowCommon;
 namespace CNS.Diffusion {
 
     /// <summary>
-    /// Dummy Flux for the SIPG Density flux, not needed because of \f$ F_v(U_1)=0\f$ 
+    /// Dummy Flux for the SIPG Density flux, not needed because of $F_v(U_1)=0$ 
     /// </summary>
     public class SIPGDensityFlux : SIPGFlux {
 

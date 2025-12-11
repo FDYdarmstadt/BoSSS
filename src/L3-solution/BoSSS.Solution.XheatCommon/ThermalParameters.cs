@@ -35,7 +35,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         /// <summary>
         /// Include nonlinear terms?
-        /// Resp.: \f$ Peclet-number \ll 1 \f$ for vanishing convective term
+        /// Resp.: $Peclet-number \ll 1$ for vanishing convective term
         /// </summary>
         [DataMember]
         public bool IncludeConvection;

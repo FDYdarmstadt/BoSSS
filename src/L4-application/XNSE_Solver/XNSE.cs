@@ -54,7 +54,7 @@ namespace BoSSS.Application.XNSE_Solver {
     ///   The normal component should match the normal velocity which can be computed from `Phi2`,
     ///   yielding following compatibility condition: 
     /// ```math
-    ///     \vec{v} \cdot \frac{\nabla \varphi_2}{| \nabla \varphi_2 |} =  \frac{- \partial_t \varphi_2}{| \nabla \varphi_2 |} 
+    ///     \underline{v} \cdot \frac{\nabla \varphi_2}{| \nabla \varphi_2 |} =  \frac{- \partial_t \varphi_2}{| \nabla \varphi_2 |} 
     /// ```
     /// </remarks>
     public class XNSE : XNSE<XNSE_Control> {

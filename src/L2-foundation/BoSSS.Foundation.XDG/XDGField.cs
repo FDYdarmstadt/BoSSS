@@ -313,15 +313,15 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Evaluates
-        /// \f$ 
+        /// $ 
         /// f_A(x_i) - f_B(x_i)
-        /// \f$ 
+        /// $ 
         /// in all nodes with spatial coordinates
-        /// \f$ x_i\f$  defined in
+        /// $x_i$  defined in
         /// <paramref name="NodeSet"/> in all cells in the range
         /// [<paramref name="j0"/>; <paramref name="j0"/> + <paramref name="Len"/>]
-        /// where \f$ f_A(x)\f$  and
-        /// \f$ f_B(x)\f$  are the values of the
+        /// where $f_A(x)$  and
+        /// $f_B(x)$  are the values of the
         /// polynomial defined by the coefficients stored for the species
         /// identified by <paramref name="SpeciesIdA"/> and
         /// <paramref name="SpeciesIdB"/>, respectively. The result will then
@@ -1010,7 +1010,7 @@ namespace BoSSS.Foundation.XDG {
         /// accumulates the derivative of DG field <paramref name="f"/> 
         /// (along the <paramref name="d"/>-th axis) times <paramref name="alpha"/>
         /// to this field, i.e. <br/>
-        /// this = this + <paramref name="alpha"/>* \f$ \frac{\partial}{\partial x_d}\f$ <paramref name="f"/>;
+        /// this = this + <paramref name="alpha"/>* $\frac{\partial}{\partial x_d}$ <paramref name="f"/>;
         /// </summary>
         /// <param name="f"></param>
         /// <param name="d">
@@ -1320,21 +1320,21 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Canonical L2 Norm in the XDG space, i.e.
-        /// ```math
+        /// \[
         ///   \left( \int_{\Omega \cap \mathfrak{ s} \cap \text{ CM} }
-        ///        u(\vec{ x})
+        ///        u(\underline{ x})
         ///   \text{dV} \right)^{1/2},
-        /// ```
+        /// \]
         /// where 
-        /// $`\mathfrak{s}`$ denotes the domain of species <paramref name="spc"/> and
-        /// $`\text{ CM} }`$ denotes the optional cell mask <paramref name="cm"/>. 
+        /// $\mathfrak{s}$ denotes the domain of species <paramref name="spc"/> and
+        /// $\text{CM}$ denotes the optional cell mask <paramref name="cm"/>. 
         /// </summary>
         /// <remarks>
         /// The foundation for computing the L2-norm in cut cells is the following relation:
         /// For any arbitrary (i.e. non-orthonormal) DG or XDG basis,
         /// the norm of a Field 
-        /// $`u = sum_{j} \phi_{j} \tilde{u}_{j}`$ is given as:
-        /// ```math
+        /// $u = sum_{j} \phi_{j} \tilde{u}_{j}$ is given as:
+        /// \[
         ///         \left\| u \right\|_{L^2}^2 =
         ///         (u, u) = 
         ///     \int_\Omega 
@@ -1344,8 +1344,8 @@ namespace BoSSS.Foundation.XDG {
         ///     \sum_{j l} \tilde{u}_{j} \tilde{u}_{l} ( \phi_{j}, \phi_{l} )
         ///     =
         ///       \tilde{u}^T M \tilde{u},
-        /// ```
-        /// where $`M `$ denotes the mass matrix ($` M_{j l} = ( \phi_ { j}, \phi_ { l} )  `$).
+        /// \]
+        /// where $M$ denotes the mass matrix ($M_{j l} = ( \phi_ { j}, \phi_ { l} )$).
         /// </remarks>
         public double L2NormSpecies(SpeciesId spc, CellMask cm = null) {
             int deg = this.Basis.Degree;

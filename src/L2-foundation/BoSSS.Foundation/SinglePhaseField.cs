@@ -308,8 +308,8 @@ namespace BoSSS.Foundation {
         ///   <item>3rd index: spatial direction of 1st derivation, <em>k</em></item>
         ///   <item>4th index: spatial direction of 2nd derivation, <em>l</em></item>
         /// </list>
-        /// So, the entry [j,m,k,l] = \f$ \frac{\partial}{\partial x_k} \frac{\partial}{\partial x_l} \varphi (\vec{\xi}_m)\f$ 
-        /// where \f$ \vec{xi}_m\f$  is the <em>m</em>-th
+        /// So, the entry [j,m,k,l] = $\frac{\partial}{\partial x_k} \frac{\partial}{\partial x_l} \varphi (\underline{\xi}_m)$ 
+        /// where $\underline{xi}_m$  is the <em>m</em>-th
         /// vector in the node set <paramref name="NS"/>, in the
         /// <em>j</em>-th cell.
         /// </param>

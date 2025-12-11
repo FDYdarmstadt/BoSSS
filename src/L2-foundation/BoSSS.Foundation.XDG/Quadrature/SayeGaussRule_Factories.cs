@@ -281,7 +281,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
 
         #region Single QuadRules
         /// <summary>
-        /// Gauss rules for \f$ \oint_{\frakI \cap K_j } \ldots \dS \f$ in the 3D case
+        /// Gauss rules for $\oint_{\mathfrak{I} \cap K_j } \ldots \textrm{dS}$ in the 3D case
         /// </summary>
         /// 
         public static IQuadRuleFactory<QuadRule> SayeGaussRule_Volume3D(
@@ -296,7 +296,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
         }
 
         /// <summary>
-        /// Gauss rules for \f$ \oint_{\frakI \cap K_j } \ldots \dS \f$ in the 3D case
+        /// Gauss rules for $\oint_{\mathfrak{I} \cap K_j } \ldots \textrm{dS}$ in the 3D case
         /// </summary>
         /// 
         public static IQuadRuleFactory<QuadRule> SayeGaussRule_NegativeVolume3D(
@@ -311,7 +311,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
         }
 
         /// <summary>
-        /// Gauss rules for \f$ \oint_{\frakI \cap K_j } \ldots \dS \f$ in the 3D case
+        /// Gauss rules for $\oint_{\mathfrak{I} \cap K_j } \ldots \textrm{dS}$ in the 3D case
         /// </summary>
         public static IQuadRuleFactory<QuadRule> SayeGaussRule_Surface3D(
             LevelSetTracker.LevelSetData _lsData,
@@ -326,7 +326,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
         }
 
         /// <summary>
-        /// Gauss rules for \f$ \int_{\frakA \cap K_j } \ldots \dV \f$ in the 2D case
+        /// Gauss rules for $\int_{\mathfrak{A} \cap K_j } \ldots \textrm{dV}$ in the 2D case
         /// </summary>
         public static IQuadRuleFactory<QuadRule> SayeGaussRule_Volume2D(
             LevelSetTracker.LevelSetData _lsData,
@@ -342,7 +342,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
         }
 
         /// <summary>
-        /// Gauss rules for \f$ \int_{\frakA \cap K_j } \ldots \dV \f$ in the 2D case
+        /// Gauss rules for $\int_{\mathfrak{A} \cap K_j } \ldots \textrm{dV}$ in the 2D case
         /// </summary>
         public static IQuadRuleFactory<QuadRule> SayeGaussRule_NegativeVolume2D(
             LevelSetTracker.LevelSetData _lsData,
@@ -358,7 +358,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
         }
 
         /// <summary>
-        /// Gauss rules for \f$ \oint_{\frakI \cap K_j } \ldots \dS \f$ in the 2D case
+        /// Gauss rules for $\oint_{\mathfrak{I} \cap K_j } \ldots \textrm{dS}$ in the 2D case
         /// </summary>
         public static IQuadRuleFactory<QuadRule> SayeGaussRule_Surface2D(
             LevelSetTracker.LevelSetData _lsData,

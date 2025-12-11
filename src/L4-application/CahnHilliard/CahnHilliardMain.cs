@@ -546,7 +546,7 @@ namespace BoSSS.Application.CahnHilliard {
         }
 
         /// <summary>
-        /// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
+        /// Block scaling of the mass matrix: for each species $\mathfrak{S}$, a vector $(\rho_\mathfrak{S}, \ldots, \rho_mathfrak{S}, 0 )$.
         /// </summary>
         protected IDictionary<SpeciesId, IEnumerable<double>> MassScale {
             get {

@@ -233,9 +233,9 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// defines a nonlinear source term.
-    /// ```math 
-    /// s(\vec{U},v) = \int_{\Omega} f(\vec{U}) v \ \mathrm{dV}
-    /// ```
+    /// \[
+    /// s(\underline{U},v) = \int_{\Omega} f(\underline{U}) v \ \mathrm{dV}
+    /// \]
     /// </summary>
     public interface INonlinearSource : IEquationComponent {
         
@@ -781,9 +781,9 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// Defines a general _edge term_, i.e. a form
-    /// ```math 
-    /// a(\vec{U},v) = \int_{\partial K} f(\vec{U}) g(v) n  \mathrm{dS} .
-    /// ```
+    /// \[
+    /// a(\underline{U},v) = \int_{\partial K} f(\underline{U}) g(v) n  \mathrm{dS} .
+    /// \]
     /// </summary>
     public interface IInnerEdgeForm : IEquationComponent {
 
@@ -807,9 +807,9 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// Defines a general _edge term_, i.e. a form
-    /// ```math 
-    /// a(\vec{U},v) = \int_{\partial K} f(\vec{U}) g(v) n  \mathrm{dS} .
-    /// ```
+    /// \[ 
+    /// a(\underline{U},v) = \int_{\partial K} f(\underline{U}) g(v) n  \mathrm{dS} .
+    /// \]
     /// </summary>
     public interface IBoundaryEdgeForm : IEquationComponent {
         /// <summary>
@@ -828,9 +828,9 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// Defines a general complete _edge term_ consisting of boundary and internal component, i.e. a form
-    /// ```math 
-    /// a(\vec{U},v) = \int_{\partial K} f(\vec{U}) g(v) n  \mathrm{dS} .
-    /// ```
+    /// \[ 
+    /// a(\underline{U},v) = \int_{\partial K} f(\underline{U}) g(v) n  \mathrm{dS} .
+    /// \]
     /// </summary>
     public interface IEdgeForm : IInnerEdgeForm, IBoundaryEdgeForm {
 
@@ -891,9 +891,9 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// defines a volume term.
-    /// ```math 
-    /// a(\vec{U},v) = \int_{\Omega} f(\vec{U}) g(v)   \mathrm{dX}
-    /// ```
+    /// \[ 
+    /// a(\underline{U},v) = \int_{\Omega} f(\underline{U}) g(v)   \mathrm{dX}
+    /// \]
     /// </summary>
     public interface IVolumeForm : IEquationComponent {
 
@@ -963,26 +963,26 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a bi-linear form of the type
-    /// ```math 
+    /// \[ 
     ///    a(U,v) = \sum_{l} \int_{\Gamma_{\mathrm{int}}} 
-    ///              u_l  {f}_{l}(\vec{x}) v
+    ///              u_l  {f}_{l}(\underline{x}) v
     ///           \ \mathrm{dV}
-    /// ```.
+    /// \].
     /// where <em>v</em> denotes the test function (corresponds to co-domain variable) and 
-    /// \f$ U = (u_0, \ldots, u_{L-1} ) \f$ denotes the trial functions (correspond to domain variable, defined by the 
+    /// $U = (u_0, \ldots, u_{L-1} )$ denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
     /// </summary>
     public interface IVolumeForm_UxV : IVolumeForm {
 
         /// <summary>
-        /// the values of \f$ {f}_{l}(\vec{x}) \f$
+        /// the values of ${f}_{l}(\underline{x})$
         /// </summary>
         /// <param name="prm">parameters on which the form may depend</param>
         /// <param name="UxV">
-        /// Output: the values of \f$ f_l(\vec{x}) \f$ 
+        /// Output: the values of $f_l(\underline{x})$ 
         /// - 1st index: cell index 
         /// - 2nd index: quadrature node 
-        /// - 3rd index: correlates with argument ordering, i.e. index \f$ l \f$, of trial function; see <see cref="IEquationComponent.ArgumentOrdering"/> 
+        /// - 3rd index: correlates with argument ordering, i.e. index $l$, of trial function; see <see cref="IEquationComponent.ArgumentOrdering"/> 
         /// </param>
         void Form(ref VolumFormParams prm, MultidimensionalArray UxV);
 
@@ -990,29 +990,29 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a bi-linear form of the type
-    /// ```math 
+    /// \[
     ///    a(U,v) = \sum_{l} \int_{\Gamma_{\mathrm{int}}} 
-    ///               v \vec{f}_{l}(\vec{x}) \cdot \nabla u_l
+    ///               v \underline{f}_{l}(\underline{x}) \cdot \nabla u_l
     ///           \ \mathrm{dV}
-    /// ```.
+    /// \].
     /// where <em>v</em> denotes the test function (corresponds to co-domain variable) and 
-    /// \f$ U = (u_0, \ldots, u_{L-1} ) \f$ denotes the trial functions (correspond to domain variable, defined by the 
+    /// $U = (u_0, \ldots, u_{L-1} )$ denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
     /// </summary>
     public interface IVolumeForm_GradUxV : IVolumeForm {
 
         /// <summary>
-        /// the values of \f$ \vec{f}_{l}(\vec{x}) \f$
+        /// the values of $\underline{f}_{l}(\underline{x})$
         /// </summary>
         /// <param name="prm">parameters on which the form may depend</param>
         /// <param name="GradUxV">
-        /// Output: the values of \f$ \vec{f}_{l}(\vec{x}) \f$ 
+        /// Output: the values of $\underline{f}_{l}(\underline{x})$ 
         ///  - 1st index: cell index 
         ///  - 2nd index: quadrature node 
-        ///  - 3rd index: correlates with argument ordering, i.e. index \f$ l \f$, of trial function; 
+        ///  - 3rd index: correlates with argument ordering, i.e. index $l$, of trial function; 
         ///            see <see cref="IEquationComponent.ArgumentOrdering"/> 
-        ///  - 4th index: component index of \f$ \vec{f}_{l}(\vec{x}) \f$, i.e. correlates with 
-        ///            component index of trial function gradient \f$ \nabla u_l \f$
+        ///  - 4th index: component index of $\underline{f}_{l}(\underline{x})$, i.e. correlates with 
+        ///            component index of trial function gradient $\nabla u_l$
         /// </param>
         void Form(ref VolumFormParams prm, MultidimensionalArray GradUxV);
 
@@ -1020,29 +1020,29 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a bi-linear form of the type
-    /// ```math 
+    /// \[ 
     ///    a(U,v) = \sum_{l} \int_{\Gamma_{\mathrm{int}}} 
-    ///               \nabla v \cdot \vec{f}_{l}(\vec{x}) u_l
+    ///               \nabla v \cdot \underline{f}_{l}(\underline{x}) u_l
     ///           \ \mathrm{dV}
-    /// ```.
+    /// \].
     /// where <em>v</em> denotes the test function (corresponds to co-domain variable) and 
-    /// \f$ U = (u_0, \ldots, u_{L-1} ) \f$ denotes the trial functions (correspond to domain variable, defined by the 
+    /// $U = (u_0, \ldots, u_{L-1} )$ denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
     /// </summary>
     public interface IVolumeForm_UxGradV : IVolumeForm {
 
         /// <summary>
-        /// the values of \f$ \vec{f}_{l}(\vec{x}) \f$
+        /// the values of $\underline{f}_{l}(\underline{x})$
         /// </summary>
         /// <param name="prm">parameters on which the form may depend</param>
         /// <param name="UxGradV">
-        ///  - Output: the values of \f$ \vec{f}_{l}(\vec{x}) \f$ 
+        ///  - Output: the values of $\underline{f}_{l}(\underline{x})$ 
         ///  - 1st index: cell index 
         ///  - 2nd index: quadrature node 
-        ///  - 3rd index: correlates with argument ordering, i.e. index \f$ l \f$, of trial function; 
+        ///  - 3rd index: correlates with argument ordering, i.e. index $l$, of trial function; 
         ///            see <see cref="IEquationComponent.ArgumentOrdering"/> 
-        ///  - 4th index: component index of \f$ \vec{f}_{l}(\vec{x}) \f$, i.e. correlates with 
-        ///            component index of test function gradient \f$ \nabla v \f$
+        ///  - 4th index: component index of $\underline{f}_{l}(\underline{x})$, i.e. correlates with 
+        ///            component index of test function gradient $\nabla v$
         /// </param>
         void Form(ref VolumFormParams prm, MultidimensionalArray UxGradV);
 
@@ -1050,31 +1050,31 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a bi-linear form of the type
-    /// ```math 
+    /// \[ 
     ///    a(U,v) = \sum_{l} \int_{\Gamma_{\mathrm{int}}} 
-    ///              \nabla v^T \cdot \vec{\vec{f}}_{l}(\vec{x}) \cdot \nabla u_l
+    ///              \nabla v^T \cdot \underline{\underline{f}}_{l}(\underline{x}) \cdot \nabla u_l
     ///           \ \mathrm{dV}
-    /// ```.
+    /// \].
     /// where <em>v</em> denotes the test function (corresponds to co-domain variable) and 
-    /// \f$ U = (u_0, \ldots, u_{L-1} ) \f$ denotes the trial functions (correspond to domain variable, defined by the 
+    /// $U = (u_0, \ldots, u_{L-1} )$ denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
     /// </summary>
     public interface IVolumeForm_GradUxGradV : IVolumeForm {
 
         /// <summary>
-        /// the values of \f$ \vec{\vec{f}}_{l}(\vec{x}) \f$
+        /// the values of $\underline{\underline{f}}_{l}(\underline{x})$
         /// </summary>
         /// <param name="prm">parameters on which the form may depend</param>
         /// <param name="GradUxGradV">
-        /// Output: the values of \f$ \vec{\vec{f}}_{l}(\vec{x}) \f$ <br/>
+        /// Output: the values of $\underline{\underline{f}}_{l}(\underline{x})$ <br/>
         /// 1st index: cell index <br/>
         /// 2nd index: quadrature node <br/>
-        /// 3rd index: correlates with argument ordering, i.e. index \f$ l \f$, of trial function; 
+        /// 3rd index: correlates with argument ordering, i.e. index $l$, of trial function; 
         ///            see <see cref="IEquationComponent.ArgumentOrdering"/> <br/>
-        /// 4th index: row index of \f$ \vec{\vec{f}}_{l}(\vec{x}) \f$, i.e. correlates with 
-        ///            component index of test function gradient \f$ \nabla v \f$
-        /// 5th index: column index of \f$ \vec{\vec{f}}_{l}(\vec{x}) \f$, i.e. correlates with 
-        ///            component index of trial function gradient \f$ \nabla u_l \f$
+        /// 4th index: row index of $\underline{\underline{f}}_{l}(\underline{x})$, i.e. correlates with 
+        ///            component index of test function gradient $\nabla v$
+        /// 5th index: column index of $\underline{\underline{f}}_{l}(\underline{x})$, i.e. correlates with 
+        ///            component index of trial function gradient $\nabla u_l$
         /// </param>
         void Form(ref VolumFormParams prm, MultidimensionalArray GradUxGradV);
 
@@ -1082,21 +1082,21 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a linear form of the type
-    /// ```math 
+    /// \[ 
     ///    a(v) = \int_{\Gamma_{\mathrm{int}}} 
-    ///              v \ f(\vec{x})
+    ///              v \ f(\underline{x})
     ///           \ \mathrm{dV}
-    /// ```
+    /// \]
     /// where <em>v</em> denotes the test function (corresponds to co-domain variable).
     /// </summary>
     public interface IVolumeSource_V : IVolumeForm {
 
         /// <summary>
-        /// the values of \f$ f(\vec{x}) \f$
+        /// the values of $f(\underline{x})$
         /// </summary>
         /// <param name="prm">parameters on which the form may depend</param>
         /// <param name="V">
-        /// Output: the values of \f$ f(\vec{x}) \f$ <br/>
+        /// Output: the values of $f(\underline{x})$ <br/>
         /// 1st index: cell index <br/>
         /// 2nd index: quadrature node <br/>
         /// </param>
@@ -1106,26 +1106,26 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a linear form of the type
-    /// ```math 
+    /// \[ 
     ///    a(v) = \int_{\Gamma_{\mathrm{int}}} 
-    ///              \nabla v^T \cdot \vec{f}(\vec{x})
+    ///              \nabla v^T \cdot \underline{f}(\underline{x})
     ///           \ \mathrm{dV}
-    /// ```
+    /// \]
     /// where <em>v</em> denotes the test function (corresponds to co-domain variable).
     /// </summary>
     public interface IVolumeSource_GradV : IVolumeForm {
 
         /// <summary>
-        /// the values of \f$ \vec{f}(\vec{x}) \f$
+        /// the values of $\underline{f}(\underline{x})$
         /// </summary>
         /// <param name="prm">parameters on which the form may depend</param>
         /// <param name="GradV">
-        /// Output: the values of \f$ \vec{f}(\vec{x}) \f$ <br/>
+        /// Output: the values of $\underline{f}(\underline{x})$ <br/>
         /// 1st index: cell index <br/>
         /// 2nd index: quadrature node <br/>
         /// 3rd index: component index/spatial direction
-        ///            of \f$ \vec{f}(\vec{x}) \f$, i.e. correlates with 
-        ///            component index of test function gradient \f$ \nabla v \f$
+        ///            of $\underline{f}(\underline{x})$, i.e. correlates with 
+        ///            component index of test function gradient $\nabla v$
         /// </param>
         void Form(ref VolumFormParams prm, MultidimensionalArray GradV);
     }
@@ -1133,36 +1133,36 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a non-linear form of the type
-    /// ```math 
+    /// \[ 
     ///    a(U,v) = \int_{\Gamma_{\mathrm{int}}} 
-    ///              u_l  {f}(\vec{x},U) v
+    ///              u_l  {f}(\underline{x},U) v
     ///             \ \mathrm{dV}
-    /// ```
+    /// \]
     /// where <em>v</em> denotes the test function (corresponds to co-domain variable) and 
-    /// \f$ U = (u_0, \ldots, u_{L-1} ) \f$ denotes the trial functions (correspond to domain variable, defined by the 
+    /// $U = (u_0, \ldots, u_{L-1} )$ denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
     /// </summary>
     public interface INonlinVolumeForm_V : IVolumeForm {
 
         /// <summary>
-        /// the function \f$ {f}(\vec{x},U,\nabla U) \f$
+        /// the function ${f}(\underline{x},U,\nabla U)$
         /// </summary>
         /// <param name="prm">parameters on which the form may depend</param>
         /// <param name="f">
-        /// Output: the values of \f$ {f}(\vec{x},U,\nabla U) \f$<br/>
+        /// Output: the values of ${f}(\underline{x},U,\nabla U)$<br/>
         /// 1st index: cell index <br/>
         /// 2nd index: quadrature node <br/>
         /// </param>
         /// <param name="U">
-        /// Input: the values of \f$ U \f$<br/>
-        /// 1st index: correlates with argument ordering, i.e. index \f$ l \f$, of trial function; 
+        /// Input: the values of $U$<br/>
+        /// 1st index: correlates with argument ordering, i.e. index $l$, of trial function; 
         ///            see <see cref="IEquationComponent.ArgumentOrdering"/> <br/>
         /// 2nd index: cell index <br/>
         /// 3rd index: quadrature node <br/>
         /// </param>
         /// <param name="GradU">
-        /// Input: the values of \f$ \nabla U \f$ <br/>
-        /// 1st index: correlates with argument ordering, i.e. index \f$ l \f$ , of trial function; 
+        /// Input: the values of $\nabla U$ <br/>
+        /// 1st index: correlates with argument ordering, i.e. index $l$ , of trial function; 
         ///            see <see cref="IEquationComponent.ArgumentOrdering"/> <br/>
         /// 2nd index: cell index <br/>
         /// 3rd index: quadrature node <br/>
@@ -1173,41 +1173,41 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a non-linear form of the type
-    /// ```math 
+    /// \[ 
     ///    a(U,v) = \int_{\Gamma_{\mathrm{int}}} 
-    ///              \nabla v^T \cdot \vec{f}(\vec{x},U,\nabla U)
+    ///              \nabla v^T \cdot \underline{f}(\underline{x},U,\nabla U)
     ///             \ \mathrm{dV}
-    /// ```
+    /// \]
     /// where <em>v</em> denotes the test function (corresponds to co-domain variable) and 
-    /// \f$ U = (u_0, \ldots, u_{L-1} ) \f$  denotes the trial functions (correspond to domain variable, defined by the 
+    /// $U = (u_0, \ldots, u_{L-1} )$  denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
     /// </summary>
     public interface INonlinVolumeForm_GradV : IVolumeForm {
 
         /// <summary>
-        /// the values of \f$ \vec{f}(\vec{x},U,\nabla U) \f$ 
+        /// the values of $\underline{f}(\underline{x},U,\nabla U)$ 
         /// </summary>
         /// <param name="prm">parameters on which the form may depend</param>
         /// <param name="U">
-        /// Input: the values of \f$ U \f$ <br/>
-        /// 1st index: correlates with argument ordering, i.e. index \f$ l \f$ , of trial function; 
+        /// Input: the values of $U$ <br/>
+        /// 1st index: correlates with argument ordering, i.e. index $l$ , of trial function; 
         ///            see <see cref="IEquationComponent.ArgumentOrdering"/> <br/>
         /// 2nd index: cell index <br/>
         /// 3rd index: quadrature node <br/>
         /// </param>
         /// <param name="GradU">
-        /// Input: the values of \f$ \nabla U \f$ <br/>
-        /// 1st index: correlates with argument ordering, i.e. index \f$ l \f$ , of trial function; 
+        /// Input: the values of $\nabla U$ <br/>
+        /// 1st index: correlates with argument ordering, i.e. index $l$ , of trial function; 
         ///            see <see cref="IEquationComponent.ArgumentOrdering"/> <br/>
         /// 2nd index: cell index <br/>
         /// 3rd index: quadrature node <br/>
         /// 4th index: spatial direction of derivative
         /// </param>
         /// <param name="f">
-        /// Output: the values of \f$ \vec{f}(\vec{x},U,\nabla U) \f$  <br/>
+        /// Output: the values of $\underline{f}(\underline{x},U,\nabla U)$  <br/>
         /// 1st index: cell index <br/>
         /// 2nd index: quadrature node <br/>
-        /// 3rd index: vector-component of \f$ \vec{f} \f$  <br/>
+        /// 3rd index: vector-component of $\underline{f}$  <br/>
         /// </param>
         void Form(ref VolumFormParams prm, MultidimensionalArray[] U, MultidimensionalArray[] GradU, MultidimensionalArray f);
     }
@@ -1282,18 +1282,18 @@ namespace BoSSS.Foundation {
     public interface IInnerEdgeform_UxV : IInnerEdgeForm {
         
         /// <summary>
-        /// the values of \f$ {f}_{i \ j \ l}(\vec{x})\f$   on interior edges on \f$ \Gamma_{\mathrm{int}} \f$ .
+        /// the values of ${f}_{i \ j \ l}(\underline{x})$   on interior edges on $\Gamma_{\mathrm{int}}$ .
         /// </summary>
         /// <param name="efp"></param>
         /// <param name="UxV">
-        /// output: the values of \f$ {f}_{i \ j \ l}(\vec{x}) \f$:
+        /// output: the values of ${f}_{i \ j \ l}(\underline{x})$:
         /// - 1st index: edge index
         /// - 2nd index: quadrature node
-        /// - 3rd index: in and out - coefficients with respect to trial function, i.e. index \f$ i \f$ 
+        /// - 3rd index: in and out - coefficients with respect to trial function, i.e. index $i$ 
         ///              ('U': index 0 corresponds to IN-cell, index 1 corresponds to OUT-cell). 
-        /// - 4th index: in and out - coefficients with respect to test function, i.e. index \f$ j \f$ 
+        /// - 4th index: in and out - coefficients with respect to test function, i.e. index $j$ 
         ///              ('V': index 0 corresponds to IN-cell, index 1 corresponds to OUT-cell). 
-        /// - 5th index: correlates with argument ordering, i.e. index \f$ l \f$ , of trial function; 
+        /// - 5th index: correlates with argument ordering, i.e. index $l$ , of trial function; 
         ///              see <see cref="IEquationComponent.ArgumentOrdering"/>
         /// </param>
         void InternalEdge_UxV(ref EdgeFormParams efp, MultidimensionalArray UxV);
@@ -1305,11 +1305,11 @@ namespace BoSSS.Foundation {
     public interface IBoundaryEdgeform_UxV : IBoundaryEdgeForm {
         
         /// <summary>
-        /// the values of \f$ {f}_{0 \ 0 \ l}(\vec{x}) \f$   on boundary edges on \f$ \partial \Omega \f$ .
+        /// the values of ${f}_{0 \ 0 \ l}(\underline{x})$   on boundary edges on $\partial \Omega$ .
         /// </summary>
         /// <param name="efp"></param>
         /// <param name="UxV">
-        /// output: the values of \f$ {f}_{0 \ 0 \ l}(\vec{x}) \f$ :<br/>
+        /// output: the values of ${f}_{0 \ 0 \ l}(\underline{x})$ :<br/>
         /// 1st index: edge index<br/>
         /// 2nd index: quadrature node<br/>
         /// 3rd index: correlates with argument ordering (of trial function; see <see cref="IEquationComponent.ArgumentOrdering"/> <br/>
@@ -1320,20 +1320,20 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a bi-linear form of the type
-    /// ```math 
+    /// \[
     ///    a(U,v) = \sum_{l} \oint_{\Gamma_{\mathrm{int}}} 
-    ///              u^\mathrm{in}_l  {f}_{0 \ 0 \ l}(\vec{x}) v^\mathrm{in} 
-    ///            + u^\mathrm{in}_l  {f}_{0 \ 1 \ l}(\vec{x}) v^\mathrm{out} 
-    ///            + u^\mathrm{out}_l {f}_{1 \ 0 \ l}(\vec{x}) v^\mathrm{in} 
-    ///            + u^\mathrm{out}_l {f}_{1 \ 1 \ l}(\vec{x}) v^\mathrm{out} 
+    ///              u^\mathrm{in}_l  {f}_{0 \ 0 \ l}(\underline{x}) v^\mathrm{in} 
+    ///            + u^\mathrm{in}_l  {f}_{0 \ 1 \ l}(\underline{x}) v^\mathrm{out} 
+    ///            + u^\mathrm{out}_l {f}_{1 \ 0 \ l}(\underline{x}) v^\mathrm{in} 
+    ///            + u^\mathrm{out}_l {f}_{1 \ 1 \ l}(\underline{x}) v^\mathrm{out} 
     ///           \ \mathrm{dS}
     ///         +
     ///          \sum_{l} \oint_{\partial \Omega} 
-    ///              u^\mathrm{in}_\gamma {f}_{0 \ 0 \ l}(\vec{x}) v^\mathrm{in} 
+    ///              u^\mathrm{in}_\gamma {f}_{0 \ 0 \ l}(\underline{x}) v^\mathrm{in} 
     ///           \ \mathrm{dS}          
-    /// ```
+    /// \]
     /// where <em>v</em> denotes the test function (corresponds to co-domain variable) and 
-    /// \f$ U = (u_0, \ldots, u_{L-1} ) \f$  denotes the trial functions (correspond to domain variable, defined by the 
+    /// $U = (u_0, \ldots, u_{L-1} )$  denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
     /// </summary>
     public interface IEdgeForm_UxV : IInnerEdgeform_UxV, IBoundaryEdgeform_UxV, IEdgeForm {
@@ -1345,20 +1345,20 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a bi-linear form of the type
-    /// ```math 
+    /// \[
     ///    a(U,v) = \sum_{l} \oint_{\Gamma_{\mathrm{int}}} 
-    ///              \nabla u^\mathrm{in}_l  \cdot \vec{f}_{0 \ 0 \ l}(\vec{x}) v^\mathrm{in} 
-    ///            + \nabla u^\mathrm{in}_l  \cdot \vec{f}_{0 \ 1 \ l}(\vec{x}) v^\mathrm{out} 
-    ///            + \nabla u^\mathrm{out}_l \cdot \vec{f}_{1 \ 0 \ l}(\vec{x}) v^\mathrm{in} 
-    ///            + \nabla u^\mathrm{out}_l \cdot \vec{f}_{1 \ 1 \ l}(\vec{x}) v^\mathrm{out} 
+    ///              \nabla u^\mathrm{in}_l  \cdot \underline{f}_{0 \ 0 \ l}(\underline{x}) v^\mathrm{in} 
+    ///            + \nabla u^\mathrm{in}_l  \cdot \underline{f}_{0 \ 1 \ l}(\underline{x}) v^\mathrm{out} 
+    ///            + \nabla u^\mathrm{out}_l \cdot \underline{f}_{1 \ 0 \ l}(\underline{x}) v^\mathrm{in} 
+    ///            + \nabla u^\mathrm{out}_l \cdot \underline{f}_{1 \ 1 \ l}(\underline{x}) v^\mathrm{out} 
     ///           \ \mathrm{dS}
     ///         +
     ///          \sum_{l} \oint_{\partial \Omega} 
-    ///              \nabla u^\mathrm{in}_\gamma \cdot \vec{f}_{0 \ 0 \ l}(\vec{x}) v^\mathrm{in} 
+    ///              \nabla u^\mathrm{in}_\gamma \cdot \underline{f}_{0 \ 0 \ l}(\underline{x}) v^\mathrm{in} 
     ///           \ \mathrm{dS}          
-    /// ```
+    /// \]
     /// where <em>v</em> denotes the test function (corresponds to co-domain variable) and 
-    /// \f$ U = (u_0, \ldots, u_{L-1} ) \f$  denotes the trial functions (correspond to domain variable, defined by the 
+    /// $U = (u_0, \ldots, u_{L-1} )$  denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
     /// </summary>
     public interface IEdgeform_GradUxV : IEdgeForm, IInnerEdgeform_GradUxV, IBoundaryEdgeform_GradUxV {
@@ -1370,18 +1370,18 @@ namespace BoSSS.Foundation {
     /// </summary>
     public interface IInnerEdgeform_GradUxV : IInnerEdgeForm {
         /// <summary>
-        /// the values of \f$ \vec{f}_{i \ j \ l}(\vec{x}) \f$   on interior edges on \f$ \Gamma_{\mathrm{int}} \f$ .
+        /// the values of $\underline{f}_{i \ j \ l}(\underline{x})$   on interior edges on $\Gamma_{\mathrm{int}}$ .
         /// </summary>
         /// <param name="efp"></param>
         /// <param name="GradUxV">
-        /// output: the values of \f$ \vec{f}_{i \ j \ l}(\vec{x}) \f$ :<br/>
+        /// output: the values of $\underline{f}_{i \ j \ l}(\underline{x})$ :<br/>
         /// 1st index: edge index<br/>
         /// 2nd index: quadrature node<br/>
-        /// 3rd index: in and out - coefficients with respect to trial function, i.e. index \f$ i \f$ 
+        /// 3rd index: in and out - coefficients with respect to trial function, i.e. index $i$ 
         ///            ('U': index 0 corresponds to IN-cell, index 1 corresponds to OUT-cell). <br/>
-        /// 4th index: in and out - coefficients with respect to test function, i.e. index \f$ j \f$ 
+        /// 4th index: in and out - coefficients with respect to test function, i.e. index $j$ 
         ///            ('V': index 0 corresponds to IN-cell, index 1 corresponds to OUT-cell). <br/>
-        /// 5th index: correlates with argument ordering, i.e. index \f$ l \f$ , of trial function; 
+        /// 5th index: correlates with argument ordering, i.e. index $l$ , of trial function; 
         ///            see <see cref="IEquationComponent.ArgumentOrdering"/> <br/>
         /// 6th index: spatial direction of trial ('U') function gradient  <br/>
         /// </param>
@@ -1394,14 +1394,14 @@ namespace BoSSS.Foundation {
     public interface IBoundaryEdgeform_GradUxV : IBoundaryEdgeForm { 
         
         /// <summary>
-        /// the values of \f$ \vec{f}_{0 \ 0 \ l}(\vec{x}) \f$   on boundary edges on \f$ \partial \Omega\f$ .
+        /// the values of $\underline{f}_{0 \ 0 \ l}(\underline{x})$   on boundary edges on $\partial \Omega$ .
         /// </summary>
         /// <param name="efp"></param>
         /// <param name="GradUxV">
-        /// output: the values of \f$ \vec{f}_{0 \ 0 \ l}(\vec{x}) \f$ :<br/>
+        /// output: the values of $\underline{f}_{0 \ 0 \ l}(\underline{x})$ :<br/>
         /// 1st index: edge index<br/>
         /// 2nd index: quadrature node<br/>
-        /// 3rd index: correlates with argument ordering, i.e. index \f$ l \f$ , of trial function; 
+        /// 3rd index: correlates with argument ordering, i.e. index $l$ , of trial function; 
         ///            see <see cref="IEquationComponent.ArgumentOrdering"/> <br/>
         /// 4th index: spatial direction of trial function gradient <br/>
         /// </param>
@@ -1410,20 +1410,20 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a bi-linear form of the type
-    /// ```math 
+    /// \[ 
     ///    a(U,v) = \sum_{l} \oint_{\Gamma_{\mathrm{int}}} 
-    ///              u^\mathrm{in}_l  \vec{f}_{0 \ 0 \ l}(\vec{x}) \cdot \nabla v^\mathrm{in} 
-    ///            + u^\mathrm{in}_l  \vec{f}_{0 \ 1 \ l}(\vec{x}) \cdot \nabla v^\mathrm{out} 
-    ///            + u^\mathrm{out}_l \vec{f}_{1 \ 0 \ l}(\vec{x}) \cdot \nabla v^\mathrm{in} 
-    ///            + u^\mathrm{out}_l \vec{f}_{1 \ 1 \ l}(\vec{x}) \cdot \nabla v^\mathrm{out} 
+    ///              u^\mathrm{in}_l  \underline{f}_{0 \ 0 \ l}(\underline{x}) \cdot \nabla v^\mathrm{in} 
+    ///            + u^\mathrm{in}_l  \underline{f}_{0 \ 1 \ l}(\underline{x}) \cdot \nabla v^\mathrm{out} 
+    ///            + u^\mathrm{out}_l \underline{f}_{1 \ 0 \ l}(\underline{x}) \cdot \nabla v^\mathrm{in} 
+    ///            + u^\mathrm{out}_l \underline{f}_{1 \ 1 \ l}(\underline{x}) \cdot \nabla v^\mathrm{out} 
     ///           \ \mathrm{dS}
     ///         +
     ///          \sum_{l} \oint_{\partial \Omega} 
-    ///              u^\mathrm{in}_\gamma \vec{f}_{0 \ 0 \ l}(\vec{x}) \cdot \nabla v^\mathrm{in} 
+    ///              u^\mathrm{in}_\gamma \underline{f}_{0 \ 0 \ l}(\underline{x}) \cdot \nabla v^\mathrm{in} 
     ///           \ \mathrm{dS}          
-    /// ```
+    /// \]
     /// where <em>v</em> denotes the test function (corresponds to co-domain variable) and 
-    /// \f$ U = (u_0, \ldots, u_{L-1} ) \f$  denotes the trial functions (correspond to domain variable, defined by the 
+    /// $U = (u_0, \ldots, u_{L-1} )$  denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
     /// </summary>
     public interface IEdgeform_UxGradV : IEdgeForm, IInnerEdgeform_UxGradV, IBoundaryEdgeform_UxGradV {
@@ -1435,18 +1435,18 @@ namespace BoSSS.Foundation {
     /// </summary>
     public interface IInnerEdgeform_UxGradV : IInnerEdgeForm { 
         /// <summary>
-        /// the values of \f$ \vec{f}_{i \ j \ l}(\vec{x}) \f$   on interior edges on \f$ \Gamma_{\mathrm{int}} \f$ .
+        /// the values of $\underline{f}_{i \ j \ l}(\underline{x})$   on interior edges on $\Gamma_{\mathrm{int}}$ .
         /// </summary>
         /// <param name="efp"></param>
         /// <param name="UxGradV">
-        /// Output: the value of \f$ \vec{f}_{i \ j \ l}(\vec{x}) \f$  <br/>
+        /// Output: the value of $\underline{f}_{i \ j \ l}(\underline{x})$  <br/>
         /// 1st index: edge index<br/>
         /// 2nd index: quadrature node<br/>
-        /// 3rd index: in and out - coefficients with respect to trial function, i.e. index \f$ i \f$ 
+        /// 3rd index: in and out - coefficients with respect to trial function, i.e. index $i$ 
         ///            ('U': index 0 corresponds to IN-cell, index 1 corresponds to OUT-cell). <br/>
-        /// 4th index: in and out - coefficients with respect to test function, i.e. index \f$ j \f$ 
+        /// 4th index: in and out - coefficients with respect to test function, i.e. index $j$ 
         ///            ('V': index 0 corresponds to IN-cell, index 1 corresponds to OUT-cell). <br/>
-        /// 5th index: correlates with argument ordering, i.e. index \f$ l \f$ , of trial function; 
+        /// 5th index: correlates with argument ordering, i.e. index $l$ , of trial function; 
         ///            see <see cref="IEquationComponent.ArgumentOrdering"/> <br/>
         /// 6th index: spatial direction of test function ('V') gradient  <br/>
         /// </param>
@@ -1458,14 +1458,14 @@ namespace BoSSS.Foundation {
     /// </summary>
     public interface IBoundaryEdgeform_UxGradV : IBoundaryEdgeForm { 
         /// <summary>
-        /// the values of \f$ \vec{f}_{0 \ 0 \ l}(\vec{x}) \f$   on boundary edges on \f$ \partial \Omega\f$ .
+        /// the values of $\underline{f}_{0 \ 0 \ l}(\underline{x})$   on boundary edges on $\partial \Omega$ .
         /// </summary>
         /// <param name="efp"></param>
         /// <param name="UxGradV">
-        /// Output: values of \f$ \vec{f}_{0 \ 0 \ l}(\vec{x}) \f$ .<br/>
+        /// Output: values of $\underline{f}_{0 \ 0 \ l}(\underline{x})$ .<br/>
         /// 1st index: edge index<br/>
         /// 2nd index: quadrature node<br/>
-        /// 3rd index: correlates with argument ordering, i.e. index \f$ l \f$ , of trial function; 
+        /// 3rd index: correlates with argument ordering, i.e. index $l$ , of trial function; 
         ///            see <see cref="IEquationComponent.ArgumentOrdering"/> <br/>
         /// 4th index: spatial direction of test function ('V') gradient <br/>
         /// </param>
@@ -1474,20 +1474,20 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a bi-linear form of the type
-    /// ```math 
+    /// \[ 
     ///    a(U,v) = \sum_{l} \oint_{\Gamma_{\mathrm{int}}} 
-    ///              (u^\mathrm{in}_l)^T   \cdot \vec{\vec{f}}_{0 \ 0 \ l}(\vec{x}) \cdot \nabla v^\mathrm{in} 
-    ///            + (u^\mathrm{in}_l)^T   \cdot \vec{\vec{f}}_{0 \ 1 \ l}(\vec{x}) \cdot \nabla v^\mathrm{out} 
-    ///            + (u^\mathrm{out}_l)^T  \cdot \vec{\vec{f}}_{1 \ 0 \ l}(\vec{x}) \cdot \nabla v^\mathrm{in} 
-    ///            + (u^\mathrm{out}_l)^T  \cdot \vec{\vec{f}}_{1 \ 1 \ l}(\vec{x}) \cdot \nabla v^\mathrm{out} 
+    ///              (u^\mathrm{in}_l)^T   \cdot \underline{\underline{f}}_{0 \ 0 \ l}(\underline{x}) \cdot \nabla v^\mathrm{in} 
+    ///            + (u^\mathrm{in}_l)^T   \cdot \underline{\underline{f}}_{0 \ 1 \ l}(\underline{x}) \cdot \nabla v^\mathrm{out} 
+    ///            + (u^\mathrm{out}_l)^T  \cdot \underline{\underline{f}}_{1 \ 0 \ l}(\underline{x}) \cdot \nabla v^\mathrm{in} 
+    ///            + (u^\mathrm{out}_l)^T  \cdot \underline{\underline{f}}_{1 \ 1 \ l}(\underline{x}) \cdot \nabla v^\mathrm{out} 
     ///           \ \mathrm{dS}
     ///         +
     ///          \sum_{l} \oint_{\partial \Omega} 
-    ///              u^\mathrm{in}_\gamma \vec{f}_{0 \ 0 \ l}(\vec{x}) \cdot \nabla v^\mathrm{in} 
+    ///              u^\mathrm{in}_\gamma \underline{f}_{0 \ 0 \ l}(\underline{x}) \cdot \nabla v^\mathrm{in} 
     ///           \ \mathrm{dS}          
-    /// ```
+    /// \]
     /// where <em>v</em> denotes the test function (corresponds to co-domain variable) and 
-    /// \f$ U = (u_0, \ldots, u_{L-1} ) \f$  denotes the trial functions (correspond to domain variable, defined by the 
+    /// $U = (u_0, \ldots, u_{L-1} )$  denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
     /// </summary>
     public interface IEdgeform_GradUxGradV : IEdgeForm, IInnerEdgeform_GradUxGradV, IBoundaryEdgeform_GradUxGradV {
@@ -1499,18 +1499,18 @@ namespace BoSSS.Foundation {
     /// </summary>
     public interface IInnerEdgeform_GradUxGradV : IInnerEdgeForm {
         /// <summary>
-        /// the values of \f$ \vec{f}_{i \ j \ l}(\vec{x}) \f$   on interior edges on \f$ \Gamma_{\mathrm{int}} \f$ .
+        /// the values of $\underline{f}_{i \ j \ l}(\underline{x})$   on interior edges on $\Gamma_{\mathrm{int}}$ .
         /// </summary>
         /// <param name="efp"></param>
         /// <param name="GradUxGradV">
-        /// Output: the value of \f$ \vec{f}_{i \ j \ l}(\vec{x}) \f$  <br/>
+        /// Output: the value of $\underline{f}_{i \ j \ l}(\underline{x})$  <br/>
         /// 1st index: edge index<br/>
         /// 2nd index: quadrature node<br/>
-        /// 3rd index: in and out - coefficients with respect to trial function, i.e. index \f$ i \f$ 
+        /// 3rd index: in and out - coefficients with respect to trial function, i.e. index $i$ 
         ///            ('U': index 0 corresponds to IN-cell, index 1 corresponds to OUT-cell). <br/>
-        /// 4th index: in and out - coefficients with respect to test function, i.e. index \f$ j \f$ 
+        /// 4th index: in and out - coefficients with respect to test function, i.e. index $j$ 
         ///            ('V': index 0 corresponds to IN-cell, index 1 corresponds to OUT-cell). <br/>
-        /// 5th index: correlates with argument ordering, i.e. index \f$ l\f$ , of trial function; 
+        /// 5th index: correlates with argument ordering, i.e. index $l$ , of trial function; 
         ///            see <see cref="IEquationComponent.ArgumentOrdering"/> <br/>
         /// 6th index: spatial direction of test function ('U') gradient  <br/>
         /// 7th index: spatial direction of test function ('V') gradient  <br/>
@@ -1523,14 +1523,14 @@ namespace BoSSS.Foundation {
     /// </summary>
     public interface IBoundaryEdgeform_GradUxGradV : IBoundaryEdgeForm {
         /// <summary>
-        /// the values of \f$ \vec{f}_{0 \ 0 \ l}(\vec{x})\f$   on boundary edges on \f$ \partial \Omega\f$ .
+        /// the values of $\underline{f}_{0 \ 0 \ l}(\underline{x})$   on boundary edges on $\partial \Omega$ .
         /// </summary>
         /// <param name="efp"></param>
         /// <param name="GradUxGradV">
-        /// Output: values of \f$ \vec{f}_{0 \ 0 \ l}(\vec{x})\f$ .<br/>
+        /// Output: values of $\underline{f}_{0 \ 0 \ l}(\underline{x})$ .<br/>
         /// 1st index: edge index<br/>
         /// 2nd index: quadrature node<br/>
-        /// 3rd index: correlates with argument ordering, i.e. index \f$ l\f$ , of trial function; 
+        /// 3rd index: correlates with argument ordering, i.e. index $l$ , of trial function; 
         ///            see <see cref="IEquationComponent.ArgumentOrdering"/> <br/>
         /// 4th index: spatial direction of test function ('U') gradient <br/>
         /// 5th index: spatial direction of test function ('V') gradient <br/>
@@ -1540,11 +1540,11 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a linear form of the type
-    /// ```math 
+    /// \[
     ///    a(v) = 
-    ///         \oint_{\Gamma_{\mathrm{int}}} f_{0}(\vec{x}) v^\mathrm{in} + f_{1}(\vec{x}) v^\mathrm{out}  \ \mathrm{dS}
-    ///         + \oint_{\partial \Omega} f_{0}(\vec{x}) v^\mathrm{in}  \ \mathrm{dS}
-    /// ```
+    ///         \oint_{\Gamma_{\mathrm{int}}} f_{0}(\underline{x}) v^\mathrm{in} + f_{1}(\underline{x}) v^\mathrm{out}  \ \mathrm{dS}
+    ///         + \oint_{\partial \Omega} f_{0}(\underline{x}) v^\mathrm{in}  \ \mathrm{dS}
+    /// \]
     /// where <em>v</em> denotes the test function.
     /// </summary>
     public interface IEdgeSource_V : IEdgeForm, IInnerEdgeSource_V, IBoundaryEdgeSource_V {
@@ -1555,14 +1555,14 @@ namespace BoSSS.Foundation {
     /// </summary>
     public interface IInnerEdgeSource_V : IInnerEdgeForm {
         /// <summary>
-        /// the point-wise source term \f$ f_{i}(\vec{x})\f$  on interior edges \f$ \Gamma_{\mathrm{int}}\f$ .
+        /// the point-wise source term $f_{i}(\underline{x})$  on interior edges $\Gamma_{\mathrm{int}}$ .
         /// </summary>
-        /// <param name="efp">parameters on which  \f$ f\f$  may depend on.</param>
+        /// <param name="efp">parameters on which  $f$  may depend on.</param>
         /// <param name="V">
-        /// Output: the value of \f$ f(\vec{x})\f$ , which will be multiplied with the test function gradient. <br/>
+        /// Output: the value of $f(\underline{x})$ , which will be multiplied with the test function gradient. <br/>
         /// 1st index: edge index<br/>
         /// 2nd index: quadrature node<br/>
-        /// 3rd index: in and out - coefficients with respect to test function, i.e. index \f$ i\f$ 
+        /// 3rd index: in and out - coefficients with respect to test function, i.e. index $i$ 
         ///            ('V': index 0 corresponds to IN-cell, index 1 corresponds to OUT-cell). <br/>
         /// </param>
         void InternalEdge_V(ref EdgeFormParams efp, MultidimensionalArray V);
@@ -1573,11 +1573,11 @@ namespace BoSSS.Foundation {
     /// </summary>
     public interface IBoundaryEdgeSource_V : IBoundaryEdgeForm {
         /// <summary>
-        /// the point-wise source term \f$ f_{0}(\vec{x}) \f$  on boundary edges \f$ \partial \Omega\f$ .
+        /// the point-wise source term $f_{0}(\underline{x})$ on boundary edges $\partial \Omega$ .
         /// </summary>
-        /// <param name="efp">parameters on which  \f$ f\f$  may depend on.</param>
+        /// <param name="efp">parameters on which $f$ may depend on.</param>
         /// <param name="V">
-        /// Output: the value of \f$ f(\vec{x})\f$ , which will be multiplied with the test function gradient. <br/>
+        /// Output: the value of $f(\underline{x})$ , which will be multiplied with the test function gradient. <br/>
         /// The value of the test function.<br/>
         /// 1st index: edge index<br/>
         /// 2nd index: quadrature node<br/>
@@ -1587,12 +1587,12 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a linear form of the type
-    /// ```math 
+    /// \[
     ///    a(v) = \oint_{\Gamma_{\mathrm{int}}} 
-    ///                     \vec{f}_{0}(\vec{x}) \cdot \nabla v^\mathrm{in} 
-    ///                   + \vec{f}_{1}(\vec{x}) \cdot \nabla v^\mathrm{out} \ \mathrm{dS}
-    ///           + \oint_{\partial \Omega} \vec{f}_{0}(\vec{x}) \cdot \nabla v^\mathrm{in} \ \mathrm{dS}
-    /// ```
+    ///                     \underline{f}_{0}(\underline{x}) \cdot \nabla v^\mathrm{in} 
+    ///                   + \underline{f}_{1}(\underline{x}) \cdot \nabla v^\mathrm{out} \ \mathrm{dS}
+    ///           + \oint_{\partial \Omega} \underline{f}_{0}(\underline{x}) \cdot \nabla v^\mathrm{in} \ \mathrm{dS}
+    /// \]
     /// where <em>v</em> denotes the test function.
     /// </summary>
     public interface IEdgeSource_GradV : IEdgeForm, IInnerEdgeSource_GradV, IBoundaryEdgeSource_GradV {
@@ -1603,14 +1603,14 @@ namespace BoSSS.Foundation {
     /// </summary>
     public interface IInnerEdgeSource_GradV : IInnerEdgeForm {
         /// <summary>
-        /// the point-wise source term \f$ \vec{f}_{i}(\vec{x})\f$  on interior edges \f$ \Gamma_{\mathrm{int}}\f$ .
+        /// the point-wise source term $\underline{f}_{i}(\underline{x})$  on interior edges $\Gamma_{\mathrm{int}}$ .
         /// </summary>
-        /// <param name="efp">parameters on which  \f$ \vec{f}\f$  may depend on.</param>
+        /// <param name="efp">parameters on which $\underline{f}$ may depend on.</param>
         /// <param name="GradV">
-        /// Output: the value of \f$ \vec{f}_{i}(\vec{x})\f$ , which will be multiplied with the test function gradient.
+        /// Output: the value of $\underline{f}_{i}(\underline{x})$ , which will be multiplied with the test function gradient.
         /// - 1st index: edge index
         /// - 2nd index: quadrature node
-        /// - 3rd index: in and out - coefficients with respect to test function, i.e. index \f$ i\f$ 
+        /// - 3rd index: in and out - coefficients with respect to test function, i.e. index $i$ 
         ///              ('V': index 0 corresponds to IN-cell, index 1 corresponds to OUT-cell).
         /// - 4th index: spatial direction of test function ('V') gradient <br/>
         /// </param>
@@ -1622,11 +1622,11 @@ namespace BoSSS.Foundation {
     /// </summary>
     public interface IBoundaryEdgeSource_GradV : IBoundaryEdgeForm {
         /// <summary>
-        /// the point-wise source term \f$ \vec{f}_{0}(\vec{x})\f$  on boundary edges \f$ \partial \Omega\f$ .
+        /// the point-wise source term $\underline{f}_{0}(\underline{x})$  on boundary edges $\partial \Omega$ .
         /// </summary>
-        /// <param name="efp">parameters on which  \f$ \vec{f}\f$  may depend on.</param> 
+        /// <param name="efp">parameters on which $\underline{f}$  may depend on.</param> 
         /// <param name="GradV">
-        /// Output: the value of \f$ \vec{f}_{0}(\vec{x})\f$ , which will be multiplied with the test function gradient. <br/>
+        /// Output: the value of $\underline{f}_{0}(\underline{x})$ , which will be multiplied with the test function gradient. <br/>
         /// 1st index: edge index<br/>
         /// 2nd index: quadrature node<br/>
         /// 3rd index: spatial direction of test function ('V') gradient <br/>
@@ -1636,18 +1636,18 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a form of the type
-    /// ```math 
+    /// \[ 
     ///    a(U,v) = \oint_{\Gamma_{\mathrm{int}}} 
-    ///              {f}^\mathrm{in} (\vec{x}, U^\mathrm{in}, U^\mathrm{out}, \nabla U^\mathrm{in}, \nabla U^\mathrm{out}) v^\mathrm{in} 
-    ///            + {f}^\mathrm{out}(\vec{x}, U^\mathrm{in}, U^\mathrm{out}, \nabla U^\mathrm{in}, \nabla U^\mathrm{out}) v^\mathrm{out} 
+    ///              {f}^\mathrm{in} (\underline{x}, U^\mathrm{in}, U^\mathrm{out}, \nabla U^\mathrm{in}, \nabla U^\mathrm{out}) v^\mathrm{in} 
+    ///            + {f}^\mathrm{out}(\underline{x}, U^\mathrm{in}, U^\mathrm{out}, \nabla U^\mathrm{in}, \nabla U^\mathrm{out}) v^\mathrm{out} 
     ///           \ \mathrm{dS}
     ///         +
     ///          \oint_{\partial \Omega} 
-    ///              {f}_{0}(\vec{x}, U^\mathrm{in}, \nabla U^\mathrm{in}) v^\mathrm{in} 
+    ///              {f}_{0}(\underline{x}, U^\mathrm{in}, \nabla U^\mathrm{in}) v^\mathrm{in} 
     ///           \ \mathrm{dS}          
-    /// ```
+    /// \]
     /// where <em>v</em> denotes the test function (corresponds to co-domain variable) and 
-    /// $` U = (u_0, \ldots, u_{L-1} ) `$  denotes the trial functions (correspond to domain variable, defined by the 
+    /// $U = (u_0, \ldots, u_{L-1} )$  denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
     /// </summary>
     public interface INonlinEdgeForm_V : IEdgeForm, INonlinInnerEdgeForm_V, INonlinBoundaryEdgeForm_V {
@@ -1658,20 +1658,20 @@ namespace BoSSS.Foundation {
     /// </summary>
     public interface INonlinInnerEdgeForm_V : IInnerEdgeForm {
         /// <summary>
-        /// the values of \f$ {f}^{*}(\ldots) \f$ on interior edges on \f$ \Gamma_{\mathrm{int}}\f$ .
+        /// the values of ${f}^{*}(\ldots)$ on interior edges on $\Gamma_{\mathrm{int}}$ .
         /// </summary>
         /// <param name="efp"></param>
         /// <param name="fin">
-        /// - output: the values of \f$ {f}^\mathrm{in}(\ldots)\f$ :
+        /// - output: the values of ${f}^\mathrm{in}(\ldots)$ :
         /// - 1st index: edge index
         /// - 2nd index: quadrature node
         /// </param>
         /// <param name="fot">
-        /// output: the values of \f$ {f}^\mathrm{out}(\ldots)\f$
+        /// output: the values of ${f}^\mathrm{out}(\ldots)$
         /// </param>
         /// <param name="Uin">
-        /// - input: the values of \f$ U^\mathrm{in}\f$ 
-        /// - 1st index: component index of \f$ U\f$
+        /// - input: the values of $U^\mathrm{in}$ 
+        /// - 1st index: component index of $U$
         /// - 2nd index: edge index
         /// - 3rd index: quadrature node
         /// </param>
@@ -1679,8 +1679,8 @@ namespace BoSSS.Foundation {
         /// analog to <paramref name="Uin"/>, for 'out'-values.<br/>
         /// </param>
         /// <param name="GradUin">
-        /// input: the values of \f$ \nabla U^\mathrm{in}\f$ <br/>
-        /// 1st index: component index of \f$ U\f$ <br/>
+        /// input: the values of $\nabla U^\mathrm{in}$ <br/>
+        /// 1st index: component index of $U$ <br/>
         /// 2nd index: edge index<br/>
         /// 3rd index: quadrature node<br/>
         /// 4th index: spatial direction of derivative<br/>
@@ -1700,23 +1700,23 @@ namespace BoSSS.Foundation {
     public interface INonlinBoundaryEdgeForm_V : IBoundaryEdgeForm {
 
         /// <summary>
-        /// the values of \f$ {f}^\mathrm{in}(\ldots)\f$   on boundary edges on \f$ \partial \Omega\f$ .
+        /// the values of ${f}^\mathrm{in}(\ldots)$   on boundary edges on $\partial \Omega$ .
         /// </summary>
         /// <param name="efp"></param>
         /// <param name="fin">
-        /// output: the values of \f$ {f}^\mathrm{in}(\ldots)\f$ :<br/>
+        /// output: the values of ${f}^\mathrm{in}(\ldots)$ :<br/>
         /// 1st index: edge index<br/>
         /// 2nd index: quadrature node<br/>
         /// </param>
         /// <param name="Uin">
-        /// input: the values of \f$ U^\mathrm{in}\f$ <br/>
-        /// 1st index: component index of \f$ U\f$ <br/>
+        /// input: the values of $U^\mathrm{in}$ <br/>
+        /// 1st index: component index of $U$ <br/>
         /// 2nd index: edge index<br/>
         /// 3rd index: quadrature node<br/>
         /// </param>
         /// <param name="GradUin">
-        /// input: the values of \f$ \nabla U^\mathrm{in}\f$ <br/>
-        /// 1st index: component index of \f$ U\f$ <br/>
+        /// input: the values of $\nabla U^\mathrm{in}$ <br/>
+        /// 1st index: component index of $U$ <br/>
         /// 2nd index: edge index<br/>
         /// 3rd index: quadrature node<br/>
         /// 4th index: spatial direction of derivative<br/>
@@ -1729,18 +1729,18 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a form of the type
-    /// ```math 
+    /// \[
     ///    a(U,v) = \oint_{\Gamma_{\mathrm{int}}} 
-    ///              \vec{f}^\mathrm{in}  (\vec{x}, U^\mathrm{in}, U^\mathrm{out}, \nabla U^\mathrm{in}, \nabla U^\mathrm{out}) \cdot \nabla v^\mathrm{in} 
-    ///            + \vec{f}^\mathrm{out} (\vec{x}, U^\mathrm{in}, U^\mathrm{out}, \nabla U^\mathrm{in}, \nabla U^\mathrm{out}) \cdot \nabla v^\mathrm{out} 
+    ///              \underline{f}^\mathrm{in}  (\underline{x}, U^\mathrm{in}, U^\mathrm{out}, \nabla U^\mathrm{in}, \nabla U^\mathrm{out}) \cdot \nabla v^\mathrm{in} 
+    ///            + \underline{f}^\mathrm{out} (\underline{x}, U^\mathrm{in}, U^\mathrm{out}, \nabla U^\mathrm{in}, \nabla U^\mathrm{out}) \cdot \nabla v^\mathrm{out} 
     ///           \ \mathrm{dS}
     ///         +
     ///          \oint_{\partial \Omega} 
-    ///              \vec{f}^\mathrm{in}  (\vec{x}, U^\mathrm{in}, \nabla U^\mathrm{in}) \cdot \nabla v^\mathrm{in} 
+    ///              \underline{f}^\mathrm{in}  (\underline{x}, U^\mathrm{in}, \nabla U^\mathrm{in}) \cdot \nabla v^\mathrm{in} 
     ///           \ \mathrm{dS}          
-    /// ```
+    /// \]
     /// where <em>v</em> denotes the test function (corresponds to co-domain variable) and 
-    /// \f$ U = (u_0, \ldots, u_{L-1} )\f$  denotes the trial functions (correspond to domain variable, defined by the 
+    /// $U = (u_0, \ldots, u_{L-1} )$  denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
     /// </summary>
     public interface INonlinEdgeForm_GradV : IEdgeForm, INonlinInnerEdgeForm_GradV, INonlinBoundaryEdgeForm_GradV {
@@ -1751,21 +1751,21 @@ namespace BoSSS.Foundation {
     /// </summary>
     public interface INonlinInnerEdgeForm_GradV : IInnerEdgeForm {
         /// <summary>
-        /// the values of \f$ \vec{f}^{*}(\ldots)\f$   on interior edges on \f$ \Gamma_{\mathrm{int}}\f$ .
+        /// the values of $\underline{f}^{*}(\ldots)$   on interior edges on $\Gamma_{\mathrm{int}}$ .
         /// </summary>
         /// <param name="efp"></param>
         /// <param name="fIN">
-        /// output: the values of \f$ {f}^\mathrm{in}(\ldots)\f$ :<br/>
+        /// output: the values of ${f}^\mathrm{in}(\ldots)$ :<br/>
         /// 1st index: edge index<br/>
         /// 2nd index: quadrature node<br/>
-        /// 3rd index: component index of  \f$ \vec{f}^\mathrm{in}(\ldots)\f$ . <br/>
+        /// 3rd index: component index of $\underline{f}^\mathrm{in}(\ldots)$ . <br/>
         /// </param>
         /// <param name="fOT">
         /// like <paramref name="fIN"/>, for OUT-cells.
         /// </param>
         /// <param name="Uin">
-        /// input: the values of \f$ U^\mathrm{in}\f$ <br/>
-        /// 1st index: component index of \f$ U\f$ <br/>
+        /// input: the values of $U^\mathrm{in}$ <br/>
+        /// 1st index: component index of $U$ <br/>
         /// 2nd index: edge index<br/>
         /// 3rd index: quadrature node<br/>
         /// </param>
@@ -1773,8 +1773,8 @@ namespace BoSSS.Foundation {
         /// analog to <paramref name="Uin"/>, for 'out'-values.<br/>
         /// </param>
         /// <param name="GradUin">
-        /// input: the values of \f$ \nabla U^\mathrm{in}\f$ <br/>
-        /// 1st index: component index of \f$ U\f$ <br/>
+        /// input: the values of $\nabla U^\mathrm{in}$ <br/>
+        /// 1st index: component index of $U$ <br/>
         /// 2nd index: edge index<br/>
         /// 3rd index: quadrature node<br/>
         /// 4th index: spatial direction of derivative<br/>
@@ -1793,24 +1793,24 @@ namespace BoSSS.Foundation {
     /// </summary>
     public interface INonlinBoundaryEdgeForm_GradV : IBoundaryEdgeForm {
         /// <summary>
-        /// the values of \f$ \vec{f}_{0}(\ldots)\f$   on boundary edges on \f$ \partial \Omega\f$ .
+        /// the values of $\underline{f}_{0}(\ldots)$   on boundary edges on $\partial \Omega$ .
         /// </summary>
         /// <param name="efp"></param>
         /// <param name="f">
-        /// output: the values of \f$ {f}_{0}(\ldots)\f$ :<br/>
+        /// output: the values of ${f}_{0}(\ldots)$ :<br/>
         /// 1st index: edge index<br/>
         /// 2nd index: quadrature node<br/>
-        /// 3rd index: component index of  \f$ \vec{f}_{i}(\ldots)\f$ . <br/>
+        /// 3rd index: component index of $\underline{f}_{i}(\ldots)$ . <br/>
         /// </param>
         /// <param name="Uin">
-        /// input: the values of \f$ U^\mathrm{in}\f$ <br/>
-        /// 1st index: component index of \f$ U\f$ <br/>
+        /// input: the values of $U^\mathrm{in}$ <br/>
+        /// 1st index: component index of $U$ <br/>
         /// 2nd index: edge index<br/>
         /// 3rd index: quadrature node<br/>
         /// </param>
         /// <param name="GradUin">
-        /// input: the values of \f$ \nabla U^\mathrm{in}\f$ 
-        /// - 1st index: component index of \f$ U\f$ 
+        /// input: the values of $\nabla U^\mathrm{in}$ 
+        /// - 1st index: component index of $U$ 
         /// - 2nd index: edge index
         /// - 3rd index: quadrature node
         /// - 4th index: spatial direction of derivative

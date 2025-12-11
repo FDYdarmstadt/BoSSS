@@ -35,11 +35,11 @@ namespace BoSSS.Solution.Control {
     /// The B-Spline depends only on one spatial coordinate and is 
     /// constant in the other (two) directions, i.e.
     /// it is a mapping 
-    /// \f[
+    /// \[
     /// (x,y,z)  ->  f(x) \textrm{ or } 
     /// (x,y,z)  ->  f(y) \textrm{ or } 
     /// (x,y,z)  ->  f(z). 
-    /// \f]
+    /// \]
     /// </remarks>
     [Serializable]
     [DataContract]
@@ -215,11 +215,11 @@ namespace BoSSS.Solution.Control {
         /// The B-Spline depends only on one spatial coordinate and is 
         /// constant in the other (two) directions, i.e.
         /// it is a mapping
-        /// \f[
+        /// \[
         /// (x,y,z)  ->  f(x) \textrm{ or } 
         /// (x,y,z)  ->  f(y) \textrm{ or } 
         /// (x,y,z)  ->  f(z). 
-        /// \f]
+        /// \]
         /// </remarks>
         public double Evaluate(double[] X, double t) {
 

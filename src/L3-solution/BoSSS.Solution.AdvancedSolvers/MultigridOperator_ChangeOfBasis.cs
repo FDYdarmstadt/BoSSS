@@ -1127,18 +1127,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
-        /// Modified inverse Cholesky - resp.LDL - factorization, 
-        /// $B =  \text{mchol}^{−1}(Q)$, resp. $B = \text{mldl}^{−1}(Q)$.
+        /// Modified inverse Cholesky- resp.LDL-factorization, 
+        /// $B =  \text{mchol}^{-1}(Q)$, resp. $B = \text{mldl}^{-1}(Q)$.
         /// In difference to the classical inverse Cholesky/LDL, the algorithm works on
-        /// indefinite/singular matrices Q, but may produce zero - rows in the output <paramref name="B"/>.
+        /// indefinite/singular matrices Q, but may produce zero-rows in the output <paramref name="B"/>.
         /// </summary>
-        /// <param name="Q">Input: some symmetric matrix $Q \in \real^{N times N}$.</param>
+        /// <param name="Q">Input: some symmetric matrix $Q \in \mathbb{R}^{N times N}$.</param>
         /// <param name="B">
-        /// Output: an upper-diagonal matrix $B \in \real^{N \times N} , so that 
-        /// $ B^T Q B = D$.
+        /// Output: an upper-diagonal matrix $B \in \mathbb{R}^{N \times N}$ , so that 
+        /// $B^T Q B = D$.
         /// If $Q$ is symmetrically positive definite, $D$ is the identity matrix and $B$ is invertible.
         /// Otherwise, $D$ is a diagonal matrix containing
-        /// only entries 0 and 1 in the $  \text{mchol}^{−1}$-case resp. 0, −1 and + 1 in the $  \text{mldl}^{−1}$-case.
+        /// only entries 0 and 1 in the $ \text{mchol}^{-1}$ -case resp. 0, −1 and + 1 in the $ \text{mldl}^{-1}$ -case.
         /// </param>
         /// <param name="threshold"></param>
         /// <param name="ldl">

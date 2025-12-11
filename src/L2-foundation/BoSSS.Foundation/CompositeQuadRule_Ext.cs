@@ -279,6 +279,39 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
+        /// Saves the sum over all weights, for each edge of a <paramref name="compositeRule"/>, into a text file
+        /// </summary>
+        public static void SaveWeightSumToTextFileEdge(this ICompositeQuadRule<QuadRule> compositeRule, IGridData gridData, string filename, bool writeHeader = true) {
+            int D = gridData.SpatialDimension;
+
+            using(var file = new StreamWriter(filename)) {
+                if(writeHeader) {
+                    string[] dimensions = new string[] { "x", "y", "z" };
+                    file.WriteLine(String.Format(
+                        "edge\t{0}\tWeightSum",
+                        dimensions.Take(D).Aggregate((s, t) => s + "\t" + t)));
+                }
+
+                foreach(IChunkRulePair<QuadRule> pair in compositeRule) {
+                    foreach(var edge in pair.Chunk.Elements.AsSmartEnumerable()) {
+                        file.Write(edge.Value);
+
+                        Vector center = gridData.iGeomEdges.GetCenter(edge.Value);
+                        for(int d = 0; d < D; d++) {
+                            file.Write("\t{0}", (center[d]).ToString("E", NumberFormatInfo.InvariantInfo));
+                        }
+                        file.Write("\t{0}", pair.Rule.Weights.Sum().ToString("E", NumberFormatInfo.InvariantInfo));
+                        file.WriteLine();
+                    }
+
+                    file.Flush();
+                }
+            }
+        }
+
+
+
+        /// <summary>
         /// Write the edge quadrature rules into vtp files (importable to paraview)
         /// </summary>
         /// <param name="chunRulePairList">the lsit of edge quadrature rules</param>

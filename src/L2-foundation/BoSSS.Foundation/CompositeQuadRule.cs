@@ -161,6 +161,7 @@ namespace BoSSS.Foundation.Quadrature {
                 using(new BlockTrace("Rule_Compilation_" + ruleFactory.GetType().Name, tr)) {
                     ruleSet = ruleFactory.GetQuadRuleSet(domain, order);
                     foreach(var rule in ruleSet) {
+                        rule.Rule.Origin = ruleFactory;
                         if(rule.Rule.OrderOfPrecision < order) {
                             throw new ArithmeticException($"Requested quadrature rule of degree {order}, but rule reports order {rule.Rule.OrderOfPrecision}.");
                         }                       

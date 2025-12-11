@@ -16,10 +16,10 @@ namespace ZwoLevelSetSolver.SolidPhase {
     /// <summary>
     /// Transport term 
     /// ```math
-    ///    \textrm{div} ( \rho u \vec{v} )
+    ///    \textrm{div} ( \rho u \underline{v} )
     /// ```
     /// using a local Lax-Friedrichs form; Version to use in combination with <see cref="BoSSS.Solution.Control.NonLinearSolverCode.Newton"/>, see also <see cref="IDifferentialOperator.LinearizationHint"/>
-    /// Here $` \vec{v} `$ is a velocity field, 
+    /// Here $` \underline{v} `$ is a velocity field, 
     /// $` \rho `$ is a constant density and 
     /// $` u `$ is a property which should be transported;
     /// </summary>

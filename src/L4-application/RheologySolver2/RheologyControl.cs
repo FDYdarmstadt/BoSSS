@@ -65,15 +65,15 @@ namespace BoSSS.Application.Rheology {
         public double Reynolds = 1;
 
         /// <summary>
-        /// Weissenberg-Number of System (We= lambda_1 * U / L) 
+        /// Weissenberg-Number of System ($We= \lambda_1 * U / L$) 
         /// </summary>
         [DataMember]
         public double Weissenberg = 0.5;
 
         /// <summary>
-        /// Retardation vs Relaxation ratio (beta = lambda_2 / lambda_1 = eta_s / eta_0)
-        /// - beta = 0: no Newtonian contribution in momentum equation
-        /// - beta = 1: Newtonian fluid, all viscous effects computed in momentum equation
+        /// Retardation vs Relaxation ratio ($\beta = \lambda_2 / \lambda_1 = \eta_s / \eta_0$) 
+        /// - $\beta = 0$: no Newtonian contribution in momentum equation
+        /// - $\beta = 1$: Newtonian fluid, all viscous effects computed in momentum equation
         /// </summary>
         [DataMember]
         public double beta = 0.11;

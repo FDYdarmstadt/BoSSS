@@ -567,8 +567,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Inner product with respect to the current mass matrix.
         /// 
         /// Note: this is the canonical inner product of the underlying DG-space, since 
-        /// for a DG/XDG field represented in an arbitrary basis $` \phi_{j} $` one verifies that
-        /// ```math
+        /// for a DG/XDG field represented in an arbitrary basis $\phi_{j}$ one verifies that
+        /// \[
         ///         (u, v) = 
         ///     \int_\Omega 
         ///         \left( \sum_{j} \phi_{j} \tilde{u}_{j} \right) 
@@ -577,8 +577,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         ///     \sum_{j l} \tilde{u}_{j} \tilde{v}_{l} ( \phi_{j}, \phi_{l} )
         ///     =
         ///       \tilde{u}^T M \tilde{v},
-        /// ```
-        /// where $`M `$ denotes the mass matrix ($` M_{j l} = ( \phi_ { j}, \phi_ { l} )  `$).
+        /// \]
+        /// where $M$ denotes the mass matrix ($M_{j l} = ( \phi_ { j}, \phi_ { l} )$).
         /// </summary>
         protected double InnerProduct<T1, T2>(T1 vecA, T1 vecB)
             where T1 : IList<double>

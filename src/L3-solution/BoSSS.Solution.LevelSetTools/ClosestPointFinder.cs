@@ -404,11 +404,11 @@ namespace BoSSS.Solution.LevelSetTools {
         /// <summary>
         /// An error measure for the closest points defined as 
         /// \f[
-        ///   \| \varphi(\vec{x}_0) \| 
+        ///   \| \varphi(\underline{x}_0) \| 
         ///      + 
         ///   \| \|
-        ///   \frac{ \langle \vec{x} - \vec{x}_0 , ( \nabla \varphi ) ( \vec{x}_0 ) \rangle  }
-        ///        { \| \vec{x} - \vec{x}_0 \| \| ( \nabla \varphi ) ( \vec{x}_0 ) \| }
+        ///   \frac{ \langle \underline{x} - \underline{x}_0 , ( \nabla \varphi ) ( \underline{x}_0 ) \rangle  }
+        ///        { \| \underline{x} - \underline{x}_0 \| \| ( \nabla \varphi ) ( \underline{x}_0 ) \| }
         ///   \| - 1 \|
         /// \f]
         /// The ordering correlates with <see cref="X0_global"/>.

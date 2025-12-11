@@ -32,11 +32,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     /// condition (<see cref="IncompressibleBcType.Pressure_Outlet"/>):
     /// For this example, the boundary condition
     /// \f[ 
-    ///     \frac{1}{\mathrm{Rey}} \nabla \vec{u} \cdot \vec{n}_{\partial \Omega} - p \vec{n}_{\partial \Omega} = 0 \textrm{ on } \Gamma_{\mathrm{POlt}}
+    ///     \frac{1}{\mathrm{Rey}} \nabla \underline{u} \cdot \underline{n}_{\partial \Omega} - p \underline{n}_{\partial \Omega} = 0 \textrm{ on } \Gamma_{\mathrm{POlt}}
     /// \f]
     /// holds at \f$ x=1\f$ , but
     /// \f[ 
-    ///     \frac{1}{\mathrm{Rey}} \nabla \vec{u} \cdot \vec{n}_{\partial \Omega} \neq 0, \ \ p \neq 0 \textrm{ on } \Gamma_{\mathrm{POlt}}.
+    ///     \frac{1}{\mathrm{Rey}} \nabla \underline{u} \cdot \underline{n}_{\partial \Omega} \neq 0, \ \ p \neq 0 \textrm{ on } \Gamma_{\mathrm{POlt}}.
     /// \f]
     /// (In this example the Reynolds number is just density over viscosity.)
     /// Since the terms of the boundary condition do not cancel out individually, but only in sum,

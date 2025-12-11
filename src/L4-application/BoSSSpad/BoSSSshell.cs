@@ -276,13 +276,16 @@ namespace BoSSS.Application.BoSSSpad {
             WriteProfiling();
 
             tracerfile = new FileStream(baseneme, FileMode.Create, FileAccess.Write, FileShare.Read);
+            //var zipper = new System.IO.Compression.GZipStream(tracerfile, System.IO.Compression.CompressionLevel.Optimal, leaveOpen:false);
+            //tracertxt = new StreamWriter(zipper);
             tracertxt = new StreamWriter(tracerfile);
 
-            TextWriterAppender fa = new TextWriterAppender();
-            fa.ImmediateFlush = true;
-            //fa.Writer = Console.Out;
-            fa.Writer = tracertxt;
-            fa.Layout = new PatternLayout("%date %-5level %logger: %message%newline");
+            TextWriterAppender fa = new TextWriterAppender {
+                ImmediateFlush = true,
+                //fa.Writer = Console.Out;
+                Writer = tracertxt,
+                Layout = new PatternLayout("%date %-5level %logger: %message%newline")
+            };
             fa.ActivateOptions();
             BasicConfigurator.Configure(fa);
             logger_output = fa;

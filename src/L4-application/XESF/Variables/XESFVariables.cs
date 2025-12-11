@@ -136,7 +136,7 @@ namespace XESF.Variables {
 
         /// <summary>
         /// The optional pressure field:
-        /// \f[ p = f(\rho, \vec{m}, \rho E) \f], where
+        /// \f[ p = f(\rho, \underline{m}, \rho E) \f], where
         /// \f[ f \f] depends on the equation of state
         /// </summary>
         public static readonly DerivedVariable<XDGField> Pressure = new DerivedVariable<XDGField>(
@@ -167,7 +167,7 @@ namespace XESF.Variables {
             );
         /// <summary>
         /// The optional pressure- step -field :
-        /// \f[ p = f(\rho, \vec{m}, \rho E) \f], where
+        /// \f[ p = f(\rho, \underline{m}, \rho E) \f], where
         /// \f[ f \f] depends on the equation of state
         /// </summary>
         public static readonly DerivedVariable<XDGField> PressureStep = new DerivedVariable<XDGField>(
@@ -199,7 +199,7 @@ namespace XESF.Variables {
 
         /// <summary>
         /// The optional velocity field:
-        /// \f[ \vec{u} = \frac{1}{\rho} \vec{m} \f] 
+        /// \f[ \underline{u} = \frac{1}{\rho} \underline{m} \f] 
         /// </summary>
         public static readonly Vector<DerivedVariable<XDGField>> Velocity = new Vector<DerivedVariable<XDGField>>(
             d => new DerivedVariable<XDGField>(

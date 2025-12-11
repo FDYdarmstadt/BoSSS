@@ -44,13 +44,13 @@ namespace CNS.Convection {
         /// flux as stated in Toro2009, equations 10.55 and 10.56.
         /// </summary>
         /// <returns>
-        /// \f$ 
+        /// $ 
         /// \frac{1}{2} (F_L + F_R - S^+ (U_R - U_L))
-        /// \f$ 
+        /// $ 
         /// where
-        /// \f$ 
+        /// $ 
         /// S^+ = \max \{|u_L| + a_L, |u_r| + a_R\}
-        /// \f$ 
+        /// $ 
         /// </returns>
         public override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref ilPSP.Vector normal, int edgeIndex) {
             double waveSpeedIn = Math.Abs(stateIn.Velocity * normal) + stateIn.SpeedOfSound;

@@ -330,7 +330,7 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Edge quadrature for the surface elements, i.e., a $D-2$ dimensional integral.
-        /// For each cut background-cell $ K_j $, the surface element is $ K_j \cap \mathfrak{I} $ and its boundaries is  $ \partial K_j \cap \mathfrak{I} $; 
+        /// For each cut background-cell $K_j$, the surface element is $K_j \cap \mathfrak{I}$ and its boundaries is  $\partial K_j \cap \mathfrak{I}$; 
         /// Therefore, one need to integrate over the line integrals:
         /// \[
         ///    \int_{\Gamma \cap \mathfrak{I}_i \cap \partial \mathfrak{A} \cap \partial \mathfrak{B} } \ldots \mathrm{dl} ,
@@ -461,12 +461,6 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
 
-
-            
-
-            //edgeQrIns.AddFactory(new QRoverride(), QRoverride.GetEM(gdat));
-
-
             return edgeQrIns;
         }
 
@@ -576,9 +570,9 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// Quadrature for edges, i.e. for each cut background-cell $` K_j `$ and each species $` \mathfrak{s} `$ a quadrature to approximate
+        /// Quadrature for edges, i.e. for each cut background-cell $ K_j $ and each species $ \mathfrak{s} $ a quadrature to approximate
         /// ```math
-        ///    \int_{\partial K_j \cap \mathfrak{s} } \ldots \mathrm{dS} .
+        ///    \oint_{\partial K_j \cap \mathfrak{s} } \ldots \mathrm{dS} .
         /// ```
         /// </summary>
         public EdgeQuadratureScheme GetEdgeQuadScheme(SpeciesId sp, bool UseDefaultFactories = true, EdgeMask IntegrationDomain = null, int? fixedOrder = null) {
@@ -1084,10 +1078,10 @@ namespace BoSSS.Foundation.XDG {
 
 
         /// <summary>
-        /// Quadrature scheme for the integration over the level-set <paramref name="iLevSet"/>, i.e. for each cut background-cell \f$ K_j \f$ a quadrature to approximate
-        /// \f[
+        /// Quadrature scheme for the integration over the level-set <paramref name="iLevSet"/>, i.e. for each cut background-cell $ K_j $ a quadrature to approximate
+        /// \[
         ///    \oint_{K_j \cap \mathfrak{I} \cap \partial \mathfrak{A} } \ldots \mathrm{dS} ,
-        /// \f]
+        /// \]
         /// where \f$ \mathfrak{A} \f$ is the first species in <see cref="SpeciesList"/>.
         /// </summary>
         public CellQuadratureScheme GetLevelSetQuadScheme(int iLevSet, CellMask IntegrationDom, int? fixedOrder = null) {
@@ -1098,10 +1092,10 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// Quadrature scheme for the integration over the level-set <paramref name="iLevSet"/>, i.e. for each cut background-cell \f$ K_j \f$ a quadrature to approximate
-        /// \f[
+        /// Quadrature scheme for the integration over the level-set <paramref name="iLevSet"/>, i.e. for each cut background-cell $ K_j $ a quadrature to approximate
+        /// \[
         ///    \oint_{K_j \cap \mathfrak{I} \cap \partial \mathfrak{A} \cap \partial \mathfrak{b} } \ldots \mathrm{dS} ,
-        /// \f]
+        /// \]
         /// where \f$ \mathfrak{A} \f$ and \f$ \mathfrak{B} \f$  are the domains of species <paramref name="spA"/> and <paramref name="spB"/>, respectively.
         /// </summary>
         public CellQuadratureScheme GetLevelSetQuadScheme(int iLevSet, SpeciesId spA, SpeciesId spB, CellMask IntegrationDom, int? fixedOrder = null) {

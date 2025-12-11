@@ -73,10 +73,10 @@ namespace BoSSS.Solution.NSECommon{
 
         /// <summary>
         /// returns
-        /// \f[ 
-        ///   \vec{v} \cdot \phi,
-        /// \f]
-        /// where \f$ \vec{v}\f$  is the linearization point.
+        /// \[ 
+        ///   \underline{v} \cdot \phi,
+        /// \]
+        /// where $\underline{v}$  is the linearization point.
         /// </summary>
         protected void Flux(ref Foundation.CommonParamsVol inp, double[] U, double[] output) {
 
