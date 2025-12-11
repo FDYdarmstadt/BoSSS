@@ -284,7 +284,7 @@ namespace BoSSS.Application.BoSSSpad {
                 ImmediateFlush = true,
                 //fa.Writer = Console.Out;
                 Writer = tracertxt,
-                Layout = new PatternLayout("%date %-5level %logger: %message%newline")
+                Layout = new PatternLayout("%date %-5level From__%logger: %message%newline")
             };
             fa.ActivateOptions();
             BasicConfigurator.Configure(fa);

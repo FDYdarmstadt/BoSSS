@@ -157,7 +157,7 @@ namespace BoSSS.Foundation.IO {
                         ImmediateFlush = true,
                         //fa.Writer = Console.Out;
                         Writer = tracertxt,
-                        Layout = new PatternLayout("%date %-5level %logger: %message%newline")
+                        Layout = new PatternLayout("%date %-5level From__%logger: %message%newline")
                     };
                     fa.ActivateOptions();
                     BasicConfigurator.Configure(fa);
