@@ -30,7 +30,7 @@ namespace BoSSS.Solution.NSECommon{
         /// <summary>
         /// This option can be used for closed systems,
         /// where p0 is determined to conserve mass, i.e.
-        /// \f$ p_0 = \frac{m(t=0)}{\int 1/T dV} \f$ .
+        /// $p_0 = \frac{m(t=0)}{\int 1/T dV}$ .
         /// </summary>
         MassDetermined
     }

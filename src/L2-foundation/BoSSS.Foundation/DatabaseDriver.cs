@@ -15,26 +15,15 @@ limitations under the License.
 */
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
-using System.Linq;
-using BoSSS.Foundation.Comm;
 using BoSSS.Foundation.Grid;
-using BoSSS.Platform;
 using ilPSP;
 using ilPSP.Tracing;
 using log4net.Appender;
 using log4net.Config;
 using log4net.Layout;
-using MPI.Wrappers;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Bson;
-using ilPSP.Utils;
-using BoSSS.Foundation.Grid.Classic;
-using log4net;
+using K4os.Compression.LZ4.Streams;
 
 namespace BoSSS.Foundation.IO {
 
@@ -90,19 +79,19 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// Returns a write-stream for some new log file.
         /// </summary>
-        public Stream GetNewLogStream(SessionInfo si, string name) {
+        public Stream GetNewLogStream(SessionInfo si, string name, string fileExt) {
             var id = si.ID;
 
             int Rank = MyRank;
 
             Stream file = null;
             if (fsDriver != null && id != Guid.Empty)
-                file = this.FsDriver.GetNewLogStream(name + "." + Rank, id);
+                file = this.FsDriver.GetNewLogStream(name + "." + Rank, fileExt, id);
 
             if (file == null) {
-                // create trace file in local directory
+                // create log file in local directory
 
-                string tracefilename = name + "." + Rank + ".txt";
+                string tracefilename = name + "." + Rank + "." + fileExt;
                 file = new FileStream(tracefilename, FileMode.Create, FileAccess.Write, FileShare.Read);
             }
 
@@ -136,28 +125,30 @@ namespace BoSSS.Foundation.IO {
 
                 Stream tracerfile = null;
                 if (fsDriver != null && id != Guid.Empty)
-                    tracerfile = this.FsDriver.GetNewLogStream("trace." + Rank, id);
+                    tracerfile = this.FsDriver.GetNewLogStream("trace." + Rank, "txt.lz4", id);
 
                 if (tracerfile == null && Tracer.NamespacesToLog.Length > 0 && !configAllreadyDone) {
                     // create trace file in local directory
 
-                    string tracefilename = "trace." + Rank + ".txt";
+                    string tracefilename = "trace." + Rank + ".txt.lz4";
                     tracerfile = new FileStream(tracefilename, FileMode.Create, FileAccess.Write, FileShare.Read);
                 }
 
                 TextWriter tracertxt = null;
                 if (tracerfile != null) {
                     //var zipper = new System.IO.Compression.GZipStream(tracerfile, System.IO.Compression.CompressionMode.Compress);
-                    //tracertxt = new StreamWriter(zipper);
-                    tracertxt = new StreamWriter(tracerfile);
+                    var zipper = LZ4Stream.Encode(tracerfile);
+                    tracertxt = new StreamWriter(zipper);
+                    //tracertxt = new StreamWriter(tracerfile);
                 }
 
                 if (tracertxt != null) {
-                    TextWriterAppender fa = new TextWriterAppender();
-                    fa.ImmediateFlush = true;
-                    //fa.Writer = Console.Out;
-                    fa.Writer = tracertxt;
-                    fa.Layout = new PatternLayout("%date %-5level %logger: %message%newline");
+                    TextWriterAppender fa = new TextWriterAppender {
+                        ImmediateFlush = true,
+                        //fa.Writer = Console.Out;
+                        Writer = tracertxt,
+                        Layout = new PatternLayout("%date %-5level From__%logger: %message%newline")
+                    };
                     fa.ActivateOptions();
                     BasicConfigurator.Configure(fa);
                     logger_output = fa;
@@ -179,7 +170,7 @@ namespace BoSSS.Foundation.IO {
                 Stream memlogFile = null;
 
                 if (fsDriver != null && id != Guid.Empty)
-                    memlogFile = this.FsDriver.GetNewLogStream("memory." + Rank, id);
+                    memlogFile = this.FsDriver.GetNewLogStream("memory." + Rank, "txt", id);
                 if (memlogFile == null) {
                     // create trace file in local directory
 

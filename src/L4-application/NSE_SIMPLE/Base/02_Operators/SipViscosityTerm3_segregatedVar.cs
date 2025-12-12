@@ -11,9 +11,9 @@ using BoSSS.Foundation;
 namespace NSE_SIMPLE {
 
      /// <summary>
-    /// \f[ 
-    ///   \frac{2}{3} \operatorname{div} \left( \mu \myMatrix{I} \operatorname{div} ( \vec{u} )  \right)
-    /// \f]
+    /// \[ 
+    ///   \frac{2}{3} \operatorname{div} \left( \mu \boldsymbol{I} \operatorname{div} ( \underline{u} )  \right)
+    /// \]
     /// </summary>
     public class SipViscosity_Term3_segregatedVar : SipViscosityBase {
 

@@ -343,7 +343,7 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
         }
 
         /// <summary>
-        /// Computes cut-cell-volume as \f$ \oint_{K_{j,\frakS}} (x,0) \cdot \vec{n} dS \f$
+        /// Computes cut-cell-volume as $\oint_{K_{j,\mathfrak{S}}} (x,0) \cdot \underline{n} dS$
         /// </summary>
         private MultidimensionalArray CellVolumeFromGauss(ICompositeQuadRule<QuadRule> edgeRule, ICompositeQuadRule<QuadRule> surfRule, double speciesSign) {
             int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;

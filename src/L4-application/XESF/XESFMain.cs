@@ -71,7 +71,7 @@ namespace XESF
         }
 
         /// <summary>
-        /// The momentum field $\rho \vec{u}$
+        /// The momentum field $\rho \underline{u}$
         /// </summary>
         public VectorField<XDGField> Momentum
         {

@@ -14,24 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using BoSSS.Foundation.Comm;
+using BoSSS.Foundation.Grid.Aggregation;
+using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.IO;
 using BoSSS.Platform;
 using BoSSS.Platform.Utils.Geom;
 using ilPSP;
+using ilPSP.Connectors;
 using ilPSP.LinSolvers;
 using ilPSP.Tracing;
 using ilPSP.Utils;
 using log4net;
 using MPI.Wrappers;
-using BoSSS.Foundation.Grid.RefElements;
-using ilPSP.Connectors;
-using BoSSS.Foundation.Grid.Aggregation;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading;
 
 namespace BoSSS.Foundation.Grid.Classic {
 
@@ -532,17 +533,18 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </summary>
         public Caching.CacheLogic_CNs GlobalNodes {
             get {
-                if(m_GlobalNodes == null) {
-                    m_GlobalNodes = new Caching.CacheLogicImplBy_CNs(this,
-                        this.TransformLocal2Global,
-                        (Len, NoNodes) => new int[] { Len, NoNodes, this.SpatialDimension });
-                }
+                LazyInitializer.EnsureInitialized(ref m_GlobalNodes,
+                    delegate () {
+                        return new Caching.CacheLogicImplBy_CNs(this,
+                            this.TransformLocal2Global,
+                            (Len, NoNodes) => new int[] { Len, NoNodes, this.SpatialDimension });
+                    });
                 return m_GlobalNodes;
             }
         }
 
         /// <summary>
-        /// Jacobian of transformation from reference to physical space, \f$ (\nabla T_j) \f$.
+        /// Jacobian of transformation from reference to physical space, $(\nabla T_j)$.
         /// </summary>
         public Caching.CacheLogicImplBy_CNs Jacobian {
             get;
@@ -629,7 +631,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
         /// <summary>
         /// Adjungate of the Jacobian of the reference-to-physical coordinate transformation, 
-        /// \f$ \mathrm{Adj}( \nabla T_j ) =  \determinant{ \nabla T_j } ( \nabla T_j )^{-1} \f$.
+        /// $\mathrm{Adj}( \nabla T_j ) =  \mathrm{Adj}( { \nabla T_j } ) ( \nabla T_j )^{-1}$.
         /// </summary>
         public Caching.CacheLogicImplBy_CNs AdjungateJacobian {
             get;
@@ -711,7 +713,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         }
 
         /// <summary>
-        /// Inverse of the Jacobian of the reference-to-physical coordinate transformation, \f$ ( \nabla T_j )^{-1} \f$.
+        /// Inverse of the Jacobian of the reference-to-physical coordinate transformation, $( \nabla T_j )^{-1}$.
         /// </summary>
         public Caching.CacheLogicImplBy_CNs InverseJacobian {
             get;
@@ -748,7 +750,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         }
 
         /// <summary>
-        /// Determinant of the Jacobian of the reference-to-physical coordinate transformation, \f$ \determinant{ \nabla T_j } \f$.
+        /// Determinant of the Jacobian of the reference-to-physical coordinate transformation, $\mathrm{Adj}( \nabla T_j )$.
         /// </summary>
         public Caching.CacheLogicImplBy_CNs JacobianDeterminat {
             get;

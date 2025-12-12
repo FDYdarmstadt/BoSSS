@@ -512,9 +512,9 @@ namespace BoSSS.Solution.NSECommon {
     }
 
     /// <summary>
-    /// \f[ 
-    ///   -\mathrm{div} \left( \mu \nabla \vec{u} \right)
-    /// \f]
+    /// \[ 
+    ///   -\mathrm{div} \left( \mu \nabla \underline{u} \right)
+    /// \]
     /// </summary>
     public class SipViscosity_GradU : SipViscosityBase,
         INonlinVolumeForm_GradV,
@@ -1002,9 +1002,9 @@ namespace BoSSS.Solution.NSECommon {
 
 
     /// <summary>
-    /// \f[ 
-    ///   - \mathrm{div} \left( \mu (\partial_d \vec{u})^T \right)
-    /// \f]
+    /// \[ 
+    ///   - \mathrm{div} \left( \mu (\partial_d \underline{u})^T \right)
+    /// \]
     /// </summary>
     public class SipViscosity_GradUtransp : SipViscosityBase, INonlinVolumeForm_GradV,
         INonlinEdgeForm_GradV,
@@ -1464,9 +1464,9 @@ namespace BoSSS.Solution.NSECommon {
 
 
     /// <summary>
-    /// \f[ 
-    ///   \frac{2}{3} \mathrm{div} \left( \mu \myMatrix{I} \mathrm{div} ( \vec{u} )  \right)
-    /// \f]
+    /// \[ 
+    ///   \frac{2}{3} \mathrm{div} \left( \mu \boldsymbol{I} \mathrm{div} ( \underline{u} )  \right)
+    /// \]
     /// </summary>
     public class SipViscosity_divU : SipViscosityBase, INonlinVolumeForm_GradV,
         INonlinEdgeForm_GradV,

@@ -65,11 +65,11 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         /// T^+ = T_t(x) \frac{p_t(x)}{p^-}^{\frac{1.0 - \gamma}{\gamma}}
         /// \f$ 
         /// \f$ 
-        /// |\vec{u^+}| = \sqrt{\frac{2 T^+}{(\gamma - 1) \mathrm{Ma}_\infty^2} \left(\frac{T_t(x)}{T^+} -1\right)}
+        /// |\underline{u^+}| = \sqrt{\frac{2 T^+}{(\gamma - 1) \mathrm{Ma}_\infty^2} \left(\frac{T_t(x)}{T^+} -1\right)}
         /// \f$ 
         /// \f$ \rho^+ = \frac{p^- }{T^+}\f$ 
         /// \f$ 
-        /// (\rho^+, -\rho^+ |\vec{u^+}| \vec{n}, \frac{p}{\kappa - 1} + \frac{rho^+ |\vec{u^+}|^2}{2})^T
+        /// (\rho^+, -\rho^+ |\underline{u^+}| \underline{n}, \frac{p}{\kappa - 1} + \frac{rho^+ |\underline{u^+}|^2}{2})^T
         /// \f$ 
         /// </returns>
         public override StateVector GetBoundaryState(double time, Vector x, Vector normal, StateVector stateIn) {

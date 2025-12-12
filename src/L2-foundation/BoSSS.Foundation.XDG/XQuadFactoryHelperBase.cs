@@ -161,8 +161,9 @@ namespace BoSSS.Foundation.XDG {
         /// Returns a rule factory for the boundary of surface-elements 
         /// (elements on the zero-level-set surface), i.e., for integrals 
         /// ```math 
-        ///    \int_{ E \cap \mathfrak{I} \textrm{dl} . 
+        ///    \int_{ E \cap \mathfrak{I} } \ldots \textrm{dl} . 
         /// ```
+        /// (elements on the zero-level-set surface), i.e. on $K \cap \mathfrak{I}$ .
         /// This are point integrals in 2D and line integrals in 3D.
         /// </summary>
         abstract public IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex, RefElement KrefEdge);

@@ -536,7 +536,7 @@ namespace PublicTestRunner {
             fa.ImmediateFlush = true;
             //fa.Writer = Console.Out;
             fa.Writer = tracertxt;
-            fa.Layout = new PatternLayout("%date %-5level %logger: %message%newline");
+            fa.Layout = new PatternLayout("%date %-5level From__%logger: %message%newline");
             fa.ActivateOptions();
             BasicConfigurator.Configure(fa);
             logger_output = fa;

@@ -327,10 +327,9 @@ namespace BoSSS.Foundation.XDG {
             return new EdgeMask(cells.GridData, bEdgeMask, mt: MaskType.Logical);
         }
 
-
         /// <summary>
         /// Edge quadrature for the surface elements, i.e., a $D-2$ dimensional integral.
-        /// For each cut background-cell $ K_j $, the surface element is $ K_j \cap \mathfrak{I} $ and its boundaries is  $ \partial K_j \cap \mathfrak{I} $; 
+        /// For each cut background-cell $K_j$, the surface element is $K_j \cap \mathfrak{I}$ and its boundaries is  $\partial K_j \cap \mathfrak{I}$; 
         /// Therefore, one need to integrate over the line integrals:
         /// \[
         ///    \int_{\Gamma \cap \mathfrak{I}_i \cap \partial \mathfrak{A} \cap \partial \mathfrak{B} } \ldots \mathrm{dl} ,
@@ -342,35 +341,21 @@ namespace BoSSS.Foundation.XDG {
         /// 
         /// These rules are used, e.g., by the (edge parts of) surface element operator <see cref="XDifferentialOperatorMk2.SurfaceElementOperator_Ls0"/>
         /// </summary>
+        /// <remarks>
+        /// Note that the ordering of <paramref name="spA"/> and <paramref name="spB"/> are not irrelevant,
+        /// but only if the level-set <paramref name="iLevSet"/> coincides with an edge between two cells.
+        /// In such a case, the quadrature will be assigned to the cell which contains a higher fraction of species <paramref name="spA"/>.
+        /// (The volume fraction of each species in such cases should be either 1.0 or 0.0)
+        /// </remarks>
         public EdgeQuadratureScheme Get_SurfaceElement_EdgeQuadScheme(SpeciesId spA, SpeciesId spB, int iLevSet) {
             var tracker = this.XDGSpaceMetrics.Tracker;
             IGridData gdat = tracker.GridDat;
             var levSetRegions = this.XDGSpaceMetrics.LevelSetRegions;
 
-
-            //CellMask cellRestriction = null;
-
             if(!this.SpeciesList.Contains(spA))
                 throw new ArgumentException($"Given species (id = {tracker.GetSpeciesName(spA)}) is not supported.");
 
             EdgeMask allRelevantEdges = SurfaceElementEdges[(spA, spB, iLevSet)];
-            /*{
-                var allRelevantEdges2 = __InnerAndDomainBoundary(cellRestriction, sp, iLevSet);
-
-
-                CellMask cellBoundaryLayer = levSetRegions.GetSpeciesMask(sp).Intersect(levSetRegions.GetCutCellMask4LevSet(iLevSet));
-                if(cellRestriction != null)
-                    cellBoundaryLayer = cellBoundaryLayer.Intersect(cellRestriction);
-
-                allRelevantEdges = InnerAndDomainBoundary(cellBoundaryLayer);
-
-
-                if(!allRelevantEdges2.Equals(allRelevantEdges)) {
-                    allRelevantEdges.SaveToTextFile("edgesCorr.csv");
-                    allRelevantEdges2.SaveToTextFile("edgesWrong.csv");
-                    throw new ApplicationException("ich hasse dich");
-                }
-            }*/
             allRelevantEdges = allRelevantEdges.ToGeometicalMask();
 
             var edgeQrIns = new EdgeQuadratureScheme(
@@ -405,7 +390,10 @@ namespace BoSSS.Foundation.XDG {
                             var doublyCut = cutDom1.Intersect(cutDom2);
 
                             if(doublyCut.NoOfItemsLocally > 0) {
-                                var jmpJ = IdentifyWingA(jLevSet, spA);
+                                //var _jmpJ = IdentifyWingA(jLevSet, spA);
+                                var jmpJ = GetTrimmingLevelSetSign(iLevSet, jLevSet, spA, spB);
+
+
                                 foreach(var Kref in gdat.iGeomCells.RefElements) {
 
                                     var _doublyCut = doublyCut.Intersect(gdat.GetEdges4RefElement(Kref, KrefEdge));
@@ -443,25 +431,21 @@ namespace BoSSS.Foundation.XDG {
 
                     EdgeMask IntegrationDom = Quadrature.LevelSetOnEdge.SurfaceElementBoundaryIntegration.ComputeMask(XDGSpaceMetrics.LevelSetRegions, iLevSet, iKrefEdge);
                     Debug.Assert(IntegrationDom.MaskType == MaskType.Geometrical);
+                    
                     var fact = new Quadrature.LevelSetOnEdge.SurfaceElementBoundaryIntegration(
                         edgeKref,
                         XDGSpaceMetrics.LevelSetData.ToArray(),
-                        XDGSpaceMetrics.Tracker.GetLevelSetSignCodes(spA),
+                        XDGSpaceMetrics.Tracker.GetLevelSetSignCodes(spA), // species A is the dominating one, i.e., we want the non-zero rules in cells with species A
+                        XDGSpaceMetrics.Tracker.GetLevelSetSignCodes(spB), 
                         iLevSet,
                         this.XDGSpaceMetrics.LevelSetRegions.LevSetCoincidingFaces,
                         this.XDGSpaceMetrics.LevelSetRegions.LevSetCoincidingCoFaces
                         );
                     edgeQrIns.AddFactoryDomainPair(fact, IntegrationDom);
 
-
+                    
                 }
             }
-
-
-            
-
-            //edgeQrIns.AddFactory(new QRoverride(), QRoverride.GetEM(gdat));
-
 
             return edgeQrIns;
         }
@@ -479,14 +463,17 @@ namespace BoSSS.Foundation.XDG {
         /// 
         /// These rules are used, e.g., by the (volume parts of) surface element operator <see cref="XDifferentialOperatorMk2.SurfaceElementOperator_Ls0"/>
         /// </summary>
+        /// <remarks>
+        /// Note that the ordering of <paramref name="spA"/> and <paramref name="spB"/> are not irrelevant,
+        /// but only if the level-set <paramref name="iLevSet"/> coincides with an edge between two cells.
+        /// In such a case, the quadrature will be assigned to the cell which contains a higher fraction of species <paramref name="spA"/>.
+        /// (The volume fraction of each species in such cases should be either 1.0 or 0.0)
+        /// </remarks>
         public CellQuadratureScheme Get_SurfaceElement_VolumeQuadScheme(SpeciesId spA, SpeciesId spB, int iLevSet) {
             if (!this.SpeciesList.Contains(spA))
                 throw new ArgumentException("Given species (id = " + spA.cntnt + ") is not supported.");
-            //Default behaviour: If Species are not divided by Level Set, function should not be called
-            //Debug.Assert(!SpeciesAreSeparatedByLevSet(iLevSet, sp, sp));
 
-            //var spdom = XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask(sp);
-            //var IntegrationDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet).Intersect(spdom);
+
             var IntegrationDom = this.LevelSetSeparationLayer[(spA, spB, iLevSet)];
 
             return GetLevelSetQuadScheme(iLevSet, spA, spB, IntegrationDom);
@@ -568,85 +555,13 @@ namespace BoSSS.Foundation.XDG {
                     iKref++;
                 }
             }
-
-
-            //var rule = LevSetQrIns.Compile(gdat, XDGSpaceMetrics.CutCellQuadOrder);
-
-
             return LevSetQrIns;
         }
 
-        /*
-        class QRoverride2 : IQuadRuleFactory<QuadRule> {
-
-            
-
-            public RefElement RefElement => Square.Instance;
-
-            public int[] GetCachedRuleOrders() {
-                return [];
-            }
-
-            public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int order) {
-
-                Console.WriteLine("go fuck yourself2");
-
-                var ret = new List<ChunkRulePair<QuadRule>>();
-                void AddQr(int iEdge, double x, double y, double w) {
-                    var r = QuadRule.CreateBlank(Square.Instance, 1, 2, false);
-                    r.Nodes[0, 0] = x;
-                    r.Nodes[0, 1] = y;
-                    r.Nodes.LockForever();
-                    r.Weights[0] = w;
-                    r.OrderOfPrecision = order + 12;
-                    ret.Add(new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(iEdge), r));
-                }
-
-                foreach(int iCell in mask.ItemEnum) {
-                    switch(iCell) {
-                        case 6: {
-                            AddQr(iCell, 1, 0.25, 1);
-                            break;
-                        }
-                        default: {
-                            AddQr(iCell, 0, 0, 0);
-                            break;
-                        }
-                    }
-
-                }
-                return ret;
-            }
-        }
-        */
-
-
-
-
-        /*
         /// <summary>
-        /// All cells, in which level-set <paramref name="iLevSet"/> intersects with some other level-set.
-        /// </summary>
-        public CellMask GetDoubleCutCells(int iLevSet) {
-            CellMask allDoublyCuts = CellMask.GetEmptyMask(gdat, MaskType.Logical);
-
-            //foreach (var Kref in gdat.Grid.RefElements) {
-            for (int jLevSet = 0; jLevSet < XDGSpaceMetrics.NoOfLevelSets; ++jLevSet) {
-                if (iLevSet != jLevSet) {
-                    allDoublyCuts = allDoublyCuts.Union(GetDoubleCutCells(iLevSet, jLevSet));
-
-                }
-            }
-            //}
-
-            return allDoublyCuts;
-        }
-        */
-
-        /// <summary>
-        /// Quadrature for edges, i.e. for each cut background-cell $` K_j `$ and each species $` \mathfrak{s} `$ a quadrature to approximate
+        /// Quadrature for edges, i.e. for each cut background-cell $ K_j $ and each species $ \mathfrak{s} $ a quadrature to approximate
         /// ```math
-        ///    \int_{\partial K_j \cap \mathfrak{s} } \ldots \mathrm{dS} .
+        ///    \oint_{\partial K_j \cap \mathfrak{s} } \ldots \mathrm{dS} .
         /// ```
         /// </summary>
         public EdgeQuadratureScheme GetEdgeQuadScheme(SpeciesId sp, bool UseDefaultFactories = true, EdgeMask IntegrationDomain = null, int? fixedOrder = null) {
@@ -731,11 +646,7 @@ namespace BoSSS.Foundation.XDG {
             CellMask jCells = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(jLevSet);
             return iCells.Intersect(jCells).ToGeometicalMask();
         }
-        //private CellMask GetDoubleCutCells(int iLevSet, int jLevSet) {
-        //    CellMask iCells = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet);
-        //    CellMask jCells = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(jLevSet);
-        //    return iCells.Intersect(jCells);
-        //}
+       
 
         /// <summary>
         /// For some species <paramref name="sp"/>,
@@ -1156,11 +1067,11 @@ namespace BoSSS.Foundation.XDG {
 
 
         /// <summary>
-        /// Quadrature scheme for the integration over the level-set <paramref name="iLevSet"/>, i.e. for each cut background-cell \f$ K_j \f$ a quadrature to approximate
-        /// \f[
+        /// Quadrature scheme for the integration over the level-set <paramref name="iLevSet"/>, i.e. for each cut background-cell $ K_j $ a quadrature to approximate
+        /// \[
         ///    \oint_{K_j \cap \mathfrak{I} \cap \partial \mathfrak{A} } \ldots \mathrm{dS} ,
-        /// \f]
-        /// where \f$ \mathfrak{A} \f$ is the first species in <see cref="SpeciesList"/>.
+        /// \]
+        /// where $ \mathfrak{A} $ is the first species in <see cref="SpeciesList"/>.
         /// </summary>
         public CellQuadratureScheme GetLevelSetQuadScheme(int iLevSet, CellMask IntegrationDom, int? fixedOrder = null) {
 
@@ -1170,12 +1081,18 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// Quadrature scheme for the integration over the level-set <paramref name="iLevSet"/>, i.e. for each cut background-cell \f$ K_j \f$ a quadrature to approximate
-        /// \f[
+        /// Quadrature scheme for the integration over the level-set <paramref name="iLevSet"/>, i.e. for each cut background-cell $ K_j $ a quadrature to approximate
+        /// \[
         ///    \oint_{K_j \cap \mathfrak{I} \cap \partial \mathfrak{A} \cap \partial \mathfrak{b} } \ldots \mathrm{dS} ,
-        /// \f]
-        /// where \f$ \mathfrak{A} \f$ and \f$ \mathfrak{B} \f$  are the domains of species <paramref name="spA"/> and <paramref name="spB"/>, respectively.
+        /// \]
+        /// where $ \mathfrak{A} $ and $ \mathfrak{B} $  are the domains of species <paramref name="spA"/> and <paramref name="spB"/>, respectively.
         /// </summary>
+        /// <remarks>
+        /// Note that the ordering of <paramref name="spA"/> and <paramref name="spB"/> are not irrelevant,
+        /// but only if the level-set <paramref name="iLevSet"/> coincides with an edge between two cells.
+        /// In such a case, the quadrature will be assigned to the cell which contains a higher fraction of species <paramref name="spA"/>.
+        /// (The volume fraction of each species in such cases should be either 1.0 or 0.0)
+        /// </remarks>
         public CellQuadratureScheme GetLevelSetQuadScheme(int iLevSet, SpeciesId spA, SpeciesId spB, CellMask IntegrationDom, int? fixedOrder = null) {
             if (IntegrationDom.MaskType == MaskType.Logical)
                 IntegrationDom = IntegrationDom.ToGeometicalMask();
@@ -1222,31 +1139,10 @@ namespace BoSSS.Foundation.XDG {
                             modIntegrationDom = modIntegrationDom.Except(doublyCut);
 
                             //var jmpA = IdentifyWingA(jLevSet, spA);
-                            var jmpA = GetTrimmingLevelSetSign(jLevSet);
+                            var jmpA = GetTrimmingLevelSetSign(iLevSet, jLevSet, spA, spB);
 
                             var twoLSFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, jLevSet, jmpA, Kref, null);
                             LevSetQrIns.AddFactoryDomainPair(twoLSFactory, doublyCut, fixedOrder);
-
-                            /*
-
-                            if(gdat.iGeomEdges.EdgeRefElements.Length > 1)
-                                    throw new NotImplementedException("Not implemented for more than one edge ref element");
-
-                            //Debug.Assert(jmpA == IdentifyWing(jLevSet, spB));
-                            if (iLevSet == 1) {
-
-                                var backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetEdgeRuleFactory(jLevSet, jmpA, gdat.iGeomEdges.EdgeRefElements[0]);
-
-                                //var _doublyCut = doublyCut.Intersect(gdat.GetEdges4RefElement(Kref, KrefEdge));
-                                var twoLSFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, jLevSet, jmpA, Kref, backupFactory);
-                                LevSetQrIns.AddFactoryDomainPair(twoLSFactory, doublyCut, fixedOrder);
-
-                            } else {
-                                var backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, Kref);
-                                var twoLSFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, jLevSet, jmpA, Kref, backupFactory);
-                                LevSetQrIns.AddFactoryDomainPair(twoLSFactory, doublyCut, fixedOrder);
-                            }
-                            */
                         }
                     }
                 }
@@ -1282,7 +1178,7 @@ namespace BoSSS.Foundation.XDG {
 
                             if(doublyCut_onEdge.NoOfItemsLocally > 0) {
                                 //var jmpA = IdentifyWingA(jLevSet, spA);
-                                var jmpA = GetTrimmingLevelSetSign(jLevSet);
+                                var jmpA = GetTrimmingLevelSetSign(iLevSet, jLevSet, spA, spB);
 
                                 var KrefEdge = gdat.iGeomEdges.EdgeRefElements.Single();
                                 var trimming_factory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetEdgeRuleFactory(jLevSet, jmpA, KrefEdge);
@@ -1304,19 +1200,20 @@ namespace BoSSS.Foundation.XDG {
             }
             return LevSetQrIns;
 
-            JumpTypes bool2JumpType(bool b) => b ? JumpTypes.Heaviside : JumpTypes.OneMinusHeaviside;
 
-            JumpTypes GetTrimmingLevelSetSign(int iTrimmingLevSet) {
-                var spnA = Tracker.GetSpeciesName(spA);
-                var spnB = Tracker.GetSpeciesName(spB);
-                var SignsA = Tracker.GetLevelSetSignCodes(spnA).Select(sign_code => sign_code.GetSign(iTrimmingLevSet));
-                if(SignsA.Count() == 1)
-                    return bool2JumpType(SignsA.Single());
-                var SignsB = Tracker.GetLevelSetSignCodes(spnB).Select(sign_code => sign_code.GetSign(iTrimmingLevSet));
-                if(SignsB.Count() == 1)
-                    return bool2JumpType(SignsB.Single());
-                throw new ApplicationException($"unable to determine required jump type/sign of trimming level-set {iTrimmingLevSet} for integration over Species {spnA}-{spnB} intersection and level-set {iLevSet}.");
-            }
+        }
+        JumpTypes GetTrimmingLevelSetSign(int iLevSet, int iTrimmingLevSet, SpeciesId spA, SpeciesId spB) {
+         
+            JumpTypes bool2JumpType(bool b) => b ? JumpTypes.Heaviside : JumpTypes.OneMinusHeaviside;
+            var spnA = Tracker.GetSpeciesName(spA);
+            var spnB = Tracker.GetSpeciesName(spB);
+            var SignsA = Tracker.GetLevelSetSignCodes(spnA).Select(sign_code => sign_code.GetSign(iTrimmingLevSet));
+            if(SignsA.Count() == 1)
+                return bool2JumpType(SignsA.Single());
+            var SignsB = Tracker.GetLevelSetSignCodes(spnB).Select(sign_code => sign_code.GetSign(iTrimmingLevSet));
+            if(SignsB.Count() == 1)
+                return bool2JumpType(SignsB.Single());
+            throw new ApplicationException($"unable to determine required jump type/sign of trimming level-set {iTrimmingLevSet} for integration over Species {spnA}-{spnB} intersection and level-set {iLevSet}.");
         }
 
         /// <summary>

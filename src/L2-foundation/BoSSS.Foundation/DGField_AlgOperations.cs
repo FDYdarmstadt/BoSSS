@@ -312,12 +312,12 @@ namespace BoSSS.Foundation {
 
         /// <summary>
         /// accumulates the projection of some vector field to this field, i.e.
-        /// \f[ 
-        ///   this = this + \alpha \cdot \| \vec{vec} \|.
-        /// \f]
+        /// \[ 
+        ///   this = this + \alpha \cdot \| \underline{vec} \|.
+        /// \]
         /// </summary>
-        /// <param name="alpha">factor \f$ \alpha \f$ </param>
-        /// <param name="vec">vector field \f$ \vec{vec} \f$ </param>
+        /// <param name="alpha">factor $\alpha$ </param>
+        /// <param name="vec">vector field $\underline{vec}$ </param>
         /// <param name="em">
         /// An optional restriction to the domain in which the projection is computed (it may, e.g.
         /// be only required in boundary cells, so a computation over the whole domain 

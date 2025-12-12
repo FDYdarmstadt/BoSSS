@@ -96,7 +96,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// The kind of HMF which is be used for computing cell volumes.
         /// </summary>
-        public CutCellQuadratureMethod HMFvariant {
+        public CutCellQuadratureMethod CutCellQuadratureType {
             get {
                 return XDGSpaceMetrics.CutCellQuadratureType;
             }
@@ -165,7 +165,7 @@ namespace BoSSS.Foundation.XDG {
                 var edgeScheme = schH.GetEdgeQuadScheme(spc);
                 var chunRulePairList = edgeScheme.Compile(gd, this.CutCellQuadratureOrder);
 
-                chunRulePairList.ToVtpFilesEdge(gd, "edgeQuadFor" + spc.ToString(XDGSpaceMetrics.Tracker) + HMFvariant);
+                chunRulePairList.ToVtpFilesEdge(gd, "edgeQuadFor" + spc.ToString(XDGSpaceMetrics.Tracker) + CutCellQuadratureType);
             }
         }
 
@@ -185,7 +185,7 @@ namespace BoSSS.Foundation.XDG {
                 chunRulePairList.SaveToTextFileCell(gd, $"volume-{spc.ToString(XDGSpaceMetrics.Tracker)}-{this.XDGSpaceMetrics.CutCellQuadratureType}-p{this.CutCellQuadratureOrder}.csv");
 
 
-                chunRulePairList.ToVtpFilesCell(gd, "volQuadFor" + spc.ToString(XDGSpaceMetrics.Tracker) + HMFvariant);
+                chunRulePairList.ToVtpFilesCell(gd, "volQuadFor" + spc.ToString(XDGSpaceMetrics.Tracker) + CutCellQuadratureType);
             }
         }
 
@@ -231,7 +231,7 @@ namespace BoSSS.Foundation.XDG {
 
 
 
-                                    chunRulePairList.ToVtpFilesCell(gd, "surfQuadFor" + SpeciesA.ToString(XDGSpaceMetrics.Tracker) + "-" + SpeciesB.ToString(XDGSpaceMetrics.Tracker) + HMFvariant);
+                                    chunRulePairList.ToVtpFilesCell(gd, "surfQuadFor" + SpeciesA.ToString(XDGSpaceMetrics.Tracker) + "-" + SpeciesB.ToString(XDGSpaceMetrics.Tracker) + CutCellQuadratureType);
                                 }
                             }
                         }
@@ -389,6 +389,10 @@ namespace BoSSS.Foundation.XDG {
 
                                         CellQuadratureScheme SurfIntegration = schH.GetLevelSetQuadScheme(iLevSet, SpeciesA, SpeciesB, IntegrationDom);
                                         var rule = SurfIntegration.Compile(gd, this.CutCellQuadratureOrder);
+
+
+                                        //rule.SaveToTextFileCell(gd, $"surface{iLevSet}{this.XDGSpaceMetrics.Tracker.GetSpeciesName(SpeciesA)}{this.XDGSpaceMetrics.Tracker.GetSpeciesName(SpeciesB)}.csv", false);
+
 
 
                                         BoSSS.Foundation.Quadrature.CellQuadrature.GetQuadrature(
@@ -563,6 +567,8 @@ namespace BoSSS.Foundation.XDG {
 
                                         var cutLineScheme = schH.Get_SurfaceElement_EdgeQuadScheme(SpeciesA, SpeciesB, iLevelSet);
                                         var cutLineRule = cutLineScheme.Compile(gd, this.CutCellQuadratureOrder);
+
+                                        //cutLineRule.SaveToTextFileEdge(gd, $"cutLine{iLevelSet}{this.XDGSpaceMetrics.Tracker.GetSpeciesName(SpeciesA)}{this.XDGSpaceMetrics.Tracker.GetSpeciesName(SpeciesB)}.csv", false);
 
                                         MultidimensionalArray edgMeas = MultidimensionalArray.Create(EE);
                                         BoSSS.Foundation.Quadrature.EdgeQuadrature.GetQuadrature(

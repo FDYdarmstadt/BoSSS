@@ -20,6 +20,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                 Ref.Init();
                 Ref.RunSolverMode();
 
+                Ref.FurtherChecks();
                 Ref.CompareTotalCutLine();
                 Ref.CompareTotalVolume();
                 Ref.CompareTotalSurface();
@@ -133,19 +134,94 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
 
         [Test]
-        public static void OneLevelSet_3D(
+        public static void OneLevelSet_3D_Classic(
 #if DEBUG
             [Values(0)] int meshVariation,
-            [Values(3, 6, 7)] int quadOrder,
+            [Values(3, 6, 7)] int quadOrder
 #else
             [Values(0, 1, 2)] int meshVariation,
-            [Values(3, 4, 7, 8, 9, 10)] int quadOrder,
+            [Values(3, 4, 7, 8)] int quadOrder
 #endif
-            [Values(CutCellQuadratureMethod.Classic, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadType) {
+            ) {
+            const CutCellQuadratureMethod cutCellQuadType = CutCellQuadratureMethod.Classic;
+            DoTests(
+               () => new TestSetupSingleLevset3D(1.0, quadOrder, cutCellQuadType, meshVariation),
+               () => new TestSetupSingleLevset3D(0.5, quadOrder, cutCellQuadType, meshVariation));
+        }
+
+        [Test]
+        public static void OneLevelSet_3D_Saye(
+#if DEBUG
+            [Values(0)] int meshVariation,
+            [Values(3, 6, 7)] int quadOrder
+#else
+            [Values(0, 1, 2)] int meshVariation,
+            [Values(3, 4, 7, 8, 9, 10)] int quadOrder
+#endif
+            ) {
+
+            const CutCellQuadratureMethod cutCellQuadType = CutCellQuadratureMethod.Saye;
+            DoTests(
+               () => new TestSetupSingleLevset3D(1.0, quadOrder, cutCellQuadType, meshVariation),
+               () => new TestSetupSingleLevset3D(0.5, quadOrder, cutCellQuadType, meshVariation));
+        }
+
+        [Test]
+        public static void OneLevelSet_3D_Algoim(
+#if DEBUG
+            [Values(0)] int meshVariation,
+            [Values(3, 6, 7)] int quadOrder
+#else
+            [Values(0, 1, 2)] int meshVariation,
+            [Values(3, 4, 7, 8, 9, 10)] int quadOrder
+#endif
+            ) {
+
+            const CutCellQuadratureMethod cutCellQuadType = CutCellQuadratureMethod.Algoim;
 
             DoTests(
                () => new TestSetupSingleLevset3D(1.0, quadOrder, cutCellQuadType, meshVariation),
                () => new TestSetupSingleLevset3D(0.5, quadOrder, cutCellQuadType, meshVariation));
+        }
+
+
+        /// <summary>
+        /// The 3D test setting is a prismatic extension of the 2D case, i.e., all properties are constant in z-direction.
+        /// Therefore, e.g., the 2D level-set-area in the 3D test could be obtained by multiplying the 1D level-set-length from the 2D test with the mesh with in z-direction.
+        /// </summary>
+        [Test]
+        public static void OneLevelSet_2Dvs3D_Classic(
+#if DEBUG
+            [Values(0)] int meshVariation,
+            [Values(3)] int quadOrder
+#else
+            [Values(0, 2)] int meshVariation,
+            [Values(3, 4, 7, 8)] int quadOrder
+#endif
+            ) {
+            const CutCellQuadratureMethod cutCellQuadType = CutCellQuadratureMethod.Classic;
+            DoTests_2Dvs3D(
+                () => new TestSetupSingleLevset2D(1.0, quadOrder, cutCellQuadType, meshVariation),
+                () => new TestSetupSingleLevset3D(1, quadOrder, cutCellQuadType, meshVariation));
+        }
+        /// <summary>
+        /// The 3D test setting is a prismatic extension of the 2D case, i.e., all properties are constant in z-direction.
+        /// Therefore, e.g., the 2D level-set-area in the 3D test could be obtained by multiplying the 1D level-set-length from the 2D test with the mesh with in z-direction.
+        /// </summary>
+        [Test]
+        public static void OneLevelSet_2Dvs3D_Saye(
+#if DEBUG
+            [Values(0)] int meshVariation,
+            [Values(3, 6, 7)] int quadOrder
+#else
+            [Values(0, 1, 2)] int meshVariation,
+            [Values(3, 4, 7, 8, 9, 10)] int quadOrder
+#endif
+            ) {
+            const CutCellQuadratureMethod cutCellQuadType = CutCellQuadratureMethod.Saye;
+            DoTests_2Dvs3D(
+                () => new TestSetupSingleLevset2D(1.0, quadOrder, cutCellQuadType, meshVariation),
+                () => new TestSetupSingleLevset3D(1, quadOrder, cutCellQuadType, meshVariation));
         }
 
         /// <summary>
@@ -153,20 +229,20 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         /// Therefore, e.g., the 2D level-set-area in the 3D test could be obtained by multiplying the 1D level-set-length from the 2D test with the mesh with in z-direction.
         /// </summary>
         [Test]
-        public static void OneLevelSet_2Dvs3D(
+        public static void OneLevelSet_2Dvs3D_Algoim(
 #if DEBUG
             [Values(0)] int meshVariation,
-            [Values(3, 6, 7)] int quadOrder,
+            [Values(3, 6, 7)] int quadOrder
 #else
             [Values(0, 1, 2)] int meshVariation,
-            [Values(3, 4, 7, 8, 9, 10)] int quadOrder,
+            [Values(3, 4, 7, 8, 9, 10)] int quadOrder
 #endif
-            [Values(CutCellQuadratureMethod.Classic, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadType) {
+            ) {
+            const CutCellQuadratureMethod cutCellQuadType = CutCellQuadratureMethod.Algoim;
             DoTests_2Dvs3D(
                 () => new TestSetupSingleLevset2D(1.0, quadOrder, cutCellQuadType, meshVariation),
                 () => new TestSetupSingleLevset3D(1, quadOrder, cutCellQuadType, meshVariation));
         }
-
         /// <summary>
         /// The 3D test setting is a prismatic extension of the 2D case, i.e., all properties are constant in z-direction.
         /// Therefore, e.g., the 2D level-set-area in the 3D test could be obtained by multiplying the 1D level-set-length from the 2D test with the mesh with in z-direction.

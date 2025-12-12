@@ -3421,7 +3421,7 @@ namespace BoSSS.Solution {
 
 
                     try {
-                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, $"profiling_bin{ProfilingLog_suffix}")) {
+                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, $"profiling_bin", $"{ProfilingLog_suffix}.bin")) {
                             var str = OnlineProfiling.Serialize();
                             using (StreamWriter stw = new StreamWriter(stream)) {
                                 stw.Write(str);
@@ -3434,7 +3434,7 @@ namespace BoSSS.Solution {
                     }
 
                     try {
-                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, $"profiling_summary{ProfilingLog_suffix}")) {
+                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_summary", $"{ProfilingLog_suffix}.txt")) {
                             using (StreamWriter stw = new StreamWriter(stream)) {
                                 OnlineProfiling.WriteProfilingReport(stw);
                                 stw.Flush();
@@ -3628,7 +3628,7 @@ namespace BoSSS.Solution {
                     // log to session directory
                     if (app.MPIRank == 0 && !app.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
                         var nlog_stream_session = app.DatabaseDriver.GetNewLogStream(
-                            app.CurrentSessionInfo, "ParameterStudy.case-" + iPstudy);
+                            app.CurrentSessionInfo, "ParameterStudy.case-" + iPstudy, "txt");
                         try {
                             var w = new StreamWriter(nlog_stream_session);
                             nlog.WriteToStream(w, RowFilter: nlog.CurrentKeyHistory);
