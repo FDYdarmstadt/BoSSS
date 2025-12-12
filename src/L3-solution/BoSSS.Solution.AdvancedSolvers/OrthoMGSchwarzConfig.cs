@@ -400,14 +400,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 return altSmooth;
             } else {
                 var altSmooth3 = new SoftGMRES();
-                altSmooth3.MaxKrylovDim = 30;
+                altSmooth3.MaxKrylovDim = 80;
                 altSmooth3.TerminationCriterion = (iIter, r0, ri) => {
-                    double tol = 1e-2;
-                    bool notTerminate = iIter <= 32 && ri > tol * r0 && (r0 > MachineEpsilon || ri > MachineEpsilon);
-                    bool success = ri <= tol * r0;
-                    return (notTerminate, success);
+                    return (iIter <= 82 && ri > 1e-7 * r0, ri <= 1e-7 * r0);
                 };
-                altSmooth3.Precond = new BlockJacobi() { NoOfIterations = 1 };
+                altSmooth3.Precond = new BlockJacobi();
                 return altSmooth3;
             }
 
