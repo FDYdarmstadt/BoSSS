@@ -13,54 +13,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
+using ilPSP;
+using ilPSP.Tracing;
+using Microsoft.Hpc.Scheduler;
+using Microsoft.Hpc.Scheduler.Properties;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.IO;
-using BoSSS.Platform;
-using ilPSP;
+using System.Linq;
 using System.Runtime.Serialization;
-using ilPSP.Tracing;
-using System.Diagnostics;
-using System.Text;
-using System.Threading;
 
 namespace BoSSS.Application.BoSSSpad {
-
-    /// <summary>
-    /// Defines the priorities that you can specify for a job.
-    /// </summary>
-    public enum JobPriority {
-
-        /// <summary>
-        /// 
-        /// </summary>
-        Lowest = 0,
-
-        /// <summary>
-        /// 
-        /// </summary>
-        BelowNormal = 1,
-
-        /// <summary>
-        /// 
-        /// </summary>
-        Normal = 2,
-
-        /// <summary>
-        /// 
-        /// </summary>
-        AboveNormal = 3,
-
-        /// <summary>
-        /// 
-        /// </summary>
-        Highest = 4
-    }
-
-
-
 
     /// <summary>
     /// A <see cref="BatchProcessorClient"/>-implementation which uses a Microsoft HPC 2012 server (or later).
@@ -68,91 +31,6 @@ namespace BoSSS.Application.BoSSSpad {
     [DataContract]
     [Serializable]
     public class MsHPC2012Client : BatchProcessorClient {
-
-
-        /// <summary>
-        /// Defines the state of the job, on MS HPC Cluster
-        /// </summary>
-        public enum JobState {
-            /// <summary>
-            /// The job is being configured. The application called the Microsoft.Hpc.Scheduler.IScheduler.CreateJob
-            /// method to create the job but has not called the Microsoft.Hpc.Scheduler.IScheduler.AddJob(Microsoft.Hpc.Scheduler.ISchedulerJob)
-            /// or Microsoft.Hpc.Scheduler.IScheduler.SubmitJob(Microsoft.Hpc.Scheduler.ISchedulerJob,System.String,System.String)
-            /// method to add the job to the scheduler or submit the job to the scheduling queue.
-            /// This enumeration member represents a value of 1.
-            /// </summary>
-            Configuring = 1,
-
-            /// <summary>
-            /// The job was submitted to the scheduling queue (see Microsoft.Hpc.Scheduler.IScheduler.SubmitJob(Microsoft.Hpc.Scheduler.ISchedulerJob,System.String,System.String)).
-            /// This enumeration member represents a value of 2.
-            /// </summary>
-            Submitted = 2,
-
-            /// <summary>
-            /// The server is determining if the job can run. This enumeration member represents
-            /// a value of 4.
-            /// </summary>
-            Validating = 4,
-
-            /// <summary>
-            /// A submission filter is determining if the job can run. For details, see the SubmissionFilterProgram
-            /// cluster parameter in the Remarks section of Microsoft.Hpc.Scheduler.IScheduler.SetClusterParameter(System.String,System.String).
-            /// This enumeration member represents a value of 8.
-            /// </summary>
-            ExternalValidation = 8,
-
-            /// <summary>
-            /// The job passed validation and was added to the scheduling queue. This enumeration
-            /// member represents a value of 16.
-            /// </summary>
-            Queued = 16,
-
-            /// <summary>
-            /// The job is running. This enumeration member represents a value of 32.
-            /// </summary>
-            Running = 32,
-
-            /// <summary>
-            /// The server is cleaning up the resources that were allocated to the job. This
-            /// enumeration member represents a value of 64.
-            /// </summary>
-            Finishing = 64,
-
-            /// <summary>
-            /// The job successfully finished (all the tasks in the job finished successfully).
-            /// This enumeration member represents a value of 128.
-            /// </summary>
-            Finished = 128,
-
-            /// <summary>
-            /// One or more of the tasks in the job failed or a system error occurred on the
-            /// compute node. To get a description of the error, access the Microsoft.Hpc.Scheduler.ISchedulerJob.ErrorMessage
-            /// property. This enumeration member represents a value of 256.
-            /// </summary>
-            Failed = 256,
-
-            /// <summary>
-            /// The job was canceled (see Microsoft.Hpc.Scheduler.IScheduler.CancelJob(System.Int32,System.String)).
-            /// If the caller provided the reason for canceling the job, then the Microsoft.Hpc.Scheduler.ISchedulerJob.ErrorMessage
-            /// property will contain the reason. This enumeration member represents a value
-            /// of 512.
-            /// </summary>
-            Canceled = 512,
-            
-            /// <summary>
-            /// The job is being canceled. This enumeration member represents a value of 1024.
-            /// </summary>
-            Canceling = 1024,
-
-            /// <summary>
-            /// A mask used to indicate all states. This enumeration member represents a value
-            /// of 2047.
-            /// </summary>
-            All = 2047
-        }
-
-
         /// <summary>
         /// Empty Constructor for de-serialization
         /// </summary>
@@ -204,11 +82,9 @@ namespace BoSSS.Application.BoSSSpad {
                 throw new NotSupportedException($"The {typeof(MsHPC2012Client).Name} is only supported on MS Windows, but your current platform seems to be {System.Environment.OSVersion.Platform}.");
             }
 
-
             base.DeploymentBaseDirectory = DeploymentBaseDirectory;
             base.DeployRuntime = DeployRuntime;
             base.RuntimeLocation = "win\\amd64";
-
 
             this.Username = Username;
             this.ComputeNodes = ComputeNodes;
@@ -223,6 +99,13 @@ namespace BoSSS.Application.BoSSSpad {
 
         }
 
+        IScheduler GetInstance() {
+            if (_Scheduler == null) {
+                _Scheduler = new Scheduler();
+                _Scheduler.Connect(ServerName);
+            }
+            return _Scheduler;
+        }
         //[NonSerialized]
         //IScheduler m__scheduler;
 
@@ -232,7 +115,15 @@ namespace BoSSS.Application.BoSSSpad {
         [DataMember]
         public string Username;
 
-        /*
+
+        /// <summary>
+        /// Active Directory password used on HPC cluster
+        /// </summary>
+        [DataMember]
+        public string Password;
+
+
+
         /// <summary>
         /// Additional number of cores (for all jobs with more than one MPI rank) which are allocated for 'service', independent of the MPI Size.
         /// </summary>
@@ -245,7 +136,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         [DataMember]
         public int NumOfAdditionalServiceCoresMPISerial = 0;
-        */
+        
 
 
         /// <summary>
@@ -254,7 +145,7 @@ namespace BoSSS.Application.BoSSSpad {
         [DataMember]
         public int NumOfServiceCoresPerMPIprocess = 1;
 
-       
+
         /// <summary>
         /// Active directory computer name of head node
         /// </summary>
@@ -279,6 +170,12 @@ namespace BoSSS.Application.BoSSSpad {
         [DataMember]
         public bool SingleNode = true;
 
+        /// <summary>
+        /// HPC Scheduler Object from Microsoft.Hpc
+        /// </summary>
+        [NonSerialized]
+        protected IScheduler _Scheduler;
+
         ///// <summary>
         ///// Access to the Microsoft HPC job scheduler interface.
         ///// </summary>
@@ -298,197 +195,61 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public override (BoSSSpad.JobStatus, int? ExitCode) EvaluateStatus(string idToken, object optInfo, string DeployDir) {
             using (var tr = new FuncTrace()) {
-
                 int id = int.Parse(idToken);
-                var intStatus = GetStatus(id);
+                var (state, exitCode) = GetStatus(id);
 
-                switch (intStatus.s) {
+                // TODO: TS Hier rennt der in JobState Failed rein beim Testrunner, das muss gedebuggt werden
+                switch (state) {
                     case JobState.Configuring:
                     case JobState.Submitted:
                     case JobState.Validating:
                     case JobState.ExternalValidation:
                     case JobState.Queued:
-                    return (JobStatus.PendingInExecutionQueue, null);
+                        return (JobStatus.PendingInExecutionQueue, null);
 
                     case JobState.Running:
                     case JobState.Finishing:
                     case JobState.Canceling:
-                    return (JobStatus.InProgress, null);
+                        return (JobStatus.InProgress, null);
 
                     case JobState.Finished:
-                    if (intStatus.exitCode != null && intStatus.exitCode == 0)
-                        return (JobStatus.FinishedSuccessful, 0);
-                    else
-                        return (JobStatus.FailedOrCanceled, intStatus.exitCode);
+                        return (JobStatus.FinishedSuccessful, exitCode);
 
                     case JobState.Failed:
                     case JobState.Canceled:
-                    Console.WriteLine($" ------------ MSHPC FailedOrCanceled; original " + intStatus.s);
-                    return (JobStatus.FailedOrCanceled, intStatus.exitCode);
+                        Console.WriteLine($" ------------ MSHPC FailedOrCanceled; original " + state);
+                        return (JobStatus.FailedOrCanceled, exitCode);
+
+                    case JobState.All:
+                        return (JobStatus.Unknown, exitCode);
 
                     default:
-                    throw new NotImplementedException("Unknown job state: " + intStatus.s);
+                        throw new NotImplementedException("Unknown job state: " + state);
                 }
-
-
-
-                /*
-                 * old code, using the .NET API
-                 * 
-
-                ISchedulerJob JD;
-                //if (optInfo != null && optInfo is ISchedulerJob _JD) {
-                //    JD = _JD;
-                //} else {
-                using(new BlockTrace("Scheduler.OpenJob", tr)) {
-                    JD = Scheduler.OpenJob(id);
-                }
-
-               
-                int ExitCode = int.MinValue;
-                using(new BlockTrace("TASK_FILTERING", tr)) {
-                    ISchedulerCollection tasks = JD.GetTaskList(null, null, false);
-                    foreach(ISchedulerTask t in tasks) {
-                        DeployDir = t.WorkDirectory;
-                        ExitCode = t.ExitCode;
-                    }
-                }
-
-                using(new BlockTrace("STATE_EVAL", tr)) {
-                    var JDstate = JD.State;
-
-                    switch(JDstate) {
-                        case JobState.Configuring:
-                        case JobState.Submitted:
-                        case JobState.Validating:
-                        case JobState.ExternalValidation:
-                        case JobState.Queued:
-                        return (JobStatus.PendingInExecutionQueue, null);
-
-                        case JobState.Running:
-                        case JobState.Finishing:
-                        case JobState.Canceling:
-                        return (JobStatus.InProgress, null);
-
-                        case JobState.Finished:
-                        var retCode = (ExitCode == 0 ? JobStatus.FinishedSuccessful : JobStatus.FailedOrCanceled, ExitCode);
-                        return retCode;
-
-                        case JobState.Failed:
-                        case JobState.Canceled:
-                        return (JobStatus.FailedOrCanceled, ExitCode);
-
-                        default:
-                        throw new NotImplementedException("Unknown job state: " + JD.State);
-                    }
-                }
-
-                */
-
-
-
-
             }
         }
 
         /// <summary>
-        /// get MS HPC status (<see cref="MsHPC2012Client.JobState"/>) from Scheduler Job ID;
+        /// get MS HPC status (<see cref="JobState"/>) from Scheduler Job ID;
         /// will be translated to <see cref="BoSSSpad.JobStatus"/> by some other method.
         /// </summary>
         public (JobState s, int? exitCode) GetStatus(int id) {
             using (var tr = new FuncTrace()) {
-                
                 tr.Info($"Trying to get status for job {id} from scheduler {this.ServerName}");
 
                 if (this.ServerName.IsEmptyOrWhite())
                     throw new IOException("'ServerName' for MS HPC scheduler is empty or white");
 
-                // Get job status
-                // ==============
-                JobState state = JobState.All;
-                {
-                    var args = $"view {id}  /scheduler:{this.ServerName}";
-                    var Res = ExecuteProcess("job.exe", args, 60000);
-
-                    bool bfound = false;
-                    using (var StandardOutput = new StringReader(Res.stdOut)) {
-                        for (string line = StandardOutput.ReadLine(); line != null; line = StandardOutput.ReadLine()) {
-                            tr.Info($"parsing line: " + line);
-                            if (line.StartsWith("state", StringComparison.InvariantCultureIgnoreCase)) {
-                                int iRes = line.IndexOf(':');
-                                string RestLine = line.Substring(iRes + 1);
-                                tr.Info("Found `state` token, rest of line is: " + RestLine);
-                                state = Enum.Parse<JobState>(RestLine);
-                                bfound = true;
-                                break;
-                            } else {
-                                continue;
-                            }
-
-
-                            //var parts = line.Split(new char[] { ' ', ' ', '\n', '\t', '\r' }, StringSplitOptions.RemoveEmptyEntries);
-                            //if (parts.Length < 3)
-                            //    continue;
-                            //if (parts[0].Equals("state", StringComparison.InvariantCultureIgnoreCase))
-                            //{
-                            //    state = Enum.Parse<JobState>(parts[2]);
-                            //    break;
-                            //}
-                            //else
-                            //{
-                            //    continue;
-                            //}
-                        }
-                    }
-
-                    if (!bfound) {
-                        throw new IOException("Unable to evaluate status of job " + id + System.Environment.NewLine + Res.stdOut + System.Environment.NewLine + Res.stdErr);
-                    }
+                var job = _Scheduler.OpenJob(id);
+                job.Refresh();
+                JobState state = job.State;
+                int exitCode = int.MinValue;
+                var tasks = job.GetTaskList(null, null, false);
+                foreach (ISchedulerTask task in tasks) {
+                    exitCode = task.ExitCode;
                 }
 
-                // Get Exit code from task
-                // =======================
-                //
-                // Note: in our simplified interface, we only have one task per job
-
-                int? exitcode = null;
-                if (state == JobState.Canceled || state == JobState.Failed || state == JobState.Finished) {
-                    var args2 = $"listtasks {id} /scheduler:{this.ServerName}";
-                    var Res2 = ExecuteProcess("job.exe", args2, 60000);
-
-
-                    using (var StandardOutput = new StringReader(Res2.stdOut)) {
-                        for (string line = StandardOutput.ReadLine(); line != null; line = StandardOutput.ReadLine()) {
-                            if (line.StartsWith("exit code", StringComparison.InvariantCultureIgnoreCase)) {
-                                int iRes = line.IndexOf(':');
-                                string RestLine = line.Substring(iRes + 1);
-                                tr.Info("Found `exit code` token, rest of line is: " + RestLine);
-                                if(!RestLine.IsEmptyOrWhite())
-                                    exitcode = int.Parse(RestLine);
-                                break;
-                            } else {
-                                continue;
-                            }
-
-
-                            //var parts = line.Split(new char[] { ' ', ' ', '\n', '\t', '\r' }, StringSplitOptions.RemoveEmptyEntries);
-                            //if (parts.Length < 3)
-                            //    continue;
-                            //if (parts[0].Equals("state", StringComparison.InvariantCultureIgnoreCase))
-                            //{
-                            //    state = Enum.Parse<JobState>(parts[2]);
-                            //    break;
-                            //}
-                            //else
-                            //{
-                            //    continue;
-                            //}
-                        }
-                    }
-
-                }
-
-                return (state, exitcode);
+                return (state, exitCode);
             }
         }
 
@@ -512,120 +273,100 @@ namespace BoSSS.Application.BoSSSpad {
 
         }
 
-        /// <summary>
-        /// should be removed; no password in public 
-        /// </summary>
-        string Password => null;
-
-        string GetLoginArg() {
-            if (this.ServerName.IsEmptyOrWhite())
-                throw new IOException("'ServerName' for MS HPC scheduler is empty or white");
-            if (this.Username.IsEmptyOrWhite())
-                throw new IOException("'Username' for MS HPC scheduler is empty or white");
-
-
-            string pass = !this.Password.IsEmptyOrWhite() ? ("/password:" + this.Password) : "";
-            var ret = $" /scheduler:{this.ServerName} /user:{this.Username} {pass}";
-            return ret;
+        private int GetNumberOfCoresForJobDescription(Job description) {
+            int MPISz = description.NumberOfMPIProcs;
+            int NumberOfCores = MPISz * description.NumberOfThreads + MPISz * this.NumOfServiceCoresPerMPIprocess + (MPISz > 1 ? this.NumOfAdditionalServiceCores : this.NumOfAdditionalServiceCoresMPISerial);
+            return NumberOfCores;
         }
 
-       
+        private ISchedulerTask CreateTaskFromJobDescription(Job description, string DeploymentDirectory, ISchedulerJob job) {
+            int NumberOfCores = GetNumberOfCoresForJobDescription(description);
+            var task = job.CreateTask();
+            task.MaximumNumberOfCores = NumberOfCores;
+            task.MinimumNumberOfCores = NumberOfCores;
+            task.WorkDirectory = DeploymentDirectory;
+
+            using (var str = new StringWriter()) {
+                str.Write("mpiexec ");
+                if (!base.DotnetRuntime.IsEmptyOrWhite())
+                    str.Write(base.DotnetRuntime + " ");
+                str.Write(description.EntryAssemblyName);
+                foreach (string arg in description.CommandLineArguments) {
+                    str.Write(" ");
+                    str.Write(arg);
+                }
+
+                task.CommandLine = str.ToString();
+            }
+            foreach (var kv in description.EnvironmentVars) {
+                string name = kv.Key;
+                string valu = kv.Value;
+                task.SetEnvironmentVariable(name, valu);
+            }
+
+            task.StdOutFilePath = Path.Combine(DeploymentDirectory, "stdout.txt");
+            task.StdErrFilePath = Path.Combine(DeploymentDirectory, "stderr.txt");
+
+            if (ComputeNodes != null) {
+                foreach (string node in ComputeNodes)
+                    job.RequestedNodes.Add(node);
+            }
+            return task;
+        }
+
         /// <summary>
         /// Submits the job to the Microsoft HPC server.
         /// </summary>
-        public override (string id, object optJobObj) Submit(Job myJob, string DeploymentDirectory) {
+        public override (string id, object optJobObj) Submit(Job description, string DeploymentDirectory) {
             using (new FuncTrace()) {
+                int NumberOfCores = GetNumberOfCoresForJobDescription(description);
+                string PrjName = BoSSSshell.WorkflowMgm.CurrentProject;
+                IScheduler Scheduler = GetInstance();
+                var job = Scheduler.CreateJob();
+                job.Name = description.Name;
+                job.Project = PrjName;
+                job.MaximumNumberOfCores = NumberOfCores;
+                job.MinimumNumberOfCores = NumberOfCores;
+                job.SingleNode = this.SingleNode;
+                job.Priority = this.DefaultJobPriority;
+                job.UserName = Username;
 
+                var task = CreateTaskFromJobDescription(description, DeploymentDirectory, job);
 
-                // write XML file
-                // ==============
-                string xmlCode = this.WriteJobXML(myJob, DeploymentDirectory);
-                string xmlFilePath;
-                {
-                    xmlCode = this.WriteJobXML(myJob, DeploymentDirectory);
-                    xmlFilePath = Path.Combine(DeploymentDirectory, "job.xml");
-                    File.WriteAllText(xmlFilePath, xmlCode);
-                }
-
-
-
-                // submitt the job
-                // ===============
-                int id = -1;
-                {
-                    //var ret = CallJobCmd($"new /jobname:{JobName} /projectname:{PrjName} /scheduler:{server}  /numcores:{NumberOfCores}-{NumberOfCores} /exclusive:{SingleNode.ToString().ToLowerInvariant()} /priority:{Priority} /requestednodes:{Nodes}");
-
-                    var ret = ExecuteProcess("job.exe", $"submit /jobfile:\"{xmlFilePath}\" {GetLoginArg()}", 60000);
-
-                    var parts = ret.stdOut.Split(new char[] { ' ', '.', '\n', '\t', '\r' }, StringSplitOptions.RemoveEmptyEntries);
-                    for (int i = 0; i < parts.Length; i++) {
-                        if (parts[i].Equals("id:", StringComparison.InvariantCultureIgnoreCase))
-                            id = int.Parse(parts[i + 1]);
-                            
-                    }
-                    //Console.WriteLine(ret);
-                }
-
-                return (id.ToString(), null);
-
-                /*
-                ISchedulerJob MsHpcJob = null;
-                ISchedulerTask task = null;
-
-                // Create a job and add a task to the job.
-                MsHpcJob = Scheduler.CreateJob();
-
-
-                
-                MsHpcJob.Name = myJob.Name;
-                MsHpcJob.Project = PrjName;
-                MsHpcJob.MaximumNumberOfCores = myJob.NumberOfMPIProcs;
-                MsHpcJob.MinimumNumberOfCores = myJob.NumberOfMPIProcs;
-                MsHpcJob.SingleNode = this.SingleNode;
-                MsHpcJob.Priority = this.DefaultJobPriority;
-
-                MsHpcJob.UserName = Username;
-
-                task = MsHpcJob.CreateTask();
-                task.MaximumNumberOfCores = myJob.NumberOfMPIProcs;
-                task.MinimumNumberOfCores = myJob.NumberOfMPIProcs;
-                
-                task.WorkDirectory = DeploymentDirectory;
-
-                using (var str = new StringWriter()) {
-                    str.Write("mpiexec ");
-                    if(!base.DotnetRuntime.IsEmptyOrWhite())
-                        str.Write(base.DotnetRuntime + " ");
-                    str.Write(Path.GetFileName(myJob.EntryAssembly.Location));
-                    foreach (string arg in myJob.CommandLineArguments) {
-                        str.Write(" ");
-                        str.Write(arg);
-                    }
-
-                    task.CommandLine = str.ToString();
-                }
-                foreach (var kv in myJob.EnvironmentVars) {
-                    string name = kv.Key;
-                    string valu = kv.Value;
-                    task.SetEnvironmentVariable(name, valu);
-                }
-
-                task.StdOutFilePath = Path.Combine(DeploymentDirectory, "stdout.txt");
-                task.StdErrFilePath = Path.Combine(DeploymentDirectory, "stderr.txt");
-
-                if (ComputeNodes != null) {
-                    foreach (string node in ComputeNodes)
-                        MsHpcJob.RequestedNodes.Add(node);
-                }
-
-
-                MsHpcJob.AddTask(task);
+                job.AddTask(task);
 
                 // Start the job.
-                Scheduler.SubmitJob(MsHpcJob, Username != null ? Username : null, Password);
-                */
-
+                Scheduler.SubmitJob(job, Username != null ? Username : null, Password);
+                job.Refresh();
+                Console.WriteLine($"State of current Job :{job.State}");
+                return (job.Id.ToString(), null);
             }
+        }
+
+        /// <summary>
+        /// publicly available wrapper, used for extension methods to <see cref="MsHPC2012Client"/>
+        /// </summary>
+        /// <returns></returns>
+        public ISchedulerJob SubmitJobs(IEnumerable<Job> jobs, string DeploymentDirectory, int NumberOfCores = 64) {
+            string PrjName = BoSSSshell.WorkflowMgm.CurrentProject;
+            IScheduler Scheduler = GetInstance();
+            var job = Scheduler.CreateJob();
+            job.Name = PrjName;
+            job.Project = PrjName;
+            job.MaximumNumberOfCores = NumberOfCores;
+            job.MinimumNumberOfCores = jobs.Select(e => e.NumberOfMPIProcs).Max();
+            job.SingleNode = this.SingleNode;
+            job.Priority = this.DefaultJobPriority;
+
+            job.UserName = Username;
+
+            foreach (var description in jobs) {
+                var task = CreateTaskFromJobDescription(description, DeploymentDirectory, job);
+                job.AddTask(task);
+            }
+
+            Scheduler.SubmitJob(job, Username != null ? Username : null, Password);
+            return job;
         }
 
         /// <summary>
@@ -639,6 +380,8 @@ namespace BoSSS.Application.BoSSSpad {
             return $"MS HPC client {NameString}@{this.ServerName}, @{this.DeploymentBaseDirectory}";
         }
 
+        /*
+<<<<<<< HEAD
         /// <summary>
         /// 
         /// </summary>
@@ -819,6 +562,9 @@ namespace BoSSS.Application.BoSSSpad {
 
         }
 
+=======
+>>>>>>> origin/hpcapi
+        */
         [NonSerialized]
         Dictionary<string, string> m_AdditionalEnvironmentVars = new Dictionary<string, string>();
 
@@ -830,89 +576,6 @@ namespace BoSSS.Application.BoSSSpad {
             get {
                 return m_AdditionalEnvironmentVars;
             }
-        }
-
-
-        /// <summary>
-        /// publicly available wrapper, used for extension methods to <see cref="MsHPC2012Client"/>
-        /// </summary>
-        /// <param name="xmlFilePath"></param>
-        /// <returns></returns>
-        public (int exitcode, string stdOut, string stdErr) SubmitProcess(string xmlFilePath) {
-            return this.ExecuteProcess("job.exe", $"submit /jobfile:\"{xmlFilePath}\" {this.GetLoginArg()}", 60000);
-        }
-
-
-        /// <summary>
-        /// Synchronous wrapper around process execution, 
-        /// see https://stackoverflow.com/questions/139593/processstartinfo-hanging-on-waitforexit-why
-        /// </summary>
-        (int exitcode, string stdOut, string stdErr) ExecuteProcess(string filename, string arguments, int timeout) {
-            using (var tr = new FuncTrace()) {
-                string modArguments = arguments; // remove the password in error diagnostics
-                if (!this.Password.IsEmptyOrWhite())
-                    modArguments = modArguments.Replace(this.Password, "***"); // make sure we don't send the password to stdout or some other log
-
-
-                using (Process process = new Process()) {
-                    StringBuilder output = new StringBuilder();
-                    StringBuilder error = new StringBuilder();
-
-                    process.StartInfo.FileName = filename;
-                    process.StartInfo.Arguments = arguments;
-                    process.StartInfo.UseShellExecute = false;
-                    process.StartInfo.RedirectStandardOutput = true;
-                    process.StartInfo.RedirectStandardError = true;
-
-                    using (AutoResetEvent outputWaitHandle = new AutoResetEvent(false))
-                    using (AutoResetEvent errorWaitHandle = new AutoResetEvent(false)) {
-                        process.OutputDataReceived += (sender, e) => {
-                            if (e.Data == null) {
-                                outputWaitHandle.Set();
-                            } else {
-                                output.AppendLine(e.Data);
-                            }
-                        };
-                        process.ErrorDataReceived += (sender, e) => {
-                            if (e.Data == null) {
-                                errorWaitHandle.Set();
-                            } else {
-                                error.AppendLine(e.Data);
-                            }
-                        };
-
-                        tr.Info($"Executing: {filename} {modArguments}");
-
-                        process.Start();
-
-                        process.BeginOutputReadLine();
-                        process.BeginErrorReadLine();
-
-                        if (process.WaitForExit(timeout) &&
-                            outputWaitHandle.WaitOne(timeout) &&
-                            errorWaitHandle.WaitOne(timeout)) {
-                            if (process.ExitCode != 0) {
-                               throw new IOException(filename + " " + modArguments + " exited with code " + process.ExitCode + System.Environment.NewLine + output.ToString() + System.Environment.NewLine + error.ToString());
-                            }
-
-                            string stdout = output.ToString();
-                            string stderr = error.ToString();
-
-                            tr.Info($"Stdout from {filename} {arguments}   :::::" + stdout + "<<<<<");
-                            tr.Info($"Stderr from {filename} {arguments}   :::::" + stderr + "<<<<<");
-
-                            // Process completed. Check process.ExitCode here.
-                            return (process.ExitCode, stdout, stderr);
-                        } else {
-                            // Timed out.
-                            tr.Error("timeout waiting for " + filename + " " + modArguments);
-                            throw new IOException("timeout waiting for " + filename + " " + modArguments);
-                        }
-                    }
-
-                }
-            }
-
         }
     }
 }

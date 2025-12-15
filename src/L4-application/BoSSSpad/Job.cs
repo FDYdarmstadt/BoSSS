@@ -1,4 +1,4 @@
-﻿/* =======================================================================
+/* =======================================================================
 Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,19 +19,13 @@ using BoSSS.Foundation.IO;
 using ilPSP;
 using ilPSP.Tracing;
 using ilPSP.Utils;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.DotNet.Interactive.Formatting;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -49,21 +43,21 @@ namespace BoSSS.Application.BoSSSpad {
         /// </param>
         /// <param name="solver"></param>
         public Job(string name, Type solver) {
-            if(name.IsEmptyOrWhite()) {
+            if (name.IsEmptyOrWhite()) {
                 int i = 1;
                 string newName;
                 do {
                     newName = "EmptyJobName_" + i;
                     i++;
-                } while(BoSSSshell.WorkflowMgm.AllJobs.ContainsKey(newName));
-                
+                } while (BoSSSshell.WorkflowMgm.AllJobs.ContainsKey(newName));
+
                 Console.WriteLine($"Empty job name - picking new name '{newName}'");
                 name = newName;
             }
             this.Solver = solver;
             this.Name = name;
             this.SessionReqForSuccess = true;
-            
+
             if (BoSSSshell.WorkflowMgm.AllJobs.ContainsKey(name)) {
                 throw new ArgumentException("Job with name '" + name + "' is already defined in the workflow management.");
             }
@@ -81,7 +75,7 @@ namespace BoSSS.Application.BoSSSpad {
             private set;
             get;
         }
-        
+
         /*
          * Fk, Anmerkung:
          * Sowas wie die folgenden Properties (MemPerCPU) sollten keine Eigenschaften des Job sein, weil es Scheduler-spezifisch ist.
@@ -137,7 +131,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public string EntryAssemblyName {
             get {
-                if(EntryAssemblyRedirection == null)
+                if (EntryAssemblyRedirection == null)
                     return Path.GetFileName(EntryAssembly.Location);
                 else
                     return EntryAssemblyRedirection;
@@ -358,29 +352,29 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-   
+
         BoSSS.Solution.Control.AppControl m_ctrl;
         int m_ctrl_index;
         string ControlName = null;
 
         private void FiddleControlFile(BatchProcessorClient bpc) {
-            if(m_ctrl == null)
+            if (m_ctrl == null)
                 return;
-           
+
             // check the database 
             // ==================
             IDatabaseInfo ctrl_db = m_ctrl.GetDatabase();
-            if(ctrl_db == null) {
-                foreach(var db in BoSSSshell.wmg.AllDatabases) {
+            if (ctrl_db == null) {
+                foreach (var db in BoSSSshell.wmg.AllDatabases) {
                     m_ctrl.SetDatabase(db);
-                    if(bpc.IsDatabaseAllowed(m_ctrl)) {
+                    if (bpc.IsDatabaseAllowed(m_ctrl)) {
                         Console.WriteLine("Set Database: " + db);
                         break;
                     }
                 }
             }
 
-            if(!bpc.IsDatabaseAllowed(m_ctrl)) {
+            if (!bpc.IsDatabaseAllowed(m_ctrl)) {
                 throw new IOException($"Database {ctrl_db} is not allowed for {this.ToString()}; You might either use a different database for this computation OR modify the 'AllowedDatabasesPaths' in '~/.BoSSS/etc/BatchProcessorConfig.json'.");
             }
 
@@ -390,10 +384,10 @@ namespace BoSSS.Application.BoSSSpad {
             // =========================
 
             // grid function hack:
-            if(m_ctrl.GridFunc != null) {
+            if (m_ctrl.GridFunc != null) {
                 Console.WriteLine("Control object contains grid function. Trying to Serialize the grid...");
                 var dbi = m_ctrl.GetDatabase();
-                if(dbi == null) {
+                if (dbi == null) {
                     throw new NotSupportedException("If a gird function is specified (instead of a grid id), a database must be specified to save the gird (when using the job manager).");
                 }
 
@@ -407,13 +401,13 @@ namespace BoSSS.Application.BoSSSpad {
                 Console.WriteLine("Control object modified.");
 
             } else {
-                if(m_ctrl.GridGuid != Guid.Empty) {
+                if (m_ctrl.GridGuid != Guid.Empty) {
                     var db = m_ctrl.GetDatabase();
-                    if(db != null) {
-                        if(!db.Grids.Any(gi => gi.ID.Equals(m_ctrl.GridGuid))) {
+                    if (db != null) {
+                        if (!db.Grids.Any(gi => gi.ID.Equals(m_ctrl.GridGuid))) {
                             Console.WriteLine("Grid is not in database yet...");
                             var grd = m_ctrl.m_Grid;
-                            if(grd != null) {
+                            if (grd != null) {
 
                                 Foundation.Grid.IGrid newInfo = db.SaveGrid(grd, true);
                                 m_ctrl.SetGrid(newInfo);
@@ -426,45 +420,45 @@ namespace BoSSS.Application.BoSSSpad {
                 }
             }
 
-            if(ctrl_db != null) {
-                if(!m_ctrl.GridGuid.Equals(Guid.Empty)) {
+            if (ctrl_db != null) {
+                if (!m_ctrl.GridGuid.Equals(Guid.Empty)) {
 
                     var GridIn_ctrl_db = ctrl_db.Grids.FirstOrDefault(GrdInf => GrdInf.ID.Equals(m_ctrl.GridGuid));
 
-                    if(GridIn_ctrl_db == null) {
+                    if (GridIn_ctrl_db == null) {
                         Console.WriteLine($"Grid {m_ctrl.GridGuid} is not present in database - copy to target system...");
 
                         var grid2copy = BoSSSshell.AllGrids.FirstOrDefault(dbGrid => dbGrid.ID.Equals(m_ctrl.GridGuid));
-                        if(grid2copy == null) {
+                        if (grid2copy == null) {
                             // maybe replace exception with a warning, if job should be tried anyway
                             throw new IOException($"Unable to find grid '{m_ctrl.GridGuid}' in any database - job will most likely crash.");
                         } else {
                             grid2copy.Copy(ctrl_db);
                         }
-                        
+
                         Console.WriteLine("done.");
                     }
                 } else {
                     Console.Error.WriteLine($"Warning: no grid seems to be specified for the job to submit.");
                 }
 
-                if(m_ctrl.RestartInfo != null) {
+                if (m_ctrl.RestartInfo != null) {
                     Guid Rstsess_guid = m_ctrl.RestartInfo.Item1;
 
 
                     var Rstsess_ctrl_db = ctrl_db.Sessions.FirstOrDefault(sinf => sinf.ID.Equals(Rstsess_guid));
 
-                    if(Rstsess_ctrl_db == null) {
+                    if (Rstsess_ctrl_db == null) {
                         Console.WriteLine($"Session {m_ctrl.GridGuid} to restart from is not present in database - copy to target system...");
 
                         var sess_2copy = BoSSSshell.AllSessions.FirstOrDefault(sinf => sinf.ID.Equals(Rstsess_guid));
-                        if(sess_2copy == null) {
+                        if (sess_2copy == null) {
                             // maybe replace exception with a warning, if job should be tried anyway
                             throw new IOException($"Unable to find session '{sess_2copy}' in any database - job will most likely crash.");
                         } else {
                             sess_2copy.Copy(ctrl_db);
                         }
-                        
+
                         Console.WriteLine("done.");
                     }
                 }
@@ -483,7 +477,7 @@ namespace BoSSS.Application.BoSSSpad {
             {
                 string text;
                 m_ctrl_index = -1;
-                if(m_ctrl.GeneratedFromCode) {
+                if (m_ctrl.GeneratedFromCode) {
                     text = m_ctrl.ControlFileText;
                     ControlName = "control.cs";
                     m_ctrl_index = m_ctrl.ControlFileText_Index;
@@ -494,7 +488,7 @@ namespace BoSSS.Application.BoSSSpad {
                 byte[] buffer = Encoding.UTF8.GetBytes(text);
 
                 int remIdx = AdditionalDeploymentFiles.IndexWhere(tt => tt.Item2 == ControlName);
-                if(remIdx >= 0)
+                if (remIdx >= 0)
                     AdditionalDeploymentFiles.RemoveAt(remIdx);
 
                 AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(buffer, ControlName));
@@ -522,7 +516,7 @@ namespace BoSSS.Application.BoSSSpad {
             // since we may need to fix database issues (path on batch system, evtl. transfer of grid)
 
             m_ctrl_index = -1;
-            if(m_ctrl.GeneratedFromCode) {
+            if (m_ctrl.GeneratedFromCode) {
                 ControlName = "control.cs";
                 m_ctrl_index = m_ctrl.ControlFileText_Index;
             } else {
@@ -558,11 +552,11 @@ namespace BoSSS.Application.BoSSSpad {
         /// Returns the control object linked to this job
         /// </summary>
         public BoSSS.Solution.Control.AppControl GetControl() {
-           
+
             return m_ctrl;
         }
 
-        
+
         string[] m_CommandLineArguments = new string[0];
 
         /// <summary>
@@ -597,8 +591,8 @@ namespace BoSSS.Application.BoSSSpad {
 
             internal Deployment(DirectoryInfo _DeploymentDirectory, Job _owner, object __optInfo = null) {
                 m_owner = _owner;
-                if(_DeploymentDirectory != null) {
-                    if(!_DeploymentDirectory.Exists)
+                if (_DeploymentDirectory != null) {
+                    if (!_DeploymentDirectory.Exists)
                         throw new ArgumentException($"Directory {_DeploymentDirectory} does not exist -- must be either an existing directory or null.");
                 }
                 m_DeploymentDirectory = _DeploymentDirectory;
@@ -608,7 +602,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             internal Deployment(ISessionInfo _Session, Job _owner) {
                 m_owner = _owner;
-                if(_Session == null) {
+                if (_Session == null) {
                     throw new ArgumentNullException();
                 }
                 this.Session = _Session;
@@ -636,7 +630,7 @@ namespace BoSSS.Application.BoSSSpad {
                         return DeploymentDirectory.CreationTime;
                     else
                         return new DateTime(1981, 7, 14);
-                    
+
                 }
             }
 
@@ -648,17 +642,14 @@ namespace BoSSS.Application.BoSSSpad {
             /// </summary>
             public string BatchProcessorIdentifierToken {
                 get {
-                    if(m_BatchProcessorIdentifierToken.IsNullOrEmpty()) {
+                    if (m_BatchProcessorIdentifierToken.IsNullOrEmpty()) {
                         string DD = this.DeploymentDirectory?.FullName;
                         if (DD != null && Directory.Exists(DD)) {
-                            try
-                            {
+                            try {
                                 var l = File.ReadAllText(Path.Combine(DD, "IdentifierToken.txt"));
                                 m_BatchProcessorIdentifierToken = l.Trim();
 
-                            }
-                            catch (Exception)
-                            {
+                            } catch (Exception) {
                                 // job was probably deployed, but never submitted
                                 // ignore this.
                             }
@@ -674,12 +665,12 @@ namespace BoSSS.Application.BoSSSpad {
             /// </summary>
             public string RelativeDeploymentDirectory {
                 get {
-                    if(DeploymentDirectory != null) {
+                    if (DeploymentDirectory != null) {
                         var parts = DeploymentDirectory.FullName.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
                         return parts.Last();
                     }
 
-                    if(Session != null) {
+                    if (Session != null) {
                         var parts = Session.DeployPath.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
                         return parts.Last();
                     }
@@ -756,7 +747,7 @@ namespace BoSSS.Application.BoSSSpad {
                     } catch (Exception) {
 
                     }
-                } 
+                }
             }
 
 
@@ -774,7 +765,7 @@ namespace BoSSS.Application.BoSSSpad {
             private TimeSpan UpdateRunTime(JobStatus s) {
                 if (m_RunTime != null)
                     return m_RunTime.Value;
-                
+
                 if (s == JobStatus.FailedOrCanceled || s == JobStatus.FinishedSuccessful) {
                     m_RunTime = m_owner.AssignedBatchProc.GetRunTime(this.BatchProcessorIdentifierToken, this.optInfo, this.DeploymentDirectory?.FullName);
                     return m_RunTime.Value;
@@ -793,10 +784,10 @@ namespace BoSSS.Application.BoSSSpad {
             /// </summary>
             public JobStatus Status {
                 get {
-                    using(var tr = new FuncTrace()) {
+                    using (var tr = new FuncTrace()) {
                         tr.Info("Trying to get status of deployment: " + ((DeploymentDirectory?.FullName) ?? "no-path-avail"));
                         if (StatusCache != null) {
-                            tr.Info("From cache: " + StatusCache.Value); 
+                            tr.Info("From cache: " + StatusCache.Value);
                             return StatusCache.Value;
                         }
 
@@ -810,12 +801,11 @@ namespace BoSSS.Application.BoSSSpad {
                         bool alreadyKnow = true;
                         string ExitCodeStr = null;
                         try {
-
                             alreadyKnow = ReadExitCache(out bpc_status, out ExitCode);
                             tr.Info($"From cache file: cached = {alreadyKnow}: {bpc_status}, exit code = {ExitCode}");
                             if (!alreadyKnow) {
                                 if (this.BatchProcessorIdentifierToken == null) {
-                                    if(this.Session != null) {
+                                    if (this.Session != null) {
                                         if (this.Session.SuccessfulTermination) {
                                             bpc_status = JobStatus.FinishedSuccessful;
                                             ExitCode = 0;
@@ -834,8 +824,7 @@ namespace BoSSS.Application.BoSSSpad {
                             ExitCodeStr = ExitCode.HasValue ? ExitCode.Value.ToString() : "null";
                             this.ExitCodeCache = ExitCode;
                         } catch (Exception e) {
-                           
-                            tr.Info($"{e.GetType().Name} during Job.Deployment status evaluation: {e.Message}; Most likely reason: job was submitted a long time ago, and the job manager deleted teh respective record."); 
+                            tr.Info($"{e.GetType().Name} during Job.Deployment status evaluation: {e.Message}; Most likely reason: job was submitted a long time ago, and the job manager deleted the respective record."); 
                             tr.Info("Exception trace: " + (e.StackTrace ?? ""));
                             bpc_status = JobStatus.Unknown;
                             ExitCode = null;
@@ -918,7 +907,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Creates a new directory where the assemblies for some job can be copied to for a deployment on this batch processor.
         /// </summary>
         string GetNewDeploymentDir() {
-            if(AssignedBatchProc == null)
+            if (AssignedBatchProc == null)
                 throw new NotSupportedException("Job is not activated yet.");
 
             if (!Path.IsPathRooted(AssignedBatchProc.DeploymentBaseDirectory))
@@ -942,7 +931,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         DirectoryInfo[] GetAllUnkonwnExistingDeployDirectories() {
             using (var tr = new FuncTrace()) {
-                if(this.GetControl() == null && this.EntryAssembly == null)
+                if (this.GetControl() == null && this.EntryAssembly == null)
                     throw new NotSupportedException("Insufficient information to find job deployments.");
 
                 if (!Path.IsPathRooted(AssignedBatchProc.DeploymentBaseDirectory))
@@ -965,8 +954,8 @@ namespace BoSSS.Application.BoSSSpad {
                 }
 
                 bool DirIsKnown(DirectoryInfo dir) {
-                    foreach(var dep in m_Deployments) {
-                        if(DirMatch(dep.DeploymentDirectory, dir))
+                    foreach (var dep in m_Deployments) {
+                        if (DirMatch(dep.DeploymentDirectory, dir))
                             return true;
                     }
                     return false;
@@ -990,33 +979,33 @@ namespace BoSSS.Application.BoSSSpad {
                 // filter appropriate ones 
                 // =======================
                 var filtDirs = new List<DirectoryInfo>();
-                using(new BlockTrace("DIRECTORY_FILTERING", tr)) {
+                using (new BlockTrace("DIRECTORY_FILTERING", tr)) {
                     var mybind = new KnownTypesBinder(this);
 
 
-                    foreach(DirectoryInfo dir in AllDirs) {
-                        if(!DirIsKnown(dir)) {
+                    foreach (DirectoryInfo dir in AllDirs) {
+                        if (!DirIsKnown(dir)) {
 
                             try {
                                 string ControlObj = Path.Combine(dir.FullName, "control.obj");
-                                if(File.Exists(ControlObj)) {
+                                if (File.Exists(ControlObj)) {
                                     var ctrl = BoSSS.Solution.Control.AppControl.Deserialize(File.ReadAllText(ControlObj), mybind);
-                                    if(BoSSSshell.WorkflowMgm.JobAppControlCorrelation(this, ctrl)) {
+                                    if (BoSSSshell.WorkflowMgm.JobAppControlCorrelation(this, ctrl)) {
                                         filtDirs.Add(new DirectoryInfo(dir.FullName));
                                         continue;
                                     }
                                 }
 
                                 string ControlScript = Path.Combine(dir.FullName, "control.cs");
-                                if(File.Exists(ControlScript)) {
+                                if (File.Exists(ControlScript)) {
                                     int control_index = 0;
                                     int i = CommandLineArguments.IndexWhere(arg => arg == "--pstudy_case");
-                                    if(i >= 0) {
+                                    if (i >= 0) {
                                         control_index = int.Parse(CommandLineArguments[i + 1]);
                                     }
 
                                     var ctrl = BoSSS.Solution.Control.AppControl.FromFile(ControlScript, jobControl.GetType(), control_index);
-                                    if(BoSSSshell.WorkflowMgm.JobAppControlCorrelation(this, ctrl)) {
+                                    if (BoSSSshell.WorkflowMgm.JobAppControlCorrelation(this, ctrl)) {
                                         filtDirs.Add(dir);
                                         continue;
                                     }
@@ -1049,10 +1038,10 @@ namespace BoSSS.Application.BoSSSpad {
             internal KnownTypesBinder(Job __owner) {
                 m_owner = __owner;
 
-                foreach(var a in __owner.AllDependentAssemblies) {
+                foreach (var a in __owner.AllDependentAssemblies) {
                     var tt = new Dictionary<string, Type>();
                     knownTypes.Add(a.GetName().Name, tt);
-                    foreach(var t in a.GetExportedTypes()) {
+                    foreach (var t in a.GetExportedTypes()) {
                         tt.Add(t.FullName, t);
                     }
                 }
@@ -1082,7 +1071,7 @@ namespace BoSSS.Application.BoSSSpad {
 
         void UpdateDeployments() {
             using (var tr = new FuncTrace()) {
-                
+
 
                 // determine all new sessions
                 // ==========================
@@ -1093,7 +1082,7 @@ namespace BoSSS.Application.BoSSSpad {
                     }
                 }
 
-               
+
                 ISessionInfo[] AllNewSessionsTotal;
                 using (new BlockTrace("NewSessionFiltering", tr)) {
                     AllNewSessionsTotal = BoSSSshell.WorkflowMgm.Sessions
@@ -1142,7 +1131,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-        
+
         internal class DeploymentsAtomic : IDisposable {
             public DeploymentsAtomic(Job owner) {
                 m_owner = owner;
@@ -1180,8 +1169,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// Deletes any trace of previous calculations for this job.
         /// </summary>
         public void DeleteOldDeploymentsAndSessions(bool deleteSessions = true) {
-            foreach(var dep in AllDeployments) {
-                if(dep.Session != null) {
+            foreach (var dep in AllDeployments) {
+                if (dep.Session != null) {
                     try {
                         dep.Session.Delete(true);
                     } catch (Exception e) {
@@ -1190,7 +1179,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                 }
 
-                if(dep.DeploymentDirectory != null && dep.DeploymentDirectory.Exists) {
+                if (dep.DeploymentDirectory != null && dep.DeploymentDirectory.Exists) {
                     Exception op(int iTry) {
                         dep.DeploymentDirectory.Delete(true);
                         return null;
@@ -1208,7 +1197,7 @@ namespace BoSSS.Application.BoSSSpad {
 
 
 
-        
+
 
         int m_NumberOfMPIProcs = 1;
 
@@ -1228,6 +1217,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         int m_NumberOfThreads = 2;
+
 
         /// <summary>
         /// Number of threads for each MPI rank
@@ -1263,7 +1253,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-        
+
         /// <summary>
         /// Returns all session which can be correlated to this job,
         /// <see cref="WorkflowMgm.SessionInfoJobCorrelation"/>.
@@ -1281,7 +1271,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-      
+
 
 
         /// <summary>
@@ -1300,7 +1290,7 @@ namespace BoSSS.Application.BoSSSpad {
         public Deployment LatestDeployment {
             get {
                 var deps = this.AllDeployments.ToArray();
-                if(deps.Length > 0)
+                if (deps.Length > 0)
                     return deps.OrderBy(d => d.CreationDate).Last();
                 else
                     return null;
@@ -1314,32 +1304,32 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public string Stdout {
             get {
-                using(new FuncTrace()) {
-                    if(AssignedBatchProc == null)
+                using (new FuncTrace()) {
+                    if (AssignedBatchProc == null)
                         throw new NotSupportedException("Job is not activated.");
 
-                    
+
 
                     string stdout = "";
 
                     Exception op(int itry) {
 
                         string StdoutFile = null;
-                        if(this.Status == JobStatus.FinishedSuccessful) {
-                            if(this.LatestSession != null) {
+                        if (this.Status == JobStatus.FinishedSuccessful) {
+                            if (this.LatestSession != null) {
                                 StdoutFile = this.LatestSession.FilesInSessionDir("stdout.0.txt").FirstOrDefault();
                             }
                         }
-                        if(StdoutFile == null) {
+                        if (StdoutFile == null) {
                             var ld = LatestDeployment;
-                            if(ld != null) {
+                            if (ld != null) {
                                 StdoutFile = AssignedBatchProc.GetStdoutFile(ld.BatchProcessorIdentifierToken, ld.DeploymentDirectory.FullName);
                             }
                         }
-    
-                        if(StdoutFile != null && File.Exists(StdoutFile)) {
-                            using(FileStream stream = File.Open(StdoutFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
-                                using(StreamReader reader = new StreamReader(stream)) {
+
+                        if (StdoutFile != null && File.Exists(StdoutFile)) {
+                            using (FileStream stream = File.Open(StdoutFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+                                using (StreamReader reader = new StreamReader(stream)) {
                                     stdout = reader.ReadToEnd();
                                 }
                             }
@@ -1361,30 +1351,30 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public string Stderr {
             get {
-                using(new FuncTrace()) {
-                    if(AssignedBatchProc == null)
+                using (new FuncTrace()) {
+                    if (AssignedBatchProc == null)
                         throw new NotSupportedException("Job is not activated.");
 
                     string stderr = "";
 
                     Exception op(int itry) {
                         string StderrFile = null;
-                        if(this.Status == JobStatus.FinishedSuccessful) {
-                            if(this.LatestSession != null) {
+                        if (this.Status == JobStatus.FinishedSuccessful) {
+                            if (this.LatestSession != null) {
                                 StderrFile = this.LatestSession.FilesInSessionDir("stderr.0.txt").FirstOrDefault();
                             }
                         }
-                        if(StderrFile == null) {
+                        if (StderrFile == null) {
                             var ld = LatestDeployment;
-                            if(ld != null) {
+                            if (ld != null) {
                                 StderrFile = AssignedBatchProc.GetStderrFile(ld.BatchProcessorIdentifierToken, ld.DeploymentDirectory.FullName);
                             }
 
                         }
 
-                        if(StderrFile != null && File.Exists(StderrFile)) {
-                            using(FileStream stream = File.Open(StderrFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
-                                using(StreamReader reader = new StreamReader(stream)) {
+                        if (StderrFile != null && File.Exists(StderrFile)) {
+                            using (FileStream stream = File.Open(StderrFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+                                using (StreamReader reader = new StreamReader(stream)) {
                                     stderr = reader.ReadToEnd();
                                 }
                             }
@@ -1409,7 +1399,7 @@ namespace BoSSS.Application.BoSSSpad {
                 throw new NotSupportedException("Job is not activated.");
 
             var ld = LatestDeployment;
-            if(ld == null) {
+            if (ld == null) {
                 Console.WriteLine("No deployment available so far.");
                 return;
             }
@@ -1459,7 +1449,7 @@ namespace BoSSS.Application.BoSSSpad {
                 return _AssignedBatchProc;
             }
             set {
-                if(_AssignedBatchProc == null)
+                if (_AssignedBatchProc == null)
                     _AssignedBatchProc = value;
                 else
                     throw new NotSupportedException("Batchprocessor can be set only once!");
@@ -1569,7 +1559,7 @@ namespace BoSSS.Application.BoSSSpad {
                 if (this.AssignedBatchProc == null)
                     throw new NotSupportedException("Job must be activated before.");
 
-                
+
                 // ================
                 // status
                 // ================
@@ -1585,11 +1575,11 @@ namespace BoSSS.Application.BoSSSpad {
                     }
                 }
 
-                if(BoSSSshell.WorkflowMgm.RunWorkflowFromBackup) {
+                if (BoSSSshell.WorkflowMgm.RunWorkflowFromBackup) {
                     Console.WriteLine($"BoSSSpad is configured to run from a backup, `RunWorkflowFromBackup` = {BoSSSshell.WorkflowMgm.RunWorkflowFromBackup} ; ");
                 }
 
-               
+
                 // ========================================================================
                 // finally, it might be necessary to submit the job to the batch processor. 
                 // ========================================================================
@@ -1601,7 +1591,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                 // deploy additional files
                 string DeploymentDirectory = this.DeployExecuteables();
-                
+
                 // submit job
                 using (new BlockTrace("JOB_SUBMISSION", tr)) {
                     var rr = AssignedBatchProc.Submit(this, DeploymentDirectory);
@@ -1609,7 +1599,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                     //Deployment dep = AllDeployments.SingleOrDefault(d => d?.BatchProcessorIdentifierToken == rr.id);
                     Deployment dep = AllDeployments.LastOrDefault(d => (d?.BatchProcessorIdentifierToken == rr.id) && PathMatch(d?.DeploymentDirectory?.FullName, DeploymentDirectory));
-                    
+
                     if (dep == null)
                         m_Deployments.Add(new Deployment(new DirectoryInfo(DeploymentDirectory), this, rr.optJobObj));
                     else
@@ -1780,7 +1770,7 @@ namespace BoSSS.Application.BoSSSpad {
                 return m_RetryCount;
             }
             set {
-                if(RetryCount < 0)
+                if (RetryCount < 0)
                     throw new ArgumentOutOfRangeException("RetryCount must be positive");
                 TestActivation();
 
@@ -1789,7 +1779,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         private void TestActivation() {
-            if(this.Status != JobStatus.PreActivation)
+            if (this.Status != JobStatus.PreActivation)
                 throw new NotSupportedException("Unable to change properties after job is activated.");
         }
 
@@ -1834,7 +1824,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
         */
 
-        
+
         /// <summary>
         /// Copies the executable files to the <see cref="BatchProcessorClient.DeploymentBaseDirectory"/>, but does not submit the job.
         /// </summary>
@@ -1857,13 +1847,13 @@ namespace BoSSS.Application.BoSSSpad {
             }
             */
 
-           
+
             void TestWR() {
-                using(new FuncTrace()) {
+                using (new FuncTrace()) {
                     Exception OP(int iTry) {
-                        if(this.GetControl() != null) {
+                        if (this.GetControl() != null) {
                             var directories = this.AllDeployments.Select(dep => dep.DeploymentDirectory).Where(dep => dep != null).ToArray();
-                            if(directories == null || directories.Length <= 0) {
+                            if (directories == null || directories.Length <= 0) {
                                 return new IOException("Job is assigned to batch processor, but no deployment directory can be found.");
                             }
                         }
@@ -1876,12 +1866,12 @@ namespace BoSSS.Application.BoSSSpad {
 
             static void CopyFilesRecursively(string sourcePath, string targetPath) {
                 //Now Create all of the directories
-                foreach(string dirPath in Directory.GetDirectories(sourcePath, "*", SearchOption.AllDirectories)) {
+                foreach (string dirPath in Directory.GetDirectories(sourcePath, "*", SearchOption.AllDirectories)) {
                     Directory.CreateDirectory(dirPath.Replace(sourcePath, targetPath));
                 }
 
                 //Copy all the files & Replaces any files with the same name
-                foreach(string newPath in Directory.GetFiles(sourcePath, "*.*", SearchOption.AllDirectories)) {
+                foreach (string newPath in Directory.GetFiles(sourcePath, "*.*", SearchOption.AllDirectories)) {
                     File.Copy(newPath, newPath.Replace(sourcePath, targetPath), true);
                 }
             }
@@ -1893,13 +1883,13 @@ namespace BoSSS.Application.BoSSSpad {
                 // Collect files
                 List<string> files = new List<string>();
                 using (new BlockTrace("ASSEMBLY_COLLECTION", tr)) {
-                    if(EntryAssemblyRedirection.IsEmptyOrWhite()) {
+                    if (EntryAssemblyRedirection.IsEmptyOrWhite()) {
                         //string SystemPath = Path.GetDirectoryName(typeof(object).Assembly.Location);
                         files.AddRange(GetManagedFileList());
                     } else {
                         Console.WriteLine("Skipping assembly file copy, since 'EntryAssemblyRedirection' = " + EntryAssemblyRedirection);
                     }
-               
+
                     // test for really strange errors
                     for (int i = 0; i < files.Count; i++) {
                         for (int j = i + 1; j < files.Count; j++) {
@@ -1931,11 +1921,11 @@ namespace BoSSS.Application.BoSSSpad {
                         }
                     }
 
-                    if(EntryAssemblyRedirection == null) {
+                    if (EntryAssemblyRedirection == null) {
                         // copy "runtimes" directory from .NET core/.NET5
                         string runtimes_Src = Path.Combine(Path.GetDirectoryName(EntryAssembly.Location), "runtimes");
                         string runtimes_Dst = Path.Combine(DeployDir, "runtimes");
-                        if(Directory.Exists(runtimes_Src)) {
+                        if (Directory.Exists(runtimes_Src)) {
                             CopyFilesRecursively(runtimes_Src, runtimes_Dst);
                         }
                     }

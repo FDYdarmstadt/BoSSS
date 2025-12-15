@@ -68,7 +68,6 @@ namespace BoSSS.Application.BoSSSpad {
             Job job = new Job(ctrl.SessionName, solverClass);
             job.SetControlObject(ctrl);
 
-
             return job;
         }
 
