@@ -15,26 +15,29 @@ limitations under the License.
 */
 
 using BoSSS.Application.BoSSSpad;
+using BoSSS.Application.XdgPoisson3;
 using BoSSS.Application.XNSE_Solver;
 using BoSSS.Foundation.XDG;
+using BoSSS.Solution;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.Gnuplot;
+using BoSSS.Solution.Statistic;
 using ilPSP;
 using ilPSP.Connectors.Matlab;
 using ilPSP.Tracing;
 using ilPSP.Utils;
+using MathNet.Numerics.Interpolation;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Xml;
-using MathNet.Numerics.Interpolation;
 using static BoSSS.Solution.Gnuplot.Plot2Ddata;
-using BoSSS.Solution.Statistic;
-using BoSSS.Application.XdgPoisson3;
-using BoSSS.Solution;
 
 namespace BoSSS.Foundation.IO {
 
@@ -2848,7 +2851,113 @@ namespace BoSSS.Foundation.IO {
 
         }
 
+        /// <summary>
+        /// Writes json files for Chrome tracing of the sessions. (Sensetive to the format of BoSSS trace files.)
+        /// The generated JSON file is in Chrome Trace Event format (all ranks in one file).
+        /// To visualize it:
+        /// 1. Open Google Chrome.
+        /// 2. Navigate to chrome://tracing
+        /// 3. Click “Load” and select the generated traceChrome.json file.
+        /// This will display function execution timelines across ranks (PIDs).
+        /// </summary>
+        /// <param name="pSessions"></param>
+        /// <param name="overWrite">true: overwrite existing chromeTrace files (.json)</param>
+        /// <param name="writeDir">null: session directory</param>
+        public static void WriteChromeTraceFile(this IEnumerable<ISessionInfo> pSessions, bool overWrite = false, string writeDir = null) {
+            foreach(var sess in pSessions) {
+                WriteChromeTraceFile(sess, overWrite, writeDir);
+            }
 
+            Console.WriteLine("--------------------");
+            Console.WriteLine("To view the trace:");
+            Console.WriteLine("1. Open Google Chrome.");
+            Console.WriteLine("2. Go to chrome://tracing");
+            Console.WriteLine("3. Click 'Load' and select the generated traceChrome.json file.");
+        }
+
+        /// <summary>
+        /// Writes json files for Chrome tracing of the sessions. (Sensetive to the format of BoSSS trace files.)
+        /// The generated JSON file is in Chrome Trace Event format (all ranks in one file).
+        /// To visualize it:
+        /// 1. Open Google Chrome.
+        /// 2. Navigate to chrome://tracing
+        /// 3. Click “Load” and select the generated traceChrome.json file.
+        /// This will display function execution timelines across ranks (PIDs).
+        /// </summary>
+        /// <param name="sess"></param>
+        /// <param name="overWrite">true: overwrite existing chromeTrace files (.json)</param>
+        /// <param name="writeDir">null: session directory</param>
+        public static void WriteChromeTraceFile(this ISessionInfo sess, bool overWrite = false, string writeDir = null) {
+            var traceFilePaths = sess.FilesInSessionDir("trace*txt");
+
+            if(traceFilePaths.Count() == 0) {
+                Console.WriteLine("No trace files found in session {0}.", sess.ID);
+                return;
+            }
+
+            writeDir ??= sess.GetSessionDirectory();
+            string writePath = writeDir + "\\" + "traceChrome.json";
+
+            if(File.Exists(writePath) && !overWrite) {
+                Console.WriteLine("Chrome trace file already exists at {0}. Use overWrite=true to overwrite.", writePath);
+                return;
+            }
+
+            try {
+                var enterPattern = new Regex(@"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) INFO\s+ilPSP\.Tracing\.FuncTrace: (ENTERING|BLKENTER) (.+?) new stack depth = \d+");
+                var leavePattern = new Regex(@"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) INFO\s+ilPSP\.Tracing\.FuncTrace: LEAVING (.+?) \(([\d.Ee+-]+) sec");
+
+                var allEvents = new List<Dictionary<string, object>>();
+
+                foreach(var traceFilePath in traceFilePaths) {
+                    int rank = int.Parse(Path.GetFileName(traceFilePath).Split('.')[^2]);
+                    var lines = File.ReadAllLines(traceFilePath);
+
+                    foreach(var line in lines) {
+                        var enterMatch = enterPattern.Match(line);
+                        if(enterMatch.Success) {
+                            var timestampStr = enterMatch.Groups[1].Value;
+                            var function = enterMatch.Groups[3].Value;
+                            long ts = (long)(DateTime.ParseExact(timestampStr, "yyyy-MM-dd HH:mm:ss,fff", CultureInfo.InvariantCulture) - DateTime.UnixEpoch).TotalMilliseconds * 1000;
+
+                            allEvents.Add(new Dictionary<string, object> {
+                        { "name", function },
+                        { "cat", "function" },
+                        { "ph", "B" },
+                        { "ts", ts },
+                        { "pid", rank },
+                        { "tid", 0 }
+                    });
+                            continue;
+                        }
+
+                        var leaveMatch = leavePattern.Match(line);
+                        if(leaveMatch.Success) {
+                            var timestampStr = leaveMatch.Groups[1].Value;
+                            var function = leaveMatch.Groups[2].Value;
+                            long ts = (long)(DateTime.ParseExact(timestampStr, "yyyy-MM-dd HH:mm:ss,fff", CultureInfo.InvariantCulture) - DateTime.UnixEpoch).TotalMilliseconds * 1000;
+
+                            allEvents.Add(new Dictionary<string, object> {
+                        { "name", function },
+                        { "cat", "function" },
+                        { "ph", "E" },
+                        { "ts", ts },
+                        { "pid", rank },
+                        { "tid", 0 }
+                    });
+                        }
+                    }
+                }
+
+                var trace = new Dictionary<string, object> { ["traceEvents"] = allEvents };
+
+                var options = new JsonSerializerOptions { WriteIndented = true };
+                File.WriteAllText(writePath, JsonSerializer.Serialize(trace, options));
+                Console.WriteLine("-> traceChrome.json ready at " + writeDir);
+            } catch(Exception ex) {
+                Console.WriteLine(sess.ID + " - Error writing Chrome trace file for: " + ex.Message);
+            }
+        }
 
         // <summary>
         // Plots the temperature profile if a  "Evaporation.txt" exists.

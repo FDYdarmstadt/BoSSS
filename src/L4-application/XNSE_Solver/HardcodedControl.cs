@@ -2059,26 +2059,31 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.LinearSolver = new PmgConfig() {
             //    ConvergenceCriterion = 1e-9
             //};
-            //C.LinearSolver = new OrthoMGSchwarzConfig() {
-            //    ConvergenceCriterion = 1e-9
-            //};
+            C.LinearSolver = new OrthoMGSchwarzConfig() {
+                ConvergenceCriterion = 1e-9,
+                CoarseKickIn = 4000,
+                TargetBlockSize = 4000,
+                SchwarzImplementation = SchwarzImplementation.CoarseMesh
+            };
 
 
             C.LevelSet_ConvergenceCriterion = 1e-6;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.TransposeTermMissing;
 
-            var config = new FGMRESConfig();
-			config.Preconditioners.Add(new OrthoMGSchwarzConfig() {
-                ConvergenceCriterion = 1e-3,
-                CoarseKickIn = 5000,
-                TargetBlockSize = 1000
-            });
+   //         var config = new FGMRESConfig();
+			//config.Preconditioners.Add(new OrthoMGSchwarzConfig() {
+   //             ConvergenceCriterion = 1e-3,
+   //             CoarseKickIn = 5000,
+   //             TargetBlockSize = 1000
+   //         });
 
             //config.Preconditioners.Add(new DirectSolver.Config() {
             //    WhichSolver = Solution.AdvancedSolvers.DirectSolver._whichSolver.PARDISO
             //    });
 
-            C.LinearSolver = config;
+            //C.LinearSolver = new SchurPrecondConfig() { 
+            //    Option = SchurPrecond.SchurOptions.exact
+            //};
             //	new DirectSolver.Config() {
             //	WhichSolver = Solution.AdvancedSolvers.DirectSolver._whichSolver.PARDISO
             //}; //new SchurPrecondConfig();
@@ -2150,11 +2155,24 @@ namespace BoSSS.Application.XNSE_Solver {
 		/// <param name="Res"></param>
 		/// <param name="p"></param>
 		/// <returns></returns>
-		public static XNSE_Control BottiDiPietro3D(int Res = 20, int p = 2) {
-			// --control cs: BoSSS.Application.XNSE_Solver.HardcodedControl.BottiDiPietro2D()
-			var C = new XNSE_Control();
+		public static XNSE_Control BottiDiPietro3D(int Res = 16, int p = 2) {
+            // --control cs: BoSSS.Application.XNSE_Solver.HardcodedControl.BottiDiPietro2D()
+            var dbPath = @"D:\Users\toprak\Documents\db";
 
-			C.GridFunc = delegate () {
+            // Only create if not already a valid BoSSS database
+            IDatabaseInfo dbInfo = DatabaseInfo.CreateOrOpen(dbPath);
+
+            // Open the database (returns IDatabaseInfo)
+
+            var C = new XNSE_Control();
+
+            C.DbPath = dbInfo.Path;
+            C.savetodb = true;
+            C.ProjectName = "BottiDiPietro3Dt";
+            C.ProjectDescription = "Overhead test";
+
+
+            C.GridFunc = delegate () {
 				GridCommons g;
 				double[] xNodes = GenericBlas.Linspace(-1, +1, Res + 1);
 				double[] yNodes = xNodes;
@@ -2237,10 +2255,15 @@ namespace BoSSS.Application.XNSE_Solver {
 
 			C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.TransposeTermMissing;
 
-			C.LinearSolver = new SchurPrecondConfig();
+            C.LinearSolver = new OrthoMGSchwarzConfig() {
+                ConvergenceCriterion = 1e-9,
+                CoarseKickIn = 10000,
+                TargetBlockSize = 10000,
+                SchwarzImplementation = SchwarzImplementation.TaskParallel,
+            };
 
-			C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
-
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+            Console.WriteLine($" p={p}, Res={Res}");
 			return C;
 		}
 
@@ -2333,7 +2356,97 @@ namespace BoSSS.Application.XNSE_Solver {
 			return C;
 		}
 
-		public static XNSE_Control TranspiratingChannel(string _DbPath = null, int p = 2) {
+
+        public static XNSE_Control XDGStokes3D(int Res = 20, int p = 2) {
+            // --control cs: BoSSS.Application.XNSE_Solver.HardcodedControl.BottiDiPietro3D()
+            var C = new XNSE_Control();
+
+            C.GridFunc = delegate () {
+                GridCommons g;
+                double[] xNodes = GenericBlas.Linspace(-1, +1, Res + 1);
+                double[] yNodes = xNodes;
+                double[] zNodes = xNodes;
+                g = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
+
+                g.DefineEdgeTags(delegate (double[] X) {
+                    double x = X[0];
+                    if(Math.Abs(x - (-1)) < 1e-8)
+                        return "pressure_outlet";
+                    return "wall";
+                });
+
+                return g;
+            };
+
+
+            C.SetDGdegree(p);
+
+
+            // Phys. Parameters
+            // ================
+
+            // Species A: Water; Species B: Air
+            C.PhysicalParameters.rho_A = 1.0; //1e-3; //     kg / cm³
+            C.PhysicalParameters.rho_B = 1.0; //1.2e-6; //   kg / cm³
+            C.PhysicalParameters.mu_A = 1.0; //1e-5; //      kg / cm / sec
+            C.PhysicalParameters.mu_B = 1.0; //17.1e-8; //   kg / cm / sec
+            C.PhysicalParameters.Sigma = 72.75e-3; // kg / sec²   
+            C.PhysicalParameters.IncludeConvection = false;
+            C.PhysicalParameters.Material = true;
+
+            // Dont know
+            // ============
+
+            double r = 0.5;
+            double nonsp = 0.5;
+
+            //double PhiFormula(double[] X) {
+            //	return (X[0] / r* nonsp).Pow2() + (X[1] / r).Pow2() + (X[2] / r).Pow2() - 1;
+            //}
+            var PhiFormula = new Formula($"X => (X[0]/{r * nonsp}).Pow2() + (X[1]/{r}).Pow2()+ (X[2]/{r}).Pow2()  - 1", false); // +(X[2] /{ r}).Pow2()
+
+            C.AddInitialValue("Phi", PhiFormula);
+
+            C.LSContiProjectionMethod = BoSSS.Solution.LevelSetTools.ContinuityProjectionOption.None;
+            //C.CutCellQuadratureType   = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.ComputeEnergyProperties = false;
+
+
+            // Solver Stuff
+            // ============
+            //C.LinearSolver = new SchurPrecondConfig();
+            C.LinearSolver = new OrthoMGSchwarzConfig() {
+                ConvergenceCriterion = 1e-9,
+                CoarseKickIn = 10000,
+                TargetBlockSize = 10000,
+                SchwarzImplementation = SchwarzImplementation.PerProcessWithIdles,
+            };
+
+            //if(C.LinearSolver is IterativeSolverConfig isc) {
+            //    isc.ConvergenceCriterion = 1e-8;
+            //    isc.MaxSolverIterations = 10000;
+            //}
+
+
+            C.NoOfMultigridLevels = 100;
+            C.TracingNamespaces = "BoSSS.Solution";
+            C.LevelSet_ConvergenceCriterion = 1e-6;
+
+            //C.Option_LevelSetEvolution                          = LevelSetEvolution.FastMarching;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+            //C.AdvancedDiscretizationOptions.ViscosityMode       = ViscosityMode.Standard;
+            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
+
+            // Timestepping / Instationary
+            // ===========================
+
+            C.ImmediatePlotPeriod = 1;
+            C.GridPartType = GridPartType.clusterHilbert;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+            return C;
+        }
+
+        public static XNSE_Control TranspiratingChannel(string _DbPath = null, int p = 2) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -6479,7 +6592,7 @@ namespace BoSSS.Application.XNSE_Solver {
             bool Steady = false;
             double bigR = 0.26;
             double smallR = 0.22;
-            C.ImmediatePlotPeriod = 1;
+            C.ImmediatePlotPeriod = -1;
             C.SuperSampling = 0;
             C.DynamicLoadBalancing_On = true;
             C.DynamicLoadBalancing_Period = 1; //Make it challenging by changing the decomposition every timestep
@@ -6762,12 +6875,18 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         public static XNSE_Control RotatingPopcorn() {
-            var C = RotatingTiltedXRigid(1, 32, 2, false, shape: Shape.Popcorn, RotAxis: "z", SolverOn: true, rateOfRadius: 0.0, TiltAngle: 0.0, partRad: 0.6);
+            var C = RotatingTiltedXRigid(2, 32, 2, false, shape: Shape.Popcorn, RotAxis: "z", SolverOn: true, rateOfRadius: 0.0, TiltAngle: 0.0, partRad: 0.6);
             C.PlotAgglomeration = true;
             C.NoOfTimesteps = 10;
             var config = new OperatorAnalysisConfig();
-            config.CalculateMassMatrix = true;
-            C.PostprocessingModules.Add(new Logging.CondLogger(config));
+			C.LinearSolver = new OrthoMGSchwarzConfig() {
+				ConvergenceCriterion = 1e-9,
+				CoarseKickIn = 5000,
+				TargetBlockSize = 500,
+				SchwarzImplementation = SchwarzImplementation.TaskParallel
+			};
+			config.CalculateMassMatrix = true;
+            //C.PostprocessingModules.Add(new Logging.CondLogger(config));
             return C;
         }
 

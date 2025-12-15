@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <!-- <TargetFramework>net8.0</TargetFramework> -->
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <OutputType>Exe</OutputType>
     <RootNamespace>BoSSS.Application.CahnHilliard</RootNamespace>
     <IsWebBootstrapper>false</IsWebBootstrapper>

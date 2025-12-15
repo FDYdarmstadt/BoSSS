@@ -306,6 +306,14 @@ namespace ilPSP {
             return ret;
         }
 
+		/// <summary>
+		/// get the offset array for this partitioning as a deep copy <see cref="m_i0Offset"/>
+		/// </summary>
+		/// <returns>deep copy of i0 offsets for each rank</returns>
+		public long[] GetOffsetArray() { 
+            return this.m_i0Offset?.CloneAs();
+		}
+
         /// <summary>
         /// creates a non-shallow copy of this object.
         /// </summary>

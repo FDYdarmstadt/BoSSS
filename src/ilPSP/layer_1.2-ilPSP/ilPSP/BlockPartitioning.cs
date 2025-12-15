@@ -140,7 +140,7 @@ namespace ilPSP {
                     throw new ArgumentException("Block end out of local range");
 
                 long iEBlock;
-                if( iBlock < NoOfBlocks - 1) {
+                if( iBlock < NoOfBlocks - 1 && _BlockLen[iBlock + 1] > 0) {
                     iEBlock = _BlockI0[iBlock + 1];
                     if (i0isLocal)
                         iEBlock += base.i0;
@@ -148,7 +148,7 @@ namespace ilPSP {
                     iEBlock = LocalLength + base.i0;
                 }
 
-                if (i0Block + N > iEBlock)
+                if (i0Block + N > iEBlock) 
                     throw new ArgumentException("Block Length exceeds i0 of next block.");
 
                 int NE = checked((int)(iEBlock - i0Block));

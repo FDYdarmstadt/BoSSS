@@ -40,6 +40,7 @@ namespace ilPSP.Utils {
             return ret;
         }
 
+        public static bool LinuxCpuAffinityError = false;
 
         /// <summary>
         /// Sets the list of CPU's to which the current process is assigned to;
@@ -59,7 +60,13 @@ namespace ilPSP.Utils {
                 CPUAffinityWindows.SetCurrentThreadAffinity(CPUlist);
 
             } else if(System.Environment.OSVersion.Platform == PlatformID.Unix) {
-                Console.Error.WriteLine("TPL CPU affinity on Linux is not implemented");
+                if(LinuxCpuAffinityError)
+                    return;
+
+                //CPUAffinityLinux.SetCurrentThreadAffinity(CPUlist);
+                Console.Error.WriteLine("TPL CPU affinity control on Linux is disabled by default when running under SLURM. " +
+                                        "If you are not using SLURM or another scheduler, you can manually set core affinity using 'taskset -c'.");
+                LinuxCpuAffinityError = true;
             } else {
                 throw new NotSupportedException("Not implemented for system: " + System.Environment.OSVersion.Platform);
             }
@@ -262,8 +269,8 @@ namespace ilPSP.Utils {
             int[] SMPRank = new int[CPUList.Length]; 
             SMPRank.SetAll(mySMPRank);
 
-            var GlobalCPUList = CPUList.MPIAllGather();
-            var GlobalSMPRank = SMPRank.MPIAllGather();
+            var GlobalCPUList = CPUList.MPIAllGatherv();
+            var GlobalSMPRank = SMPRank.MPIAllGatherv();
 
             var r = new HashSet<int>();
             disjoint = true;

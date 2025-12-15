@@ -24,6 +24,8 @@ using System.IO;
 using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Runtime.Serialization;
+using System.Runtime.CompilerServices;
+
 //using System.Runtime.Serialization.Formatters.Binary;
 
 namespace MPI.Wrappers {
@@ -153,6 +155,152 @@ namespace MPI.Wrappers {
         }
 
         /// <summary>
+        /// Broadcast a single int
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="root"></param>
+        /// <param name="comm"></param>
+        /// <returns></returns>
+        public static int MPIBroadcast(this int value, int root, MPI_Comm comm) {
+            unsafe {
+                csMPI.Raw.Bcast((IntPtr)(&value), 1, csMPI.Raw._DATATYPE.INT, root, comm);
+            }
+            return value; // on non-root, this becomes the root's value
+        }
+
+        /// <summary>
+        /// Broadcast a single double
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="root"></param>
+        /// <param name="comm"></param>
+        /// <returns></returns>
+        public static double MPIBroadcast(this double value, int root, MPI_Comm comm) {
+            unsafe {
+                csMPI.Raw.Bcast((IntPtr)(&value), 1, csMPI.Raw._DATATYPE.DOUBLE, root, comm);
+            }
+            return value;
+        }
+
+
+        static public int[] MPIBroadcast(this int[] array, int root, MPI_Comm comm) {
+            int myRank;
+            csMPI.Raw.Comm_Rank(comm, out myRank);
+
+            int length = -1;
+
+            // Phase 1: broadcast the array length
+            if(myRank == root && array != null) {
+                length = array.Length;
+            }
+
+            unsafe {
+                csMPI.Raw.Bcast((IntPtr)(&length), 4, csMPI.Raw._DATATYPE.BYTE, root, comm);
+            }
+
+            // Null array case
+            if(length < 0) {
+                return null;
+            }
+
+            // Allocate array on non-root processes
+            if(myRank != root) {
+                array = new int[length];
+            }
+
+            // Phase 2: broadcast the actual data
+            unsafe {
+                fixed(int* ptr = array) {
+                    csMPI.Raw.Bcast((IntPtr)ptr, length * sizeof(int), csMPI.Raw._DATATYPE.BYTE, root, comm);
+                }
+            }
+
+            return array;
+        }
+
+        static public float[] MPIBroadcast(this float[] array, int root, MPI_Comm comm) {
+            int myRank;
+            csMPI.Raw.Comm_Rank(comm, out myRank);
+
+            int length = -1;
+            if(myRank == root && array != null)
+                length = array.Length;
+
+            unsafe {
+                csMPI.Raw.Bcast((IntPtr)(&length), 4, csMPI.Raw._DATATYPE.BYTE, root, comm);
+            }
+
+            if(length < 0)
+                return null;
+
+            if(myRank != root)
+                array = new float[length];
+
+            unsafe {
+                fixed(float* ptr = array) {
+                    csMPI.Raw.Bcast((IntPtr)ptr, length * sizeof(float), csMPI.Raw._DATATYPE.BYTE, root, comm);
+                }
+            }
+
+            return array;
+        }
+
+        static public double[] MPIBroadcast(this double[] array, int root, MPI_Comm comm) {
+            int myRank;
+            csMPI.Raw.Comm_Rank(comm, out myRank);
+
+            int length = -1;
+            if(myRank == root && array != null)
+                length = array.Length;
+
+            unsafe {
+                csMPI.Raw.Bcast((IntPtr)(&length), 4, csMPI.Raw._DATATYPE.BYTE, root, comm);
+            }
+
+            if(length < 0)
+                return null;
+
+            if(myRank != root)
+                array = new double[length];
+
+            unsafe {
+                fixed(double* ptr = array) {
+                    csMPI.Raw.Bcast((IntPtr)ptr, length * sizeof(double), csMPI.Raw._DATATYPE.BYTE, root, comm);
+                }
+            }
+
+            return array;
+        }
+
+        static public long[] MPIBroadcast(this long[] array, int root, MPI_Comm comm) {
+            int myRank;
+            csMPI.Raw.Comm_Rank(comm, out myRank);
+
+            int length = -1;
+            if(myRank == root && array != null)
+                length = array.Length;
+
+            unsafe {
+                csMPI.Raw.Bcast((IntPtr)(&length), sizeof(int), csMPI.Raw._DATATYPE.BYTE, root, comm);
+            }
+
+            if(length < 0)
+                return null;
+
+            if(myRank != root)
+                array = new long[length];
+
+            unsafe {
+                fixed(long* ptr = array) {
+                    csMPI.Raw.Bcast((IntPtr)ptr, length * sizeof(long), csMPI.Raw._DATATYPE.BYTE, root, comm);
+                }
+            }
+
+            return array;
+        }
+
+
+        /// <summary>
         /// Gathers (serializeable) objects <paramref name="o"/> from each rank on rank <paramref name="root"/>.
         /// </summary>
         /// <param name="o"></param>
@@ -278,7 +426,7 @@ namespace MPI.Wrappers {
             // -----------------------------------------------------
             // 2nd phase: gather data 
             // -----------------------------------------------------
-            byte[] rcvBuffer = buffer.MPIAllGatherv(Sizes);
+            byte[] rcvBuffer = buffer.MPIAllGatherv(Sizes, comm);
 
             // -----------------------------------------------------
             // 3rd phase: de-serialize
@@ -1633,10 +1781,17 @@ namespace MPI.Wrappers {
             return send.Byte_MPIAllGatherv(recvcounts, csMPI.Raw._COMM.WORLD);
         }
 
-        /// <summary>
-        /// Gathers all send Arrays on all MPI-processes, at which every jth block of data is from the jth process.
-        /// </summary>
-        static private byte[] Byte_MPIAllGatherv(this byte[] send, int[] m_recvcounts, MPI_Comm comm) {
+		/// <summary>
+		/// Gathers all byte[] send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
+		/// </summary>
+		static public byte[] MPIAllGatherv(this byte[] send, int[] recvcounts, MPI_Comm comm) {
+			return send.Byte_MPIAllGatherv(recvcounts, comm);
+		}
+
+		/// <summary>
+		/// Gathers all send Arrays on all MPI-processes, at which every jth block of data is from the jth process.
+		/// </summary>
+		static private byte[] Byte_MPIAllGatherv(this byte[] send, int[] m_recvcounts, MPI_Comm comm) {
             csMPI.Raw.Comm_Size(comm, out int size);
             int rcs = m_recvcounts.Sum();
             if (rcs == 0)
@@ -1880,6 +2035,7 @@ namespace MPI.Wrappers {
 
             unsafe {
                 int* displs = stackalloc int[size];
+                displs[0] = 0;
                 if (rank == root) {
                     for (int i = 1; i < size; i++) {
                         displs[i] = displs[i - 1] + recvcounts[i - 1];
