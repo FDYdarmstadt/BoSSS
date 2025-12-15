@@ -160,6 +160,7 @@ namespace PublicTestRunner {
                         //typeof(BoSSS.Application.XNSE_ViscosityAgglomerationTest.XNSE_ViscosityAgglomerationTestMain),
                         typeof(ALTSTests.Program),
                         typeof(ZwoLevelSetSolver.ZLS),
+                        typeof(HFSISolver.HFSI),
                         typeof(HangingNodesTests.HangingNodesTestMain),
                         typeof(BoSSS.Application.CahnHilliard.CahnHilliardMain),
                         typeof(IntersectingLevelSetTest.AllUpTest),
@@ -535,7 +536,7 @@ namespace PublicTestRunner {
             fa.ImmediateFlush = true;
             //fa.Writer = Console.Out;
             fa.Writer = tracertxt;
-            fa.Layout = new PatternLayout("%date %-5level %logger: %message%newline");
+            fa.Layout = new PatternLayout("%date %-5level From__%logger: %message%newline");
             fa.ActivateOptions();
             BasicConfigurator.Configure(fa);
             logger_output = fa;

@@ -263,12 +263,12 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
         /// <summary>
-        /// Projects a surface property \f$ f\f$  (see below) of some vector field <paramref name="U"/>,
+        /// Projects a surface property $f$  (see below) of some vector field <paramref name="U"/>,
         /// onto a single-phase field.
         /// </summary>
         /// <param name="OnlyNormalComponent">
-        /// if true, the norm of \f$ \llbracket \vec{u} \cdot \vec{n} \rrbracket =: f\f$  <br/>
-        /// if false, the norm of \f$ \llbracket \vec{u} \rrbracket =: f\f$  <br/>
+        /// if true, the norm of $[\![ \underline{u} \cdot \underline{n} ]\!] =: f$  <br/>
+        /// if false, the norm of $[\![ \underline{u} ]\!] =: f$  <br/>
         /// </param>
         /// <param name="U">
         /// some XDG vector field
@@ -307,7 +307,7 @@ namespace BoSSS.Solution.XNSECommon {
 
             //var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, LsTrk.GetSpeciesId("A"));
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, momentFittingOrder, 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
 
             double mini = double.MaxValue, maxi = double.MinValue;
 
@@ -340,12 +340,12 @@ namespace BoSSS.Solution.XNSECommon {
 
 
         /// <summary>
-        /// The surface norm, i.e. \f$ \oint_{\mathfrak{I}} f^2 \ \mathrm{dS}\f$  for the jump 
-        /// \f$ f\f$  (see below) of some vector field <paramref name="U"/>.
+        /// The surface norm, i.e. $\oint_{\mathfrak{I}} f^2 \ \mathrm{dS}$  for the jump 
+        /// $f$ (see below) of some vector field <paramref name="U"/>.
         /// </summary>
         /// <param name="OnlyNormalComponent">
-        /// if true, the norm of \f$ \llbracket \vec{u} \cdot \vec{n} \rrbracket =: f\f$  <br/>
-        /// if false, the norm of \f$ \llbracket \vec{u} \rrbracket =: f\f$  <br/>
+        /// if true, the norm of $[\![ \underline{u} \cdot \underline{n} ]\!] =: f$  <br/>
+        /// if false, the norm of $[\![ \underline{u} ]\!] =: f$  <br/>
         /// </param>
         /// <param name="U">
         /// some XDG vector field
@@ -364,7 +364,7 @@ namespace BoSSS.Solution.XNSECommon {
 
             //var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, LsTrk.GetSpeciesId("A"));
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new SpeciesId[] { LsTrk.GetSpeciesId("A") }, momentFittingOrder, 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
 
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 cqs.Compile(LsTrk.GridDat, momentFittingOrder),
@@ -388,7 +388,7 @@ namespace BoSSS.Solution.XNSECommon {
             ScalarFunctionEx ErrFunc = GetVelocityJumpErrFunc(U, true, true);
 
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), momentFittingOrder, 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
 
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 cqs.Compile(LsTrk.GridDat, momentFittingOrder),
@@ -548,8 +548,8 @@ namespace BoSSS.Solution.XNSECommon {
                 };
 
                 //var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, );
-                var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, momentFittingOrder, 1).XQuadSchemeHelper;
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+                var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A"), LsTrk.GetSpeciesId("B") }, momentFittingOrder, 1).XQuadSchemeHelper;
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
 
                 CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                     cqs.Compile(LsTrk.GridDat, momentFittingOrder),
@@ -574,7 +574,7 @@ namespace BoSSS.Solution.XNSECommon {
             double[] STF_Norm = new double[D];
 
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, momentFittingOrder, 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
 
             CellQuadrature.GetQuadrature(new int[] { D }, LsTrk.GridDat,
                 cqs.Compile(LsTrk.GridDat, momentFittingOrder),
@@ -801,7 +801,7 @@ namespace BoSSS.Solution.XNSECommon {
             double[] momBal_Norm = new double[D];
 
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, momentFittingOrder, 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
 
             CellQuadrature.GetQuadrature(new int[] { D }, LsTrk.GridDat,
                 cqs.Compile(LsTrk.GridDat, momentFittingOrder),
@@ -837,7 +837,7 @@ namespace BoSSS.Solution.XNSECommon {
 
                 int order = ((U[d].Basis.Degree - 1) + (P.Basis.Degree) + err[d].Basis.Degree + 2);
                 var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, order, 1).XQuadSchemeHelper;
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
 
                 CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                     cqs.Compile(LsTrk.GridDat, order),
@@ -1215,7 +1215,7 @@ namespace BoSSS.Solution.XNSECommon {
             int order  = (quadRuleOrder < 0) ? 1 : quadRuleOrder;
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;
 
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 cqs.Compile(LsTrk.GridDat, order),
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
@@ -1244,7 +1244,9 @@ namespace BoSSS.Solution.XNSECommon {
             }
 
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;
-            EdgeQuadratureScheme eqs = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(LsTrk.GetSpeciesId("A"), 0); // GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            EdgeQuadratureScheme eqs = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(LsTrk.GetSpeciesId("A"), LsTrk.GetSpeciesId("B"), 0); // GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            if(LsTrk.NoOfLevelSets > 1)
+                throw new NotSupportedException("todo -- maybe missing level-set intersection line contributions.");
             EdgeQuadrature.GetQuadrature(new int[] { D }, LsTrk.GridDat,
                 eqs.Compile(LsTrk.GridDat, order),
                 delegate (int e0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
@@ -1319,7 +1321,10 @@ namespace BoSSS.Solution.XNSECommon {
             List<double[]> surfTvectrosOT = new List<double[]>();
 
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;
-            EdgeQuadratureScheme eqs = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(LsTrk.GetSpeciesId("A"), 0); // GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            EdgeQuadratureScheme eqs = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(LsTrk.GetSpeciesId("A"), LsTrk.GetSpeciesId("B"), 0); // GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            if(LsTrk.NoOfLevelSets > 1)
+                throw new NotSupportedException("todo -- maybe missing level-set intersection line contributions.");
+
             EdgeQuadrature.GetQuadrature(new int[] { D }, LsTrk.GridDat,
                 eqs.Compile(LsTrk.GridDat, order),
                 delegate (int e0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
@@ -1389,7 +1394,7 @@ namespace BoSSS.Solution.XNSECommon {
             int D = LsTrk.GridDat.SpatialDimension;
             int p = LevSet.Basis.Degree;
             if (sgrd == null)
-                sgrd = LsTrk.Regions.GetCutCellSubgrid4LevSet(0);
+                sgrd = LsTrk.Regions.GetCutCellSubgrid4LevSet(1);
 
             int quadRule = (quadRuleOrderForNodeSet < 0) ? p * 2 : quadRuleOrderForNodeSet;
             NodeSet[] Nodes = LsTrk.GridDat.Grid.RefElements.Select(Kref => Kref.GetQuadratureRule(quadRule).Nodes).ToArray();
@@ -1397,7 +1402,7 @@ namespace BoSSS.Solution.XNSECommon {
             int K = Nodes.Max(nds => nds.NoOfNodes);
             int numP = Jsub * K;
 
-            var cp = new BoSSS.Solution.LevelSetTools.ClosestPointFinder(LsTrk, 0, sgrd, Nodes);
+            var cp = new BoSSS.Solution.LevelSetTools.ClosestPointFinder(LsTrk, 1, sgrd, Nodes);
 
             MultidimensionalArray ClosestPoints = cp.X0_global_Resorted;
 
@@ -1588,7 +1593,7 @@ namespace BoSSS.Solution.XNSECommon {
             // ========================================================
             double gaussInVolume = 0.0;
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
-                schemeHelper.GetLevelSetquadScheme(0, cellIntDom, order).Compile(LsTrk.GridDat, order),
+                schemeHelper.GetLevelSetQuadScheme(0, cellIntDom, order).Compile(LsTrk.GridDat, order),
                 delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
 
                     int qN = QR.NoOfNodes;
@@ -1617,7 +1622,7 @@ namespace BoSSS.Solution.XNSECommon {
             // =========================================================
             double gaussAtInterface = 0.0;
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
-                schemeHelper.GetLevelSetquadScheme(0, cellIntDom).Compile(LsTrk.GridDat, order),
+                schemeHelper.GetLevelSetQuadScheme(0, cellIntDom).Compile(LsTrk.GridDat, order),
                 delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
 
                     int qN = QR.NoOfNodes;
@@ -1706,12 +1711,6 @@ namespace BoSSS.Solution.XNSECommon {
         /// <summary>
         /// Checks the special Stokes theorem in cut-cell <param name="jCell"></param> with the given test field <param name="testField"></param>
         /// </summary>
-        /// <param name="jCell"></param>
-        /// <param name="LsTrk"></param>
-        /// <param name="spcId_A"></param>
-        /// <param name="testField"></param>
-        /// <param name="order"></param>
-        /// <returns></returns>
         public static (double error, double stokesAtInterface, double stokesAtEdges) CheckStokesForCell(int jCell, LevelSetTracker LsTrk, VectorField<SinglePhaseField> testField, int order) {
 
             GridData grdDat = LsTrk.GridDat;
@@ -1724,7 +1723,7 @@ namespace BoSSS.Solution.XNSECommon {
             // ========================================================
             double stokesAtInterface = 0.0;
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
-                schemeHelper.GetLevelSetquadScheme(0, cellIntDom, order).Compile(LsTrk.GridDat, order),
+                schemeHelper.GetLevelSetQuadScheme(0, cellIntDom, order).Compile(LsTrk.GridDat, order),
                 delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
 
                     int qN = QR.NoOfNodes;
@@ -1757,18 +1756,17 @@ namespace BoSSS.Solution.XNSECommon {
             ).Execute();
 
             // =========================================================
-            BitArray edgeIntDomBA = new BitArray(grdDat.iGeomEdges.Count);
-            var jCell2Edges = grdDat.Cells.Cells2Edges[jCell];
-            foreach (int iE in jCell2Edges) {
-                if (iE < 0)
-                    edgeIntDomBA[(-iE) - 1] = true;
-                else
-                    edgeIntDomBA[iE - 1] = true;
-            }
-            EdgeMask edgeIntDom = new EdgeMask(grdDat, edgeIntDomBA);
+            EdgeQuadratureScheme SurfaceElement_BoundaryEdge;
+            {
+                var mask = (new CellMask(grdDat, Chunk.GetSingleElementChunk(jCell))).GetAllLocalEdgesMask();
+                EdgeQuadratureScheme __SurfaceElement_BoundaryEdge = schemeHelper.Get_SurfaceElement_EdgeQuadScheme(LsTrk.GetSpeciesId("A"), LsTrk.GetSpeciesId("B"), 0);
+                SurfaceElement_BoundaryEdge = new EdgeQuadratureScheme(__SurfaceElement_BoundaryEdge.IntegrationMetric, false, mask);
+                foreach(var fdp in __SurfaceElement_BoundaryEdge.FactoryChain) {
+                    SurfaceElement_BoundaryEdge.AddFactory(fdp.RuleFactory, fdp.Domain);
+                }
 
-            var testFactory = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), order).XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(0, LsTrk.GridDat.Grid.RefElements[0]);
-            EdgeQuadratureScheme SurfaceElement_BoundaryEdge = new EdgeQuadratureScheme(testFactory, edgeIntDom);
+            }
+            
 
             double stokesAtEdges = 0.0;
             EdgeQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
@@ -1785,29 +1783,18 @@ namespace BoSSS.Solution.XNSECommon {
                             // Console.WriteLine($"jCell {jCell} OUT on edge {i0 + i} - change direction");
                             EdgeNormal.ScaleV(-1.0);
                         }
-                        // Console.WriteLine($"normal at Edge {i0+i} : ({EdgeNormal[0]}, {EdgeNormal[1]})");
-                        // Console.WriteLine($"normal at Edge {i0+i} : ({EdgeNormal[0]}, {EdgeNormal[1]}, , {EdgeNormal[2]})");
 
-                        // Console.WriteLine($"edge {i0 + i} - number of nodes {qN}");
+
                         int trf = (LsTrk.GridDat.Edges.CellIndices[i0 + i, 0] == jCell) ? LsTrk.GridDat.Edges.Edge2CellTrafoIndex[i0 + i, 0] : LsTrk.GridDat.Edges.Edge2CellTrafoIndex[i0 + i, 1];
                         NodeSet VolNodes = QR.Nodes.GetVolumeNodeSet(LsTrk.GridDat, trf, false);
-                        // Console.WriteLine($"volume node: ({VolNodes[0, 0]}, {VolNodes[0, 1]})");  
-
+                        
                         var LsNormals = LsTrk.DataHistories[0].Current.GetLevelSetNormals(VolNodes, jCell, length);
-                        // var phiGrad = MultidimensionalArray.Create(length, qN, D);
-                        // ((LevelSet)LsTrk.LevelSets[0]).EvaluateGradient(jCell, length, VolNodes, phiGrad);
-
                         for (int d = 0; d < D; d++) {
 
                             var fEval = MultidimensionalArray.Create(length, qN);
                             testField[d].Evaluate(jCell, length, VolNodes, fEval);
 
                             for (int qn = 0; qn < qN; qn++) {
-                                // Console.WriteLine($"LevelSet normal at Edge {i0+i}: ({LsNormals[i, qn, 0]}, {LsNormals[i, qn, 1]})");
-                                // Console.WriteLine($"LevelSet normal at Edge {i0+i}: ({LsNormals[i, qn, 0]}, {LsNormals[i, qn, 1]}, {LsNormals[i, qn, 2]})");
-                                // double[] LsNormal = new double[] { phiGrad[i, qn, 0], phiGrad[i, qn, 1] };
-                                // LsNormal.Normalize();
-                                // Console.WriteLine($"PhiGrad normal at Edge {i0+i}: ({LsNormal[0]}, {LsNormal[1]})");
 
                                 double[] LsTangent = new double[D];
                                 for (int d1 = 0; d1 < D; d1++) {
@@ -1822,25 +1809,6 @@ namespace BoSSS.Solution.XNSECommon {
                                 }
                                 LsTangent = LsTangent.Normalize();
 
-                                // double tangentCheck = GenericBlas.InnerProd(LsTangent, LsNormals.ExtractSubArrayShallow(i, qn, -1).To1DArray());
-                                // Console.WriteLine($"LsTangent * LsNormals = {tangentCheck}");                       
-
-                                // if (D != 2) 
-                                //     throw new ArgumentException();
-
-                                // double[] LsTangent = new double[2];
-
-                                // LsTangent[0] = -LsNormals[i, qn, 1];
-                                // LsTangent[1] = LsNormals[i, qn, 0];
-
-                                // if (GenericBlas.InnerProd(LsTangent, EdgeNormal) < 0.0) {
-                                //     // Console.WriteLine($"LsTangent change direction");
-                                //     // LsTangent.ScaleV(-1.0);
-                                //     Console.WriteLine($"LsTangent NOT pointing outward!");
-                                // }
-
-                                // Console.WriteLine($"LS tangent: ({LsTangent[0]}, {LsTangent[1]})");  
-                                // Console.WriteLine($"LS tangent: ({LsTangent[0]}, {LsTangent[1]} , {LsTangent[2]})");  
                                 EvalResult[i, qn, 0] += LsTangent[d] * fEval[i, qn];
                             }
                         }

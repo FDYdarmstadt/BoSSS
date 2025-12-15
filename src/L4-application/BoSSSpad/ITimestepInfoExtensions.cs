@@ -665,7 +665,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// The name of the DG field whose error should be estimated.
         /// </param>
         /// <param name="xAxis_Is_hOrDof">
-        /// - true: the x-axis (<see cref="Plot2Ddata.XYvalues.Abscissas"/>) is the grid resolution \f$ h \f$
+        /// - true: the x-axis (<see cref="Plot2Ddata.XYvalues.Abscissas"/>) is the grid resolution $h$
         /// - false: the x-axis (<see cref="Plot2Ddata.XYvalues.Abscissas"/>) is the number of degrees-of-freedom
         /// </param>
         /// <param name="normType">

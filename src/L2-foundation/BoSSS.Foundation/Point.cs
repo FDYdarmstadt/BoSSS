@@ -27,7 +27,7 @@ using ilPSP.Tracing;
 namespace BoSSS.Foundation.Grid.RefElements {
 
     /// <summary>
-    /// The point reference element, i.e. \f$ K^{\textrm{point}} = \{ 0 \} \f$.
+    /// The point reference element, i.e. $K^{\textrm{point}} = \{ 0 \}$.
     /// </summary>
     public class Point : RefElement {
 

@@ -88,11 +88,11 @@ namespace BoSSS.Application.XNSFE_Solver {
             });
         }
 
-        /// <summary>
-        /// Exact solution, temperature, for each species (either A or B).
-        /// </summary>
-        [NonSerialized]
-        [JsonIgnore]
-        public IDictionary<string, Func<double[], double, double>> ExactSolutionTemperature;
+        ///// <summary>
+        ///// Exact solution, temperature, for each species (either A or B).
+        ///// </summary>
+        //[NonSerialized]
+        //[JsonIgnore]
+        //public IDictionary<string, Func<double[], double, double>> ExactSolutionTemperature;
     }
 }

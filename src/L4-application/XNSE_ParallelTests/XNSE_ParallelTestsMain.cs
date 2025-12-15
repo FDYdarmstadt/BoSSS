@@ -82,7 +82,7 @@ namespace XNSE_ParallelTests {
 
             int RefMPIsize = 1;
 
-            var FieldChecker = new TestingIO(solver.GridData, $"SolutionsFields_{testcaseName}.csv", true, RefMPIsize);
+            var FieldChecker = new TestingIO(solver.GridData, $"SolutionsFields_{testcaseName}.csv", TestingIO.DataCorrelation.GlobalId, RefMPIsize);
             int D = solver.GridData.SpatialDimension;
             for (int d = 0; d < D; d++) {
                 FieldChecker.AddDGField(solver.Velocity[d]);

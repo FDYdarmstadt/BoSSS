@@ -4,6 +4,7 @@ using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution.AdvancedSolvers;
+using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.NSECommon;
 using ilPSP;
 using ilPSP.LinSolvers;
@@ -31,13 +32,13 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         /// <summary>
         /// ctor
         /// </summary>
-        public StokesExtension(int D, IncompressibleBoundaryCondMap map, int cutCellQuadOrder, double AgglomerationThrshold, bool fullStokes, bool useBCMap = false) {
+        public StokesExtension(int D, IncompressibleBoundaryCondMap map, int cutCellQuadOrder, double AgglomerationThrshold, bool fullStokes, StokesExtentionBoundaryOption useBCMap = StokesExtentionBoundaryOption.FreeSlipAtWall) {
             this.D = D;
             this.map = map;
             this.m_CutCellQuadOrder = cutCellQuadOrder;
             this.AgglomerationThreshold = AgglomerationThrshold;
             this.fullStokes = fullStokes;
-            this.m_useBCMap = useBCMap; // if false, Neumann boundary condtions are applied everywhere. If true, the boundary conditions from map are applied.
+            this.m_useBCMap = useBCMap; // if false, Neumann boundary conditions are applied everywhere. If true, the boundary conditions from map are applied.
         }
 
         int D;
@@ -45,7 +46,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         IncompressibleBoundaryCondMap map;
         double AgglomerationThreshold;
         bool fullStokes;
-        bool m_useBCMap;
+        StokesExtentionBoundaryOption m_useBCMap;
 
         const double penalty_safety = 4.0;
 
@@ -263,7 +264,6 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                 double[] InputVelL2 = VelocityAtInterface.Select(vel => vel.L2Norm()).ToArray();
 
 
-                // Tecplot.Tecplot.PlotFields(ExtensionVelocity.Cat(lsTrk.LevelSets[0] as LevelSet), this.GetType().ToString().Split('.').Last() + "-" + timestepNo, (double)timestepNo, 2);
                 m_LatestAgglom = lsTrk.GetAgglomerator(lsTrk.SpeciesIdS.ToArray(), this.m_CutCellQuadOrder, this.AgglomerationThreshold);
 
                 int J = gDat.iLogicalCells.NoOfLocalUpdatedCells;
@@ -315,6 +315,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                 MultigridOperator mgOp = new MultigridOperator(AggBasis, ExtenstionSolVec.Mapping, OpMtx, null, MultigridOperatorConfig, GetBulkOperator());
 
                 var bkup_RHS = RHS.CloneAs();
+                Exception e;
                 try {
                     var Pre_RHS = RHS.CloneAs();
                     var Pre_Sol = ExtenstionSolVec.CloneAs();
@@ -322,13 +323,27 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                     mgOp.TransformRhsInto(RHS, Pre_RHS, true);
                     mgOp.OperatorMatrix.Solve_Direct(Pre_Sol, Pre_RHS);
                     mgOp.TransformSolFrom(ExtenstionSolVec, Pre_Sol);
+                    e = null;
+                } catch(Exception ee) {
+                    e = ee;
+                }
+                try {
+                    e.ExceptionBcast(); // MPI-parallel exception handling 
+                    
                 } catch {
                     // should be replaced by something more sophisticated
                     //var Residual = RHS.CloneAs();
                     //var cExtenstionSolVec = ExtenstionSolVec.CloneAs();
-                    tr.Warning("StokesExtension.SolveExtension with Multigridoperator failed, trying direct method");
+                    tr.Warning($"StokesExtension.SolveExtension with Multigridoperator failed, trying direct method; got exception");
                     OpMtx.Solve_Direct(ExtenstionSolVec, bkup_RHS);
                 }
+
+                //{
+                //    DGField[] stokesShit = VelocityAtInterface.Cat(DummySolFields);
+                //    Tecplot.Tecplot.PlotFields(stokesShit, "StokesExt.ls" + levelSetIndex, 0.0, 3);
+                //}
+
+
 
                 //Console.WriteLine("Difference: {0}", ExtenstionSolVec.L2Dist(cExtenstionSolVec));
 

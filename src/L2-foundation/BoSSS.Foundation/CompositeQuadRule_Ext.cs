@@ -157,6 +157,18 @@ namespace BoSSS.Foundation {
         /// <paramref name="compositeRule"/> into a text file
         /// </summary>
         public static void SaveToTextFileCell(this ICompositeQuadRule<QuadRule> compositeRule, IGridData gridData, string filename, bool writeHeader = true) {
+            _SaveToTextFileCell<QuadRule>(compositeRule, gridData, filename, writeHeader);
+        }
+
+        /// <summary>
+        /// Saves the location and weight associated with each node in
+        /// <paramref name="compositeRule"/> into a text file
+        /// </summary>
+        public static void SaveToTextFileCellBoundary(this ICompositeQuadRule<CellBoundaryQuadRule> compositeRule, IGridData gridData, string filename, bool writeHeader = true) {
+            _SaveToTextFileCell<CellBoundaryQuadRule>(compositeRule, gridData, filename, writeHeader);
+        }
+
+        static void _SaveToTextFileCell<Q>(this ICompositeQuadRule<Q> compositeRule, IGridData gridData, string filename, bool writeHeader = true) where Q : QuadRule {
             int D = gridData.SpatialDimension;
 
             using(var file = new StreamWriter(filename)) {
@@ -265,6 +277,70 @@ namespace BoSSS.Foundation {
                 }
             }
         }
+
+        /// <summary>
+        /// Saves the sum over all weights, for each edge of a <paramref name="compositeRule"/>, into a text file
+        /// </summary>
+        public static void SaveWeightSumToTextFileEdge(this ICompositeQuadRule<QuadRule> compositeRule, IGridData gridData, string filename, bool writeHeader = true) {
+            int D = gridData.SpatialDimension;
+
+            using(var file = new StreamWriter(filename)) {
+                if(writeHeader) {
+                    string[] dimensions = new string[] { "x", "y", "z" };
+                    file.WriteLine(String.Format(
+                        "edge\t{0}\tWeightSum",
+                        dimensions.Take(D).Aggregate((s, t) => s + "\t" + t)));
+                }
+
+                foreach(IChunkRulePair<QuadRule> pair in compositeRule) {
+                    foreach(var edge in pair.Chunk.Elements.AsSmartEnumerable()) {
+                        file.Write(edge.Value);
+
+                        Vector center = gridData.iGeomEdges.GetCenter(edge.Value);
+                        for(int d = 0; d < D; d++) {
+                            file.Write("\t{0}", (center[d]).ToString("E", NumberFormatInfo.InvariantInfo));
+                        }
+                        file.Write("\t{0}", pair.Rule.Weights.Sum().ToString("E", NumberFormatInfo.InvariantInfo));
+                        file.WriteLine();
+                    }
+
+                    file.Flush();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Saves the sum over all weights, for each cell of a <paramref name="compositeRule"/>, into a text file
+        /// </summary>
+        public static void SaveWeightSumToTextFileCell(this ICompositeQuadRule<QuadRule> compositeRule, IGridData gridData, string filename, bool writeHeader = true) {
+            int D = gridData.SpatialDimension;
+
+            using(var file = new StreamWriter(filename)) {
+                if(writeHeader) {
+                    string[] dimensions = new string[] { "x", "y", "z" };
+                    file.WriteLine(String.Format(
+                        "cell\t{0}\tWeightSum",
+                        dimensions.Take(D).Aggregate((s, t) => s + "\t" + t)));
+                }
+
+                foreach(IChunkRulePair<QuadRule> pair in compositeRule) {
+                    foreach(var cell in pair.Chunk.Elements.AsSmartEnumerable()) {
+                        file.Write(cell.Value);
+
+                        Vector center = gridData.iGeomCells.GetCenter(cell.Value);
+                        for(int d = 0; d < D; d++) {
+                            file.Write("\t{0}", (center[d]).ToString("E", NumberFormatInfo.InvariantInfo));
+                        }
+                        file.Write("\t{0}", pair.Rule.Weights.Sum().ToString("E", NumberFormatInfo.InvariantInfo));
+                        file.WriteLine();
+                    }
+
+                    file.Flush();
+                }
+            }
+        }
+
+
 
         /// <summary>
         /// Write the edge quadrature rules into vtp files (importable to paraview)

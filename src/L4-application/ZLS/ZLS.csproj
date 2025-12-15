@@ -8,7 +8,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="System.Drawing.Common" Version="5.0.3" />
+    <!--PackageReference Include="System.Drawing.Common" Version="5.0.3" /-->
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj" />
@@ -27,5 +27,18 @@
     <ProjectReference Include="..\..\..\src\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj" />
     <ProjectReference Include="..\..\..\src\L4-application\XNSE_Solver\XNSE_Solver.csproj" />
     <ProjectReference Include="..\ipPoisson\ipPoisson.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
 </Project>

@@ -387,17 +387,17 @@ namespace BoSSS.Solution.NSECommon {
 
 
         /// <summary>
-        /// convective part, x-component, i.e. \f$ \nabla \cdot ( u_1 \cdot \vec{u} ) \f$ 
+        /// convective part, x-component, i.e. $\nabla \cdot ( u_1 \cdot \underline{u} )$ 
         /// </summary>
         public const string ConvectiveX = "ConvectiveX";
         
         /// <summary>
-        /// convective part, y-component, i.e. \f$ \nabla \cdot ( u_2 \cdot \vec{u} ) \f$ 
+        /// convective part, y-component, i.e. $\nabla \cdot ( u_2 \cdot \underline{u} )$ 
         /// </summary>
         public const string ConvectiveY = "ConvectiveY";
 
         /// <summary>
-        /// convective part, z-component, i.e. \f$ \nabla \cdot ( u_3 \cdot \vec{u} ) \f$ 
+        /// convective part, z-component, i.e. $\nabla \cdot ( u_3 \cdot \underline{u} )$ 
         /// </summary>
         public const string ConvectiveZ = "ConvectiveZ";
 
@@ -1818,5 +1818,37 @@ namespace BoSSS.Solution.NSECommon {
         public const string ElectricPotential = "ElectricPotential";
 
         public const string FreechargeDensity = "FreechargeDensity";
+
+        /// <summary>
+        /// used for surface advection-reaction problem.
+        /// </summary>
+        public const string SurfaceAdvectionVelocityX = "SurfaceAdvectionVelocityX";
+
+        public const string SurfaceAdvectionVelocityY = "SurfaceAdvectionVelocityY";
+
+        public const string SurfaceAdvectionVelocityZ = "SurfaceAdvectionVelocityZ";
+
+        static public string SurfaceAdvectionVelocity_d(int d) {
+            switch(d) {
+                case 0: return SurfaceAdvectionVelocityX;
+                case 1: return SurfaceAdvectionVelocityY;
+                case 2: return SurfaceAdvectionVelocityZ;
+                default: throw new NotSupportedException("unsupported names");
+            }
+        }
+
+        static public string[] SurfaceAdvectionVelocity(int D) {
+            switch(D) {
+                case 1: return new string[] { SurfaceAdvectionVelocityX };
+                case 2: return new string[] { SurfaceAdvectionVelocityX, SurfaceAdvectionVelocityY };
+                case 3: return new string[] { SurfaceAdvectionVelocityX, SurfaceAdvectionVelocityY, SurfaceAdvectionVelocityZ };
+                default: throw new NotSupportedException("unsupported names.");
+            }
+        }
+        /// <summary>
+        /// The domain variable for any surface equation defined on the level-set based on TraceDG Solver
+        /// </summary>
+        public const string SurfaceScalar = "q";
+
     }
 }

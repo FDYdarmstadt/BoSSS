@@ -295,15 +295,6 @@ namespace BoSSS.Application.XNSEC {
         [DataMember]
         public double PenaltyHeatConduction = 1.0;
 
-        
-        /// <summary>
-        /// Exact solution, Mixture fraction, for each species (either A or B).
-        /// </summary>
-        [NonSerialized]
-        [JsonIgnore]
-        public IDictionary<string, Func<double[], double, double>> ExactSolutionMixtureFraction;
-
-
         ///<summary>
         /// Block-Preconditiond for the velocity/momentum-block of the saddle-point system
         /// </summary>
@@ -408,13 +399,12 @@ namespace BoSSS.Application.XNSEC {
         [DataMember]
         public CpCalculationMode HeatCapacityMode = CpCalculationMode.constant;
 
-        //}
-        /// <summary>
-        /// Exact solution for Mass Fractions, for each species (either A or B).
-        /// </summary>
-        [NonSerialized]
-        [JsonIgnore]
-        public IDictionary<string, Func<double[], double, double>[]> ExactSolutionMassFractions;
+        ///// <summary>
+        ///// Exact solution for Mass Fractions, for each species (either A or B).
+        ///// </summary>
+        //[NonSerialized]
+        //[JsonIgnore]
+        //public IDictionary<string, Func<double[], double, double>[]> ExactSolutionMassFractions;
 
         [DataMember]
         public double[] FuelInletConcentrations = new double[] { 0.2, 0.0, 0.0, 0.0, 0.8 };

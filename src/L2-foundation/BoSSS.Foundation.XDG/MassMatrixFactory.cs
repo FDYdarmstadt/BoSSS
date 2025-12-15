@@ -166,7 +166,7 @@ namespace BoSSS.Foundation.XDG {
                 var _basisS = mapping.BasisS.ToArray();
                 var ctx = _basisS[0].GridDat;
                 int J = ctx.iLogicalCells.NoOfLocalUpdatedCells;
-                if(!object.ReferenceEquals(this.XDGSpaceMetrics.Tracker.GridDat, ctx))
+                if(!object.ReferenceEquals(this.XDGSpaceMetrics.GridDat, ctx))
                     throw new ArgumentException("grid object mismatch");
                 if (!M.RowPartitioning.EqualsPartition(mapping))
                     throw new ArgumentException("Mismatch in row mapping.");
@@ -420,10 +420,7 @@ namespace BoSSS.Foundation.XDG {
                 Basis nonXbasis = this.MaxTraceBasis;
 
                 // compute Blocks
-                {
-                    ComputeTraceMassMatrixBlocks(out this.TraceMassBlocks, nonXbasis, this.XDGSpaceMetrics);
-                    
-                }
+                ComputeTraceMassMatrixBlocks(out this.TraceMassBlocks, nonXbasis, this.XDGSpaceMetrics);
             }
 
         }
@@ -664,7 +661,7 @@ namespace BoSSS.Foundation.XDG {
                     int[] jSub2jCell = Result.jSub2jCell;
                     int[] jCell2jSub = Result.jCell2jSub;
                     // get quad scheme
-                    CellQuadratureScheme scheme = schemeHelper.GetLevelSetquadScheme(0, Result.IntegrationDomain);
+                    CellQuadratureScheme scheme = schemeHelper.GetLevelSetQuadScheme(0, Result.IntegrationDomain);
 
                     // result storage
                     var MassMatrixBlocksSpc = Result.MassMatrixBlocks;

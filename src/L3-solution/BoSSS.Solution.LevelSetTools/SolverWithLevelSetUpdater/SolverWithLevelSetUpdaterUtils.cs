@@ -68,7 +68,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             int order  = (quadRuleOrder < 0) ? 1 : quadRuleOrder;
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;
 
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(iLevSet, LsTrk.Regions.GetCutCellMask());
+            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(iLevSet, LsTrk.Regions.GetCutCellMask());
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 cqs.Compile(LsTrk.GridDat, order),
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {

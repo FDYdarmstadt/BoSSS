@@ -616,15 +616,49 @@ namespace ilPSP {
         /// </summary>
         public static HashSet<T> SetUnion<T>(this IEnumerable<T> A, IEnumerable<T> B) {
             HashSet<T> R = new HashSet<T>();
-            foreach(T i in A) {
+            foreach (T i in A) {
                 R.Add(i);
             }
-            foreach(T i in B) {
+            foreach (T i in B) {
                 R.Add(i);
             }
             return R;
         }
+        
+        /// <summary>
+        /// the set <paramref name="A"/> minus the set <paramref name="B"/>
+        /// </summary>
+        public static HashSet<T> SetDifference<T>(this IEnumerable<T> A, IEnumerable<T> B) {
+            HashSet<T> R = new HashSet<T>();
+            foreach (T i in A) {
+                R.Add(i);
+            }
+            foreach (T i in B) {
+                R.Remove(i);
+            }
+            return R;
+        }
 
+        /// <summary>
+        /// a set which contains all elements which are either in <paramref name="A"/> or <paramref name="B"/>, but not in both.
+        /// </summary>
+        public static HashSet<T> SetSymmDifference<T>(this IEnumerable<T> A, IEnumerable<T> B) {
+            return SetDifference(A, B).SetUnion(SetDifference(B,A));
+        }
+
+
+        /// <summary>
+        /// intersection of sets
+        /// </summary>
+        public static HashSet<T> SetIntersection<T>(this IEnumerable<T> A, IEnumerable<T> B) {
+            HashSet<T> R = new HashSet<T>();
+            foreach (T i in A) {
+                if(B.Contains(i)) 
+                    R.Add(i);
+            }
+
+            return R;
+        }
         /// <summary>
         /// Checks if an enumeration is a set - i.e. each element is contained exactly once.
         /// </summary>
@@ -861,5 +895,20 @@ namespace ilPSP {
                 return stw.ToString();
             }
         }
+
+        /// <summary>
+        /// like the ordinary select, but also provides an index
+        /// </summary>
+        public static IEnumerable<TResult> Select2<TSource, TResult>(this IEnumerable<TSource> enu, Func<TSource, int, TResult> selector_with_index) {
+            var res = new List<TResult>();
+            int idx = 0;
+            foreach(TSource obj in enu) {
+                TResult res_idx = selector_with_index(obj, idx);
+                res.Add(res_idx);
+                idx++;
+            }
+            return res.ToArray();
+        }
+
     }
 }

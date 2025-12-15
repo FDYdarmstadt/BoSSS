@@ -96,7 +96,7 @@ namespace BoSSS.Application.XRheology_Solver {
         /// 
         /// </summary>
         [DataMember]
-        public int ReInitPeriod = 0;
+        public int ReInitPeriod = 20;
 
         /// <summary>
         /// Expert options regarding the spatial discretization.

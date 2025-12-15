@@ -78,12 +78,12 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
 
 
             /// <summary>
-            /// Turns the right-hand-side, i.e. the term $ -\divergence{ \frac{ \nabla \phi_0 }{ | \nabla \phi_0 | }$ on or off.
+            /// Turns the right-hand-side, i.e. the term $-\divergence{ \frac{ \nabla \phi_0 }{ | \nabla \phi_0 | }$ on or off.
             /// </summary>
             public double RhsSwitch = 1.0;
 
             /// <summary>
-            /// Turns the left-hand-side, i.e. the term $ \divergence{ \nabla \phi_1 | }$ on or off.
+            /// Turns the left-hand-side, i.e. the term $\divergence{ \nabla \phi_1 | }$ on or off.
             /// </summary>
             public double LhsSwitch = 1.0;
 

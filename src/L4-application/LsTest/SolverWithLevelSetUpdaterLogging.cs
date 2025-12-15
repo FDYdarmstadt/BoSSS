@@ -101,7 +101,7 @@ namespace BoSSS.Application.LsTest {
 
             // surface
             double surface = 0.0;
-            var surfElemVol = SchemeHelper.GetLevelSetquadScheme(iLevSet, LsTrk.Regions.GetCutCellMask4LevSet(iLevSet));
+            var surfElemVol = SchemeHelper.GetLevelSetQuadScheme(iLevSet, LsTrk.Regions.GetCutCellMask4LevSet(iLevSet));
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 surfElemVol.Compile(LsTrk.GridDat, order),
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
@@ -119,7 +119,7 @@ namespace BoSSS.Application.LsTest {
 
             if (exactSolGiven) {
                 // contour- error
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(iLevSet, LsTrk.Regions.GetCutCellMask4LevSet(iLevSet));
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(iLevSet, LsTrk.Regions.GetCutCellMask4LevSet(iLevSet));
                 int Norm = 2;
                 double conterr = DGField.IntegralOverEx(cqs, ((X, U, j) => contour(X, phystime).Pow(Norm)), 2, new DGField[] { (DGField)LsTrk.LevelSets[iLevSet] });
                 Props[1] = Math.Abs(volume - vol_ana);
@@ -207,7 +207,7 @@ namespace BoSSS.Application.LsTest {
             Props[0] = PhiCG.L2Error(PhiDG, LsTrk.Regions.GetNearMask4LevSet(iLevSet, LsTrk.NearRegionWidth));           
 
             // interface error (L2 - norm of PhiDG along interface computed by PhiCG)            
-            var surfElemVol = SchemeHelper.GetLevelSetquadScheme(iLevSet, LsTrk.Regions.GetCutCellMask4LevSet(iLevSet));
+            var surfElemVol = SchemeHelper.GetLevelSetQuadScheme(iLevSet, LsTrk.Regions.GetCutCellMask4LevSet(iLevSet));
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 surfElemVol.Compile(LsTrk.GridDat, order),
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {

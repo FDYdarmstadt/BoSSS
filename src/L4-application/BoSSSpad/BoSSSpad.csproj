@@ -95,6 +95,7 @@
     <ProjectReference Include="..\XNSE_Solver\XNSE_Solver.csproj" />
     <ProjectReference Include="..\XNSFE_Solver\XNSFE_Solver.csproj" />
     <ProjectReference Include="..\ZLS\ZLS.csproj" />
+	<ProjectReference Include="..\HFSI\HFSI.csproj" />
   </ItemGroup>
   <PropertyGroup>
     <PreBuildEvent>git describe --long &gt; "$(SolutionDir)\version.txt"

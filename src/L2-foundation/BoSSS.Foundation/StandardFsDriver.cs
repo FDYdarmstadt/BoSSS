@@ -452,10 +452,11 @@ namespace BoSSS.Foundation.IO {
         /// <param name="sessionGuid">
         /// the session in which the log should be created.
         /// </param>
+        /// <param name="fileExt"></param>
         /// <returns></returns>
-        public Stream GetNewLogStream(string logName, Guid sessionGuid) {
+        public Stream GetNewLogStream(string logName, string fileExt, Guid sessionGuid) {
             string filename = Path.Combine(
-                SessionsDir, sessionGuid.ToString(), logName + ".txt");
+                SessionsDir, sessionGuid.ToString(), logName + "." + fileExt);
 
             Stream fs = OpenFileCooperatively(true, filename, true);
 
@@ -476,7 +477,7 @@ namespace BoSSS.Foundation.IO {
         /// </param>
         /// <returns></returns>
         public TextWriter GetNewLog(string logName, Guid sessionGuid) {
-            return new StreamWriter(GetNewLogStream(logName, sessionGuid));
+            return new StreamWriter(GetNewLogStream(logName, "txt", sessionGuid));
         }
 
         /// <summary>

@@ -32,7 +32,7 @@ namespace BoSSS.Foundation.Quadrature {
     /// </summary>
     public class QuadRule : ICloneable, IEquatable<QuadRule> {
 
-
+        
         /// <summary>
         /// Creates a empty (i.e. all entries set to 0.0) quadrature rule for filling by the user.
         /// </summary>
@@ -112,7 +112,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// </summary>
         public int SpatialDim {
             get {
-                if (OrderOfPrecision == int.MaxValue) {
+                if (this.Nodes.RefElement.SpatialDimension == 0) {
                     return 0;
                 } else {
                     return Nodes.GetLength(1);

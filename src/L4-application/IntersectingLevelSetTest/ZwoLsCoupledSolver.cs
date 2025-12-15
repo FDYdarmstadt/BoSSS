@@ -228,7 +228,6 @@ namespace IntersectingLevelSetTest {
             
 
             // compute integrals 
-            Integrals integrals = new Integrals();
             //integrals.Evaluate(LsTrk, 2, LsTrk.GetSpeciesId("B"), LsTrk.GetSpeciesId("A"));
 
 

@@ -23,25 +23,26 @@ using System.Runtime.Serialization;
 namespace BoSSS.Solution.XNSECommon {
 
     /// <summary>
-    /// Options of the surface stress tensor \f$ \sigma_{\Gamma} \f$ for the momentum jump condition 
-    /// \f[ 
-    ///   \llbracket (-p \myMatrix{I} + \mu \myMatrix{D} (\vec{u}) ) \cdot \vec{n} \rrbracket = \divergence{\sigma_{\Gamma}}_{\Gamma},
-    /// \f]
+    /// Options of the surface stress tensor $\sigma_{\Gamma}$ for the momentum jump condition 
+    /// \[ 
+    ///   [\![ (-p \boldsymbol{I} + \mu \boldsymbol{D} (\underline{u}) ) \cdot \underline{n} ]\!] = {\textrm{div}\left({\sigma_{\Gamma}}\right)}_{\Gamma},
+    /// \]
     /// </summary>
     public enum SurfaceSressTensor {
 
         /// <summary>
-        /// only the isotropic \f$ \sigma_{\gamma} = \sigma \myMatrix{P}_{\Gamma} \f$
+        /// only the isotropic $\sigma_{\gamma} = \sigma \boldsymbol{P}_{\Gamma}$
         /// </summary>
         Isotropic,
 
         /// <summary>
-        /// \f$ \mu_I \( \myMatrix{P}_I \grad_I \vec{u} + \( \grad_I \vec{u}\)^T \myMatrix{P}_I \) \f$ (additional dynamic part, resembling the semi-implicit discretization)
+        /// $\mu_I (\boldsymbol{P}_I \nabla_I \underline { u } + ( \nabla_I \underline { u } )^T \boldsymbol{P}_I )$
+        /// (additional dynamic part, resembling the semi-implicit discretization)
         /// </summary>
         SurfaceRateOfDeformation,
 
         /// <summary>
-        /// \f$ \( \lambda_I - \mu_I \) \div_I \vec{u} \myMatrix{P}_I  \f$
+        /// $\( \lambda_I - \mu_I \) \div_I \underline{u} \boldsymbol{P}_I$
         /// </summary>
         SurfaceDivergence,
 
@@ -199,9 +200,9 @@ namespace BoSSS.Solution.XNSECommon {
         
         /// <summary>
         /// the full viscous stress tensor is discretized in the bulk domain, i.e. 
-        /// \f[ 
-        ///    \mathrm{div} \left( \mu \left( \nabla \vec{u} + \vec{u}^T \right) \right),
-        /// \f]
+        /// \[ 
+        ///    \mathrm{div} \left( \mu \left( \nabla \underline{u} + \underline{u}^T \right) \right),
+        /// \]
         /// therefore the jump condition can be implemented symmetric.
         /// </summary>
         /// <remarks>
@@ -211,18 +212,18 @@ namespace BoSSS.Solution.XNSECommon {
 
         /// <summary>
         /// for test purposes, an implementation that neglects the term
-        /// \f[ 
-        ///    \mathrm{div} \left( \mu \vec{u}^T \right),
-        /// \f]
+        /// \[ 
+        ///    \mathrm{div} \left( \mu \underline{u}^T \right),
+        /// \]
         /// </summary>
         TransposeTermMissing,
 
         /// <summary>
         /// In viscoelastic case we calculate dimensionless and have the material parameter \beta
         /// such that the dimensionless "Viscosity" is defined as 
-        /// \f[ 
+        /// \[ 
         ///     \frac{\beta}{\mathrm{Re}}
-        /// \f]
+        /// \]
         /// </summary>
         Viscoelastic
 
@@ -242,43 +243,7 @@ namespace BoSSS.Solution.XNSECommon {
         [DataMember]
         public ViscosityMode ViscosityMode = ViscosityMode.FullySymmetric;
 
-       
-        /*
-        /// <summary>
-        /// Turn the use of ghost penalties on or off, see <br/>
-        /// @article{massjung_unfitted_2012,
-        ///         title = {An {Unfitted} {Discontinuous} {Galerkin} {Method} {Applied} to {Elliptic} {Interface} {Problems}},
-        ///         volume = {50},
-        ///         issn = {0036-1429, 1095-7170},
-        ///         url = {http://epubs.siam.org/doi/abs/10.1137/090763093},
-        ///         doi = {10.1137/090763093},
-        ///         language = {en},
-        ///         number = {6},
-        ///         urldate = {2014-11-03},
-        ///         journal = {SIAM Journal on Numerical Analysis},
-        ///         author = {Massjung, Ralf},
-        ///         month = jan,
-        ///         year = {2012},
-        ///         pages = {3134--3162}
-        /// }
-        /// </summary>
-        [DataMember]
-        public bool UseGhostPenalties = false;
-        
-        /// <summary>
-        /// Continuity equation: work with div(-) resp. -div(-)
-        /// </summary>
-        [DataMember]
-        public double ContiSign = -1.0;
-
-        /// <summary>
-        /// scale continuity equation with one over density
-        /// </summary>
-        [DataMember]
-        public bool RescaleConti = false;
-        */
-
-        /// <summary>
+             /// <summary>
         /// stabilization parameter for Local-Lax-Friedrichs flux, phase A
         /// </summary>
         [DataMember]
@@ -291,18 +256,17 @@ namespace BoSSS.Solution.XNSECommon {
         public double LFFB = 0.8;
 
         /// <summary>
+        /// stabilization parameter for Local-Lax-Friedrichs flux, phase C
+        /// </summary>
+        [DataMember]
+        public double LFFC = 0.8;
+
+        /// <summary>
         /// Penalty safety factor for the viscous operator.
         /// </summary>
         [DataMember]
         public double PenaltySafety = 4;
 
-        /*
-        /// <summary>
-        /// 
-        /// </summary>
-        [DataMember]
-        public double CellAgglomerationThreshold = 0.1;
-        */
 
         /// <summary>
         /// characteristic velocity scale for the Dong boundary condition term
@@ -370,7 +334,8 @@ namespace BoSSS.Solution.XNSECommon {
         public bool CurvatureNeeded = false;
 
         /// <summary>
-        /// Expert options regarding the evaluation of the curvature.
+        /// Expert options regarding the evaluation of the curvature;
+        /// only effectve if <see cref="SST_isotropicMode"/> is set to <see cref="SurfaceStressTensor_IsotropicMode.Curvature_Projected"/>
         /// </summary>
         [DataMember]
         public LevelSetTools.CurvatureAlgorithms.FilterConfiguration FilterConfiguration = LevelSetTools.CurvatureAlgorithms.FilterConfiguration.NoFilter;
@@ -455,7 +420,7 @@ namespace BoSSS.Solution.XNSECommon {
         public double StressPenalty = 1.0;
 
         /// <summary>
-        /// double cut cell special handling override <see cref="BoSSS.Foundation.XDG.Quadrature.BruteForceSettingsOverride"/>
+        /// double cut cell special handling override <see cref="BoSSS.Foundation.XDG.Quadrature.BruteForce.BruteForceSettingsOverride"/>
         /// </summary>
         [DataMember]
         public bool DoubleCutSpecialQuadrature = false;

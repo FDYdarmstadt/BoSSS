@@ -10,32 +10,18 @@ using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Numerics;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Factorization;
-using BoSSS.Solution.Tecplot;
 using BoSSS.Foundation.XDG;
-using BoSSS.Solution.XNSECommon;
-using BoSSS.Foundation.XDG.Quadrature.HMF;
 using BoSSS.Solution.LevelSetTools;
 using BoSSS.Application.CahnHilliard;
-using static BoSSS.Application.CahnHilliard.CahnHilliardMain;
 using BoSSS.Solution.LevelSetTools.PhasefieldLevelSet;
-using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
-using BoSSS.Foundation.Grid.RefElements;
-using System.IO;
-using BoSSS.Solution.LevelSetTools.StokesExtension;
-using BoSSS.Solution.NSECommon;
 
-// TODO: test mit norm, jump norm zum laufen bringen
-// erst dotnet, dann mono, dann openfoam
 
 namespace BoSSS.Application.ExternalBinding {
     
@@ -856,16 +842,19 @@ namespace BoSSS.Application.ExternalBinding {
                     RealLevSet.Clear();
                     RealLevSet.Acc(1.0, c);
                     LevelSetUpdater lsu;
-                    lsu = new LevelSetUpdater(grd, CutCellQuadratureMethod.Classic,
-                                                             2, new string[] { "a", "b" },
-                                                             GetNamedInputFields,
-                                                             RealLevSet, "c", ContinuityProjectionOption.None);
+                    lsu = new LevelSetUpdater(grd, 
+                                              CutCellQuadratureMethod.Classic, () => RealLevSet.Basis.Degree*2,
+                                              2, new string[] { "a", "b" },
+                                              GetNamedInputFields,
+                                              RealLevSet, "c", ContinuityProjectionOption.None);
+     
+
                     // note on continuity projection:
                     // - For the Stokes Extension, we only require level-set-surface integrals; no cut-edge integrals are required;
                     // - therefore, the level-set does not need to be strictly continuous.
                     // => ContinuityProjectionOption.None should be ok.
 
-                    try{
+                    try {
                         lsu.EnforceContinuity();
                     } catch (LevelSetTopologyException e) {
                         Console.WriteLine("Ignoring topology exception");

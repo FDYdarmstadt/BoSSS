@@ -123,7 +123,9 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// </param>
         /// <param name="config">
         /// </param>
-        static public IDictionary<string, double[]> Perform(IEnumerable<AppControl> controls, Config config) {
+        static public IDictionary<string, double[]> Perform(IEnumerable<AppControl> controls, Config config = null) {
+            if(config ==  null) 
+                config = new Config();
             var t = new ConditionNumberScalingTest(config);
             t.SetControls(controls);
             t.RunAndLog();

@@ -1,13 +1,9 @@
-﻿using BoSSS.Foundation.Grid.Classic;
+﻿using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.Quadrature;
-using BoSSS.Foundation.XDG.Quadrature.HMF;
+using BoSSS.Foundation.XDG.Quadrature;
 using ilPSP;
-using log4net.Core;
 using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Text;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -44,10 +40,10 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         TwoStepStokesAndGauss = 3,
 
-        /// <summary>
-        /// Only for debugging purpose, see <see cref="ExactCircleLevelSetIntegration"/>, <see cref="ExactCircleLevelSetIntegration.RADIUS"/>
-        /// </summary>
-        ExactCircle = 4,
+        ///// <summary>
+        ///// Only for debugging purpose, see <see cref="ExactCircleLevelSetIntegration"/>, <see cref="ExactCircleLevelSetIntegration.RADIUS"/>
+        ///// </summary>
+        //ExactCircle = 4,
 
         /// <summary>
         /// Gaussian quadrature rules for <see cref="Square"/> and <see cref="Cube"/> elements,
@@ -97,11 +93,26 @@ namespace BoSSS.Foundation.XDG {
             this.m_LevelSetDatas = lsDatas.CloneAs();
         }
 
+        protected IGridData gdat {
+            get {
+                return this.m_LevelSetDatas[0].GridDat;
+            }
+        }
+
+
 #if DEBUG
         public static bool CheckQuadRules = true;
 #else
         public static bool CheckQuadRules = false;
 #endif
+
+        /// <summary>
+        /// Triggers the creation of all quadrature rules, so that later, the can be retrieved from the cache.
+        /// This is supposed to give a better runtime behavior, since the creation of quadrature rules is quite expensive.
+        /// Furthermore, in the creation of quadrature rules there are some parts where MPI communication is needed or makes things more robust.
+        /// One example are hanging node on MPI boundaries; There, a quadrature rule might be difficult to be created right locally.
+        /// </summary>
+        abstract public void CreateRulesAndMPIExchgange(int __quadorder);
 
         protected readonly LevelSetTracker.LevelSetData[] m_LevelSetDatas;
 
@@ -127,7 +138,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Generates a quadrature rule factory for the cut edge integrals.
         /// </summary>
-        abstract public IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex, JumpTypes jmp, RefElement KrefVol);
+        abstract public IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex, JumpTypes jmp, RefElement KrefEdge);
         // ref (2), on edges
 
         /// <summary>
@@ -148,14 +159,17 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Returns a rule factory for the boundary of surface-elements 
-        /// (elements on the zero-level-set surface), i.e. on \f$  K \cap \mathfrak{I}\f$ .
+        /// (elements on the zero-level-set surface), i.e., for integrals 
+        /// ```math 
+        ///    \int_{ E \cap \mathfrak{I} } \ldots \textrm{dl} . 
+        /// ```
+        /// (elements on the zero-level-set surface), i.e. on $K \cap \mathfrak{I}$ .
         /// This are point integrals in 2D and line integrals in 3D.
         /// </summary>
-        /// <returns>
-        /// the returned factory produces <see cref="QuadRule"/>'s on edges
-        /// </returns>
-        abstract public IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex, RefElement KrefVol);
-        // ref (5a), on edge
+        abstract public IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex, RefElement KrefEdge);
+
+        abstract public IQuadRuleFactory<CellBoundaryQuadRule> _GetSurfaceElement_BoundaryRuleFactory(int levSetIndex, RefElement KrefVol);
+
 
         /// <summary>
         /// Generates a volume quadrature rule factory for cells cut by two level sets. <see cref="GetSurfaceElement_BoundaryRuleFactory(int, RefElement)"/>

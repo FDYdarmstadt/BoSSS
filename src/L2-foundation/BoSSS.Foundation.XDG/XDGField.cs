@@ -313,15 +313,15 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Evaluates
-        /// \f$ 
+        /// $ 
         /// f_A(x_i) - f_B(x_i)
-        /// \f$ 
+        /// $ 
         /// in all nodes with spatial coordinates
-        /// \f$ x_i\f$  defined in
+        /// $x_i$  defined in
         /// <paramref name="NodeSet"/> in all cells in the range
         /// [<paramref name="j0"/>; <paramref name="j0"/> + <paramref name="Len"/>]
-        /// where \f$ f_A(x)\f$  and
-        /// \f$ f_B(x)\f$  are the values of the
+        /// where $f_A(x)$  and
+        /// $f_B(x)$  are the values of the
         /// polynomial defined by the coefficients stored for the species
         /// identified by <paramref name="SpeciesIdA"/> and
         /// <paramref name="SpeciesIdB"/>, respectively. The result will then
@@ -412,12 +412,69 @@ namespace BoSSS.Foundation.XDG {
                 DGField.EvaluateInternal,
                 ref m_Evaluate_SpeciesEvalBuffer,
                 __M => new int[] { 1, __M },
-                delegate (MultidimensionalArray R, int offset, int m, int SpcInd, MultidimensionalArray[] SR) {
+                delegate (MultidimensionalArray R, int offset, int m, LevelSetSignCode levset_bytecode,
+                    ReducedRegionCode reducedRegionCode, MultidimensionalArray[] SR) {
+                    int SpcInd = this.Basis.Tracker.GetSpeciesIndex(reducedRegionCode, levset_bytecode);
                     double r = R[offset, m] * _ResultPreScale;
                     r += SR[SpcInd][0, m];
                     R[offset, m] = r;
                 });
         }
+
+        /// <summary>
+        /// Evaluates the cut-cell DG - field;
+        /// </summary>
+        /// <param name="species">Restrict evaluation to these species </param>
+        /// <param name="_j0">local index of the first cell to evaluate</param>
+        /// <param name="_Len">Number of cells to evaluate</param>
+        /// <param name="_NodeSet">
+        /// as usual, the node set;
+        /// </param>
+        /// <param name="_result">
+        /// on exit, result of the evaluations are accumulated there;
+        /// the original content is scaled by <paramref name="_ResultPreScale"/>;<br/>
+        /// 1st index: cell index minus <paramref name="_j0"/>;<br/>
+        /// 2nd index: node index;
+        /// </param>
+        /// <param name="_ResultCellindexOffset">
+        /// an offset for the first index of <paramref name="_result"/>;
+        /// </param>
+        /// <param name="_ResultPreScale">
+        /// see <paramref name="_result"/>
+        /// </param>
+        public void Evaluate(string[] species, int _j0, int _Len, NodeSet _NodeSet, MultidimensionalArray _result, 
+            int _ResultCellindexOffset, double _ResultPreScale) {
+            int _M = _NodeSet.NoOfNodes; // number of nodes per cell
+
+            if (_result.Dimension != 2)
+                throw new ArgumentOutOfRangeException("result", "dimension of result array must be 2");
+            if (_result.GetLength(1) != _M)
+                throw new ArgumentOutOfRangeException();
+
+            MultidimensionalArray[] m_Evaluate_SpeciesEvalBuffer = new MultidimensionalArray[0];
+
+            IEnumerable<int> levelSets = this.Basis.Tracker.GetLevelSetsSeparatingSpecies(species);
+
+            GenericEval(_j0, _Len, _NodeSet, _result, _ResultCellindexOffset, _ResultPreScale,
+            DGField.EvaluateInternal,
+            ref m_Evaluate_SpeciesEvalBuffer,
+            __M => new int[] { 1, __M },
+            delegate (MultidimensionalArray R, int offset, int m, LevelSetSignCode levset_bytecode,
+                ReducedRegionCode reducedRegionCode, MultidimensionalArray[] SR) {
+                    //Set unused regions to far
+                    for(int iLevSet = 0; iLevSet < this.Basis.Tracker.NoOfLevelSets; ++ iLevSet) {
+                        if (!levelSets.Contains(iLevSet)) {
+                            reducedRegionCode = ReducedRegionCode.Set2Far(iLevSet, levset_bytecode.GetSign(iLevSet), reducedRegionCode);
+                        }
+                    }
+                    int SpcInd = this.Basis.Tracker.GetSpeciesIndex(reducedRegionCode, levset_bytecode);
+                    double r = R[offset, m] * _ResultPreScale;
+                    r += SR[SpcInd][0, m];
+                    R[offset, m] = r;
+                });
+        }
+
+
 
         /// <summary>
         /// <see cref="DGField.EvaluateEdge(int, int, NodeSet, MultidimensionalArray, MultidimensionalArray, MultidimensionalArray, MultidimensionalArray, MultidimensionalArray, MultidimensionalArray, int, double)"/>
@@ -465,9 +522,12 @@ namespace BoSSS.Foundation.XDG {
                 DGField.EvaluateGradientInternal,
                 ref m_EvaluateGradient_SpeciesEvalBuffer,
                 _M => new int[] { 1, _M, D },
-                delegate (MultidimensionalArray R, int offset, int m, int SpcInd, MultidimensionalArray[] SR) {
-                    for (int d = 0; d < D; d++) {
-                        double r = R[offset, m, d] * ResultPreScale;
+                delegate (MultidimensionalArray R, int offset, int m, LevelSetSignCode levset_bytecode,
+                    ReducedRegionCode reducedRegionCode, MultidimensionalArray[] SR) {
+                        int SpcInd = this.Basis.Tracker.GetSpeciesIndex(reducedRegionCode, levset_bytecode);
+                        for (int d = 0; d < D; d++) {
+                            
+                            double r = R[offset, m, d] * ResultPreScale;
                         r += SR[SpcInd][0, m, d];
                         R[offset, m, d] = r;
                     }
@@ -950,7 +1010,7 @@ namespace BoSSS.Foundation.XDG {
         /// accumulates the derivative of DG field <paramref name="f"/> 
         /// (along the <paramref name="d"/>-th axis) times <paramref name="alpha"/>
         /// to this field, i.e. <br/>
-        /// this = this + <paramref name="alpha"/>* \f$ \frac{\partial}{\partial x_d}\f$ <paramref name="f"/>;
+        /// this = this + <paramref name="alpha"/>* $\frac{\partial}{\partial x_d}$ <paramref name="f"/>;
         /// </summary>
         /// <param name="f"></param>
         /// <param name="d">
@@ -1260,21 +1320,21 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Canonical L2 Norm in the XDG space, i.e.
-        /// ```math
+        /// \[
         ///   \left( \int_{\Omega \cap \mathfrak{ s} \cap \text{ CM} }
-        ///        u(\vec{ x})
+        ///        u(\underline{ x})
         ///   \text{dV} \right)^{1/2},
-        /// ```
+        /// \]
         /// where 
-        /// $`\mathfrak{s}`$ denotes the domain of species <paramref name="spc"/> and
-        /// $`\text{ CM} }`$ denotes the optional cell mask <paramref name="cm"/>. 
+        /// $\mathfrak{s}$ denotes the domain of species <paramref name="spc"/> and
+        /// $\text{CM}$ denotes the optional cell mask <paramref name="cm"/>. 
         /// </summary>
         /// <remarks>
         /// The foundation for computing the L2-norm in cut cells is the following relation:
         /// For any arbitrary (i.e. non-orthonormal) DG or XDG basis,
         /// the norm of a Field 
-        /// $`u = sum_{j} \phi_{j} \tilde{u}_{j}`$ is given as:
-        /// ```math
+        /// $u = sum_{j} \phi_{j} \tilde{u}_{j}$ is given as:
+        /// \[
         ///         \left\| u \right\|_{L^2}^2 =
         ///         (u, u) = 
         ///     \int_\Omega 
@@ -1284,8 +1344,8 @@ namespace BoSSS.Foundation.XDG {
         ///     \sum_{j l} \tilde{u}_{j} \tilde{u}_{l} ( \phi_{j}, \phi_{l} )
         ///     =
         ///       \tilde{u}^T M \tilde{u},
-        /// ```
-        /// where $`M `$ denotes the mass matrix ($` M_{j l} = ( \phi_ { j}, \phi_ { l} )  `$).
+        /// \]
+        /// where $M$ denotes the mass matrix ($M_{j l} = ( \phi_ { j}, \phi_ { l} )$).
         /// </remarks>
         public double L2NormSpecies(SpeciesId spc, CellMask cm = null) {
             int deg = this.Basis.Degree;

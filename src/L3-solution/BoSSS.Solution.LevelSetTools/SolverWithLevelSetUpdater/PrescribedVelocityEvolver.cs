@@ -55,7 +55,20 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public IList<string> VariableNames => null;
 
         // nothing to do
-        public Func<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>, bool> AfterMovePhaseInterface => null;
+        //public Func<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>, bool> AfterMovePhaseInterface => null;
+
+        /// <summary>
+        /// nothing to do
+        /// </summary>
+        public bool AfterMovePhaseInterface(
+            DualLevelSet levelSet,
+            double time,
+            double dt,
+            bool incremental,
+            IReadOnlyDictionary<string, DGField> DomainVarFields,
+            IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            return false;
+        }
 
 
         /// <summary>
@@ -111,7 +124,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             }
 
             /// <summary>
-            /// `$ \vec{u} \varphi `$
+            /// `$ \underline{u} \varphi `$
             /// </summary>
             protected override void Flux(ref CommonParamsVol inp, double[] U, double[] output) {
                 for (int d = 0; d < inp.D; d++) {

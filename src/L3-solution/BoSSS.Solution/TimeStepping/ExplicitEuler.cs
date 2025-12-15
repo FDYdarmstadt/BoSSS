@@ -206,13 +206,13 @@ namespace BoSSS.Solution.Timestepping {
         /// <param name="edgeFluxes"></param>
         /// <remarks>
         /// Assume an ODE
-        /// ``` math
+        /// \[
         /// d/dt u = f(u)
-        /// ```
+        /// \]
         /// which is discretized by an explicit Euler scheme
-        /// ```math
+        /// \[
         /// (u_1 - u_0)/delta_t = f(u_0).
-        /// ```
+        /// \]
         /// Here, f(u) denotes the discretization of the spatial operator by the DG method.
         /// The purpose of this method is to evaluate f(u_0).<br/>
         /// It does so by calling <see cref="IEvaluatorNonLin.Evaluate{Tout}"/>

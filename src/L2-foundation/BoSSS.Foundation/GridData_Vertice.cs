@@ -884,7 +884,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     int NoOfPeriodicElim;
                     int[][] VtxSendLists;
                     int[][] VtxInsertLists;
-                    Tuple<int, int>[] PeriodicElim;
+                    (int elim_src, int elim_targ)[] PeriodicElim;
 
                     
 
@@ -1068,14 +1068,34 @@ namespace BoSSS.Foundation.Grid.Classic {
         }
 
 
+
         /// <summary>
         /// Negotiation of MPI-Ownership for 'items' (e.g. vertices or edges).
         /// </summary>
+        /// <param name="comm"></param>
+        /// <param name="ItemIndicesOnOtherProcessors">
+        /// input: Identities of item indices on other processes.
+        /// - 1st index: MPI-local item index i
+        /// - 2nd index: enumeration
+        /// - Item1: process rank R
+        /// - Item2: MPI-local index of item i on rank R
+        /// </param>
+        /// <param name="ItemPermutation"></param>
+        /// <param name="NoOfPureLocal">output: purely local items, i.e., items which are owned by this process only</param>
+        /// <param name="NoOfRelayed">output: relayed items, i.e., items which are owned by this process, but are also shared with others</param>
+        /// <param name="NoOfBorrowed">output: shared items, i.e., items which are owned by other processes, but are also present on this one</param>
+        /// <param name="NoOfPeriodicElim"></param>
+        /// <param name="NoOfExternal"></param>
+        /// <param name="SendLists"></param>
+        /// <param name="InsertLists"></param>
+        /// <param name="LocalDuplicates"></param>
+        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="Exception"></exception>
         private static void NegotiateOwnership(MPI_Comm comm, (int MPIrank, int idx)[][] ItemIndicesOnOtherProcessors, 
             out int[] ItemPermutation, 
             out int NoOfPureLocal, out int NoOfRelayed, out int NoOfBorrowed, out int NoOfPeriodicElim, out int NoOfExternal, 
             out int[][] SendLists, out int[][] InsertLists,
-            out Tuple<int,int>[] LocalDuplicates
+            out (int elim_src, int elim_targ)[] LocalDuplicates
             ) {
             using (var tr = new FuncTrace()) {
 
@@ -1103,8 +1123,8 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 BitArray LocalElim = new BitArray(K); // item 'k' where the 'LocalElim[k]'-flag is set will be moved
                                                       //                                       to the end, i.e. after the borrowed items.
-                                                      //                                       It marks representants that are redundant locally.
-                List<Tuple<int, int>> LocalIdentities = new List<Tuple<int, int>>();
+                                                      //                                       It marks representatives that are redundant locally.
+                List<(int idx_otherProc, int idx_local)> LocalIdentities = new List<(int, int)>();
 
                 // find the local identities
                 // =========================
@@ -1122,16 +1142,16 @@ namespace BoSSS.Foundation.Grid.Classic {
                     if (Equivals.Length <= 0)
                         throw new ArgumentException();
                     if (Equivals.Length == 1) {
-                        Debug.Assert(Equivals[0].Item1 == myRank);
+                        Debug.Assert(Equivals[0].MPIrank == myRank);
                         // no known equivalences
                         continue;
                     }
 
                     foreach (var T in Equivals) {
-                        if (T.Item1 == myRank && T.Item2 != k) {
-                            LocalElim[T.Item2] = true;
+                        if (T.MPIrank == myRank && T.idx != k) {
+                            LocalElim[T.idx] = true;
 
-                            var lid = new Tuple<int, int>(T.Item2, k);
+                            var lid = (T.idx, k);
                             Debug.Assert(lid.Item1 > lid.Item2); // the eliminated representative 'lid.Item2' of some item must be higher than the representative 'k' which is kept
                             Debug.Assert(LocalIdentities.Contains(lid, (A, B) => A.Item1 == B.Item1 && A.Item2 == B.Item2) == false);
                             LocalIdentities.Add(lid); // 'T.Item2' is equivalent to 'k': we select 'k' as a representative of the item.
@@ -1141,7 +1161,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
 
                 // for each MPI process,
-                // collect the vertices that are shared with this process
+                // collect the items that are shared with this process
                 // ======================================================
                 HashSet<int>[] _SharedVertices = new HashSet<int>[size];
                 for (int k = 0; k < K; k++) {
@@ -1174,7 +1194,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
                 }
 
-                // sort the shared vertices
+                // sort the shared items
                 // (i am not sure if that is really necessary)
                 List<int>[] SharedVertices = _SharedVertices.Select(hs => hs != null ? (new List<int>(hs)) : default(List<int>)).ToArray();
                 foreach (var lst in SharedVertices) {
@@ -1254,7 +1274,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                     RelayedItems.Add(kItem);
                                     NoOfRelayed++;
                                 } else {
-                                    Debug.Assert(LocalIdentities.Contains(new Tuple<int, int>(T.Item2, kItem), (A, B) => A.Item1 == B.Item1 && A.Item2 == B.Item2) == true);
+                                    Debug.Assert(LocalIdentities.Contains((T.idx, kItem), (A, B) => A.Item1 == B.Item1 && A.Item2 == B.Item2) == true);
                                     Debug.Assert(LocalElim[T.Item2] == true);
                                 }
                             }
@@ -1271,7 +1291,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         RankDetermined[k_myRank] = true;
 
                         int k_otherRank = OnOther.Where(T => T.Item1 == otherRank).Min(T => T.Item2); // pick the minimum representative 'k_otherRank' on processor 'otherRank' 
-                                                                                                      //                                                                               for the item represented by 'k_myRank' on this processor
+                        //                                                                               for the item represented by 'k_myRank' on this processor
 
 
 

@@ -102,94 +102,92 @@ namespace ilPSP.LinSolvers {
         /// Optional column partition of the output matrix; if null, a column partition is chosen automatically.
         /// </param>
         public static MsrMatrix LoadFromFile(string path, MPI_Comm mpi_comm, IPartitioning RowPart = null, IPartitioning ColPart = null) {
-            
-
-
             int rank, size;
             csMPI.Raw.Comm_Rank(mpi_comm, out rank);
             csMPI.Raw.Comm_Size(mpi_comm, out size);
 
-            SerialisationMessenger sms = new SerialisationMessenger(mpi_comm);
+            using(SerialisationMessenger sms = new SerialisationMessenger(mpi_comm)) {
 
-            MsrMatrix M;
-            if (rank == 0) {
+                MsrMatrix M;
+                if(rank == 0) {
 
-                SerializationContainer sc;
-                using(FileStream fs = new FileStream(path, FileMode.Open)) {
-                    //BinaryFormatter bf = new BinaryFormatter();
-                    using(var rdr = new BsonDataReader(fs)) {
-                        sc = jsonFormatter.Deserialize<SerializationContainer>(rdr);
+                    SerializationContainer sc;
+                    using(FileStream fs = new FileStream(path, FileMode.Open)) {
+                        //BinaryFormatter bf = new BinaryFormatter();
+                        using(var rdr = new BsonDataReader(fs)) {
+                            sc = jsonFormatter.Deserialize<SerializationContainer>(rdr);
+                        }
+
+
+                        // close file
+                        fs.Close();
                     }
-
-
-                    // close file
-                    fs.Close();
-                }
                     // deserialize No of Cols, Rows, create Matrix
-               long[] Dim = new long[2];
-                Dim[0] = (long)sc.NoOfRows;
-                Dim[1] = (long)sc.NoOfColumns;
-                unsafe {
-                    fixed (long* pDim = &Dim[0]) {
-                        csMPI.Raw.Bcast((IntPtr)pDim, 2, csMPI.Raw._DATATYPE.LONG_LONG_INT, 0, mpi_comm);
+                    long[] Dim = new long[2];
+                    Dim[0] = (long)sc.NoOfRows;
+                    Dim[1] = (long)sc.NoOfColumns;
+                    unsafe {
+                        fixed(long* pDim = &Dim[0]) {
+                            csMPI.Raw.Bcast((IntPtr)pDim, 2, csMPI.Raw._DATATYPE.LONG_LONG_INT, 0, mpi_comm);
+                        }
                     }
-                }
-                RowPart = FindPartitioning(RowPart, mpi_comm, rank, size, Dim[0]);
-                ColPart = FindPartitioning(ColPart, mpi_comm, rank, size, Dim[1]);
+                    RowPart = FindPartitioning(RowPart, mpi_comm, rank, size, Dim[0]);
+                    ColPart = FindPartitioning(ColPart, mpi_comm, rank, size, Dim[1]);
 
 
-                //Partition par = new Partition((int)NoOfRows);
-                M = new MsrMatrix(RowPart, ColPart);
+                    //Partition par = new Partition((int)NoOfRows);
+                    M = new MsrMatrix(RowPart, ColPart);
 
-                // load matrix
-                Array.Copy(sc.entries, 0, M.m_Entries, 0, (int)RowPart.GetLocalLength(0));
+                    // load matrix
+                    Array.Copy(sc.entries, 0, M.m_Entries, 0, (int)RowPart.GetLocalLength(0));
 
-                // distribute data
-                for (int r = 1; r < size; r++)
-                    sms.SetCommPath(r);
-                sms.CommitCommPaths();
+                    // distribute data
+                    for(int r = 1; r < size; r++)
+                        sms.SetCommPath(r);
+                    sms.CommitCommPaths();
 
-                for (int r = 1; r < size; r++) {
-                    MatrixEntry[][] entriesSend = new MatrixEntry[RowPart.GetLocalLength(r)][];
-                    Array.Copy(sc.entries, (int)RowPart.GetI0Offest(r), entriesSend, 0, entriesSend.Length);
-                    sms.Transmit(r, entriesSend);
-                }
-
-                MatrixEntry[][] dummy;
-                int _dummy;
-                if (sms.GetNext(out _dummy, out dummy))
-                    throw new ApplicationException("internal error.");
-
-            } else {
-                sms.CommitCommPaths();
-
-                // receive No of Cols, Rows, create Matrix
-                long[] Dim = new long[2];
-                unsafe {
-                    fixed (long* pDim = &Dim[0]) {
-                        csMPI.Raw.Bcast((IntPtr)pDim, 2, csMPI.Raw._DATATYPE.LONG_LONG_INT, 0, mpi_comm);
+                    for(int r = 1; r < size; r++) {
+                        MatrixEntry[][] entriesSend = new MatrixEntry[RowPart.GetLocalLength(r)][];
+                        Array.Copy(sc.entries, (int)RowPart.GetI0Offest(r), entriesSend, 0, entriesSend.Length);
+                        sms.Transmit(r, entriesSend);
                     }
+
+                    MatrixEntry[][] dummy;
+                    int _dummy;
+                    if(sms.GetNext(out _dummy, out dummy))
+                        throw new ApplicationException("internal error.");
+
+                } else {
+                    sms.CommitCommPaths();
+
+                    // receive No of Cols, Rows, create Matrix
+                    long[] Dim = new long[2];
+                    unsafe {
+                        fixed(long* pDim = &Dim[0]) {
+                            csMPI.Raw.Bcast((IntPtr)pDim, 2, csMPI.Raw._DATATYPE.LONG_LONG_INT, 0, mpi_comm);
+                        }
+                    }
+                    RowPart = FindPartitioning(RowPart, mpi_comm, rank, size, Dim[0]);
+                    ColPart = FindPartitioning(ColPart, mpi_comm, rank, size, Dim[1]);
+                    M = new MsrMatrix(RowPart, RowPart);
+
+                    // receive data
+                    int rcvRank;
+                    sms.GetNext(out rcvRank, out M.m_Entries);
+                    if(M.m_Entries.Length != M.RowPartitioning.LocalLength)
+                        throw new ApplicationException("internal error.");
+
+                    if(rcvRank != 0)
+                        throw new ApplicationException("internal error.");
+                    MatrixEntry[][] dummy;
+                    int _dummy;
+                    if(sms.GetNext(out _dummy, out dummy))
+                        throw new ApplicationException("internal error.");
                 }
-                RowPart = FindPartitioning(RowPart, mpi_comm, rank, size, Dim[0]);
-                ColPart = FindPartitioning(ColPart, mpi_comm, rank, size, Dim[1]);
-                M = new MsrMatrix(RowPart, RowPart);
 
-                // receive data
-                int rcvRank;
-                sms.GetNext(out rcvRank, out M.m_Entries);
-                if (M.m_Entries.Length != M.RowPartitioning.LocalLength)
-                    throw new ApplicationException("internal error.");
-
-                if (rcvRank != 0)
-                    throw new ApplicationException("internal error.");
-                MatrixEntry[][] dummy;
-                int _dummy;
-                if (sms.GetNext(out _dummy, out dummy))
-                    throw new ApplicationException("internal error.");
+                
+                return M;
             }
-
-            sms.Dispose();
-            return M;
         }
 
         private static IPartitioning FindPartitioning(IPartitioning Part, MPI_Comm mpi_comm, int rank, int size, long Dim) {
@@ -250,55 +248,55 @@ namespace ilPSP.LinSolvers {
             csMPI.Raw.Comm_Rank(comm, out rank);
             csMPI.Raw.Comm_Size(comm, out size);
 
-            SerialisationMessenger sms = new SerialisationMessenger(comm);
+            using(SerialisationMessenger sms = new SerialisationMessenger(comm)) {
 
-            if (rank == 0) {
-                sms.CommitCommPaths();
+                if(rank == 0) {
+                    sms.CommitCommPaths();
 
-                // receive data from other processors
-                MatrixEntry[][] entries = m_Entries;
-                if (size > 1) {
-                    entries = new MatrixEntry[m_RowPartitioning.TotalLength][];
-                    Array.Copy(m_Entries, entries, m_Entries.Length);
-                }
-
-                MatrixEntry[][] rcvdata;
-                int rcvRank;
-                while (sms.GetNext(out rcvRank, out rcvdata)) {
-                    Array.Copy(rcvdata, 0, entries, (int)this.RowPartitioning.GetI0Offest(rcvRank), rcvdata.Length);
-                }
-
-                // open file
-                using(FileStream fs = new FileStream(path, fm)) {
-                    //BinaryFormatter bf = new BinaryFormatter();
-
-                    // serialize matrix data
-                    var container = new SerializationContainer() {
-                        NoOfRows = this.RowPartitioning.TotalLength,
-                        NoOfColumns = this.ColPartition.TotalLength,
-                        entries = entries
-                    };
-
-                    //bf.Serialize(fs, (long)(this.RowPartitioning.TotalLength));
-                    //bf.Serialize(fs, (long)(this.ColPartition.TotalLength));
-                    //bf.Serialize(fs, entries);
-                    using(var wrt = new BsonDataWriter(fs)) {
-                        jsonFormatter.Serialize(wrt, container);
+                    // receive data from other processors
+                    MatrixEntry[][] entries = m_Entries;
+                    if(size > 1) {
+                        entries = new MatrixEntry[m_RowPartitioning.TotalLength][];
+                        Array.Copy(m_Entries, entries, m_Entries.Length);
                     }
+
+                    MatrixEntry[][] rcvdata;
+                    int rcvRank;
+                    while(sms.GetNext(out rcvRank, out rcvdata)) {
+                        Array.Copy(rcvdata, 0, entries, (int)this.RowPartitioning.GetI0Offest(rcvRank), rcvdata.Length);
+                    }
+
+                    // open file
+                    using(FileStream fs = new FileStream(path, fm)) {
+                        //BinaryFormatter bf = new BinaryFormatter();
+
+                        // serialize matrix data
+                        var container = new SerializationContainer() {
+                            NoOfRows = this.RowPartitioning.TotalLength,
+                            NoOfColumns = this.ColPartition.TotalLength,
+                            entries = entries
+                        };
+
+                        //bf.Serialize(fs, (long)(this.RowPartitioning.TotalLength));
+                        //bf.Serialize(fs, (long)(this.ColPartition.TotalLength));
+                        //bf.Serialize(fs, entries);
+                        using(var wrt = new BsonDataWriter(fs)) {
+                            jsonFormatter.Serialize(wrt, container);
+                        }
+                    }
+                } else {
+                    sms.SetCommPath(0);
+                    sms.CommitCommPaths();
+
+                    sms.Transmit(0, m_Entries);
+
+                    MatrixEntry[][] dummy;
+                    int dummy_;
+                    if(sms.GetNext<MatrixEntry[][]>(out dummy_, out dummy))
+                        throw new ApplicationException("error in app");
                 }
-            } else {
-                sms.SetCommPath(0);
-                sms.CommitCommPaths();
 
-                sms.Transmit(0, m_Entries);
-
-                MatrixEntry[][] dummy;
-                int dummy_;
-                if (sms.GetNext<MatrixEntry[][]>(out dummy_, out dummy))
-                    throw new ApplicationException("error in app");
             }
-
-            sms.Dispose();
         }
 
         /// <summary>

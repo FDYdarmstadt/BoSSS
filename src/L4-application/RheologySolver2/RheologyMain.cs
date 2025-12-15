@@ -319,6 +319,7 @@ namespace BoSSS.Application.Rheology {
                     m_Timestepper.DataRestoreAfterBalancing(L,
                         ArrayTools.Cat<DGField>(Velocity.Current, Pressure, StressXX, StressXY, StressYY),
                         ArrayTools.Cat<DGField>(ResidualMomentum, ResidualConti, ResidualStressXX, ResidualStressXY, ResidualStressYY),
+                        null,
                         null, this.MultigridSequence, XOP);
                     this.LsTrk = m_Timestepper.LsTrk;
 

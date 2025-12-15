@@ -30,7 +30,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
 
 
     /// <summary>
-    /// The line reference element, i.e. \f$ K^{\textrm{line}} = ( -1,1 ) \f$.
+    /// The line reference element, i.e. $K^{\textrm{line}} = ( -1,1 )$.
     /// </summary>
     public class Line : RefElement {
 

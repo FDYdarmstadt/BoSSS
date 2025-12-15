@@ -38,18 +38,18 @@ namespace BoSSS.Solution.NSECommon {
         Velocity_Inlet = 1,
 
         /// <summary>
-        /// \f[
-        ///     \left( \psi \myMatrix{I} - \frac{1}{\reynolds} \nabla \vec{u} \right) \cdot \vec{n}_{\partial \Omega} = 0
-        /// \f]
+        /// \[
+        ///     \left( \psi \boldsymbol{I} - \frac{1}{\textrm{Re}} \nabla \underline{u} \right) \cdot \underline{n}_{\partial \Omega} = 0
+        /// \]
         /// </summary>
         Pressure_Outlet = 2,
 
         /// <summary>
         /// Outflow with Neumann pressure boundary condition
         /// Within the SIMPLE algorithm this boundary condition implements
-        /// \f[
-        ///     \left( \psi \myMatrix{I} - \frac{1}{\reynolds} \nabla \vec{u} \right) \cdot \vec{n}_{\partial \Omega} = 0
-        /// \f]
+        /// \[
+        ///     \left( \psi \boldsymbol{I} - \frac{1}{\textrm{Re}} \nabla \underline{u} \right) \cdot \underline{n}_{\partial \Omega} = 0
+        /// \]
         /// </summary>
         SIMPLE_Outflow = 3,
 
@@ -68,9 +68,9 @@ namespace BoSSS.Solution.NSECommon {
 
         /// <summary>
         /// Wall with free slip condition:
-        /// \f[
-        /// \vec{u} \cdot \vec{n} = 0 \text{ and } \vec{t} \cdot (\operatorname{grad}u + (\operatorname{grad}u)^T ) \cdot \vec{n} = 0 
-        /// \f]
+        /// \[
+        /// \underline{u} \cdot \underline{n} = 0 \text{ and } \underline{t} \cdot (\operatorname{grad}u + (\operatorname{grad}u)^T ) \cdot \underline{n} = 0 
+        /// \]
         /// </summary>
         FreeSlip = 6,
 
@@ -81,11 +81,11 @@ namespace BoSSS.Solution.NSECommon {
 
         /// <summary>
         /// Generalized Navier Boundary condition with linear effective forces at wall and contact line
-        /// \f[
-        /// \vec{u} \cdot \vec{n}_S = 0 \text{ and } 
-        /// \boldsymbol{P}_S (\operatorname{grad}u + (\operatorname{grad}u)^T ) \vec{n}_S = -\beta_S \boldsymbol{P}_S \vec{u} \text{ on } \partial \Omega_{S}
-        /// \sigma \boldsymbol{P}_S \tau_L = -\beta_L (\vec{u} \cdot \vec{n}_L) + \sigma \cos(\Theta_e) \vec{n}_L \text{ on } L
-        /// \f]
+        /// \[
+        /// \underline{u} \cdot \underline{n}_S = 0 \text{ and } 
+        /// \boldsymbol{P}_S (\operatorname{grad}u + (\operatorname{grad}u)^T ) \underline{n}_S = -\beta_S \boldsymbol{P}_S \underline{u} \text{ on } \partial \Omega_{S}
+        /// \sigma \boldsymbol{P}_S \tau_L = -\beta_L (\underline{u} \cdot \underline{n}_L) + \sigma \cos(\Theta_e) \underline{n}_L \text{ on } L
+        /// \]
         /// </summary>
         NavierSlip_Linear = 8,
 
@@ -96,13 +96,13 @@ namespace BoSSS.Solution.NSECommon {
 
         /// <summary>
         /// outflow boundary condition according to Dong et. al.
-        /// \f[
-        ///     \left( - \psi \myMatrix{I} + \frac{1}{\reynolds} \nabla \vec{u} - \frac{1}{2} \abs{\vec{u}}^2 S_{out} (\vec{n} \cdot \vec{u}) \right) \cdot \vec{n}_{\partial \Omega} = 0
-        /// \f]
+        /// \[
+        ///     \left( - \psi \boldsymbol{I} + \frac{1}{\textrm{Re}} \nabla \underline{u} - \frac{1}{2} \left\lvert{\underline{u}}\right\rvert^2 S_{out} (\underline{n} \cdot \underline{u}) \right) \cdot \underline{n}_{\partial \Omega} = 0
+        /// \]
         /// where 
-        /// \f[
+        /// \[
         ///     S_{out}(-) = \frac{1}{2}(1 - tanh(\frac{(-)}{U_0 \delta}))
-        /// \f]
+        /// \]
         /// with U_0 is the characteristic velocity scale, and δ > 0 is a chosen non-dimensional positive constant that is sufficiently small
         /// </summary>
         Dong_OutFlow = 10

@@ -38,7 +38,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
     /// A helper class to analyze and visualize the convergence of an iterative solver algorithm.
     /// - writes tecplot files containing the residuals, error (if the solution is known), <see cref="TecplotOut"/>.
-    /// - records convergence trends for different grid and \f$ p \f$-levels.
+    /// - records convergence trends for different grid and $p$-levels.
     /// </summary>
     public class ConvergenceObserver {
 

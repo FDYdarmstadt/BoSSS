@@ -10,7 +10,6 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-    <!--CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet-->
     <UseVSHostingProcess>true</UseVSHostingProcess>
     <DocumentationFile>bin\Release\ilPSP.LinSolvers.PARDISO.XML</DocumentationFile>
 	<TreatWarningsAsErrors>true</TreatWarningsAsErrors>

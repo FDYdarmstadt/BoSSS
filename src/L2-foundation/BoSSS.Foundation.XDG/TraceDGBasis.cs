@@ -182,6 +182,13 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
+        public override int Length {
+            get {
+                return MaximalLength;
+            }
+        }
+
+
         /*
         /// <summary>
         /// evaluation of basis function within cells

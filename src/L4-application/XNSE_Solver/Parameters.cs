@@ -69,7 +69,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// <summary>
     /// Computation of the fluid interface velocity for material interfaces:
     /// Due to the discontinuous approximation at the interface, 
-    /// and the weak enforcement of the velocity jump condition `$ [[\vec{u}]] = 0 `$
+    /// and the weak enforcement of the velocity jump condition `$ [[\underline{u}]] = 0 `$
     /// the velocities of both phases do not match exactly in the discrete setting.
     /// (They are equal in the continuous setting, however.)
     /// 

@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -29,14 +28,7 @@ using MPI.Wrappers;
 using BoSSS.Foundation.Comm;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
-using BoSSS.Foundation.Quadrature.FluxQuadCommon;
-
-using static BoSSS.Foundation.DifferentialOperator;
-using BoSSS.Foundation.Quadrature.NonLin;
-using BoSSS.Foundation.Quadrature.Linear;
-using System.Transactions;
 using NUnit.Framework;
-using System.Reflection;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -130,11 +122,21 @@ namespace BoSSS.Foundation.XDG {
             }
 
 
+
             /// <summary>
             /// creates a matrix builder
             /// </summary>
-            protected override void ctorTraceDGBulkIntegrator(int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, bool[] RowSwitch, DGField[] Params, DGField[] DomFld) {
-                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner, RowSwitch, this.m_lsTrk, null, quadOrder, eqs, cqs, this.TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
+            protected override void ctorTraceDGBulkIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, bool[] RowSwitch, DGField[] Params, DGField[] DomFld) {
+
+                // Here so far, all the implementations of traceDg are based on single spc. (Theoretically, we don't need it)
+                // But in order to use XDG ready-to-use
+                // features, i need to specify the spc name. I cannot pass null to the spc name otherwise the following MatrixBuilder will cause problem.
+                // Maybe i need to refactor it one day....
+                // var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner, RowSwitch, this.m_lsTrk, null, quadOrder, eqs, cqs, this.TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
+                string spcName = m_lsTrk.GetSpeciesName(SpeciesId);
+
+                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner, RowSwitch, this.m_lsTrk, spcName, quadOrder, eqs, cqs, this.TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
+
 
                 TraceBulkMtxBuilder = tempOp.GetMatrixBuilder(DomainFrame.FrameMap, Params, CodomFrame.FrameMap);
                 TraceBulkMtxBuilder.MPITtransceive = false;
@@ -170,6 +172,7 @@ namespace BoSSS.Foundation.XDG {
             protected override DGField[] GetTrxFields() {
                 return base.Parameters.ToArray();
             }
+
 
             /// <summary>
             /// computation of operator matrix, currently only two species are supported
@@ -242,9 +245,9 @@ namespace BoSSS.Foundation.XDG {
                         SpeciesFrameVector<V>[] vec_spc_noTdg = new SpeciesFrameVector<V>[ReqSpecies.Length];
                         for(int i = 0; i < ReqSpecies.Length; i++) {
                             SpeciesId SpId = ReqSpecies[i];
-                            mtx_spc_incTgd[i] = new SpeciesFrameMatrix<M>(Matrix, this.SpeciesDomainFrame_WithTraceDg[SpId], this.SpeciesDomainFrame_WithTraceDg[SpId]);
+                            mtx_spc_incTgd[i] = new SpeciesFrameMatrix<M>(Matrix, this.SpeciesCodomFrame_WithTraceDg[SpId], this.SpeciesDomainFrame_WithTraceDg[SpId]);
                             vec_spc_incTdg[i] = (AffineOffset != null) ?
-                                                (new SpeciesFrameVector<V>(AffineOffset, this.SpeciesDomainFrame_WithTraceDg[SpId]))
+                                                (new SpeciesFrameVector<V>(AffineOffset, this.SpeciesCodomFrame_WithTraceDg[SpId]))
                                                 :
                                                 null;
                             mtx_spc_noTgd[i] = new SpeciesFrameMatrix<M>(Matrix, this.SpeciesCodomFrame_WithoutTraceDg[SpId], this.SpeciesDomainFrame_WithoutTraceDg[SpId]);
@@ -266,9 +269,9 @@ namespace BoSSS.Foundation.XDG {
                             var _mtx_noTdg = Matrix != null ? mtx_noTdg : default(SpeciesFrameMatrix<M>);
                             SpeciesFrameVector<V> vec_noTdg = vec_spc_noTdg[iSpecies];
 
-                            var SpeciesBuilders = new[] { (1, SpeciesBulkMtxBuilder, mtx_noTdg, vec_noTdg), 
-                                                          (2, SpeciesGhostEdgeBuilder, mtx_noTdg, vec_noTdg), 
-                                                          (3, SpeciesSurfElmBuilder, mtx_incTdg, vec_incTdg), 
+                            var SpeciesBuilders = new[] { (1, SpeciesBulkMtxBuilder, mtx_noTdg, vec_noTdg),
+                                                          (2, SpeciesGhostEdgeBuilder, mtx_noTdg, vec_noTdg),
+                                                          (3, SpeciesSurfElmBuilder, mtx_incTdg, vec_incTdg),
                                                           (4, SpeciesContactLineBuilder, mtx_incTdg, vec_incTdg) };
 
                             foreach(var t4 in SpeciesBuilders) {
@@ -276,28 +279,46 @@ namespace BoSSS.Foundation.XDG {
                                 var _mtx = t4.Item3;
                                 var vec = t4.Item4;
 
+                                if(onlyfordebugging_DoBulk == false && (t4.Item1 == 1 || t4.Item1 == 2)) {
+                                    Console.WriteLine("skipping bulk and ghost " + t4.Item1);
+                                    continue;
+                                }
+
+                                if(onlyfordebugging_DoContactline == false && t4.Item1 == 4) {
+                                    Console.WriteLine("skipping contact line " + t4.Item1);
+                                    continue;
+                                }
+                                if(onlyfordebugging_DoSurfaceelm == false && t4.Item1 == 3) {
+                                    Console.WriteLine("skipping surface element " + t4.Item1);
+                                    continue;
+                                }
 
                                 if(SpeciesBuilder.ContainsKey(SpeciesId)) {
                                     var builder = SpeciesBuilder[SpeciesId];
                                     BulkIntegrator(builder, SpeciesId, _mtx, vec);
                                 }
-
                             }
                         }
-
                     }
+
                     
-
                     if(base.AnyTraceDG_Codomn || base.AnyTraceDG_Domain) {
-                        using(new BlockTrace("bulk_integration_tracedg", tr)) {
-                            var mtx = new SpeciesFrameMatrix<M>(Matrix, this.TraceDgCodomFrame, this.TraceDgDomainFrame);
-                            var vec = (AffineOffset != null) ?
-                                      (new SpeciesFrameVector<V>(AffineOffset, this.TraceDgCodomFrame))
-                                      :
-                                      null;
+                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                        // integrate equation components in the normal operator, which are applied to trace DG
+                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                        if(onlyfordebugging_DoTraceDG) {
+                            using(new BlockTrace("bulk_integration_tracedg", tr)) {
+                                var mtx = new SpeciesFrameMatrix<M>(Matrix, this.TraceDgCodomFrame, this.TraceDgDomainFrame);
+                                var vec = (AffineOffset != null) ?
+                                          (new SpeciesFrameVector<V>(AffineOffset, this.TraceDgCodomFrame))
+                                          :
+                                          null;
 
-                            BulkIntegrator(TraceBulkMtxBuilder, default(SpeciesId), mtx, vec);
+                                BulkIntegrator(TraceBulkMtxBuilder, default(SpeciesId), mtx, vec);
 
+                            }
+                        } else {
+                            Console.WriteLine("skipping TraceDG");
                         }
                     }
 
@@ -388,20 +409,36 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
+        /// <summary>
+        /// Only for debugging; can be used to turn surface integration in spatial operators off.
+        /// </summary>
+        static bool onlyfordebugging_DoSurface = true;
 
         /// <summary>
-        /// Only for debugging;  can be used to turn surface integration in spatial operators off.
+        /// Only for debugging; can be used to turn bulk component integration in spatial operators off.
         /// </summary>
+        static bool onlyfordebugging_DoBulk = true;
 
-        static bool onlyfordebugging_DoSurface = true;
+        /// <summary>
+        /// Only for debugging; can be used to turn contact line contribution (<see cref="ContactLineOperator_Ls0"/>) in spatial operators off.
+        /// </summary>
+        static bool onlyfordebugging_DoContactline = true;
+
+        /// <summary>
+        /// Only for debugging; can be used to turn surface element contribution (<see cref="SurfaceElementOperator_Ls0"/>) in spatial operators off.
+        /// </summary>
+        static bool onlyfordebugging_DoSurfaceelm = true;
+
+        /// <summary>
+        /// Only for debugging; can be used to turn trace DG integration in spatial operators off.
+        /// </summary>
+        static bool onlyfordebugging_DoTraceDG = true;
+
 
         /// <summary>
         /// Explicit evaluation of (nonlinear and linear) XDG operators
         /// </summary>
         public class XEvaluatorNonlin : XEvaluatorBase, IEvaluatorNonLin {
-
-
-
             internal XEvaluatorNonlin(XDifferentialOperatorMk2 ownr,
                 LevelSetTracker lsTrk,
                 CoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
@@ -426,50 +463,6 @@ namespace BoSSS.Foundation.XDG {
                 private set;
             }
 
-            /*
-            static void Diagnosis(UnsetteledCoordinateMapping mapping, double[] resi, double[] resiB4, string suffix) {
-                var ResiFields = mapping.BasisS.Select(b => new XDGField(b as XDGBasis)).ToArray();
-                var ResiVector = new CoordinateVector(ResiFields);
-                var LsTrk = ResiFields[0].Basis.Tracker;
-                ResiVector.SetV(resi);
-                ResiVector.AccV(-1.0, resiB4);
-
-                int J = LsTrk.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
-                var cutBitMask = LsTrk.Regions.GetCutCellMask().GetBitMask();
-                int NoOfCutCells = LsTrk.Regions.GetCutCellMask().NoOfItemsLocally;
-
-                MultidimensionalArray Residuals = null;
-                int k = 0;
-                for(int j = 0; j < J; j++) {
-                    var resi0_j = ResiFields[0].Coordinates.GetRow(j);
-                    if(!cutBitMask[j]) {
-                        //if(resi0_j.L2Norm() > 1.0e-10)
-                        //    throw new Exception();
-                        continue;
-                    }
-                    if(j % 2 == 0)
-                        continue;
-
-                    if(Residuals == null) {
-                        Residuals = MultidimensionalArray.Create(NoOfCutCells / 2, resi0_j.Length);
-                    }
-
-                    Residuals.SetRow(k, resi0_j);
-                    k++;
-
-                    //Console.WriteLine($"j = {j} cut = {cutBitMask[j]}:" + resi0_j.L2Norm());
-                    //Console.WriteLine(resi0_j.ToConcatString("[", "; ", "]"));
-                }
-
-
-                Console.WriteLine("--------------------- " + suffix + " ------------  ");
-                Console.WriteLine("          " + Residuals.GetRow(1).L2Dist(Residuals.GetRow(2)) + "\t\t" + Residuals.GetRow(2).L2Dist(Residuals.GetRow(3)));
-
-
-
-
-                Residuals.SaveToTextFile("MomXcoord." + suffix + ".txt");
-            }*/
 
             public void Evaluate<Tout>(double alpha, double beta, Tout output, double[] outputBndEdge = null) where Tout : IList<double> {
                 if(base.MPITtransceive == true)
@@ -499,7 +492,7 @@ namespace BoSSS.Foundation.XDG {
                     // ---------------------
 
                     void BulkIntegrator(IEvaluatorNonLin eval, SpeciesId spId, SpeciesFrameVector<Tout> vec) {
-                        if(spId != default(SpeciesId))
+                        if(spId != default)
                             NotifySpecies((DifferentialOperator)(eval.Owner), this.m_lsTrk, spId);
 
                         if(trx != null) {
@@ -540,6 +533,22 @@ namespace BoSSS.Foundation.XDG {
                                 var SpeciesEval = t3.Item2;
                                 var vec = t3.Item3;
 
+                                if(onlyfordebugging_DoBulk == false && (t3.Item1 == 1 || t3.Item1 == 2)) {
+                                    Console.WriteLine("skipping bulk and ghost " + t3.Item1);
+                                    continue;
+                                }
+
+                                if(onlyfordebugging_DoContactline == false && t3.Item1 == 4) {
+                                    Console.WriteLine("skipping contact line " + t3.Item1);
+                                    continue;
+                                }
+                                if(onlyfordebugging_DoSurfaceelm == false && t3.Item1 == 3) {
+                                    Console.WriteLine("skipping surface element " + t3.Item1);
+                                    continue;
+                                }
+
+
+
                                 if(SpeciesEval.ContainsKey(SpeciesId)) {
                                     var eval = SpeciesEval[SpeciesId];
                                     BulkIntegrator(eval, SpeciesId, vec);
@@ -549,10 +558,15 @@ namespace BoSSS.Foundation.XDG {
                     }
 
                     if(base.AnyTraceDG_Codomn || base.AnyTraceDG_Domain) {
-                        using(new BlockTrace("bulk_integration_tracedg", tr)) {
-                            var vec = new SpeciesFrameVector<Tout>(output, this.TraceDgCodomFrame);
+                        if(onlyfordebugging_DoTraceDG) {
 
-                            BulkIntegrator(TraceBulkEval, default(SpeciesId), vec);
+                            using(new BlockTrace("bulk_integration_tracedg", tr)) {
+                                var vec = new SpeciesFrameVector<Tout>(output, this.TraceDgCodomFrame);
+
+                                BulkIntegrator(TraceBulkEval, default, vec);
+                            }
+                        } else {
+                            Console.WriteLine("skipping TraceDG");
                         }
                     }
 
@@ -622,6 +636,8 @@ namespace BoSSS.Foundation.XDG {
 #endif
                             }
 
+                        } else {
+                            Console.WriteLine("skipping level-set surface integration");
                         }
                     }
 
@@ -707,8 +723,15 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// creates an evaluator
             /// </summary>
-            protected override void ctorTraceDGBulkIntegrator(int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, bool[] RowSwitch, DGField[] Params, DGField[] DomFld) {
-                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner, RowSwitch, this.m_lsTrk, null, quadOrder, eqs, cqs, this.TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
+            protected override void ctorTraceDGBulkIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, bool[] RowSwitch, DGField[] Params, DGField[] DomFld) {
+                //Here so far, all the implementations of traceDg are based on single spc. (Theoretically we don't need it) But in order to use XDG ready-to-use
+                // features, i need to specify the spc name. I cannot pass null to the spc name otherwise the following MatrixBuilder will cause problem.
+                //Maybe i need to refactor it one day....
+                //var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner, RowSwitch, this.m_lsTrk, null, quadOrder, eqs, cqs, this.TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
+                string spcName = m_lsTrk.GetSpeciesName(SpeciesId);
+
+                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner, RowSwitch, this.m_lsTrk, spcName, quadOrder, eqs, cqs, this.TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
+                //var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner, RowSwitch, this.m_lsTrk, null, quadOrder, eqs, cqs, this.TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
 
                 TraceBulkEval = tempOp.GetEvaluatorEx(DomFld, Params, CodomFrame.FrameMap);
                 TraceBulkEval.MPITtransceive = false;
@@ -764,7 +787,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// Write quadrature rules to text file, for debugging
             /// </summary>
-            static private bool onlyfordebugging_RuleDiagnosis = false;
+            static bool onlyfordebugging_RuleDiagnosis = false;
 
             /// <summary>
             /// ctor
@@ -813,7 +836,7 @@ namespace BoSSS.Foundation.XDG {
                         throw new ArgumentException("grid data mismatch");
                     m_lsTrk = lsTrk;
                     m_Xowner = ownr;
-                    ReqSpecies = ownr.Species.Select(spcNmn => lsTrk.GetSpeciesId(spcNmn)).ToArray();
+                    ReqSpecies = ownr.Species.Select(lsTrk.GetSpeciesId).ToArray();
 
                     this.UsedQuadOrder = quadOrder;
                     this.TrackerHistoryIndex = __TrackerHistoryIndex;
@@ -828,6 +851,7 @@ namespace BoSSS.Foundation.XDG {
                     {
                         foreach(var SpeciesId in ReqSpecies) {
                             int iSpecies = Array.IndexOf(ReqSpecies, SpeciesId);
+                            string speciesName = lsTrk.GetSpeciesName(SpeciesId);
 
                             // parameters for species
                             // ----------------------
@@ -852,7 +876,7 @@ namespace BoSSS.Foundation.XDG {
 
                             var CodomFrame_WithTraceDg = new FrameBase(TrackerRegions, SpeciesId, CodomainMapping, false, FrameBase_TraceDGhandling.DG_XDG_and_TraceDG);
                             var DomainFrame_WithTraceDg = new FrameBase(TrackerRegions, SpeciesId, DomainMapping, true, FrameBase_TraceDGhandling.DG_XDG_and_TraceDG);
-                            SpeciesCodomFrame_WithTraceDg .Add(SpeciesId, CodomFrame_WithTraceDg);
+                            SpeciesCodomFrame_WithTraceDg.Add(SpeciesId, CodomFrame_WithTraceDg);
                             SpeciesDomainFrame_WithTraceDg.Add(SpeciesId, DomainFrame_WithTraceDg);
 
                             // quadrature rules
@@ -867,7 +891,7 @@ namespace BoSSS.Foundation.XDG {
                                     var edgeRule = edgeScheme.Compile(this.GridData, quadOrder);
                                     var volRule = cellScheme.Compile(this.GridData, quadOrder);
 
-                                    string suffix = $"{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}of{this.GridData.MpiSize}";
+                                    string suffix = $"{speciesName}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}of{this.GridData.MpiSize}";
                                     edgeRule.SaveToTextFileEdge(GridData, $"Edge-{suffix}.csv");
                                     edgeRule.ToVtpFilesEdge(GridData, $"Edge-{suffix}");
                                     edgeRule.SumOfWeightsToTextFileEdge(this.GridData, $"WgtSumEdge-{suffix}.csv");
@@ -893,52 +917,58 @@ namespace BoSSS.Foundation.XDG {
                                     Params_4Species, DomFld_4Species);
                             }
 
-                            //Only for ls0 so far:
-                            //Add species, if it is separated from another species by level set 0
-                            //For species not separated by ls0, nothing happens
+                            // Only for ls0 so far:
+                            // Add species, if it is separated from another species by level set 0
+                            // For species not separated by ls0, nothing happens
                             var levelSetSpecies = lsTrk.GetSpeciesSeparatedByLevSet(0);
-                            if(levelSetSpecies.Contains(lsTrk.GetSpeciesName(SpeciesId))) {
-                                if(m_Xowner.SurfaceElementOperator_Ls0.TotalNoOfComponents > 0) {
-                                    EdgeQuadratureScheme SurfaceElement_Edge = m_Xowner.SurfaceElement_EdgeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
-                                    CellQuadratureScheme SurfaceElement_volume = m_Xowner.SurfaceElement_VolumeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
-                                    if(onlyfordebugging_RuleDiagnosis) {
+                            if(levelSetSpecies.Contains(speciesName)) {
+                                if(m_Xowner.NoOfFilteredComponents(m_Xowner.SurfaceElementOperator_Ls0, speciesName) > 0) {
+                                    foreach(var speciesB in levelSetSpecies) {
+                                        var speciesBId = lsTrk.GetSpeciesId(speciesB);
+                                        if(SpeciesId == speciesBId)
+                                            continue;
 
-                                        //if(GridData.MpiRank == 1)
-                                        //    Debugger.Launch();
-                                        var coEdgRule = SurfaceElement_Edge.Compile(GridData, quadOrder);
-                                        var coVolRole = SurfaceElement_volume.Compile(GridData, quadOrder);
+                                        EdgeQuadratureScheme SurfaceElement_Edge = m_Xowner.SurfaceElement_EdgeQuadraturSchemeProvider(lsTrk, SpeciesId, speciesBId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
+                                        CellQuadratureScheme SurfaceElement_volume = m_Xowner.SurfaceElement_VolumeQuadraturSchemeProvider(lsTrk, SpeciesId, speciesBId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
+                                        if(onlyfordebugging_RuleDiagnosis) {
 
-                                        string suffix = $"{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}of{this.GridData.MpiSize}";
-                                        coVolRole.SaveToTextFileCell(GridData, $"surfaceElementOperator_volume_{suffix}.csv");
-                                        coEdgRule.SaveToTextFileEdge(GridData, $"surfaceElementOperator_edge_{suffix}.csv");
+                                            //if(GridData.MpiRank == 1)
+                                            //    Debugger.Launch();
+                                            var coEdgRule = SurfaceElement_Edge.Compile(GridData, quadOrder);
+                                            var coVolRole = SurfaceElement_volume.Compile(GridData, quadOrder);
 
-                                        coVolRole.ToVtpFilesCell(GridData, $"surfaceElementOperator_volume_{suffix}");
-                                        coEdgRule.ToVtpFilesEdge(GridData, $"surfaceElementOperator_edge_{suffix}");
+                                            string suffix = $"{speciesName}{speciesB}-ls{0}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}of{this.GridData.MpiSize}";
+                                            coVolRole.SaveToTextFileCell(GridData, $"surfaceElementOperator_volume_{suffix}.csv");
+                                            coEdgRule.SaveToTextFileEdge(GridData, $"surfaceElementOperator_edge_{suffix}.csv");
 
-                                        SurfaceElement_volume.Compile(GridData, 0).SumOfWeightsToTextFileVolume(GridData, $"wgtSumSurfaceElementOperator_volume_{suffix}.csv");
+                                            coVolRole.ToVtpFilesCell(GridData, $"surfaceElementOperator_volume_{suffix}");
+                                            coEdgRule.ToVtpFilesEdge(GridData, $"surfaceElementOperator_edge_{suffix}");
+
+                                            SurfaceElement_volume.Compile(GridData, 0).SumOfWeightsToTextFileVolume(GridData, $"wgtSumSurfaceElementOperator_volume_{suffix}.csv");
+                                        }
+
+                                        ctorSurfaceElementSpeciesIntegrator(SpeciesId, quadOrder, SurfaceElement_volume, SurfaceElement_Edge, DomainFrame_WithTraceDg, CodomFrame_WithTraceDg,
+                                            CodomFrame_WithTraceDg.FrameMap.BasisS.Select(b => b.MaximalLength > 0).ToArray(),
+                                            Params_4Species, DomFld_4Species);
                                     }
-
-                                    ctorSurfaceElementSpeciesIntegrator(SpeciesId, quadOrder, SurfaceElement_volume, SurfaceElement_Edge, DomainFrame_WithTraceDg, CodomFrame_WithTraceDg,
-                                        CodomFrame_WithTraceDg.FrameMap.BasisS.Select(b => b.MaximalLength > 0).ToArray(),
-                                        Params_4Species, DomFld_4Species);
-                                }
-                                if(m_Xowner.ContactLineOperator_Ls0.TotalNoOfComponents > 0) {
-                                    EdgeQuadratureScheme ContactLine_Edge = new EdgeQuadratureScheme(false, EdgeMask.GetEmptyMask(GridData));
-                                    CellQuadratureScheme ContactLine_Volume = m_Xowner.ContactLine_VolumeQuadratureSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
-                                    if(onlyfordebugging_RuleDiagnosis) {
-                                        string suffix = $"{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}of{this.GridData.MpiSize}";
-
-                                        ContactLine_Volume.SaveToTextFileCell(GridData, quadOrder, $"contactLineOperator_{suffix}.csv");
-                                        ContactLine_Volume.Compile(GridData, quadOrder).ToVtpFilesCell(GridData, $"contactLineOperator_{suffix}");
-                                    }
-                                    ctorContactLineSpeciesIntegrator(SpeciesId, quadOrder, ContactLine_Volume, ContactLine_Edge, DomainFrame_WithTraceDg, CodomFrame_WithTraceDg,
-                                        CodomFrame_WithTraceDg.FrameMap.BasisS.Select(b => b.MaximalLength > 0).ToArray(),
-                                        Params_4Species, DomFld_4Species);
                                 }
                             }
+
+
+                            if(m_Xowner.NoOfFilteredComponents(m_Xowner.ContactLineOperator_Ls0, speciesName) > 0) {
+                                EdgeQuadratureScheme ContactLine_Edge = new EdgeQuadratureScheme(false, EdgeMask.GetEmptyMask(GridData));
+                                CellQuadratureScheme ContactLine_Volume = m_Xowner.ContactLine_VolumeQuadratureSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
+                                if(onlyfordebugging_RuleDiagnosis) {
+                                    string suffix = $"{speciesName}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}of{this.GridData.MpiSize}";
+
+                                    ContactLine_Volume.SaveToTextFileCell(GridData, quadOrder, $"contactLineOperator_{suffix}.csv");
+                                    ContactLine_Volume.Compile(GridData, quadOrder).ToVtpFilesCell(GridData, $"contactLineOperator_{suffix}");
+                                }
+                                ctorContactLineSpeciesIntegrator(SpeciesId, quadOrder, ContactLine_Volume, ContactLine_Edge, DomainFrame_WithTraceDg, CodomFrame_WithTraceDg,
+                                    CodomFrame_WithTraceDg.FrameMap.BasisS.Select(b => b.MaximalLength > 0).ToArray(),
+                                    Params_4Species, DomFld_4Species);
+                            }
                         }
-
-
                     }
 
 
@@ -950,10 +980,16 @@ namespace BoSSS.Foundation.XDG {
                         var sgrd = lsTrk.Regions.GetCutCellSubGrid();
                         var cellScheme = new CellQuadratureScheme(UseDefaultFactories: true, domain: sgrd.VolumeMask);
                         var edgeScheme = new EdgeQuadratureScheme(UseDefaultFactories: true, domain: sgrd.InnerEdgesMask);
+                        //foreach(var SpeciesId in ReqSpecies) {
+                        //    ctorTraceDGBulkIntegrator(SpeciesId, quadOrder, cellScheme, edgeScheme, TraceDgDomainFrame, TraceDgCodomFrame,
+                        //    TraceDgCodomFrame.FrameMap.BasisS.Select(b => b.MaximalLength > 0).ToArray(),
+                        //    Parameters?.ToArray(), DomainFields?.ToArray());
+                        //}
 
-                        ctorTraceDGBulkIntegrator(quadOrder, cellScheme, edgeScheme, TraceDgCodomFrame, TraceDgCodomFrame,
-                            TraceDgCodomFrame.FrameMap.BasisS.Select(b => b.MaximalLength > 0).ToArray(),
-                            Parameters?.ToArray(), DomainFields?.ToArray());
+                        ctorTraceDGBulkIntegrator(ReqSpecies[0], quadOrder, cellScheme, edgeScheme, TraceDgDomainFrame, TraceDgCodomFrame,
+                        TraceDgCodomFrame.FrameMap.BasisS.Select(b => b.MaximalLength > 0).ToArray(),
+                        Parameters?.ToArray(), DomainFields?.ToArray());
+
                     }
 
 
@@ -1074,7 +1110,8 @@ namespace BoSSS.Foundation.XDG {
                                             }
                                             ICompositeQuadRule<QuadRule> rule;
                                             using(new BlockTrace("QuadRule-compilation", tr)) {
-                                                CellQuadratureScheme SurfIntegration = SchemeHelper.GetLevelSetquadScheme(iLevSet, SpeciesA, IntegrationDom);
+                                                //CellQuadratureScheme SurfIntegration = SchemeHelper.GetLevelSetquadScheme(iLevSet, SpeciesA, IntegrationDom);
+                                                CellQuadratureScheme SurfIntegration = m_Xowner.CouplingQuadraturSchemeProvider(lsTrk, iLevSet, SpeciesA, SpeciesB, IntegrationDom, SchemeHelper, quadOrder, __TrackerHistoryIndex);
                                                 rule = SurfIntegration.Compile(GridData, quadOrder);
 
                                                 if(onlyfordebugging_RuleDiagnosis) {
@@ -1164,7 +1201,9 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// create integrator for bulk components (stabilization components) for Trace DG
             /// </summary>
-            abstract protected void ctorTraceDGBulkIntegrator(int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, bool[] RowSwitch, DGField[] Params, DGField[] DomFld);
+            //abstract protected void ctorTraceDGBulkIntegrator(int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, bool[] RowSwitch, DGField[] Params, DGField[] DomFld);
+            abstract protected void ctorTraceDGBulkIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, bool[] RowSwitch, DGField[] Params, DGField[] DomFld);
+
 
             /// <summary>
             /// Create integrator for <see cref="XDifferentialOperatorMk2.GhostEdgesOperator"/>
