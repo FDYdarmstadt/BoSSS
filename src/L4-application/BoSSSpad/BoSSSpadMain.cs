@@ -30,6 +30,8 @@ using System.Threading.Tasks;
 using static ilPSP.Connectors.Matlab.BatchmodeConnector;
 using System.Diagnostics.Metrics;
 using BoSSS.Solution;
+using BoSSS.Solution.Tecplot;
+using BoSSS.Solution.LevelSetTools.PhasefieldLevelSet;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -112,52 +114,27 @@ namespace BoSSS.Application.BoSSSpad {
         //[STAThread]
         public static int Main(string[] args) {
             int errCount = 0;
-            
+
 
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
-           /*
-            string path = @"\\fdygitrunner\ValidationTests\databases\bkup-2023Oct31_165410.LinslvPerfSer\sessions\dce38035-09a6-4f62-a82f-b7c089d27822\"; 
-            var json = File.ReadAllText(Path.Combine(path, "profiling_bin.0.txt"));
 
-            var p = OnlineProfiling.Deserialize(json);
-
-            Console.Write(p.ToString());
-            
-            //*/
-
-            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
-            
             // interpretation of command line options
             // ======================================
             Modes mode;
             {
                 bool parseModeSuccesfully = true;
-                //if (args.Length == 0) {
-                //    // assuming the user wants to run the worksheet mode
-                //    mode = Modes.Worksheet;
-                //    fileToOpen = null;
-                //} else if (args.Length == 1) {
-                //    if (args[0].StartsWith("--")) {
-                //        parseModeSuccesfully = Enum<Modes>.TryParse(args[0].Substring(2), out mode);
-                //        fileToOpen = null;
-                //    }
-                //    else {
-                //        mode = Modes.Worksheet;
-                //        fileToOpen = args[0];
-                //    }
-                //} else 
-                if (args.Length <= 0) {
+                if(args.Length <= 0) {
                     PrintUsage();
                     return int.MinValue;
                 } else {
-                    if (!args[0].StartsWith("--")) {
+                    if(!args[0].StartsWith("--")) {
                         PrintUsage();
                         return int.MinValue;
                     }
 
                     parseModeSuccesfully = Enum<Modes>.TryParse(args[0].Substring(2), out mode);
 
-                    if (!parseModeSuccesfully) {
+                    if(!parseModeSuccesfully) {
                         PrintUsage();
                         return int.MinValue;
                     }
@@ -173,10 +150,10 @@ namespace BoSSS.Application.BoSSSpad {
             bool IinitializedMPI = BoSSS.Solution.Application.InitMPI(args);
 
             try {
-                switch (mode) {
+                switch(mode) {
 
                     case Modes.Check:
-                    if (args.Length != 1) {
+                    if(args.Length != 1) {
                         PrintUsage();
                         return int.MinValue;
                     }
@@ -185,7 +162,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                     case Modes.OldFileUpgrade: {
                         string fileToOpen;
-                        if (args.Length != 2) {
+                        if(args.Length != 2) {
                             PrintUsage();
                             return int.MinValue;
                         }
@@ -198,7 +175,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                     case Modes.JupyterBatch: {
                         string fileToOpen;
-                        if (args.Length != 2) { 
+                        if(args.Length != 2) {
                             Console.Error.WriteLine($"Expecting exactly two arguments, but got {args.Length} (which are {args.ToConcatString("", ",", "")}");
                             PrintUsage();
                             return int.MinValue;
@@ -212,7 +189,7 @@ namespace BoSSS.Application.BoSSSpad {
                     case Modes.Batch:
                     case Modes.TexBatch: {
                         string fileToOpen;
-                        if (args.Length != 2) {
+                        if(args.Length != 2) {
                             PrintUsage();
                             return int.MinValue;
                         }
@@ -226,7 +203,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                     case Modes.Jupyterfile: {
                         string fileToOpen;
-                        if (args.Length != 2) {
+                        if(args.Length != 2) {
                             PrintUsage();
                             return int.MinValue;
                         }
@@ -242,14 +219,14 @@ namespace BoSSS.Application.BoSSSpad {
                     default:
                     throw new NotImplementedException();
                 }
-            } catch (Exception e) {
+            } catch(Exception e) {
                 Console.Error.WriteLine(e.GetType().Name + ": " + e.Message);
                 errCount = -666;
                 //throw new AggregateException(e);
             }
 
 
-            if (IinitializedMPI)
+            if(IinitializedMPI)
                 BoSSS.Solution.Application.FinalizeMPI();
 
             return errCount;
@@ -776,6 +753,7 @@ namespace BoSSS.Application.BoSSSpad {
             Console.WriteLine(typeof(XNSFE_Solver.XNSFE).FullName);
             Console.WriteLine(typeof(XNSERO_Solver.XNSERO).FullName);
             Console.WriteLine(typeof(ZwoLevelSetSolver.ZLS).FullName);
+            Console.WriteLine(typeof(HFSISolver.HFSI).FullName);
             Console.WriteLine(typeof(XNSEC.XNSEC).FullName);
             //Console.WriteLine(typeof(MultiphaseElectroHydroDynamic.MultiphaseElectroHydroDynamic).FullName);
         }

@@ -66,7 +66,7 @@ namespace BoSSS.Application.XRheology_Solver {
     /// <summary>
     /// Solver for Incompressible Multiphase flows
     /// </summary>
-    public class XRheology_SolverMain : BoSSS.Application.XNSE_Solver.XBase_Solver<XRheology_Control> {
+    public class XRheology_SolverMain : XBase_Solver<XRheology_Control> {
 
 
 
@@ -1718,7 +1718,7 @@ namespace BoSSS.Application.XRheology_Solver {
         }
 
 
-
+        /*
         // =========================
         // adaptive mesh refinement
         // ========================
@@ -1994,7 +1994,7 @@ namespace BoSSS.Application.XRheology_Solver {
 
             }
         }
-
+        */
 
         /// <summary>
         /// Step 1 of 2 for dynamic load balancing: creating a backup of this objects 
@@ -2003,11 +2003,6 @@ namespace BoSSS.Application.XRheology_Solver {
         public override void DataBackupBeforeBalancing(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             m_BDF_Timestepper.DataBackupBeforeBalancing(L);
         }
-
-
-
-
-        #endregion
 
 
         // =========
@@ -2087,8 +2082,8 @@ namespace BoSSS.Application.XRheology_Solver {
                 m_owner.PushLevelSetAndRelatedStuff();
             }
 
-            public double Update(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental) {
-                return m_owner.DelUpdateLevelSet(CurrentState, time, dt, UnderRelax, incremental);
+            public double Update(IList<string> variableNames, DGField[] CurrentVariableState, IList<string> parameterNames, DGField[] CurrentParameterState, double time, double dt, double UnderRelax, bool incremental) {
+                return m_owner.DelUpdateLevelSet(CurrentVariableState, time, dt, UnderRelax, incremental);
             }
         }
 
@@ -2249,17 +2244,22 @@ namespace BoSSS.Application.XRheology_Solver {
             // surface
             double surface = 0.0;
             //CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
-            var surfElemVol = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(spcId, 0);
-            CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
-                surfElemVol.Compile(LsTrk.GridDat, this.m_HMForder),
-                delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
-                    EvalResult.SetAll(1.0);
-                },
-                delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                    for (int i = 0; i < Length; i++)
-                        surface += ResultsOfIntegration[i, 0];
-                }
-            ).Execute();
+            foreach(var sp2 in LsTrk.SpeciesIdS) {
+                if(spcId == sp2)
+                    continue;
+                var surfElemVol = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(spcId, sp2, 0);
+             
+                CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
+                    surfElemVol.Compile(LsTrk.GridDat, this.m_HMForder),
+                    delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+                        EvalResult.SetAll(1.0);
+                    },
+                    delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+                        for(int i = 0; i < Length; i++)
+                            surface += ResultsOfIntegration[i, 0];
+                    }
+                ).Execute();
+            }
 
             return new double[] { volume, surface };
 
@@ -2273,7 +2273,9 @@ namespace BoSSS.Application.XRheology_Solver {
             if (this.LsTrk.GridDat.SpatialDimension == 3) {
 
                 var metrics = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder);
+                CL_length += metrics.CutCellMetrics.CutLineLengthEdge[this.LsTrk.GetSpeciesId("A")].Sum();
 
+                /*
                 XQuadSchemeHelper SchemeHelper = metrics.XQuadSchemeHelper;
                 EdgeQuadratureScheme SurfaceElement_Edge = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(this.LsTrk.GetSpeciesId("A"), 0);
 
@@ -2307,6 +2309,7 @@ namespace BoSSS.Application.XRheology_Solver {
                             CL_length += ResultsOfIntegration[i, 0];
                     }
                 ).Execute();
+                */
             }
 
             return CL_length;
@@ -2391,7 +2394,7 @@ namespace BoSSS.Application.XRheology_Solver {
             // circularity
             double diamtr_c = Math.Sqrt(4 * area / Math.PI);
             double perimtr_b = 0.0;
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 cqs.Compile(LsTrk.GridDat, order),
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {

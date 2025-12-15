@@ -43,7 +43,7 @@ namespace ilPSP {
         public int iThread;
 
         /// <summary>
-        /// actuial numbe of threads
+        /// actual number of threads
         /// </summary>
         public int NumThreads;
     }
@@ -264,7 +264,7 @@ namespace ilPSP {
 
             BLAS.ActivateOMP();
             LAPACK.ActivateOMP();
-            PinOMPthreads();
+            PinOMPthreadsSometimes();
         }
 
         /*
@@ -420,7 +420,7 @@ namespace ilPSP {
 
                     bool bTerminate = false;
 
-                    int[] LocalIters = new int[16];
+                    //int[] LocalIters = new int[16];
 
 
                     void balancingBody(int ithread) {
@@ -444,7 +444,7 @@ namespace ilPSP {
                                 } 
                             }
 
-                            LocalIters[ithread]++;
+                            //LocalIters[ithread]++;
                             body(ti, my_item);
                             if(!continue_on_loop)
                                 return;
@@ -530,7 +530,7 @@ namespace ilPSP {
 
         /// <summary>
         /// The signature of <see cref="body"/> is: `i, localData => localData`
-        /// **Note**: the balancing is performend by the TPL implementation;
+        /// **Note**: the balancing is performed by the TPL implementation;
         /// </summary>
         public static void ParallelFor<TLocal>(int fromInclusive, int toExclusive, Func<TLocal> localInit, Func<int, TLocal, TLocal> body, Action<TLocal> localFinally, bool enablePar = true) {
             if(InParallelSection == true || !enablePar || NumThreads <= 1) {
@@ -617,8 +617,7 @@ namespace ilPSP {
         public static void InitThreading(bool LookAtEnvVar, int? NumThreadsOverride) {
             using(var tr = new FuncTrace()) {
                 tr.InfoToConsole = true;
-                StdoutOnlyOnRank0 = false;
-                //tr.StdoutOnAllRanks();
+                tr.StdoutOnAllRanks();
 
 
                 tr.Info($"MPI Rank {MPIEnv.MPI_Rank}: Value for OMP_PLACES: {System.Environment.GetEnvironmentVariable("OMP_PLACES")}");
@@ -744,6 +743,8 @@ namespace ilPSP {
 
                     DedicatedCPUsForThisRank = ReservedCPUsOnSMP.ToArray().GetSubVector(i0, iE - i0);
 
+
+
                     /*if(ReservedCPUsOnSMP.Count() >= NumThreads * MPIEnv.ProcessesOnMySMP) {
                         // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                         // Sufficient CPUs to give each MPI rank `NumThreads` CPUs
@@ -785,9 +786,23 @@ namespace ilPSP {
                 } else {
                     DedicatedCPUsForThisRank = ReservedCPUs.ToArray();
                     // just hope for the best
-                    MKLservice.Dynamic = true;
+                    MKLservice.Dynamic = false;
                     MKLservice.SetNumThreads(NumThreads);
+                    //DisableOpenMP_becauseIsSlow = true;
                     tr.Warning("Reserved CPUs for all ranks are neither equal nor disjoint; some CPUs are owned by multiple ranks, some are exclusive; Pinning will be disabled.");
+
+/*
+                    int l = ReservedCPUs.Count();
+                    int r = MPIEnv.ProcessRankOnSMP;
+                    int s = MPIEnv.ProcessesOnMySMP;
+
+                    int i0 = (l * r) / s, iE = (l * (r + 1)) / s;
+
+                    DedicatedCPUsForThisRank = ReservedCPUs.ToArray().GetSubVector(i0, iE - i0);
+                    allequal = false;
+                    disjoint = true;
+*/
+
                 }
                 if(NumThreads > DedicatedCPUsForThisRank.Count()) {
                     NumThreads = Math.Max(1, DedicatedCPUsForThisRank.Count());
@@ -804,6 +819,11 @@ namespace ilPSP {
 
                 PerformOMPthreadPinning = MPIEnv.MPI_Size > 1 && (allequal != disjoint);
                 PerformTPLthreadPinning = MPIEnv.MPI_Size > 1 && (allequal != disjoint);
+
+                if(DedicatedCPUsForThisRank == null || DedicatedCPUsForThisRank.Length < NumThreads) {
+                    PerformOMPthreadPinning = false;
+                    PerformTPLthreadPinning = false;
+                }
 
                 /*
                                 if(NumThreads*2 < DedicatedCPUsForThisRank.Length) {
@@ -863,7 +883,7 @@ namespace ilPSP {
             if(PerformTPLthreadPinning) {
                 int L = DedicatedCPUsForThisRank.Length;
                 if(ilPSP.Environment.NumThreads > L)
-                    throw new ApplicationException("Configuration error: more threads than CPUs available");
+                    throw new ApplicationException($"Configuration error: more threads requested ({ilPSP.Environment.NumThreads}) than CPUs available ({L})");
                 int skip = L - NumThreads;
                 int iCpu = DedicatedCPUsForThisRank[skip + ithread]; // use the left-over CPUs **at the beginning** for spare; I assume that background threads rather grab those, resp. mpiexec is forcing them to do so.
                 CPUAffinity.SetCurrentThreadAffinity(iCpu);
@@ -883,6 +903,8 @@ namespace ilPSP {
             if(PerformOMPthreadPinning) {
                 var cpus = DedicatedCPUsForThisRank.GetSubVector(DedicatedCPUsForThisRank.Length - NumThreads, NumThreads); // use the left-over CPUs **at the beginning** for spare; I assume that background threads rather grab those.
                 MKLservice.BindOMPthreads_1To1(cpus);
+            } else {
+                MKLservice.SetNumThreads(NumThreads);
             }
 
             /*{

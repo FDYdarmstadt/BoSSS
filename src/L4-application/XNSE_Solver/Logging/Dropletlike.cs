@@ -2,6 +2,7 @@
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution;
 using BoSSS.Solution.XNSECommon;
+using MPI.Wrappers;
 using ilPSP;
 using System;
 using System.Collections.Generic;
@@ -35,11 +36,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// </summary>
         protected override string LogFileName => LogfileName;
 
-        private int InnerSpecies;
-        public Dropletlike(int InnerSpecies) {
-            this.InnerSpecies = InnerSpecies;
+        private string InnerSpecies;
+        private string OuterSpecies;
+        public Dropletlike(string __InnerSpecies, string __OuterSpecies) {
+            this.InnerSpecies = __InnerSpecies;
+            this.OuterSpecies = __OuterSpecies;
         }
-        public Dropletlike() : this(0) {
+
+
+        public Dropletlike() : this("A", "B") {
         }
 
         /// <summary>
@@ -64,14 +69,21 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 Xcoord[i] = interP[i, 0];
                 Ycoord[i] = interP[i, 1];
             }
-            double semiAxisX = Xcoord.Max() - Xcoord.Min();
-            double semiAxisY = Ycoord.Max() - Ycoord.Min();
+            double semiAxisX = Xcoord.Max().MPIMax() - Xcoord.Min().MPIMin();
+            double semiAxisY = Ycoord.Max().MPIMax() - Ycoord.Min().MPIMin();
 
             double[] sphereProps = this.ComputeSphericalPorperties();
+            sphereProps = sphereProps.MPISum();
 
-            string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}", TimestepNo, phystime, semiAxisX, semiAxisY, sphereProps[0], sphereProps[1]);
-            Log.WriteLine(line);
-            Log.Flush();
+            AppendToLog(TimestepNo);
+            AppendToLog(phystime);
+            AppendToLog(semiAxisX);
+            AppendToLog(semiAxisY);
+            AppendToLog(sphereProps[0]);
+            AppendToLog(sphereProps[1]);
+            //string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}", TimestepNo, phystime, semiAxisX, semiAxisY, sphereProps[0], sphereProps[1]);
+            //Log.WriteLine(line);
+            //Log.Flush();
 
             return;
         }
@@ -84,7 +96,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             // area/volume
             double volume = 0.0;
-            SpeciesId spcId = LsTrk.SpeciesIdS[InnerSpecies];
+            SpeciesId spcId = LsTrk.GetSpeciesId(InnerSpecies);
+            SpeciesId spcIdB = LsTrk.GetSpeciesId(OuterSpecies);
+
             var vqs = SchemeHelper.GetVolumeQuadScheme(spcId);
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 vqs.Compile(LsTrk.GridDat, this.m_HMForder),
@@ -100,7 +114,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // surface
             double surface = 0.0;
             //CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
-            var surfElemVol = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(spcId, 0);
+            var surfElemVol = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(spcId, spcIdB, 0);
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 surfElemVol.Compile(LsTrk.GridDat, this.m_HMForder),
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {

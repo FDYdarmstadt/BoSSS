@@ -71,11 +71,11 @@ namespace CNS.Source {
 
         /// <summary>
         /// Applies a source term given by
-        /// \f[ w \cdot s^2 \cdot (c - c_\text{ref})\f], where \f[ w \f] is a
+        /// \[w \cdot s^2 \cdot (c - c_\text{ref})\], where \[ w \] is a
         /// user-defined damping strength (see <see cref="dampingStrength"/>),
-        /// \f[ s \f] is the local coordinate within the damping zone (0 at the
-        /// start, 1 at the end), \f[ c \f] is the field variable to damped and
-        /// \f[ c_\text{ref} \f] is the corresponding reference state.
+        /// \[s\] is the local coordinate within the damping zone (0 at the
+        /// start, 1 at the end), \[c\] is the field variable to damped and
+        /// \[ c_\text{ref} \] is the corresponding reference state.
         /// </summary>
         /// <param name="time"></param>
         /// <param name="x"></param>

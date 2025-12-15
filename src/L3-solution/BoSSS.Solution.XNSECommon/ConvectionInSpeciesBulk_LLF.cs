@@ -98,6 +98,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
                 bool CellOut = SubGrdMask[inp.jCellOut];
                 Debug.Assert(CellIn || CellOut, "at least one cell must be in the subgrid!");
 
+                if (!(CellIn && CellOut))
+                    throw new ArgumentException("current subgrid handling should not occur");
+
                 if (CellOut == true && CellIn == false) {
                     // IN-cell is outside of subgrid: extrapolate from OUT-cell!
                     Uin[0] = Uout[0];
@@ -213,6 +216,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
                 bool CellIn = SubGrdMask[inp.jCellIn];
                 bool CellOut = SubGrdMask[inp.jCellOut];
                 Debug.Assert(CellIn || CellOut, "at least one cell must be in the subgrid!");
+
+                if (!(CellIn && CellOut))
+                    throw new ArgumentException("current subgrid handling should not occur");
 
                 if (CellOut == true && CellIn == false) {
                     // IN-cell is outside of subgrid: extrapolate from OUT-cell!

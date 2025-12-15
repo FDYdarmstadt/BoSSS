@@ -282,7 +282,7 @@ namespace BoSSS.Application.XRheology_Solver {
 
             C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             C.AdvancedDiscretizationOptions.Penalty2 = 1;
             C.AdvancedDiscretizationOptions.Penalty1[0] = 0;
             C.AdvancedDiscretizationOptions.Penalty1[1] = 0;

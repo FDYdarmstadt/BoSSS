@@ -546,7 +546,7 @@ namespace BoSSS.Application.CahnHilliard {
         }
 
         /// <summary>
-        /// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
+        /// Block scaling of the mass matrix: for each species $ \mathfrak{s} $, a vector $ (\rho_\mathfrak{s}, \ldots, \rho_{\mathfrak{s}}, 0 ) $.
         /// </summary>
         protected IDictionary<SpeciesId, IEnumerable<double>> MassScale {
             get {
@@ -579,80 +579,6 @@ namespace BoSSS.Application.CahnHilliard {
                 return R;
             }
         }
-
-
-        /// <summary>
-        /// control of mesh adaptation
-        /// </summary>
-        protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
-            if(this.Control.AdaptiveMeshRefinement && TimestepNo > 1) {
-
-
-                long oldJ = this.GridData.CellPartitioning.TotalLength;
-
-                //double LocNormPow2 = this.ResiualKP1.CoordinateVector.L2NormPow2(); // norm of residual on this processor
-                //double TotNormPow2 = LocNormPow2.MPISum(); //                          norm of residual over all processors
-                //double MeanNormPow2PerCell = TotNormPow2 / oldJ; //                    mean norm per cell
-
-
-                int MyLevelIndicator(int j, int CurrentLevel) {
-                    /*
-                    double CellNorm = this.ResiualKP1.Coordinates.GetRow(j).L2NormPow2();
-
-
-                    if (j == 0)
-                        CurrentLevel = CurrentLevel + 1;
-
-                    if (CellNorm > MeanNormPow2PerCell * 1.1)
-                        return CurrentLevel + 1;
-                    else
-                        return CurrentLevel;
-                    */
-
-                    return 0;
-                }
-
-
-                GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData, null);
-                bool AnyChange = gridRefinementController.ComputeGridChange(MyLevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
-                int NoOfCellsToRefine = 0;
-                int NoOfCellsToCoarsen = 0;
-                if(AnyChange) {
-                    int[] glb = (new int[] {
-                        CellsToRefineList.Count,
-                        Coarsening.Sum(L => L.Length),
-                        //0, 0
-                    }).MPISum();
-
-                    NoOfCellsToRefine = glb[0];
-                    NoOfCellsToCoarsen = glb[1];
-                }
-                //*/
-
-
-                // Update Grid
-                // ===========
-
-                if(AnyChange) {
-
-
-                    Console.WriteLine("       Refining " + NoOfCellsToRefine + " of " + oldJ + " cells");
-                    Console.WriteLine("       Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
-
-                    newGrid = ((GridData)(this.GridData)).Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
-
-                } else {
-
-                    newGrid = null;
-                    old2NewGrid = null;
-                }
-            } else {
-
-                newGrid = null;
-                old2NewGrid = null;
-            }
-        }
-
 
         /// <summary>
         /// Single run of the solver
@@ -925,7 +851,7 @@ namespace BoSSS.Application.CahnHilliard {
             // surface
             double surface = 0.0;
             //CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
-            var surfElemVol = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(spcId, 0);
+            var surfElemVol = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(spcId, RealTracker.SpeciesIdS[0], 0);
             CellQuadrature.GetQuadrature(new int[] { 1 }, RealTracker.GridDat,
                 surfElemVol.Compile(RealTracker.GridDat, this.m_HMForder),
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {

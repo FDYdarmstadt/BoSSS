@@ -44,7 +44,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         /// <param name="alpha"></param>
         /// <param name="f">
-        /// A function $ (\vector{x}, U, \texttt{jcell}) \mapsto f $
+        /// A function $(\underline{x}, U, \texttt{jcell}) \mapsto f$
         /// </param>
         /// <param name="speciesToEvaluateIDs"></param>
         /// <param name="U"></param>

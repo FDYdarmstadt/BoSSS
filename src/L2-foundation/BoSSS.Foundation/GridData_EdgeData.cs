@@ -179,35 +179,36 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// </summary>
             /// <remarks>
             /// Let be 
-            /// \f[ 
+            /// \[
             ///   \mathbb{R}^{D-1} 
-            ///     \ni \vec{\xi} 
-            ///       \mapsto
-            ///         \gamma(\vec{\xi}) \in
-            ///           \mathbb{R}^{D-1}
-            /// \f]
+            ///   \ni 
+            ///      \underline{\xi} \mapsto \gamma(\underline{\xi}) 
+            ///   \in 
+            ///   \mathbb{R}^{ D - 1}
+            /// \]
+            /// 
             /// the mapping from the edge coordinate system to the physical coordinate system.
-            /// Then the integral of \f$  f \f$  over the edge 
-            /// \f$ \gamma(K_\textrm{ref}) \f$ 
+            /// Then the integral of $f$  over the edge 
+            /// $\gamma(K_\textrm{ref})$ 
             /// is given as 
-            /// \f[ 
-            ///   \int_{\vec{x} \in \gamma(K_\textrm{ref})} f(\vec{x}) \ \textrm{dS}
+            /// \[ 
+            ///   \int_{\underline{x} \in \gamma(K_\textrm{ref})} f(\underline{x}) \ \textrm{dS}
             ///   =
-            ///   \int_{\xi \in K_\textrm{ref}} f(\gamma(\xi)) g(\vec{\xi}) \ \textrm{d} \vec{\xi}
-            /// \f]
+            ///   \int_{\xi \in K_\textrm{ref}} f(\gamma(\xi)) g(\underline{\xi}) \ \textrm{d} \underline{\xi}
+            /// \]
             /// with the square-root of the Gram determinant
-            /// \f[ 
-            ///   g(\vec{xi}) = \sqrt{ 
+            /// \[ 
+            ///   g(\underline{xi}) = \sqrt{ 
             ///      \textrm{det} ( (\partial \gamma)^T \cdot (\partial \gamma) )  
             ///   }.
-            /// \f]
+            /// \]
             /// If the transformation 
-            /// \f$ \gamma \f$
+            /// $\gamma$
             /// of the edge to the global coordinate system 
             /// is affine-linear, the Jacobian 
-            /// \f$ \partial \gamma \f$
+            /// $\partial \gamma$
             /// is constant and 
-            /// \f$ g \f$
+            /// $g$
             /// can be precomputed.
             /// (see Analysis 2, Königsberger, Springer-Verlag 2000, pp. 343)
             /// </remarks>
@@ -1057,9 +1058,9 @@ namespace BoSSS.Foundation.Grid.Classic {
 
             /// <summary>
             /// Square-root of the Gramian determinat for each transformation in <see cref="Edge2CellTrafos"/>, i.e.
-            /// if \f$ \myMatrix{M} \f$ 
+            /// if $\boldsymbol{M}$ 
             /// is the matrix of the transformation, this number is 
-            /// \f$ \sqrt{ \operatorname{det} ( \myMatrix{M}^T \cdot \myMatrix{M} ) } \f$.
+            /// $\sqrt{ \operatorname{det} ( \boldsymbol{M}^T \cdot \boldsymbol{M} ) }$.
             /// </summary>
             public MultidimensionalArray Edge2CellTrafos_SqrtGramian {
                 get {
@@ -1649,8 +1650,15 @@ namespace BoSSS.Foundation.Grid.Classic {
                                     throw new NotSupportedException("Boundary conditions must be specified either by edge tags or by boundary-condition elements. Both options simultaneously is not supported.");
                                 }
 
-                                if (_Q.Count() > 1)
+                                if(_Q.Count() > 1) {
+                                    //Console.Error.WriteLine("Found more than one EdgeTag for a boundary condition, for some face.");
+
+                                    if(_Q.Any(cft => cft.EdgeTag >= GridCommons.FIRST_PERIODIC_BC_TAG)) {
+                                        throw new NotSupportedException("Found more than one EdgeTag for a boundary condition, for some face - maybe some hanging nodes on periodic boundary, which is not allowed.");
+                                    }
+                                    
                                     throw new NotSupportedException("Found more than one EdgeTag for a boundary condition, for some face.");
+                                }
 
                                 if (_Q.Count() > 0) {
                                     EdgeTag = _Q.First().EdgeTag;
@@ -2094,7 +2102,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     int NoOfPeriodicElim;
                     int[][] EdgeSendLists;
                     int[][] EdgeInsertLists;
-                    Tuple<int, int>[] LocalId;
+                    (int elim_src, int elim_targ)[] LocalId;
                     NegotiateOwnership(csMPI.Raw._COMM.WORLD, EdgeIndicesOnOtherProcessors,
                         out EdgePermuation, out NoOfPureLocal, out NoOfShOwned, out NoOfShForeign, out NoOfPeriodicElim, out NoOfExternal,
                         out EdgeSendLists, out EdgeInsertLists,

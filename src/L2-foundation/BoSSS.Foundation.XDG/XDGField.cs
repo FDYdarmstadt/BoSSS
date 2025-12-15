@@ -313,15 +313,15 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Evaluates
-        /// \f$ 
+        /// $ 
         /// f_A(x_i) - f_B(x_i)
-        /// \f$ 
+        /// $ 
         /// in all nodes with spatial coordinates
-        /// \f$ x_i\f$  defined in
+        /// $x_i$  defined in
         /// <paramref name="NodeSet"/> in all cells in the range
         /// [<paramref name="j0"/>; <paramref name="j0"/> + <paramref name="Len"/>]
-        /// where \f$ f_A(x)\f$  and
-        /// \f$ f_B(x)\f$  are the values of the
+        /// where $f_A(x)$  and
+        /// $f_B(x)$  are the values of the
         /// polynomial defined by the coefficients stored for the species
         /// identified by <paramref name="SpeciesIdA"/> and
         /// <paramref name="SpeciesIdB"/>, respectively. The result will then
@@ -412,12 +412,69 @@ namespace BoSSS.Foundation.XDG {
                 DGField.EvaluateInternal,
                 ref m_Evaluate_SpeciesEvalBuffer,
                 __M => new int[] { 1, __M },
-                delegate (MultidimensionalArray R, int offset, int m, int SpcInd, MultidimensionalArray[] SR) {
+                delegate (MultidimensionalArray R, int offset, int m, LevelSetSignCode levset_bytecode,
+                    ReducedRegionCode reducedRegionCode, MultidimensionalArray[] SR) {
+                    int SpcInd = this.Basis.Tracker.GetSpeciesIndex(reducedRegionCode, levset_bytecode);
                     double r = R[offset, m] * _ResultPreScale;
                     r += SR[SpcInd][0, m];
                     R[offset, m] = r;
                 });
         }
+
+        /// <summary>
+        /// Evaluates the cut-cell DG - field;
+        /// </summary>
+        /// <param name="species">Restrict evaluation to these species </param>
+        /// <param name="_j0">local index of the first cell to evaluate</param>
+        /// <param name="_Len">Number of cells to evaluate</param>
+        /// <param name="_NodeSet">
+        /// as usual, the node set;
+        /// </param>
+        /// <param name="_result">
+        /// on exit, result of the evaluations are accumulated there;
+        /// the original content is scaled by <paramref name="_ResultPreScale"/>;<br/>
+        /// 1st index: cell index minus <paramref name="_j0"/>;<br/>
+        /// 2nd index: node index;
+        /// </param>
+        /// <param name="_ResultCellindexOffset">
+        /// an offset for the first index of <paramref name="_result"/>;
+        /// </param>
+        /// <param name="_ResultPreScale">
+        /// see <paramref name="_result"/>
+        /// </param>
+        public void Evaluate(string[] species, int _j0, int _Len, NodeSet _NodeSet, MultidimensionalArray _result, 
+            int _ResultCellindexOffset, double _ResultPreScale) {
+            int _M = _NodeSet.NoOfNodes; // number of nodes per cell
+
+            if (_result.Dimension != 2)
+                throw new ArgumentOutOfRangeException("result", "dimension of result array must be 2");
+            if (_result.GetLength(1) != _M)
+                throw new ArgumentOutOfRangeException();
+
+            MultidimensionalArray[] m_Evaluate_SpeciesEvalBuffer = new MultidimensionalArray[0];
+
+            IEnumerable<int> levelSets = this.Basis.Tracker.GetLevelSetsSeparatingSpecies(species);
+
+            GenericEval(_j0, _Len, _NodeSet, _result, _ResultCellindexOffset, _ResultPreScale,
+            DGField.EvaluateInternal,
+            ref m_Evaluate_SpeciesEvalBuffer,
+            __M => new int[] { 1, __M },
+            delegate (MultidimensionalArray R, int offset, int m, LevelSetSignCode levset_bytecode,
+                ReducedRegionCode reducedRegionCode, MultidimensionalArray[] SR) {
+                    //Set unused regions to far
+                    for(int iLevSet = 0; iLevSet < this.Basis.Tracker.NoOfLevelSets; ++ iLevSet) {
+                        if (!levelSets.Contains(iLevSet)) {
+                            reducedRegionCode = ReducedRegionCode.Set2Far(iLevSet, levset_bytecode.GetSign(iLevSet), reducedRegionCode);
+                        }
+                    }
+                    int SpcInd = this.Basis.Tracker.GetSpeciesIndex(reducedRegionCode, levset_bytecode);
+                    double r = R[offset, m] * _ResultPreScale;
+                    r += SR[SpcInd][0, m];
+                    R[offset, m] = r;
+                });
+        }
+
+
 
         /// <summary>
         /// <see cref="DGField.EvaluateEdge(int, int, NodeSet, MultidimensionalArray, MultidimensionalArray, MultidimensionalArray, MultidimensionalArray, MultidimensionalArray, MultidimensionalArray, int, double)"/>
@@ -465,9 +522,12 @@ namespace BoSSS.Foundation.XDG {
                 DGField.EvaluateGradientInternal,
                 ref m_EvaluateGradient_SpeciesEvalBuffer,
                 _M => new int[] { 1, _M, D },
-                delegate (MultidimensionalArray R, int offset, int m, int SpcInd, MultidimensionalArray[] SR) {
-                    for (int d = 0; d < D; d++) {
-                        double r = R[offset, m, d] * ResultPreScale;
+                delegate (MultidimensionalArray R, int offset, int m, LevelSetSignCode levset_bytecode,
+                    ReducedRegionCode reducedRegionCode, MultidimensionalArray[] SR) {
+                        int SpcInd = this.Basis.Tracker.GetSpeciesIndex(reducedRegionCode, levset_bytecode);
+                        for (int d = 0; d < D; d++) {
+                            
+                            double r = R[offset, m, d] * ResultPreScale;
                         r += SR[SpcInd][0, m, d];
                         R[offset, m, d] = r;
                     }
@@ -950,7 +1010,7 @@ namespace BoSSS.Foundation.XDG {
         /// accumulates the derivative of DG field <paramref name="f"/> 
         /// (along the <paramref name="d"/>-th axis) times <paramref name="alpha"/>
         /// to this field, i.e. <br/>
-        /// this = this + <paramref name="alpha"/>* \f$ \frac{\partial}{\partial x_d}\f$ <paramref name="f"/>;
+        /// this = this + <paramref name="alpha"/>* $\frac{\partial}{\partial x_d}$ <paramref name="f"/>;
         /// </summary>
         /// <param name="f"></param>
         /// <param name="d">
@@ -1196,7 +1256,18 @@ namespace BoSSS.Foundation.XDG {
         /// todo
         /// </summary>
         public override void ProjectPow(double alpha, DGField f, double pow, CellMask em) {
-            throw new NotImplementedException("todo");
+            if (em == null) {
+                em = CellMask.GetFullMask(this.Basis.GridDat);
+            }
+
+            foreach (var spcId in this.Basis.Tracker.SpeciesIdS) {
+                DGField this_spcId = this.GetSpeciesShadowField(spcId);
+                DGField f_spcId = (f as XDGField)?.GetSpeciesShadowField(spcId) ?? f;
+
+                var mask_spcID = this.Basis.Tracker.Regions.GetSpeciesMask(spcId);
+
+                this_spcId.ProjectPow(alpha, f_spcId, pow, mask_spcID.Intersect(em));
+            }
         }
 
 
@@ -1212,12 +1283,14 @@ namespace BoSSS.Foundation.XDG {
         /// </param>
         /// </summary>
         public SinglePhaseField ProjectToSinglePhaseField(int BasisDegreeMultiplicator = 2, CellMask cellMask = null) {
-            var QRs = GridDat.iGeomCells.RefElements.Select(Kref => Kref.GetQuadratureRule(this.Basis.Degree * BasisDegreeMultiplicator));
+            int order = this.Basis.Degree * BasisDegreeMultiplicator;
+            var QRs = GridDat.iGeomCells.RefElements.Select(Kref => Kref.GetQuadratureRule(order));
             SinglePhaseField FieldReturn = new SinglePhaseField(this.Basis.NonX_Basis, this.Identification);
             CellQuadratureScheme CQS = new CellQuadratureScheme(false, cellMask).AddFixedRuleS(QRs);
             FieldReturn.ProjectField(1.0,
                 this.Evaluate,
-                CQS);
+                CQS,
+                order);
             return FieldReturn;
         }
 
@@ -1247,21 +1320,21 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Canonical L2 Norm in the XDG space, i.e.
-        /// ```math
+        /// \[
         ///   \left( \int_{\Omega \cap \mathfrak{ s} \cap \text{ CM} }
-        ///        u(\vec{ x})
+        ///        u(\underline{ x})
         ///   \text{dV} \right)^{1/2},
-        /// ```
+        /// \]
         /// where 
-        /// $`\mathfrak{s}`$ denotes the domain of species <paramref name="spc"/> and
-        /// $`\text{ CM} }`$ denotes the optional cell mask <paramref name="cm"/>. 
+        /// $\mathfrak{s}$ denotes the domain of species <paramref name="spc"/> and
+        /// $\text{CM}$ denotes the optional cell mask <paramref name="cm"/>. 
         /// </summary>
         /// <remarks>
         /// The foundation for computing the L2-norm in cut cells is the following relation:
         /// For any arbitrary (i.e. non-orthonormal) DG or XDG basis,
         /// the norm of a Field 
-        /// $`u = sum_{j} \phi_{j} \tilde{u}_{j}`$ is given as:
-        /// ```math
+        /// $u = sum_{j} \phi_{j} \tilde{u}_{j}$ is given as:
+        /// \[
         ///         \left\| u \right\|_{L^2}^2 =
         ///         (u, u) = 
         ///     \int_\Omega 
@@ -1271,8 +1344,8 @@ namespace BoSSS.Foundation.XDG {
         ///     \sum_{j l} \tilde{u}_{j} \tilde{u}_{l} ( \phi_{j}, \phi_{l} )
         ///     =
         ///       \tilde{u}^T M \tilde{u},
-        /// ```
-        /// where $`M `$ denotes the mass matrix ($` M_{j l} = ( \phi_ { j}, \phi_ { l} )  `$).
+        /// \]
+        /// where $M$ denotes the mass matrix ($M_{j l} = ( \phi_ { j}, \phi_ { l} )$).
         /// </remarks>
         public double L2NormSpecies(SpeciesId spc, CellMask cm = null) {
             int deg = this.Basis.Degree;
@@ -1404,166 +1477,166 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         /// <param name="levelSetStatus"></param>
         public void OnNext(LevelSetTracker.LevelSetRegions levelSetStatus) {
-            int J = this.GridDat.iLogicalCells.Count;
-            LevelSetTracker trk = m_CCBasis.Tracker;
+                int J = this.GridDat.iLogicalCells.Count;
+                LevelSetTracker trk = m_CCBasis.Tracker;
 
-            int oldTrackerVersion = m_TrackerVersion;
-            m_TrackerVersion = trk.VersionCnt;
+                int oldTrackerVersion = m_TrackerVersion;
+                m_TrackerVersion = trk.VersionCnt;
 
-            m_Coordinates.BeginResize(m_CCBasis.MaximalLength);
+                m_Coordinates.BeginResize(m_CCBasis.MaximalLength);
 
-            if (m_UpdateBehaviour == BehaveUnder_LevSetMoovement.PreserveMemory || m_UpdateBehaviour == BehaveUnder_LevSetMoovement.AutoExtrapolate) {
-                if (trk.HistoryLength < 1)
-                    throw new NotSupportedException("LevelSettracker must have a history length >= 1 in order to support 'PreserveMemory' or 'AutoExtrapolate'.");
-            }
-
-            // rearrange DG coordinates if regions have changed
-            // ================================================
-            if ((m_UpdateBehaviour == BehaveUnder_LevSetMoovement.PreserveMemory || m_UpdateBehaviour == BehaveUnder_LevSetMoovement.AutoExtrapolate)
-                && (m_TrackerVersion - oldTrackerVersion) > 0 && levelSetStatus.m_LevSetRegions_b4Update != null) {
-
-                if((m_TrackerVersion - oldTrackerVersion) > 1) {
-                    string message = $"The update behavior '{BehaveUnder_LevSetMoovement.PreserveMemory}' and '{BehaveUnder_LevSetMoovement.AutoExtrapolate}' do not work if every tracker update is paired with a 'PushStacks()' call (DGfield '" + (this.Identification ?? "no name set") + "').";
-                    //Console.WriteLine(message);
-                    throw new NotSupportedException(message);
+                if (m_UpdateBehaviour == BehaveUnder_LevSetMoovement.PreserveMemory || m_UpdateBehaviour == BehaveUnder_LevSetMoovement.AutoExtrapolate) {
+                    if (trk.HistoryLength < 1)
+                        throw new NotSupportedException("LevelSettracker must have a history length >= 1 in order to support 'PreserveMemory' or 'AutoExtrapolate'.");
                 }
 
-                // rearrange DG coordinates, preserve State of each species 
-                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                // rearrange DG coordinates if regions have changed
+                // ================================================
+                if ((m_UpdateBehaviour == BehaveUnder_LevSetMoovement.PreserveMemory || m_UpdateBehaviour == BehaveUnder_LevSetMoovement.AutoExtrapolate)
+                    && (m_TrackerVersion - oldTrackerVersion) > 0 && levelSetStatus.m_LevSetRegions_b4Update != null) {
 
-                double[] coordsFull = new double[m_CCBasis.MaximalLength];
-                ushort[] OldRegionCode = levelSetStatus.m_LevSetRegions_b4Update;
-                ushort[] NewRegionCode = levelSetStatus.RegionsCode;
-                Debug.Assert(!object.ReferenceEquals(OldRegionCode, NewRegionCode));
-
-                int Nsep = m_CCBasis.DOFperSpeciesPerCell;
-                int i0CmnFull = trk.TotalNoOfSpecies * Nsep;
-                //int[] i0SepFull = new int[trk.TotalNoOfSpecies];
-                //for( int iSepc = 0; iSepc < i0SepFull.Length; iSepc++) i0SepFull[iSepc] = iSepc*Nsep;
-
-                for (int j = 0; j < J; j++) {
-
-                    ushort oldCd = OldRegionCode[j];
-                    ushort newCd = NewRegionCode[j];
-                                       
-                    if (oldCd != newCd  // quick pre-test
-                         && ReducedRegionCode.Extract(oldCd) != ReducedRegionCode.Extract(newCd)) {
-                        // something changed
-
-                        Array.Clear(coordsFull, 0, coordsFull.Length);
-
-                        // save coordinates
-                        // ----------------
-                        {
-                            ReducedRegionCode OldInd;
-                            int OldNo = trk.GetNoOfSpeciesByRegionCode(oldCd, out OldInd);
-
-                            // separate coordinates
-                            for (int iSpec = 0; iSpec < OldNo; iSpec++) {
-                                SpeciesId SpecId = trk.GetSpeciesIdFromIndex(OldInd, iSpec);
-                                int iSpecGlob = SpecId.cntnt - LevelSetTracker.___SpeciesIDOffest;
-                                int i0SepOld = iSpec * Nsep;
-                                int i0SepFull = iSpecGlob * Nsep;
-
-                                for (int _n = 0; _n < Nsep; _n++)
-                                    coordsFull[_n + i0SepFull] = m_Coordinates[j, _n + i0SepOld];
-                            }
-                        }
-
-                        // resize array
-                        // ------------
-                        m_Coordinates.Resize(j, m_CCBasis.GetLength(j));
-
-                        // write back coordinates in new order
-                        // -----------------------------------
-                        {
-                            ReducedRegionCode NewInd;
-                            int NewNo = trk.GetNoOfSpeciesByRegionCode(newCd, out NewInd);
-
-                            // separate coordinates
-                            for (int iSpec = 0; iSpec < NewNo; iSpec++) {
-                                SpeciesId SpecId = trk.GetSpeciesIdFromIndex(NewInd, iSpec);
-                                int iSpecGlob = SpecId.cntnt - LevelSetTracker.___SpeciesIDOffest;
-                                int i0SepNew = iSpec * Nsep;
-                                int i0SepFull = iSpecGlob * Nsep;
-
-                                for (int _n = 0; _n < Nsep; _n++)
-                                    m_Coordinates[j, _n + i0SepNew] = coordsFull[_n + i0SepFull];
-                            }
-                        }
-                    } else {
-                        m_Coordinates.Resize(j, m_CCBasis.GetLength(j)); // need to call resize in every case
+                    if((m_TrackerVersion - oldTrackerVersion) > 1) {
+                        string message = $"The update behavior '{BehaveUnder_LevSetMoovement.PreserveMemory}' and '{BehaveUnder_LevSetMoovement.AutoExtrapolate}' do not work if every tracker update is paired with a 'PushStacks()' call (DGfield '" + (this.Identification ?? "no name set") + "').";
+                        //Console.WriteLine(message);
+                        throw new NotSupportedException(message);
                     }
-                }
-            } else {
-                // just allocate/free memory
-                // +++++++++++++++++++++++++
 
-                for (int j = 0; j < J; j++) {
-                    int l = m_CCBasis.GetLength(j);
-                    m_Coordinates.Resize(j, l);
-                }
+                    // rearrange DG coordinates, preserve State of each species 
+                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-            }
+                    double[] coordsFull = new double[m_CCBasis.MaximalLength];
+                    ushort[] OldRegionCode = levelSetStatus.m_LevSetRegions_b4Update;
+                    ushort[] NewRegionCode = levelSetStatus.RegionsCode;
+                    Debug.Assert(!object.ReferenceEquals(OldRegionCode, NewRegionCode));
 
-            m_Coordinates.FinishResize();
+                    int Nsep = m_CCBasis.DOFperSpeciesPerCell;
+                    int i0CmnFull = trk.TotalNoOfSpecies * Nsep;
+                    //int[] i0SepFull = new int[trk.TotalNoOfSpecies];
+                    //for( int iSepc = 0; iSepc < i0SepFull.Length; iSepc++) i0SepFull[iSepc] = iSepc*Nsep;
 
-            if (m_UpdateBehaviour == BehaveUnder_LevSetMoovement.JustReallocate)
-                // the DOF in the near band will be crap anyway...
-                m_Coordinates.Clear();
+                    for (int j = 0; j < J; j++) {
 
-            //m_TrackerVersionCnt = levelSetStatus.Version;
+                        ushort oldCd = OldRegionCode[j];
+                        ushort newCd = NewRegionCode[j];
 
-            // update MPI buffer size
-            // ======================
-            int size = this.GridDat.CellPartitioning.MpiSize;
-            if (size > 1) {
-                if (m_MPIRecvBufSize == null)
-                    m_MPIRecvBufSize = new int[size];
-                if (m_MPISendBufSize == null)
-                    m_MPISendBufSize = new int[size];
+                        if (oldCd != newCd  // quick pre-test
+                             && ReducedRegionCode.Extract(oldCd) != ReducedRegionCode.Extract(newCd)) {
+                            // something changed
 
-                for (int p = 0; p < size; p++) {
-                    // send list
-                    {
-                        int[] senditems = this.GridDat.iParallel.SendCommLists[p];
-                        if (senditems != null) {
-                            int L = senditems.Length;
+                            Array.Clear(coordsFull, 0, coordsFull.Length);
 
-                            int sz = 0;
-                            for (int l = 0; l < L; l++)
-                                sz += m_CCBasis.GetLength(senditems[l]);
-                            m_MPISendBufSize[p] = sz;
+                            // save coordinates
+                            // ----------------
+                            {
+                                ReducedRegionCode OldInd;
+                                int OldNo = trk.GetNoOfSpeciesByRegionCode(oldCd, out OldInd);
+
+                                // separate coordinates
+                                for (int iSpec = 0; iSpec < OldNo; iSpec++) {
+                                    SpeciesId SpecId = trk.GetSpeciesIdFromIndex(OldInd, iSpec);
+                                    int iSpecGlob = SpecId.cntnt - LevelSetTracker.___SpeciesIDOffest;
+                                    int i0SepOld = iSpec * Nsep;
+                                    int i0SepFull = iSpecGlob * Nsep;
+
+                                    for (int _n = 0; _n < Nsep; _n++)
+                                        coordsFull[_n + i0SepFull] = m_Coordinates[j, _n + i0SepOld];
+                                }
+                            }
+
+                            // resize array
+                            // ------------
+                            m_Coordinates.Resize(j, m_CCBasis.GetLength(j));
+
+                            // write back coordinates in new order
+                            // -----------------------------------
+                            {
+                                ReducedRegionCode NewInd;
+                                int NewNo = trk.GetNoOfSpeciesByRegionCode(newCd, out NewInd);
+
+                                // separate coordinates
+                                for (int iSpec = 0; iSpec < NewNo; iSpec++) {
+                                    SpeciesId SpecId = trk.GetSpeciesIdFromIndex(NewInd, iSpec);
+                                    int iSpecGlob = SpecId.cntnt - LevelSetTracker.___SpeciesIDOffest;
+                                    int i0SepNew = iSpec * Nsep;
+                                    int i0SepFull = iSpecGlob * Nsep;
+
+                                    for (int _n = 0; _n < Nsep; _n++)
+                                        m_Coordinates[j, _n + i0SepNew] = coordsFull[_n + i0SepFull];
+                                }
+                            }
                         } else {
-                            m_MPISendBufSize[p] = int.MinValue;
+                            m_Coordinates.Resize(j, m_CCBasis.GetLength(j)); // need to call resize in every case
                         }
                     }
+                } else {
+                    // just allocate/free memory
+                    // +++++++++++++++++++++++++
 
-                    // receive list
-                    {
-                        int L = this.GridDat.iParallel.RcvCommListsNoOfItems[p];
-                        if (L > 0) {
-                            int j0 = this.GridDat.iParallel.RcvCommListsInsertIndex[p];
-                            L += j0;
-                            int sz = 0;
-                            for (int j = j0; j < L; j++) {
-                                sz += m_CCBasis.GetLength(j);
+                    for (int j = 0; j < J; j++) {
+                        int l = m_CCBasis.GetLength(j);
+                        m_Coordinates.Resize(j, l);
+                    }
+
+                }
+
+                m_Coordinates.FinishResize();
+
+                if (m_UpdateBehaviour == BehaveUnder_LevSetMoovement.JustReallocate)
+                    // the DOF in the near band will be crap anyway...
+                    m_Coordinates.Clear();
+
+                //m_TrackerVersionCnt = levelSetStatus.Version;
+
+                    // update MPI buffer size
+                    // ======================
+                    int size = this.GridDat.CellPartitioning.MpiSize;
+                    if (size > 1) {
+                        if (m_MPIRecvBufSize == null)
+                            m_MPIRecvBufSize = new int[size];
+                        if (m_MPISendBufSize == null)
+                            m_MPISendBufSize = new int[size];
+
+                        for (int p = 0; p < size; p++) {
+                            // send list
+                            {
+                                int[] senditems = this.GridDat.iParallel.SendCommLists[p];
+                                if (senditems != null) {
+                                    int L = senditems.Length;
+
+                                    int sz = 0;
+                                    for (int l = 0; l < L; l++)
+                                        sz += m_CCBasis.GetLength(senditems[l]);
+                                    m_MPISendBufSize[p] = sz;
+                                } else {
+                                    m_MPISendBufSize[p] = int.MinValue;
+                                }
                             }
-                            m_MPIRecvBufSize[p] = sz;
-                        } else {
-                            m_MPIRecvBufSize[p] = int.MinValue;
+
+                            // receive list
+                            {
+                                int L = this.GridDat.iParallel.RcvCommListsNoOfItems[p];
+                                if (L > 0) {
+                                    int j0 = this.GridDat.iParallel.RcvCommListsInsertIndex[p];
+                                    L += j0;
+                                    int sz = 0;
+                                    for (int j = j0; j < L; j++) {
+                                        sz += m_CCBasis.GetLength(j);
+                                    }
+                                    m_MPIRecvBufSize[p] = sz;
+                                } else {
+                                    m_MPIRecvBufSize[p] = int.MinValue;
+                                }
+                            }
                         }
+                    }
+
+                // do Extrapolation, if necessary
+                if (m_UpdateBehaviour == BehaveUnder_LevSetMoovement.AutoExtrapolate && trk.PopulatedHistoryLength >= 1) {
+                    foreach (var species in m_CCBasis.Tracker.SpeciesIdS) {
+                        AutoExtrapolateSpecies(species, trk.RegionsHistory[0].GetSpeciesSubGrid(species));
                     }
                 }
             }
-
-            // do Extrapolation, if necessary
-            if (m_UpdateBehaviour == BehaveUnder_LevSetMoovement.AutoExtrapolate && trk.PopulatedHistoryLength >= 1) {
-                foreach (var species in m_CCBasis.Tracker.SpeciesIdS) {
-                    AutoExtrapolateSpecies(species, trk.RegionsHistory[0].GetSpeciesSubGrid(species));
-                }
-            }
-        }
 
         #endregion
     }

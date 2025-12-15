@@ -423,16 +423,9 @@ namespace BoSSS.Foundation.XDG {
                 if (CellVolumes.GetLength(0) != Jtot)
                     throw new ArgumentException();
 
-
-
-
                 // determine agglomeration source cells
                 // ================================
-                //var _AccEdgesMask = new BitArray(NoOfEdges);
                 var AgglomCellsBitmask = new BitArray(Jup);
-                //var _AgglomCellsEdges = new BitArray(NoOfEdges);
-                //var _AllowedEdges =  new BitArray(NoOfEdges); _AllowedEdges.SetAll(true); // AllowedEdges.GetBitMask();
-
 
                 // mask for the cells in which we -- potentially -- want to do agglomeration
                 var AggCandidates = Tracker.Regions.GetSpeciesMask(spId).GetBitMaskWithExternal().CloneAs();
@@ -478,14 +471,6 @@ namespace BoSSS.Foundation.XDG {
                 if (NoTimeLev > 0) {
                     // for the previous timestep
                     // - - - - - - - - - - - - - 
-
-                    //ushort[][] PrevRegions = new ushort[NoTimeLev][];
-                    //CellMask suspectsForAgg = Tracker.PreviousRegions.GetSpeciesMask(spId);
-                    //CellMask[] suspectsForAgg = new CellMask[NoTimeLev];
-                    //for(int itl = 0; itl < NoTimeLev; itl++) {
-                    //    PrevRegions[itl] = Tracker.RegionsHistory[-itl].LevelSetRegionsCode;
-                    //    suspectsForAgg[itl] = Tracker.RegionsHistory[-itl].GetSpeciesMask(spId);
-                    //}
 
                     LevelSetSignCode[] signCodes = Tracker.GetLevelSetSignCodes(spId);
                     int NoOfLevSets = Tracker.LevelSets.Count;
@@ -541,7 +526,7 @@ namespace BoSSS.Foundation.XDG {
                                         AgglomCellsList.Add(jNewbornCell);
                                         AgglomCellsBitmask[jNewbornCell] = true;
 
-                                        Console.WriteLine("Must agglom NEWBORN cell " + jNewbornCell + "#" + Tracker.GetSpeciesName(spId) + " on RANK-" + myMpiRank);
+                                        //Console.WriteLine("Must agglom NEWBORN cell " + jNewbornCell + "#" + Tracker.GetSpeciesName(spId) + " on RANK-" + myMpiRank);
 
                                     }
                                 }
@@ -575,7 +560,7 @@ namespace BoSSS.Foundation.XDG {
                                         VanishingCellsList.Add(jVanishingCell);
                                         AgglomCellsBitmask[jVanishingCell] = true;
 
-                                        Console.WriteLine("Must agglom DEAD cell " + jVanishingCell + "#" + Tracker.GetSpeciesName(spId) + " on RANK-" + myMpiRank);
+                                        //Console.WriteLine("Must agglom DEAD cell " + jVanishingCell + "#" + Tracker.GetSpeciesName(spId) + " on RANK-" + myMpiRank);
 
                                     }
                                 }
@@ -1238,7 +1223,7 @@ namespace BoSSS.Foundation.XDG {
                     // cell 'jCell' should be agglomerated to some other cell
                     Debug.Assert(AgglomCellsBitmask[jCell] == true);
 
-                    double frac_neigh_max = -1.0;
+                    double frac_neigh_max = 0.0;//-1.0;
                     int e_max = -1;
                     int jEdge_max = int.MinValue;
                     int jCellNeigh_max = int.MinValue;

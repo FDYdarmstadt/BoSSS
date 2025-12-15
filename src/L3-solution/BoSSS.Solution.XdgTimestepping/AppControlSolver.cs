@@ -100,14 +100,6 @@ namespace BoSSS.Solution.Control {
 
 
         /// <summary>
-        /// List of active AMR level indicators;
-        /// One can use e.g., <see cref="AMRLevelIndicatorLibrary.AMRonBoundary"/>, <see cref="AMRLevelIndicatorLibrary.AMRInBoundingBox"/>, <see cref="AMRLevelIndicatorLibrary.AMReveryWhere"/>;
-        /// </summary>
-        [DataMember]
-        public List<AMRLevelIndicator> activeAMRlevelIndicators = new List<AMRLevelIndicator>();
-
-
-        /// <summary>
         /// 
         /// </summary>
         public override bool Equals(object obj) {

@@ -199,13 +199,13 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
             MultidimensionalArray hessian = lsData.GetLevelSetReferenceHessian(nodeOnPsi, cell, 1);
             hessian = hessian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1 });
 
-            MultidimensionalArray jacobian = grid.InverseJacobian.GetValue_Cell(nodeOnPsi, cell, 1);
-            jacobian = jacobian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1 });
+            //MultidimensionalArray jacobian = grid.InverseJacobian.GetValue_Cell(nodeOnPsi, cell, 1);
+            //jacobian = jacobian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1 });
 
             hessian.ApplyAll(x => Math.Abs(x));
 
             //abs(Hessian) * diameters = delta 
-            MultidimensionalArray delta = hessian * jacobian * diameters;
+            MultidimensionalArray delta = hessian * diameters;
             delta = delta.ExtractSubArrayShallow(new int[] { -1, 0 });
 
             //Check if suitable
@@ -253,15 +253,15 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
 
         private MultidimensionalArray ReferenceGradient(NodeSet Node, int Cell)
         {
-            MultidimensionalArray gradient = lsData.GetLevelSetGradients(Node, Cell, 1);
+            MultidimensionalArray gradient = lsData.GetLevelSetReferenceGradients(Node, Cell, 1);
             gradient = gradient.ExtractSubArrayShallow(new int[] { 0, 0, -1 }).CloneAs();
 
-            MultidimensionalArray jacobian = grid.Jacobian.GetValue_Cell(Node, Cell, 1);
-            jacobian = jacobian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1 });
-            jacobian.TransposeInPlace();
+            //MultidimensionalArray jacobian = grid.Jacobian.GetValue_Cell(Node, Cell, 1);
+            //jacobian = jacobian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1 });
+            //jacobian.TransposeInPlace();
 
-            double[] tmp_grad = gradient.Storage;
-            jacobian.MatVecMulInplace(1, tmp_grad, false);
+            //double[] tmp_grad = gradient.Storage;
+            //jacobian.MatVecMulInplace(1, tmp_grad, false);
 
             return gradient;
         }

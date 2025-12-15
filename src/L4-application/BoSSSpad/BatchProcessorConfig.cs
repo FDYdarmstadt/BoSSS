@@ -76,18 +76,23 @@ namespace BoSSS.Application.BoSSSpad {
 
             try {
                 if(!File.Exists(DefaultQueuesProjectOverridePath)) {
-                    string[] lines = new string[]{
-                    "## This file contains the default batch queue for specific BoSSS projects. ",
-                    "## Precisely, this is an override for the global `DefaultQueueIndex` set in file `BatchProcessorConfig.json`.",
-                    "## ",
-                    "## The format for each line is",
-                    "## ```",
-                    "## Project-name : queue-name",
-                    "## ```",
-                    "## where `Project-name` is set in e Jupyter Notebook using `wmg.Init(\"LinslvPerf_ConstPoissonMpi1\")`",
-                    "## and `queue-name` correlates with `BatchProcessorClient.Name`;" +
-                    "## (Note: string comparisons are case-insensitive)"
-                };
+                    string[] lines = [
+                        "## This file contains the default batch queue for specific BoSSS projects. ",
+                        "## Precisely, this is an override for the global `DefaultQueueIndex` set in file `BatchProcessorConfig.json`.",
+                        "## ",
+                        "## The format for each line is",
+                        "## ```",
+                        "## Project-name : queue-name",
+                        "## ```",
+                        "## where `Project-name` is set in e Jupyter Notebook using `wmg.Init(\"LinslvPerf_ConstPoissonMpi1\")`",
+                        "## and `queue-name` correlates with `BatchProcessorClient.Name`;" +
+                        "## (Note: string comparisons are case-insensitive)"
+                        ];
+
+                    string dir = Path.GetDirectoryName(DefaultQueuesProjectOverridePath);
+                    if(!Directory.Exists(dir)) {
+                        Directory.CreateDirectory(dir);
+                    }
 
                     File.WriteAllLines(DefaultQueuesProjectOverridePath, lines);
                     return null;
@@ -123,6 +128,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="bpc"></param>
         static public void SaveConfiguration(BatchProcessorConfig bpc) {
             string p = ConfigFilePath;
+
+            string dir = Path.GetDirectoryName(p);
+            if(!Directory.Exists(dir)) {
+                Directory.CreateDirectory(dir);
+            }
+
             string text = bpc.Serialize();
             File.WriteAllText(p, text);
         }

@@ -317,20 +317,16 @@ namespace BoSSS.Application.XNSEC {
             // initial values and exact solution
             // =================================
 
-            C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
-            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionTemperature = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionMassFractions = new Dictionary<string, Func<double[], double, double>[]>();
             int D = 2;
 
             foreach (var spc in new[] { "A", "B" }) {
-                C.ExactSolutionPressure.Add(spc, GetPress(spc));
-                C.ExactSolutionVelocity.Add(spc, D.ForLoop(d => GetU(spc, d)));
+                C.AddExactSolution(VariableNames.Pressure, spc, GetPress(spc));
                 //C.ExactSolutionMassFractions.Add(spc, NoChemSpc.ForLoop(q => tst.GetMassFractions(spc, q)));
 
                 //C.ExactSolutionTemperature.Add(spc, tst.GetTemperature(spc));
                 for (int d = 0; d < D; d++) {
-                    C.InitialValues_Evaluators.Add(VariableNames.Velocity_d(d) + "#" + spc, GetU(spc, d).Convert_Xt2X(0.0));
+                    C.AddInitialValue(VariableNames.Velocity_d(d), spc, GetU(spc, d).Convert_Xt2X(0.0));
+                    C.AddExactSolution(VariableNames.Velocity_d(d), spc, GetU(spc, d));
                 }
 
                 C.InitialValues_Evaluators.Add(VariableNames.Pressure + "#" + spc, GetPress(spc).Convert_Xt2X(0.0));
@@ -340,7 +336,7 @@ namespace BoSSS.Application.XNSEC {
                 C.InitialValues_Evaluators.Add(VariableNames.MassFraction1 + "#" + spc, X => 0.5);
             }
 
-            C.Phi = GetPhi();
+            C.AddExactSolution("Phi", GetPhi());
             C.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCG, GetPhi());
 
             // boundary conditions

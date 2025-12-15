@@ -68,7 +68,7 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        XQuadSchemeHelper m_XQuadSchemeHelper;
+        readonly XQuadSchemeHelper m_XQuadSchemeHelper;
 
         /// <summary>
         /// Provides access to quadrature schemes on cut-cell domains.
@@ -80,7 +80,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
 
-        MassMatrixFactory m_MassMatrixFactory;
+        readonly MassMatrixFactory m_MassMatrixFactory;
         
         /// <summary>
         /// Ye olde provider of the best mass matrices in town. 
@@ -109,7 +109,7 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        LevelSetTracker.LevelSetRegions m_LevelSetRegions;
+        readonly LevelSetTracker.LevelSetRegions m_LevelSetRegions;
 
         /// <summary>
         /// Constant during object lifetime.

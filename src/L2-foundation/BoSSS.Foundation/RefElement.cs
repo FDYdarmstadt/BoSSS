@@ -14,16 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.Quadrature;
+using BoSSS.Platform;
+using BoSSS.Platform.LinAlg;
+using ilPSP;
+using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using BoSSS.Foundation.Quadrature;
-using BoSSS.Platform;
-using BoSSS.Platform.LinAlg;
-using ilPSP.Utils;
-using ilPSP;
-using BoSSS.Foundation.Grid.Classic;
+using System.Threading;
 
 namespace BoSSS.Foundation.Grid.RefElements {
 
@@ -108,9 +109,9 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// </summary>
         public NodeSet Center {
             get {
-                if(m_Center == null) {
-                    m_Center = new NodeSet(this, new double[Math.Max(1, this.SpatialDimension)], false);
-                }
+                LazyInitializer.EnsureInitialized(ref m_Center, delegate () {
+                    return new NodeSet(this, new double[Math.Max(1, this.SpatialDimension)], false);
+                });
                 return m_Center;
             }
         }
@@ -219,17 +220,15 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// Let D be the spatial dimension of the simplex, then the spatial
         /// dimension of the face is D-1; but, for the transformation, the face
         /// coordinate system is embedded into
-        /// \f$ \mathbb{R}^{D}\f$  and we additionally map
+        /// $\mathbb{R}^{D}$  and we additionally map
         /// the D-th standard basis vector to
-        /// \f$ \vec{c}_e + \vec{n}_e\f$  (center of edge
-        /// \f$ e\f$  plus normal), i.e.
-        /// \f$ 
-        /// \mathbb{R}^{D} \ni (0,\ldots,0,1) \mapsto \vec{c}_e + \vec{n}_e
-        /// \f$ .
+        /// $\underline{c}_e + \underline{n}_e$  (center of edge
+        /// $e$  plus normal), i.e.
+        /// $\mathbb{R}^{D} \ni (0,\ldots,0,1) \mapsto \underline{c}_e + \underline{n}_e$ .
         /// </remarks>
         public AffineTrafo GetEmbeddedFaceTrafo(int FaceIndex) {
-            if (m_EmbeddedFaceTransformation == null) {
-                m_EmbeddedFaceTransformation = new AffineTrafo[NoOfFaces];
+            LazyInitializer.EnsureInitialized(ref m_EmbeddedFaceTransformation, delegate () {
+                var _EmbeddedFaceTransformation = new AffineTrafo[NoOfFaces];
 
                 int[,] EdgIdx = FaceToVertexIndices;
                 var vtx_Cod = this.Vertices;
@@ -266,10 +265,10 @@ namespace BoSSS.Foundation.Grid.RefElements {
 
 
                     // compute trafo:
-                    m_EmbeddedFaceTransformation[i] = AffineTrafo.FromPoints(Dom, Cod);
+                    _EmbeddedFaceTransformation[i] = AffineTrafo.FromPoints(Dom, Cod);
                 }
-
-            }
+                return _EmbeddedFaceTransformation;
+            });
             return m_EmbeddedFaceTransformation[FaceIndex];
         }
 
@@ -286,23 +285,22 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// Let D be the spatial dimension of the simplex, then the spatial
         /// dimension of the face is D-1; but, for the transformation, the face
         /// coordinate system is embedded into
-        /// \f$ \mathbb{R}^{D}\f$  and we additionally map
-        /// \f$ \vec{c}_e + \vec{n}_e\f$  (center of edge
-        /// \f$ e\f$  plus normal) to the D-th standard
+        /// $\mathbb{R}^{D}$  and we additionally map
+        /// $\underline{c}_e + \underline{n}_e$  (center of edge
+        /// $e$  plus normal) to the D-th standard
         /// basis vector, i.e.
-        /// \f$ 
-        /// \vec{c}_e + \vec{n}_e \mapsto (0,\ldots,0,1) \in \mathbb{R}^{D}
-        /// \f$ .
+        /// $\underline{c}_e + \underline{n}_e \mapsto (0,\ldots,0,1) \in \mathbb{R}^{D}$ .
         /// </remarks>
         public AffineTrafo GetInverseEmbeddedFaceTrafo(int FaceIndex) {
-            if (m_InverseEmbeddedFaceTransformation == null) {
-                m_InverseEmbeddedFaceTransformation = new AffineTrafo[this.NoOfFaces];
+            LazyInitializer.EnsureInitialized(ref m_InverseEmbeddedFaceTransformation, delegate () {
+                var _InverseEmbeddedFaceTransformation = new AffineTrafo[this.NoOfFaces];
 
-                for (int l = 0; l < this.NoOfFaces; l++) {
+                for(int l = 0; l < this.NoOfFaces; l++) {
                     var Et = this.GetEmbeddedFaceTrafo(l);
-                    m_InverseEmbeddedFaceTransformation[l] = Et.Invert();
+                    _InverseEmbeddedFaceTransformation[l] = Et.Invert();
                 }
-            }
+                return _InverseEmbeddedFaceTransformation;
+            });
             return m_InverseEmbeddedFaceTransformation[FaceIndex];
         }
 
@@ -316,25 +314,27 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// the coordinate system of face <paramref name="FaceIndex"/>.
         /// </summary>
         public AffineTrafo GetInverseFaceTrafo(int FaceIndex) {
-            if (m_InverseFaceTransformation == null) {
-                m_InverseFaceTransformation = new AffineTrafo[this.NoOfFaces];
+            LazyInitializer.EnsureInitialized(ref m_InverseFaceTransformation, delegate () {
+                var _InverseFaceTransformation = new AffineTrafo[this.NoOfFaces];
 
                 int D = this.SpatialDimension;
 
-                for (int l = 0; l < this.NoOfFaces; l++) {
+                for(int l = 0; l < this.NoOfFaces; l++) {
                     var Et = this.GetInverseEmbeddedFaceTrafo(l);
 
-                    m_InverseFaceTransformation[l] = new AffineTrafo(D, D - 1);
-                    var tr = m_InverseFaceTransformation[l];
+                    _InverseFaceTransformation[l] = new AffineTrafo(D, D - 1);
+                    var tr = _InverseFaceTransformation[l];
 
-                    for (int i = 0; i < D - 1; i++) {
-                        for (int j = 0; j < D; j++) {
+                    for(int i = 0; i < D - 1; i++) {
+                        for(int j = 0; j < D; j++) {
                             tr.Matrix[i, j] = Et.Matrix[i, j];
                         }
                         tr.Affine[i] = Et.Affine[i];
                     }
                 }
-            }
+
+                return _InverseFaceTransformation;
+            });
             return m_InverseFaceTransformation[FaceIndex];
         }
 
@@ -349,26 +349,27 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// the the local coordinate system of the simplex.
         /// </summary>
         virtual public AffineTrafo GetFaceTrafo(int FaceIndex) {
-            if (m_FaceTransformation == null) {
-                m_FaceTransformation = new AffineTrafo[this.NoOfFaces];
+            LazyInitializer.EnsureInitialized(ref m_FaceTransformation, delegate () {
+                var _FaceTransformation = new AffineTrafo[this.NoOfFaces];
 
                 int D = this.SpatialDimension;
                 int DMinusOne = Math.Max(D - 1, 1);
 
-                for (int l = 0; l < this.NoOfFaces; l++) {
+                for(int l = 0; l < this.NoOfFaces; l++) {
                     var Et = this.GetEmbeddedFaceTrafo(l);
 
-                    m_FaceTransformation[l] = new AffineTrafo(DMinusOne, D);
-                    var tr = m_FaceTransformation[l];
+                    _FaceTransformation[l] = new AffineTrafo(DMinusOne, D);
+                    var tr = _FaceTransformation[l];
 
-                    for (int i = 0; i < D; i++) {
-                        for (int j = 0; j < DMinusOne; j++) {
+                    for(int i = 0; i < D; i++) {
+                        for(int j = 0; j < DMinusOne; j++) {
                             tr.Matrix[i, j] = Et.Matrix[i, j];
                         }
                         tr.Affine[i] = Et.Affine[i];
                     }
                 }
-            }
+                return _FaceTransformation;
+            });
             return m_FaceTransformation[FaceIndex];
         }
 
@@ -384,13 +385,13 @@ namespace BoSSS.Foundation.Grid.RefElements {
 
         /// <summary>
         /// Square-root of the Gramian determinant of the face-to-volume
-        /// transformation, see <see cref="GetFaceTrafo"/>. <br/>
-        /// index: face index
+        /// transformation, see <see cref="GetFaceTrafo"/>. 
+        /// - index: face index
         /// </summary>
         public virtual double[] FaceTrafoGramianSqrt {
             get {
-                if (m_FaceTrafoGramianSqrt == null) {
-                    m_FaceTrafoGramianSqrt = new double[this.NoOfFaces];
+                LazyInitializer.EnsureInitialized(ref m_FaceTrafoGramianSqrt, delegate() {
+                    var _FaceTrafoGramianSqrt = new double[this.NoOfFaces];
                     int D = this.SpatialDimension;
 
                     MultidimensionalArray Transpose = MultidimensionalArray.Create(D - 1, D);
@@ -404,9 +405,10 @@ namespace BoSSS.Foundation.Grid.RefElements {
                         Trafo.Matrix.TransposeTo(Transpose);
                         Product.Clear();
                         Product.GEMM(1.0, Transpose, Trafo.Matrix, 0.0);
-                        m_FaceTrafoGramianSqrt[l] = Math.Sqrt(Product.Determinant());
+                        _FaceTrafoGramianSqrt[l] = Math.Sqrt(Product.Determinant());
                     }
-                }
+                    return _FaceTrafoGramianSqrt;
+                });
 
                 return m_FaceTrafoGramianSqrt;
             }
@@ -425,24 +427,24 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// </summary>
         public int[][] VertexIndicesToFaces {
             get {
-                if (m_VertexIndicesToFaces == null) {
+                LazyInitializer.EnsureInitialized(ref m_VertexIndicesToFaces, delegate () {
                     int NF = this.NoOfFaces;
 
-                    m_VertexIndicesToFaces = new int[NoOfVertices][];
+                    var _VertexIndicesToFaces = new int[NoOfVertices][];
 
                     var V2F = this.FaceToVertexIndices;
-                    for (int iFace = 0; iFace < this.NoOfFaces; iFace++) {
-                        for (int k = 0; k < V2F.GetLength(1); k++) {
+                    for(int iFace = 0; iFace < this.NoOfFaces; iFace++) {
+                        for(int k = 0; k < V2F.GetLength(1); k++) {
                             int I = V2F[iFace, k];
 
-                            if (m_VertexIndicesToFaces[iFace] == null)
-                                m_VertexIndicesToFaces[iFace] = new int[0];
+                            if(_VertexIndicesToFaces[iFace] == null)
+                                _VertexIndicesToFaces[iFace] = new int[0];
 
-                            iFace.AddToArray(ref m_VertexIndicesToFaces[I]);
+                            iFace.AddToArray(ref _VertexIndicesToFaces[I]);
                         }
                     }
-
-                }
+                    return _VertexIndicesToFaces;
+                });
                 return m_VertexIndicesToFaces;
             }
         }
@@ -460,24 +462,24 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// </summary>
         public int[][] VertexIndicesToCoFaces {
             get {
-                if (m_VertexIndicesToCoFaces == null) {
+                LazyInitializer.EnsureInitialized(ref m_VertexIndicesToCoFaces, delegate () {
                     int NF = this.NoOfFaces;
 
-                    m_VertexIndicesToCoFaces = new int[NoOfVertices][];
+                    var _VertexIndicesToCoFaces = new int[NoOfVertices][];
 
                     var V2F = this.CoFaceVerticeIndices;
-                    for (int iCoFace = 0; iCoFace < this.NoOfFaces; iCoFace++) {
-                        for (int k = 0; k < V2F.GetLength(1); k++) {
+                    for(int iCoFace = 0; iCoFace < this.NoOfFaces; iCoFace++) {
+                        for(int k = 0; k < V2F.GetLength(1); k++) {
                             int I = V2F[iCoFace, k];
 
-                            if (m_VertexIndicesToCoFaces[iCoFace] == null)
-                                m_VertexIndicesToCoFaces[iCoFace] = new int[0];
+                            if(_VertexIndicesToCoFaces[iCoFace] == null)
+                                _VertexIndicesToCoFaces[iCoFace] = new int[0];
 
-                            iCoFace.AddToArray(ref m_VertexIndicesToCoFaces[I]);
+                            iCoFace.AddToArray(ref _VertexIndicesToCoFaces[I]);
                         }
                     }
-
-                }
+                    return _VertexIndicesToCoFaces;
+                });
                 return m_VertexIndicesToCoFaces;
             }
         }
@@ -500,14 +502,13 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// </summary>
         public int[,] FaceToVertexIndices {
             get {
-                if (m_FaceToVertexIndices == null)
-                    InitFaceVerticesIndex();
+                LazyInitializer.EnsureInitialized(ref m_FaceToVertexIndices, InitFaceVerticesIndex);
                 return (int[,])m_FaceToVertexIndices.Clone();
             }
         }
 
-        private void InitFaceVerticesIndex() {
-            m_FaceToVertexIndices = new int[this.NoOfFaces, this.FaceRefElement.NoOfVertices];
+        private int[,] InitFaceVerticesIndex() {
+            var _FaceToVertexIndices = new int[this.NoOfFaces, this.FaceRefElement.NoOfVertices];
 
             for (int FaceIndex = 0; FaceIndex < this.NoOfFaces; FaceIndex++) {
 
@@ -535,7 +536,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
                        
 
                         if(dist < 1.0e-6) {
-                            m_FaceToVertexIndices[FaceIndex, f] = j;
+                            _FaceToVertexIndices[FaceIndex, f] = j;
                             f++;
 
                         } else {
@@ -552,6 +553,8 @@ namespace BoSSS.Foundation.Grid.RefElements {
 
             }
 
+            return _FaceToVertexIndices;
+
         }
 
         /// <summary>
@@ -562,8 +565,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// </summary>
         public NodeSet FaceCenters {
             get {
-                if (m_FaceCenters == null)
-                    InitFaceCenters();
+                LazyInitializer.EnsureInitialized(ref m_FaceCenters, InitFaceCenters);
                 return m_FaceCenters;
             }
         }
@@ -575,12 +577,13 @@ namespace BoSSS.Foundation.Grid.RefElements {
             if(iFace < 0 || iFace >= this.NoOfFaces)
                 throw new ArgumentException("face index out of range.");
 
-            if(m_FaceCenterPF == null) {
-                m_FaceCenterPF = new NodeSet[this.NoOfFaces];
-                for(int iF = 0; iF < m_FaceCenterPF.Length; iF++) {
-                    m_FaceCenterPF[iF] = new NodeSet(this, this.FaceCenters.GetRow(iF), false);
+            LazyInitializer.EnsureInitialized(ref m_FaceCenterPF, delegate () {
+                var _FaceCenterPF = new NodeSet[this.NoOfFaces];
+                for(int iF = 0; iF < _FaceCenterPF.Length; iF++) {
+                    _FaceCenterPF[iF] = new NodeSet(this, this.FaceCenters.GetRow(iF), true);
                 }
-            }
+                return _FaceCenterPF;
+            });
             return m_FaceCenterPF[iFace];
         }
 
@@ -599,8 +602,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// </summary>
         public MultidimensionalArray FaceNormals {
             get {
-                if (m_FaceNormals == null)
-                    InitFaceNormals();
+                LazyInitializer.EnsureInitialized(ref m_FaceNormals, InitFaceNormals);
                 return m_FaceNormals;
             }
         }
@@ -617,53 +619,56 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// </summary>
         private MultidimensionalArray m_FaceNormals;
 
-        private void InitFaceCenters() {
+        private NodeSet InitFaceCenters() {
             int[,] ev = FaceToVertexIndices;
             int D = SpatialDimension;
             int N = ev.GetLength(1);
 
-            m_FaceCenters = new NodeSet(this, ev.GetLength(0), D, false);
+            var _FaceCenters = new NodeSet(this, ev.GetLength(0), D, false);
 
             // loop over all edges ...
-            for (int m = 0; m < m_FaceCenters.GetLength(0); m++) {
+            for (int m = 0; m < _FaceCenters.GetLength(0); m++) {
 
                 // loop over the vertices of all edges ...
                 for (int n = 0; n < N; n++) {
 
                     for (int d = 0; d < D; d++)
-                        m_FaceCenters[m, d] += Vertices[ev[m, n], d];
+                        _FaceCenters[m, d] += Vertices[ev[m, n], d];
 
                 }
 
                 for (int d = 0; d < D; d++)
-                    m_FaceCenters[m, d] *= 1.0 / ((double)N);
+                    _FaceCenters[m, d] *= 1.0 / ((double)N);
             }
 
-            m_FaceCenters.LockForever();
+            _FaceCenters.LockForever();
+            return _FaceCenters;
         }
 
-        private void InitFaceNormals() {
+        private MultidimensionalArray InitFaceNormals() {
             var ec = FaceCenters;
             int D = SpatialDimension;
 
             // RefElements are zero-centered -> vectors to edge centers are
             // already normal to the faces
-            m_FaceNormals = MultidimensionalArray.Create(ec.Lengths);
-            m_FaceNormals.Set(ec);
+            var _FaceNormals = MultidimensionalArray.Create(ec.Lengths);
+            _FaceNormals.Set(ec);
 
             // loop over all edges ...
             for (int m = 0; m < m_FaceCenters.GetLength(0); m++) {
 
                 double len = 0;
                 for (int d = 0; d < D; d++) {
-                    len += m_FaceNormals[m, d] * m_FaceNormals[m, d];
+                    len += _FaceNormals[m, d] * _FaceNormals[m, d];
                 }
                 len = 1.0 / Math.Sqrt(len);
 
                 for (int d = 0; d < D; d++) {
-                    m_FaceNormals[m, d] *= len;
+                    _FaceNormals[m, d] *= len;
                 }
             }
+
+            return _FaceNormals;
         }
 
         /// <summary>
@@ -682,15 +687,8 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// </summary>
         /// <remarks>
         /// Indices are defined as follows:
-        /// <list type="bullet">
-        ///   <item>
-        ///     1st index: Vertex index
-        ///   </item>
-        ///   <item>
-        ///     2nd index: spatial dimension, 0 for 1D and 0,1 for 2D and 0,1,2
-        ///     for 3D
-        ///   </item>
-        /// </list>
+        /// - 1st index: Vertex index
+        /// - 2nd index: spatial dimension, 0 for 1D and 0,1 for 2D and 0,1,2 for 3D
         /// The average (center of gravity) of these points must be 0. The
         /// number of vertices must be at least <i>D</i>+1, where <i>D</i>
         /// denotes the spatial dimension. Furthermore, if the vertices are
@@ -718,16 +716,18 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// Returns the vertices of the <paramref name="iFace"/>--th face.
         /// </summary>
         public NodeSet GetFaceVertices(int iFace) {
-            if(m_FaceVertices == null) {
-                m_FaceVertices = new NodeSet[this.NoOfFaces];
+            LazyInitializer.EnsureInitialized(ref m_FaceVertices, delegate () {
+                var _FaceVertices = new NodeSet[this.NoOfFaces];
                 int D = this.SpatialDimension;
                 int K = this.FaceRefElement.NoOfVertices;
-                for(int iF = 0; iF < m_FaceVertices.Length; iF++) {
-                    m_FaceVertices[iF] = new NodeSet(this, K, D, true);
-                    this.TransformFaceCoordinates(iF, this.FaceRefElement.Vertices, m_FaceVertices[iF]);
-                    this.m_FaceVertices[iF].LockForever();
+                for(int iF = 0; iF < _FaceVertices.Length; iF++) {
+                    _FaceVertices[iF] = new NodeSet(this, K, D, true);
+                    this.TransformFaceCoordinates(iF, this.FaceRefElement.Vertices, _FaceVertices[iF]);
+                    _FaceVertices[iF].LockForever();
                 }
-            }
+                return _FaceVertices;
+            });
+            
             return m_FaceVertices[iFace];
         }
 
@@ -1128,32 +1128,33 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// </remarks>
         public NodeSet[] SubdivisonVertices {
             get {
-                if (m_SubdivisonVertices != null)
-                    return m_SubdivisonVertices;
+                LazyInitializer.EnsureInitialized(ref m_SubdivisonVertices, delegate () {
 
-                AffineTrafo[] SubDiv = GetSubdivision();
+                    AffineTrafo[] SubDiv = GetSubdivision();
 
-                m_SubdivisonVertices = new NodeSet[SubDiv.Length];
+                    var _SubdivisonVertices = new NodeSet[SubDiv.Length];
 
-                int D = this.SpatialDimension;
-                double[] vtx = new double[D];
-                int[] idx = new int[2];
+                    int D = this.SpatialDimension;
+                    double[] vtx = new double[D];
+                    int[] idx = new int[2];
 
-                for (int i = 0; i < SubDiv.Length; i++) {
+                    for(int i = 0; i < SubDiv.Length; i++) {
 
-                    int J = Vertices.GetLength(0); // No. of Vertice
+                        int J = Vertices.GetLength(0); // No. of Vertice
 
-                    m_SubdivisonVertices[i] = new NodeSet(this, Vertices.GetLength(0), Vertices.GetLength(1), true);
+                        _SubdivisonVertices[i] = new NodeSet(this, Vertices.GetLength(0), Vertices.GetLength(1), true);
 
-                    for (int j = 0; j < J; j++) {
-                        idx[1] = j;
-                        m_Vertices.ExtractVector(vtx, 0, 0, D, idx);
-                        double[] Tvtx = SubDiv[i].Transform(vtx);
-                        IMatrixExtensions.SetRow<double[]>(m_SubdivisonVertices[i], j, Tvtx);
+                        for(int j = 0; j < J; j++) {
+                            idx[1] = j;
+                            m_Vertices.ExtractVector(vtx, 0, 0, D, idx);
+                            double[] Tvtx = SubDiv[i].Transform(vtx);
+                            IMatrixExtensions.SetRow<double[]>(_SubdivisonVertices[i], j, Tvtx);
+                        }
+
+                        _SubdivisonVertices[i].LockForever();
                     }
-
-                    m_SubdivisonVertices[i].LockForever();
-                }
+                    return _SubdivisonVertices;
+                });
 
                 return m_SubdivisonVertices;
             }
@@ -1732,12 +1733,12 @@ namespace BoSSS.Foundation.Grid.RefElements {
             }
 
             /// <summary>
-            /// Computes a transformation matrix \f$ A \f$, which expresses the orthonormal polynomials in the root of the subdivision tree,
-            /// \f$ \underline{\phi}^{\text{root}} \f$, in terms of the orthonormal polynomials in this leaf, \f$ \underline{\phi}^{\text{leaf}} \f$,
+            /// Computes a transformation matrix $A$, which expresses the orthonormal polynomials in the root of the subdivision tree,
+            /// $\underline{\phi}^{\text{root}}$, in terms of the orthonormal polynomials in this leaf, $\underline{\phi}^{\text{leaf}}$,
             /// i.e.
-            /// \f[
+            /// \[
             ///   \underline{\phi}^{\text{root}} = \underline{\phi}^{\text{leaf}} A .
-            /// \f]
+            /// \]
             /// </summary>
             /// <param name="p">Polynomial degree.</param>
             /// <returns>
@@ -1804,407 +1805,6 @@ namespace BoSSS.Foundation.Grid.RefElements {
 
         }
 
-        /*
-
-        /// <summary>
-        /// Transformation from reference coordinates to physical coordinates
-        /// </summary>
-        /// <param name="ReferenceVerticesIn">
-        /// Input; vertices in the local coordinate system of an element;
-        /// <list type="bullet">
-        ///   <item>1st index: vertex index;</item>
-        ///   <item>
-        ///   2nd index: spatial coordinate index 0 for 1D and 0,1 for 2D and
-        ///   0,1,2 for 3D;
-        ///   </item>
-        /// </list>
-        /// </param>
-        /// <param name="JacobianOut">
-        /// Output; the Jacobian of the transformation defined by
-        /// <paramref name="TransformationParams"/>
-        /// <list type="bullet">
-        ///   <item>
-        ///     1st index: must be set to <paramref name="jOffset"/>
-        ///   </item>
-        ///   <item>
-        ///     2nd index: vertex index, corresponds with the 1st index of
-        ///     <paramref name="ReferenceVerticesIn"/>;
-        ///   </item>
-        ///   <item>
-        ///     3rd index: spatial coordinate index 0 for 1D and 0,1 for 2D and 0,1,2 for 3D;
-        ///   </item>
-        /// </list>            
-        /// </param>
-        /// <param name="jOffset">
-        /// 1st index into <paramref name="JacobianOut"/>
-        /// </param>
-        /// <param name="Type"><see cref="CellType"/></param>
-        /// <param name="TransformationParams">
-        /// <see cref="Element.TransformationParams"/>
-        /// </param>
-        public void JacobianOfTransformation(MultidimensionalArray ReferenceVerticesIn, MultidimensionalArray JacobianOut, int jOffset, CellType Type, MultidimensionalArray TransformationParams) {
-            int K = ReferenceVerticesIn.GetLength(0);
-            int D = this.SpatialDimension;
-            if (ReferenceVerticesIn.Dimension != 2)
-                throw new ArgumentOutOfRangeException("ReferenceVerticesIn", "Wrong array dimension.");
-            if (ReferenceVerticesIn.GetLength(1) != D)
-                throw new ArgumentOutOfRangeException("ReferenceVerticesIn", "Wrong spatial dimension.");
-            if (JacobianOut.Dimension != 4)
-                throw new ArgumentOutOfRangeException("JacobianOut", "Wrong array dimension.");
-            if (JacobianOut.GetLength(1) != K)
-                throw new ArgumentOutOfRangeException("JacobianOut", "Wrong number of nodes.");
-            if (JacobianOut.GetLength(2) != D)
-                throw new ArgumentOutOfRangeException("JacobianOut", "Wrong spatial dimension.");
-            if (JacobianOut.GetLength(3) != D)
-                throw new ArgumentOutOfRangeException("JacobianOut", "Wrong spatial dimension.");
-
-            var Polys = this.GetInterpolationPolynomials(Type);
-
-            var PolyGradientValues = MultidimensionalArray.Create(Polys.Length, K, D);
-            for (int i = 0; i < Polys.Length; i++) {
-                if (Polys == null)
-                    Console.Error.WriteLine("polys null");
-                if (Polys[i] == null)
-                    Console.Error.WriteLine("polys[i] null");
-                if (PolyGradientValues == null)
-                    Console.Error.WriteLine("PolyGradientValues null");
-                Polys[i].EvaluateGradient(PolyGradientValues.ExtractSubArrayShallow(i, -1, -1), ReferenceVerticesIn);
-            }
-            if (TransformationParams.GetLength(0) != Polys.Length)
-                throw new ArgumentOutOfRangeException("TransformationParams");
-            if (TransformationParams.GetLength(1) != D)
-                throw new ArgumentOutOfRangeException("TransformationParams");
-            var S = JacobianOut.ExtractSubArrayShallow(
-                new int[] { jOffset, 0, 0, 0 },
-                new int[] { jOffset - 1, K - 1, D - 1, D - 1 });
-            S.Multiply(1.0, PolyGradientValues, TransformationParams, 0.0, "krc", "ikc", "ir");
-
-#if DEBUG
-            for(int k = 0; k < S.GetLength(0); k++) {
-                double JacobiDet = S.ExtractSubArrayShallow(k, -1, -1).Determinat();
-                Debug.Assert(JacobiDet > 0);
-            }
-#endif
-        }
-
-        /// <summary>
-        /// Jacobian of the transformation from reference coordinates to
-        /// physical coordinates;
-        /// </summary>
-        /// <param name="ReferenceVerticesIn"></param>
-        /// <param name="GlobalVerticesOut">
-        /// <list type="bullet">
-        ///   <item>
-        ///     1st index: must be set to <paramref name="jOffset"/>
-        ///   </item>
-        ///   <item>
-        ///     2nd index: vertex index, corresponds with the 1st index of
-        ///     <paramref name="ReferenceVerticesIn"/>;
-        ///   </item>
-        ///   <item>
-        ///     3rd index: row index of the Jacobian matrix
-        ///   </item>
-        ///   <item>
-        ///     4th index: column index of the Jacobian matrix
-        ///   </item>
-        /// </list>
-        /// </param>
-        /// <param name="jOffset"></param>
-        /// <param name="Type"></param>
-        /// <param name="TransformationParams"></param>
-        public void TransformLocal2Global(MultidimensionalArray ReferenceVerticesIn, MultidimensionalArray GlobalVerticesOut, int jOffset, CellType Type, MultidimensionalArray TransformationParams) {
-            int K = ReferenceVerticesIn.GetLength(0);
-            int D = this.SpatialDimension;
-            if (ReferenceVerticesIn.Dimension != 2)
-                throw new ArgumentOutOfRangeException("ReferenceVerticesIn", "Wrong array dimension.");
-            if (ReferenceVerticesIn.GetLength(1) != D)
-                throw new ArgumentOutOfRangeException("ReferenceVerticesIn", "Wrong spatial dimension.");
-            if (GlobalVerticesOut.Dimension != 3)
-                throw new ArgumentOutOfRangeException("GlobalVerticesOut", "Wrong array dimension.");
-            if (GlobalVerticesOut.GetLength(1) != K)
-                throw new ArgumentOutOfRangeException("GlobalVerticesOut", "Wrong number of nodes.");
-            if (GlobalVerticesOut.GetLength(2) != D)
-                throw new ArgumentOutOfRangeException("GlobalVerticesOut", "Wrong spatial dimension.");
-
-            var Polys = this.GetInterpolationPolynomials(Type);
-            var PolyValues = MultidimensionalArray.Create(Polys.Length, K);
-            for (int i = 0; i < Polys.Length; i++) {
-                Polys[i].Evaluate(PolyValues.ExtractSubArrayShallow(i, -1), ReferenceVerticesIn);
-            }
-
-            if (TransformationParams.GetLength(1) != D)
-                throw new ArgumentOutOfRangeException("TransformationParams");
-            if (TransformationParams.GetLength(0) != Polys.Length)
-                throw new ArgumentOutOfRangeException("TransformationParams");
-
-            var S = GlobalVerticesOut.ExtractSubArrayShallow(new int[] { jOffset, 0, 0 }, new int[] { jOffset - 1, K - 1, D - 1 });
-            S.Multiply(1.0, PolyValues, TransformationParams, 0.0, "kd", "ik", "id");
-        }
-
-        /// <summary>
-        /// Adjugate Jacobian of the transformation from reference coordinates
-        /// to physical coordinates;
-        /// </summary>
-        /// <param name="ReferenceVerticesIn">
-        /// <list type="bullet">
-        ///   <item>1st index: node index </item>
-        ///   <item>2nd index: spatial dimension; </item>
-        /// </list>
-        /// </param>
-        /// <param name="AdjugateJacobianOut">
-        /// <list type="bullet">
-        ///   <item>
-        ///     1st index: must be set to <paramref name="jOffset"/>
-        ///   </item>
-        ///   <item>
-        ///     2nd index: vertex index, corresponds with the 1st index of
-        ///     <paramref name="ReferenceVerticesIn"/>
-        ///   </item>
-        ///   <item>
-        ///     3rd index: row index of the AdjugateJacobian matrix
-        ///     </item>
-        ///   <item>
-        ///     4th index: column index of the Adjugate Jacobian matrix
-        ///   </item>
-        /// </list>
-        /// </param>
-        /// <param name="jOffset"></param>
-        /// <param name="Type"></param>
-        /// <param name="TransformationParams"></param>
-        public void AdjugateJacobianOfTransformation(MultidimensionalArray ReferenceVerticesIn, MultidimensionalArray AdjugateJacobianOut, int jOffset, CellType Type, MultidimensionalArray TransformationParams) {
-            int D = ReferenceVerticesIn.GetLength(1); // dim
-            int L = ReferenceVerticesIn.GetLength(0); // number of nodes
-
-            Debug.Assert(ReferenceVerticesIn.Dimension == 2);
-
-
-            Debug.Assert(AdjugateJacobianOut.GetLength(2) == D, "wrong spatial dimension of JacobianOut");
-            Debug.Assert(AdjugateJacobianOut.GetLength(3) == D, "wrong spatial dimension of JacobianOut");
-            Debug.Assert(ReferenceVerticesIn.GetLength(1) == D, "wrong spatial dimension of ReferenceVerticesIn");
-            Debug.Assert(ReferenceVerticesIn.GetLength(0) == AdjugateJacobianOut.GetLength(1), "mismatch in number of vertices per cell.");
-            Debug.Assert(TransformationParams.GetLength(1) == D, "wrong spatial dimension of TransformationParams");
-
-            if (D > 1)
-                JacobianOfTransformation(ReferenceVerticesIn, AdjugateJacobianOut, jOffset, Type, TransformationParams);
-
-            Adjugate(AdjugateJacobianOut, jOffset, D, L);
-        }
-
-        private static void Adjugate(MultidimensionalArray AdjugateJacobianOut, int jOffset, int D, int L) {
-            if (D == 1) {
-                // 1D - adjungate
-                for (int l = 0; l < L; l++)
-                    AdjugateJacobianOut[jOffset, l, 0, 0] = 1.0;
-            } else if (D == 2) {
-                // 2D - adjungate
-
-                for (int l = 0; l < L; l++) {
-                    double m00 = AdjugateJacobianOut[jOffset, l, 0, 0];
-                    double m01 = AdjugateJacobianOut[jOffset, l, 0, 1];
-                    double m10 = AdjugateJacobianOut[jOffset, l, 1, 0];
-                    double m11 = AdjugateJacobianOut[jOffset, l, 1, 1];
-
-
-                    AdjugateJacobianOut[jOffset, l, 0, 0] = m11;
-                    AdjugateJacobianOut[jOffset, l, 0, 1] = -m01;
-                    AdjugateJacobianOut[jOffset, l, 1, 0] = -m10;
-                    AdjugateJacobianOut[jOffset, l, 1, 1] = m00;
-                }
-            } else if (D == 3) {
-                // 3D - adjungate
-
-                for (int l = 0; l < L; l++) {
-                    double m00 = AdjugateJacobianOut[jOffset, l, 0, 0];
-                    double m01 = AdjugateJacobianOut[jOffset, l, 0, 1];
-                    double m02 = AdjugateJacobianOut[jOffset, l, 0, 2];
-                    double m10 = AdjugateJacobianOut[jOffset, l, 1, 0];
-                    double m11 = AdjugateJacobianOut[jOffset, l, 1, 1];
-                    double m12 = AdjugateJacobianOut[jOffset, l, 1, 2];
-                    double m20 = AdjugateJacobianOut[jOffset, l, 2, 0];
-                    double m21 = AdjugateJacobianOut[jOffset, l, 2, 1];
-                    double m22 = AdjugateJacobianOut[jOffset, l, 2, 2];
-
-
-                    AdjugateJacobianOut[jOffset, l, 0, 0] = m11 * m22 - m12 * m21;
-                    AdjugateJacobianOut[jOffset, l, 0, 1] = -m01 * m22 + m02 * m21;
-                    AdjugateJacobianOut[jOffset, l, 0, 2] = m01 * m12 - m02 * m11;
-                    AdjugateJacobianOut[jOffset, l, 1, 0] = -m10 * m22 + m12 * m20;
-                    AdjugateJacobianOut[jOffset, l, 1, 1] = m00 * m22 - m02 * m20;
-                    AdjugateJacobianOut[jOffset, l, 1, 2] = -m00 * m12 + m02 * m10;
-                    AdjugateJacobianOut[jOffset, l, 2, 0] = m10 * m21 - m11 * m20;
-                    AdjugateJacobianOut[jOffset, l, 2, 1] = -m00 * m21 + m01 * m20;
-                    AdjugateJacobianOut[jOffset, l, 2, 2] = m00 * m11 - m01 * m10;
-                }
-            } else {
-                throw new NotSupportedException("spatial dimension of " + D + " is not supported yet.");
-            }
-        }
-
-        /// <summary>
-        /// Inverse Jacobian of the transformation from reference coordinates
-        /// to physical coordinates;
-        /// </summary>
-        /// <param name="ReferenceVerticesIn">
-        /// <list type="bullet">
-        ///   <item>1st index: node index </item>
-        ///   <item>2nd index: spatial dimension; </item>
-        /// </list>
-        /// </param>
-        /// <param name="InverseJacobianOut">
-        /// <list type="bullet">
-        ///   <item>1st index: must be set to <paramref name="jOffset"/></item>
-        ///   <item>
-        ///     2nd index: vertex index, corresponds with the 1st index of
-        ///     <paramref name="ReferenceVerticesIn"/>
-        ///   </item>
-        ///   <item>3rd index: row index of the inverse Jacobian matrix</item>
-        ///   <item>
-        ///   4th index: column index of the inverse Jacobian matrix
-        ///   </item>
-        /// </list>
-        /// </param>
-        /// <param name="jOffset"></param>
-        /// <param name="Type"></param>
-        /// <param name="TransformationParams"></param>
-        public void InverseJacobianOfTransformation(MultidimensionalArray ReferenceVerticesIn, MultidimensionalArray InverseJacobianOut, int jOffset, CellType Type, MultidimensionalArray TransformationParams) {
-            int D = ReferenceVerticesIn.GetLength(1); // dim
-            int L = ReferenceVerticesIn.GetLength(0); // number of nodes
-
-            Debug.Assert(ReferenceVerticesIn.Dimension == 2);
-            Debug.Assert(InverseJacobianOut.GetLength(2) == D, "wrong spatial dimension of JacobianOut");
-            Debug.Assert(InverseJacobianOut.GetLength(3) == D, "wrong spatial dimension of JacobianOut");
-            Debug.Assert(ReferenceVerticesIn.GetLength(1) == D, "wrong spatial dimension of ReferenceVerticesIn");
-            Debug.Assert(ReferenceVerticesIn.GetLength(0) == InverseJacobianOut.GetLength(1), "mismatch in number of vertices per cell.");
-
-            JacobianOfTransformation(ReferenceVerticesIn, InverseJacobianOut, jOffset, Type, TransformationParams);
-
-            unsafe {
-
-                double* det = stackalloc double[L];
-
-                for (int l = 0; l < L; l++) {
-                    det[l] = Determinant(D, InverseJacobianOut, l);
-                }
-
-                Adjugate(InverseJacobianOut, jOffset, D, L);
-
-                for (int l = 0; l < L; l++) {
-                    InverseJacobianOut.ExtractSubArrayShallow(jOffset, l, -1, -1).Scale(1.0 / det[l]);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Determinant of the Jacobian matrix of the transformation from
-        /// reference coordinates to physical coordinates;
-        /// </summary>
-        /// <param name="ReferenceVerticesIn"></param>
-        /// <param name="JacobianDetOut">
-        /// <list type="bullet">
-        ///   <item>
-        ///     1st index: must be set to <paramref name="jOffset"/>
-        ///   </item>
-        ///   <item>
-        ///     2nd index: vertex index, corresponds with the 1st index of
-        ///     <paramref name="ReferenceVerticesIn"/>
-        ///   </item>
-        /// </list>
-        /// </param>
-        /// <param name="jOffset"></param>
-        /// <param name="Type"></param>
-        /// <param name="TransformationParams"></param>
-        virtual public void JacobianDetTransformation(MultidimensionalArray ReferenceVerticesIn, MultidimensionalArray JacobianDetOut, int jOffset, CellType Type, MultidimensionalArray TransformationParams) {
-            int D = ReferenceVerticesIn.GetLength(1); // dim
-            int L = ReferenceVerticesIn.GetLength(0); // number of nodes
-
-            Debug.Assert(ReferenceVerticesIn.Dimension == 2);
-            Debug.Assert(JacobianDetOut.Dimension == 2);
-            Debug.Assert(JacobianDetOut.GetLength(0) > jOffset, "insufficient number of elements in JacobianDetOut");
-            Debug.Assert(JacobianDetOut.GetLength(1) == L, "wrong number of nodes for JacobianDetOut");
-            Debug.Assert(ReferenceVerticesIn.GetLength(1) == D, "wrong spatial dimension of ReferenceVerticesIn");
-
-            var Jacobian = MultidimensionalArray.Create(1, L, D, D);
-            this.JacobianOfTransformation(ReferenceVerticesIn, Jacobian, 0, Type, TransformationParams);
-
-
-            for (int l = 0; l < L; l++) {
-                double det;
-                det = Determinant(D, Jacobian, l);
-
-                Debug.Assert(det >= 0, String.Format(
-                    "Encountered negative determinant in cell {0}. This indicates an invalid mesh description.",
-                    l));
-
-                JacobianDetOut[jOffset, l] = det;
-            }
-        }
-
-        private static double Determinant(int D, MultidimensionalArray Jacobian, int l) {
-            double det;
-            switch (D) {
-                case 1:
-                    det = Jacobian[0, l, 0, 0];
-                    break;
-
-                case 2:
-                    det = (Jacobian[0, l, 0, 0] * Jacobian[0, l, 1, 1] - Jacobian[0, l, 0, 1] * Jacobian[0, l, 1, 0]);
-                    break;
-
-                case 3:
-                    det = (Jacobian[0, l, 0, 0] * Jacobian[0, l, 1, 1] * Jacobian[0, l, 2, 2] - Jacobian[0, l, 0, 0] * Jacobian[0, l, 1, 2] * Jacobian[0, l, 2, 1]
-                                 - Jacobian[0, l, 1, 0] * Jacobian[0, l, 0, 1] * Jacobian[0, l, 2, 2] + Jacobian[0, l, 1, 0] * Jacobian[0, l, 0, 2] * Jacobian[0, l, 2, 1]
-                                 + Jacobian[0, l, 2, 0] * Jacobian[0, l, 0, 1] * Jacobian[0, l, 1, 2] - Jacobian[0, l, 2, 0] * Jacobian[0, l, 0, 2] * Jacobian[0, l, 1, 1]);
-                    break;
-
-                default:
-                    throw new NotSupportedException();
-            }
-            return det;
-        }
-
-        /// <summary>
-        /// Debug code: computation of the Jacobian by finite differences, in order to
-        /// test the correctness of <see cref="JacobianOfTransformation"/>.
-        /// </summary>
-        [Conditional("DEBUG")]
-        public void FiniteDifferenceJacobian(MultidimensionalArray vtx, MultidimensionalArray JacobianOut, int jOffset, CellType Type, MultidimensionalArray TransformationParams) {
-            int D = vtx.GetLength(1); // dim
-            int L = vtx.GetLength(0); // number of nodes
-
-            //var Jacobian = MultidimensionalArray.Create(1, L, D, D);
-            //this.JacobianOfTransformation(vtx, Jacobian, 0, MinorCellType, TransformationParam);
-
-            var vtx_plus = MultidimensionalArray.Create(vtx.Lengths);
-            var vtx_minus = MultidimensionalArray.Create(vtx.Lengths);
-
-
-            var vtx_glob_plus = MultidimensionalArray.Create(1, L, D);
-            var vtx_glob_minus = MultidimensionalArray.Create(1, L, D);
-
-            //var Jacobian_finiteDiff = MultidimensionalArray.Create(Jacobian.Lengths);
-            for (int d = 0; d < D; d++) {
-                double delta = 1.0e-3;
-
-                vtx_minus.Set(vtx);
-                vtx_plus.Set(vtx);
-                for (int l = 0; l < L; l++) {
-                    vtx_minus[l, d] -= 0.5 * delta;
-                    vtx_plus[l, d] += 0.5 * delta;
-                }
-
-                vtx_glob_plus.Clear();
-                vtx_glob_minus.Clear();
-                this.TransformLocal2Global(vtx_plus, vtx_glob_plus, 0, Type, TransformationParams);
-                this.TransformLocal2Global(vtx_minus, vtx_glob_minus, 0, Type, TransformationParams);
-
-                var JacobiCol = JacobianOut.ExtractSubArrayShallow(-1, -1, -1, d);
-                JacobiCol.Acc(1.0, vtx_glob_plus);
-                JacobiCol.Acc(-1.0, vtx_glob_minus);
-                JacobiCol.Scale(1.0 / delta);
-            }
-        }
-         */
-
         /// <summary>
         /// equality
         /// </summary>
@@ -2248,6 +1848,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
         abstract protected void GetInterpolationNodes_NonLin(CellType type, out NodeSet InterpolationNodes, out PolynomialList InterpolationPolynomials, out int[] NodeType, out int[] EntityIndex);
 
 
+
         Dictionary<CellType, int[]> m_NodeTypes = new Dictionary<CellType, int[]>();
         Dictionary<CellType, int[]> m_EntityIndices = new Dictionary<CellType, int[]>();
         Dictionary<CellType, NodeSet> m_InterpolationNodes = new Dictionary<CellType, NodeSet>();
@@ -2265,29 +1866,31 @@ namespace BoSSS.Foundation.Grid.RefElements {
         }
 
         private void InitMinorType(CellType type) {
-            if (m_NodeTypes.ContainsKey(type)) {
-                Debug.Assert(m_EntityIndices.ContainsKey(type));
-                Debug.Assert(m_InterpolationNodes.ContainsKey(type));
-                Debug.Assert(m_InterpolationPolynomials.ContainsKey(type));
-                Debug.Assert(ContainsZero(m_InterpolationPolynomials[type]), "interpolation poly not found");
-            } else {
-                NodeSet InterpolationNodes;
-                PolynomialList InterpolationPolynomials;
-                int[] NodeType;
-                int[] EntityIndex;
-
-                if (type.IsLinear()) {
-                    this.SelectNodalPolynomials(1, out InterpolationNodes, out InterpolationPolynomials, out NodeType, out EntityIndex);
+            lock(m_NodeTypes) {
+                if(m_NodeTypes.ContainsKey(type)) {
+                    Debug.Assert(m_EntityIndices.ContainsKey(type));
+                    Debug.Assert(m_InterpolationNodes.ContainsKey(type));
+                    Debug.Assert(m_InterpolationPolynomials.ContainsKey(type));
+                    Debug.Assert(ContainsZero(m_InterpolationPolynomials[type]), "interpolation poly not found");
                 } else {
-                    GetInterpolationNodes_NonLin(type, out InterpolationNodes, out InterpolationPolynomials, out NodeType, out EntityIndex);
-                }
+                    NodeSet InterpolationNodes;
+                    PolynomialList InterpolationPolynomials;
+                    int[] NodeType;
+                    int[] EntityIndex;
 
-                m_NodeTypes.Add(type, NodeType);
-                m_EntityIndices.Add(type, EntityIndex);
-                m_InterpolationNodes.Add(type, InterpolationNodes);
-                m_InterpolationPolynomials.Add(type, InterpolationPolynomials);
-                Debug.Assert(ContainsZero(InterpolationPolynomials), "interpolation poly not found, 3");
-                Debug.Assert(ContainsZero(m_InterpolationPolynomials[type]), "interpolation poly not found, 2");
+                    if(type.IsLinear()) {
+                        this.SelectNodalPolynomials(1, out InterpolationNodes, out InterpolationPolynomials, out NodeType, out EntityIndex);
+                    } else {
+                        GetInterpolationNodes_NonLin(type, out InterpolationNodes, out InterpolationPolynomials, out NodeType, out EntityIndex);
+                    }
+
+                    m_NodeTypes.Add(type, NodeType);
+                    m_EntityIndices.Add(type, EntityIndex);
+                    m_InterpolationNodes.Add(type, InterpolationNodes);
+                    m_InterpolationPolynomials.Add(type, InterpolationPolynomials);
+                    Debug.Assert(ContainsZero(InterpolationPolynomials), "interpolation poly not found, 3");
+                    Debug.Assert(ContainsZero(m_InterpolationPolynomials[type]), "interpolation poly not found, 2");
+                }
             }
         }
 
@@ -2389,13 +1992,14 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// </summary>
         public IEnumerable<CellType> SupportedCellTypes {
             get {
-                if (m_SupportedCellTypes == null) {
+                LazyInitializer.EnsureInitialized(ref m_SupportedCellTypes, delegate () {
                     string[] ee = typeof(CellType).GetEnumNames();
                     string thisname = this.GetType().Name.ToLowerInvariant();
                     IEnumerable<string> eee = ee.Where(t => t.ToLowerInvariant().StartsWith(thisname));
-                    m_SupportedCellTypes = eee.Select(t =>
+                    var _SupportedCellTypes = eee.Select(t =>
                         ((CellType)Enum.Parse(typeof(CellType), t))).ToArray();
-                }
+                    return _SupportedCellTypes;
+                });
 
                 return m_SupportedCellTypes;
             }

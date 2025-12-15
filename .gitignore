@@ -92,3 +92,6 @@ doxyerr.txt
 doxyout.txt
 # emacs-stuff
 auto/
+# equation-checking
+doc/latex-eq-check/*.tex
+

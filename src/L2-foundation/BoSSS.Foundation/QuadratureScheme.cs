@@ -200,11 +200,10 @@ namespace BoSSS.Foundation.Quadrature {
         /// The factory to be added.
         /// </param>
         /// <param name="domain">
-        /// The domain on which <paramref name="factory"/> should act.
+        /// The domain on which <paramref name="factory"/> should act; if null, the entire domain of the scheme (<see cref="Domain"/> will be used
         /// </param>
         /// <param name="order">
-        /// An optional order that overrides the order passed to
-        /// <see cref="Compile"/>.
+        /// An optional order that overrides the order passed to <see cref="Compile"/>.
         /// </param>
         /// <returns>
         /// This object (to allow for fluent addition of multiple factories).
@@ -297,6 +296,19 @@ namespace BoSSS.Foundation.Quadrature {
                     } else {
                         currentDomain = baseDomain.Intersect(factoryDomainPair.Domain);
                         Debug.Assert(currentDomain.Except(GetDomainForRefElement(RefElm, gridData)).NoOfItemsLocally <= 0);
+                    }
+                    if(i < factoryDomainPairs.Count() - 1) {
+                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                        // exclude cells from later quadrature rule factories;
+                        // this avoid creating unnecessary rules, since rules form this factory might be overwritten anyway.
+                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                        for(int iOther = i + 1; iOther < factoryDomainPairs.Count(); iOther++) {
+                            var other = factoryDomainPairs.ElementAt(iOther);
+                            if(other.Domain != null)
+                                currentDomain = currentDomain.Except(other.Domain);
+                        }
+
                     }
 
                     // check the type of factory
@@ -489,7 +501,8 @@ namespace BoSSS.Foundation.Quadrature {
                 private set;
             }
 
-#endregion
+            #endregion
+
         }
     }
 

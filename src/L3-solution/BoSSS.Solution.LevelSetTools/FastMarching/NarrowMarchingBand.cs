@@ -761,7 +761,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
         /*
         /// <summary>
-        /// The term $ \vec{S} \cdot \nabla \varphi $, where $\vec{S}$ denotes the vector extension velocity.
+        /// The term $ \underline{S} \cdot \nabla \varphi $, where $\underline{S}$ denotes the vector extension velocity.
         /// </summary>
         static double LevelSetEvoTerm_Vector(double[] X, double[] U, int jCell) {
             //ouble s = U[0];

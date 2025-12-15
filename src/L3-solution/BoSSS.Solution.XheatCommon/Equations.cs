@@ -43,6 +43,7 @@ namespace BoSSS.Solution.XheatCommon {
             switch (spcName) {
                 case "A": { capSpc = thermParams.rho_A * thermParams.c_A; LFFSpc = dntParams.LFFA; break; }
                 case "B": { capSpc = thermParams.rho_B * thermParams.c_B; LFFSpc = dntParams.LFFB; break; }
+                case "C": { capSpc = thermParams.rho_C * thermParams.c_C; LFFSpc = dntParams.LFFC; break; }
                 default: throw new ArgumentException("Unknown species.");
             }
 
@@ -71,7 +72,7 @@ namespace BoSSS.Solution.XheatCommon {
                 var Visc = new ConductivityInSpeciesBulk(
                     penalty, //dntParams.UseGhostPenalties ? 0.0 : penalty, 
                     1.0,
-                    boundaryMap, D, spcName, thermParams.k_A, thermParams.k_B);
+                    boundaryMap, D, spcName, thermParams.k_A, thermParams.k_B, thermParams.k_C);
 
                 AddComponent(Visc);
 

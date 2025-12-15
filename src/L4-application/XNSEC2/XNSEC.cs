@@ -9,6 +9,7 @@ using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XheatCommon;
@@ -23,7 +24,7 @@ using System.Linq;
 
 namespace BoSSS.Application.XNSEC {
     /// <summary>
-    /// Low Mach number flow solver. Supports temperature dependeant density and transport parameters.
+    /// Low Mach number flow solver. Supports temperature dependent density and transport parameters.
     /// The mixture fraction solver <see cref="XNSEC_MixtureFraction"/> can be used for finding estimates for combustion applications
     /// </summary>
     public partial class XNSEC : SolverWithLevelSetUpdater<XNSEC_Control> {
@@ -34,30 +35,10 @@ namespace BoSSS.Application.XNSEC {
         private static void Main(string[] args) {
             //-n 4 ./XNSEC.exe -c "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.BackwardFacingStep()"
 
-            InitMPI();
-            ilPSP.Environment.NumThreads = 2;
-            BoSSS.Application.XNSEC.NUnitTest.XDG_PSEUDO1D_COMBUSTION_TEST();
-            //BoSSS.Application.XNSEC.NUnitTest.ManufacturedSolutionLowMachCombustionTest();
-            //BoSSS.Application.XNSEC.NUnitTest.ViscosityJumpTest(2, 1, 0.0d, ViscosityMode.FullySymmetric, CutCellQuadratureMethod.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
+            //InitMPI();
+            //ilPSP.Environment.NumThreads = 2;
+            //BoSSS.Application.XNSEC.NUnitTest.XDG_PSEUDO1D_COMBUSTION_TEST();
 
-
-            //DeleteOldPlotFiles();
-            //DeleteOldTextFiles();
-            //Debugger.Launch();
-
-            //NUnitTest.XDG_PSEUDO1D_EVAPORATION_TEST();
-            //NUnitTest.CavityNaturalConvection();
-            //NUnitTest.XDG_DROPLET_COMBUSTION_TEST();
-            //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
-
-            //BoSSS.Solution.Application<XNSEC_Control>._Main(new string[] { "--control", "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.XDG_pseudo2dCombustion_MixtureFraction()", "--delplt" }, false, delegate () {
-            //    var p = new XNSEC_MixtureFraction();
-            //    return p;
-            //});
-            //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
-
-            //-n 8 ./XNSEC.exe -c "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.XDG_DropletCombustion()"
-            //System.Environment.Exit(111);
 
             bool MixtureFractionCalculation = false;
             try {
@@ -384,21 +365,21 @@ namespace BoSSS.Application.XNSEC {
                     MaxSigma maxSigmaParameter = new MaxSigma(Control.PhysicalParameters, Control.AdvancedDiscretizationOptions, QuadOrder(), Control.dtFixed);
                     opFactory.AddParameter(maxSigmaParameter);
                     lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, maxSigmaParameter);
-                    BeltramiGradient lsBGradient = FromControl.BeltramiGradient(Control, "Phi", D);
+                    GradientAndCurvature lsBGradient = FromControl.GradientAndCurvature(Control, "Phi", quadOrder, D);
                     lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsBGradient);
                     break;
 
                 case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux:
                 case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local:
-                    BeltramiGradient lsGradient = FromControl.BeltramiGradient(Control, "Phi", D);
+                    GradientAndCurvature lsGradient = FromControl.GradientAndCurvature(Control, "Phi", quadOrder, D);
                     lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsGradient);
                     break;
 
                 case SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint:
                 case SurfaceStressTensor_IsotropicMode.Curvature_Projected:
                 case SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean:
-                    BeltramiGradientAndCurvature lsGradientAndCurvature =
-                        FromControl.BeltramiGradientAndCurvature(Control, "Phi", quadOrder, D);
+                    GradientAndCurvature lsGradientAndCurvature =
+                        FromControl.GradientAndCurvature(Control, "Phi", quadOrder, D);
                     opFactory.AddParameter(lsGradientAndCurvature);
                     lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsGradientAndCurvature);
                     break;
@@ -672,11 +653,9 @@ namespace BoSSS.Application.XNSEC {
 
 
             if (Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
-                Console.WriteLine("Linearization Hint:" + LinearizationHint.GetJacobiOperator.ToString());
                 XOP.LinearizationHint = LinearizationHint.GetJacobiOperator;
             } else if (Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard){
-                Console.WriteLine("Linearization Hint:" + LinearizationHint.GetJacobiOperator.ToString());
-
+                
                 //throw new NotImplementedException("LowMach solver supports only Newton as NonLinearSolver");
             }
 
@@ -940,7 +919,7 @@ namespace BoSSS.Application.XNSEC {
             }
 
             var overallstart = DateTime.Now;
-            Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt}");
+            Console.WriteLine($"Starting time step {TimestepNo}, t = {phystime:g4}, dt = {dt:g4} ...");
             bool SolverSuccess = Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
             var overallstop = DateTime.Now;
             var overallduration = overallstop - overallstart;
@@ -952,7 +931,7 @@ namespace BoSSS.Application.XNSEC {
             Console.WriteLine("Duration of this timestep: " + overallduration);
             Console.WriteLine($"done with time step {TimestepNo}");
 
-            if (Control.AnalyticsolutionSwitch || !Control.ExactSolutionVelocity.IsNullOrEmpty()) {
+            if (Control.AnalyticsolutionSwitch || Control.ExactSolutions_Evaluators_TimeDep.Keys.Any(name => name.StartsWith("Velocity"))) {
                 CalcErrors();
             }
 
@@ -1034,7 +1013,7 @@ namespace BoSSS.Application.XNSEC {
             }
 
             // Create fields for analytical solution and errors
-            if (Control.AnalyticsolutionSwitch || !Control.ExactSolutionVelocity.IsNullOrEmpty()) {
+            if (Control.AnalyticsolutionSwitch || Control.ExactSolutions_Evaluators_TimeDep.Keys.Any(name => name.StartsWith("Velocity"))) {
                 // Errors:
                 var errFields = InstantiateErrorFields();
                 foreach (var f in errFields) {

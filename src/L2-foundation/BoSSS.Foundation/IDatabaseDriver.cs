@@ -71,7 +71,7 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// Returns a write-stream for some new log file.
         /// </summary>
-        Stream GetNewLogStream(SessionInfo si, string name);      
+        Stream GetNewLogStream(SessionInfo si, string name, string fileExt);      
 
         /// <summary>
         /// saves a vector to the database, allocating a guid automatically

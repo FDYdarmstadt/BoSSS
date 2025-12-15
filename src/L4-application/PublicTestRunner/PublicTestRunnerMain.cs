@@ -1,4 +1,5 @@
 ﻿using BoSSS.Application.BoSSSpad;
+using BoSSS.Application.XNSE_Solver;
 using BoSSS.Application.XNSFE_Solver;
 using BoSSS.Solution;
 using ilPSP;
@@ -142,6 +143,7 @@ namespace PublicTestRunner {
         virtual public Type[] ReleaseOnlyTests {
             get {
                 return new Type[] {
+                        typeof(BoSSS.Application.LsTest.SolverWithLevelSetUpdaterTestCenter),
                         typeof(BoSSS.Application.XNSERO_Solver.XNSERO),
                         //typeof(BoSSS.Application.XNSE_Solver.XNSE),
                         typeof(BoSSS.Application.XNSFE_Solver.XNSFE),
@@ -158,12 +160,14 @@ namespace PublicTestRunner {
                         //typeof(BoSSS.Application.XNSE_ViscosityAgglomerationTest.XNSE_ViscosityAgglomerationTestMain),
                         typeof(ALTSTests.Program),
                         typeof(ZwoLevelSetSolver.ZLS),
+                        typeof(HFSISolver.HFSI),
                         typeof(HangingNodesTests.HangingNodesTestMain),
                         typeof(BoSSS.Application.CahnHilliard.CahnHilliardMain),
                         typeof(IntersectingLevelSetTest.AllUpTest),
                         typeof(BUIDT.Tests.BUIDTTestProgram),
                         typeof(SAIDT.Tests.SAIDTTestProgram),
                         typeof(XESF.Tests.XESFTestProgram),
+                        //typeof(XNSE_ParallelTests.XNSE_ParallelTests),
                         typeof(StokesHelical_Ak.HelicalMain)
                 };
             }
@@ -532,7 +536,7 @@ namespace PublicTestRunner {
             fa.ImmediateFlush = true;
             //fa.Writer = Console.Out;
             fa.Writer = tracertxt;
-            fa.Layout = new PatternLayout("%date %-5level %logger: %message%newline");
+            fa.Layout = new PatternLayout("%date %-5level From__%logger: %message%newline");
             fa.ActivateOptions();
             BasicConfigurator.Configure(fa);
             logger_output = fa;

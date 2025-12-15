@@ -363,7 +363,7 @@ namespace BoSSS.Platform.Utils.Geom {
         /// <summary>
         /// finds the next point out of <see cref="Points"/> to <paramref name="pt"/>.
         /// </summary>
-        public (int,Vector) FindNextPoint(Vector pt) {
+        public (int index_into_Points, Vector nearest_pt) FindNextPoint(Vector pt) {
             int D = this.Points.GetLength(1);
             if(pt.Dim != D)
                 throw new ArgumentException("Spatial dimension mismatch.");

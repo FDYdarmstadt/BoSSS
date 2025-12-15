@@ -28,7 +28,7 @@ using System.Collections.Concurrent;
 namespace BoSSS.Foundation.Caching {
 
     /// <summary>
-    /// Caches monomials ( e.g. \f$ x \f$, \f$ x y \f$, \f$ x y^2 \f$) for node sets. 
+    /// Caches monomials ( e.g. $x$, $x y$, $x y^2$) for node sets. 
     /// A global singleton, see <see cref="Instance"/>.
     /// </summary>
     public class MonomialCache : CacheLogic_NsP {
@@ -460,46 +460,55 @@ namespace BoSSS.Foundation.Caching {
         /// calling <see cref="m_ComputeValues"/>.
         /// </remarks>
         public MultidimensionalArray GetValue_Cell(NodeSet NS, int j0, int Len, int Degree) {
-            lock (this) {
-                if (j0 < 0) throw new ArgumentOutOfRangeException("j0", "must be greater or equal than zero.");
-                if (Len < 1) throw new ArgumentOutOfRangeException("Len", "must be greater or equal than one.");
-                if ((j0 + Len) > this.GridData.iGeomCells.Count)
-                    throw new ArgumentOutOfRangeException("j0 + Len exceeds the number of local cells");
-                if (NS.GetNodeCoordinateSystem(this.GridData) != NodeCoordinateSystem.CellCoord)
-                    throw new ArgumentException("Expecting a node set in local cell coordinate system");
+            if (j0 < 0) throw new ArgumentOutOfRangeException("j0", "must be greater or equal than zero.");
+            if (Len < 1) throw new ArgumentOutOfRangeException("Len", "must be greater or equal than one.");
+            if ((j0 + Len) > this.GridData.iGeomCells.Count)
+                throw new ArgumentOutOfRangeException("j0 + Len exceeds the number of local cells");
+            if (NS.GetNodeCoordinateSystem(this.GridData) != NodeCoordinateSystem.CellCoord)
+                throw new ArgumentException("Expecting a node set in local cell coordinate system");
+
+            if(NS.Reference == 0) {
+                // ++++++++++++++++++++++++++++++++++++++++++++
+                // no caching requested - avoid thread-locking
+                // ++++++++++++++++++++++++++++++++++++++++++++
+                var R = this.m_alloc(j0, Len, Degree, NS);
+                this.m_ComputeValues(NS, j0, Len, Degree, R);
+                return R;
+            } else {
+                lock(this) {
 #if DEBUG
-                int iKref = NS.GetVolumeRefElementIndex(this.GridData);
-                if (iKref < 0)
-                    throw new ArgumentException("not a volume node set");
-                for (int j = 0; j < Len; j++) {
-                    if (GridData.iGeomCells.GetRefElementIndex(j + j0) != iKref)
-                        throw new ArgumentException("node set ref. element/cell mismatch");
-                }
-                Debug.Assert(NS.SpatialDimension == this.GridData.SpatialDimension,
-                    "Mismatch between number of spatial directions in node set and reference element.");
+                    int iKref = NS.GetVolumeRefElementIndex(this.GridData);
+                    if(iKref < 0)
+                        throw new ArgumentException("not a volume node set");
+                    for(int j = 0; j < Len; j++) {
+                        if(GridData.iGeomCells.GetRefElementIndex(j + j0) != iKref)
+                            throw new ArgumentException("node set ref. element/cell mismatch");
+                    }
+                    Debug.Assert(NS.SpatialDimension == this.GridData.SpatialDimension,
+                        "Mismatch between number of spatial directions in node set and reference element.");
 #endif
 
-                MultidimensionalArray R = null;
-                if (NS.Reference != 0 && lastCell_j0 == j0 && lastCell_Len == Len && lastCell_Degree == Degree && lastCell_NSref == NS.Reference) {
-                    R = (MultidimensionalArray)Cache.GetItem(lastCell_CashRef);
-                    Debug.Assert((R == null) || (R.GetLength(0) == Len));
-                    Debug.Assert((R == null) || (R.GetLength(1) == NS.NoOfNodes));
-                }
+                    MultidimensionalArray R = null;
+                    if(lastCell_j0 == j0 && lastCell_Len == Len && lastCell_Degree == Degree && lastCell_NSref == NS.Reference) {
+                        R = (MultidimensionalArray)Cache.GetItem(lastCell_CashRef);
+                        Debug.Assert((R == null) || (R.GetLength(0) == Len));
+                        Debug.Assert((R == null) || (R.GetLength(1) == NS.NoOfNodes));
+                    }
 
-                lastCell_j0 = j0;
-                lastCell_Len = Len;
-                lastCell_Degree = Degree;
-                lastCell_NSref = NS.Reference;
+                    lastCell_j0 = j0;
+                    lastCell_Len = Len;
+                    lastCell_Degree = Degree;
+                    lastCell_NSref = NS.Reference;
 
-                if (R == null) {
-                    R = this.m_alloc(j0, Len, Degree, NS);
-                    this.m_ComputeValues(NS, j0, Len, Degree, R);
-                    Debug.Assert(R.GetLength(0) == Len);
-                    Debug.Assert(R.GetLength(1) == NS.NoOfNodes);
-                    if (NS.Reference != 0)
+                    if(R == null) {
+                        R = this.m_alloc(j0, Len, Degree, NS);
+                        this.m_ComputeValues(NS, j0, Len, Degree, R);
+                        Debug.Assert(R.GetLength(0) == Len);
+                        Debug.Assert(R.GetLength(1) == NS.NoOfNodes);
                         lastCell_CashRef = Cache.CacheItem(R, R.Length * sizeof(double));
+                    }
+                    return R;
                 }
-                return R;
             }
         }
 
@@ -510,62 +519,79 @@ namespace BoSSS.Foundation.Caching {
                 throw new ArgumentOutOfRangeException("j0 + Len exceeds the number of edges");
             if (NS.GetNodeCoordinateSystem(this.GridData) != NodeCoordinateSystem.EdgeCoord)
                 throw new ArgumentException("Expecting a node set in edge coordinate system");
-            lock (this) {
+
+            if(NS.Reference == 0) {
+                // ++++++++++++++++++++++++++++++++++++++++++++
+                // no caching requested - avoid thread-locking
+                // ++++++++++++++++++++++++++++++++++++++++++++
+                
+                return EvaluateEdgeSV(NS, e0, Len, Degree);
+
+            } else {
+
+
+                lock(this) {
 #if DEBUG
-                int iKref = NS.GetEdgeRefElementIndex(this.GridData);
-                if (iKref < 0)
-                    throw new ArgumentException("not an edge node set");
-                for (int j = 0; j < Len; j++) {
-                    if (this.GridData.iGeomEdges.GetRefElementIndex(j + e0) != iKref)
-                        throw new ArgumentException("node set ref. element/edge missmatch");
-                }
+                    int iKref = NS.GetEdgeRefElementIndex(this.GridData);
+                    if(iKref < 0)
+                        throw new ArgumentException("not an edge node set");
+                    for(int j = 0; j < Len; j++) {
+                        if(this.GridData.iGeomEdges.GetRefElementIndex(j + e0) != iKref)
+                            throw new ArgumentException("node set ref. element/edge missmatch");
+                    }
 #endif
 
-                MultidimensionalArray Rin = null;
-                if (NS.Reference != 0 && lastEdge_e0 == e0 && lastEdge_Len == Len && lastEdge_Degree == Degree && lastEdge_NSref == NS.Reference) {
-                    Rin = (MultidimensionalArray)Cache.GetItem(lastEdge_CashRefIn);
+                    MultidimensionalArray Rin = null;
+                    if(lastEdge_e0 == e0 && lastEdge_Len == Len && lastEdge_Degree == Degree && lastEdge_NSref == NS.Reference) {
+                        Rin = (MultidimensionalArray)Cache.GetItem(lastEdge_CashRefIn);
 
-                    Debug.Assert((Rin == null) || (Rin.GetLength(0) == Len));
-                    Debug.Assert((Rin == null) || (Rin.GetLength(1) == NS.NoOfNodes));
-                }
-
-                bool RinReq = Rin == null;
-
-                lastEdge_e0 = e0;
-                lastEdge_Len = Len;
-                lastEdge_Degree = Degree;
-                lastEdge_NSref = NS.Reference;
-
-                if (RinReq) {
-                    Rin = m_alloc(e0, Len, Degree, NS);
-                    Debug.Assert(Rin.GetLength(0) == Len);
-                    Debug.Assert(Rin.GetLength(1) == NS.NoOfNodes);
-
-
-                    int[] i0 = new int[Rin.Dimension];
-                    int[] iE = new int[i0.Length];
-                    for (int k = 2; k < i0.Length; k++) {
-                        iE[k] = Rin.GetLength(k) - 1;
-                    }
-                    iE[1] = NS.NoOfNodes - 1;
-
-                    int[,] E2C = this.GridData.iLogicalEdges.CellIndices;
-                    int[,] TrIdx = this.GridData.iGeomEdges.Edge2CellTrafoIndex;
-
-                    for (int e = 0; e < Len; e++) {
-                        int iEdge = e + e0;
-                        int jCell1, edge1;
-                        jCell1 = E2C[iEdge, 0];
-                        edge1 = TrIdx[iEdge, 0];
-
-                        i0[0] = e;
-                        iE[0] = e;
-
-                        this.m_ComputeValues(NS.GetVolumeNodeSet(this.GridData, edge1, false), jCell1, 1, Degree, Rin.ExtractSubArrayShallow(i0, iE));
+                        Debug.Assert((Rin == null) || (Rin.GetLength(0) == Len));
+                        Debug.Assert((Rin == null) || (Rin.GetLength(1) == NS.NoOfNodes));
                     }
 
-                    if (NS.Reference != 0)
+                    bool RinReq = Rin == null;
+
+                    lastEdge_e0 = e0;
+                    lastEdge_Len = Len;
+                    lastEdge_Degree = Degree;
+                    lastEdge_NSref = NS.Reference;
+
+                    if(RinReq) {
+                        Rin = EvaluateEdgeSV(NS, e0, Len, Degree);
                         lastEdge_CashRefIn = Cache.CacheItem(Rin, Rin.Length * sizeof(double));
+                    }
+
+                    return Rin;
+                }
+            }
+
+            MultidimensionalArray EvaluateEdgeSV(NodeSet NS, int e0, int Len, int Degree) {
+                var Rin = m_alloc(e0, Len, Degree, NS);
+
+                Debug.Assert(Rin.GetLength(0) == Len);
+                Debug.Assert(Rin.GetLength(1) == NS.NoOfNodes);
+
+
+                int[] i0 = new int[Rin.Dimension];
+                int[] iE = new int[i0.Length];
+                for(int k = 2; k < i0.Length; k++) {
+                    iE[k] = Rin.GetLength(k) - 1;
+                }
+                iE[1] = NS.NoOfNodes - 1;
+
+                int[,] E2C = this.GridData.iLogicalEdges.CellIndices;
+                int[,] TrIdx = this.GridData.iGeomEdges.Edge2CellTrafoIndex;
+
+                for(int e = 0; e < Len; e++) {
+                    int iEdge = e + e0;
+                    int jCell1, edge1;
+                    jCell1 = E2C[iEdge, 0];
+                    edge1 = TrIdx[iEdge, 0];
+
+                    i0[0] = e;
+                    iE[0] = e;
+
+                    this.m_ComputeValues(NS.GetVolumeNodeSet(this.GridData, edge1, false), jCell1, 1, Degree, Rin.ExtractSubArrayShallow(i0, iE));
                 }
 
                 return Rin;
@@ -582,7 +608,7 @@ namespace BoSSS.Foundation.Caching {
 
         /// <summary>
         /// Double-value (i.e. values for IN- and OUT-cell) evaluation at edges,
-        /// used for properties which ar discontinuous at edges.
+        /// used for properties which or discontinuous at edges.
         /// </summary>
         public (MultidimensionalArray INval, MultidimensionalArray OUTvl) GetValue_EdgeDV(NodeSet NS, int e0, int Len, int Degree) {
             if(e0 < 0) throw new ArgumentOutOfRangeException("e0", "must be greater or equal than zero.");
@@ -600,82 +626,99 @@ namespace BoSSS.Foundation.Caching {
                     throw new ArgumentException("node set ref. element/edge mismatch");
             }
 #endif
-            lock (this) {
+            if(NS.Reference == 0) {
+                // ++++++++++++++++++++++++++++++++++++++++++++
+                // no caching requested - avoid thread-locking
+                // ++++++++++++++++++++++++++++++++++++++++++++
+
                 MultidimensionalArray Rin = null, Rot = null;
-
-                if (NS.Reference != 0 && lastEdge_e0 == e0 && lastEdge_Len == Len && lastEdge_Degree == Degree && lastEdge_NSref == NS.Reference) {
-                    Rin = (MultidimensionalArray)Cache.GetItem(lastEdge_CashRefIn);
-                    Rot = (MultidimensionalArray)Cache.GetItem(lastEdge_CashRefOt);
-
-                    // check if the object retrived form cache has the right properties; otherwise, the cache logic is corrupt
-                    Debug.Assert((Rin == null) || (Rin.GetLength(0) == Len));
-                    Debug.Assert((Rot == null) || (Rot.GetLength(0) == Len));
-                    Debug.Assert((Rin == null) || (Rin.GetLength(1) == NS.NoOfNodes));
-                    Debug.Assert((Rot == null) || (Rot.GetLength(1) == NS.NoOfNodes));
-                }
-
-                bool RinReq = Rin == null;
-                bool RotReq = Rot == null;
-
-                lastEdge_e0 = e0;
-                lastEdge_Len = Len;
-                lastEdge_Degree = Degree;
-                lastEdge_NSref = NS.Reference;
-
-
-                if (RinReq)
-                    Rin = this.m_alloc(e0, Len, Degree, NS);
-                if (RotReq)
-                    Rot = this.m_alloc(e0, Len, Degree, NS);
-                Debug.Assert(Rin.GetLength(0) == Len);
-                Debug.Assert(Rot.GetLength(0) == Len);
-                Debug.Assert(Rin.GetLength(1) == NS.NoOfNodes);
-                Debug.Assert(Rot.GetLength(1) == NS.NoOfNodes);
-
-                if (RinReq || RotReq) {
-                    int[] i0 = new int[Rin.Dimension];
-                    int[] iE = new int[i0.Length];
-                    for (int k = 2; k < i0.Length; k++) {
-                        iE[k] = Rin.GetLength(k) - 1;
-                        Debug.Assert(Rin.GetLength(k) == Rot.GetLength(k));
-                    }
-                    iE[1] = NS.NoOfNodes - 1;
-
-                    int[,] E2C = this.GridData.iGeomEdges.CellIndices;
-                    int[,] TrIdx = this.GridData.iGeomEdges.Edge2CellTrafoIndex;
-
-                    for (int e = 0; e < Len; e++) {
-                        int iEdge = e + e0;
-                        int jCell1, jCell2, edge1, edge2;
-                        jCell1 = E2C[iEdge, 0];
-                        jCell2 = E2C[iEdge, 1];
-                        edge1 = TrIdx[iEdge, 0];
-                        edge2 = TrIdx[iEdge, 1];
-
-                        i0[0] = e;
-                        iE[0] = e;
-
-                        if (RinReq) {
-                            this.m_ComputeValues(NS.GetVolumeNodeSet(this.GridData, edge1, false), jCell1, 1, Degree, Rin.ExtractSubArrayShallow(i0, iE));
-                        }
-                        if (RotReq) {
-                            if (jCell2 >= 0) {
-                                this.m_ComputeValues(NS.GetVolumeNodeSet(this.GridData, edge2, false), jCell2, 1, Degree, Rot.ExtractSubArrayShallow(i0, iE));
-                            } else {
-                                Rot.ExtractSubArrayShallow(i0, iE).Clear();
-                            }
-                        }
-                    }
-
-                    if (NS.Reference != 0 && RinReq)
-                        lastEdge_CashRefIn = Cache.CacheItem(Rin, Rin.Length * sizeof(double));
-                    if (NS.Reference != 0 && RotReq)
-                        lastEdge_CashRefOt = Cache.CacheItem(Rot, Rot.Length * sizeof(double));
-                }
-
+                EvaluateEdgeDV(NS, e0, Len, Degree, ref Rin, ref Rot);
                 return (Rin, Rot);
+            } else {
+                lock(this) {
+                    MultidimensionalArray Rin = null, Rot = null;
+
+                    if(lastEdge_e0 == e0 && lastEdge_Len == Len && lastEdge_Degree == Degree && lastEdge_NSref == NS.Reference) {
+                        Rin = (MultidimensionalArray)Cache.GetItem(lastEdge_CashRefIn);
+                        Rot = (MultidimensionalArray)Cache.GetItem(lastEdge_CashRefOt);
+
+                        // check if the object retrieved form cache has the right properties; otherwise, the cache logic is corrupt
+                        Debug.Assert((Rin == null) || (Rin.GetLength(0) == Len));
+                        Debug.Assert((Rot == null) || (Rot.GetLength(0) == Len));
+                        Debug.Assert((Rin == null) || (Rin.GetLength(1) == NS.NoOfNodes));
+                        Debug.Assert((Rot == null) || (Rot.GetLength(1) == NS.NoOfNodes));
+                    }
+                    bool RinReq = Rin == null;
+                    bool RotReq = Rot == null;
+
+                    lastEdge_e0 = e0;
+                    lastEdge_Len = Len;
+                    lastEdge_Degree = Degree;
+                    lastEdge_NSref = NS.Reference;
+
+                    if(RinReq || RotReq) {
+                        EvaluateEdgeDV(NS, e0, Len, Degree, ref Rin, ref Rot);
+
+                        if(NS.Reference != 0 && RinReq)
+                            lastEdge_CashRefIn = Cache.CacheItem(Rin, Rin.Length * sizeof(double));
+                        if(NS.Reference != 0 && RotReq)
+                            lastEdge_CashRefOt = Cache.CacheItem(Rot, Rot.Length * sizeof(double));
+                    }
+                    return (Rin, Rot);
+                }
             }
         }
+
+        void EvaluateEdgeDV(NodeSet NS, int e0, int Len, int Degree, ref MultidimensionalArray Rin, ref MultidimensionalArray Rot) {
+            bool RinReq = Rin == null;
+            bool RotReq = Rot == null;
+
+            if(RinReq)
+                Rin = this.m_alloc(e0, Len, Degree, NS);
+            if(RotReq)
+                Rot = this.m_alloc(e0, Len, Degree, NS);
+            Debug.Assert(Rin.GetLength(0) == Len);
+            Debug.Assert(Rot.GetLength(0) == Len);
+            Debug.Assert(Rin.GetLength(1) == NS.NoOfNodes);
+            Debug.Assert(Rot.GetLength(1) == NS.NoOfNodes);
+
+            if(RinReq || RotReq) {
+                int[] i0 = new int[Rin.Dimension];
+                int[] iE = new int[i0.Length];
+                for(int k = 2; k < i0.Length; k++) {
+                    iE[k] = Rin.GetLength(k) - 1;
+                    Debug.Assert(Rin.GetLength(k) == Rot.GetLength(k));
+                }
+                iE[1] = NS.NoOfNodes - 1;
+
+                int[,] E2C = this.GridData.iGeomEdges.CellIndices;
+                int[,] TrIdx = this.GridData.iGeomEdges.Edge2CellTrafoIndex;
+
+                for(int e = 0; e < Len; e++) {
+                    int iEdge = e + e0;
+                    int jCell1, jCell2, edge1, edge2;
+                    jCell1 = E2C[iEdge, 0];
+                    jCell2 = E2C[iEdge, 1];
+                    edge1 = TrIdx[iEdge, 0];
+                    edge2 = TrIdx[iEdge, 1];
+
+                    i0[0] = e;
+                    iE[0] = e;
+
+                    if(RinReq) {
+                        this.m_ComputeValues(NS.GetVolumeNodeSet(this.GridData, edge1, false), jCell1, 1, Degree, Rin.ExtractSubArrayShallow(i0, iE));
+                    }
+                    if(RotReq) {
+                        if(jCell2 >= 0) {
+                            this.m_ComputeValues(NS.GetVolumeNodeSet(this.GridData, edge2, false), jCell2, 1, Degree, Rot.ExtractSubArrayShallow(i0, iE));
+                        } else {
+                            Rot.ExtractSubArrayShallow(i0, iE).Clear();
+                        }
+                    }
+                }
+            }
+        }
+
 
         /// <summary>
         /// Grid reference.
@@ -1691,10 +1734,10 @@ namespace BoSSS.Foundation.Caching {
             int D = value_iTrafo.GetLength(2);
             Debug.Assert(D == this.GridData.SpatialDimension);
             if(value_iTrafo.GetLength(1) > N) {
-                value_iTrafo = value_iTrafo.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { NS.NoOfNodes - 1, N - 1, D - 1 });
+                value_iTrafo = value_iTrafo.ExtractSubArrayShallow([0, 0, 0], [NS.NoOfNodes - 1, N - 1, D - 1]);
             }
 
-            Value.ExtractSubArrayShallow(new int[] { iTrafo, 0, 0, 0 }, new int[] { iTrafo - 1, NS.NoOfNodes - 1, N - 1, D - 1 }).Set(value_iTrafo);
+            Value.ExtractSubArrayShallow([iTrafo, 0, 0, 0], [iTrafo - 1, NS.NoOfNodes - 1, N - 1, D - 1]).Set(value_iTrafo);
         }
 
         public IGridData GridData {

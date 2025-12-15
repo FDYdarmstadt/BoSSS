@@ -1,13 +1,19 @@
 ﻿using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
+using BoSSS.Solution.AdvancedSolvers;
+using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.NSECommon;
 using ilPSP;
 using ilPSP.LinSolvers;
+using ilPSP.Tracing;
 using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -26,13 +32,13 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         /// <summary>
         /// ctor
         /// </summary>
-        public StokesExtension(int D, IncompressibleBoundaryCondMap map, int cutCellQuadOrder, double AgglomerationThrshold, bool fullStokes, bool useBCMap = false) {
+        public StokesExtension(int D, IncompressibleBoundaryCondMap map, int cutCellQuadOrder, double AgglomerationThrshold, bool fullStokes, StokesExtentionBoundaryOption useBCMap = StokesExtentionBoundaryOption.FreeSlipAtWall) {
             this.D = D;
             this.map = map;
             this.m_CutCellQuadOrder = cutCellQuadOrder;
             this.AgglomerationThreshold = AgglomerationThrshold;
             this.fullStokes = fullStokes;
-            this.m_useBCMap = useBCMap; // if false, Neumann boundary condtions are applied everywhere. If true, the boundary conditions from map are applied.
+            this.m_useBCMap = useBCMap; // if false, Neumann boundary conditions are applied everywhere. If true, the boundary conditions from map are applied.
         }
 
         int D;
@@ -40,7 +46,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         IncompressibleBoundaryCondMap map;
         double AgglomerationThreshold;
         bool fullStokes;
-        bool m_useBCMap;
+        StokesExtentionBoundaryOption m_useBCMap;
 
         const double penalty_safety = 4.0;
 
@@ -250,88 +256,151 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         /// output
         /// </param>
         public void SolveExtension(int levelSetIndex, LevelSetTracker lsTrk, DGField[] VelocityAtInterface, SinglePhaseField[] ExtensionVelocity) {
-            var gDat = lsTrk.GridDat;
-            int deg = ExtensionVelocity[0].Basis.Degree;
+            using(FuncTrace tr = new FuncTrace()) {
+                tr.InfoToConsole = false;
+                var gDat = lsTrk.GridDat;
+                int deg = ExtensionVelocity[0].Basis.Degree;
 
-            double[] InputVelL2 = VelocityAtInterface.Select(vel => vel.L2Norm()).ToArray();
+                double[] InputVelL2 = VelocityAtInterface.Select(vel => vel.L2Norm()).ToArray();
 
-            
-            // Tecplot.Tecplot.PlotFields(ExtensionVelocity.Cat(lsTrk.LevelSets[0] as LevelSet), this.GetType().ToString().Split('.').Last() + "-" + timestepNo, (double)timestepNo, 2);
-            m_LatestAgglom = lsTrk.GetAgglomerator(lsTrk.SpeciesIdS.ToArray(), this.m_CutCellQuadOrder, this.AgglomerationThreshold);
 
-            int J = gDat.iLogicalCells.NoOfLocalUpdatedCells;
-            var Gradients = lsTrk.DataHistories[0].Current.GetLevelSetGradients(gDat.Grid.RefElements[0].Center, 0, J);
-            var yValues = Gradients.ExtractSubArrayShallow(-1, -1, 1);
+                m_LatestAgglom = lsTrk.GetAgglomerator(lsTrk.SpeciesIdS.ToArray(), this.m_CutCellQuadOrder, this.AgglomerationThreshold);
 
-            DGField[] DummySolFields = ExtensionVelocity;
-            if (fullStokes) {
-                SinglePhaseField dummyPressure = new SinglePhaseField(new Basis(gDat, deg - 1), "DummyPressure");
-                DummySolFields = DummySolFields.Cat(dummyPressure);
-            }
-            CoordinateVector ExtenstionSolVec = new CoordinateVector(DummySolFields);
+                int J = gDat.iLogicalCells.NoOfLocalUpdatedCells;
+                var Gradients = lsTrk.DataHistories[0].Current.GetLevelSetGradients(gDat.Grid.RefElements[0].Center, 0, J);
+                var yValues = Gradients.ExtractSubArrayShallow(-1, -1, 1);
 
-            (BlockMsrMatrix OpMtx, double[] RHS) = ComputeMatrix(levelSetIndex, lsTrk, ExtenstionSolVec.Mapping, VelocityAtInterface);
-
-            //var RHSdg = new CoordinateVector(DummySolFields.Select(dd => dd.CloneAs()));
-            //RHSdg.SetV(RHS, 1.0);
-            //double[] RHSL2norm = RHSdg.Fields.Select(f => f.L2Norm()).ToArray();
-
-            // should be replaced by something more sophisticated
-            var Residual = RHS.CloneAs();
-            OpMtx.Solve_Direct(ExtenstionSolVec, RHS);
-
-            // Console.WriteLine("StokesExt Vel L2: " + RHS.L2Norm());
-
-            double[] OutputVelL2 = ExtensionVelocity.Select(vel => vel.L2Norm()).ToArray();
-
-            // Tecplot.Tecplot.PlotFields(ExtensionVelocity.Cat(lsTrk.LevelSets[0] as LevelSet), this.GetType().ToString().Split('.').Last() + "-" + timestepNo, (double)timestepNo, 2);
-            /*
-            {
-                double RhsNorm = Residual.L2NormPow2().MPISum().Sqrt();
-                double MatrixInfNorm = OpMtx.InfNorm();
-                OpMtx.SpMV(-1.0, ExtenstionSolVec, 1.0, Residual);
-
-                double ResidualNorm = Residual.L2NormPow2().MPISum().Sqrt();
-                double SolutionNorm = ExtenstionSolVec.L2NormPow2().MPISum().Sqrt();
-                double Denom = Math.Max(MatrixInfNorm, Math.Max(RhsNorm, Math.Max(SolutionNorm, Math.Sqrt(BLAS.MachineEps))));
-                double RelResidualNorm = ResidualNorm / Denom;
-
-                //Console.WriteLine("done: Abs.: {0}, Rel.: {1}", ResidualNorm, RelResidualNorm);
-
-                if(RelResidualNorm > 1.0e-10) {
-                    string ErrMsg;
-                    using(var stw = new System.IO.StringWriter()) {
-                        stw.WriteLine("Stokes Extension: High residual from direct solver.");
-                        stw.WriteLine("    L2 Norm of RHS:         " + RhsNorm);
-                        stw.WriteLine("    L2 Norm of Solution:    " + SolutionNorm);
-                        stw.WriteLine("    L2 Norm of Residual:    " + ResidualNorm);
-                        stw.WriteLine("    Relative Residual norm: " + RelResidualNorm);
-                        stw.WriteLine("    Matrix Inf norm:        " + MatrixInfNorm);
-
-                        ErrMsg = stw.ToString();
-                    }
-                    Console.Error.WriteLine(ErrMsg);
-
-                    string curDir = System.IO.Directory.GetCurrentDirectory();
-                    string failVault = System.IO.Path.Combine(curDir, "failVault_" + (DateTime.Now.Ticks));
-                    Directory.CreateDirectory(failVault);
-                    foreach(var plt in System.IO.Directory.GetFiles(curDir, "*.plt")) {
-                        System.IO.File.Copy(plt, Path.Combine(failVault, Path.GetFileName(plt)));
-                    }
-
-                    OpMtx.SaveToTextFileSparse(Path.Combine(failVault, "StokesExtMtx.txt"));
-                    RHS.SaveToTextFile(Path.Combine(failVault, "StokesExtRHS.txt"));
-                    ExtenstionSolVec.SaveToTextFile(Path.Combine(failVault, "StokesExtSOL.txt"));
-
-                    throw new ArithmeticException(ErrMsg);
-
+                DGField[] DummySolFields = ExtensionVelocity;
+                if (fullStokes) {
+                    SinglePhaseField dummyPressure = new SinglePhaseField(new Basis(gDat, deg - 1), "DummyPressure");
+                    DummySolFields = DummySolFields.Cat(dummyPressure);
                 }
-            }*/
+                CoordinateVector ExtenstionSolVec = new CoordinateVector(DummySolFields);
+
+                (BlockMsrMatrix OpMtx, double[] RHS) = ComputeMatrix(levelSetIndex, lsTrk, ExtenstionSolVec.Mapping, VelocityAtInterface);
+
+                //var RHSdg = new CoordinateVector(DummySolFields.Select(dd => dd.CloneAs()));
+                //RHSdg.SetV(RHS, 1.0);
+                //double[] RHSL2norm = RHSdg.Fields.Select(f => f.L2Norm()).ToArray();
+
+                var AggGrid = CoarseningAlgorithms.CreateSequence(ExtenstionSolVec.Mapping.GridDat, -1);
+                var AggBasis = AggregationGridBasis.CreateSequence(AggGrid, ExtenstionSolVec.Mapping.BasisS);
+                var MultigridOperatorConfig = new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig[1][];
+                MultigridOperatorConfig[0] = new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig[ExtenstionSolVec.Mapping.Fields.Count];
+                if (this.fullStokes) {
+                    for (int i = 0; i < ExtenstionSolVec.Mapping.Fields.Count; i++) {
+                        if( i == ExtenstionSolVec.Mapping.Fields.Count - 1) {
+                            MultigridOperatorConfig[0][i] = new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig() {
+                                mode = BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.IdMass_DropIndefinite,
+                                VarIndex = new int[] { i },
+                                DegreeS = new int[] { ExtenstionSolVec.Mapping.Fields[i].Basis.Degree }
+                            };
+                        } else {
+                            MultigridOperatorConfig[0][i] = new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig() {
+                                mode = BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
+                                VarIndex = new int[] { i },
+                                DegreeS = new int[] { ExtenstionSolVec.Mapping.Fields[i].Basis.Degree }
+                            };
+                        }
+                    }
+                } else {
+                    for (int i = 0; i < ExtenstionSolVec.Mapping.Fields.Count; i++) {
+                        MultigridOperatorConfig[0][i] = new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig() {
+                            mode = BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
+                            VarIndex = new int[] { i },
+                            DegreeS = new int[] { ExtenstionSolVec.Mapping.Fields[i].Basis.Degree }
+                        };
+                    }
+                }
+                MultigridOperator mgOp = new MultigridOperator(AggBasis, ExtenstionSolVec.Mapping, OpMtx, null, MultigridOperatorConfig, GetBulkOperator());
+
+                var bkup_RHS = RHS.CloneAs();
+                Exception e;
+                try {
+                    var Pre_RHS = RHS.CloneAs();
+                    var Pre_Sol = ExtenstionSolVec.CloneAs();
+                    tr.Info("StokesExtension.SolveExtension trying with Multigridoperator");
+                    mgOp.TransformRhsInto(RHS, Pre_RHS, true);
+                    mgOp.OperatorMatrix.Solve_Direct(Pre_Sol, Pre_RHS);
+                    mgOp.TransformSolFrom(ExtenstionSolVec, Pre_Sol);
+                    e = null;
+                } catch(Exception ee) {
+                    e = ee;
+                }
+                try {
+                    e.ExceptionBcast(); // MPI-parallel exception handling 
+                    
+                } catch {
+                    // should be replaced by something more sophisticated
+                    //var Residual = RHS.CloneAs();
+                    //var cExtenstionSolVec = ExtenstionSolVec.CloneAs();
+                    tr.Warning($"StokesExtension.SolveExtension with Multigridoperator failed, trying direct method; got exception");
+                    OpMtx.Solve_Direct(ExtenstionSolVec, bkup_RHS);
+                }
+
+                //{
+                //    DGField[] stokesShit = VelocityAtInterface.Cat(DummySolFields);
+                //    Tecplot.Tecplot.PlotFields(stokesShit, "StokesExt.ls" + levelSetIndex, 0.0, 3);
+                //}
 
 
-            // plotting for debug reasons
-            //Tecplot.Tecplot.PlotFields(ExtenstionSolVec.Fields, this.GetType().ToString().Split('.').Last() + "-" + timestepNo, (double)timestepNo, 2);
-            //timestepNo++;
+
+                //Console.WriteLine("Difference: {0}", ExtenstionSolVec.L2Dist(cExtenstionSolVec));
+
+                // Console.WriteLine("StokesExt Vel L2: " + RHS.L2Norm());
+
+                double[] OutputVelL2 = ExtensionVelocity.Select(vel => vel.L2Norm()).ToArray();
+
+                // Tecplot.Tecplot.PlotFields(ExtensionVelocity.Cat(lsTrk.LevelSets[0] as LevelSet), this.GetType().ToString().Split('.').Last() + "-" + timestepNo, (double)timestepNo, 2);
+                /*
+                {
+                    double RhsNorm = Residual.L2NormPow2().MPISum().Sqrt();
+                    double MatrixInfNorm = OpMtx.InfNorm();
+                    OpMtx.SpMV(-1.0, ExtenstionSolVec, 1.0, Residual);
+
+                    double ResidualNorm = Residual.L2NormPow2().MPISum().Sqrt();
+                    double SolutionNorm = ExtenstionSolVec.L2NormPow2().MPISum().Sqrt();
+                    double Denom = Math.Max(MatrixInfNorm, Math.Max(RhsNorm, Math.Max(SolutionNorm, Math.Sqrt(BLAS.MachineEps))));
+                    double RelResidualNorm = ResidualNorm / Denom;
+
+                    //Console.WriteLine("done: Abs.: {0}, Rel.: {1}", ResidualNorm, RelResidualNorm);
+
+                    if(RelResidualNorm > 1.0e-10) {
+                        string ErrMsg;
+                        using(var stw = new System.IO.StringWriter()) {
+                            stw.WriteLine("Stokes Extension: High residual from direct solver.");
+                            stw.WriteLine("    L2 Norm of RHS:         " + RhsNorm);
+                            stw.WriteLine("    L2 Norm of Solution:    " + SolutionNorm);
+                            stw.WriteLine("    L2 Norm of Residual:    " + ResidualNorm);
+                            stw.WriteLine("    Relative Residual norm: " + RelResidualNorm);
+                            stw.WriteLine("    Matrix Inf norm:        " + MatrixInfNorm);
+
+                            ErrMsg = stw.ToString();
+                        }
+                        Console.Error.WriteLine(ErrMsg);
+
+                        string curDir = System.IO.Directory.GetCurrentDirectory();
+                        string failVault = System.IO.Path.Combine(curDir, "failVault_" + (DateTime.Now.Ticks));
+                        Directory.CreateDirectory(failVault);
+                        foreach(var plt in System.IO.Directory.GetFiles(curDir, "*.plt")) {
+                            System.IO.File.Copy(plt, Path.Combine(failVault, Path.GetFileName(plt)));
+                        }
+
+                        OpMtx.SaveToTextFileSparse(Path.Combine(failVault, "StokesExtMtx.txt"));
+                        RHS.SaveToTextFile(Path.Combine(failVault, "StokesExtRHS.txt"));
+                        ExtenstionSolVec.SaveToTextFile(Path.Combine(failVault, "StokesExtSOL.txt"));
+
+                        throw new ArithmeticException(ErrMsg);
+
+                    }
+                }*/
+
+
+                // plotting for debug reasons
+                //Console.WriteLine("StokesExtension Plotting enabled!");
+                //Tecplot.Tecplot.PlotFields(ExtenstionSolVec.Fields.Cat(VelocityAtInterface), this.GetType().ToString().Split('.').Last() + "-" + timestepNo, (double)timestepNo, 2);
+                //timestepNo++;
+            }
         }
     }
 }

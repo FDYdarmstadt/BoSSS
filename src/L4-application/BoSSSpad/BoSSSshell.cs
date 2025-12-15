@@ -1,4 +1,5 @@
-﻿using BoSSS.Foundation;
+﻿using BoSSS.Application.XNSE_Solver.DongBoundaryConditionTests;
+using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
@@ -15,6 +16,7 @@ using log4net.Appender;
 using log4net.Config;
 using log4net.Layout;
 using Microsoft.DotNet.Interactive.Formatting;
+using MPI.Wrappers;
 using NUnit.Framework.Internal;
 using System;
 using System.Collections;
@@ -261,7 +263,6 @@ namespace BoSSS.Application.BoSSSpad {
             if (logger_output != null)
                 throw new ApplicationException("Already called."); // is seems this object is designed so that it stores at max one session per lifetime
 
-
             string settingsDir = Foundation.IO.Utils.GetBoSSSUserSettingsPath();
             string tracingDir = Path.Combine(settingsDir, "bossspad-trace");
             if (!System.IO.Directory.Exists(tracingDir))
@@ -271,17 +272,20 @@ namespace BoSSS.Application.BoSSSpad {
             string baseneme = Path.Combine(tracingDir, $"trace.{bbb}.txt");
             ProfilingFile = Path.Combine(tracingDir, $"profiling_summary.{bbb}.txt");
             Console.WriteLine("Tracing file: " + baseneme);
-            Console.WriteLine("Profiling file: " + baseneme);
+            Console.WriteLine("Profiling file: " + ProfilingFile);
             WriteProfiling();
 
             tracerfile = new FileStream(baseneme, FileMode.Create, FileAccess.Write, FileShare.Read);
+            //var zipper = new System.IO.Compression.GZipStream(tracerfile, System.IO.Compression.CompressionLevel.Optimal, leaveOpen:false);
+            //tracertxt = new StreamWriter(zipper);
             tracertxt = new StreamWriter(tracerfile);
 
-            TextWriterAppender fa = new TextWriterAppender();
-            fa.ImmediateFlush = true;
-            //fa.Writer = Console.Out;
-            fa.Writer = tracertxt;
-            fa.Layout = new PatternLayout("%date %-5level %logger: %message%newline");
+            TextWriterAppender fa = new TextWriterAppender {
+                ImmediateFlush = true,
+                //fa.Writer = Console.Out;
+                Writer = tracertxt,
+                Layout = new PatternLayout("%date %-5level From__%logger: %message%newline")
+            };
             fa.ActivateOptions();
             BasicConfigurator.Configure(fa);
             logger_output = fa;
@@ -704,8 +708,14 @@ namespace BoSSS.Application.BoSSSpad {
                 }
             }
 
+            bool bExists = false;
+            if(csMPI.Rank_World == 0) {
+                bExists = Directory.Exists(dbDir);
+            }
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+            bExists = MPIExtensions.MPIBroadcast(bExists, 0);
 
-            if (Directory.Exists(dbDir)) {
+            if (bExists) {
                 if (!DatabaseUtils.IsValidBoSSSDatabase(dbDir)) {
                     throw new ArgumentException("Directory '" + dbDir + "' exists, but is not a valid BoSSS database.");
                 }
@@ -714,6 +724,7 @@ namespace BoSSS.Application.BoSSSpad {
                 if (allowCreation) {
                     DatabaseUtils.CreateDatabase(dbDir);
                     Console.WriteLine("Creating database '" + dbDir + "'.");
+                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                 } else {
                     throw new ArgumentException("Database Directory '" + dbDir + "' does not exist.");
                 }
@@ -1199,7 +1210,7 @@ namespace BoSSS.Application.BoSSSpad {
                 typeof(BoSSS.Solution.Tecplot.Tecplot),
                 typeof(BoSSS.Solution.ASCIIExport.CurveExportDriver),
                 typeof(BoSSS.Solution.AdvancedSolvers.MultigridOperator),
-                typeof(BoSSS.Solution.XNSECommon.CurvatureAlgorithms),
+                typeof(BoSSS.Solution.LevelSetTools.CurvatureAlgorithms),
                 typeof(BoSSS.Solution.EnergyCommon.Dissipation),
                 typeof(BoSSS.Solution.XheatCommon.AuxiliaryHeatFlux_Identity),
                 typeof(BoSSS.Solution.XdgTimestepping.LevelSetHandling),
@@ -1211,6 +1222,7 @@ namespace BoSSS.Application.BoSSSpad {
                 typeof(MathNet.Numerics.Complex32),
                 typeof(CNS.CNSProgram),
                 typeof(XNSE_Solver.XNSE),
+                typeof(DongBoundaryCondition_KovasznayFlow),
                 typeof(BoSSS.Application.SipPoisson.SipPoissonMain),
                 typeof(Rheology.Rheology),
                 typeof(XNSERO_Solver.XNSERO),

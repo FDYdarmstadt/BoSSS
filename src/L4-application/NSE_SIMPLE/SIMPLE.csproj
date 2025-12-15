@@ -51,4 +51,7 @@
   <ItemGroup>
     <Folder Include="Incompressible\01_VariableSet\" />
   </ItemGroup>
+  <ItemGroup>
+    <!--PackageReference Include="System.Drawing.Common" Version="5.0.3" /-->
+  </ItemGroup>
 </Project>

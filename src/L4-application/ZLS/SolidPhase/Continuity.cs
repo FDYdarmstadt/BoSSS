@@ -1,6 +1,7 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
+using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,38 +11,29 @@ using System.Threading.Tasks;
 namespace ZwoLevelSetSolver.SolidPhase {
     class Continuity : BulkEquation {
 
-        internal static bool ContinuityInDisplacement = false;
-        internal static bool ContinuityStabilization = false;
-
         string spcName;
 
-        public Continuity(string spcName, int D) {
+        public Continuity(string spcName, int D, Solid material) {
             this.spcName = spcName;
-            for(int i = 0; i < D; ++i) {
-
-
-                if(ContinuityInDisplacement) {
-                    string variableName = ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[i];
-                    AddVariableNames(variableName);
-                    var divergence = new Divergence(spcName, variableName, i);
-                    AddComponent(divergence);
-                } else {
-                    string variableName1 = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[i];
-                    AddVariableNames(variableName1);
-                    var divergence1 = new Divergence(spcName, variableName1, i);
+            if(true) {
+                for(int i = 0; i < D; ++i) {
+                    string velocity = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[i];
+                    AddVariableNames(velocity);
+                    var divergence1 = new Divergence(spcName, velocity, i);
                     AddComponent(divergence1);
                 }
-                //*/
+                AddComponent(new EdgePenaltyForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.Pressure, -1.0 / material.Lame2 - 1.0 / material.Viscosity));
+                //AddComponent(new EdgePenaltyForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.Pressure, -1.0 / (material.Viscosity)));
+                //AddComponent(new EdgePenaltyForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.Pressure, -1000));
+            } else {
+                string[] displacement = ZwoLevelSetSolver.VariableNames.DisplacementVector(D);
+                for(int i = 0; i < D; ++i) {
+                    AddVariableNames(displacement);
+                    var divergence = new Divergence(spcName, displacement[i], i, 1.0);
+                    AddComponent(divergence);
+                }
+                //AddComponent(new NonlinearContinuityForm(spcName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D)));
             }
-
-            
-            if(ContinuityStabilization) {
-                string pressure = BoSSS.Solution.NSECommon.VariableNames.Pressure;
-                AddVariableNames(pressure);
-                var pressurePenalty = new EdgePenaltyForm(spcName, pressure, -1); // Must scale with viscosity, see Die Pietro
-                AddComponent(pressurePenalty);
-            }
-            //*/
         }
 
         public override string SpeciesName => spcName;
@@ -56,11 +48,13 @@ namespace ZwoLevelSetSolver.SolidPhase {
         string speciesName;
         string[] variables;
         int d;
-
-        public Divergence(string speciesName, string variableName, int d) {
+        double scale;
+        
+        public Divergence(string speciesName, string variableName, int d, double scale = 1.0) {
             this.speciesName = speciesName;
             this.variables = new string[] { variableName };
             this.d = d;
+            this.scale = scale;
         }
 
         public TermActivationFlags BoundaryEdgeTerms {
@@ -83,23 +77,23 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
             double flux = _uA[0] * inp.Normal[d];
-            return flux * _vA;
-
+            return scale * flux * _vA;
+            //return 0.0;
         }
 
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
             double flux = (_uIN[0] - _uOUT[0]) * inp.Normal[d];
-            flux *= 0.5 * (_vIN + _vOUT);
+            flux *=  0.5 * (_vIN + _vOUT);
 
             //double flux = 0.5 * (_uIN[0] + _uOUT[0]) * inp.Normal[d];
             //flux *= (_vIN - _vOUT);
-            return flux;
+            return scale * flux;
 
         }
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double flux = GradU[0,d] * V;
-            return -flux;
+            return - scale * flux;
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {

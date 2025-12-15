@@ -28,6 +28,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// The Session information after the solver is finished.
         /// </returns>
         public static SessionInfo Run(this AppControl ctrl) {
+            //ilPSP.Environment.NumThreads = 1;
             //Debugger.Launch();
             var solverClass = ctrl.GetSolverType();
             object solver = Activator.CreateInstance(solverClass);
@@ -344,8 +345,9 @@ namespace BoSSS.Application.BoSSSpad {
             Guid rst_ID = sess.ID;
             TimestepNumber rst_ts = sess.Timesteps.Last().TimeStepNumber;
 
-            ctrl.InitialValues.Clear();
-            ctrl.InitialValues_Evaluators.Clear();
+            // sometimes stuff like a prescribed level set velocity or gravity is supplied as an Initial Value, so keep these and only override the IO Fields with restart values
+            //ctrl.InitialValues.Clear();
+            //ctrl.InitialValues_Evaluators.Clear();
 
             ctrl.RestartInfo = Tuple.Create(rst_ID, rst_ts);
 

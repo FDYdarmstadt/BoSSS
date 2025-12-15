@@ -293,16 +293,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         protected override void SetUpEnvironment() {
             base.SetUpEnvironment();
 
-            // AMR level indactors
-            //====================
-            m_AMRLevelIndicators.Clear();
-            if (this.Control != null && this.Control.activeAMRlevelIndicators != null) {
-                m_AMRLevelIndicators.AddRange(this.Control.activeAMRlevelIndicators);
-            }
-
-            foreach (var lvlInd in ActiveAMRLevelIndicators) {
-                lvlInd.Setup(this);
-            }
+            
         }
 
 
@@ -327,7 +318,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 // currently, only supported for the BDF timestepper.
                 
-                Timestepping.DataRestoreAfterBalancing(L, CurrentState.Fields, CurrentResidual.Fields, base.LsTrk, base.MultigridSequence, this.Operator);
+                Timestepping.DataRestoreAfterBalancing(L, CurrentState.Fields, CurrentResidual.Fields, Parameters, base.LsTrk, base.MultigridSequence, this.Operator);
 
                 if (!object.ReferenceEquals(this.Operator, Timestepping.Operator))
                     throw new ApplicationException();
@@ -579,105 +570,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
-        /// <summary>
-        /// 
-        /// </summary>
-        protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
-            using (var tr = new FuncTrace()) {
-
-                if (this.Control.AdaptiveMeshRefinement) {
-
-                    // Check grid changes
-                    // ==================
-
-                    int[] desiredLevels = GetDesiredRefinementLevels();
-
-                    GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData, null);
-                    bool AnyChange = gridRefinementController.ComputeGridChange(desiredLevels, out List<int> CellsToRefineList, out List<int[]> Coarsening);
-
-                    int NoOfCellsToRefine = 0;
-                    int NoOfCellsToCoarsen = 0;
-                    if (AnyChange.MPIOr()) {
-                        int[] glb = (new int[] { CellsToRefineList.Count, Coarsening.Sum(L => L.Length) }).MPISum();
-                        NoOfCellsToRefine = glb[0];
-                        NoOfCellsToCoarsen = glb[1];
-                    }
-                    long oldJ = this.GridData.CellPartitioning.TotalLength;
-
-                    // Update Grid
-                    // ===========
-                    if (AnyChange.MPIOr()) {
-
-                        Console.WriteLine(" Refining " + NoOfCellsToRefine + " of " + oldJ + " cells");
-                        Console.WriteLine(" Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
-
-                        newGrid = ((GridData)this.GridData).Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
-
-                    } else {
-
-                        newGrid = null;
-                        old2NewGrid = null;
-                    }
-
-                } else {
-
-                    newGrid = null;
-                    old2NewGrid = null;
-                }
-
-            }
-        }
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        private int[] GetDesiredRefinementLevels() {
-
-            if(Control.AdaptiveMeshRefinement == true)
-                if(ActiveAMRLevelIndicators == null || ActiveAMRLevelIndicators.Count <= 0) {
-                    Console.Error.WriteLine("Control object configuration inconsistent: 'AdaptiveMeshRefinement == true', but no refinement indicators in 'activeAMRLevelIndicators' are set.");
-                }
-
-            int J = this.GridData.CellPartitioning.LocalLength;
-            int[] levelChanges = new int[J];
-
-            // combine all results of active level indicators
-            foreach (var lvlInd in ActiveAMRLevelIndicators) {
-                if(ActiveAMRLevelIndicators.IndexOf(lvlInd) == 0) {
-                    levelChanges = lvlInd.DesiredCellChanges(); // levelChanges is instantiated to zero. Without this line, coarsening is impossible due to Max(a,b)
-                }
-                int[] lvls = lvlInd.DesiredCellChanges();
-                //levelChanges = levelChanges.Zip(lvls, (a, b) => a + b).ToArray();
-                levelChanges = levelChanges.Zip(lvls, (a, b) => Math.Max(a,b)).ToArray(); // keep finer level indicator, but don't double refine
-            }
-
-            // get desired level 
-            int[] levels = new int[J];
-            Cell[] cells = ((GridData)this.GridData).Grid.Cells;
-            for (int j = 0; j < J; j++) {
-                levels[j] = cells[j].RefinementLevel;
-                if (levelChanges[j] > 0)
-                    levels[j] += 1;
-                else if (levelChanges[j] < 0)
-                    levels[j] -= 1;
-            }
-
-            return levels;
-        }
-
-
-        List<AMRLevelIndicator> m_AMRLevelIndicators = new List<AMRLevelIndicator>();
-
-        /// <summary>
-        /// <see cref="Control.AppControl.activeAMRlevelIndicators"/>
-        /// </summary>
-        public IList<AMRLevelIndicator> ActiveAMRLevelIndicators {
-            get {
-                return m_AMRLevelIndicators;
-            }
-        }
+        
 
 
 
@@ -911,6 +804,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         bool PlotShadowfields = false;
+
         /// <summary>
         /// Plot using Tecplot
         /// </summary>

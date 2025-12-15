@@ -6,6 +6,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!--PackageReference Include="System.Drawing.Common" Version="5.0.3" /-->
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj" />
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj" />
     <ProjectReference Include="..\AdvancedSolverTests\AdvancedSolverTests.csproj" />

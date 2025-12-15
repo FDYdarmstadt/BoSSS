@@ -36,6 +36,7 @@
     <ProjectReference Include="..\ipPoisson\ipPoisson.csproj" />
     <ProjectReference Include="..\ipViscosity\ipViscosity.csproj" />
     <ProjectReference Include="..\LoadBalancingTest\LoadBalancingTest.csproj" />
+    <ProjectReference Include="..\LsTest\LsTest.csproj" />
     <ProjectReference Include="..\LTSTests\LTSTests.csproj" />
     <ProjectReference Include="..\Matrix_MPItest\Matrix_MPItest.csproj" />
     <ProjectReference Include="..\MPITest\MPITest.csproj" />
@@ -53,10 +54,12 @@
     <ProjectReference Include="..\XESF\XESF.csproj" />
     <ProjectReference Include="..\XESTSF\XESTSF.csproj" />
     <ProjectReference Include="..\XNSERO\XNSERO_Solver.csproj" />
+    <ProjectReference Include="..\XNSE_ParallelTests\XNSE_ParallelTests.csproj" />
     <ProjectReference Include="..\XNSE_Solver\XNSE_Solver.csproj" />
     <ProjectReference Include="..\XNSE_Solver_LargeMPItest\XNSE_Solver_LargeMPItest.csproj" />
     <ProjectReference Include="..\XNSE_Solver_MPItest\XNSE_Solver_MPItest.csproj" />
     <ProjectReference Include="..\ZLS\ZLS.csproj" />
+	<ProjectReference Include="..\HFSI\HFSI.csproj" />
     <ProjectReference Include="..\ZwoLsTest\ZwoLsTest.csproj" />
   </ItemGroup>
 </Project>

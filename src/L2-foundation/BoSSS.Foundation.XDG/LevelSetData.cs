@@ -1149,15 +1149,16 @@ namespace BoSSS.Foundation.XDG {
             Dictionary<SpeciesId, SubGrid> m_SpeciesSubGrids;
 
             /// <summary>
-            /// Level set region code,
-            /// for locally updated and external cells
+            /// Level set region code, for locally updated and external cells
+            /// - index: (logical) cell index, also includes external cells.
             /// </summary>
             internal ushort[] m_LevSetRegions;
 
 
             /// <summary>
             /// Level set region code, before the most recent call to <see cref="LevelSetTracker.UpdateTracker"/>
-            /// for locally updated and external cells
+            /// for locally updated and external cells.
+            /// This is required for updating memory of XDG fields.
             /// </summary>
             internal ushort[] m_LevSetRegions_b4Update;
 
@@ -1261,6 +1262,7 @@ namespace BoSSS.Foundation.XDG {
                 this.m_NearField4LevelSet = null;
                 this.m_NearMask = null;
                 this.m_NearMask4LevelSet = null;
+                this.m_ZeroSetEdges4LevelSet = null;
                 this.m_SpeciesMask = null;
                 this.m_SpeciesSubGrids = null;
                 this.m_ColorMap4Spc = new Dict_ColorMap4Spc(this);
@@ -1307,12 +1309,54 @@ namespace BoSSS.Foundation.XDG {
                 return GetNearFieldMask(0);
             }
 
+            EdgeMask[] m_ZeroSetEdges4LevelSet;
             /// <summary>
             /// For each level-set, a mask containing all edges that coincide with the level-set itself.
             /// Return value can be null, if there are no such edges.
             /// </summary>
             public EdgeMask GetZeroSetEdges(int LevSetIdx) {
-                throw new NotImplementedException("todo");
+                //throw new NotImplementedException("todo");
+                if (m_ZeroSetEdges4LevelSet == null) {
+                    m_ZeroSetEdges4LevelSet = new EdgeMask[this.m_owner.NoOfLevelSets];
+                }
+
+                if (m_ZeroSetEdges4LevelSet[LevSetIdx] == null) {
+                    var CutCells = GetCutCellMask4LevSet(LevSetIdx);
+                    var CandidateEdges = CutCells.GetAllLocalEdgesMask();
+                    var ZeroSetEdges = CandidateEdges.GetBitMask();
+                    ZeroSetEdges.SetAll(false);
+
+                    var LevSet = m_owner.LevelSets[LevSetIdx];
+
+                    foreach (int edge in CandidateEdges.ItemEnum) {
+                        ZeroSetEdges[edge] = isCutEdge(edge);
+                    }
+
+                    m_ZeroSetEdges4LevelSet[LevSetIdx] = new EdgeMask(CandidateEdges.GridData, ZeroSetEdges);
+
+                    bool isCutEdge(int iedge) {
+                        int icell = GridDat.Edges.CellIndices[iedge, 0];
+                        var edgRef = GridDat.Edges.GetRefElement(iedge);
+                        NodeSet edgNodes;
+                        edgRef.GetNodeSet(15, out edgNodes, out _, out _);
+                        NodeSet evalNodes = edgNodes.GetVolumeNodeSet(GridDat, GridDat.Edges.Edge2CellTrafoIndex[iedge, 0], false);
+                        MultidimensionalArray result = MultidimensionalArray.Create(1, evalNodes.NoOfNodes);
+                        LevSet.Evaluate(icell, 1, evalNodes, result);
+
+                        bool pos = false;
+                        bool neg = false;
+                        for (int i = 0; i < evalNodes.NoOfNodes; i++) {
+                            if (result[0, i] > 0) {
+                                pos = true;
+                            } else if (result[0, i] < 0) {
+                                neg = true;
+                            }
+                        }
+                        return pos && neg || (!pos && !neg);
+                    }
+                }
+
+                return m_ZeroSetEdges4LevelSet[LevSetIdx];
             }
 
 
@@ -1652,12 +1696,12 @@ namespace BoSSS.Foundation.XDG {
             }
 
             /// <summary>
-            /// Tests if a species  \f$\mathfrak{s}\f$ is actually \f$ \emph{present} \f$ in some cell \f$K_{\text{\tt jCell}}\f$,
+            /// Tests if a species $\mathfrak{s}$ is actually $\emph{present}$ in some cell $K_{\text{\tt jCell}}$,
             /// i.e. if 
             /// the measure of the species in the cell is positive, i.e. 
-            /// \f[
-            ///   \int_{K_{\text{\tt jCell}} \cap \mathfrak{s} } 1 \dV > 0 
-            /// \f]
+            /// \[
+            ///   \int_{K_{\text{\tt jCell}} \cap \mathfrak{s} } 1 \textrm{dV} > 0 
+            /// \]
             /// </summary>
             /// <param name="speciesId">The id of species \mathfrak{s}.</param>
             /// <param name="jCell">a cell index</param>

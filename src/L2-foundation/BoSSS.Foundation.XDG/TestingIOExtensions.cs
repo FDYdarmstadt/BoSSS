@@ -1,4 +1,5 @@
 ﻿using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,7 +32,7 @@ namespace BoSSS.Foundation.XDG {
         }
         
         /// <summary>
-        /// Adds an XDG field.
+        /// Computes the difference between XDG field <paramref name="f"/> and the respective field in memory
         /// </summary>
         public static XDGField LocalError(this TestingIO t, XDGField f) {
             var trk = f.Basis.Tracker;
@@ -54,13 +55,32 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Overwrites the memory of a XDG field with the reference data 
         /// </summary>
-        static public void OverwriteDGField(this TestingIO t, XDGField f) {
+        public static void OverwriteDGField(this TestingIO t, XDGField f) {
              var trk = f.Basis.Tracker;
 
             foreach(string spc in trk.SpeciesNames) {
                 var fs = f.GetSpeciesShadowField(spc);
                 t.OverwriteDGField(fs);
             }
+        }
+
+        /// <summary>
+        /// Absolute L2 for XDG fields
+        /// </summary>
+        public static double AbsError(this TestingIO t, XDGField f) {
+            if (t.GridDat.MpiSize == t.ReferenceMPISize)
+                return 0.0;
+
+            var err = f.CloneAs();
+
+            var trk = f.Basis.Tracker;
+            foreach (string spc in trk.SpeciesNames) {
+                var fs = err.GetSpeciesShadowField(spc);
+                t.OverwriteDGField(fs);
+            }
+            err.Acc(-1.0, f);
+
+            return err.L2Norm();
         }
 
     }

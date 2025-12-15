@@ -226,16 +226,16 @@ namespace BoSSS.Application.XNSE_Solver {
                 };
 
                 C.Option_LevelSetEvolution = LevelSetEvolution.Fourier;
-                C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Fourier;
+                C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Fourier;
             } else {
 
                 C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
                 C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
-                C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+                C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
                 C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 2;
             }
 
-            C.ComputeEnergyProperties = true;
+            ////C.ComputeEnergyProperties = true;
 
             // Timestepping
             // ============
@@ -465,13 +465,13 @@ namespace BoSSS.Application.XNSE_Solver {
             Func<double[], double, double> PsiB = (X, t) => psiB(X.L2Norm());
 
 
-            C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
-            C.ExactSolutionVelocity.Add("A", new Func<double[], double, double>[] { UA1, UA2 });
-            C.ExactSolutionVelocity.Add("B", new Func<double[], double, double>[] { UB1, UB2 });
+            C.AddExactSolution("VelocityX#A", UA1);
+            C.AddExactSolution("VelocityY#A", UA2);
+            C.AddExactSolution("VelocityX#B", UB1);
+            C.AddExactSolution("VelocityY#B", UB2);
 
-            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionPressure.Add("A", PsiA);
-            C.ExactSolutionPressure.Add("B", PsiB);
+            C.AddExactSolution("Pressure#A", PsiA);
+            C.AddExactSolution("Pressure#B", PsiA);
 
 
             // Boundary condition
@@ -1794,10 +1794,10 @@ namespace BoSSS.Application.XNSE_Solver {
             #region solver
 
             C.solveKineticEnergyEquation = false;
-            //C.ComputeEnergyProperties = true;
+            //////C.ComputeEnergyProperties = true;
 
-            C.CheckJumpConditions = false;
-            C.CheckInterfaceProps = false;
+            //C.CheckJumpConditions = false;
+            //C.CheckInterfaceProps = false;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
@@ -1979,7 +1979,7 @@ namespace BoSSS.Application.XNSE_Solver {
             #region solver
 
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             C.NonLinearSolver.MaxSolverIterations = 100;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
@@ -2302,7 +2302,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 			C.LSContiProjectionMethod = BoSSS.Solution.LevelSetTools.ContinuityProjectionOption.None;
 			//C.CutCellQuadratureType   = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
-			C.ComputeEnergyProperties = false;
+			//C.ComputeEnergyProperties = false;
 
 
 			// Solver Stuff
@@ -2461,21 +2461,13 @@ namespace BoSSS.Application.XNSE_Solver {
 
             Func<double[], double, double> psi_0 = (X, t) => psi0 * X[0] + (xSize * psi0 + 1);
 
-            //Func<double, double> phi = t => t * v0;
+            C.AddExactSolution("VelocityX#A", u_A);
+            C.AddExactSolution("VelocityY#A", v_0);
+            C.AddExactSolution("VelocityX#B", u_B);
+            C.AddExactSolution("VelocityY#B", v_0);
+            C.AddExactSolution("Pressure#A", psi_0);
+            C.AddExactSolution("Pressure#B", psi_0);
 
-            C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
-            C.ExactSolutionVelocity.Add("A", new Func<double[], double, double>[] { u_A, v_0 });
-            C.ExactSolutionVelocity.Add("B", new Func<double[], double, double>[] { u_B, v_0 });
-
-            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionPressure.Add("A", psi_0);
-            C.ExactSolutionPressure.Add("B", psi_0);
-
-            //double[] X_test = new double[] {0,1};
-            //double u_B_test = u_B(X_test,0);
-            //Console.WriteLine("u_B = {0}", u_B_test);
-            //u_B_test = u_B(X_test, 1);
-            //Console.WriteLine("u_B = {0}", u_B_test);
 
             #endregion
 
@@ -2955,10 +2947,10 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
             C.NonLinearSolver.MaxSolverIterations = 100;
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
             C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 0;
 
             #endregion
@@ -3391,7 +3383,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.3;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
@@ -3405,7 +3397,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.AdvancedDiscretizationOptions.surfTensionMode = SurfaceTensionMode.Curvature_Fourier;
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
             C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
 
             #endregion
@@ -3621,15 +3613,11 @@ namespace BoSSS.Application.XNSE_Solver {
             // ==============
 
 
-            C.Phi = ((X, t) => ((X[0] - (center[0] + Xvel * t)).Pow2() + (X[1] - (center[1])).Pow2()).Sqrt() - radius);
+            C.AddExactSolution("Phi", (X, t) => ((X[0] - (center[0] + Xvel * t)).Pow2() + (X[1] - (center[1])).Pow2()).Sqrt() - radius);
 
-            C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
-            C.ExactSolutionVelocity.Add("A", new Func<double[], double, double>[] { (X, t) => Xvel, (X, t) => 0.0 });
-            C.ExactSolutionVelocity.Add("B", new Func<double[], double, double>[] { (X, t) => Xvel, (X, t) => 0.0 });
 
-            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionPressure.Add("A", (X, t) => 0.0);
-            C.ExactSolutionPressure.Add("B", (X, t) => 0.0);
+            C.AddExactSolution(VariableNames.VelocityX, X => Xvel);
+            C.AddExactSolution(VariableNames.Pressure, X => 0.0);
 
 
             // Fourier Level-Set
@@ -3670,7 +3658,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.FourierLevSetControl.Timestepper = FourierLevelSet_Timestepper.ExplicitEuler;
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
             C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
 
             #endregion
@@ -3913,7 +3901,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
             C.NonLinearSolver.MaxSolverIterations = 100;
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             #endregion
 
@@ -4075,7 +4063,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
             C.NonLinearSolver.MaxSolverIterations = 100;
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             #endregion
 
@@ -4303,7 +4291,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
             C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
 
             #endregion
@@ -4585,7 +4573,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = true;
+            ////C.ComputeEnergyProperties = true;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
@@ -4806,7 +4794,7 @@ namespace BoSSS.Application.XNSE_Solver {
             #region solver
 
             C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
             C.AgglomerationThreshold = 0.1;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
@@ -5223,7 +5211,7 @@ namespace BoSSS.Application.XNSE_Solver {
             #region solver
 
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
@@ -5458,7 +5446,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
             C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 0;
 
             #endregion
@@ -5661,7 +5649,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.NonLinearSolver.MaxSolverIterations = 100;
 
             C.Option_LevelSetEvolution = LevelSetEvolution.Fourier;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Fourier;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Fourier;
 
             #endregion
 
@@ -5924,7 +5912,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.InitialValues_Evaluators.Add("Phi", (X => X[1] - X[0] + 0.2));
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
@@ -6152,7 +6140,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.None;
             C.NonLinearSolver.MaxSolverIterations = 50;
@@ -6164,7 +6152,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Option_LevelSetEvolution = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             #endregion
 
@@ -6343,7 +6331,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
 

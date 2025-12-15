@@ -26,7 +26,7 @@ using System.Runtime.InteropServices;
 //[assembly: AssemblyConfiguration("")]
 //[assembly: AssemblyCompany("Microsoft")]
 //[assembly: AssemblyProduct("MPI.Wrappers")]
-[assembly: AssemblyCopyright("Copyright © Microsoft 2010")]
+[assembly: AssemblyCopyright("Copyright © Chair of Fluid Dynamics, TU Darmstadt, 2010")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

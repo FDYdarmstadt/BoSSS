@@ -21,6 +21,7 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.AdvancedSolvers.Testing;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.XdgTimestepping;

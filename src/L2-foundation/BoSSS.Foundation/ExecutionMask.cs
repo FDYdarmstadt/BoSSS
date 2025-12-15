@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections;
@@ -161,18 +162,10 @@ namespace BoSSS.Foundation.Grid {
 
         /// <summary>
         /// Main storage entity of this class. Encoding: 
-        /// <list type="bullet">
-        ///  <item>
-        ///   entry <em>i</em> is positive number <em>v</em>:
-        ///   A <see cref="Chunk"/> with <see cref="Chunk.i0"/>==<em>v</em>-1 and
-        ///   <see cref="Chunk.Len"/>==1;
-        ///  </item>
-        ///  <item>
-        ///   entry <em>i</em> is negative number <em>v</em>:
-        ///   A <see cref="Chunk"/> with <see cref="Chunk.i0"/>== -<em>v</em>-1 and
-        ///   <see cref="Chunk.Len"/>==<see cref="Sequence"/>[<em>i</em>+1];
-        ///  </item>
-        /// </list>
+        /// - entry <em>i</em> is positive number <em>v</em>:
+        ///   A <see cref="Chunk"/> with <see cref="Chunk.i0"/>==<em>v</em>-1 and <see cref="Chunk.Len"/>==1;
+        /// - entry <em>i</em> is negative number <em>v</em>:
+        ///   A <see cref="Chunk"/> with <see cref="Chunk.i0"/>== -<em>v</em>-1 and <see cref="Chunk.Len"/>==<see cref="Sequence"/>[<em>i</em>+1];
         /// </summary>
         protected int[] Sequence;
 
@@ -348,6 +341,9 @@ namespace BoSSS.Foundation.Grid {
             return m_BitMask;
         }
 
+       
+
+
         /// <summary>
         /// Creates an execution mask which only contains elements that are
         /// included in this mask and in the given mask
@@ -358,7 +354,7 @@ namespace BoSSS.Foundation.Grid {
         /// </param>
         /// <returns>
         /// A new execution mask representing
-        /// \f$ \mathrm{this} \cap \mathrm{otherMask}\f$ 
+        /// $\mathrm{this} \cap \mathrm{otherMask}$ 
         /// </returns>
         public T Intersect<T>(T otherMask) where T : ExecutionMask {
             if (this.GetType() != otherMask.GetType())
@@ -388,7 +384,7 @@ namespace BoSSS.Foundation.Grid {
         /// </param>
         /// <returns>
         /// A new execution mask representing
-        /// \f$ \mathrm{this} \setminus \mathrm{otherMask}\f$ 
+        /// $\mathrm{this} \setminus \mathrm{otherMask}$ 
         /// </returns>
         public T Except<T>(T otherMask) where T : ExecutionMask {
             if (this.GetType() != otherMask.GetType()) 
@@ -460,7 +456,7 @@ namespace BoSSS.Foundation.Grid {
         /// </param>
         /// <returns>
         /// A new execution mask representing
-        /// \f$ \mathrm{this} \cup \mathrm{otherMask}\f$ 
+        /// $\mathrm{this} \cup \mathrm{otherMask}$ 
         /// </returns>
         public T Union<T>(T otherMask) where T : ExecutionMask {
             if (this.GetType() != otherMask.GetType()) 
@@ -525,7 +521,7 @@ namespace BoSSS.Foundation.Grid {
                 return false;
             }
 
-            return Enumerable.SequenceEqual(o.Sequence, this.Sequence);
+            return this.ItemEnum.SetEquals(o.ItemEnum);
         }
 
         /// <summary>

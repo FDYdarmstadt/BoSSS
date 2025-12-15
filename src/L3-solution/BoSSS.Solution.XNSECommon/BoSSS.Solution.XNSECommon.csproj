@@ -32,4 +32,7 @@
     <Compile Remove="newXSpatialOperator\OperatorConfigurationMk2.cs" />
     <Compile Remove="newXSpatialOperator\OperatorFactoryMk2.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <!--PackageReference Include="System.Drawing.Common" Version="5.0.3" /-->
+  </ItemGroup>
 </Project>

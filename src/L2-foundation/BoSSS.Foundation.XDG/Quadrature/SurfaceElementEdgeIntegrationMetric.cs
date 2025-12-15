@@ -9,14 +9,14 @@ using System.Text;
 namespace BoSSS.Foundation.XDG.Quadrature {
 
     /// <summary>
-    /// Integration metric for $D-2$-dimensional integral the boundary of surface elements for each edge.
+    /// Integration metric for $D - 2$-dimensional integral the boundary of surface elements for each edge.
     /// This is a point in 2D and a line in 3D,
-    /// i.e., for an edge $e_i$ an integral of the type
+    /// i.e., for an edge $e_i$ which is subset of some cells $ K_j $ boundary, i.e., $ e_i \subset K_j $  an integral of the type
     /// \[
     ///    \int_{e_j \cap \mathfrak{I}}  f \mathrm{dl} .
     /// \]
     /// </summary>
-    internal class SurfaceElementEdgeIntegrationMetric : IIntegrationMetric {
+    public class SurfaceElementEdgeIntegrationMetric : IIntegrationMetric {
 
 
         public SurfaceElementEdgeIntegrationMetric(LevelSetTracker.LevelSetData levelSetData) {
@@ -49,7 +49,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 var ret = MultidimensionalArray.Create(L);
                 ret.SetAll(1.0);
                 return ret;
-            } else { 
+            } else {
                 throw new NotSupportedException();
             }
 
@@ -71,7 +71,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             int K = qr.NoOfNodes;
 
             var metric = MultidimensionalArray.Create(L, K);
-            var Tangents = TempBuffer.GetTempMultidimensionalarray(out int iTangentsBuf, 2*K, D);
+            var Tangents = TempBuffer.GetTempMultidimensionalarray(out int iTangentsBuf, 2 * K, D);
 
             for(int i = 0; i < L; i++) {
                 int jCell0 = E2C[iEdge + i, 0];
@@ -82,64 +82,41 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 var LevSetNormals = this.m_levelSetData.GetLevelSetReferenceNormals(NodesCell, jCell0, 1).ExtractSubArrayShallow(0, -1, -1);
                 var CellNormal = Kref.FaceNormals.GetRowPt(iFace);
 
-                
+
 
                 for(int k = 0; k < K; k++) {
-                    var SurfNormal = LevSetNormals.GetRowPt(k);
-                    var Node = NodesCell.GetRowPt(k);
+                    if(qr.Weights[k] != 0) { // avoid empty rules
+                        var SurfNormal = LevSetNormals.GetRowPt(k);
+                        var Node = NodesCell.GetRowPt(k);
 
-                    var Tangent = CellNormal.CrossProduct(SurfNormal);
-                    Tangent.NormalizeInPlace();
+                        var Tangent = CellNormal.CrossProduct(SurfNormal);
+                        Tangent.NormalizeInPlace();
 
-                    Tangents.SetRowPt(k, Tangent + Node);
-                    Tangents.SetRowPt(k + K, Node);
+                        Tangents.SetRowPt(k, Tangent + Node);
+                        Tangents.SetRowPt(k + K, Node);
+                    }
                 }
 
                 var TangentsTransformed = gridData.TransformLocal2Global(Tangents, jCell0);
 
                 // the metric is the local stretching of the tangent on the boundary line
                 for(int k = 0; k < K; k++) {
-                    var TangentTransformed = TangentsTransformed.GetRowPt(k) - TangentsTransformed.GetRow(k + K);
-                    metric[i, k] = TangentTransformed.L2Norm();
+                    if(qr.Weights[k] != 0) { // avoid empty rules
+                        var TangentTransformed = TangentsTransformed.GetRowPt(k) - TangentsTransformed.GetRow(k + K);
+                        metric[i, k] = TangentTransformed.L2Norm();
+                    }
                 }
             }
 
             TempBuffer.FreeTempBuffer(iTangentsBuf);
 
-
             return metric;
-
-            //var metrics = m_levelSetData.GetLevelSetNormalReferenceToPhysicalMetrics(qr.Nodes, jCell0, L);
-
-            //int NoOfNodes = qr.NoOfNodes;
-            //Debug.Assert(metrics.Dimension == 2);
-            //Debug.Assert(metrics.GetLength(0) == L);
-            //Debug.Assert(metrics.GetLength(1) == qr.NoOfNodes);
-
-            //if(gridData.iGeomCells.IsCellAffineLinear(jCell0)) {
-            //    //
-            //    // note: implemented in the refactoring to reproduce the original implementation,
-            //    // without any mathematical consideration put in place
-            //    //
-
-            //    var cellJacDet = gridData.iGeomCells.JacobiDet;
-
-            //    for(int i = 0; i < L; i++) {
-            //        for(int k = 0; k < NoOfNodes; k++) {
-            //            metrics[i, k] = cellJacDet[i + jCell0] / metrics[i, k];
-            //        }
-            //    }
-
-
-            //} else {
-            //    throw new NotSupportedException("todo");
-            //}
-
-
-            //return metrics;
-            //return gridData.JacobianDeterminat.GetValue_Cell(qr.Nodes, jCell0, L);
         }
     }
+
+
+
+
 }
 
 

@@ -332,8 +332,8 @@ namespace BoSSS.Solution {
 
             ReadBatchModeConnectorConfig();
 
-            System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
-
+            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+            CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
             return _MustFinalizeMPI;
         }
@@ -655,7 +655,11 @@ namespace BoSSS.Solution {
                 Console.Write("rm");
                 foreach (var pltFile in dir.GetFiles("*.plt").Concat(dir.GetFiles("*.curve"))) {
                     Console.Write(" " + pltFile.Name);
-                    pltFile.Delete();
+                    try {
+                        pltFile.Delete();
+                    } catch (IOException ioe) {
+                        Console.Error.WriteLine(ioe.Message);
+                    }
                 }
                 Console.WriteLine(";");
             }
@@ -865,9 +869,7 @@ namespace BoSSS.Solution {
         /// </summary>
         public int MPISize {
             get {
-                int size;
-                csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
-                return size;
+                return csMPI.Size_World;
             }
         }
 
@@ -877,9 +879,7 @@ namespace BoSSS.Solution {
         /// </summary>
         public int MPIRank {
             get {
-                int rank;
-                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
-                return rank;
+                return csMPI.Rank_World;
             }
         }
 
@@ -1383,6 +1383,17 @@ namespace BoSSS.Solution {
                 if (DatabaseDriver.FsDriver != null
                     && !this.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
                     this.CurrentSessionInfo.Save();
+                }
+
+                // AMR level indactors
+                //====================
+                m_AMRLevelIndicators.Clear();
+                if(this.Control != null && this.Control.AdaptiveMeshRefinement  && this.Control.activeAMRlevelIndicators != null) {
+                    m_AMRLevelIndicators.AddRange(this.Control.activeAMRlevelIndicators);
+                }
+
+                foreach(var lvlInd in ActiveAMRLevelIndicators) {
+                    lvlInd.Setup(this);
                 }
             }
         }
@@ -2435,9 +2446,11 @@ namespace BoSSS.Solution {
 
                         SaveApplicationToDatabase(i, physTime, RunLoop(i + 1), gridChanged);
 
-
-                        if (this.Control != null && this.Control.ImmediatePlotPeriod > 0 && i % this.Control.ImmediatePlotPeriod == 0)
+                        //Console.WriteLine("End of timestep #" + i + ", ImmediatePlotPeriod = " + this.Control.ImmediatePlotPeriod);
+                        if (this.Control != null && this.Control.ImmediatePlotPeriod > 0 && i % this.Control.ImmediatePlotPeriod == 0) {
+                            tr.Info("Plotting timestep #" + i);
                             PlotCurrentState(physTime, i, this.Control.SuperSampling);
+                        }
                     }
 
 
@@ -2485,6 +2498,128 @@ namespace BoSSS.Solution {
                     CorrectlyTerminated = true;
 
                 }
+            }
+        }
+
+        public void SetupSolverMode() {
+            // =========================================
+            // loading grid, initializing database, etc:
+            // =========================================
+            SetUpEnvironment(); // remark: tracer is not avail before setup
+
+            using (var tr = new FuncTrace()) {
+
+                var rollingSavesTsi = new List<Tuple<int, ITimestepInfo, bool>>();
+
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
+                double physTime = 0.0;
+                TimestepNumber i0 = 0;
+                if (this.Control == null) {
+                    SetInitial(0.0); // default behavior if no control file is present
+                } else {
+                    if (this.Control != null) {
+                        if (!this.Control.InitialValues_Evaluators.IsNullOrEmpty() && this.Control.RestartInfo != null) {
+                            //throw new ApplicationException("Invalid state in control object: the specification of initial values ('AppControl.InitialValues') and restart info ('AppControl.RestartInfo') is exclusive: "
+                            //    + " both cannot be unequal null at the same time.");
+                            Console.WriteLine("Warning: InitialValues set, while restarting a simulation.");
+                        }
+
+                        if (this.Control.RestartInfo != null) {
+                            LoadRestart(out physTime, out i0);
+                            TimeStepNoRestart = i0;
+                        } else {
+                            SetInitial(0.0);
+                        }
+                    }
+                }
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
+                m_queryHandler.QueryResults.Clear();
+
+                if (this.Control.RestartInfo != null) {
+                    CreateEquationsAndSolvers(null);
+                    tr.LogMemoryStat();
+                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
+                    if (LsTrk != null) {
+                        if (LsTrk.Regions.Time != physTime)
+                            LsTrk.UpdateTracker(physTime);
+                        LsTrk.PushStacks();
+                    }
+                }
+
+                // =========================================================
+                // Adaptive-Mesh-Refinement and/or load balancing on startup
+                // =========================================================
+
+
+                // load balancing solo
+                if (this.Control.DynamicLoadBalancing_RedistributeAtStartup && !this.Control.AdaptiveMeshRefinement) {
+                    PlotAndSave(physTime, i0, rollingSavesTsi);
+                    MpiRedistributeAndMeshAdaptOnInit(i0.MajorNumber, physTime);
+                    PlotAndSave(physTime, i0, rollingSavesTsi);
+                }
+
+                // load balancing and adaptive mesh refinement
+                if (this.Control.AdaptiveMeshRefinement) {
+
+                    // unprocessed initial value IO
+                    if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
+                        PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(0)), this.Control.SuperSampling);
+
+                    var ts0amr = SaveToDatabase(new TimestepNumber(i0.Numbers.Cat(0)), physTime); // save the initial value
+                    if (this.RollingSave)
+                        rollingSavesTsi.Add(Tuple.Create(0, ts0amr, false));
+
+
+                    bool initialRedist = false;
+                    for (int s = 1; s <= this.Control.AMR_startUpSweeps; s++) {
+                        initialRedist |= this.MpiRedistributeAndMeshAdaptOnInit(i0.MajorNumber, physTime);
+
+                        if (initialRedist == true) {
+
+                            if (this.Control.ImmediatePlotPeriod > 0)
+                                PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(s)), this.Control.SuperSampling);
+
+                            ts0amr = SaveToDatabase(new TimestepNumber(i0.Numbers.Cat(s)), physTime); // save the AMR'ed initial value
+                            if (this.RollingSave)
+                                rollingSavesTsi[0] = Tuple.Create(0, ts0amr, false);
+
+                        }
+                    }
+                }
+
+                // ================================================================================
+                // sometimes, the operators depend on parameters,
+                // therefore 'CreateEquationsAndSolvers()' has to be called after ' SetInitial()',
+                // resp. 'LoadRestart(..)'!!!
+                // ================================================================================
+
+                if (this.Control.RestartInfo == null) {
+                    //{ 
+                    CreateEquationsAndSolvers(null);
+                    tr.LogMemoryStat();
+                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
+                    if (LsTrk != null)
+                        LsTrk.PushStacks();
+                }
+
+                // ========================================================================
+                // initial value IO:
+                // (note: in some apps, the initial values might be tweaked in the 
+                // 'CreateEquationsAndSolvers(...)' method; but here we should have the 
+                // "true" initial value)
+                // ========================================================================
+
+
+                if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
+                    PlotCurrentState(physTime, i0, this.Control.SuperSampling);
+
+                var ts0 = SaveToDatabase(i0, physTime); // save the initial value
+                if (this.RollingSave)
+                    rollingSavesTsi.Add(Tuple.Create(0, ts0, false));
             }
         }
 
@@ -3013,15 +3148,124 @@ namespace BoSSS.Solution {
         LoadBalancer m_Balancer;
 
         /// <summary>
-        /// Adaptation of the current mesh (<see cref="Grid"/>).
+        /// 
         /// </summary>
         protected virtual void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
-            newGrid = null;
-            old2NewGrid = null;
+            using(var tr = new FuncTrace()) {
+
+                if(this.Control.AdaptiveMeshRefinement) {
+
+                    // Check grid changes
+                    // ==================
+
+                    int[] desiredLevels = GetDesiredRefinementLevels();
+
+
+
+                    GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData);
+                    bool AnyChange = gridRefinementController.ComputeGridChange(desiredLevels, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+
+
+                    int NoOfCellsToRefine = 0;
+                    int NoOfCellsToCoarsen = 0;
+                    if(AnyChange.MPIOr()) {
+                        int[] glb = (new int[] { CellsToRefineList.Count, Coarsening.Sum(L => L.Length) }).MPISum();
+                        NoOfCellsToRefine = glb[0];
+                        NoOfCellsToCoarsen = glb[1];
+                    }
+                    long oldJ = this.GridData.CellPartitioning.TotalLength;
+
+                    // Update Grid
+                    // ===========
+                    if(AnyChange.MPIOr()) {
+
+                        Console.WriteLine(" Refining   " + NoOfCellsToRefine + " of " + oldJ + " cells");
+                        Console.WriteLine(" Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
+
+                        newGrid = ((GridData)this.GridData).Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
+
+                        //AMRtests.MeshSymmetryTest(newGrid);
+                    } else {
+                        newGrid = null;
+                        old2NewGrid = null;
+                    }
+                } else {
+                    newGrid = null;
+                    old2NewGrid = null;
+                }
+
+            }
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        private int[] GetDesiredRefinementLevels() {
+            using(var tr = new FuncTrace()) {
+                if(Control.AdaptiveMeshRefinement == true) {
+                    if(ActiveAMRLevelIndicators == null || ActiveAMRLevelIndicators.Count <= 0) {
+                        tr.Error("Control object configuration inconsistent: 'AdaptiveMeshRefinement == true', but no refinement indicators in 'activeAMRLevelIndicators' are set.");
+                    }
+                }
+
+                int J = this.GridData.CellPartitioning.LocalLength;
+                int[] levelChanges = null;
+
+                // combine all results of active level indicators
+                int cnt = 0;
+                foreach(var lvlInd in ActiveAMRLevelIndicators) {
+                    if(cnt == 0) {
+                        levelChanges = lvlInd.DesiredCellChanges(); // levelChanges is instantiated to zero. Without this line, coarsening is impossible due to Max(a,b)
+                    } else {
+                        int[] lvls = lvlInd.DesiredCellChanges();
+                        //levelChanges = levelChanges.Zip(lvls, (a, b) => a + b).ToArray();
+                        levelChanges = levelChanges.Zip(lvls, (a, b) => Math.Max(a, b)).ToArray(); // keep finer level indicator, but don't double refine
+                    }
+                    cnt++;
+                }
+                if(levelChanges == null)
+                    levelChanges = new int[J];
+
+
+                // get desired level 
+                int[] levels = new int[J];
+                Cell[] cells = ((GridData)this.GridData).Grid.Cells;
+
+                int cellsToRefine = 0;
+                int cellsToCoarse = 0;
+                for(int j = 0; j < J; j++) {
+                    levels[j] = cells[j].RefinementLevel;
+                    if(levelChanges[j] > 0) {
+                        levels[j] += 1;
+                        cellsToRefine++;
+                    } else if(levelChanges[j] < 0) {
+                        levels[j] -= 1;
+                        cellsToCoarse++;
+                    }
+                }
+
+                tr.Info($"all AMR indicators combined: cells to refine: {cellsToRefine}, cells to coarsen: {cellsToCoarse}");
+
+                return levels;
+            }
+        }
+
+
+        List<AMRLevelIndicator> m_AMRLevelIndicators = new List<AMRLevelIndicator>();
+
+        /// <summary>
+        /// <see cref="Control.AppControl.activeAMRlevelIndicators"/>
+        /// </summary>
+        public IList<AMRLevelIndicator> ActiveAMRLevelIndicators {
+            get {
+                return m_AMRLevelIndicators;
+            }
         }
 
         /// <summary>
-        /// Default implementation (which does nothing) for the computation of the grid partitioning
+        /// Default implementation for the computation of the grid partitioning
         /// during runtime (dynamic load balancing).
         /// </summary>
         /// <param name="TimeStepNo"></param>
@@ -3177,7 +3421,7 @@ namespace BoSSS.Solution {
 
 
                     try {
-                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, $"profiling_bin{ProfilingLog_suffix}")) {
+                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, $"profiling_bin", $"{ProfilingLog_suffix}.bin")) {
                             var str = OnlineProfiling.Serialize();
                             using (StreamWriter stw = new StreamWriter(stream)) {
                                 stw.Write(str);
@@ -3190,7 +3434,7 @@ namespace BoSSS.Solution {
                     }
 
                     try {
-                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, $"profiling_summary{ProfilingLog_suffix}")) {
+                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_summary", $"{ProfilingLog_suffix}.txt")) {
                             using (StreamWriter stw = new StreamWriter(stream)) {
                                 OnlineProfiling.WriteProfilingReport(stw);
                                 stw.Flush();
@@ -3384,7 +3628,7 @@ namespace BoSSS.Solution {
                     // log to session directory
                     if (app.MPIRank == 0 && !app.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
                         var nlog_stream_session = app.DatabaseDriver.GetNewLogStream(
-                            app.CurrentSessionInfo, "ParameterStudy.case-" + iPstudy);
+                            app.CurrentSessionInfo, "ParameterStudy.case-" + iPstudy, "txt");
                         try {
                             var w = new StreamWriter(nlog_stream_session);
                             nlog.WriteToStream(w, RowFilter: nlog.CurrentKeyHistory);

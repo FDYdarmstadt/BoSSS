@@ -320,7 +320,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
@@ -335,7 +335,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.mu_I = dt * 0.2;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
 
             C.AdaptiveMeshRefinement = false;
@@ -715,7 +715,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
@@ -731,7 +731,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.mu_I = dt * 0.2;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             C.AdvancedDiscretizationOptions.CurvatureNeeded = false;
 
 
@@ -1866,7 +1866,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
@@ -1886,7 +1886,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.mu_I = dt * 0.2;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             //C.AdvancedDiscretizationOptions.CurvatureNeeded = true;
 
 
@@ -2196,7 +2196,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 Func<double[], double, double> PhiFunc = ((X, t) => zi(t) - X[1]);
 
                 C.InitialValues_Evaluators.Add("Phi", X => PhiFunc(X, 0.0));
-                C.Phi = PhiFunc;
+                C.AddExactSolution("Phi", PhiFunc);
 
             }
 
@@ -2290,17 +2290,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     PhiFunc = ((X, t) => (X[0].Pow2() + X[1].Pow2()).Sqrt() - zi(t));
 
                 C.InitialValues_Evaluators.Add("Phi", X => PhiFunc(X, 0.0));
-                C.Phi = PhiFunc;
+                C.AddExactSolution("Phi", PhiFunc);
 
             }
-
-
-            //C.InitialValues_Evaluators.Add("VelocityY#B", X => 0.0);
-            //C.InitialValues_Evaluators.Add("Pressure#A", X => P0);
-
-
-            //C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, null);
-
 
             #endregion
 
@@ -2343,7 +2335,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
@@ -2362,7 +2354,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.mu_I = dt * 0.2;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             //C.AdvancedDiscretizationOptions.CurvatureNeeded = true;
 
 
@@ -2627,7 +2619,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
@@ -2645,7 +2637,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.mu_I = dt * 0.2;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             //C.AdvancedDiscretizationOptions.CurvatureNeeded = true;
 
 
@@ -2899,7 +2891,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
@@ -2917,7 +2909,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.mu_I = dt * 0.2;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             //C.AdvancedDiscretizationOptions.CurvatureNeeded = true;
 
 
@@ -3137,7 +3129,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
@@ -3152,7 +3144,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.mu_I = dt * 0.2;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             //C.AdvancedDiscretizationOptions.CurvatureNeeded = true;
 
 
@@ -3433,7 +3425,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             Func<double[], double, double> PhiFunc = ((X, t) => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - (2.0 * beta * Math.Sqrt(alpha * (t_0 + t))));
 
             C.InitialValues_Evaluators.Add("Phi", X => PhiFunc(X, 0.0));
-            C.Phi = PhiFunc;
+            C.AddExactSolution("Phi", PhiFunc);
 
 
             #endregion
@@ -3456,7 +3448,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
@@ -3470,7 +3462,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             //C.AdvancedDiscretizationOptions.CurvatureNeeded = true;
 
 
@@ -3727,7 +3719,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
@@ -3742,7 +3734,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.mu_I = dt * 0.2;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             //C.AdvancedDiscretizationOptions.CurvatureNeeded = true;
 
 
@@ -3980,7 +3972,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
@@ -3998,7 +3990,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.mu_I = dt * 0.2;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             //C.AdvancedDiscretizationOptions.CurvatureNeeded = true;
 
 
@@ -4263,7 +4255,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
@@ -4278,7 +4270,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.mu_I = dt * 0.2;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             //C.AdvancedDiscretizationOptions.CurvatureNeeded = true;
 
 
@@ -4532,7 +4524,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
@@ -4547,7 +4539,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.mu_I = dt * 0.2;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
 
             C.AdaptiveMeshRefinement = false;
@@ -4799,7 +4791,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.None;
 
@@ -4814,7 +4806,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.mu_I = dt * 0.2;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
 
             C.AdaptiveMeshRefinement = false;

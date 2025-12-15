@@ -154,12 +154,6 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         public ilPSP.Vector BurgersDirection;
 
         
-        /// <summary>
-        /// If <see cref="HMF"/>==<see cref="CutCellQuadratureMethod.ExactCircle"/>, this is the 
-        /// radius in dependence of time.
-        /// </summary>
-        public Func<double, double> CircleRadius;
-
 
     }
 }
