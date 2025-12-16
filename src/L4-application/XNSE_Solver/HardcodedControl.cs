@@ -2409,7 +2409,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.LSContiProjectionMethod = BoSSS.Solution.LevelSetTools.ContinuityProjectionOption.None;
             //C.CutCellQuadratureType   = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
 
             // Solver Stuff
