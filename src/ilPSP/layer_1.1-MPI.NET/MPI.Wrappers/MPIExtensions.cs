@@ -182,7 +182,13 @@ namespace MPI.Wrappers {
             return value;
         }
 
-
+        /// <summary>
+        ///  Broadcast an int array
+        /// </summary>
+        /// <param name="array"></param>
+        /// <param name="root"></param>
+        /// <param name="comm"></param>
+        /// <returns></returns>
         static public int[] MPIBroadcast(this int[] array, int root, MPI_Comm comm) {
             int myRank;
             csMPI.Raw.Comm_Rank(comm, out myRank);
@@ -218,6 +224,14 @@ namespace MPI.Wrappers {
             return array;
         }
 
+
+        /// <summary>
+        /// Broadcast a float array
+        /// </summary>
+        /// <param name="array"></param>
+        /// <param name="root"></param>
+        /// <param name="comm"></param>
+        /// <returns></returns>
         static public float[] MPIBroadcast(this float[] array, int root, MPI_Comm comm) {
             int myRank;
             csMPI.Raw.Comm_Rank(comm, out myRank);
@@ -245,6 +259,14 @@ namespace MPI.Wrappers {
             return array;
         }
 
+
+        /// <summary>
+        ///  Broadcast a double array
+        /// </summary>
+        /// <param name="array"></param>
+        /// <param name="root"></param>
+        /// <param name="comm"></param>
+        /// <returns></returns>
         static public double[] MPIBroadcast(this double[] array, int root, MPI_Comm comm) {
             int myRank;
             csMPI.Raw.Comm_Rank(comm, out myRank);
@@ -272,6 +294,14 @@ namespace MPI.Wrappers {
             return array;
         }
 
+
+        /// <summary>
+        ///  Broadcast a long array
+        /// </summary>
+        /// <param name="array"></param>
+        /// <param name="root"></param>
+        /// <param name="comm"></param>
+        /// <returns></returns>
         static public long[] MPIBroadcast(this long[] array, int root, MPI_Comm comm) {
             int myRank;
             csMPI.Raw.Comm_Rank(comm, out myRank);
