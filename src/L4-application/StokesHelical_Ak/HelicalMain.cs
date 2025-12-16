@@ -441,6 +441,7 @@ namespace StokesHelical_Ak {
             Globals.pressureStabilConti = true;
             Globals.pressureStabilEtaMom = false;
 
+
             diffOp_implicit = new DifferentialOperator(
             new string[] { "ur", "uxi", "ueta", "Pressure" },
             new string[0],   //no parameters
@@ -477,6 +478,7 @@ namespace StokesHelical_Ak {
             // Navier-Stokes (nonlinear)
             // +++++++++++++++++++++++++
             if(Control.NavierStokes) {
+                Globals.ConcetiveTerms_Add_on_Term_2 = this.Control.Conv_AK_2;
                 diffOp_explicit.EquationComponents["rmom"].Add(new convectiveRmom());
                 diffOp_explicit.EquationComponents["etamom"].Add(new convectiveETAmom());
                 diffOp_explicit.EquationComponents["zmom"].Add(new convectiveXImom());
@@ -549,7 +551,7 @@ namespace StokesHelical_Ak {
                 }
 
                 string nameOf_Plot = "Hel_BDF_10Noise_" + this.Control.GetBDFOrder() +"_"+this.Control.grid+ "_LinSol" + this.Control.LinearSolver.Shortname + "_rMin_" + this.Control.rMin.ToString() + "_Mult_" + Globals.activeMult.ToString() + "_PRP_" + Globals.pressureReferencePoint + "_" + this.Control.Resolution_R.ToString() + "_x_" +
-                              this.Control.Resolution_R.ToString()  + "_DGd_" + this.Control.dg_degree + "_Ak_Conv_" + Globals.ConcetiveTerms_Add_on_Term_2.ToString() + "_Amp_" + this.Control.maxAmpli.ToString() + "_dt_" + this.Control.dtMax + "_TiStNo_" + timestepNo;
+                              this.Control.Resolution_R.ToString()  + "_DGd_" + this.Control.dg_degree + "_Ak_Conv_" + this.Control.Conv_AK_2.ToString() + "_Amp_" + this.Control.maxAmpli.ToString() + "_dt_" + this.Control.dtMax + "_TiStNo_" + timestepNo;
 
                 plt1.PlotFields(nameOf_Plot, physTime, m_IOFields);
 

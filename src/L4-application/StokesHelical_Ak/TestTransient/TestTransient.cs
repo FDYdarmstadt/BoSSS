@@ -915,7 +915,7 @@ namespace StokesHelical_Ak.TestTransient {
             double a = Globals.a;
             double b = Globals.b;
             double nu = Globals.nu;
-            Globals.ConcetiveTerms_Add_on_Term_2 = true;
+            ctrl.Conv_AK_2 = true;
             ctrl.savetodb = true;
             ctrl.InitialValues.Clear();
             ctrl.InitialValues_Evaluators.Clear();
@@ -1027,7 +1027,7 @@ namespace StokesHelical_Ak.TestTransient {
             double a = Globals.a;
             double b = Globals.b;
             double nu = Globals.nu;
-            Globals.ConcetiveTerms_Add_on_Term_2 = false;
+            ctrl.Conv_AK_2 = true;
             ctrl.savetodb = true;
             ctrl.InitialValues.Clear();
             ctrl.InitialValues_Evaluators.Clear();
