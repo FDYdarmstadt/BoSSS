@@ -37,7 +37,7 @@ namespace BoSSS.Application.BoSSSpad {
         private MsHPC2012Client() : base() {
             //Console.WriteLine("MsHPC2012Client: empty ctor");
 
-            if (System.Environment.OSVersion.Platform != PlatformID.Win32NT) {
+            if ( System.Environment.OSVersion.Platform != PlatformID.Win32NT ) {
                 throw new NotSupportedException($"The {typeof(MsHPC2012Client).Name} is only supported on MS Windows, but your current platform seems to be {System.Environment.OSVersion.Platform}.");
             }
 
@@ -52,7 +52,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public override string RuntimeLocation {
             get {
-                if (base.RuntimeLocation != null)
+                if ( base.RuntimeLocation != null )
                     return base.RuntimeLocation;
                 else
                     return "win\\amd64";
@@ -78,7 +78,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// See <see cref="BatchProcessorClient.DeployRuntime"/>.
         /// </param>
         public MsHPC2012Client(string DeploymentBaseDirectory, string ServerName, string Username = null, string[] ComputeNodes = null, bool DeployRuntime = true) : base() {
-            if (System.Environment.OSVersion.Platform != PlatformID.Win32NT) {
+            if ( System.Environment.OSVersion.Platform != PlatformID.Win32NT ) {
                 throw new NotSupportedException($"The {typeof(MsHPC2012Client).Name} is only supported on MS Windows, but your current platform seems to be {System.Environment.OSVersion.Platform}.");
             }
 
@@ -90,21 +90,26 @@ namespace BoSSS.Application.BoSSSpad {
             this.ComputeNodes = ComputeNodes;
             this.ServerName = ServerName;
 
-            if (!Directory.Exists(base.DeploymentBaseDirectory))
+            if ( !Directory.Exists(base.DeploymentBaseDirectory) )
                 Directory.CreateDirectory(base.DeploymentBaseDirectory);
 #pragma warning disable CA1416
-            if (this.Username == null)
+            if ( this.Username == null )
                 this.Username = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
 #pragma warning restore CA1461
 
         }
 
         IScheduler GetInstance() {
-            if (_Scheduler == null) {
-                _Scheduler = new Scheduler();
-                _Scheduler.Connect(ServerName);
+            if ( this._Scheduler == null ) {
+                this._Scheduler = new Scheduler();
+                try {
+                    this._Scheduler.Connect(ServerName);
+                } catch ( Exception ex ) {
+                    Console.WriteLine(ex.Message);
+                    System.Environment.Exit(1);
+                }
             }
-            return _Scheduler;
+            return this._Scheduler;
         }
         //[NonSerialized]
         //IScheduler m__scheduler;
@@ -194,12 +199,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// Job status.
         /// </summary>
         public override (BoSSSpad.JobStatus, int? ExitCode) EvaluateStatus(string idToken, object optInfo, string DeployDir) {
-            using (var tr = new FuncTrace()) {
+            using ( var tr = new FuncTrace() ) {
                 int id = int.Parse(idToken);
                 var (state, exitCode) = GetStatus(id);
 
                 // TODO: TS Hier rennt der in JobState Failed rein beim Testrunner, das muss gedebuggt werden
-                switch (state) {
+                switch ( state ) {
                     case JobState.Configuring:
                     case JobState.Submitted:
                     case JobState.Validating:
@@ -234,10 +239,10 @@ namespace BoSSS.Application.BoSSSpad {
         /// will be translated to <see cref="BoSSSpad.JobStatus"/> by some other method.
         /// </summary>
         public (JobState s, int? exitCode) GetStatus(int id) {
-            using (var tr = new FuncTrace()) {
+            using ( var tr = new FuncTrace() ) {
                 tr.Info($"Trying to get status for job {id} from scheduler {this.ServerName}");
 
-                if (this.ServerName.IsEmptyOrWhite())
+                if ( this.ServerName.IsEmptyOrWhite() )
                     throw new IOException("'ServerName' for MS HPC scheduler is empty or white");
 
                 var job = _Scheduler.OpenJob(id);
@@ -245,7 +250,7 @@ namespace BoSSS.Application.BoSSSpad {
                 JobState state = job.State;
                 int exitCode = int.MinValue;
                 var tasks = job.GetTaskList(null, null, false);
-                foreach (ISchedulerTask task in tasks) {
+                foreach ( ISchedulerTask task in tasks ) {
                     exitCode = task.ExitCode;
                 }
 
@@ -257,7 +262,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Path to standard error file.
         /// </summary>
         public override string GetStderrFile(string idToken, string DeployDir) {
-            if (idToken.IsEmptyOrWhite() || DeployDir.IsEmptyOrWhite())
+            if ( idToken.IsEmptyOrWhite() || DeployDir.IsEmptyOrWhite() )
                 return null;
             string fp = Path.Combine(DeployDir, "stderr.txt");
             return fp;
@@ -266,7 +271,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Path to standard output file.
         /// </summary>
         public override string GetStdoutFile(string idToken, string DeployDir) {
-            if (idToken.IsEmptyOrWhite() || DeployDir.IsEmptyOrWhite())
+            if ( idToken.IsEmptyOrWhite() || DeployDir.IsEmptyOrWhite() )
                 return null;
             string fp = Path.Combine(DeployDir, "stdout.txt");
             return fp;
@@ -286,19 +291,19 @@ namespace BoSSS.Application.BoSSSpad {
             task.MinimumNumberOfCores = NumberOfCores;
             task.WorkDirectory = DeploymentDirectory;
 
-            using (var str = new StringWriter()) {
+            using ( var str = new StringWriter() ) {
                 str.Write("mpiexec ");
-                if (!base.DotnetRuntime.IsEmptyOrWhite())
+                if ( !base.DotnetRuntime.IsEmptyOrWhite() )
                     str.Write(base.DotnetRuntime + " ");
                 str.Write(description.EntryAssemblyName);
-                foreach (string arg in description.CommandLineArguments) {
+                foreach ( string arg in description.CommandLineArguments ) {
                     str.Write(" ");
                     str.Write(arg);
                 }
 
                 task.CommandLine = str.ToString();
             }
-            foreach (var kv in description.EnvironmentVars) {
+            foreach ( var kv in description.EnvironmentVars ) {
                 string name = kv.Key;
                 string valu = kv.Value;
                 task.SetEnvironmentVariable(name, valu);
@@ -307,8 +312,8 @@ namespace BoSSS.Application.BoSSSpad {
             task.StdOutFilePath = Path.Combine(DeploymentDirectory, "stdout.txt");
             task.StdErrFilePath = Path.Combine(DeploymentDirectory, "stderr.txt");
 
-            if (ComputeNodes != null) {
-                foreach (string node in ComputeNodes)
+            if ( ComputeNodes != null ) {
+                foreach ( string node in ComputeNodes )
                     job.RequestedNodes.Add(node);
             }
             return task;
@@ -318,7 +323,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Submits the job to the Microsoft HPC server.
         /// </summary>
         public override (string id, object optJobObj) Submit(Job description, string DeploymentDirectory) {
-            using (new FuncTrace()) {
+            using ( new FuncTrace() ) {
                 int NumberOfCores = GetNumberOfCoresForJobDescription(description);
                 string PrjName = BoSSSshell.WorkflowMgm.CurrentProject;
                 IScheduler Scheduler = GetInstance();
@@ -344,6 +349,16 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
+        /// Cancels the job with the given id
+        /// </summary>
+        /// <param name="Id">The identifier for the job</param>
+        /// <param name="message">The reason the job was cancelled</param>
+        public override void Cancel(string Id, string message) {
+            int id = int.Parse(Id);
+            IScheduler Scheduler = GetInstance();
+            Scheduler.CancelJob(id, message);
+        }
+        /// <summary>
         /// publicly available wrapper, used for extension methods to <see cref="MsHPC2012Client"/>
         /// </summary>
         /// <returns></returns>
@@ -360,7 +375,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             job.UserName = Username;
 
-            foreach (var description in jobs) {
+            foreach ( var description in jobs ) {
                 var task = CreateTaskFromJobDescription(description, DeploymentDirectory, job);
                 job.AddTask(task);
             }
@@ -374,7 +389,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public override string ToString() {
             string NameString = "";
-            if (!base.Name.IsEmptyOrWhite())
+            if ( !base.Name.IsEmptyOrWhite() )
                 NameString = " " + base.Name + " ";
 
             return $"MS HPC client {NameString}@{this.ServerName}, @{this.DeploymentBaseDirectory}";

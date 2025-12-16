@@ -13,7 +13,7 @@
         },
         {
           "Id": "46709e47-c4be-4130-9ba4-c3999a6def77",
-          "Command": "nunit3 StokesHelical_Ak  "
+          "Command": "runjobmanager StokesHelical_Ak  "
         },
         {
           "Id": "ddfba31a-c8dd-4bf2-8a6a-fffbd3b0d237",
