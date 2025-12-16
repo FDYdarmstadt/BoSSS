@@ -1042,9 +1042,9 @@ namespace ilPSP {
                 if(StdOut != null) {
                     m_StdoutOnlyOnRank0 = value;
                     if(m_StdoutOnlyOnRank0) {
-                        StdOut.surpressStream = (MPIEnv.MPI_Rank != 0);
+                        StdOut.surpressStream0 = (MPIEnv.MPI_Rank != 0);
                     } else {
-                        StdOut.surpressStream = false;
+                        StdOut.surpressStream0 = false;
                     }
                 }
             }
