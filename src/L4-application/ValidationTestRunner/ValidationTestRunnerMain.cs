@@ -124,7 +124,7 @@ namespace ValidationTestRunner {
         [NUnitFileToCopyHack("AgglomerationTestcases/collidingSpheres2D.ipynb", "AgglomerationTestcases/collidingSpheres2Dpost.ipynb")]
         [Test]
         static public void Run__AggCollidingSpheres2D() {
-            // delete the database if it is more than 75 days old;
+            // delete the database if it is more than 150 days old;
             // this will cause a re-execution of all computations
             // otherwise, i.e. if the database is not deleted, sessions from the database 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
@@ -174,8 +174,8 @@ namespace ValidationTestRunner {
 				"Popcorn2D_condStudy",
 				new TimeSpan(days: 150, hours: 1, minutes: 0, seconds: 0));
 
-			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/Popcorn2D.ipynb");
-			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/Popcorn2Dpost.ipynb");
+			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/rotatingPopcorn2D.ipynb");
+			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/rotatingPopcorn2Dpost.ipynb");
 
 			Console.WriteLine("RotatingPopcorn2D @ FDYcluster");
 		}
@@ -196,8 +196,8 @@ namespace ValidationTestRunner {
 				"Popcorn3D_condStudy",
 				new TimeSpan(days: 150, hours: 1, minutes: 0, seconds: 0));
 
-			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/Popcorn3D.ipynb");
-			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/Popcorn3Dpost.ipynb");
+			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/rotatingPopcorn3D.ipynb");
+			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/rotatingPopcorn3Dpost.ipynb");
 
 			Console.WriteLine("RotatingPopcorn3D @ FDYcluster");
 		}

@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+   http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using ilPSP.Tracing;
+using ilPSP.Utils;
+using MPI.Wrappers;
+using NUnit.Framework;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
@@ -25,10 +30,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using ilPSP.Tracing;
-using ilPSP.Utils;
-using MPI.Wrappers;
-using NUnit.Framework;
 
 namespace ilPSP {
 
@@ -315,7 +316,6 @@ namespace ilPSP {
         /// </summary>
         /// </summary>
         public static void ParallelFor(int fromInclusive, int toExclusive, Action<ThreadInfo, int> body, bool enablePar = true) {
-
             if(InParallelSection == true || !enablePar || NumThreads <= 1) {
                 ThreadInfo ti;
                 ti.iThread = 0;
@@ -336,8 +336,7 @@ namespace ilPSP {
 
                 try {
                     InParallelSection = true;
-                    BLAS.ActivateSEQ(); // within a parallel section, we don't want BLAS/LAPACK to spawn into further threads
-                    LAPACK.ActivateSEQ();
+                    DisableOpenMP(); // within a parallel section, we don't want BLAS/LAPACK to spawn into further threads
 
                     // let TPL do the balancing
                     //Parallel.For(fromInclusive, toExclusive, options, body);
@@ -370,13 +369,69 @@ namespace ilPSP {
 
 
                 } finally {
-                    InParallelSection = false;
-                    BLAS.ActivateOMP(); // restore parallel 
-                    LAPACK.ActivateOMP();
-                    PinOMPthreadsSometimes();
+                    InParallelSection = false; // restore parallel 
+                    EnableOpenMP();
                 }
             }
         }
+
+        public static void ParallelForWithPartitioner(int fromInclusive, int toExclusive, Action<int> body) {
+            ParallelForWithPartitioner(fromInclusive, toExclusive, NumThreads, (ThreadInfo _, int i) => body(i));
+        }
+
+        public static void ParallelForWithPartitioner(int fromInclusive, int toExclusive, int numThreads, Action<int> body) { 
+            ParallelForWithPartitioner(fromInclusive, toExclusive, numThreads, (ThreadInfo _, int i) => body(i));
+        }
+
+        public static void ParallelForWithPartitioner(int fromInclusive, int toExclusive, int numThreads, Action<ThreadInfo, int> body) {
+            if(toExclusive <= fromInclusive)
+                return;
+
+            if(InParallelSection || NumThreads <= 1) {
+                ThreadInfo ti = new ThreadInfo { iThread = 0, NumThreads = 1 };
+                for(int i = fromInclusive; i < toExclusive; i++)
+                    body(ti, i);
+                return;
+            }
+
+            try {
+                InParallelSection = true;
+                DisableOpenMP();
+
+                PinTPLThreadsSometimes();
+
+                int total = toExclusive - fromInclusive;
+
+                // Balanced partitioning of work ranges
+                var rangePartitioner = Partitioner.Create(fromInclusive, toExclusive,
+                    Math.Max(1, total / (numThreads * 4)));
+
+                // Dedicated scheduler pair to isolate from global ThreadPool
+                var schedulerPair = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default, numThreads);
+                var opts = new ParallelOptions {
+                    TaskScheduler = schedulerPair.ConcurrentScheduler,
+                    MaxDegreeOfParallelism = numThreads
+                };
+
+                Parallel.ForEach(rangePartitioner, opts, range =>
+                {
+                    int threadId = Thread.CurrentThread.ManagedThreadId;
+                    var ti = new ThreadInfo {
+                        iThread = threadId,
+                        NumThreads = numThreads
+                    };
+
+                    for(int i = range.Item1; i < range.Item2; i++)
+                        body(ti, i);
+                });
+            } finally {
+                InParallelSection = false;
+                EnableOpenMP();
+            }
+        }
+
+
+
 
         /// <summary>
         /// Parallel foreach-loop, the signature of <see cref="body"/> is: `ithread, item` 
@@ -409,8 +464,7 @@ namespace ilPSP {
 
                 try {
                     InParallelSection = true;
-                    BLAS.ActivateSEQ(); // within a parallel section, we don't want BLAS/LAPACK to spawn into further threads
-                    LAPACK.ActivateSEQ();
+                    DisableOpenMP(); // within a parallel section, we don't want BLAS/LAPACK to spawn into further threads
 
                     // we do the balancing:
                     object padlock = new object();
@@ -441,7 +495,7 @@ namespace ilPSP {
 
                                 if(!continue_on_loop) {
                                     bTerminate = true;
-                                } 
+                                }
                             }
 
                             //LocalIters[ithread]++;
@@ -457,9 +511,7 @@ namespace ilPSP {
 
                 } finally {
                     InParallelSection = false;
-                    BLAS.ActivateOMP(); // restore parallel 
-                    LAPACK.ActivateOMP();
-                    PinOMPthreadsSometimes();
+                    EnableOpenMP(); // restore parallel 
                 }
             }
         }
@@ -502,8 +554,7 @@ namespace ilPSP {
 
                 try {
                     InParallelSection = true;
-                    BLAS.ActivateSEQ(); // within a parallel section, we don't want BLAS/LAPACK to spawn into further threads
-                    LAPACK.ActivateSEQ();
+                    DisableOpenMP();
 
                     void _body(int ithread) {
                         ThreadInfo ti;
@@ -520,9 +571,7 @@ namespace ilPSP {
                     Parallel.For(0, __Numthreads, options, _body);
                 } finally {
                     InParallelSection = false;
-                    BLAS.ActivateOMP(); // restore parallel 
-                    LAPACK.ActivateOMP();
-                    PinOMPthreadsSometimes();
+                    EnableOpenMP(); // restore parallel 
                 }
             }
         }
@@ -557,8 +606,7 @@ namespace ilPSP {
 
                 try {
                     InParallelSection = true;
-                    BLAS.ActivateSEQ();
-                    LAPACK.ActivateSEQ();
+                    DisableOpenMP();
 
                     TLocal _body(int i, ParallelLoopState s, TLocal r) {
                         return body(i, r);
@@ -568,9 +616,7 @@ namespace ilPSP {
                     Parallel.For(fromInclusive, toExclusive, options, localInit, _body, localFinally);
                 } finally {
                     InParallelSection = false;
-                    BLAS.ActivateOMP();
-                    LAPACK.ActivateOMP();
-                    PinOMPthreadsSometimes();
+                    EnableOpenMP();  // restore parallel 
                 }
             }
         }
@@ -694,12 +740,12 @@ namespace ilPSP {
                 if(ReservedCPUsInitially == null)
                     ReservedCPUsInitially = CPUAffinity.GetCurrentThreadAffinity().ToList().AsReadOnly();
                 IEnumerable<int> ReservedCPUs = ReservedCPUsInitially.ToArray();
-
                 //if(ReservedCPUs.Count() == 1) {
                 //Debugger.Launch();
                 //ReservedCPUs = CPUAffinity.GetAffinity();
                 //ReservedCPUs = CPUAffinity.GetAffinity().ToConcatString("[", ", ", "]")
                 //}
+                //--- this is mpi-local --//
                 if(System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
                     if(System.Environment.GetEnvironmentVariable("CCP_AFFINITY").IsNonEmpty()) {
                         // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -708,21 +754,25 @@ namespace ilPSP {
                         tr.Info($"CCP_AFFINITY is set as '{System.Environment.GetEnvironmentVariable("CCP_AFFINITY")}'");
 
                         var _ReservedCPUs = CPUAffinityWindows.Decode_CCP_AFFINITY();
-                        bool eqalAff = _ReservedCPUs.SetEquals(ReservedCPUs);
+                        var eqalAff = _ReservedCPUs.SetEquals(ReservedCPUs);
                         string listdiffs;
                         if(!eqalAff)
                             listdiffs = " (From Win32: " + ReservedCPUs.ToConcatString("[", ",", "]") + " from CCP_AFFINITY: " + _ReservedCPUs.ToConcatString("[", ",", "]") + ")";
                         else
                             listdiffs = "";
                         if(eqalAff == false) {
+                            tr.Info($"R{MPIEnv.MPI_Rank}: reserved CPUs from Affinity Mask: {_ReservedCPUs.ToConcatString("[", ",", "]")}, C# reports mask {Process.GetCurrentProcess().ProcessorAffinity:X}");
                             tr.Error("Mismatch in CPU affinity (" + MPIEnv.MPI_Rank + "of" + MPIEnv.MPI_Size + ")! " + listdiffs);
+                            tr.Info("Mismatch in CPU affinity (" + MPIEnv.MPI_Rank + "of" + MPIEnv.MPI_Size + ")! " + listdiffs);
                         }
-                        tr.Info("Win32 reports same affinity as CPUs from CCP_AFFINITY? " + eqalAff);
-                        //ReservedCPUs = _ReservedCPUs;
+                        tr.Info("Does Win32 report same affinity as CPUs from CCP_AFFINITY? " + eqalAff);
+                        ReservedCPUs = _ReservedCPUs;
                     } else {
                         tr.Info($"CCP_AFFINITY not set");
                     }
                 }
+                //--- end of mpi-local --//
+
                 tr.Info($"R{MPIEnv.MPI_Rank}: reserved CPUs: {ReservedCPUs.ToConcatString("[", ",", "]")}, C# reports mask {Process.GetCurrentProcess().ProcessorAffinity:X}");
 
                 ReservedCPUsOnSMP = CPUAffinity.CpuListOnSMP(ReservedCPUs, out bool disjoint, out bool allequal);
@@ -784,7 +834,7 @@ namespace ilPSP {
                     DedicatedCPUsForThisRank = ReservedCPUs.ToArray();
 
                 } else {
-                    DedicatedCPUsForThisRank = ReservedCPUs.ToArray();
+                    DedicatedCPUsForThisRank = ReservedCPUs.ToArray(); 
                     // just hope for the best
                     MKLservice.Dynamic = false;
                     MKLservice.SetNumThreads(NumThreads);
@@ -832,17 +882,24 @@ namespace ilPSP {
                                 }
                 */
 
+
                 tr.Info($"R{MPIEnv.MPI_Rank}: TPL thread pinning: {PerformTPLthreadPinning}, OMP thread pinning: {PerformOMPthreadPinning}");
+
+                //tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity before OpenMP binding: " + CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ",", "]"));
+                //csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD); // wait for all ranks to finish setting up the CPU affinity
 
                 BLAS.ActivateOMP();
                 LAPACK.ActivateOMP();
                 PinTPLThreads();
+                //tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity after TPL binding: " + CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ",", "]"));
                 PinOMPthreads();
                 StdoutOnlyOnRank0 = true;
                 tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity after OpenMP binding: " + CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ",", "]"));
+
             }
         }
 
+        //static bool TestingPinning = false;
 
         static bool PerformTPLthreadPinning = false;
 
@@ -876,7 +933,7 @@ namespace ilPSP {
                 Parallel.For(0, ilPSP.Environment.NumThreads,
                     new ParallelOptions { MaxDegreeOfParallelism = ilPSP.Environment.NumThreads },
                     PinTPLThread);
-            }
+            } 
         }
 
         static void PinTPLThread(int ithread) {
@@ -892,13 +949,15 @@ namespace ilPSP {
         }
 
 
-
         static bool PerformOMPthreadPinning = false;
 
 
         private static void PinOMPthreads() {
-
-
+            if(System.Environment.OSVersion.Platform == PlatformID.Unix) {
+                //MKLservice.Dynamic = true;
+                //MKLservice.SetNumThreads(NumThreads);
+                return;
+            }
 
             if(PerformOMPthreadPinning) {
                 var cpus = DedicatedCPUsForThisRank.GetSubVector(DedicatedCPUsForThisRank.Length - NumThreads, NumThreads); // use the left-over CPUs **at the beginning** for spare; I assume that background threads rather grab those.
