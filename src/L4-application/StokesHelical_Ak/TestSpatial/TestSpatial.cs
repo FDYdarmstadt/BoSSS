@@ -1557,7 +1557,9 @@ namespace StokesHelical_Ak.TestSpartial
             //###########################################################
 
             spaceConvergence_iterative = Man_Sol_DDD.ManSol_DDD_Paper(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, rMin: r_min, steady: true);
-            spaceConvergence_iterative.LinearSolver = new BoSSS.Solution.AdvancedSolvers.OrthoMGSchwarzConfig() { };
+            spaceConvergence_iterative.LinearSolver = new BoSSS.Solution.AdvancedSolvers.OrthoMGSchwarzConfig() {
+                ConvergenceCriterion = 1e-8 // after the discussion with Florian and Toprak, this has changed to a more suitable value as the condition number of the system might be high
+            };
             var helical_iterativ = new HelicalMain();
             helical_iterativ.Init(spaceConvergence_iterative);
             helical_iterativ.RunSolverMode();

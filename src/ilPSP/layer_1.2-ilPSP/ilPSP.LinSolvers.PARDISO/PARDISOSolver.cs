@@ -307,8 +307,8 @@ namespace ilPSP.LinSolvers.PARDISO {
 
             //
             using (var tr = new FuncTrace()) {
+                CheckNestedParallism();
 
-                
 
                 // check input arguments
                 // =====================
@@ -416,6 +416,10 @@ namespace ilPSP.LinSolvers.PARDISO {
             }
         }
 
+        void CheckNestedParallism() {
+            if (ilPSP.Environment.InParallelSection && Parallelism == Parallelism.OMP)
+                throw new ApplicationException("Nested parallelism detected: PARDISO with OpenMP parallelism is called from within a parallel region. This is not supported.");
+        }
 
         class PARDISOinternals {
             /// <summary>

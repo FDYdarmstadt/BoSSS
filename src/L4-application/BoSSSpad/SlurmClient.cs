@@ -453,31 +453,29 @@ namespace BoSSS.Application.BoSSSpad {
             string executiontime = myJob.ExecutionTime != null ? myJob.ExecutionTime : this.ExecutionTime; //if execution time is not defined. Use the default value.
             int MPIcores = myJob.NumberOfMPIProcs;
             int NumThreads = myJob.NumberOfThreads;
-            //string userName = Username;
+            int TotalThreadsPerRank = NumThreads + NumOfServiceCoresPerMPIprocess;  // Total number of threads per MPI process
+                    //string userName = Username;
             string startupstring;
             //string quote = "\"";
             string slurmAccount = this.SlurmAccount;
-            //string memPerCPU = "5000";
-            //if (myJob.MemPerCPU != null) {
-            //    memPerCPU = myJob.MemPerCPU;
-            //} else {
-            //    memPerCPU = "5000";
-            //}
 
-            using ( var str = new StringWriter() ) {
-                str.Write($"srun {base.DotnetRuntime} "); // when using SLURM, `srun` is recommended instead of `mpiexec`
-                //if (MPIcores > 1) {
-                //    str.Write($"mpiexec -n {MPIcores} {base.DotnetRuntime} ");
-                //} else {
-                //    str.Write($"{base.DotnetRuntime} ");
-                //}
+            
+            using (var str = new StringWriter()) {
+
+                //str.Write($"srun --export=ALL,OMP_NUM_THREADS={NumThreads} --cpu-bind=cores --cpus-per-task={NumThreads} {base.DotnetRuntime} "); // when using SLURM, `srun` is recommended instead of `mpiexec`
+                str.Write(
+                $"srun --cpu-bind=cores " +
+                $"--mem-bind=local " +
+                //"--output=rank_%t_trace.out strace -f -e clone " + // for debugging threading
+                $"bash -c 'export OMP_NUM_THREADS={NumThreads}; " + //if not used like this, srun overwrites OMP_NUM_THREADS to TotalThreadsPerRank.
+                $"{base.DotnetRuntime} ");
 
                 str.Write(jobpath_unix + "/" + myJob.EntryAssemblyName);
                 //str.Write(" ");
                 //str.Write(myJob.EnvironmentVars["BOSSS_ARG_" + 0]);
                 //str.Write(" ");
 
-
+                str.Write("'");
 
                 startupstring = str.ToString();
             }
@@ -486,6 +484,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             using ( StreamWriter sw = File.CreateText(path) ) {
                 sw.NewLine = "\n"; // Unix file endings
+
 
                 sw.WriteLine("#!/bin/sh");
                 sw.WriteLine("#SBATCH -J " + jobname);
@@ -500,20 +499,21 @@ namespace BoSSS.Application.BoSSSpad {
                     sw.WriteLine("#SBATCH --exclusive");
                 }
 
-                sw.WriteLine("#SBATCH -n " + MPIcores);
-                sw.WriteLine("#SBATCH -c " + NumThreads);
-                if ( !this.Email.IsEmptyOrWhite() ) {
+
+                sw.WriteLine("#SBATCH -c " + TotalThreadsPerRank);
+
+                if (!this.Email.IsEmptyOrWhite()) {
                     sw.WriteLine("#SBATCH --mail-user=" + this.Email);
                     sw.WriteLine("#SBATCH --mail-type=ALL");
                 }
                 foreach ( var cmd in this.AdditionalBatchCommands ?? Enumerable.Empty<string>() ) {
                     sw.WriteLine(cmd);
                 }
-                //sw.WriteLine("#SBATCH --ntasks-per-node 1");    // Only start one MPI-process per node
 
                 // Load modules
                 foreach ( string arg in moduleLoad ) {
-                    sw.WriteLine(arg);
+                    //sw.WriteLine("#SBATCH --ntasks-per-node 1");                          // Only start one MPI-process per node
+                    sw.WriteLine(arg); // Load modules
                 }
 
                 // Set environment variables for Job
@@ -528,6 +528,23 @@ namespace BoSSS.Application.BoSSSpad {
                     }
                     sw.WriteLine($"export {envvar.Key}={envValue}");
                 }
+
+                //// ----------  OpenMP  ---------- // it does not make sense to use these flags, as they slow down the speed and srun already handles this
+                //sw.WriteLine($"export OMP_PLACES=cores");                               // OpenMP sees those the cores as its 'places'
+                //sw.WriteLine($"export OMP_PROC_BIND=close");                           //keep OpenMP threads fixed to the cores
+
+                // ---------- .NET GC ---------- //
+                if(NumOfServiceCoresPerMPIprocess > 64)
+                    throw new InvalidOperationException(
+                        "GC affinity mask supports at most 64 service cores.");
+
+                // Set GC affinity mask and heap count
+                ulong mask = 0;
+                for(int i = 0; i < NumOfServiceCoresPerMPIprocess; i++)
+                    mask |= 1UL << (NumThreads + i);                                    // builds the 64-bit mask
+
+                sw.WriteLine($"export COMPlus_GCHeapCount={NumOfServiceCoresPerMPIprocess}");
+                //sw.WriteLine($"export COMPlus_GCHeapAffinitizeMask=0x{mask:X}");
 
                 // Set startupstring
                 string RunningToken = DeploymentDirectoryAtRemote(DeploymentDirectory) + "/isrunning.txt";

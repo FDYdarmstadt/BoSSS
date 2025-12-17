@@ -1659,6 +1659,7 @@ namespace PublicTestRunner {
             Console.WriteLine("                                 'NUnitFileToCopyHack' attribute; these depend");
             Console.WriteLine("                                 on files within the source repo; skipping those");
             Console.WriteLine("                                 allows to run without source code in place.");
+            Console.WriteLine("         list          : list discovered tests in FILTER (no execution).");
             Console.WriteLine("         help          : prints this message.");
             Console.WriteLine("         yaml          : write 'jobs.yml' file for Gitlab.");
             Console.WriteLine("  and FILTER selects some assembly, i.e. DerivativeTests.exe; it can be ");
@@ -1726,13 +1727,46 @@ namespace PublicTestRunner {
             int ret = -1;
             switch ( args[0] ) {
                 case "nunit3":
+
                     if ( args.Length < 2 ) {
                         Console.WriteLine("Insufficient number of arguments.");
                         PrintMainUsage();
                         return -7777;
                     }
-
                     ret = RunNunit3Tests(args[1], args.Skip(2).ToArray());
+                    break;
+
+
+                case "list":
+                    if ( args.Length < 2 ) {
+                        Console.WriteLine("Insufficient number of arguments.");
+                        PrintMainUsage();
+                        return -7777;
+                    } {
+                        string myFilter = args[1];
+                        int total = 0;
+                        Assembly[] assln = GetAllAssembliesForTests();
+                        if ( assln == null || assln.Length == 0 ) {
+                            Console.WriteLine("No assemblies available from the test provider.");
+                            ret = 0;
+                            break;
+                        }
+
+                        foreach ( var a in assln ) {
+                            if ( !FilterTestAssembly(a, myFilter) )
+                                continue;
+                            var tinfo = GetTestsInAssembly(a, myFilter);
+                            if ( tinfo.NoOfTests <= 0 )
+                                continue;
+                            Console.WriteLine($"Assembly: {Path.GetFileName(a.Location)} ({a.Location})");
+                            for ( int i = 0; i < tinfo.NoOfTests; i++ ) {
+                                Console.WriteLine($"  {i + 1}  : {tinfo.tests[i]}");
+                            }
+                            total = tinfo.NoOfTests;
+                        }
+                        Console.WriteLine($"Found {total} tests matching '{myFilter}'.");
+                        ret = 0;
+                    }
                     break;
 
                 case "runjobmanager":

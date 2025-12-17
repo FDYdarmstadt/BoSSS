@@ -144,6 +144,12 @@ namespace BoSSS.Application.BoSSSpad {
             set;
         }
 
+        /// <summary>
+        /// Additional number of cores which are allocated for each MPI rank for 'service', e.g., background threads, IO, garbage collection, etc.;
+        /// </summary>
+        [DataMember]
+        public int NumOfServiceCoresPerMPIprocess = 1;
+
 
         /// <summary>
         /// Specifies paths to databases which are accessible (i.e. allowed) to the computer system 

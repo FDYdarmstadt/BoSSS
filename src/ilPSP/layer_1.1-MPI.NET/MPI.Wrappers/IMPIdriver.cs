@@ -312,22 +312,34 @@ namespace MPI.Wrappers {
         /// <param name="comm"></param>
         void Send(IntPtr buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm);
 
-        /// <summary>
-        /// Blocks until all communication operations associated with active
-        /// handles in the list complete, and return the status of all these
-        /// operations (this includes the case where no handle in the list is
-        /// active). Both arrays have the same number of valid entries. The
-        /// i-th entry in <paramref name="array_of_statuses"/> is set to the
-        /// return status of the i-th operation. Requests that were created by
-        /// nonblocking communication operations are deallocated and the
-        /// corresponding handles in the array are set to MPI_REQUEST_NULL. The
-        /// list may contain null or inactive handles. The call sets to empty
-        /// the status of each such entry.
-        /// </summary>
-        /// <param name="count"></param>
-        /// <param name="array_of_requests"></param>
-        /// <param name="array_of_statuses"></param>
-        void Waitall(int count, MPI_Request[] array_of_requests, MPI_Status[] array_of_statuses);
+		/// <summary>
+		/// Starts a nonblocking send. (non-synchronous) 
+		/// </summary>
+		/// <param name="buf"></param>
+		/// <param name="count"></param>
+		/// <param name="datatype"></param>
+		/// <param name="dest"></param>
+		/// <param name="tag"></param>
+		/// <param name="comm"></param>
+		/// <param name="request"></param>
+		void Isend(IntPtr buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, out MPI_Request request);
+
+		/// <summary>
+		/// Blocks until all communication operations associated with active
+		/// handles in the list complete, and return the status of all these
+		/// operations (this includes the case where no handle in the list is
+		/// active). Both arrays have the same number of valid entries. The
+		/// i-th entry in <paramref name="array_of_statuses"/> is set to the
+		/// return status of the i-th operation. Requests that were created by
+		/// nonblocking communication operations are deallocated and the
+		/// corresponding handles in the array are set to MPI_REQUEST_NULL. The
+		/// list may contain null or inactive handles. The call sets to empty
+		/// the status of each such entry.
+		/// </summary>
+		/// <param name="count"></param>
+		/// <param name="array_of_requests"></param>
+		/// <param name="array_of_statuses"></param>
+		void Waitall(int count, MPI_Request[] array_of_requests, MPI_Status[] array_of_statuses);
 
         /// <summary>
         /// Gets the Count of a MPI_Status struct
@@ -351,18 +363,33 @@ namespace MPI.Wrappers {
         /// </summary>
         void Cancel(ref MPI_Request r);
 
+		/// <summary>
+		/// Tests for completion of a nonblocking operation.
+		/// </summary>
+		/// <param name="request"></param>
+		/// <param name="flag"></param>
+		/// <param name="status"></param>
+		void Test(ref MPI_Request request, out bool flag, out MPI_Status status);
 
-        /// <summary>
-        /// Blocks until one of the operations associated with the active
-        /// requests in the array has completed. If more then one operation is
-        /// enabled and can terminate, one is arbitrarily chosen. Returns in
-        /// index the index of that request in the array and returns in status
-        /// the status of the completing communication. (The array is indexed
-        /// from zero in C, and from one in Fortran.) If the request was
-        /// allocated by a nonblocking communication operation, then it is
-        /// deallocated and the request handle is set to MPI_REQUEST_NULL.
-        /// </summary>
-        void Waitany(int count, MPI_Request[] array_of_requests, out int index, out MPI_Status status);
+		/// <summary>
+		/// <see cref="Test"/> for an array of requests."/>
+		/// </summary>
+		/// <param name="requests"></param>
+		/// <param name="flag"></param>
+		/// <param name="statuses"></param>
+		void Testall(ref MPI_Request[] requests, out bool flag, out MPI_Status[] statuses);
+
+		/// <summary>
+		/// Blocks until one of the operations associated with the active
+		/// requests in the array has completed. If more then one operation is
+		/// enabled and can terminate, one is arbitrarily chosen. Returns in
+		/// index the index of that request in the array and returns in status
+		/// the status of the completing communication. (The array is indexed
+		/// from zero in C, and from one in Fortran.) If the request was
+		/// allocated by a nonblocking communication operation, then it is
+		/// deallocated and the request handle is set to MPI_REQUEST_NULL.
+		/// </summary>
+		void Waitany(int count, MPI_Request[] array_of_requests, out int index, out MPI_Status status);
 
 
         /// <summary>

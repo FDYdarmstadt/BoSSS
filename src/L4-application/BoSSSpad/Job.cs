@@ -532,7 +532,8 @@ namespace BoSSS.Application.BoSSSpad {
             string[] args = new string[] {
                 "--control", "control.obj",
                 "--prjnmn", PrjName,
-                "--sesnmn", this.Name
+                "--sesnmn", this.Name,
+                "--num_threads", this.NumberOfThreads.ToString()
             };
             if ( m_ctrl_index >= 0 ) {
                 ArrayTools.Cat(args, "--pstudy_case", m_ctrl_index.ToString());
@@ -544,6 +545,19 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
             // 
+        }
+
+        /// <summary>
+        /// Enables explicitly overriding the BoSSS Arguments (e.g,  "--control", "control.obj",)
+        /// </summary>
+        /// <param name="args"></param>
+        public void SetBoSSSArguments(string[] args) {
+            TestActivation();
+
+            m_EnvironmentVars.Clear();
+            for(int i = 0; i < args.Length; i++) {
+                m_EnvironmentVars.Add("BOSSS_ARG_" + i, args[i]);
+            }
         }
 
         /// <summary>
