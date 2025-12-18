@@ -1360,8 +1360,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// entry point for the TaskParallelOrthoMG (finest level)
         /// </summary>
         public void Init(MultigridOperator op) {
-            Debugger.Launch();
-			if (op.OperatorMatrix.MPI_Comm != csMPI.Raw._COMM.WORLD)
+            if (op.OperatorMatrix.MPI_Comm != csMPI.Raw._COMM.WORLD)
 				throw new Exception("Task parallel OrthoMG (finest level) should be initiated with an operator in world communicator");
 
             var ThisAndCoarserLevels = GetSubOperatorChain(op);
