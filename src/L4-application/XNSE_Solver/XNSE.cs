@@ -63,13 +63,19 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
+            //InitMPI();
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.BcTest_PressureOutletTest(2, 1, 0.1, CutCellQuadratureMethod.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TaylorCouetteConvergenceTest(2, Tests.TaylorCouette.Mode.Test2Phase, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, false, NonLinearSolverCode.Picard);
+            //throw new Exception("remove");
+
+
             {
                 XNSE._Main(args, false, delegate () {
                     var p = new XNSE();
                     return p;
                 });
             }
-            //*/
+
             ilPSP.LinSolvers.BlockMsrMatrix.PrintPerfStat();
         }
     }
