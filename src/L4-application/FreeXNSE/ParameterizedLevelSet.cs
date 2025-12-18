@@ -109,7 +109,7 @@ namespace FreeXNSE {
         public void MovePhaseInterface(double dt, LevelSetTracker _lsTrk, int order, DGField[] _interfaceVelocity) {
             this.lsTrk = _lsTrk;
             var SchemeHelper = lsTrk.GetXDGSpaceMetrics(lsTrk.SpeciesIdS.ToArray(), order).XQuadSchemeHelper;
-            var scheme = SchemeHelper.GetLevelSetquadScheme(0, lsTrk.Regions.GetCutCellMask4LevSet(0));
+            var scheme = SchemeHelper.GetLevelSetQuadScheme(0, lsTrk.Regions.GetCutCellMask4LevSet(0));
             this.quadruleInterface = scheme.Compile(lsTrk.GridDat, order);
 
             InterfaceVelocity = _interfaceVelocity;

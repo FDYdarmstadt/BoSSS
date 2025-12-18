@@ -30,8 +30,13 @@ using Newtonsoft.Json;
 namespace ilPSP {
 
     /// <summary>
-    /// A spatial coordinate or vector, in 1D, 2D, 3D
+    /// A spatial coordinate or vector, in 1D, 2D, 3D.
     /// </summary>
+    /// <remarks>
+    /// To make this structure computational efficient, two measures are taken:
+    /// - it is implement as a value-type, so it can be stores on the stack and in an array
+    /// - it is always, independent of the actual spatial dimension, 256 byte large, so its start address in an array have all the same memory alignment, cf. <see cref="Dummy_256bitAlign"/>
+    /// </remarks>
     [Serializable] 
     [StructLayout(LayoutKind.Sequential)]
     [DataContract]
@@ -278,7 +283,7 @@ namespace ilPSP {
         /// </summary>
         /// <param name="v">A vector</param>
         /// <returns>
-        /// \f$ \vec{u} \times \vec{v}\f$ 
+        /// \f$ \underline{u} \times \underline{v}\f$ 
         /// Note
         /// - return value will always be a 3D vector (<see cref="Dim"/>==3)
         /// - for 2D arguments, only the <see cref="z"/> component will be unequal 0.

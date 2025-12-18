@@ -117,7 +117,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests
         /// Computes the L2 Error of the actual solution against the exact solution in the control object 
         /// (<see cref="XNSE_Control.ExactSolutionTemperature"/>.
         /// </summary>
-        public override double[] ComputeL2Error(double time, XNSE_Control control) {
+        public override double[] ComputeL2Error(double time, AppControl control) {
             double[] Ret = new double[1];
 
             var ExactSolutionTemperature = base.GetExactSolution(control, VariableNames.Temperature);

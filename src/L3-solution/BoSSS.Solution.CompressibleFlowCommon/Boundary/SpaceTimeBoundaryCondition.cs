@@ -21,7 +21,7 @@ using System.Diagnostics;
 using ilPSP;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using BoSSS.Foundation;
-using IntersectingQuadrature.TensorAnalysis;
+//using IntersectingQuadrature.TensorAnalysis;
 using BoSSS.Foundation.Grid;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {

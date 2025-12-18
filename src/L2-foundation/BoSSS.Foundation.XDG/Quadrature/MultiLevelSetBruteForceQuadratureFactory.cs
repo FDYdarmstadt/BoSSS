@@ -12,8 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static BoSSS.Foundation.XDG.LevelSetTracker;
 
-namespace BoSSS.Foundation.XDG.Quadrature
-{
+namespace BoSSS.Foundation.XDG.Quadrature.BruteForce {
     class LevelSetCombination
     {
         public CombinedID ID;

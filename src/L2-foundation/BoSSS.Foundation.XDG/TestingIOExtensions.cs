@@ -32,7 +32,7 @@ namespace BoSSS.Foundation.XDG {
         }
         
         /// <summary>
-        /// Adds an XDG field.
+        /// Computes the difference between XDG field <paramref name="f"/> and the respective field in memory
         /// </summary>
         public static XDGField LocalError(this TestingIO t, XDGField f) {
             var trk = f.Basis.Tracker;

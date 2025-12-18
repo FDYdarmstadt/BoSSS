@@ -30,7 +30,6 @@ namespace BoSSS.Application.LoadBalancingTest {
 
         static void Main(string[] args) {
             XQuadFactoryHelper.CheckQuadRules = true;
-            
             ////MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
             //InitMPI();
             //// dbg_launch();
@@ -134,7 +133,8 @@ namespace BoSSS.Application.LoadBalancingTest {
                 throw new NotImplementedException();
             }
 
-            public double Update(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
+            public double Update(IList<string> variablenames, DGField[] CurrentState, IList<string> parameterNames, 
+                DGField[] parameterState,double phystime, double dt, double UnderRelax, bool incremental) {
 
                 return m_owner.DelUpdateLevelset(CurrentState, phystime, dt, UnderRelax, incremental);
             }
@@ -225,7 +225,7 @@ namespace BoSSS.Application.LoadBalancingTest {
 
             } else {
                 Debug.Assert(object.ReferenceEquals(this.MultigridSequence[0].ParentGrid, this.GridData));
-                TimeIntegration.DataRestoreAfterBalancing(L, new DGField[] { u }, new DGField[] { uResidual }, base.LsTrk, this.MultigridSequence, this.Op);
+                TimeIntegration.DataRestoreAfterBalancing(L, new DGField[] { u }, new DGField[] { uResidual }, null, base.LsTrk, this.MultigridSequence, this.Op);
                 //AltTimeIntegration.DataRestoreAfterBalancing(L, new DGField[] { u }, new DGField[] { uResidual }, base.LsTrk, this.MultigridSequence);
             }
         }

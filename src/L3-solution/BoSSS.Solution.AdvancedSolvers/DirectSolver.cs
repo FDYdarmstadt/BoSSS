@@ -196,7 +196,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 m_Mtx = Mtx;
             }
         }
-    
+
 
         IOperatorMappingPair MatrixNMapping;
 
@@ -356,7 +356,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
         int IterCnt = 1;
 
 
-        long m_UsedMemoryInLastCall = 0; 
+        long m_UsedMemoryInLastCall = 0;
+
+
+        Func<ISparseSolver>[] altSolvers = new Func<ISparseSolver>[] {
+            () => new PARDISOSolver() { Parallelism = Parallelism.SEQ },
+            () => new MUMPSSolver() { Parallelism = Parallelism.SEQ }
+        };
+
+
 
         /// <summary>
         /// %
@@ -371,76 +379,105 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double[] Residual = this.config.TestSolution ? B.ToArray() : null;
 
                 string SolverName = "NotSet";
-                
+                Exception lastException = null;
+                for (int iSolver = 0; iSolver <= altSolvers.Length; iSolver++) {
+                    {
+                        if (iSolver == 0) {
+                            if (m_Solver == null)
+                                m_Solver = GetSolver(m_Mtx);
+                        } else {
+                            m_Solver?.Dispose();
 
-                {
-                    if(m_Solver == null)
-                        m_Solver = GetSolver(m_Mtx);
-                    SolverName = m_Solver.GetType().FullName;
-                    //Console.Write("Direct solver run {0}, using {1} ... ", IterCnt, solver.GetType().Name);
-                    IterCnt++;
-                    m_Solver.Solve(X, B);
-                    this.Converged = true; 
-                    m_ThisLevelIterations++;
-                    //Console.WriteLine("done.");
+                            m_Solver = altSolvers[iSolver - 1]();
+                            m_Solver.DefineMatrix(m_Mtx);
+                        }
+                        SolverName = m_Solver.GetType().FullName;
+                        //Console.Write("Direct solver run {0}, using {1} ... ", IterCnt, solver.GetType().Name);
+                        IterCnt++;
+                        try {
+                            m_Solver.Solve(X, B);
+                            X.CheckForNanOrInfV(true, true, true, typeof(DirectSolver).Name + ", solution after solver call: ");
+                        }
+                        catch (Exception e) {
+                            lastException = e;
+                            Console.Error.WriteLine(e);
+                            Console.Error.WriteLine(e.StackTrace);
+                            this.Converged = false;
+                            m_Mtx.SaveToTextFileSparse("Mtx.txt");
+                            X.SaveToTextFile("X.txt");
+                            B.SaveToTextFile("B.txt");
+                            continue;
+                        }
+                        this.Converged = true;
+                        m_ThisLevelIterations++;
+                        //Console.WriteLine("done.");
 
-                    if(m_Solver is PARDISOSolver pslv) {
-                        m_UsedMemoryInLastCall = pslv.UsedMemory();
+                        if (m_Solver is PARDISOSolver pslv) {
+                            m_UsedMemoryInLastCall = pslv.UsedMemory();
+                        }
                     }
-                }
-
-                X.CheckForNanOrInfV(true, true, true, typeof(DirectSolver).Name + ", solution after solver call: ");
 
 
-                if(Residual != null) {
-                    double MatrixInfNorm = m_Mtx.InfNorm();
 
-                    double RhsNorm_loc = Residual.L2NormPow2();
+                    if (Residual != null) {
+                        double MatrixInfNorm = m_Mtx.InfNorm();
 
-                    m_Mtx.SpMV(-1.0, X, 1.0, Residual);
+                        double RhsNorm_loc = B.L2NormPow2();
 
-                    double[] normsGlobPow2 = (new[] { RhsNorm_loc, Residual.L2NormPow2(), B.L2NormPow2(), X.L2NormPow2() }).MPISum(m_Mtx.MPI_Comm);
-                    double RhsNorm = normsGlobPow2[0].Sqrt();
-                    double ResidualNorm = normsGlobPow2[1].Sqrt();
-                    double SolutionNorm = normsGlobPow2[2].Sqrt();
-                    double Denom = Math.Max(MatrixInfNorm, Math.Max(RhsNorm, Math.Max(SolutionNorm, Math.Sqrt(BLAS.MachineEps))));
-                    double RelResidualNorm = ResidualNorm / Denom;
+                        m_Mtx.SpMV(-1.0, X, 1.0, Residual);
 
-                    //Console.WriteLine("done: Abs.: {0}, Rel.: {1}", ResidualNorm, RelResidualNorm);
+                        double[] normsGlobPow2 = (new[] { RhsNorm_loc, Residual.L2NormPow2(), X.L2NormPow2() }).MPISum(m_Mtx.MPI_Comm);
+                        double RhsNorm = normsGlobPow2[0].Sqrt();
+                        double ResidualNorm = normsGlobPow2[1].Sqrt();
+                        double SolutionNorm = normsGlobPow2[2].Sqrt();
+                        double Denom = Math.Max(MatrixInfNorm, Math.Max(RhsNorm, Math.Max(SolutionNorm, Math.Sqrt(BLAS.MachineEps))));
+                        double RelResidualNorm = ResidualNorm / Denom;
 
-                    if(RelResidualNorm > 1.0e-10) {
+                        //Console.WriteLine("done: Abs.: {0}, Rel.: {1}", ResidualNorm, RelResidualNorm);
 
-                        //Console.WriteLine("High residual from direct solver: abs {0}, rel {1}", ResidualNorm , ResidualNorm / SolutionNorm);
-#if TEST
-                        m_Mtx.SaveToTextFileSparse("Mtx.txt");
-                        X.SaveToTextFile("X.txt");
-                        B.SaveToTextFile("B.txt");
-#endif
+                        if (RelResidualNorm > 1.0e-10) {
 
-                        string ErrMsg;
-                        using(var stw = new StringWriter()) {
-                            stw.WriteLine("High residual from direct solver (using {0}).", SolverName);
-                            stw.WriteLine("    L2 Norm of RHS:         " + RhsNorm);
-                            stw.WriteLine("    L2 Norm of Solution:    " + SolutionNorm);
-                            stw.WriteLine("    L2 Norm of Residual:    " + ResidualNorm);
-                            stw.WriteLine("    Relative Residual norm: " + RelResidualNorm);
-                            stw.WriteLine("    Matrix Inf norm:        " + MatrixInfNorm);
+                            //Console.WriteLine("High residual from direct solver: abs {0}, rel {1}", ResidualNorm , ResidualNorm / SolutionNorm);
+//#if TEST
+                            m_Mtx.SaveToTextFileSparse("Mtx.txt");
+                            X.SaveToTextFile("X.txt");
+                            B.SaveToTextFile("B.txt");
+//#endif
+
+                            string ErrMsg;
+                            using (var stw = new StringWriter()) {
+                                stw.WriteLine("High residual from direct solver (using {0}).", SolverName);
+                                stw.WriteLine("    L2 Norm of RHS:         " + RhsNorm);
+                                stw.WriteLine("    L2 Norm of Solution:    " + SolutionNorm);
+                                stw.WriteLine("    L2 Norm of Residual:    " + ResidualNorm);
+                                stw.WriteLine("    Relative Residual norm: " + RelResidualNorm);
+                                stw.WriteLine("    Matrix Inf norm:        " + MatrixInfNorm);
 #if TEST
                             stw.WriteLine("Dumping text versions of Matrix, Solution and RHS.");
 #endif
-                            ErrMsg = stw.ToString();
+                                ErrMsg = stw.ToString();
+                            }
+                            Console.Error.WriteLine(ErrMsg);
+                            this.Converged = false;
+                            //continue;
                         }
-                        Console.Error.WriteLine(ErrMsg);
-                        this.Converged = false;
                     }
+
+                    if (this.IterationCallback != null) {
+                        double[] _xl = X.ToArray();
+                        double[] _bl = B.ToArray();
+                        m_Mtx.SpMV(-1.0, _xl, 1.0, _bl);
+                        this.IterationCallback(1, _xl, _bl, this.MatrixNMapping as MultigridOperator);
+                    }
+
+                    if (iSolver > 0) {
+                        m_Solver.Dispose();
+                        m_Solver = null;
+                    }
+                    return;
                 }
 
-                if(this.IterationCallback != null) {
-                    double[] _xl = X.ToArray();
-                    double[] _bl = B.ToArray();
-                    m_Mtx.SpMV(-1.0, _xl, 1.0, _bl);
-                    this.IterationCallback(1, _xl, _bl, this.MatrixNMapping as MultigridOperator);
-                }
+                throw lastException;
             }
         }
 
@@ -513,6 +550,43 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
     }
 
+    /// <summary>
+    /// In certain cases, it might be handy to use PardisoSolver for a subsystem without using DirectSolver class.
+    /// (.e.g, for memory reasons)
+    /// This is a wrapper around PardisoSolver which implements <see cref="ISubsystemSolver"/>.
+    /// </summary>
+    public class SubSystemPardiso : PARDISOSolver, ISubsystemSolver {
+        int ISolverSmootherTemplate.IterationsInNested => 0;
 
+        int ISolverSmootherTemplate.ThisLevelIterations => 1;
 
+        bool ISolverSmootherTemplate.Converged => true;
+
+        public void Init(IOperatorMappingPair op) {
+            InitializeMatrix(op.OperatorMatrix, op.DgMapping);
+        }
+
+        object ICloneable.Clone() {
+            throw new NotImplementedException();
+        }
+
+        void ISolverSmootherTemplate.Init(MultigridOperator op) {
+            InitializeMatrix(op.OperatorMatrix, op.DgMapping);
+        }
+
+        private void InitializeMatrix(IMutableMatrixEx Mtx, IBlockPartitioning MgMap) {
+            if(!Mtx.RowPartitioning.EqualsPartition(MgMap)) {
+                throw new ArgumentException("Row partitioning mismatch.");
+            }
+            DefineMatrix(Mtx);
+        }
+
+        void ISolverSmootherTemplate.ResetStat() {
+            //Console.Error.WriteLine("ResetStat is not supported");
+        }
+
+        void ISolverSmootherTemplate.Solve<U, V>(U X, V B) {
+            base.Solve(X, B);
+        }
+    }
 }

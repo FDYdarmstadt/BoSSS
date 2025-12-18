@@ -1,4 +1,5 @@
 ﻿using ilPSP.Utils;
+using MPI.Wrappers;
 using MPI.Wrappers.Utils;
 using System;
 using System.Collections.Generic;
@@ -90,7 +91,7 @@ namespace ilPSP {
 
         /// <summary>
         /// Setting/Getting the state of OpenMP dynamic thread allocation 
-        /// (internal control variable `omp_get_dynamic`, overrifed the bahavor of OMP_DYNAMIC environment variable)
+        /// (internal control variable `omp_get_dynamic`, overrides the behavior of OMP_DYNAMIC environment variable)
         /// </summary>
         public static bool Dynamic {
             get {
@@ -117,6 +118,8 @@ namespace ilPSP {
 
 
         public static void BindOMPthreads_1To1(int[] CPUindices) {
+            int rank = -1;
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
             CPUindices = CPUAffinity.ToOpenMpCPUindices(CPUindices).ToArray();
 
             int ret;

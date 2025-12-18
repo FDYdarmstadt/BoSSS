@@ -836,6 +836,37 @@ namespace ilPSP.Utils {
         }
 
         /// <summary>
+        /// returns <paramref name="a"/> + <paramref name="B1"/>, allocates memory for the result
+        /// </summary>
+        static public double[] PlusVec<T, V1>(this T a, V1 B1)
+            where T : IList<double>
+            where V1 : IList<double> {
+            return a.WeightedPlusVec(1.0, B1, 1.0);
+        }
+
+        /// <summary>
+        /// returns <paramref name="a"/>*<paramref name="alpha1"/> + <paramref name="B1"/>*<paramref name="alpha2"/>, allocates memory for the result
+        /// </summary>
+        static public double[] WeightedPlusVec<T, V1>(this T a, double alpha1, V1 B1, double alpha2)
+            where T : IList<double>
+            where V1 : IList<double> {
+
+            var ret = new double[a.Count];
+            a.SetV(a, alpha1);
+            a.AccV(alpha2, B1);
+            return ret;
+        }
+
+
+        /// <summary>
+        /// returns <paramref name="a"/> - <paramref name="B1"/>, allocates memory for the result
+        /// </summary>
+        static public double[] MinusVec<T, V1>(this T a, V1 B1)
+            where T : IList<double>
+            where V1 : IList<double> {
+            return a.WeightedPlusVec(1.0, B1, -1.0);
+        }
+        /// <summary>
         /// checks all entries for infinity or NAN - values, and
         /// throws an <see cref="ArithmeticException"/> if found;
         /// </summary>

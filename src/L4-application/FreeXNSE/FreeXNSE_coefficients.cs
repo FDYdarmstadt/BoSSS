@@ -273,46 +273,50 @@ namespace FreeXNSE {
                 ContactPoints.Clear();
 
                 int D = grd.SpatialDimension;
-                LevelSetTracker trk = new LevelSetTracker(grd, CutCellQuadratureMethod.Saye, 1, new string[] { "A", "B" }, phi);
-                trk.UpdateTracker(0.0);
+                using(LevelSetTracker trk = new LevelSetTracker(grd, CutCellQuadratureMethod.Saye, 1, new string[] { "A", "B" }, phi)) {
+                    trk.UpdateTracker(0.0);
 
-                XQuadSchemeHelper SchemeHelper = trk.GetXDGSpaceMetrics(trk.SpeciesIdS.ToArray(), 0).XQuadSchemeHelper;
-                EdgeQuadratureScheme SurfaceElement_Edge = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(trk.GetSpeciesId("A"), 0);
+                    XQuadSchemeHelper SchemeHelper = trk.GetXDGSpaceMetrics(trk.SpeciesIdS.ToArray(), 0).XQuadSchemeHelper;
+                    EdgeQuadratureScheme SurfaceElement_Edge = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(trk.GetSpeciesId("A"), trk.GetSpeciesId("B"), 0);
+                    if(trk.NoOfLevelSets > 1)
+                        throw new NotSupportedException("todo -- maybe missing level-set intersection line contributions.");
 
-                var QuadDom = SurfaceElement_Edge.Domain;
-                var boundaryEdge = grd.GetBoundaryEdgeMask().GetBitMask();
-                var boundaryCutEdge = QuadDom.Intersect(new EdgeMask(grd, boundaryEdge, MaskType.Geometrical));
 
-                var factory = trk.GetXDGSpaceMetrics(trk.SpeciesIdS.ToArray(), 0).XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(0, trk.GridDat.Grid.RefElements[0]);
-                SurfaceElement_Edge = new EdgeQuadratureScheme(factory, boundaryCutEdge);
+                    var QuadDom = SurfaceElement_Edge.Domain;
+                    var boundaryEdge = grd.GetBoundaryEdgeMask().GetBitMask();
+                    var boundaryCutEdge = QuadDom.Intersect(new EdgeMask(grd, boundaryEdge, MaskType.Geometrical));
 
-                EdgeQuadrature.GetQuadrature(new int[] { D }, trk.GridDat,
-                    SurfaceElement_Edge.Compile(trk.GridDat, 0),
-                    delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
-                        // contact point
-                        NodeSet Enode_l = QR.Nodes;
-                        int trf = trk.GridDat.Edges.Edge2CellTrafoIndex[i0, 0];
-                        NodeSet Vnode_l = Enode_l.GetVolumeNodeSet(trk.GridDat, trf, false);
-                        NodeSet Vnode_g = Vnode_l.CloneAs();
-                        int cell = trk.GridDat.Edges.CellIndices[i0, 0];
-                        trk.GridDat.TransformLocal2Global(Vnode_l, Vnode_g, cell);
-                        //Console.WriteLine("contact point: ({0},{1})", Vnode_g[0, 0], Vnode_g[0, 1]);
+                    var factory = trk.GetXDGSpaceMetrics(trk.SpeciesIdS.ToArray(), 0).XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(0, trk.GridDat.Grid.RefElements[0]);
+                    SurfaceElement_Edge = new EdgeQuadratureScheme(factory, boundaryCutEdge);
 
-                        int D = trk.GridDat.SpatialDimension;
-                        for(int d = 0; d < D; d++) {
-                            EvalResult[0, 0, d] = Vnode_g[0, d];
-                        }                        
-                    },
-                    delegate (int i0, int length, MultidimensionalArray ResultsOfIntegration) {
-                        for(int i = 0; i < length; i++) {
-                            double[] cp = new double[D];
+                    EdgeQuadrature.GetQuadrature(new int[] { D }, trk.GridDat,
+                        SurfaceElement_Edge.Compile(trk.GridDat, 0),
+                        delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
+                            // contact point
+                            NodeSet Enode_l = QR.Nodes;
+                            int trf = trk.GridDat.Edges.Edge2CellTrafoIndex[i0, 0];
+                            NodeSet Vnode_l = Enode_l.GetVolumeNodeSet(trk.GridDat, trf, false);
+                            NodeSet Vnode_g = Vnode_l.CloneAs();
+                            int cell = trk.GridDat.Edges.CellIndices[i0, 0];
+                            trk.GridDat.TransformLocal2Global(Vnode_l, Vnode_g, cell);
+                            //Console.WriteLine("contact point: ({0},{1})", Vnode_g[0, 0], Vnode_g[0, 1]);
+
+                            int D = trk.GridDat.SpatialDimension;
                             for(int d = 0; d < D; d++) {
-                                cp[d] = ResultsOfIntegration[i, d];
+                                EvalResult[0, 0, d] = Vnode_g[0, d];
                             }
-                            ContactPoints.Add(cp);
-                        }                        
-                    }
-                ).Execute();
+                        },
+                        delegate (int i0, int length, MultidimensionalArray ResultsOfIntegration) {
+                            for(int i = 0; i < length; i++) {
+                                double[] cp = new double[D];
+                                for(int d = 0; d < D; d++) {
+                                    cp[d] = ResultsOfIntegration[i, d];
+                                }
+                                ContactPoints.Add(cp);
+                            }
+                        }
+                    ).Execute();
+                }
             }
 
             List<double[]> ContactPoints = new List<double[]>();

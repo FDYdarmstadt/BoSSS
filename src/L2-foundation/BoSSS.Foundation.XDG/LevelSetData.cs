@@ -1149,15 +1149,16 @@ namespace BoSSS.Foundation.XDG {
             Dictionary<SpeciesId, SubGrid> m_SpeciesSubGrids;
 
             /// <summary>
-            /// Level set region code,
-            /// for locally updated and external cells
+            /// Level set region code, for locally updated and external cells
+            /// - index: (logical) cell index, also includes external cells.
             /// </summary>
             internal ushort[] m_LevSetRegions;
 
 
             /// <summary>
             /// Level set region code, before the most recent call to <see cref="LevelSetTracker.UpdateTracker"/>
-            /// for locally updated and external cells
+            /// for locally updated and external cells.
+            /// This is required for updating memory of XDG fields.
             /// </summary>
             internal ushort[] m_LevSetRegions_b4Update;
 
@@ -1695,12 +1696,12 @@ namespace BoSSS.Foundation.XDG {
             }
 
             /// <summary>
-            /// Tests if a species  \f$\mathfrak{s}\f$ is actually \f$ \emph{present} \f$ in some cell \f$K_{\text{\tt jCell}}\f$,
+            /// Tests if a species $\mathfrak{s}$ is actually $\emph{present}$ in some cell $K_{\text{\tt jCell}}$,
             /// i.e. if 
             /// the measure of the species in the cell is positive, i.e. 
-            /// \f[
-            ///   \int_{K_{\text{\tt jCell}} \cap \mathfrak{s} } 1 \dV > 0 
-            /// \f]
+            /// \[
+            ///   \int_{K_{\text{\tt jCell}} \cap \mathfrak{s} } 1 \textrm{dV} > 0 
+            /// \]
             /// </summary>
             /// <param name="speciesId">The id of species \mathfrak{s}.</param>
             /// <param name="jCell">a cell index</param>

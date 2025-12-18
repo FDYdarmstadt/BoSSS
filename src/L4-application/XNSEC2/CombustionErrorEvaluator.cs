@@ -19,6 +19,7 @@ using BoSSS.Application.XNSE_Solver.Tests;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution;
+using BoSSS.Solution.Control;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Utils;
 using ilPSP;
@@ -118,7 +119,7 @@ namespace BoSSS.Application.XNSEC {
                 return L2Error;
             }
 
-            public override double[] ComputeL2Error(double time, XNSE_Control control) {
+            public override double[] ComputeL2Error(double time, AppControl control) {
                 return ComputeL2Error(time, (XNSEC_Control)control); ;
             }
 
@@ -194,7 +195,7 @@ namespace BoSSS.Application.XNSEC {
             }
 
          
-            public override double[] ComputeL2Error(double time, XNSE_Control control) {
+            public override double[] ComputeL2Error(double time, AppControl control) {
                 return ComputeL2Error(time, (XNSEC_Control)control); ;
             }
 

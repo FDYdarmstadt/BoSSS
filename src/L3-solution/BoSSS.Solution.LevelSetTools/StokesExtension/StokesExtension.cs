@@ -4,6 +4,7 @@ using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution.AdvancedSolvers;
+using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.NSECommon;
 using ilPSP;
 using ilPSP.LinSolvers;
@@ -31,7 +32,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         /// <summary>
         /// ctor
         /// </summary>
-        public StokesExtension(int D, IncompressibleBoundaryCondMap map, int cutCellQuadOrder, double AgglomerationThrshold, bool fullStokes, bool useBCMap = false) {
+        public StokesExtension(int D, IncompressibleBoundaryCondMap map, int cutCellQuadOrder, double AgglomerationThrshold, bool fullStokes, StokesExtentionBoundaryOption useBCMap = StokesExtentionBoundaryOption.FreeSlipAtWall) {
             this.D = D;
             this.map = map;
             this.m_CutCellQuadOrder = cutCellQuadOrder;
@@ -45,7 +46,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         IncompressibleBoundaryCondMap map;
         double AgglomerationThreshold;
         bool fullStokes;
-        bool m_useBCMap;
+        StokesExtentionBoundaryOption m_useBCMap;
 
         const double penalty_safety = 4.0;
 
@@ -263,7 +264,6 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                 double[] InputVelL2 = VelocityAtInterface.Select(vel => vel.L2Norm()).ToArray();
 
 
-                // Tecplot.Tecplot.PlotFields(ExtensionVelocity.Cat(lsTrk.LevelSets[0] as LevelSet), this.GetType().ToString().Split('.').Last() + "-" + timestepNo, (double)timestepNo, 2);
                 m_LatestAgglom = lsTrk.GetAgglomerator(lsTrk.SpeciesIdS.ToArray(), this.m_CutCellQuadOrder, this.AgglomerationThreshold);
 
                 int J = gDat.iLogicalCells.NoOfLocalUpdatedCells;
@@ -337,6 +337,13 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                     tr.Warning($"StokesExtension.SolveExtension with Multigridoperator failed, trying direct method; got exception");
                     OpMtx.Solve_Direct(ExtenstionSolVec, bkup_RHS);
                 }
+
+                //{
+                //    DGField[] stokesShit = VelocityAtInterface.Cat(DummySolFields);
+                //    Tecplot.Tecplot.PlotFields(stokesShit, "StokesExt.ls" + levelSetIndex, 0.0, 3);
+                //}
+
+
 
                 //Console.WriteLine("Difference: {0}", ExtenstionSolVec.L2Dist(cExtenstionSolVec));
 

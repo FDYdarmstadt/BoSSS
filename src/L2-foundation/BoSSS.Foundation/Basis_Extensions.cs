@@ -133,7 +133,7 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// From origin basis to destination basis $` T = \langle B_i,B_j \rangle^{-1} \langle B_j, P_k \rangle = M^{-1} \cdot S $`
+        /// From origin basis to destination basis $T = \langle B_i,B_j \rangle^{-1} \langle B_j, P_k \rangle = M^{-1} \cdot S$
         /// </summary>
         protected virtual void ConstructTransform() {
             var Krefs = ((GridCommons)m_origin.GridDat.Grid).RefElements;
@@ -194,7 +194,7 @@ namespace BoSSS.Foundation {
 
 
         /// <summary>
-        /// From destination basis to origin basis: $` T = \langle P_i,P_j \rangle^{-1} \langle P_j, B_k \rangle $`
+        /// From destination basis to origin basis: $T = \langle P_i,P_j \rangle^{-1} \langle P_j, B_k \rangle$
         /// </summary>
         protected virtual void ConstructInverseTransform() {
             var Krefs = ((GridCommons)m_origin.GridDat.Grid).RefElements;
@@ -282,8 +282,8 @@ namespace BoSSS.Foundation {
 
         /// <summary>
         /// Indices of Coefficients lying on faces of the refelement
-        ///     1st index: Refelement
-        ///     2nd index: Face
+        /// - 1st index: Refelement
+        /// - 2nd index: Face
         /// </summary>
         public List<int>[][] FaceCoefficients {
             get;

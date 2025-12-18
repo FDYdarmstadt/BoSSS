@@ -5,21 +5,55 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ZwoLevelSetSolver.ContactLine;
+using ZwoLevelSetSolver.SolidPhase;
 
 namespace ZwoLevelSetSolver.Boundary {
+    
+    /// <summary>
+    /// Solid Fluid Interface for Displacement Transport Equation
+    /// </summary>
     class DisplacementBoundary : SurfaceEquation {
         string fluidSpecies;
         string solidSpecies;
         string codomainName;
 
-        public DisplacementBoundary(LevelSetTracker LsTrkr, string fluidSpecies, string solidSpecies, int d, int D, double artificialViscosity) {
+
+        public DisplacementBoundary(LevelSetTracker LsTrkr, string fluidSpecies, string solidSpecies, int d, int D, double artificialViscosity, double fluidViscosity, Solid material) {
             codomainName = ZwoLevelSetSolver.EquationNames.DisplacementEvolutionComponent(d);
             this.fluidSpecies = fluidSpecies;
             this.solidSpecies = solidSpecies;
 
             AddVariableNames(ZwoLevelSetSolver.VariableNames.DisplacementVector(D));
-            AddComponent(new NonLinearSolidConvectionForm(ZwoLevelSetSolver.VariableNames.DisplacementVector(D), BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), 1.0, d, 1, fluidSpecies, solidSpecies));
-            AddComponent(new SolidTensionForm(fluidSpecies, solidSpecies, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, D, 1, artificialViscosity));
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
+            //AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D));
+            
+            AddComponent(new InnerNonLinearSolidConvectionForm(ZwoLevelSetSolver.VariableNames.DisplacementVector(D), 
+                BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), 
+                1.0, d, 1, 
+                fluidSpecies, 
+                solidSpecies));
+            //*/
+            /*
+            AddComponent(new ParameterTransportBoundaryForm( ZwoLevelSetSolver.VariableNames.Displacement0Vector(D)[d],
+                BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D),
+                1.0, D,
+                fluidSpecies,
+                solidSpecies,
+                1
+                ));
+            AddParameter(ZwoLevelSetSolver.VariableNames.Displacement0Vector(D)[d]);
+            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D));
+            
+            //AddComponent(new ConvectionDivergenceBoundaryForm(d, D, 1, fluidSpecies, solidSpecies, 1000));
+
+            if (artificialViscosity != 0.0)
+            {
+                //AddComponent(new SolidTensionForm(fluidSpecies, solidSpecies, d, D, 1, artificialViscosity, fluidViscosity, material.Viscosity));
+                AddComponent(new ParameterSIPBoundaryForm(fluidSpecies, solidSpecies, d, D, 1, ZwoLevelSetSolver.VariableNames.ArtificialViscosity));
+            }
+            //AddSurfaceComponent(new SurfacePenaltyForm(ZwoLevelSetSolver.VariableNames.DisplacementComponent(d), -100));
+            */
         }
 
         public override string FirstSpeciesName => fluidSpecies;

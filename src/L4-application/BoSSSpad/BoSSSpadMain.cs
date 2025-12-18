@@ -753,6 +753,7 @@ namespace BoSSS.Application.BoSSSpad {
             Console.WriteLine(typeof(XNSFE_Solver.XNSFE).FullName);
             Console.WriteLine(typeof(XNSERO_Solver.XNSERO).FullName);
             Console.WriteLine(typeof(ZwoLevelSetSolver.ZLS).FullName);
+            Console.WriteLine(typeof(HFSISolver.HFSI).FullName);
             Console.WriteLine(typeof(XNSEC.XNSEC).FullName);
             //Console.WriteLine(typeof(MultiphaseElectroHydroDynamic.MultiphaseElectroHydroDynamic).FullName);
         }

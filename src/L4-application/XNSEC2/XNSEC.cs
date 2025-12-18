@@ -24,7 +24,7 @@ using System.Linq;
 
 namespace BoSSS.Application.XNSEC {
     /// <summary>
-    /// Low Mach number flow solver. Supports temperature dependeant density and transport parameters.
+    /// Low Mach number flow solver. Supports temperature dependent density and transport parameters.
     /// The mixture fraction solver <see cref="XNSEC_MixtureFraction"/> can be used for finding estimates for combustion applications
     /// </summary>
     public partial class XNSEC : SolverWithLevelSetUpdater<XNSEC_Control> {
@@ -653,11 +653,9 @@ namespace BoSSS.Application.XNSEC {
 
 
             if (Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
-                Console.WriteLine("Linearization Hint:" + LinearizationHint.GetJacobiOperator.ToString());
                 XOP.LinearizationHint = LinearizationHint.GetJacobiOperator;
             } else if (Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard){
-                Console.WriteLine("Linearization Hint:" + LinearizationHint.GetJacobiOperator.ToString());
-
+                
                 //throw new NotImplementedException("LowMach solver supports only Newton as NonLinearSolver");
             }
 

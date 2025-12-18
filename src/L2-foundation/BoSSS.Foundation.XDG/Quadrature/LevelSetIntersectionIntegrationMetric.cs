@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Text;
 using static BoSSS.Foundation.XDG.LevelSetTracker;
 
-namespace BoSSS.Foundation.XDG {
+namespace BoSSS.Foundation.XDG.Quadrature {
 
 
     /// <summary>
@@ -82,14 +82,15 @@ namespace BoSSS.Foundation.XDG {
 
             var metric = MultidimensionalArray.Create(L, K);
 
-            var LevSetNormals1 = this.m_levelSetData1.GetLevelSetReferenceNormals(qr.Nodes, jCell0, 1).ExtractSubArrayShallow(0, -1, -1);
-            var LevSetNormals2 = this.m_levelSetData2.GetLevelSetReferenceNormals(qr.Nodes, jCell0, 1).ExtractSubArrayShallow(0, -1, -1);
+            var LevSetNormals1 = this.m_levelSetData1.GetLevelSetReferenceNormals(qr.Nodes, jCell0, L);
+            var LevSetNormals2 = this.m_levelSetData2.GetLevelSetReferenceNormals(qr.Nodes, jCell0, L);
             var Tangents = TempBuffer.GetTempMultidimensionalarray(out int iTangengBuffer, L, 2 * K, D);
+            var TangentsTransformed = TempBuffer.GetTempMultidimensionalarray(out int iTangentsTransformedBuffer, L, 2 * K, D);
 
             for(int j = 0; j < L; j++) {
 
                 var LevSetNormals1_j = LevSetNormals1.ExtractSubArrayShallow(j, -1, -1);
-                var LevSetNormals2_j = LevSetNormals1.ExtractSubArrayShallow(j, -1, -1);
+                var LevSetNormals2_j = LevSetNormals2.ExtractSubArrayShallow(j, -1, -1);
                 var Tangents_j = Tangents.ExtractSubArrayShallow(j, -1, -1);
 
                 for(int k = 0; k < K; k++) {
@@ -99,13 +100,13 @@ namespace BoSSS.Foundation.XDG {
                     var Tangent = SurfNormal1.CrossProduct(SurfNormal2);
                     Tangent.NormalizeInPlace();
 
-                    Tangents.SetRowPt(k, Tangent + Node);
-                    Tangents.SetRowPt(k + K, Node);
+                    Tangents_j.SetRowPt(k, Tangent + Node);
+                    Tangents_j.SetRowPt(k + K, Node);
                 }
+            
+                gridData.TransformLocal2Global(Tangents_j, jCell0 + j, 1, TangentsTransformed, j);
             }
 
-            var TangentsTransformed = TempBuffer.GetTempMultidimensionalarray(out int iTangentsTransformedBuffer, L, 2 * K, D);
-            gridData.TransformLocal2Global(Tangents, jCell0, L, TangentsTransformed);
 
             for(int j = 0; j < L; j++) {
                 var TangentsTransformed_j = TangentsTransformed.ExtractSubArrayShallow(j, -1, -1);

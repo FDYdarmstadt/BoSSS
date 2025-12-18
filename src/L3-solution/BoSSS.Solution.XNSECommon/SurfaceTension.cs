@@ -46,6 +46,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
     }
 
+    /*
     /// <summary>
     /// Implementation of <see cref="CurvatureBasedSurfaceTension"/> for use in <see cref="XSpatialOperatorMk2.SurfaceElementOperator_Ls0"/>
     /// </summary>
@@ -56,10 +57,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="_d">spatial direction</param>
-        /// <param name="_D">spatial dimension</param>
-        /// <param name="LsTrk"></param>
-        /// <param name="_sigma">surface-tension constant</param>
         public CurvatureBasedSurfaceTension_SurfaceOperator(int _d, int _D, double _sigma) {
             //m_LsTrk = LsTrk;
             if (_d >= _D)
@@ -89,7 +86,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             // only parameter dependent, leave this empty
-            return new IEquationComponent[] { this };
+            Console.WriteLine(" !!!!!!!!!!!!!!!   This or nix ????????????????????");
+            return new IEquationComponent[] { };
+            //return new IEquationComponent[] { this };
         }
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
@@ -109,7 +108,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             return Flx * V;
         }
     }
-
+    */
 
     /// <summary>
     /// Represents the artificial surface force (usually only used in manufactured solutions).
@@ -345,6 +344,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             // only parameter dependent, leave this empty
+            //Console.WriteLine(" !!!!!!!!!!!!!!!   This or nix ????????????????????");
+            //return new IEquationComponent[] { };
             return new IEquationComponent[] { this };
         }
 
@@ -535,7 +536,21 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         }
     }
 
-    public abstract class IBM_ContactLine {
+    public abstract class IBM_ContactLine : ISpeciesFilter {
+
+        protected IBM_ContactLine(string _ValidSpecies) {
+            ValidSpecies = _ValidSpecies;
+        }
+
+        public string ValidSpecies {
+            get;
+            private set;
+        }
+
+        virtual public IList<string> ArgumentOrdering => new string[0];
+        
+        abstract public IList<string> ParameterOrdering { get; }
+
         protected Vector FluidSurfaceNormal(ref CommonParamsVol cpv) {
             return SurfaceNormal(cpv.Parameters, cpv.D, 0);
         }
@@ -603,14 +618,14 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
     }
 
     /// <summary>
-    /// LaplaceBeltrami with max sigma as parameter, for contact line between two level sets
+    /// LaplaceBeltrami with max sigma as parameter, for contact line/intersection between two level sets
     /// </summary>
     public class Curvature_LaplaceBeltrami_Contactline : IBM_ContactLine, IVolumeForm, ISupportsJacobianComponent  {
         int d;
         int D;
         int iLevSet;
 
-        public Curvature_LaplaceBeltrami_Contactline(int d, int D, int iLevSet) {
+        public Curvature_LaplaceBeltrami_Contactline(int d, int D, int iLevSet, string _ValidSpecies) : base(_ValidSpecies) {
             this.d = d;
             this.D = D;
             this.iLevSet = iLevSet;
@@ -618,7 +633,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         public TermActivationFlags VolTerms => TermActivationFlags.V;
 
-        public virtual IList<string> ParameterOrdering {
+        public override IList<string> ParameterOrdering {
             get {
                 string[] parameters = VariableNames.NormalVector(D);
                 parameters = parameters.Cat(VariableNames.AsLevelSetVariable(NSECommon.VariableNames.LevelSetCGidx(iLevSet), VariableNames.NormalVector(D)));
@@ -627,8 +642,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             }
         }
 
-        public IList<string> ArgumentOrdering => new string[0];
-
+        
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             Vector EdgeNormal = SolidSurfaceNormal(ref cpv);
             Vector SurfaceNormal_IN = FluidSurfaceNormal(ref cpv);
@@ -660,7 +674,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         double sigma;
         double theta_e;
 
-        public SurfaceTension_GNBC_Contactline(int d, int D, double theta_e, double sigma, int iLevSet) {
+        public SurfaceTension_GNBC_Contactline(int d, int D, double theta_e, double sigma, int iLevSet, string _ValidSpecies) : base(_ValidSpecies) {
             this.comp = d;
             this.D = D;
             this.iLevSet = iLevSet;
@@ -670,7 +684,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         public TermActivationFlags VolTerms => TermActivationFlags.V;
 
-        public virtual IList<string> ParameterOrdering {
+        public override IList<string> ParameterOrdering {
             get {
                 string[] parameters = VariableNames.NormalVector(D);
                 parameters = parameters.Cat(VariableNames.AsLevelSetVariable(NSECommon.VariableNames.LevelSetCGidx(iLevSet), VariableNames.NormalVector(D)));
@@ -678,8 +692,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             }
         }
 
-        public IList<string> ArgumentOrdering => new string[0];
-
+        
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             Vector EdgeNormal = SolidSurfaceNormal(ref cpv);
             Vector SurfaceNormal_IN = FluidSurfaceNormal(ref cpv);
@@ -802,16 +815,16 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         /// </summary>
         double m_beta;
 
-        /// <summary>
-        /// true for quasi-static computations with moving slip-wall and non-moving interface  
-        /// </summary>
-        //bool m_staticInt;
+        ///// <summary>
+        ///// true for quasi-static computations with moving slip-wall and non-moving interface  
+        ///// </summary>
+        ////bool m_staticInt;
 
         IncompressibleBcType[] m_edgeTag2Type;
 
         /// <summary>
-        /// Dirichlet boundary values; <br/>
-        ///  - 2nd index: edge tag
+        /// Dirichlet boundary values
+        ///  - 1st index: edge tag
         /// </summary>
         protected Func<double[], double, double>[] velFunction;
 

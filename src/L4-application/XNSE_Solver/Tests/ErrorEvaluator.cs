@@ -36,7 +36,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests
         /// <summary>
         /// Computes the L2 Error of the actual solution against the exact solution in the control object 
         /// </summary>
-        public abstract double[] ComputeL2Error(double time, XNSE_Control control);
+        public abstract double[] ComputeL2Error(double time, AppControl control);
 
 
         /// <summary>
@@ -63,7 +63,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests
         /// - null, if no field with name starting with <paramref name="SolPrefix"/> can be found in <see cref="AppControl.ExactSolutions"/>
         /// - otherwise, a list of species names for which this solution is specified
         /// </returns>
-        protected IEnumerable<string> GetSpecies(string SolPrefix, XNSE_Control Control) {
+        protected IEnumerable<string> GetSpecies(string SolPrefix, AppControl Control) {
             var species = new HashSet<string>();
 
             bool bfound = false;
@@ -89,7 +89,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests
         }
 
 
-        protected IDictionary<string, Func<double[], double, double>> GetExactSolution(XNSE_Control control, string VariableName) {
+        protected IDictionary<string, Func<double[], double, double>> GetExactSolution(AppControl control, string VariableName) {
 
             var FluidSpecies = GetSpecies(VariableName, control);
             if(FluidSpecies == null)
@@ -154,7 +154,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests
             return arr[0].Substring(0, i);
         }
 
-        protected IDictionary<string, Func<double[], double, double>[]> GetExactSolution(XNSE_Control control, string[] VectorVariableNames) {
+        protected IDictionary<string, Func<double[], double, double>[]> GetExactSolution(AppControl control, string[] VectorVariableNames) {
             int D = VectorVariableNames.Length;
 
             var FluidSpecies = GetSpecies(GetCommonPrefix(VectorVariableNames), control);
@@ -310,12 +310,12 @@ namespace BoSSS.Application.XNSE_Solver.Tests
         }
 
 
-        IDictionary<string, Func<double[], double, double>[]> GetExactSolutionVelocity(XNSE_Control control) {
+        IDictionary<string, Func<double[], double, double>[]> GetExactSolutionVelocity(AppControl control) {
             int D = solver.GridData.SpatialDimension;
             return base.GetExactSolution(control, VariableNames.VelocityVector(D));
         }
 
-        IDictionary<string, Func<double[], double, double>> GetExactSolutionPressure(XNSE_Control control) {
+        IDictionary<string, Func<double[], double, double>> GetExactSolutionPressure(AppControl control) {
             return base.GetExactSolution(control, VariableNames.Pressure);
         }
 
@@ -325,7 +325,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests
         /// Computes the L2 Error of the actual solution against the exact solution in the control object 
         /// (<see cref="AppControl.ExactSolutions"/>).
         /// </summary>
-        public override double[] ComputeL2Error(double time, XNSE_Control control) {
+        public override double[] ComputeL2Error(double time, AppControl control) {
             int D = solver.GridData.SpatialDimension;
             double[] Ret = new double[D + 1];
 
@@ -389,7 +389,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests
         /// <returns></returns>
         public double ComputeLevelSetError(CellMask cm) {
 
-            SinglePhaseField PhiCG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet;
+            SinglePhaseField PhiCG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].C0LevelSet;
 
             double L2Error = PhiCG.L2Error(exactPhi, cm);
 
@@ -423,7 +423,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests
         /// <returns></returns>
         public double ComputeInterfacePointsError(double time) {
 
-            SinglePhaseField PhiCG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet;
+            SinglePhaseField PhiCG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].C0LevelSet;
             SubGrid sbgrd = solver.LsTrk.Regions.GetCutCellSubGrid();
             MultidimensionalArray interfaceP = XNSEUtils.GetInterfacePoints(solver.LsTrk, PhiCG, sbgrd);
 
@@ -474,7 +474,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests
         /// Computes the L2 Error of the actual solution against the exact solution in the control object 
         /// (<see cref="XNSE_Control.ExactSolutionVelocity"/> and <see cref="XNSE_Control.ExactSolutionPressure"/>).
         /// </summary>
-        public override double[] ComputeL2Error(double time, XNSE_Control control) {
+        public override double[] ComputeL2Error(double time, AppControl control) {
 
             SetExactPhiAndLevelSetTracker(time);
 

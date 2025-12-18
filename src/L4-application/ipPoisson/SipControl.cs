@@ -77,7 +77,7 @@ namespace BoSSS.Application.SipPoisson {
 
        
         /// <summary>
-        /// True, if an exact solution -- in order to determine the error -- is provides.
+        /// True, if an exact solution -- in order to determine the error -- is provided.
         /// </summary>
         [DataMember]
         public bool ExactSolution_provided = false;

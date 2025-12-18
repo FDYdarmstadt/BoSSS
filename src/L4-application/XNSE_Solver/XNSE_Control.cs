@@ -465,6 +465,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// See <see cref="InterfaceAveraging"/>
         /// </summary>
+        [DataMember]
         public InterfaceVelocityAveraging InterVelocAverage = InterfaceVelocityAveraging.density;
 
         /*

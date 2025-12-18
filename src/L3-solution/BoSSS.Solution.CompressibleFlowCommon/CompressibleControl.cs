@@ -169,7 +169,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// <summary>
         /// 
         /// </summary>
-        public virtual object Clone() {
+        public override object Clone() {
             throw new NotImplementedException();
         }
 

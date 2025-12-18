@@ -383,9 +383,9 @@ namespace BoSSS.Foundation {
 
         /// <summary>
         /// Performs a nodal projection, i.e. accumulates a DG field, defined by
-        /// \f[ 
-        ///     \textrm{in each cell } K_j: \ u(\vec{\xi}_i) = \alpha f(\vec{\xi}_i) \quad \forall \vec{\xi}_i
-        /// \f]
+        /// \[ 
+        ///     \textrm{in each cell } K_j: \ u(\underline{\xi}_i) = \alpha f(\underline{\xi}_i) \quad \forall \underline{\xi}_i
+        /// \]
         /// to this field.
         /// If the number of nodes is not equal to the degrees-of-freedom in a specific cell,
         /// a least-square projection is performed.
@@ -393,7 +393,7 @@ namespace BoSSS.Foundation {
         /// <param name="alpha">scaling of <paramref name="func"/></param>
         /// <param name="func">function to be projected</param>
         /// <param name="NodeSet">
-        /// cell-local coordinates \f$ (\vec{xi}_1, \ldots , \vec{xi}_M) \f$
+        /// cell-local coordinates $(\underline{xi}_1, \ldots , \underline{xi}_M)$
         /// </param>
         public void ProjectNodal(double alpha, ScalarFunction func, NodeSet NodeSet) {
             using (new FuncTrace()) {
@@ -438,9 +438,9 @@ namespace BoSSS.Foundation {
 
         /// <summary>
         /// Performs a nodal projection, i.e. accumulates a DG field, defined by
-        /// \f[ 
-        ///     \textrm{in each cell } K_j: \ u(\vec{\xi}_i) = \alpha f(\vec{\xi}_i) \quad \forall \vec{\xi}_i
-        /// \f]
+        /// \[ 
+        ///     \textrm{in each cell } K_j: \ u(\underline{\xi}_i) = \alpha f(\underline{\xi}_i) \quad \forall \underline{\xi}_i
+        /// \]
         /// to this field. If the number of nodes is not equal to the
         /// degrees-of-freedom in a specific cell, a least-square projection is
         /// performed.
@@ -448,7 +448,7 @@ namespace BoSSS.Foundation {
         /// <param name="alpha">scaling of <paramref name="func"/></param>
         /// <param name="func">function to be projected</param>
         /// <param name="NodeSet">
-        /// cell-local coordinates \f$ (\vec{xi}_1, \ldots , \vec{xi}_M) \f$
+        /// cell-local coordinates $(\underline{xi}_1, \ldots , \underline{xi}_M)$
         /// </param>
         public void ProjectNodal(double alpha, ScalarFunctionEx func, NodeSet NodeSet) {
             using (new FuncTrace()) {
@@ -653,8 +653,8 @@ namespace BoSSS.Foundation {
         /// </summary>
         /// <param name="cm">optional restriction to computational domain</param>
         /// <param name="mean">
-        /// If false, the return value equals \f$ \int_{\Omega} u \dV \f$, 
-        /// otherwise it equals \f$ \frac{  \int_{\Omega} u \dV }{  \int_{\Omega} 1 \dV  } \f$.
+        /// If false, the return value equals $\int_{\Omega} u \textrm{dV}$, 
+        /// otherwise it equals $\frac{  \int_{\Omega} u \textrm{dV} }{  \int_{\Omega} 1 \textrm{dV}  }$.
         /// </param>
         virtual public double GetMeanValueTotal(CellMask cm, bool mean = true) {
             using (new FuncTrace()) {

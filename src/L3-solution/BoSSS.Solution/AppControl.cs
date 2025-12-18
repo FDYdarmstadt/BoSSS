@@ -257,7 +257,7 @@ namespace BoSSS.Solution.Control {
             /// <summary>
             /// Steady-state or temporally dependent boundary values.
             /// - key: a name for the boundary value, e.g. 'VelocityX'
-            /// - value: some function that maps a space coordinate to some function value, i.e.  \f$ (\vec{x},t) \mapsto f(\vec{x},t)\f$ 
+            /// - value: some function that maps a space coordinate to some function value, i.e.  $(\underline{x},t) \mapsto f(\underline{x},t)$ 
             /// </summary>
             /// <remarks>
             /// Adding delegates directly to this dictionary is possible for backward compatibility reasons,
@@ -281,7 +281,7 @@ namespace BoSSS.Solution.Control {
             /// <summary>
             /// Steady-state or temporally dependent boundary values.
             /// - key: a name for the boundary value, e.g. 'VelocityX'<br/>
-            /// - value: some function that maps a space coordinate to some function value, i.e.  \f$ (\vec{x},t) \mapsto f(\vec{x},t)\f$ 
+            /// - value: some function that maps a space coordinate to some function value, i.e.  $(\underline{x},t) \mapsto f(\underline{x},t)$ 
             /// </summary>
             [JsonIgnore]
             public IDictionary<string, IBoundaryAndInitialData> Values {
@@ -1168,7 +1168,7 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         /// <seealso cref="BoSSS.Foundation.IO.IDatabaseDriver.InitTraceFile(SessionInfo)"/>
         [DataMember]
-        public string TracingNamespaces = null;
+        public string TracingNamespaces = "*";
 
         /// <summary>
         /// Activate/Deactivate memory allocation logging
@@ -1268,9 +1268,9 @@ namespace BoSSS.Solution.Control {
 
         /// <summary>
         /// Relative value, which is compared against the relative computation imbalance
-        /// \f[ 
+        /// \[ 
         /// \frac{\text{maximum runtime difference over all MPI processors}}{\text{maximum runtime over all MPI processors}} .
-        /// \f]
+        /// \]
         /// Dynamic load balancing is suppressed if the relative computation imbalance is below this value.
         /// </summary>
         [DataMember]
@@ -1309,7 +1309,7 @@ namespace BoSSS.Solution.Control {
         /// this setting has no effect.
         /// </summary>
         [DataMember]
-        public CutCellQuadratureMethod CutCellQuadratureType = CutCellQuadratureMethod.Algoim;
+        public CutCellQuadratureMethod CutCellQuadratureType = CutCellQuadratureMethod.Saye;
 
         /// <summary>
         /// Calculation is not stopped if an I/O exception is thrown in <see cref="Application{T}.SaveToDatabase(TimestepNumber, double)"/>.
@@ -1429,7 +1429,7 @@ namespace BoSSS.Solution.Control {
             */
         }
 
-        public object Clone() {
+        public virtual object Clone() {
             return Deserialize(this.Serialize());
         }
 

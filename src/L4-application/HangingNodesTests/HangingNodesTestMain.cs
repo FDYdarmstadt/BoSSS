@@ -25,11 +25,12 @@ namespace HangingNodesTests {
     public class HangingNodesTestMain {
         static void Main(string[] args) {
             // mpiexec -n 2 dotnet HangingNodesTests.dll
-            //Console.WriteLine("Starting Hanging Nodes Test!");
-            //BoSSS.Solution.Application.InitMPI();
-            //ilPSP.Environment.NumThreads = 1;
-            //HangingNodesTests.HangingNodesTestMain.Test3Phase(CutCellQuadratureMethod.Saye);
-            //Assert.IsFalse(true, "remove me");
+            Console.WriteLine("Starting Hanging Nodes Test!");
+            BoSSS.Solution.Application.InitMPI(num_threads: 1);
+            //HangingNodesTests.HangingNodesTestMain.Test1Phase(CutCellQuadratureMethod.Algoim);
+            HangingNodesTests.HangingNodesTestMain.Test3Phase(CutCellQuadratureMethod.Saye);
+            Assert.IsFalse(true, "remove me");
+            BoSSS.Solution.Application.InitMPI();
 
             // to test individual setups
             double[] sizes = new double[] { 1e0 };
@@ -72,8 +73,8 @@ namespace HangingNodesTests {
         /// </summary>
         [Test]
         public static void Test1Phase([Values(CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod ccqm) {
-            double[] sizes = new double[] { 1e0, 1e-3 };
-            byte[] setup = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+            double[] sizes = [1e0, 1e-3];
+            byte[] setup = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
             RunTest(sizes, setup, 1, ccqm);
         }
 
@@ -82,8 +83,8 @@ namespace HangingNodesTests {
         /// </summary>
         [Test]
         public static void Test2Phase([Values(CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod ccqm) {
-            double[] sizes = new double[] { 1e0, 1e-3 };
-            byte[] setup = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+            double[] sizes = [1e0, 1e-3];
+            byte[] setup = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
             RunTest(sizes, setup, 2, ccqm);
         }
 
@@ -92,8 +93,8 @@ namespace HangingNodesTests {
         /// </summary>
         [Test]
         public static void Test3Phase([Values(CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod ccqm) {
-            double[] sizes = new double[] { 1e0, 1e-3 };
-            byte[] setup = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+            double[] sizes = [1e0, 1e-3];
+            byte[] setup = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
             RunTest(sizes, setup, 3, ccqm);
         }
 
@@ -117,7 +118,10 @@ namespace HangingNodesTests {
             var agg = Tracker.GetAgglomerator(species, solver.QuadOrder(), solver.Control.AgglomerationThreshold);
             int J = solver.GridData.iLogicalCells.NoOfLocalUpdatedCells;
 
-            var LsChecker = new TestingIO(solver.GridData, "CellMetrics-" + filename + ".abc", false, 1);
+            var LsChecker = new TestingIO(solver.GridData, "CellMetrics-" + filename + ".abc", TestingIO.DataCorrelation.GeometricalCode, 1);
+            //var LsChecker = new TestingIO(solver.GridData, "CellMetrics-" + filename + ".abc", false, 1);
+
+
             for(int iSpc = 0; iSpc < species.Length; iSpc++) {
                 SpeciesId spc = species[iSpc];
                 string SpcName = Tracker.GetSpeciesName(spc);
@@ -142,15 +146,16 @@ namespace HangingNodesTests {
 
 
         private static void RunTest(double[] sizes, byte[] setup, int phase, CutCellQuadratureMethod ccqm) {
-            csMPI.Raw.Comm_Size(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out int procs);
-            csMPI.Raw.Comm_Rank(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out int rank);
+            int procs = csMPI.Size_World;
+            int rank = csMPI.Rank_World;
 
             List<double> TemperatureRes = new List<double>();
             List<double> MomentumRes = new List<double>();
             List<string> Description = new List<string>();
 
             int TestCounter = 0;
-            foreach (double size in sizes) {
+            List<int> Loops_with_Exceptions = new List<int>();
+            foreach(double size in sizes) {
                 foreach(byte s in setup) {
                     TestCounter++;
                     string desc = String.Format($"Test #{TestCounter}: Size : {size}, Phases : {phase}, Setup : {s}, Procs : {procs}, CutCellQuadratureMethod: {ccqm}");
@@ -177,6 +182,7 @@ namespace HangingNodesTests {
                             Console.Error.WriteLine(e.StackTrace);
                             TemperatureRes.Add(-1.0);
                             MomentumRes.Add(-1.0);
+                            Loops_with_Exceptions.Add(TestCounter);
                         }
                     }
                 }
@@ -188,9 +194,11 @@ namespace HangingNodesTests {
             Console.WriteLine("Finished Hanging Nodes Test with {0} procs.", procs);
             Console.WriteLine();
             Console.WriteLine("Results:");
+
             for (int i = 0; i < Description.Count; i++) {
                 Console.WriteLine($"{Description[i]}: MomRes : {MomentumRes[i]}, TempRes : {TemperatureRes[i]}");
             }
+            Assert.Zero(Loops_with_Exceptions.Count, "Exceptions occurred in loops: " + Loops_with_Exceptions.ToConcatString("[", ", ", "]"));
             for (int i = 0; i < MomentumRes.Count; i++) {
                 Assert.Less(MomentumRes[i].Abs(), 1e-6, "Momentum Residual too high.");
             }

@@ -126,7 +126,9 @@ namespace HangingNodesTests {
 
             if(setup != 0 && setup < 16)
                 ctrl.AdaptiveMeshRefinement = true;
-            
+            else
+                ctrl.AdaptiveMeshRefinement = false;
+
             double L = size;
             if((setup & 1) != 0) {
                 ctrl.activeAMRlevelIndicators.Add(new BoSSS.Solution.AMRLevelIndicatorLibrary.AMRInBoundingBox(new BoundingBox(new double[,] { { -L, -L }, { 0, 0 } })) { maxRefinementLevel = 1 });

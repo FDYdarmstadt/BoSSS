@@ -1,40 +1,22 @@
-﻿using BoSSS.Application.XNSE_Solver.LoadBalancing;
-using BoSSS.Application.XNSE_Solver.SpecificSolutions;
-using BoSSS.Foundation;
+﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.Grid.Classic;
-using BoSSS.Foundation.Grid.RefElements;
-using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
-using BoSSS.Solution;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
-using BoSSS.Solution.Gnuplot;
 using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.NSECommon;
-using BoSSS.Solution.NSECommon.Operator.Viscosity;
-using BoSSS.Solution.Tecplot;
-using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.Utils;
-using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.XNSECommon;
-using CommandLine;
 using ilPSP;
-using ilPSP.LinSolvers;
 using ilPSP.Tracing;
 using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
-using static System.Reflection.Metadata.BlobBuilder;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -72,7 +54,7 @@ namespace BoSSS.Application.XNSE_Solver {
     ///   The normal component should match the normal velocity which can be computed from `Phi2`,
     ///   yielding following compatibility condition: 
     /// ```math
-    ///     \vec{v} \cdot \frac{\nabla \varphi_2}{| \nabla \varphi_2 |} =  \frac{- \partial_t \varphi_2}{| \nabla \varphi_2 |} 
+    ///     \underline{v} \cdot \frac{\nabla \varphi_2}{| \nabla \varphi_2 |} =  \frac{- \partial_t \varphi_2}{| \nabla \varphi_2 |} 
     /// ```
     /// </remarks>
     public class XNSE : XNSE<XNSE_Control> {
@@ -81,11 +63,6 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
-
-            //InitMPI();
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TaylorCouetteConvergenceTest(2, Tests.TaylorCouette.Mode.Test2Phase, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, false, NonLinearSolverCode.Picard);
-            //throw new Exception("remove");
-
             {
                 XNSE._Main(args, false, delegate () {
                     var p = new XNSE();
@@ -583,7 +560,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             if(this.Control.AdvancedDiscretizationOptions.DoubleCutSpecialQuadrature)
-                BoSSS.Foundation.XDG.Quadrature.BruteForceSettingsOverride.doubleCutCellOverride = true;
+                BoSSS.Foundation.XDG.Quadrature.BruteForce.BruteForceSettingsOverride.doubleCutCellOverride = true;
 
             for(int d = 0; d < D; ++d) {
                 // so far only no slip!
@@ -638,6 +615,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using(var f = new FuncTrace()) {
+                Console.WriteLine();
                 if((int)this.Control.TimeSteppingScheme >= 100 && this.Control.TimesteppingMode != AppControl._TimesteppingMode.Steady) {
 
                     // this is a RK scheme, set here the maximum 
@@ -651,32 +629,35 @@ namespace BoSSS.Application.XNSE_Solver {
                     // this is a BDF or non-adaptive scheme, use the base implementation, i.e. the fixed timestep
                     dt = base.GetTimestep();
                 }
+                Console.WriteLine($"Starting time step {TimestepNo}, t = {phystime:g4}, dt = {dt:g4} ...");
 
-                int NoOfCutCells = this.LsTrk.Regions.GetNearFieldMask(1).NoOfItemsLocally;
-                int NoOfCells = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
-                int NoOfCutCells_Min = NoOfCutCells.MPIMin();
-                int NoOfCutCells_Max = NoOfCutCells.MPIMax();
-                int NoOfCells_Min = NoOfCells.MPIMin();
-                int NoOfCells_Max = NoOfCells.MPIMax();
-                int NoOfCutCellsTot = NoOfCutCells.MPISum();
-                long NoOfCellsTot = this.GridData.CellPartitioning.TotalLength;
-                double AvgCutCells = NoOfCutCellsTot / (double)this.MPISize;
-                double AvgCells = NoOfCellsTot / (double)this.MPISize;
-                double RelCellsInbalance = (double)(NoOfCells_Max - NoOfCells_Min) / NoOfCells_Max;
-                double RelCutCellsInbalance = NoOfCutCells_Max == 0 ? 0 : (double)(NoOfCutCells_Max - NoOfCutCells_Min) / NoOfCutCells_Max;
+                {
+                    int NoOfCutCells = this.LsTrk.Regions.GetNearFieldMask(1).NoOfItemsLocally;
+                    int NoOfCells = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+                    int NoOfCutCells_Min = NoOfCutCells.MPIMin();
+                    int NoOfCutCells_Max = NoOfCutCells.MPIMax();
+                    int NoOfCells_Min = NoOfCells.MPIMin();
+                    int NoOfCells_Max = NoOfCells.MPIMax();
+                    int NoOfCutCellsTot = NoOfCutCells.MPISum();
+                    long NoOfCellsTot = this.GridData.CellPartitioning.TotalLength;
+                    double AvgCutCells = NoOfCutCellsTot / (double)this.MPISize;
+                    double AvgCells = NoOfCellsTot / (double)this.MPISize;
+                    double RelCellsInbalance = (double)(NoOfCells_Max - NoOfCells_Min) / NoOfCells_Max;
+                    double RelCutCellsInbalance = NoOfCutCells_Max == 0 ? 0 : (double)(NoOfCutCells_Max - NoOfCutCells_Min) / NoOfCutCells_Max;
 
-                Console.WriteLine($"All Cells: min={NoOfCells_Min} max={NoOfCells_Max} avg={AvgCells:G5} inb={RelCellsInbalance:G4} tot={NoOfCellsTot}");
-                Console.WriteLine($"Cut Cells: min={NoOfCutCells_Min} max={NoOfCutCells_Max} avg={AvgCutCells:G5} inb={RelCutCellsInbalance:G4}, tot={NoOfCutCellsTot}");
+                    f.Info($"All Cells: min={NoOfCells_Min} max={NoOfCells_Max} avg={AvgCells:G5} inb={RelCellsInbalance:G4} tot={NoOfCellsTot}");
+                    f.Info($"Cut Cells: min={NoOfCutCells_Min} max={NoOfCutCells_Max} avg={AvgCutCells:G5} inb={RelCutCellsInbalance:G4}, tot={NoOfCutCellsTot}");
 
-                if(ImbalanceTrack != null) ImbalanceTrack.Add((RelCellsInbalance, RelCutCellsInbalance));
+                    if(ImbalanceTrack != null) 
+                        ImbalanceTrack.Add((RelCellsInbalance, RelCutCellsInbalance));
 
+                }
 
                 if(!this.Control.InitialRampUpValues.IsNullOrEmpty()) {
                     SetRampUpValue(TimestepNo, phystime);
                 }
 
 
-                Console.WriteLine($"Starting time step {TimestepNo}, t = {phystime:g4}, dt = {dt:g4} ...");
                 bool success = Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
 
                 Console.WriteLine($"Done with time step {TimestepNo}; solver success: {success}");
@@ -795,6 +776,7 @@ namespace BoSSS.Application.XNSE_Solver {
             double s = 0.5; // safety factor
             int D = this.GridData.SpatialDimension;
 
+
             List<DGField> LevelSetVelocity;
             IList<string> LevelSetVelocityNames = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(VariableNames.LevelSetCG, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
             if(this.RegisteredFields.Any(s => LevelSetVelocityNames.Any(x => x == s.Identification)))
@@ -802,6 +784,7 @@ namespace BoSSS.Application.XNSE_Solver {
             else
                 LevelSetVelocity = null;
 
+            int p = 0;
 
             var CC = this.LsTrk.Regions.GetCutCellMask4LevSet(0);
             if(CC.NoOfItemsLocally > 0) {
@@ -814,10 +797,10 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
 
                 // get level set degree
-                int p = 0;
                 try {
                     p = ((DGField)LsTrk.LevelSets[0]).Basis.Degree;
-                } catch {
+                }
+                catch {
                     Console.WriteLine("Cannot determine DG order of level set");
                 }
 
@@ -834,19 +817,20 @@ namespace BoSSS.Application.XNSE_Solver {
                         }
                     }
                 }
+            }
 
-                // level set cfl
-                {
-                    if(LevelSetVelocity != null) {
-                        // At this point the level set velocity is not updated to the correct value
-                        //VectorField<DGField> LevelSetVelocity = new VectorField<DGField>(D.ForLoop(d => RegisteredFields.SingleOrDefault(s => s.Identification == LevelSetVelocityNames[d])));
 
-                        double dt_cfl = this.GridData.ComputeCFLTime(LevelSetVelocity.ToArray(), 10000, CC);
-                        dt_cfl *= s / Math.Pow(p, 2);
-                        if(dt_cfl < dt) {
-                            dt = Math.Min(dt_cfl, dt);
-                            Console.WriteLine("Restricting time step size to: {0}, due to level set cfl", dt_cfl);
-                        }
+            // level set cfl
+            {
+                if(LevelSetVelocity != null) {
+                    // At this point the level set velocity is not updated to the correct value
+                    //VectorField<DGField> LevelSetVelocity = new VectorField<DGField>(D.ForLoop(d => RegisteredFields.SingleOrDefault(s => s.Identification == LevelSetVelocityNames[d])));
+
+                    double dt_cfl = this.GridData.ComputeCFLTime(LevelSetVelocity.ToArray(), 10000, CC);
+                    dt_cfl *= s / Math.Pow(p, 2);
+                    if(dt_cfl < dt) {
+                        dt = Math.Min(dt_cfl, dt);
+                        Console.WriteLine("Restricting time step size to: {0}, due to level set cfl", dt_cfl);
                     }
                 }
             }

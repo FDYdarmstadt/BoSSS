@@ -44,7 +44,7 @@ namespace CNS.Tests.Ringleb {
         }
 
         /// <summary>
-        /// The reference speed of sound \f$ a_0\f$  that
+        /// The reference speed of sound $a_0$  that
         /// has to be specified in the definition of the Ringleb problem
         /// </summary>
         public double RinglebReferenceSpeedOfSound = 1.0;
@@ -52,7 +52,7 @@ namespace CNS.Tests.Ringleb {
         private double? ringlebReferenceTotalPressure = null;
 
         /// <summary>
-        /// The reference total pressure \f$ p^t_0\f$ 
+        /// The reference total pressure $p^t_0$ 
         /// that has to be specified in the definition of the Ringleb problem
         /// </summary>
         public double RinglebReferenceTotalPressure {
