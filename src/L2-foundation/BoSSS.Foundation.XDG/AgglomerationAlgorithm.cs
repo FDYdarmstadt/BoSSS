@@ -409,7 +409,6 @@ namespace BoSSS.Foundation.XDG {
 
                 int[,] Edge2Cell = grdDat.Edges.CellIndices;
                 byte[] EdgeTags = grdDat.Edges.EdgeTags;
-                var Cell2Edge = grdDat.Cells.Cells2Edges;
                 int NoOfEdges = grdDat.Edges.Count;
                 int myMpiRank = Tracker.GridDat.MpiRank;
                 int Jup = grdDat.Cells.NoOfLocalUpdatedCells;

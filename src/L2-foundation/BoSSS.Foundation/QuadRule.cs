@@ -91,6 +91,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// </summary>
         public int OrderOfPrecision;
 
+
         /// <summary>
         /// Guess What?
         /// </summary>

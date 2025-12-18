@@ -375,7 +375,6 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
 
-
             // Handle doubly cut cells
             // =======================
             for(int jLevSet = 0; jLevSet < XDGSpaceMetrics.NoOfLevelSets; jLevSet++) {
@@ -528,9 +527,6 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
 
-            //var rule1 = LevSetQrIns.Compile(gdat, 4);
-            //var rule2 = (new QRoverride2()).GetQuadRuleSet(LevSetQrIns.Domain, 4)
-            //LevSetQrIns.AddFactory(new QRoverride2(), IntegrationDom);
 
             // special case handling
             // =====================
@@ -555,6 +551,7 @@ namespace BoSSS.Foundation.XDG {
                     iKref++;
                 }
             }
+
             return LevSetQrIns;
         }
 

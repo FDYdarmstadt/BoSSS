@@ -51,13 +51,15 @@ namespace XESF
         /// <param name="args">string pointing to a control file, i.e. 'cs:XESF.XESFHardCodedControl.XDGWedgeFlow_TwoLs_Base()' </param>
         static void Main(string[] args)
         {
-
+            XESF.Tests.XESFTestProgram.XDG_SWF_TwoLs();
             //XESF.Tests.XESFTestProgram.XDG_SWF_TwoLs();
             //IDTTestRunner.RunTests();
             //XESF.Tests.XESFTestProgram.XDG_SWF_TwoLs();
             //XESF.Tests.XESFTestProgram.XDG_SWF_TwoLs_HighOrder();
             //XESF.Tests.XESFTestProgram.XDGBowShockFromDB();
-            XESFMain._Main(args, false, () => new XESFMain());
+
+
+            //XESFMain._Main(args, false, () => new XESFMain());
         }
 
         #region XDG Fields

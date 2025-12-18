@@ -250,6 +250,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// </summary>
         public ICompositeQuadRule<TQuadRule> Compile(IGridData gridData, int order) {
             using(var tr = new FuncTrace()) {
+
                 tr.Info("order = " + order);
                 // set domain
                 TDomain baseDomain = Domain ?? GetDefaultDomain(gridData);

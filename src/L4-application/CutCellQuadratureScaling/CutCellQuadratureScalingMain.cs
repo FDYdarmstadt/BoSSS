@@ -38,8 +38,9 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             //ilPSP.Utils.Algoim.TwoLsIsFucked1();
             //ilPSP.Utils.Algoim.TwoLsIsSuperFucked1();
 
-            //BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_2D_SayeVsAlgoim(0, 3);
+
             BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_2D(0, 6, CutCellQuadratureMethod.Algoim);
+
 
             BoSSS.Solution.Application.FinalizeMPI();
         }
