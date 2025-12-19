@@ -493,6 +493,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
         
         public static ZLS_Control AlandSL3D(int p = 2, int AMRlvl = 5, double SL = 1e-5) {
+            // -c 'cs:ZwoLevelSetSolver.ControlFiles.Droplet.AlandSL3D(2,2,0)'
             ZLS_Control C = new ZLS_Control(p);
             C.ImmediatePlotPeriod = 1;
             C.SuperSampling = 3;
