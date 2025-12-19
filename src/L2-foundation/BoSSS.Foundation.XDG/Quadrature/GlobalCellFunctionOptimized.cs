@@ -3,6 +3,7 @@ using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Platform.LinAlg;
 using ilPSP;
+using ilPSP.Utils;
 using IntersectingQuadrature.Tensor;
 using System;
 using System.Collections.Generic;
@@ -115,13 +116,23 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
                         xk[d] = X[k, d];
                     }
 
-
                     val_this[0, k] = Evaluate(xk);
 
                 }
 
                 if(val_this.L2Dist(V) > 1.0e-10)
                     throw new ArithmeticException("mismatch between nodal values and interpolation");
+
+                for(int k = 0; k < X.NoOfNodes; k++) {
+                    Tensor1 xk = Tensor1.Zeros(M);
+                    for(int d = 0; d < M; d++) {
+                        xk[d] = X[k, d];
+                    }
+
+                    EvaluateAndGradient(xk);
+                    EvaluateAndGradientAndHessian(xk);
+                }
+
 
             }
 #endif
@@ -215,7 +226,29 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
                 abs_gradDist += gradDist[i].Abs();
             }
             if(abs_gradDist > 1.0e-10) {
-                throw new ArithmeticException("optimized version sux 2");
+
+                double[] dxi = new double[M];
+                double eps = GenericBlas.MachineEps.Sqrt();
+                double[] vp = new double[M];
+                double[] vm = new double[M];
+                double[] vp1 = new double[M];
+                double[] vm1 = new double[M];
+                for(int i = 0; i < M; i++) {
+                    var xp = (Tensor1) x.Clone();
+                    xp[i] += eps;
+                    vp[i] = reference.Evaluate(xp);
+                    vp1[i] = this.Evaluate(xp);
+
+                    var xm = (Tensor1) x.Clone();
+                    xm[i] -= eps;
+                    vm[i] = reference.Evaluate(xm);
+                    vm1[i] = this.Evaluate(xm);
+
+                    dxi[i] = (vp[i] - vm[i])/(2*eps);
+                }
+                
+
+                throw new ArithmeticException("optimized version sux 2: " + abs_gradDist);
             }
 #endif
 
@@ -283,47 +316,50 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
         // ---------------
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        double Eval1D(Tensor1 x) {
-            double xx = x[0]; // assumed reference coord in [-1,1]
+        double Eval1D(Tensor1 X) {
+            double x = X[0]; // assumed reference coord in [-1,1]
             int n0 = n[0];
 
-            // T_k and U_k-1 at x
-            var T = new double[n0];
-            var U = new double[Math.Max(1, n0 - 1)];
-            Build_T_and_U(xx, n0, T, U);
+            unsafe {
+                // T_k 
+                double* T = stackalloc double[n0];
+                Build_T(x, n0, T);
 
-            // f = sum_k c_k T_k
-            double s = 0.0;
-            int off = 0;
-            for(int k = 0; k < n0; ++k, off += 1)
-                s += coeff[off] * T[k];
-            return s;
+                // f = sum_k c_k T_k
+                double s = 0.0;
+                int idx = 0;
+                for(int k = 0; k < n0; ++k, idx += 1)
+                    s += coeff[idx] * T[k];
+                return s;
+            }
         }
 
-        void EvalGrad1D(Tensor1 x, out double f, out double fx) {
-            double xx = x[0];
+        void EvalGrad1D(Tensor1 X, out double f, out double fx) {
+            double xx = X[0];
             int n0 = n[0];
 
-            var T = new double[n0];
-            var U = new double[Math.Max(1, n0 - 1)];
-            var dU = new double[Math.Max(1, n0 - 1)];
-            Build_T_U_dU(xx, n0, T, U, dU);
+            unsafe {
+                double* T =  stackalloc double[n0];
+                double* dT = stackalloc double[n0];
+                Build_T_dT(xx, n0, T, dT);
 
-            double s = 0.0, sx = 0.0;
-            int off = 0;
-            for(int k = 0; k < n0; ++k, off += 1) {
-                double ck = coeff[off];
-                s += ck * T[k];
-                if(k > 0) sx += ck * k * U[k - 1];
+                double s = 0.0, sx = 0.0;
+                int idx = 0;
+                for(int k = 0; k < n0; ++k, ++idx) {
+                    double ck = coeff[idx];
+                    s += ck * T[k];
+                    sx += ck * dT[k];
+                }
+                f = s;
+                fx = sx;
             }
-            f = s;
-            fx = sx;
         }
 
         void EvalGradHess1D(Tensor1 x, out double f, out double fx, out double fxx) {
             double xx = x[0];
             int n0 = n[0];
 
+            /*
             var T = new double[n0];
             var U = new double[Math.Max(1, n0 - 1)];
             var dU = new double[Math.Max(1, n0 - 1)];
@@ -341,6 +377,26 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
                 }
             }
             f = s; fx = sx; fxx = sxx;
+            */
+
+            unsafe {
+                double* T =  stackalloc double[n0];
+                double* dT = stackalloc double[n0];
+                double* ddT = stackalloc double[n0];
+                Build_T_dT_ddT(xx, n0, T, dT, ddT);
+
+                double s = 0.0, sx = 0.0, sxx = 0.0;
+                int idx = 0;
+                for(int k = 0; k < n0; ++k, ++idx) {
+                    double ck = coeff[idx];
+                    s += ck * T[k];
+                    sx += ck * dT[k];
+                    sxx += ck * ddT[k];
+                }
+                f = s;
+                fx = sx;
+                fxx = sxx;
+            }
         }
 
         // ---------------
@@ -349,31 +405,35 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
 
        
 
-        double Eval2D(Tensor1 x) {
-            double x0 = x[0], x1 = x[1];
+        double Eval2D(Tensor1 X) {
+            double x0 = X[0], x1 = X[1];
             int n0 = n[0], n1 = n[1];
 
-            var T0 = new double[n0]; var U0 = new double[Math.Max(1, n0 - 1)];
-            var T1 = new double[n1]; var U1 = new double[Math.Max(1, n1 - 1)];
-            Build_T_and_U(x0, n0, T0, U0);
-            Build_T_and_U(x1, n1, T1, U1);
+            unsafe {
+                double* T0 = stackalloc double[n0];
+                double* T1 = stackalloc double[n1];
+                Build_T(x0, n0, T0);
+                Build_T(x1, n1, T1);
 
-            double s = 0.0;
-            int idx = 0;
-            for(int k0 = 0; k0 < n0; ++k0) {
-                double a = 0.0;
-                for(int k1 = 0; k1 < n1; ++k1, ++idx)
-                    a += coeff[idx] * T1[k1];
-                s += a * T0[k0];
+                double s = 0.0;
+                int idx = 0;
+                for(int k0 = 0; k0 < n0; ++k0) {
+                    double a = 0.0;
+                    for(int k1 = 0; k1 < n1; ++k1, ++idx)
+                        a += coeff[idx] * T1[k1];
+                    s += a * T0[k0];
+                }
+                return s;
             }
-            return s;
         }
 
     
 
-        void EvalGrad2D(Tensor1 x, out double f, out double fx, out double fy) {
-            double x0 = x[0], x1 = x[1];
+        void EvalGrad2D(Tensor1 X, out double f, out double fx, out double fy) {
+            double x0 = X[0], x1 = X[1];
             int n0 = n[0], n1 = n[1];
+
+            /*{
 
             var T0 = new double[n0]; var U0 = new double[Math.Max(1, n0 - 1)];
             var T1 = new double[n1]; var U1 = new double[Math.Max(1, n1 - 1)];
@@ -394,39 +454,32 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
                 sy += T0[k0] * ay;                             // undiff axis 0: already 1/2 on k0=0
             }
             f = s; fx = sx; fy = sy;
-        }
+            }*/
+            unsafe {
+                double* T0 = stackalloc double[n0];
+                double* dT0 = stackalloc double[n0];
+                double* T1 = stackalloc double[n1];
+                double* dT1 = stackalloc double[n0];
+                Build_T_dT(x0, n0, T0, dT0);
+                Build_T_dT(x1, n1, T1, dT1);
 
-
-
-        // ---------------
-        // 3D evaluation
-        // ---------------
-
-        double Eval3D(Tensor1 x) {
-            double x0 = x[0], x1 = x[1], x2 = x[2];
-            int n0 = n[0], n1 = n[1], n2 = n[2];
-
-            var T0 = new double[n0]; var U0 = new double[Math.Max(1, n0 - 1)];
-            var T1 = new double[n1]; var U1 = new double[Math.Max(1, n1 - 1)];
-            var T2 = new double[n2]; var U2 = new double[Math.Max(1, n2 - 1)];
-            Build_T_and_U(x0, n0, T0, U0);
-            Build_T_and_U(x1, n1, T1, U1);
-            Build_T_and_U(x2, n2, T2, U2);
-
-            // (((coeff • T2) • T1) • T0)
-            double s = 0.0;
-            int idx012 = 0;
-            for(int k0 = 0; k0 < n0; ++k0) {
-                double a0 = 0.0;
-                for(int k1 = 0; k1 < n1; ++k1) {
-                    double a1 = 0.0;
-                    for(int k2 = 0; k2 < n2; ++k2, ++idx012)
-                        a1 += coeff[idx012] * T2[k2];
-                    a0 += a1 * T1[k1];
+                double s = 0.0, sx = 0.0, sy = 0.0;
+                int idx = 0;
+                for(int k0 = 0; k0 < n0; ++k0) {
+                    double a = 0.0, ax = 0.0, ay = 0.0;
+                    for(int k1 = 0; k1 < n1; ++k1, ++idx) {
+                        double ck = coeff[idx];
+                        a += ck * T1[k1];
+                        //ax += ck * T1[k1];
+                        ay += ck * dT1[k1];
+                    }
+                    ax = a;
+                    s += a * T0[k0];
+                    sx += ax * dT0[k0];
+                    sy += ay * T0[k0];
                 }
-                s += a0 * T0[k0];
+                f = s; fx = sx; fy = sy;
             }
-            return s;
         }
 
         void EvalGradHess2D(Tensor1 x, out double f,
@@ -435,6 +488,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             double x0 = x[0], x1 = x[1];
             int n0 = n[0], n1 = n[1];
 
+            /*
             var T0 = new double[n0]; var U0 = new double[Math.Max(1, n0 - 1)]; var dU0 = new double[Math.Max(1, n0 - 1)];
             var T1 = new double[n1]; var U1 = new double[Math.Max(1, n1 - 1)]; var dU1 = new double[Math.Max(1, n1 - 1)];
             Build_T_U_dU(x0, n0, T0, U0, dU0);
@@ -468,15 +522,85 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
                     sxx += kxDU * a;                             // diff^2 axis 0
                 }
             }
-            f = s; fx = sx; fy = sy; fxx = sxx; fxy = sxy; fyy = syy;
+            */
+
+            unsafe {
+                double* T0 = stackalloc double[n0];
+                double* dT0 = stackalloc double[n0];
+                double* ddT0 = stackalloc double[n0];
+                double* T1 = stackalloc double[n1];
+                double* dT1 = stackalloc double[n0];
+                double* ddT1 = stackalloc double[n0];
+                Build_T_dT_ddT(x0, n0, T0, dT0, ddT0);
+                Build_T_dT_ddT(x1, n1, T1, dT1, ddT1);
+
+                double s = 0.0, sx = 0.0, sy = 0.0, sxx = 0, sxy = 0, syy = 0;
+                int idx = 0;
+                for(int k0 = 0; k0 < n0; ++k0) {
+                    double a = 0.0, ax = 0.0, ay = 0.0, axx = 0, axy = 0, ayy = 0;
+                    for(int k1 = 0; k1 < n1; ++k1, ++idx) {
+                        double ck = coeff[idx];
+                        a += ck * T1[k1];
+                        //ax += ck * T1[k1];
+                        ay += ck * dT1[k1];
+
+                        //axx += ck*T1[k1];
+                        axy += ck*dT1[k1];
+                        ayy += ck*ddT1[k1];
+                    }
+                    ax = a;
+                    axx = a;
+                    s += a * T0[k0];
+                    sx += ax * dT0[k0];
+                    sy += ay * T0[k0];
+                    sxx += axx * ddT0[k0];
+                    sxy += axy * dT0[k0];
+                    syy += ayy * T0[k0];
+
+                }
+                f = s; fx = sx; fy = sy; fxx = sxx; fxy = sxy; fyy = syy;
+            }
         }
 
+        // ---------------
+        // 3D evaluation
+        // ---------------
+
+        double Eval3D(Tensor1 X) {
+            double x0 = X[0], x1 = X[1], x2 = X[2];
+            int n0 = n[0], n1 = n[1], n2 = n[2];
+
+            unsafe {
+                double* T0 = stackalloc double[n0];
+                double* T1 = stackalloc double[n1];
+                double* T2 = stackalloc double[n2];
+                Build_T(x0, n0, T0);
+                Build_T(x1, n1, T1);
+                Build_T(x2, n2, T2);
+
+                // (((coeff • T2) • T1) • T0)
+                double s = 0.0;
+                int idx012 = 0;
+                for(int k0 = 0; k0 < n0; ++k0) {
+                    double a0 = 0.0;
+                    for(int k1 = 0; k1 < n1; ++k1) {
+                        double a1 = 0.0;
+                        for(int k2 = 0; k2 < n2; ++k2, ++idx012)
+                            a1 += coeff[idx012] * T2[k2];
+                        a0 += a1 * T1[k1];
+                    }
+                    s += a0 * T0[k0];
+                }
+                return s;
+            }
+        }
 
         void EvalGrad3D(Tensor1 x, out double f,
                          out double fx, out double fy, out double fz) {
             double x0 = x[0], x1 = x[1], x2 = x[2];
             int n0 = n[0], n1 = n[1], n2 = n[2];
 
+            /*{
             var T0 = new double[n0]; var U0 = new double[Math.Max(1, n0 - 1)];
             var T1 = new double[n1]; var U1 = new double[Math.Max(1, n1 - 1)];
             var T2 = new double[n2]; var U2 = new double[Math.Max(1, n2 - 1)];
@@ -520,6 +644,49 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             }
 
             f = s; fx = sx; fy = sy; fz = sz;
+            }*/
+
+            unsafe {
+                double* T0 = stackalloc double[n0];
+                double* dT0 = stackalloc double[n0];
+                double* T1 = stackalloc double[n1];
+                double* dT1 = stackalloc double[n0];
+                double* T2 = stackalloc double[n1];
+                double* dT2 = stackalloc double[n0];
+                Build_T_dT(x0, n0, T0, dT0);
+                Build_T_dT(x1, n1, T1, dT1);
+                Build_T_dT(x2, n2, T2, dT2);
+
+                // (((coeff • T2) • T1) • T0)
+                double s = 0.0, sx = 0.0, sy = 0.0, sz = 0.0;
+                int idx012 = 0;
+                for(int k0 = 0; k0 < n0; ++k0) {
+                    double a0 = 0.0, a0x = 0.0, a0y = 0.0, a0z = 0.0;
+                    for(int k1 = 0; k1 < n1; ++k1) {
+                        double a1 = 0.0, a1x = 0.0, a1y = 0.0, a1z = 0.0;
+                        for(int k2 = 0; k2 < n2; ++k2, ++idx012) {
+                            double ck = coeff[idx012];
+                            a1 += ck * T2[k2];
+                            //a1x += ck * T2[k2];
+                            //a1y += ck * T2[k2];
+                            a1z += ck * dT2[k2];
+                        }
+                        a1x = a1;
+                        a1y = a1;
+                        
+                        a0 += a1 * T1[k1];
+                        a0x += a1x *  T1[k1];
+                        a0y += a1y * dT1[k1];
+                        a0z += a1z *  T1[k1];
+                    }
+                    s += a0 * T0[k0];
+                    sx += a0x * dT0[k0];
+                    sy += a0y *  T0[k0];
+                    sz += a0z *  T0[k0];
+
+                }
+                f = s; fx = sx; fy = sy; fz = sz;
+            }
         }
 
         void EvalGradHess3D(Tensor1 x, out double f,
@@ -529,6 +696,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             double x0 = x[0], x1 = x[1], x2 = x[2];
             int n0 = n[0], n1 = n[1], n2 = n[2];
 
+            /*
             var T0 = new double[n0]; var U0 = new double[Math.Max(1, n0 - 1)];
             var dU0 = new double[Math.Max(1, n0 - 1)];
             var T1 = new double[n1]; var U1 = new double[Math.Max(1, n1 - 1)];
@@ -584,11 +752,84 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
                     Sxx += (k0 * dU0[k0 - 1]) * A;
                 }
             }
+            */
 
-            f = S;
-            fx = Sx; fy = Sy; fz = Sz;
-            fxx = Sxx; fxy = Sxy; fxz = Sxz;
-            fyy = Syy; fyz = Syz; fzz = Szz;
+            unsafe {
+                double* T0 = stackalloc double[n0];
+                double* dT0 = stackalloc double[n0];
+                double* ddT0 = stackalloc double[n0];
+                double* T1 = stackalloc double[n1];
+                double* dT1 = stackalloc double[n0];
+                double* ddT1 = stackalloc double[n0];
+                double* T2 = stackalloc double[n1];
+                double* dT2 = stackalloc double[n0];
+                double* ddT2 = stackalloc double[n0];
+                Build_T_dT_ddT(x0, n0, T0, dT0, ddT0);
+                Build_T_dT_ddT(x1, n1, T1, dT1, ddT1);
+                Build_T_dT_ddT(x2, n2, T2, dT2, ddT2);
+
+                // (((coeff • T2) • T1) • T0)
+                double s = 0.0, sx = 0.0, sy = 0.0, sz = 0.0;
+                double sxx = 0.0, sxy = 0.0, sxz = 0.0, syy = 0.0, syz = 0.0, szz = 0.0;
+
+                int idx012 = 0;
+                for(int k0 = 0; k0 < n0; ++k0) {
+                    double a0 = 0.0, a0x = 0.0, a0y = 0.0, a0z = 0.0;
+                    double a0xx = 0.0, a0xy = 0.0, a0xz = 0.0, a0yy = 0.0, a0yz = 0.0, a0zz = 0.0;
+
+                    for(int k1 = 0; k1 < n1; ++k1) {
+                        double a1 = 0.0, a1x = 0.0, a1y = 0.0, a1z = 0.0;
+                        double a1xx = 0.0, a1xy = 0.0, a1xz = 0.0, a1yy = 0.0, a1yz = 0.0, a1zz = 0.0;
+
+                        for(int k2 = 0; k2 < n2; ++k2, ++idx012) {
+                            double ck = coeff[idx012];
+                            a1 += ck * T2[k2];
+                            //a1x += ck * T2[k2];
+                            //a1y += ck * T2[k2];
+                            a1z += ck * dT2[k2];
+
+                            //axx += ck*T2[k2];
+                            //a1xy += ck*T2[k2];
+                            //a1xz += ck*dT2[k2];
+                            //a1yy += ck*T2[k2];
+                            //a1yz += ck*dT2[k2];
+                            a1zz += ck*ddT2[k2];
+                        }
+                        a1x = a1;
+                        a1y = a1;
+                        a1xx = a1;
+                        a1xy = a1;
+                        a1xz = a1z;
+                        a1yy = a1;
+                        a1yz = a1z;
+                        
+                        a0 += a1 * T1[k1];
+                        a0x += a1x *  T1[k1];
+                        a0y += a1y * dT1[k1];
+                        a0z += a1z *  T1[k1];
+                        a0xx += a1xx * T1[k1];
+                        a0xy += a1xy * dT1[k1];
+                        a0xz += a1xz * T1[k1];
+                        a0yy += a1yy * ddT1[k1];
+                        a0yz += a1yz * dT1[k1];
+                        a0zz += a1zz * T1[k1];
+                    }
+                    s += a0 * T0[k0];
+                    sx += a0x * dT0[k0];
+                    sy += a0y *  T0[k0];
+                    sz += a0z *  T0[k0];
+                    sxx += a0xx * ddT0[k0];
+                    sxy += a0xy * dT0[k0];
+                    sxz += a0xz * dT0[k0];
+                    syy += a0yy * T0[k0];
+                    syz += a0yz * T0[k0];
+                    szz += a0zz * T0[k0];
+
+                }
+                f = s; fx = sx; fy = sy; fz = sz;
+                fxx = sxx; fxy = sxy; fxz = sxz;
+                fyy = syy; fyz = syz; fzz = szz;
+            }
         }
 
         // -------------------------
@@ -619,6 +860,47 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             U[1] = 2.0 * x;
             for(int k = 2; k < m; ++k)
                 U[k] = 2.0 * x * U[k - 1] - U[k - 2];
+        }
+
+        // Build T_k(x) for k=0..n-1
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static unsafe void Build_T(double x, int n, double* T) {
+            if(n == 1) {
+                T[0] = 1.0;
+                return;
+            }
+            T[0] = 1.0;
+            T[1] = x;
+            for(int k = 2; k < n; ++k)
+                T[k] = 2.0 * x * T[k - 1] - T[k - 2];
+        }
+
+        // Build T_k(x) and dT_k(x)/dx for k=0..n-1
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static unsafe void Build_T_dT(double x, int n, double* T, double* dT) {
+            Build_T(x, n, T);
+            if(n == 1) {
+                dT[0] = 0.0;
+                return;
+            }
+            dT[0] = 0.0;
+            dT[1] = 1;
+            for(int k = 2; k < n; ++k)
+                dT[k] = 2*T[k-1] + 2*x*dT[k-1] - dT[k-2];
+        }
+
+        // Build T_k(x) and dT_k(x)/dx and ddT_k(x)/dxdx for k=0..n-1
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static unsafe void Build_T_dT_ddT(double x, int n, double* T, double* dT, double* ddT) {
+            Build_T_dT(x, n, T, dT);
+            if(n == 1) {
+                ddT[0] = 0.0;
+                return;
+            }
+            ddT[0] = 0.0;
+            ddT[1] = 0.0;
+            for(int k = 2; k < n; ++k)
+                ddT[k] = 4*dT[k-1] + 2*x*ddT[k-1] - ddT[k-2];
         }
 
         // Also build dU_k/dx via stable three-term recurrence:
