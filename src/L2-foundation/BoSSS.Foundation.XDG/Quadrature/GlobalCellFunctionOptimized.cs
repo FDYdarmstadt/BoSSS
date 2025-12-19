@@ -359,25 +359,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             double xx = x[0];
             int n0 = n[0];
 
-            /*
-            var T = new double[n0];
-            var U = new double[Math.Max(1, n0 - 1)];
-            var dU = new double[Math.Max(1, n0 - 1)];
-            Build_T_U_dU(xx, n0, T, U, dU);
-
-            double s = 0.0, sx = 0.0, sxx = 0.0;
-            int off = 0;
-            for(int k = 0; k < n0; ++k, off += 1) {
-                double ck = coeff[off];
-                s += ck * T[k];
-                if(k > 0) {
-                    double ku = k * U[k - 1];
-                    sx += ck * ku;
-                    sxx += ck * k * dU[k - 1];
-                }
-            }
-            f = s; fx = sx; fxx = sxx;
-            */
+            
 
             unsafe {
                 double* T =  stackalloc double[n0];
@@ -433,28 +415,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             double x0 = X[0], x1 = X[1];
             int n0 = n[0], n1 = n[1];
 
-            /*{
-
-            var T0 = new double[n0]; var U0 = new double[Math.Max(1, n0 - 1)];
-            var T1 = new double[n1]; var U1 = new double[Math.Max(1, n1 - 1)];
-            Build_T_and_U(x0, n0, T0, U0);
-            Build_T_and_U(x1, n1, T1, U1);
-
-            double s = 0.0, sx = 0.0, sy = 0.0;
-            int idx = 0;
-            for(int k0 = 0; k0 < n0; ++k0) {
-                double a = 0.0, ay = 0.0;
-                for(int k1 = 0; k1 < n1; ++k1, ++idx) {
-                    double c = coeff[idx];
-                    a += c * T1[k1];                        // undiff axis 1: already has 1/2 on k1=0
-                    if(k1 > 0) ay += c * (k1 * U1[k1 - 1]); // diff axis 1: no 1/2 (k1>0 anyway)
-                }
-                s += a * T0[k0];                              // undiff axis 0: has 1/2 on k0=0
-                if(k0 > 0) sx += (k0 * U0[k0 - 1]) * a;      // diff axis 0: no 1/2 (k0>0)
-                sy += T0[k0] * ay;                             // undiff axis 0: already 1/2 on k0=0
-            }
-            f = s; fx = sx; fy = sy;
-            }*/
             unsafe {
                 double* T0 = stackalloc double[n0];
                 double* dT0 = stackalloc double[n0];
@@ -488,42 +448,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             double x0 = x[0], x1 = x[1];
             int n0 = n[0], n1 = n[1];
 
-            /*
-            var T0 = new double[n0]; var U0 = new double[Math.Max(1, n0 - 1)]; var dU0 = new double[Math.Max(1, n0 - 1)];
-            var T1 = new double[n1]; var U1 = new double[Math.Max(1, n1 - 1)]; var dU1 = new double[Math.Max(1, n1 - 1)];
-            Build_T_U_dU(x0, n0, T0, U0, dU0);
-            Build_T_U_dU(x1, n1, T1, U1, dU1);
-
-            // undifferentiated axes must carry 1/2 on zero modes
-            T0[0] *= 0.5;
-            T1[0] *= 0.5;
-
-            double s = 0, sx = 0, sy = 0, sxx = 0, sxy = 0, syy = 0;
-            int idx = 0;
-            for(int k0 = 0; k0 < n0; ++k0) {
-                double a = 0, ay = 0, ayy = 0;
-                for(int k1 = 0; k1 < n1; ++k1, ++idx) {
-                    double c = coeff[idx];
-                    a += c * T1[k1];                            // undiff axis 1 (has 1/2 if k1=0)
-                    if(k1 > 0) {
-                        ay += c * (k1 * U1[k1 - 1]);           // diff axis 1
-                        ayy += c * (k1 * dU1[k1 - 1]);          // diff^2 axis 1
-                    }
-                }
-                s += a * T0[k0];                               // undiff axis 0 (has 1/2 if k0=0)
-                sy += T0[k0] * ay;                              // undiff axis 0
-                syy += T0[k0] * ayy;                             // undiff axis 0
-
-                if(k0 > 0) {
-                    double kxU = k0 * U0[k0 - 1];
-                    double kxDU = k0 * dU0[k0 - 1];
-                    sx += kxU * a;                             // diff axis 0
-                    sxy += kxU * ay;                            // diff axis 0, diff axis 1
-                    sxx += kxDU * a;                             // diff^2 axis 0
-                }
-            }
-            */
-
+           
             unsafe {
                 double* T0 = stackalloc double[n0];
                 double* dT0 = stackalloc double[n0];
@@ -696,64 +621,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             double x0 = x[0], x1 = x[1], x2 = x[2];
             int n0 = n[0], n1 = n[1], n2 = n[2];
 
-            /*
-            var T0 = new double[n0]; var U0 = new double[Math.Max(1, n0 - 1)];
-            var dU0 = new double[Math.Max(1, n0 - 1)];
-            var T1 = new double[n1]; var U1 = new double[Math.Max(1, n1 - 1)];
-            var dU1 = new double[Math.Max(1, n1 - 1)];
-            var T2 = new double[n2]; var U2 = new double[Math.Max(1, n2 - 1)];
-            var dU2 = new double[Math.Max(1, n2 - 1)];
-            Build_T_U_dU(x0, n0, T0, U0, dU0);
-            Build_T_U_dU(x1, n1, T1, U1, dU1);
-            Build_T_U_dU(x2, n2, T2, U2, dU2);
-
-            double S = 0.0, Sx = 0.0, Sy = 0.0, Sz = 0.0;
-            double Sxx = 0.0, Sxy = 0.0, Sxz = 0.0, Syy = 0.0, Syz = 0.0, Szz = 0.0;
-
-            int idx = 0;
-            for(int k0 = 0; k0 < n0; ++k0) {
-                double A = 0.0, Ay = 0.0, Ayy = 0.0, Az = 0.0, Azz = 0.0, Ayz = 0.0;
-                for(int k1 = 0; k1 < n1; ++k1) {
-                    double B = 0.0, Bz = 0.0, Bzz = 0.0;
-                    for(int k2 = 0; k2 < n2; ++k2, ++idx) {
-                        double c = coeff[idx];
-                        B += c * T2[k2];
-                        if(k2 > 0) {
-                            double kzU = k2 * U2[k2 - 1];
-                            Bz += c * kzU;
-                            Bzz += c * (k2 * dU2[k2 - 1]);
-                        }
-                    }
-                    // along axis-1 derivatives
-                    A += B * T1[k1];
-                    Az += Bz * T1[k1];
-                    Azz += Bzz * T1[k1];
-
-                    if(k1 > 0) {
-                        double kyU = k1 * U1[k1 - 1];
-                        Ay += kyU * B;
-                        Ayz += kyU * Bz;
-                        Ayy += (k1 * dU1[k1 - 1]) * B;
-                    }
-                }
-
-                S += A * T0[k0];
-                Sy += Ay * T0[k0];
-                Sz += Az * T0[k0];
-                Syy += Ayy * T0[k0];
-                Syz += Ayz * T0[k0];
-                Szz += Azz * T0[k0];
-
-                if(k0 > 0) {
-                    double kxU = k0 * U0[k0 - 1];
-                    Sx += kxU * A;
-                    Sxy += kxU * Ay;
-                    Sxz += kxU * Az;
-                    Sxx += (k0 * dU0[k0 - 1]) * A;
-                }
-            }
-            */
-
+            
             unsafe {
                 double* T0 = stackalloc double[n0];
                 double* dT0 = stackalloc double[n0];
@@ -846,22 +714,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             return x;
         }
 
-        // Build T_k(x) for k=0..n-1 and U_k(x) for k=0..n-2
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static void Build_T_and_U(double x, int n, double[] T, double[] U) {
-            if(n == 1) { T[0] = 1.0; return; }
-            T[0] = 1.0; T[1] = x;
-            for(int k = 2; k < n; ++k)
-                T[k] = 2.0 * x * T[k - 1] - T[k - 2];
-
-            int m = n - 1;
-            if(m <= 0) return;
-            U[0] = 1.0; if(m == 1) return;
-            U[1] = 2.0 * x;
-            for(int k = 2; k < m; ++k)
-                U[k] = 2.0 * x * U[k - 1] - U[k - 2];
-        }
-
+        
         // Build T_k(x) for k=0..n-1
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static unsafe void Build_T(double x, int n, double* T) {
@@ -903,19 +756,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
                 ddT[k] = 4*dT[k-1] + 2*x*ddT[k-1] - ddT[k-2];
         }
 
-        // Also build dU_k/dx via stable three-term recurrence:
-        // dU_0=0, dU_1=2, dU_{k+1} = 2*U_k + 2*x*dU_k - dU_{k-1}
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static void Build_T_U_dU(double x, int n, double[] T, double[] U, double[] dU) {
-            Build_T_and_U(x, n, T, U);
-            int m = n - 1;
-            if(m <= 0) return;
-            dU[0] = 0.0;
-            if(m == 1) return;
-            dU[1] = 2.0;
-            for(int k = 2; k < m; ++k)
-                dU[k] = 2.0 * U[k - 1] + 2.0 * x * dU[k - 1] - dU[k - 2];
-        }
+     
 
         // -------------------------
         // Separable DCT-I (O(n^2))
