@@ -1439,7 +1439,7 @@ namespace BoSSS.Foundation.XDG {
             int order2Pick = AvailOrders.Any() ? AvailOrders.Min() : 2 * deg;
 
             
-            var schemeHelper = trk.GetXDGSpaceMetrics(order2Pick).XQuadSchemeHelper;
+            var schemeHelper = trk.GetXDGSpaceMetrics(order2Pick, 1).XQuadSchemeHelper;
             
             this.MPIExchange();
             

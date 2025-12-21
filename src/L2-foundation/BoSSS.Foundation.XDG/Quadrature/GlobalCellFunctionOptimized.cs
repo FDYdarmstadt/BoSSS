@@ -44,7 +44,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
         public readonly Stopwatch stwH = new Stopwatch();
 
 
-#if DEBUG
+#if DEBUG_EXTENDED
         readonly IScalarFunction reference;
 #endif
 
@@ -52,7 +52,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
 
         /// <summary></summary>
         public GlobalCellFunctionOptimized(RefElement Kref, IScalarFunction other, int degree) : this(Kref, Kref.SpatialDimension.ForLoop(d => degree + 1)) {
-#if DEBUG
+#if DEBUG_EXTENDED
             reference = other;
 #endif
 
@@ -66,7 +66,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             // 2) compute internal coefficients
             ConstructorCommon(V);
 
-#if DEBUG
+#if DEBUG_EXTENDED
             // check if we recover the nodal values
             {
 
@@ -94,7 +94,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
         /// <param name="jCell"></param>
         /// <param name="levelSet"></param>
         public GlobalCellFunctionOptimized(LevelSetTracker.LevelSetData levelSet, int jCell, int[] nPerAxis) : this(levelSet.GridDat.iGeomCells.GetRefElement(jCell), nPerAxis) {
-#if DEBUG
+#if DEBUG_EXTENDED
             reference = new GlobalCellFunction(levelSet, jCell);
 #endif
 
@@ -106,7 +106,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             ConstructorCommon(V);
 
             // check if we recover the nodal values
-#if DEBUG
+#if DEBUG_EXTENDED
             {
 
                 MultidimensionalArray val_this = MultidimensionalArray.Create(1, X.NoOfNodes);
@@ -215,7 +215,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             EvalCounterG++;
             stwG.Stop();
 
-#if DEBUG
+#if DEBUG_EXTENDED
             var valgradRef = reference.EvaluateAndGradient(x);
             if(Math.Abs(valgradRef.evaluation - val) > 1.0e-10) {
                 throw new ArithmeticException("optimized version sux 1");
@@ -286,7 +286,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             EvalCounterH++;
             stwH.Stop();
 
-#if DEBUG
+#if DEBUG_EXTENDED
             var valgradRef = reference.EvaluateAndGradientAndHessian(x);
             if(Math.Abs(valgradRef.evaluation - val) > 1.0e-10)
                 throw new ArithmeticException("optimized version sux 1b");
