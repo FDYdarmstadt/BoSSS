@@ -10,20 +10,23 @@ using ilPSP.Connectors.Matlab;
 using BoSSS.Solution.Statistic;
 using NUnit.Framework;
 using System.Diagnostics;
+using System.IO;
+using BoSSS.Foundation.IO;
+using ilPSP;
+using BoSSS.Foundation.Grid;
 
 namespace ZwoLevelSetSolver {
     class ZLSmain {
 
         static void Main(string[] args) {
-            //BoSSS.Solution.Application.InitMPI(num_threads:1);
+            BoSSS.Solution.Application.InitMPI(num_threads:1);
             //BoSSS.Solution.Application.DeleteOldPlotFiles();
 
-            RunSolver(args);
-            //ConditionNumberScaling();
-            //Tests.SolidOnlyTests.RotationConvergenceTest(2);
-            //Tests.ThreePhaseTests.ThreePhaseContactLine_TensionBalance(true);
-
-            //BoSSS.Solution.Application.FinalizeMPI();
+            //RunSolver(args);
+            ReferenceRun();
+            //ComparisonRun();
+            
+            BoSSS.Solution.Application.FinalizeMPI();
         }
 
         static void RunSolver(string[] args) {
@@ -34,6 +37,48 @@ namespace ZwoLevelSetSolver {
                 return p;
             });
         }
+
+        static void ReferenceRun() {
+            var dbPath = "bosss_db_debug";
+            if(!Directory.Exists(dbPath))
+                BoSSS.Foundation.IO.DatabaseUtils.CreateDatabase(dbPath);
+            var db = DatabaseInfo.Open(dbPath);
+            
+            var c = ZwoLevelSetSolver.ControlFiles.Droplet.AlandSL3D(2, 2, 0);
+            c.DbPath = db.Path;
+            c.savetodb = false;
+            c.NoOfTimesteps = 1;
+
+            using(var p = new ZLS()) {
+                p.Init(c);
+                p.RunSolverMode();
+
+                foreach(var field in p.CurrentState.Fields) {
+                    double totalJumpNorm = field.JumpNorm();
+                    double inrprJumpNorm = field.JumpNorm(p.GridData.GetInterprocessEdges());
+
+                    Console.WriteLine($"Jump norm of {field.Identification}: \t{totalJumpNorm:g6} \t(interprocess: {inrprJumpNorm:g7})");
+                }
+            }
+        }
+
+        static void ComparisonRun() {
+            var dbPath = "bosss_db_debug";
+            var db = DatabaseInfo.Open(dbPath);
+
+            var lastOne = db.Sessions.Last();
+            foreach(var g in lastOne.GetGrids()) {
+                Console.WriteLine(" --- grid: " + g);
+            }
+            
+            foreach(var ts in lastOne.Timesteps) {
+                Console.WriteLine(" --- tmst: " + ts);
+                Console.WriteLine("    " + ts.FieldInitializers.Select(fi => fi.Identification).ToConcatString("[", ", ", "]"));
+            }
+
+        }
+
+
     }
 
 }
