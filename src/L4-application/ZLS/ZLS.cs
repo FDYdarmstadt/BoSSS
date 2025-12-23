@@ -168,12 +168,7 @@ namespace ZwoLevelSetSolver {
                 Console.WriteLine($"done with time step {TimestepNo}, Solver success? {LastSolverSuccess}");
                 Assert.IsTrue(LastSolverSuccess, "Solver did not converge");
 
-                foreach(var field in this.CurrentState.Fields) {
-                    double totalJumpNorm = field.JumpNorm();
-                    double inrprJumpNorm = field.JumpNorm(this.GridData.GetInterprocessEdges());
 
-                    Console.WriteLine($"Jump norm of {field.Identification}: \t{totalJumpNorm:g6} \t(interprocess: {inrprJumpNorm:g7})");
-                }
 
                 return dt;
             }

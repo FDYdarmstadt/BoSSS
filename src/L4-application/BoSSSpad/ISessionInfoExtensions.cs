@@ -1693,10 +1693,24 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
+        /// The number of MPI ranks used
+        /// </summary>
+        public static int MPIsize(this ISessionInfo session) {
+            return session.NumberOfMPIranks();
+        }
+
+        /// <summary>
+        /// The number of MPI ranks used
+        /// </summary>
+        public static int NumberOfMPIranks(this ISessionInfo session) {
+            return session.ComputeNodeNames.Count();
+        }
+
+        /// <summary>
         /// The number of cores/processes that where used for this simulation
         /// </summary>
         public static int NumberOfCores(this ISessionInfo session) {
-            return session.ComputeNodeNames.Count();
+            return session.MPIsize() * session.NumberOfThreadsPerRank();
         }
 
         /// <summary>
