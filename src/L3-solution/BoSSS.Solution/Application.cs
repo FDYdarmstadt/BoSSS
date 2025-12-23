@@ -3414,14 +3414,14 @@ namespace BoSSS.Solution {
 
                     if(ProfilingLog_suffix == null) {
                         if(this.CurrentSessionInfo.ID == Guid.Empty)
-                            ProfilingLog_suffix = $"{DateTime.Now.ToString("MMMdd_HHmmss")}";
+                            ProfilingLog_suffix = $"{DateTime.Now.ToString("MMMdd_HHmmss")}.";
                         else
                             ProfilingLog_suffix = "";
                     }
 
 
                     try {
-                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, $"profiling_bin", $"{ProfilingLog_suffix}.bin")) {
+                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, $"profiling_bin", $"{ProfilingLog_suffix}bin")) {
                             var str = OnlineProfiling.Serialize();
                             using (StreamWriter stw = new StreamWriter(stream)) {
                                 stw.Write(str);
@@ -3434,7 +3434,7 @@ namespace BoSSS.Solution {
                     }
 
                     try {
-                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_summary", $"{ProfilingLog_suffix}.txt")) {
+                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_summary", $"{ProfilingLog_suffix}txt")) {
                             using (StreamWriter stw = new StreamWriter(stream)) {
                                 OnlineProfiling.WriteProfilingReport(stw);
                                 stw.Flush();

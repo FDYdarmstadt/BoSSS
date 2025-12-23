@@ -11,7 +11,28 @@ using System.Data;
 using System.Diagnostics;
 using static BoSSS.Foundation.XDG.LevelSetTracker;
 
+
 namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
+
+    /*
+    public static class Report {
+        public static void R() {
+            Console.WriteLine("-----------------------------------------------");
+            Console.WriteLine($"all calls: {IntersectingRuleFactory.calls.Elapsed.TotalSeconds:g7}");
+            Console.WriteLine($"  opt val: {GlobalCellFunctionOptimized.stwV.Elapsed.TotalSeconds:g7} \t(calls: {GlobalCellFunctionOptimized.EvalCounterV})");
+            Console.WriteLine($" opt grad: {GlobalCellFunctionOptimized.stwG.Elapsed.TotalSeconds:g7} \t(calls: {GlobalCellFunctionOptimized.EvalCounterG})");
+            Console.WriteLine($" opt hess: {GlobalCellFunctionOptimized.stwH.Elapsed.TotalSeconds:g7} \t(calls: {GlobalCellFunctionOptimized.EvalCounterH})");
+            Console.WriteLine($" opt ctor: {GlobalCellFunctionOptimized.stwC.Elapsed.TotalSeconds:g7}");
+
+            Console.WriteLine($"  ref val: {GlobalCellFunction.stwV.Elapsed.TotalSeconds:g7} \t(calls: {GlobalCellFunction.EvalCounterV})");
+            Console.WriteLine($" ref grad: {GlobalCellFunction.stwG.Elapsed.TotalSeconds:g7} \t(calls: {GlobalCellFunction.EvalCounterG})");
+            Console.WriteLine($" ref hess: {GlobalCellFunction.stwH.Elapsed.TotalSeconds:g7} \t(calls: {GlobalCellFunction.EvalCounterH})");
+
+            Console.WriteLine("-----------------------------------------------");
+        }
+    }
+    */
+
     internal class IntersectingRuleFactory : IQuadRuleFactory<QuadRule> {
 
         readonly IFunctionMap map;
@@ -90,8 +111,11 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             return rules;
         }
 
+        //public static Stopwatch calls = new Stopwatch();
+
         QuadRule GetQuadRule(int j, int order) {
             HyperRectangle domain = map.Codomain(j);
+            //calls.Start();
             IScalarFunction a = map.MapFromDomainToCodomain(alpha, j);
             IScalarFunction b = map.MapFromDomainToCodomain(beta, j);
             (int nodeCount, int subdivisions) = Convert(order);
@@ -105,11 +129,15 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             }
 
             QuadRule q = map.MapFromCodomainToDomain(ruleQ, j);
+            //calls.Stop();
             return q;
         }
 
         static (int nodeCount, int subdivisions) Convert(int order) {
             return (Math.Min(32, Math.Max(1, order)), order / 32);
         }
+
+
+        
     }
 }
