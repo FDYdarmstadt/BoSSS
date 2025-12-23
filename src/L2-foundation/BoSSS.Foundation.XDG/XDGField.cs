@@ -1299,8 +1299,6 @@ namespace BoSSS.Foundation.XDG {
         //}
 
         public double L2NormAllSpecies(CellMask cm = null) {
-            
-
             double acc = 0;
             foreach (SpeciesId spc in this.Basis.Tracker.SpeciesIdS) {
                 acc += L2NormSpecies(spc, cm).Pow2();
@@ -1401,7 +1399,7 @@ namespace BoSSS.Foundation.XDG {
 
                 MM_j.GEMV(1.0, Coords, 0.0, tmp);
                 double res_j = Coords.InnerProd(tmp);
-                acc += res_j;
+                acc += Math.Max(0.0, res_j); // in rare occasions, it might happen that this gets **sightly** negative due to round-off errors; best to ignore it?
 
                 cmMask[jCell] = false; // mark that we have taken care of this cell
             }

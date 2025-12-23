@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using BoSSS.Application.XNSE_Solver;
-using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution.AdvancedSolvers;
@@ -167,6 +167,13 @@ namespace ZwoLevelSetSolver {
                 LastSolverSuccess = Timestepping.Solve(phystime, dt, this.Control.SkipSolveAndEvaluateResidual);
                 Console.WriteLine($"done with time step {TimestepNo}, Solver success? {LastSolverSuccess}");
                 Assert.IsTrue(LastSolverSuccess, "Solver did not converge");
+
+                foreach(var field in this.CurrentState.Fields) {
+                    double totalJumpNorm = field.JumpNorm();
+                    double inrprJumpNorm = field.JumpNorm(this.GridData.GetInterprocessEdges());
+
+                    Console.WriteLine($"Jump norm of {field.Identification}: \t{totalJumpNorm:g6} \t(interprocess: {inrprJumpNorm:g7})");
+                }
 
                 return dt;
             }

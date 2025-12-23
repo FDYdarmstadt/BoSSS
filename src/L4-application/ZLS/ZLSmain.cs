@@ -46,8 +46,8 @@ namespace ZwoLevelSetSolver {
             
             var c = ZwoLevelSetSolver.ControlFiles.Droplet.AlandSL3D(2, 2, 0);
             c.DbPath = db.Path;
-            c.savetodb = false;
-            c.NoOfTimesteps = 1;
+            c.savetodb = true;
+            c.NoOfTimesteps = 5;
 
             using(var p = new ZLS()) {
                 p.Init(c);

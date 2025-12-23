@@ -651,7 +651,7 @@ namespace BoSSS.Foundation {
                 int jCell0_log = grd.GetLogicalCellIndex(jCell0);
                 int jCell1_log = grd.GetLogicalCellIndex(jCell1);
                 long Gidx0 = jCell0_log + grd.CellPartitioning.i0;
-                long Gidx1 = grd.iParallel.GlobalIndicesExternalCells[jCell1_log];
+                long Gidx1 = grd.iParallel.GlobalIndicesExternalCells[jCell1_log - Jup];
 
                 return (Gidx0 < Gidx1); // convention: only count interprocess edge if the locally updated cell has the smaller index.
             }
@@ -688,7 +688,7 @@ namespace BoSSS.Foundation {
                     for(int i = 0; i < Length; i++) {
                         int iEdge = i + i0;
                         if(CountInterprocessEdge(iEdge))
-                            Unorm += ResultsOfIntegration[i];
+                            Unorm += ResultsOfIntegration[i, 0];
                     }
                 }).Execute();
 
