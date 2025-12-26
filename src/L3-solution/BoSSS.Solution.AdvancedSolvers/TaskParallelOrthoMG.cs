@@ -22,6 +22,7 @@ using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform;
 using BoSSS.Platform.Utils.Geom;
+using BoSSS.Solution.AdvancedSolvers.Testing;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.Gnuplot;
 using BoSSS.Solution.Statistic;
@@ -363,7 +364,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 							cnt += Len;
 						} else { //keep block information to be consistent with global indices but assign them zero length and some suitable i0
 							if (j > 0) {
-								i0Cell.Add(i0Cell[j - 1]);
+								i0Cell.Add(i0Cell[j - 1] + LnCell[j - 1]);
 							} else {
 								i0Cell.Add(0);
 							}
@@ -2024,9 +2025,29 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 		TpTaskType myTask = TpTaskType.All;
 
-		static BlockPartitioning GetPartitioning((long i0Global, int CellLen)[] DOFs, MPI_Comm comm) {
+        static int __cnt = 0;
+
+		public static BlockPartitioning GetPartitioning((long i0Global, int CellLen)[] DOFs, MPI_Comm comm) {
 			using (new FuncTrace()) {
-				var LnCell = new List<int>();
+
+                var i0Global = MultidimensionalArray.Create(DOFs.Length, 2);
+                var CellLen = MultidimensionalArray.Create(DOFs.Length, 2);
+                for(int l = 0;  l < DOFs.Length; l++) {
+                    i0Global[l, 0] = l;
+                    i0Global[l, 1] = DOFs[l].i0Global;
+
+                    CellLen[l, 0] = l;
+                    CellLen[l, 1] = DOFs[l].CellLen;
+                }
+                csMPI.Raw.Comm_Rank(comm, out int Rnk);
+                csMPI.Raw.Comm_Size(comm, out int Sz);
+                i0Global.SaveToTextFile($"C:\\tmp\\i0GlobalR{Rnk}of{Sz}-{__cnt}.txt");
+                CellLen.SaveToTextFile($"C:\\tmp\\CellLenR{Rnk}of{Sz}-{__cnt}.txt");
+                __cnt++;
+
+
+
+                var LnCell = new List<int>();
 				var i0Cell = new List<long>();
 
 				int cnt = 0;

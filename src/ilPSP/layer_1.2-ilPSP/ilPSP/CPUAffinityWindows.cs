@@ -248,7 +248,7 @@ namespace ilPSP.Utils {
 
 
                 for(int cntGroup = 0; cntGroup < NumberOfGroups; cntGroup++) {
-                    Console.Error.WriteLine($"Setting {cntGroup + 1}/{NumberOfGroups} group with affinity 0x{affinities[cntGroup].Mask:x} at group-{affinities[cntGroup].Group}");
+                    //Console.Error.WriteLine($"Setting {cntGroup + 1}/{NumberOfGroups} group with affinity 0x{affinities[cntGroup].Mask:x} at group-{affinities[cntGroup].Group}");
                     if(SetThreadGroupAffinity(GetCurrentThread(), ref affinities[cntGroup], null)) {
 
                     } else {
