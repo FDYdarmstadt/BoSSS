@@ -20,22 +20,13 @@ namespace ZwoLevelSetSolver {
     class ZLSmain {
 
         static void Main(string[] args) {
-            //int L = Vector<double>.Count;
-
-
-
-            BoSSS.Solution.Application.InitMPI(num_threads:1);
+            //BoSSS.Solution.Application.InitMPI(num_threads:1);
             //BoSSS.Solution.Application.DeleteOldPlotFiles();
 
-            //RunSolver(args);
-            ReferenceRun();
-            //ComparisonRun();
-            
-            BoSSS.Solution.Application.FinalizeMPI();
+            RunSolver(args);
         }
 
         static void RunSolver(string[] args) {
-            //Debugger.Launch();
             ZLS._Main(args, false, delegate () {
                 //Control file from runtime via args
                 var p = new ZLS();
