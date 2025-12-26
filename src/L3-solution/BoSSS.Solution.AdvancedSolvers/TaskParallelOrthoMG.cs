@@ -2024,7 +2024,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 		TpTaskType myTask = TpTaskType.All;
 
-		BlockPartitioning GetPartitioning((long i0Global, int CellLen)[] DOFs, MPI_Comm comm) {
+		static BlockPartitioning GetPartitioning((long i0Global, int CellLen)[] DOFs, MPI_Comm comm) {
 			using (new FuncTrace()) {
 				var LnCell = new List<int>();
 				var i0Cell = new List<long>();
@@ -2042,14 +2042,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 							cnt += Len;
 						} else { //keep block information to be consistent with global indices but assign them zero length and some suitable i0
 							if (j > 0) {
-								i0Cell.Add(i0Cell[j - 1]);
+								i0Cell.Add(i0Cell[j - 1] + LnCell[j - 1]);
 							} else {
 								i0Cell.Add(0);
 							}
 
-							LnCell.Add(Len);
-							cnt += Len;
-						}
+							LnCell.Add(Len); // Len == 0
+							cnt += Len; //      Len == 0
+                        }
 					}
 				}
 
