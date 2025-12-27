@@ -2025,7 +2025,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 		TpTaskType myTask = TpTaskType.All;
 
-        static int __cnt = 0;
+        //static int __cnt = 0;
 
 		public static BlockPartitioning GetPartitioning((long i0Global, int CellLen)[] DOFs, MPI_Comm comm) {
 			using (new FuncTrace()) {
@@ -2039,11 +2039,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     CellLen[l, 0] = l;
                     CellLen[l, 1] = DOFs[l].CellLen;
                 }
-                csMPI.Raw.Comm_Rank(comm, out int Rnk);
-                csMPI.Raw.Comm_Size(comm, out int Sz);
-                i0Global.SaveToTextFile($"C:\\tmp\\i0GlobalR{Rnk}of{Sz}-{__cnt}.txt");
-                CellLen.SaveToTextFile($"C:\\tmp\\CellLenR{Rnk}of{Sz}-{__cnt}.txt");
-                __cnt++;
+                //csMPI.Raw.Comm_Rank(comm, out int Rnk);
+                //csMPI.Raw.Comm_Size(comm, out int Sz);
+                //i0Global.SaveToTextFile($"C:\\tmp\\i0GlobalR{Rnk}of{Sz}-{__cnt}.txt");
+                //CellLen.SaveToTextFile($"C:\\tmp\\CellLenR{Rnk}of{Sz}-{__cnt}.txt");
+                //__cnt++;
 
 
 
