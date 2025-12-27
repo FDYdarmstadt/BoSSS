@@ -414,8 +414,6 @@ namespace BoSSS.Foundation.Quadrature {
 
 
             foreach (var chunk in mask) {
-
-
                 for (int i = chunk.i0; i < chunk.JE; i++) {
                     int iQuadRule = m_EdgesToChunk[i];
                     var pair = m_QuadRule[iQuadRule];

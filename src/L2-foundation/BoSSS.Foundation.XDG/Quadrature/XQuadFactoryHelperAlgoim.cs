@@ -118,11 +118,7 @@ namespace BoSSS.Foundation.XDG {
                 var algoimFactory = DoubleCutFactories[KrefVol];
                 var cellBoundaryFac = algoimFactory.GetCellBoundaryVolumeFactory(jumps);
 
-                //var cutDom1 = m_LevelSetDatas[levSetIndex0].Region.GetCutCellMask4LevSet(levSetIndex0);
-                //var cutDom2 = m_LevelSetDatas[levSetIndex1].Region.GetCutCellMask4LevSet(levSetIndex1);
-                //var cutDom = cutDom1.Intersect(cutDom2).ToGeometicalMask();
-                //var _cutDom = cutDom.Intersect(m_LevelSetDatas[levSetIndex0].GridDat.Cells.GetCells4Refelement(KrefVol));
-
+            
                 var maxdom = m_CutEdges4LevelSet[levSetIndex0].Intersect(m_CutEdges4LevelSet[levSetIndex1]);
 
 

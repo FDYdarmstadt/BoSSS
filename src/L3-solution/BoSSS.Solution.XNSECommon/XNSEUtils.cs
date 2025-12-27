@@ -1593,7 +1593,7 @@ namespace BoSSS.Solution.XNSECommon {
             // ========================================================
             double gaussInVolume = 0.0;
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
-                schemeHelper.GetLevelSetQuadScheme(0, cellIntDom, order).Compile(LsTrk.GridDat, order),
+                schemeHelper.GetLevelSetQuadScheme(0, cellIntDom).Compile(LsTrk.GridDat, order),
                 delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
 
                     int qN = QR.NoOfNodes;
@@ -1723,7 +1723,7 @@ namespace BoSSS.Solution.XNSECommon {
             // ========================================================
             double stokesAtInterface = 0.0;
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
-                schemeHelper.GetLevelSetQuadScheme(0, cellIntDom, order).Compile(LsTrk.GridDat, order),
+                schemeHelper.GetLevelSetQuadScheme(0, cellIntDom).Compile(LsTrk.GridDat, order),
                 delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
 
                     int qN = QR.NoOfNodes;

@@ -239,58 +239,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         private Dictionary<SpeciesId, EdgeMask> m_SpeciesSubgrid_InnerAndDomainEdges = new Dictionary<SpeciesId, EdgeMask>();
 
-        /*
-        EdgeMask __InnerAndDomainBoundary(CellMask cellRestriction, SpeciesId sp, int iLevSet) {
-            //var subGrd = new SubGrid(cells);
-            //var innerEdges = subGrd.InnerEdgesMask;
-            //var bndy = cells.GridData.GetBoundaryEdgeMask().Intersect(subGrd.BoundaryEdgesMask);
-            //return bndy.Union(innerEdges);
-
-            if(cellRestriction != null && cellRestriction.MaskType != MaskType.Logical)
-                throw new ArgumentException("expecting a logical cell mask", nameof(cellRestriction));
-            
-            var bCellRstm = cellRestriction?.GetBitMask();
-            var bCellMask = this.CellBoundaryLayer_Bitmask[(sp, iLevSet)];
-            
-            int[,] E2C = this.gdat.iLogicalEdges.CellIndices;
-            int NoOfEdges = this.gdat.iLogicalEdges.Count;
-            var bEdgeMask = new BitArray(NoOfEdges);
-            int Jup = this.gdat.iLogicalCells.NoOfLocalUpdatedCells;
-
-
-
-            for(int iEdge = 0; iEdge < NoOfEdges; iEdge++) {
-                int jCell0 = E2C[iEdge, 0];
-                int jCell1 = E2C[iEdge, 1];
-
-                if(bCellRstm != null) {
-                    if(jCell1 >= 0)
-                        if(bCellRstm[jCell0] == false && bCellRstm[jCell1] == false)
-                            continue;
-
-                    if(jCell1 < 0 || jCell1 >= Jup)
-                        if(bCellRstm[jCell0] == false)
-                            continue;
-                }
-
-
-                if(jCell1 >= 0) {
-                    // inner egde: both cells must be part of the bit-mask
-                    if(bCellMask[jCell0] && bCellMask[jCell1])
-                        bEdgeMask[iEdge] = true;
-                } else {
-                    // boundary edge: only in-cell must be part of the mask
-                    if(bCellMask[jCell0])
-                        bEdgeMask[iEdge] = true;
-                }
-
-
-            }
-
-            return new EdgeMask(this.gdat, bEdgeMask, mt: MaskType.Logical);
-        }
-        */
-
+   
         EdgeMask InnerAndDomainBoundary(CellMask cells) {
             //var subGrd = new SubGrid(cells);
             //var innerEdges = subGrd.InnerEdgesMask;
@@ -561,10 +510,11 @@ namespace BoSSS.Foundation.XDG {
         ///    \oint_{\partial K_j \cap \mathfrak{s} } \ldots \mathrm{dS} .
         /// ```
         /// </summary>
-        public EdgeQuadratureScheme GetEdgeQuadScheme(SpeciesId sp, bool UseDefaultFactories = true, EdgeMask IntegrationDomain = null, int? fixedOrder = null) {
+        public EdgeQuadratureScheme GetEdgeQuadScheme(SpeciesId sp, bool UseDefaultFactories = true, EdgeMask IntegrationDomain = null) {
             if (!this.SpeciesList.Contains(sp))
                 throw new ArgumentException("Given species (id = " + sp.cntnt + ") is not supported.");
 
+            int? fixedOrder = null;
             
             // determine domain
             // ================
@@ -630,8 +580,6 @@ namespace BoSSS.Foundation.XDG {
                         }
                     }
                 }
-                //}
-                
 
                 return edgeQrIns;
             }
@@ -728,23 +676,6 @@ namespace BoSSS.Foundation.XDG {
                 int cnt = 0;
                 JumpTypes jmpRet = JumpTypes.Implicit;
 
-                /*
-                int[] _i = new int[2];
-                for (_i[0] = 0; _i[0] < 2; _i[0]++) { // loop over signs of level-set 0 ...
-                    for (_i[1] = 0; _i[1] < 2; _i[1]++) { // loop over signs of level-set 1 ...
-                        if (speciesTable[_i[0], _i[1]] == spN) {
-                            cnt++;
-
-                            if (_i[levSetIdx] == 0)
-                                jmpRet = JumpTypes.OneMinusHeaviside;
-                            else if (_i[levSetIdx] == 1)
-                                jmpRet = JumpTypes.Heaviside;
-                            else
-                                throw new ApplicationException();
-                        }
-                    }
-                }
-                */
 
                 if (foundCell == false)
                     return JumpTypes.Heaviside; // no cell on this proc, so anyway pretty irrelevant
@@ -879,58 +810,6 @@ namespace BoSSS.Foundation.XDG {
             // return
             // ======
             return new EdgeQuadratureScheme(true, new EdgeMask(this.gdat, EdgBitMask));
-
-            /*
-
-            if (!this.GhostSupport)
-                throw new NotSupportedException();
-
-            // determine domain
-            // ================
-
-            var allRelevantEdges = this.GhostIntegrationDomain[sp];
-            if (IntegrationDomain != null) {
-                allRelevantEdges = allRelevantEdges.Intersect(IntegrationDomain);
-            }
-
-            // special treatment for the edges of agglomerated cells
-            // =====================================================
-            EdgeMask fuckedEdges = null;
-            {
-                var AggCells = this.CellAgglomeration.GetAgglomerator(sp).AggInfo.SourceCells;
-                if (AggCells != null && AggCells.NoOfItemsLocally > 0) {
-                    //int EdgB4 = allRelevantEdges.NoOfItemsGlobally;
-
-                    //allRelevantEdges = allRelevantEdges.Except(AggCellsSgrd.InnerEdgesMask); // option 1
-                    //allRelevantEdges = allRelevantEdges.Except(AggCellsSgrd.AllEdgesMask);   // option 2
-                    //                                                                          option 3: überhaupt nix
-
-                    fuckedEdges = allRelevantEdges.Intersect(this.CellAgglomeration.GetAgglomerator(sp).AggInfo.SourceCellsEdges);
-                }
-            }
-
-            // create Scheme
-            // =============
-            {
-                var GhostScheme = new EdgeQuadratureScheme(true, allRelevantEdges);
-
-                // use the HMF-rule on the edges of the agglomerated cells:
-                if (fuckedEdges != null) {
-                    foreach (var Kref in lsTrk.GridDat.Grid.RefElements) {
-                        for (int iLevSet = 0; iLevSet < lsTrk.LevelSets.Count; iLevSet++) { // loop over level sets...
-                            var cutEdges = fuckedEdges;
-                            cutEdges = cutEdges.Intersect(this.m_Subgrid4Kref_AllEdges[Kref]);
-                            var jmp = IdentifyWing(iLevSet, sp);
-                            var factory = this.lsTrk.GetXQuadFactoryHelper(MomentFittingVariant).GetEdgeRuleFactory(iLevSet, jmp, Kref);
-                            GhostScheme.AddFactory(factory, cutEdges);
-                        }
-                    }
-                }
-
-                // return
-                return GhostScheme;
-            }
-            */
         }
 
         /// <summary>
@@ -964,7 +843,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Fills up the volume scheme for species <paramref name="sp"/>.
         /// </summary>
-        public CellQuadratureScheme GetVolumeQuadScheme(SpeciesId sp, bool UseDefaultFactories = true, CellMask IntegrationDomain = null, int? fixedOrder = null) {
+        public CellQuadratureScheme GetVolumeQuadScheme(SpeciesId sp, bool UseDefaultFactories = true, CellMask IntegrationDomain = null) {
                 ilPSP.MPICollectiveWatchDog.Watch();
                 if (!this.SpeciesList.Contains(sp))
                     throw new ArgumentException("Given species (id = " + sp.cntnt + ") is not supported.");
@@ -975,7 +854,7 @@ namespace BoSSS.Foundation.XDG {
 
                 CellMask CellMask = GetCellMask(sp, IntegrationDomain);
 
-               
+                int? fixedOrder = null;
 
                 // default rule for "normal" cells
                 var volQrIns = (new CellQuadratureScheme(UseDefaultFactories, CellMask));
@@ -1047,22 +926,6 @@ namespace BoSSS.Foundation.XDG {
             return OutCellMask;
         }
 
-
-        /*
-        public CellQuadratureScheme bal(int iLevSet) {
-            var CutCells = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet);
-
-            foreach(var Kref in gdat.iGeomCells.RefElements) {
-                this.XDGSpaceMetrics.XQuadFactoryHelper._GetSurfaceElement_BoundaryRuleFactory()
-            }
-        }
-        */
-
-
-
-
-
-
         /// <summary>
         /// Quadrature scheme for the integration over the level-set <paramref name="iLevSet"/>, i.e. for each cut background-cell $ K_j $ a quadrature to approximate
         /// \[
@@ -1070,11 +933,11 @@ namespace BoSSS.Foundation.XDG {
         /// \]
         /// where $ \mathfrak{A} $ is the first species in <see cref="SpeciesList"/>.
         /// </summary>
-        public CellQuadratureScheme GetLevelSetQuadScheme(int iLevSet, CellMask IntegrationDom, int? fixedOrder = null) {
+        public CellQuadratureScheme GetLevelSetQuadScheme(int iLevSet, CellMask IntegrationDom) {
 
             var PossibleSpecies = Tracker.GetSpeciesSeparatedByLevSet(iLevSet).Select(Tracker.GetSpeciesId);
 
-            return GetLevelSetQuadScheme(iLevSet, PossibleSpecies.First(), PossibleSpecies.ElementAt(1), IntegrationDom, fixedOrder);
+            return GetLevelSetQuadScheme(iLevSet, PossibleSpecies.First(), PossibleSpecies.ElementAt(1), IntegrationDom);
         }
 
         /// <summary>
@@ -1090,13 +953,13 @@ namespace BoSSS.Foundation.XDG {
         /// In such a case, the quadrature will be assigned to the cell which contains a higher fraction of species <paramref name="spA"/>.
         /// (The volume fraction of each species in such cases should be either 1.0 or 0.0)
         /// </remarks>
-        public CellQuadratureScheme GetLevelSetQuadScheme(int iLevSet, SpeciesId spA, SpeciesId spB, CellMask IntegrationDom, int? fixedOrder = null) {
+        public CellQuadratureScheme GetLevelSetQuadScheme(int iLevSet, SpeciesId spA, SpeciesId spB, CellMask IntegrationDom) {
             if (IntegrationDom.MaskType == MaskType.Logical)
                 IntegrationDom = IntegrationDom.ToGeometicalMask();
             if(gdat.iGeomCells.RefElements.Length > 1)
                 throw new NotImplementedException("more than one reference element is currently not supported");
 
-            
+            int? fixedOrder = null;
 
 
             CellQuadratureScheme LevSetQrIns = new CellQuadratureScheme(

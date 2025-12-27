@@ -1166,8 +1166,8 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 EdgeQuadratureScheme emptyEdgeScheme = new EdgeQuadratureScheme(domain: EdgeMask.GetEmptyMask(grdDat));
 
                 EdgeQuadratureScheme posEdgesScheme, negEdgesScheme;
-                posEdgesScheme = SchHelper.GetEdgeQuadScheme(Tracker.GetSpeciesId("B"), UseDefaultFactories: false, IntegrationDomain: subGrid.InnerEdgesMask, fixedOrder: HMForder);
-                negEdgesScheme = SchHelper.GetEdgeQuadScheme(Tracker.GetSpeciesId("A"), UseDefaultFactories: false, IntegrationDomain: subGrid.InnerEdgesMask, fixedOrder: HMForder);
+                posEdgesScheme = SchHelper.GetEdgeQuadScheme(Tracker.GetSpeciesId("B"), UseDefaultFactories: false, IntegrationDomain: subGrid.InnerEdgesMask);
+                negEdgesScheme = SchHelper.GetEdgeQuadScheme(Tracker.GetSpeciesId("A"), UseDefaultFactories: false, IntegrationDomain: subGrid.InnerEdgesMask);
 
                 // integrate interface
                 // (Only the interface part contributes to the RHS; must be integrated fore EACH component.)
