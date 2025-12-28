@@ -395,20 +395,23 @@ namespace BoSSS.Foundation.Quadrature {
 
             // init & checks
             // =============
-
-            
-
+            if(order > this.m_quadorder)
+                throw new ArgumentException($"requested quadrature order to high (requested {order}, maximum allowed {this.m_quadorder})");
+            if(mask.GridData != m_maxEdgeDomain.GridData)
+                throw new ArgumentException("grid mismatch");            
             if (!(mask is EdgeMask))
                 throw new ArgumentException("Expecting an edge mask.");
             if (mask.MaskType != MaskType.Geometrical)
                 throw new ArgumentException("Expecting a geometrical mask.");
-
             if(!mask.IsSubMaskOf(m_maxEdgeDomain))
                 throw new ArgumentException("Cannot return quadrature rule for mask larger than initially specified");
 #if DEBUG
             var checkBitMask = new BitArray(grd.iGeomEdges.Count);
 #endif
 
+
+            // Extract rule for `mask` form the `m_QuadRule`
+            // =============================================
 
             var Ret = new List<ChunkRulePair<QuadRule>>();
 
@@ -439,7 +442,8 @@ namespace BoSSS.Foundation.Quadrature {
 
             }
 
-
+            // return
+            // ======
 #if DEBUG
             var maskBitMask = mask.GetBitMask();
             for(int i = 0; i < grd.iLogicalEdges.Count; i++) {
@@ -535,154 +539,7 @@ namespace BoSSS.Foundation.Quadrature {
 
         }
 
-        /*
-        // Basically the same, but drop nodes, that are not located on the edge!
-        private QuadRule CombineQrNonConformal(QuadRule qrEdge, CellBoundaryQuadRule givenRule, int iFace, int iEdge, int jCell) {
-            int D = grd.SpatialDimension;
-            var volSplx = m_cellBndQF.RefElement;
-            int coD = D - 1;
-            Debug.Assert(this.RefElement.SpatialDimension == coD);
-
-
-            //if (grd.MpiRank == 1 && this.m_cellBndQF.GetType().ToString().ToLowerInvariant().Contains("pointqrf")) {
-            //    Debugger.Launch();
-            //}
-
-
-            // extract edge rule
-            // -----------------
-
-            int i0 = 0, iE = 0;
-            for (int i = 0; i < iFace; i++)
-                i0 += givenRule.NumbersOfNodesPerFace[i];
-            iE = i0 + givenRule.NumbersOfNodesPerFace[iFace] - 1;
-
-            if (iE < i0) {
-                // rule is empty (measure is zero).
-
-                if (qrEdge == null) {
-                    QuadRule ret = new QuadRule();
-                    ret.OrderOfPrecision = int.MaxValue - 1;
-                    ret.Nodes = new NodeSet(this.RefElement, 1, Math.Max(1, D - 1), (givenRule.Nodes.Reference > 0));
-                    ret.Weights = MultidimensionalArray.Create(1);  // this is an empty rule, since the weight is zero!
-                    // (rules with zero nodes may cause problems at various places.)
-                    return ret;
-                } else {
-                    qrEdge.Nodes.Scale(0.5);
-                    qrEdge.Weights.Scale(0.5);
-                    return qrEdge;
-                }
-            }
-
-            // dbg_launch();
-
-            MultidimensionalArray NodesVol = givenRule.Nodes.ExtractSubArrayShallow(new int[] { i0, 0 }, new int[] { iE, D - 1 });
-            MultidimensionalArray Weigts = givenRule.Weights.ExtractSubArrayShallow(new int[] { i0 }, new int[] { iE }).CloneAs();
-            NodeSet Nodes = new NodeSet(this.RefElement, iE - i0 + 1, coD, false);
-
-            // as before, nodes from cell transformed to face
-            volSplx.GetInverseFaceTrafo(iFace).Transform(NodesVol, Nodes);
-            Nodes.LockForever();
-
-            // get edge endpoints 
-            var EdgeNodes = this.RefElement.Vertices;
-            NodeSet FaceNodes = new NodeSet(this.RefElement, this.RefElement.Vertices.NoOfNodes, coD, false);
-            // Transform to cell
-            int trf;
-            if (grd.Edges.CellIndices[iEdge, 0] == jCell) {
-                trf = grd.Edges.Edge2CellTrafoIndex[iEdge, 0];
-            } else {
-                trf = grd.Edges.Edge2CellTrafoIndex[iEdge, 1];
-            }
-            var CellNodes = EdgeNodes.GetVolumeNodeSet(grd, trf, false);
-            // Transform to face
-            volSplx.GetInverseFaceTrafo(iFace).Transform(CellNodes, FaceNodes);
-
-            // build transformation from face to edge
-            var Trafo = AffineTrafo.FromPoints(
-                FaceNodes.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { this.RefElement.SpatialDimension, this.RefElement.SpatialDimension -1 }), 
-                EdgeNodes.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { this.RefElement.SpatialDimension, this.RefElement.SpatialDimension - 1 }));
-            double scale = m_scaleReq ? Trafo.Matrix.Determinant() : 1.0;
-
-            // construct the NodeSet in edge local coordinates
-            NodeSet NodesEdge = new NodeSet(this.RefElement, Trafo.Transform(Nodes), false);
-
-            double[] NodesOnEdge = new double[0];
-            double[] WeightsOnEdge = new double[0];
-            int NoOfNodes = 0;
-            for (int i = 0; i < iE - i0 + 1; i++) {
-                // remove nodes, that are not located on this edge
-                double[] point = NodesEdge.ExtractSubArrayShallow(i, -1).To1DArray();
-                
-                double weight = Weigts[i] * scale;
-                if (this.RefElement.IsWithin(point)) {
-                    // take node
-                    NodesOnEdge = NodesOnEdge.Concat(point).ToArray();
-                    WeightsOnEdge = WeightsOnEdge.Concat(weight).ToArray();
-                    NoOfNodes++;
-                }
-                // else: drop node
-            }
-
-            // create empty if none of the points lies on this edge
-            if(NoOfNodes == 0) {
-                NodesOnEdge = NodesOnEdge.Concat(this.RefElement.Center.ExtractSubArrayShallow(0,-1).To1DArray()).ToArray();
-                WeightsOnEdge = WeightsOnEdge.Concat(0.0).ToArray();
-                NoOfNodes++;
-            }
-
-            // override the Node set with the "true" nodes located on the edge and in edge local coordinates
-            Nodes = new NodeSet(this.RefElement, MultidimensionalArray.CreateWrapper(NodesOnEdge, new int[] { NoOfNodes, this.RefElement.SpatialDimension }), qrEdge == null);
-            Weigts = MultidimensionalArray.CreateWrapper(WeightsOnEdge, new int[] { NoOfNodes });
-            Nodes.LockForever();
-
-            //Debug.Assert((Weigts.Sum() - grd.Grid.GridSimplex.EdgeSimplex.Volume).Abs() < 1.0e-6, "i've forgotten the gramian");
-
-            // combine 
-            // -------
-            if (qrEdge == null) {
-                // no rule defined yet - just set the one we have got
-                // ++++++++++++++++++++++++++++++++++++++++++++++++++
-                qrEdge = new QuadRule();
-                qrEdge.Weights = Weigts;
-                qrEdge.Nodes = Nodes;
-                qrEdge.OrderOfPrecision = givenRule.OrderOfPrecision;
-
-            } else {
-                // take the mean of already defined and new rule
-                // +++++++++++++++++++++++++++++++++++++++++++++
-
-                int L1 = qrEdge.Nodes.GetLength(0);
-                int L2 = Nodes.GetLength(0);
-                Debug.Assert(coD == qrEdge.Nodes.GetLength(1));
-
-                NodeSet newNodes = new NodeSet(this.RefElement, L1 + L2, coD, true);
-                newNodes.SetSubArray(qrEdge.Nodes, new int[] { 0, 0 }, new int[] { L1 - 1, coD - 1 });
-                newNodes.SetSubArray(Nodes, new int[] { L1, 0 }, new int[] { L1 + L2 - 1, coD - 1 });
-                newNodes.LockForever();
-
-                MultidimensionalArray newWeights = MultidimensionalArray.Create(L1 + L2);
-                newWeights.AccSubArray(0.5, qrEdge.Weights, new int[] { 0 }, new int[] { L1 - 1 });
-                newWeights.AccSubArray(0.5, Weigts, new int[] { L1 }, new int[] { L1 + L2 - 1 });
-
-                double oldSum = qrEdge.Weights.Sum();
-                double newSum = Weigts.Sum();
-                WeightInbalance += Math.Abs(oldSum - newSum);
-
-
-                qrEdge.Nodes = newNodes;
-                qrEdge.Weights = newWeights;
-                qrEdge.OrderOfPrecision = Math.Min(qrEdge.OrderOfPrecision, givenRule.OrderOfPrecision);
-
-            }
-
-            // return
-            // ------
-            return qrEdge;
-
-        }
-        */
-
+     
         /// <summary>
         /// total difference between quadrature weights on both sides of an edge
         /// </summary>
