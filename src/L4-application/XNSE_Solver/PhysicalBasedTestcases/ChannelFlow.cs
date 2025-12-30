@@ -59,6 +59,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             int D = 2;
             C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
 
+
             //if (D == 3)
             //    C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Classic;
 
@@ -102,9 +103,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     SaveToDB = FieldOpts.SaveToDBOpt.TRUE
                 });
             }
-            C.FieldOptions.Add("GravityY", new FieldOpts() {
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            //C.FieldOptions.Add("GravityY", new FieldOpts() {
+            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            //});
             C.FieldOptions.Add("Pressure", new FieldOpts() {
                 Degree = p - 1,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
@@ -439,9 +440,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
 
-            //C.LinearSolver = LinearSolverCode.exp_Kcycle_schwarz.GetConfig();
-            //C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            //C.LevelSet_ConvergenceCriterion = 1e-6;
+            //C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            C.LevelSet_ConvergenceCriterion = 1e-6;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
@@ -453,7 +455,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.ReInitPeriod = 1;
             //C.ReInitOnRestart = true;  
 
-            C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
+            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
 
             //C.Option_LevelSetEvolution = LevelSetEvolution.Prescribed;
             //C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
@@ -468,7 +470,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.SkipSolveAndEvaluateResidual = true;
 
 
-            C.AdaptiveMeshRefinement = true;
+            C.AdaptiveMeshRefinement = false;
             C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
             C.AMR_startUpSweeps = 1;
 
