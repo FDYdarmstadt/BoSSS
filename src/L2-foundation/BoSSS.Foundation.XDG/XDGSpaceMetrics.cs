@@ -21,12 +21,24 @@ namespace BoSSS.Foundation.XDG {
     /// </summary>
     public sealed class XDGSpaceMetrics {
 
-        XQuadFactoryHelperBase m_qfHelper;
+        
+        static XQuadFactoryHelperBase GetXQuadFactoryHelper(CutCellQuadratureMethod variant, LevelSetTracker.LevelSetData[] lsDatas) {
+            XQuadFactoryHelperBase qfHelper;
+            if(variant == CutCellQuadratureMethod.Algoim) {
+                qfHelper = new XQuadFactoryHelperAlgoim(
+                    lsDatas);
+            } else {
+                qfHelper = new XQuadFactoryHelper(
+                    lsDatas,
+                    variant);
+            }
+            return qfHelper;
+        }
 
         /// <summary>
         /// ctor.
         /// </summary>
-        internal XDGSpaceMetrics(LevelSetTracker lsTrk, XQuadFactoryHelperBase qfHelper, int __quadorder, SpeciesId[] speciesIds, int HistoyIndex) {
+        internal XDGSpaceMetrics(LevelSetTracker lsTrk, int __quadorder, SpeciesId[] speciesIds, int HistoryIndex) {
             using(new FuncTrace("XDGSpaceMetrics.ctor")) {
                 // ----
                 // init 
@@ -39,34 +51,38 @@ namespace BoSSS.Foundation.XDG {
                     throw new ArgumentException();
                 }
                 CutCellQuadOrder = __quadorder;
-                m_qfHelper = qfHelper;
                 this.Tracker = lsTrk;
                 this.m_SpeciesList = speciesIds.ToArray();
 
-                m_LevelSetRegions = lsTrk.RegionsHistory[HistoyIndex];
-                m_LevelSetData = lsTrk.DataHistories.Select(his => his[HistoyIndex]).ToList().AsReadOnly();
+                m_LevelSetRegions = lsTrk.RegionsHistory[HistoryIndex];
+                m_LevelSetData = lsTrk.DataHistories.Select(his => his[HistoryIndex]).ToList().AsReadOnly();
                 foreach(var lsData in m_LevelSetData) {
-                    Debug.Assert(lsData.HistoryIndex == HistoyIndex);
+                    Debug.Assert(lsData.HistoryIndex == HistoryIndex);
                 }
 
                 // ---------------------
                 // compute all the stuff
                 // ---------------------
+                m_qfHelper = GetXQuadFactoryHelper(lsTrk.CutCellQuadratureType, m_LevelSetData.ToArray());
+                m_XQuadSchemeHelper = new XQuadSchemeHelper(this);
 
                 m_CutCellMetrics = new CutCellMetrics(this);
                 m_MassMatrixFactory = new MassMatrixFactory(this);
-                m_XQuadSchemeHelper = new XQuadSchemeHelper(this);
             }
         }
+
+        XQuadFactoryHelperBase m_qfHelper;
+
 
         /// <summary>
         /// Provides access to quadrature factories; however, most of the time the user wants to use schemes, <see cref="XQuadSchemeHelper"/>.
         /// </summary>
         public XQuadFactoryHelperBase XQuadFactoryHelper {
             get {
-                return m_qfHelper;
+                return m_qfHelper;                
             }
         }
+        
 
         readonly XQuadSchemeHelper m_XQuadSchemeHelper;
 
@@ -78,7 +94,7 @@ namespace BoSSS.Foundation.XDG {
                 return m_XQuadSchemeHelper;
             }
         }
-
+  
 
         readonly MassMatrixFactory m_MassMatrixFactory;
         

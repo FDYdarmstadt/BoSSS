@@ -97,11 +97,13 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// ctor.
         /// </summary>
-        internal XQuadSchemeHelper(XDGSpaceMetrics __XDGSpaceMetrics) {
+        internal XQuadSchemeHelper(XDGSpaceMetrics __XDGSpaceMetrics) {            
             MPICollectiveWatchDog.Watch();
             this.XDGSpaceMetrics = __XDGSpaceMetrics;
             ConstructorCommon();
         }
+
+        
 
         /// <summary>
         /// creates all objects which require MPI-collective calls at the beginning, 
@@ -110,6 +112,9 @@ namespace BoSSS.Foundation.XDG {
         private void ConstructorCommon() {
             var Krefs = this.gdat.iGeomCells.RefElements;
             var KrefsEdges = this.gdat.iGeomEdges.EdgeRefElements;
+
+
+         
 
             // initialize some mask's and subgrids
             // ===================================
@@ -178,6 +183,18 @@ namespace BoSSS.Foundation.XDG {
                         //CellBoundaryLayer_Bitmask.Add((spId, iLevSet), cellBoundaryLayer.GetBitMaskWithExternal());
                     }
                 }
+            }
+        }
+
+      
+
+
+        /// <summary>
+        /// Provides access to quadrature factories; however, most of the time the user wants to use schemes, <see cref="XQuadSchemeHelper"/>.
+        /// </summary>
+        public XQuadFactoryHelperBase XQuadFactoryHelper {
+            get {
+                return this.XDGSpaceMetrics.XQuadFactoryHelper;                
             }
         }
 
@@ -319,7 +336,7 @@ namespace BoSSS.Foundation.XDG {
                 //for (int iLevSet = 0; iLevSet < XDGSpaceMetrics.NoOfLevelSets; iLevSet++) { // loop over level sets...
                 {
                     EdgeMask cutEdges = this.GetCutEdges(KrefEdge, iLevSet);
-                    var factory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, KrefEdge);
+                    var factory = this.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, KrefEdge);
                     edgeQrIns.AddFactory(factory, cutEdges);
                 }
             }
@@ -348,8 +365,8 @@ namespace BoSSS.Foundation.XDG {
                                     if(_doublyCut.NoOfItemsLocally <= 0)
                                         continue;
 
-                                    var backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, KrefEdge);
-                                    var factory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, jLevSet, jmpJ, Kref, backupFactory);
+                                    var backupFactory = this.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, KrefEdge);
+                                    var factory = this.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, jLevSet, jmpJ, Kref, backupFactory);
                                     edgeQrIns.AddFactory(factory, _doublyCut);
                                 }
                             }
@@ -468,9 +485,9 @@ namespace BoSSS.Foundation.XDG {
                     if(doublyCut.Count() > 0) {
                         var jmpJ = IdentifyWingA(iLevSet1, sp);
                         var KrefEdge = gdat.iGeomEdges.EdgeRefElements.Single();
-                        var backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet0, KrefEdge);
+                        var backupFactory = this.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet0, KrefEdge);
                         
-                        var intersectionFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetIntersectionRuleFactory(iLevSet0, iLevSet1, Kref, backupFactory);
+                        var intersectionFactory = this.XQuadFactoryHelper.GetIntersectionRuleFactory(iLevSet0, iLevSet1, Kref, backupFactory);
                         LevSetQrIns.AddFactory(intersectionFactory, doublyCut);
                     }
                 }
@@ -489,8 +506,8 @@ namespace BoSSS.Foundation.XDG {
                     var intersectionFactory = new Quadrature.LevelSetOnEdge.InterfacesIntersection(
                         Kref, XDGSpaceMetrics.LevelSetRegions,
                         iLevSet0, iLevSet1,
-                        this.XDGSpaceMetrics.XQuadFactoryHelper._GetSurfaceElement_BoundaryRuleFactory(iLevSet0, Kref),
-                        this.XDGSpaceMetrics.XQuadFactoryHelper._GetSurfaceElement_BoundaryRuleFactory(iLevSet1, Kref),
+                        this.XQuadFactoryHelper._GetSurfaceElement_BoundaryRuleFactory(iLevSet0, Kref),
+                        this.XQuadFactoryHelper._GetSurfaceElement_BoundaryRuleFactory(iLevSet1, Kref),
                         this.XDGSpaceMetrics.CutCellMetrics.CutCellVolumes[sp]
                         );
 
@@ -538,7 +555,7 @@ namespace BoSSS.Foundation.XDG {
                                 throw new ArithmeticException("Edges of the Cells" + difference.GetSummary() + " are detected as cut, but these cells are not contained in the cut Cell-Mask of the Level-Set-Tracker");
 #endif
                             var jmp = IdentifyWingA(iLevSet, sp);
-                            var factory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetEdgeRuleFactory(iLevSet, jmp, KrefEdge);
+                            var factory = this.XQuadFactoryHelper.GetEdgeRuleFactory(iLevSet, jmp, KrefEdge);
                             edgeQrIns.AddFactoryDomainPair(factory, cutEdges, fixedOrder);
                         }
                     }
@@ -570,8 +587,8 @@ namespace BoSSS.Foundation.XDG {
                                                 continue;
 
 
-                                            var backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetEdgeRuleFactory(iLevSet, jmp, KrefEdge);
-                                            var twoLSFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetEdgeRuleFactory(iLevSet, jmp, jLevSet, jmpJ, Kref, backupFactory);
+                                            var backupFactory = this.XQuadFactoryHelper.GetEdgeRuleFactory(iLevSet, jmp, KrefEdge);
+                                            var twoLSFactory = this.XQuadFactoryHelper.GetEdgeRuleFactory(iLevSet, jmp, jLevSet, jmpJ, Kref, backupFactory);
                                             edgeQrIns.AddFactoryDomainPair(twoLSFactory, _doublyCut, fixedOrder);
                                         }
                                     }
@@ -869,7 +886,7 @@ namespace BoSSS.Foundation.XDG {
 
                         for (int iKref = 0; iKref < gdat.iGeomCells.RefElements.Length; iKref++) {
                             RefElement Kref = gdat.iGeomCells.RefElements[iKref];
-                            var factory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetVolRuleFactory(iLevSet, jmp, Kref);
+                            var factory = this.XQuadFactoryHelper.GetVolRuleFactory(iLevSet, jmp, Kref);
                             var _cutDom = cutCells.Intersect(gdat.iGeomCells.GetCells4Refelement(Kref));
                             volQrIns.AddFactoryDomainPair(factory, _cutDom, fixedOrder);
                         }
@@ -895,8 +912,8 @@ namespace BoSSS.Foundation.XDG {
 
                                     if (doublyCut.Count() > 0) {
                                         var jmpJ = IdentifyWingA(jLevSet, sp);
-                                        var backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetVolRuleFactory(iLevSet, jmp, Kref);
-                                        var twoLSFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetVolRuleFactory(iLevSet, jmp, jLevSet, jmpJ, Kref, backupFactory);
+                                        var backupFactory = this.XQuadFactoryHelper.GetVolRuleFactory(iLevSet, jmp, Kref);
+                                        var twoLSFactory = this.XQuadFactoryHelper.GetVolRuleFactory(iLevSet, jmp, jLevSet, jmpJ, Kref, backupFactory);
                                         volQrIns.AddFactoryDomainPair(twoLSFactory, doublyCut, fixedOrder);
                                     }
                                 }
@@ -969,7 +986,7 @@ namespace BoSSS.Foundation.XDG {
             // "ordinary" cut cells for level set `iLevSet`
             // ============================================
             foreach(var Kref in gdat.iGeomCells.RefElements) {
-                var surfaceFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, Kref);
+                var surfaceFactory = this.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, Kref);
 
                 // exclude doubly-cut cells;
                 // (should not be necessary, because for a quadrature scheme, the rules which come later would overwrite the earier ones)
@@ -1001,7 +1018,7 @@ namespace BoSSS.Foundation.XDG {
                             //var jmpA = IdentifyWingA(jLevSet, spA);
                             var jmpA = GetTrimmingLevelSetSign(iLevSet, jLevSet, spA, spB);
 
-                            var twoLSFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, jLevSet, jmpA, Kref, null);
+                            var twoLSFactory = this.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, jLevSet, jmpA, Kref, null);
                             LevSetQrIns.AddFactoryDomainPair(twoLSFactory, doublyCut, fixedOrder);
                         }
                     }
@@ -1041,7 +1058,7 @@ namespace BoSSS.Foundation.XDG {
                                 var jmpA = GetTrimmingLevelSetSign(iLevSet, jLevSet, spA, spB);
 
                                 var KrefEdge = gdat.iGeomEdges.EdgeRefElements.Single();
-                                var trimming_factory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetEdgeRuleFactory(jLevSet, jmpA, KrefEdge);
+                                var trimming_factory = this.XQuadFactoryHelper.GetEdgeRuleFactory(jLevSet, jmpA, KrefEdge);
 
                                 var dblCutEdges = this.GetCutEdges(KrefEdge, jLevSet);
 
@@ -1084,7 +1101,7 @@ namespace BoSSS.Foundation.XDG {
 
             // test parameters
             var jmp = Foundation.XDG.Quadrature.JumpTypes.Heaviside;
-            var sch = this.XDGSpaceMetrics.XQuadFactoryHelper;
+            var sch = this.XQuadFactoryHelper;
             var spNm = this.XDGSpaceMetrics.LevelSetRegions.GetSpeciesName(spc);
             //var spId = LsTrk.GetSpeciesId(spNm);
             var DomainOfInterest = XDGSpaceMetrics.LevelSetRegions.GetCutCellSubgrid4LevSet(iLevSet);

@@ -31,40 +31,6 @@ namespace BoSSS.Foundation.XDG {
 
     partial class LevelSetTracker {
 
-        HistoryStack<Dictionary<(CutCellQuadratureMethod method, int QuadOrder),  XQuadFactoryHelperBase>> m_QuadFactoryHelpersHistory = null;
-
-        /// <summary>
-        /// Central 'factory' for creating Level Set - related quadrature.
-        /// </summary>
-        /// <remarks>
-        /// The centralized approach should avoid multiple creation of the same quadrature rule.
-        /// </remarks>
-        XQuadFactoryHelperBase GetXQuadFactoryHelper(CutCellQuadratureMethod variant, int QuadOrder, int HistoryIndex = 1) {
-            var dict = m_QuadFactoryHelpersHistory[HistoryIndex];
-
-            var key = (variant, QuadOrder);
-
-            if(!dict.ContainsKey(key)) {
-
-                XQuadFactoryHelperBase qfHelper;
-                if(variant == CutCellQuadratureMethod.Algoim) {
-                    qfHelper = new XQuadFactoryHelperAlgoim(
-                        this.DataHistories.Select(hist => hist[HistoryIndex]).ToArray());
-                } else {
-                    qfHelper = new XQuadFactoryHelper(
-                        this.DataHistories.Select(hist => hist[HistoryIndex]).ToArray(),
-                        variant);
-                }
-                qfHelper.CreateRulesAndMPIExchgange(QuadOrder);
-
-                dict.Add(key, qfHelper);
-            }
-                
-
-            return dict[key];
-        }
-
-
         HistoryStack<Dictionary<Tuple<SpeciesId[], CutCellQuadratureMethod, int>, XDGSpaceMetrics>> m_XDGSpaceMetricsHistory = null;
         
         Dictionary<Tuple<SpeciesId[], CutCellQuadratureMethod, int>, XDGSpaceMetrics> NewXDGSpaceMetricsCache() {
@@ -171,15 +137,12 @@ namespace BoSSS.Foundation.XDG {
 #endif
             var CutCellsQuadType = this.CutCellQuadratureType;
 
-
-
-            //throw new NotImplementedException("todo");
             var dict = m_XDGSpaceMetricsHistory[HistoryIndex];
             var key = Tuple.Create(_Spc, this.CutCellQuadratureType, CutCellsQuadOrder);
             if (!dict.ContainsKey(key)) {
                 dict.Add(key,
                     new XDGSpaceMetrics(this,
-                        GetXQuadFactoryHelper(CutCellsQuadType, CutCellsQuadOrder, HistoryIndex),
+                        //GetXQuadFactoryHelper(CutCellsQuadType, CutCellsQuadOrder, HistoryIndex),
                         CutCellsQuadOrder,
                         _Spc,
                         HistoryIndex

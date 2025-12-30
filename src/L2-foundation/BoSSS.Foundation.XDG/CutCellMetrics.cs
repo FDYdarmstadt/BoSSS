@@ -518,8 +518,8 @@ namespace BoSSS.Foundation.XDG {
                 int NoOfLevelSets = this.XDGSpaceMetrics.NoOfLevelSets;
                 int[,] E2C = gd.iLogicalEdges.CellIndices;
 
-                //var schH = new XQuadSchemeHelper(XDGSpaceMetrics);
-                var schH = this.XDGSpaceMetrics.XQuadSchemeHelper;
+                var schH = new XQuadSchemeHelper(XDGSpaceMetrics);
+                //var schH = this.XDGSpaceMetrics.XQuadSchemeHelper;
 
                 // collect all per-cell-metrics in the same MultidimArry, for MPI-exchange (only 1 exchange instead of three, saving some overhead)
                 // 1st index: cell

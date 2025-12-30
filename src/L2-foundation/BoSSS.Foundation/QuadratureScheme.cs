@@ -167,7 +167,7 @@ namespace BoSSS.Foundation.Quadrature {
         public readonly IIntegrationMetric IntegrationMetric;
 
 
-        bool m_UseDefaultFactories;
+        protected readonly bool m_UseDefaultFactories;
 
         #region IQuadratureInstruction<TQuadRule,TDomain> Members
 
@@ -420,6 +420,7 @@ namespace BoSSS.Foundation.Quadrature {
             return RefElements;
         }
 
+            
 #endregion
 
         /// <summary>
@@ -689,6 +690,8 @@ namespace BoSSS.Foundation.Quadrature {
             scheme = (scheme ?? new EdgeQuadratureScheme(true));
             return scheme.Compile(g, order);
         }
+
+        
     }
 
     /// <summary>
@@ -804,6 +807,19 @@ namespace BoSSS.Foundation.Quadrature {
         //    return this;
         //}
 
+        /// <summary>
+        /// Restricts the <see cref="Domain"/> to elements which are included in <paramref name="mask"/>
+        /// </summary>
+        public CellQuadratureScheme Restrict(CellMask mask) {
+            if(mask.MaskType == MaskType.Logical)
+                mask = mask.ToGeometicalMask();
+            var restDomain = this.Domain.Intersect(mask);
+            var ret = new CellQuadratureScheme(this.IntegrationMetric, this.m_UseDefaultFactories, restDomain);
+            foreach(var kkk in this.FactoryChain) {
+                this.AddFactoryDomainPair(kkk.RuleFactory, kkk.Domain);
+            }
+            return ret;
+        }
 
     }
 
@@ -911,6 +927,20 @@ namespace BoSSS.Foundation.Quadrature {
         /// </param>
         protected override IQuadRuleFactory<QuadRule> GetDefaultRuleFactory(IGridData gridData, RefElement Kref) {
             return new StandardQuadRuleFactory(Kref);
+        }
+
+        /// <summary>
+        /// Restricts the <see cref="Domain"/> to elements which are included in <paramref name="mask"/>
+        /// </summary>
+        public EdgeQuadratureScheme Restrict(EdgeMask mask) {
+            if(mask.MaskType == MaskType.Logical)
+                mask = mask.ToGeometicalMask();
+            var restDomain = this.Domain.Intersect(mask);
+            var ret = new EdgeQuadratureScheme(this.IntegrationMetric, this.m_UseDefaultFactories, restDomain);
+            foreach(var kkk in this.FactoryChain) {
+                this.AddFactoryDomainPair(kkk.RuleFactory, kkk.Domain);
+            }
+            return ret;
         }
     }
 

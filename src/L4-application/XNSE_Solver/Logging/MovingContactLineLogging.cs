@@ -167,19 +167,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             LevelSetGradient.Gradient(1.0, (SinglePhaseField)LsTrk.LevelSets[0]);
             SinglePhaseField[] Normals = LevelSetGradient.ToArray();
 
-            XQuadSchemeHelper SchemeHelper = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder).XQuadSchemeHelper;
-            EdgeQuadratureScheme SurfaceElement_Edge = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(this.LsTrk.GetSpeciesId("A"), this.LsTrk.GetSpeciesId("B"), 0);
+            XQuadSchemeHelper SchemeHelper = this.LsTrk.GetXDGSpaceMetrics(this.m_HMForder).XQuadSchemeHelper;
+            EdgeQuadratureScheme SurfaceElement_Edge = SchemeHelper
+                .Get_SurfaceElement_EdgeQuadScheme(this.LsTrk.GetSpeciesId("A"), this.LsTrk.GetSpeciesId("B"), 0)
+                .Restrict(this.LsTrk.GridDat.GetBoundaryEdgeMask());
 
-            var gridDat = (GridData)this.SolverMainOverride.GridData;
-            var QuadDom = SurfaceElement_Edge.Domain;
-            var boundaryEdge = gridDat.GetBoundaryEdgeMask().GetBitMask();
-            var boundaryCutEdge = QuadDom.Intersect(new EdgeMask(gridDat, boundaryEdge, MaskType.Geometrical));
-
-            var factory = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder).XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(0, LsTrk.GridDat.Grid.RefElements[0]);
-            SurfaceElement_Edge = new EdgeQuadratureScheme(factory, boundaryCutEdge);
-            
             EdgeQuadrature.GetQuadrature(new int[] { 5 }, LsTrk.GridDat,
-                SurfaceElement_Edge.Compile(LsTrk.GridDat, 0),
+                SurfaceElement_Edge.Compile(LsTrk.GridDat, this.m_HMForder),
                 delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
 
                     // contact point
@@ -221,11 +215,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     //EvalResult[0, 0, 2 * D] = (theta > 180) ? theta - 180 : theta;
                     //Console.WriteLine("contact angle = {0}", EvalResult[0, 0, 2 * D]);
 
-                    double[] surfNormal = new double[] { normal_IN[0, 0, 0], normal_IN[0, 0, 1] };
-                    double[] edgeNormal = new double[] { LsTrk.GridDat.Edges.NormalsForAffine[i0, 0], LsTrk.GridDat.Edges.NormalsForAffine[i0, 1] };
-                    Console.WriteLine("surf normal = ({0}, {1})", surfNormal[0], surfNormal[1]);
-                    Console.WriteLine("edge normal = ({0}, {1})", edgeNormal[0], edgeNormal[1]);
-                    double contactAngle = GetAngleBetweenNormals(surfNormal, edgeNormal);
+                    var surfNormal = normal_IN.GetRowPt(0, 0);
+                    var edgeNormal =  LsTrk.GridDat.Edges.NormalsForAffine.GetRowPt(i0);
+                    //double[] surfNormal = new double[] { normal_IN[0, 0, 0], normal_IN[0, 0, 1] };
+                    //double[] edgeNormal = new double[] { LsTrk.GridDat.Edges.NormalsForAffine[i0, 0], LsTrk.GridDat.Edges.NormalsForAffine[i0, 1] };
+                    //Console.WriteLine("surf normal = ({0}, {1})", surfNormal[0], surfNormal[1]);
+                    //Console.WriteLine("edge normal = ({0}, {1})", edgeNormal[0], edgeNormal[1]);
+                    double contactAngle = surfNormal.AngleTo(edgeNormal);
+                    //double contactAngle = GetAngleBetweenNormals(surfNormal, edgeNormal);
 
                     EvalResult[0, 0, 2 * D] = (Math.PI - contactAngle) * (180.0 / Math.PI);
                     //Console.WriteLine("contact angle = {0}", EvalResult[0, 0, 2 * D]);
@@ -254,14 +251,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         }
 
 
-        double GetAngleBetweenNormals(double[] a, double[] b) {
-
-            double scalarProdcut = (a[0] * b[0]) + (a[1] * b[1]);
-            double aNorm = Math.Sqrt(a[0].Pow2() + a[1].Pow2());
-            double bNorm = Math.Sqrt(b[0].Pow2() + b[1].Pow2());
-
-            return Math.Acos(scalarProdcut / (aNorm * bNorm));
-        }
+        // double GetAngleBetweenNormals(double[] a, double[] b) {
+        //     double scalarProdcut = (a[0] * b[0]) + (a[1] * b[1]);
+        //     double aNorm = Math.Sqrt(a[0].Pow2() + a[1].Pow2());
+        //     double bNorm = Math.Sqrt(b[0].Pow2() + b[1].Pow2());
+        //     return Math.Acos(scalarProdcut / (aNorm * bNorm));
+        // }
 
 
     }
