@@ -3005,7 +3005,8 @@ namespace BoSSS.Solution {
                     int trackerVersion = remshDat.SetNewTracker(this.LsTrk);
 
                     CreateFields(); // full user control   
-                                    //PostRestart(physTime, TimeStepNo);
+                    //PostRestart(physTime, TimeStepNo);
+                    SetInternalTimestepNumber(TimeStepNo);
 
                     if(this.LsTrk != null) {
                         if(this.LsTrk.Regions.Time != physTime)
@@ -3014,8 +3015,8 @@ namespace BoSSS.Solution {
 
                     if (plotAdaption)
                         PlotCurrentState(physTime, new TimestepNumber(new int[] { TimeStepNo, 11 }), 2);
-                    
-                    if (IsInit && this.Control.RestartInfo != null)
+
+                    if(IsInit && this.Control.RestartInfo != null)
                         PostRestart(physTime, TimeStepNo);
 
                     ReCreateEquationAndSolvers(IsInit, remshDat, physTime);
@@ -3861,6 +3862,15 @@ namespace BoSSS.Solution {
         /// </summary>
         public virtual void PostRestart(double time, TimestepNumber timestep) {
         }
+
+
+        /// <summary>
+        /// intermediate helper method to update the internal timestep counter, e.g ReInit period after AMR
+        /// </summary>
+        /// <param name="timestep"></param>
+        public virtual void SetInternalTimestepNumber(TimestepNumber timestep) {     
+        }
+
 
         /// <summary>
         /// Override this method in order to construct a

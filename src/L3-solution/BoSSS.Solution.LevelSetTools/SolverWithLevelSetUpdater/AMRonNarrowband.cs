@@ -97,6 +97,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         public int levelSet = -1; // level set this Indicator should be active on
 
+
+        [JsonProperty]
+        public bool useUnion = false; // if true the union of narrowband and given edgeTag is refined, else only the intersection of both sets.
+
         [JsonProperty]
         private byte[] m_EdgeTags;
 
@@ -130,13 +134,31 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         atBoundary = true;
                 }
 
-
-                if (band.Contains(j) && atBoundary && currentLevel < maxRefinementLevel) {
-                    levels[j] = 1;
-                    cellsToRefine++;
-                } else if ((!band.Contains(j) || !atBoundary) && currentLevel > 0) {
-                    levels[j] = -1;
-                    cellsToCoarse++;
+                if (useUnion)
+                {
+                    if ((band.Contains(j) || atBoundary) && currentLevel < maxRefinementLevel)
+                    {
+                        levels[j] = 1;
+                        cellsToRefine++;
+                    }
+                    else if (!band.Contains(j) && !atBoundary && currentLevel > 0)
+                    {
+                        levels[j] = -1;
+                        cellsToCoarse++;
+                    }
+                }
+                else
+                {
+                    if (band.Contains(j) && atBoundary && currentLevel < maxRefinementLevel)
+                    {
+                        levels[j] = 1;
+                        cellsToRefine++;
+                    }
+                    else if ((!band.Contains(j) || !atBoundary) && currentLevel > 0)
+                    {
+                        levels[j] = -1;
+                        cellsToCoarse++;
+                    }
                 }
             }
 

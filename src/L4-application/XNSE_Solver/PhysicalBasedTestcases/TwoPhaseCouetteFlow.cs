@@ -14,24 +14,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.IO;
+using BoSSS.Solution.AdvancedSolvers;
+using BoSSS.Solution.Control;
+using BoSSS.Solution.LevelSetTools;
+using BoSSS.Solution.LevelSetTools.FourierLevelSet;
+using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
+using BoSSS.Solution.Timestepping;
+using BoSSS.Solution.XdgTimestepping;
+using BoSSS.Solution.XNSECommon;
+using ilPSP;
+using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
-using ilPSP;
-using ilPSP.Utils;
-using BoSSS.Solution.Control;
-using BoSSS.Solution.AdvancedSolvers;
-using BoSSS.Solution.XNSECommon;
-using BoSSS.Foundation.IO;
-using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.Grid.Classic;
-using BoSSS.Solution.XdgTimestepping;
-using BoSSS.Solution.LevelSetTools.FourierLevelSet;
-using BoSSS.Solution.Timestepping;
-using BoSSS.Solution.LevelSetTools;
 
 namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
@@ -44,7 +44,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control Couette_GNBC(int tc = 2, int p = 3, int kelem = 12, double dt = 0.02, string _DbPath = null) {
+        public static XNSE_Control Couette_GNBC(int tc = 1, int p = 3, int kelem = 6, double dt = 0.02, string _DbPath = null) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -64,7 +64,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
             //C.LogPeriod = 1;
-            C.PostprocessingModules.Add(new MovingContactLineLogging());
+            C.PostprocessingModules.Add(new MovingContactLineLogging() { SolverStage = 2, LogPeriod = 5 });
             #endregion
 
 
@@ -287,10 +287,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.AdaptiveMeshRefinement = true;
-            //C.RefineStrategy = XNSE_Control.RefinementStrategy.ContactLineRefined;
-            //C.RefineNavierSlipBoundary = false;
-            //C.BaseRefinementLevel  0;
-            //C.RefinementLevel = 1;
+            C.activeAMRlevelIndicators.Add(new AMRonNarrowbandAtBoundary(new byte[] { 1, 2 }) { useUnion = true, maxRefinementLevel = 1 }); 
+            C.AMR_startUpSweeps = 1;
 
             #endregion
 
@@ -299,7 +297,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF3;
             //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
@@ -307,8 +305,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //double dt = 1e-1;
             C.dtMax = dt;
             C.dtMin = dt;
-            C.Endtime = 200;
-            C.NoOfTimesteps = (int)(200.0 / (dt));
+            C.Endtime = 160;
+            C.NoOfTimesteps = (int)(160.0 / (dt));
             C.saveperiod = 2;
 
             #endregion

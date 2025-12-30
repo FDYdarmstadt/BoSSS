@@ -4,6 +4,7 @@ using BoSSS.Solution;
 using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.NSECommon;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,7 +18,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// the generic type is necessary to make the methods e.g. <see cref="CurrentVel"/> also available in solvers
     /// deriving from <see cref="XNSE{T}"/>. otherwise we are unable to cast e.g. XNSE<T> to XNSE<P> where T:P.
     /// </summary>
-    public abstract class XNSEinSituPostProcessingModule<T> : InSituPostProcessingModule where T:XNSE_Control, new() {
+    public abstract class XNSEinSituPostProcessingModule<T> : InSituPostProcessingModule where T : XNSE_Control, new() {
 
         /// <summary>
         /// reference to solver application class

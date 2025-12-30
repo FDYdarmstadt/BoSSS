@@ -186,15 +186,19 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     NodeSet Enode_l = QR.Nodes;
                     int trf = LsTrk.GridDat.Edges.Edge2CellTrafoIndex[i0, 0];
                     NodeSet Vnode_l = Enode_l.GetVolumeNodeSet(LsTrk.GridDat, trf, false);
-                    NodeSet Vnode_g = Vnode_l.CloneAs();
+                    //NodeSet Vnode_g = Vnode_l.CloneAs();
+                    int D = base.SolverMainOverride.Grid.SpatialDimension;
+                    MultidimensionalArray Vnode_g = MultidimensionalArray.Create(QR.NoOfNodes, D);
                     int cell = LsTrk.GridDat.Edges.CellIndices[i0, 0];
                     LsTrk.GridDat.TransformLocal2Global(Vnode_l, Vnode_g, cell);
                     //Console.WriteLine("contact point: ({0},{1})", Vnode_g[0, 0], Vnode_g[0, 1]);
 
-                    int D = base.SolverMainOverride.Grid.SpatialDimension;
+                    double[] cp = new double[D];
                     for (int d = 0; d < D; d++) {
-                        EvalResult[0, 0, d] = Vnode_g[0, d];
+                        //EvalResult[0, 0, d] = Vnode_g[0, d];
+                        cp[d] = Vnode_g[0, d];
                     }
+                    contactPoints.Add(cp);
 
                     // contact line velocity
                     MultidimensionalArray U_IN = MultidimensionalArray.Create(new int[] { 1, 1, D });
@@ -203,9 +207,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                         (meanVelocity[d] as SinglePhaseField).EvaluateEdge(i0, length, QR.Nodes, U_IN.ExtractSubArrayShallow(-1, -1, d), U_OUT.ExtractSubArrayShallow(-1, -1, d));
                     }
 
+                    double[] cpV = new double[D];
                     for (int d = 0; d < D; d++) {
-                        EvalResult[0, 0, 2 + d] = U_IN[0, 0, d];
+                        //EvalResult[0, 0, 2 + d] = U_IN[0, 0, d];
+                        cpV[d] = U_IN[0, 0, d];
                     }
+                    contactVelocities.Add(cpV);
 
                     // contact angle
                     MultidimensionalArray normal_IN = MultidimensionalArray.Create(new int[] { 1, 1, D });
@@ -223,29 +230,30 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
                     double[] surfNormal = new double[] { normal_IN[0, 0, 0], normal_IN[0, 0, 1] };
                     double[] edgeNormal = new double[] { LsTrk.GridDat.Edges.NormalsForAffine[i0, 0], LsTrk.GridDat.Edges.NormalsForAffine[i0, 1] };
-                    Console.WriteLine("surf normal = ({0}, {1})", surfNormal[0], surfNormal[1]);
-                    Console.WriteLine("edge normal = ({0}, {1})", edgeNormal[0], edgeNormal[1]);
+                    //Console.WriteLine("surf normal = ({0}, {1})", surfNormal[0], surfNormal[1]);
+                    //Console.WriteLine("edge normal = ({0}, {1})", edgeNormal[0], edgeNormal[1]);
                     double contactAngle = GetAngleBetweenNormals(surfNormal, edgeNormal);
 
-                    EvalResult[0, 0, 2 * D] = (Math.PI - contactAngle) * (180.0 / Math.PI);
+                    //EvalResult[0, 0, 2 * D] = (Math.PI - contactAngle) * (180.0 / Math.PI);
+                    contactAngles.Add(Math.Abs((Math.PI - contactAngle) * (180.0 / Math.PI)));
                     //Console.WriteLine("contact angle = {0}", EvalResult[0, 0, 2 * D]);
 
                 },
                 delegate (int i0, int length, MultidimensionalArray ResultsOfIntegration) {
-                    int D = SolverMainOverride.Grid.SpatialDimension;
-                    for (int i = 0; i < length; i++) {
-                        if (ResultsOfIntegration[i, 2 * D] != 0.0) {
-                            contactAngles.Add(Math.Abs(ResultsOfIntegration[i, 2 * D]));
-                            double[] cp = new double[D];
-                            double[] cpV = new double[D];
-                            for (int d = 0; d < D; d++) {
-                                cp[d] = ResultsOfIntegration[i, d];
-                                cpV[d] = ResultsOfIntegration[i, 2 + d];
-                            }
-                            contactPoints.Add(cp);
-                            contactVelocities.Add(cpV);
-                        }
-                    }
+                    //int D = SolverMainOverride.Grid.SpatialDimension;
+                    //for (int i = 0; i < length; i++) {
+                    //    if (ResultsOfIntegration[i, 2 * D] != 0.0) {
+                    //        contactAngles.Add(Math.Abs(ResultsOfIntegration[i, 2 * D]));
+                    //        double[] cp = new double[D];
+                    //        double[] cpV = new double[D];
+                    //        for (int d = 0; d < D; d++) {
+                    //            cp[d] = ResultsOfIntegration[i, d];
+                    //            cpV[d] = ResultsOfIntegration[i, 2 + d];
+                    //        }
+                    //        contactPoints.Add(cp);
+                    //        contactVelocities.Add(cpV);
+                    //    }
+                    //}
                 }
             ).Execute();
 

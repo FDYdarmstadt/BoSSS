@@ -41,7 +41,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// <summary>
         /// ctor
         /// </summary>
-        public StokesExtensionEvolver(string levelSetName, int hMForder, int D, IncompressibleBoundaryCondMap bcMap, double AgglomThreshold, IGridData grd, bool fullStokes = true, StokesExtentionBoundaryOption useBCmap = StokesExtentionBoundaryOption.FreeSlipAtWall) {
+        public StokesExtensionEvolver(string levelSetName, int hMForder, int D, IncompressibleBoundaryCondMap bcMap, double AgglomThreshold, IGridData grd, 
+            bool fullStokes = true, StokesExtentionBoundaryOption useBCmap = StokesExtentionBoundaryOption.FreeSlipAtWall, EllipticReInitAlgoControl ReInitControl = null, int ReInitPeriod = 0) {
             for(int d = 0; d < D; d++) {
                 if(!bcMap.bndFunction.ContainsKey(NSECommon.VariableNames.Velocity_d(d)))
                     throw new ArgumentException($"Missing boundary condition for variable {NSECommon.VariableNames.Velocity_d(d)}.");
@@ -57,8 +58,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             this.m_grd = grd;
             timeStepOrder = 2;
 
-            //this.ReInit_Period = ReInitPeriod;
-            //ReInit_Control = new EllipticReInitAlgoControl();
+            ReInit_Control = ReInitControl != null ? ReInitControl : new EllipticReInitAlgoControl();
+            this.ReInit_Period = ReInitPeriod;
+
         }
 
         IGridData m_grd;
@@ -207,14 +209,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         }
 
 
-        private EllipticReInitAlgoControl ReInit_Control = new EllipticReInitAlgoControl();
+        private EllipticReInitAlgoControl ReInit_Control;
+        private int ReInit_Period;
         private int ReInit_TimestepIndex = 0;
-        private int ReInit_Period = 0;
 
-        public void InitializeReInit(EllipticReInitAlgoControl RI_ctrl, int RI_period, int RI_tsI) {
-            ReInit_Control = RI_ctrl;
-            ReInit_Period = RI_period;
-            ReInit_TimestepIndex = RI_tsI + 1;
+        public void SetReInitTimestepNumber(int RI_Timestep) {
+            ReInit_TimestepIndex = RI_Timestep;
         }
 
         /// <summary>
@@ -230,7 +230,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
 
             bool changed = false;
-            ReInit_TimestepIndex++; // increment first
+            ReInit_TimestepIndex++;
+
             if (phaseInterface.LevelSetIndex > 0) 
                 return false; //skip the second level set
 
@@ -250,7 +251,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 changed = true;
             }
 
-            
             return changed;
         }
     }
