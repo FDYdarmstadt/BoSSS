@@ -106,15 +106,18 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         }
 
         static IChunkRulePair<TQuadRule>[] MergeRules(IChunkRulePair<TQuadRule>[] A, IChunkRulePair<TQuadRule>[] B) {
-            IChunkRulePair<TQuadRule>[] M = new IChunkRulePair<TQuadRule>[A.Length + B.Length];
             int iA = 0;
             int iB = 0;
+            int AL = A.Length;
+            int BL = B.Length;
+            int ML = AL + BL;
+            IChunkRulePair<TQuadRule>[] M = new IChunkRulePair<TQuadRule>[ML];
             
-            for(int iM = 0; iM < M.Length; iM++) {
-                if(iB >= B.Length || A[iA].Chunk.i0 < B[iB].Chunk.i0) {
+            for(int iM = 0; iM < ML; iM++) {
+                if(iA < AL && (iB >= B.Length || A[iA].Chunk.i0 < B[iB].Chunk.i0)) {
                     M[iM] = A[iA];
                     iA++;
-                } else if(iA >= A.Length || B[iB].Chunk.i0 < A[iA].Chunk.i0) {
+                } else if(iB < BL && (iA >= A.Length || B[iB].Chunk.i0 < A[iA].Chunk.i0)) {
                     M[iM] = B[iB];
                     iB++;
                 } else {

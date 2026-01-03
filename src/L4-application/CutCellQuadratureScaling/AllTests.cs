@@ -293,7 +293,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 #endif
 
             [Values(CutCellQuadratureMethod.Saye/*, CutCellQuadratureMethod.Algoim*/)] CutCellQuadratureMethod cutCellQuadType) {
-
+            // --test=BoSSS.Application.CutCellQuadratureScaling.AllTests.TwoLevelSets_2D
             DoTests(
                 () => new TestSetupTwoLevSets3D(1.0, quadOrder, cutCellQuadType, meshVariation),
                 () => new TestSetupTwoLevSets3D(0.5, quadOrder, cutCellQuadType, meshVariation));
