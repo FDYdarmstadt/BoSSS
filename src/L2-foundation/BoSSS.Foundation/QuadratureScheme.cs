@@ -808,7 +808,7 @@ namespace BoSSS.Foundation.Quadrature {
         //}
 
         /// <summary>
-        /// Restricts the <see cref="Domain"/> to elements which are included in <paramref name="mask"/>
+        /// Restricts the <see cref="QuadratureScheme{TQuadRule, TDomain}.Domain"/> to elements which are included in <paramref name="mask"/>
         /// </summary>
         public CellQuadratureScheme Restrict(CellMask mask) {
             if(mask.MaskType == MaskType.Logical)
@@ -930,7 +930,7 @@ namespace BoSSS.Foundation.Quadrature {
         }
 
         /// <summary>
-        /// Restricts the <see cref="Domain"/> to elements which are included in <paramref name="mask"/>
+        /// Restricts the <see cref="QuadratureScheme{TQuadRule, TDomain}.Domain"/> to elements which are included in <paramref name="mask"/>
         /// </summary>
         public EdgeQuadratureScheme Restrict(EdgeMask mask) {
             if(mask.MaskType == MaskType.Logical)

@@ -2,6 +2,7 @@
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.Quadrature;
+using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections;
@@ -16,30 +17,12 @@ namespace BoSSS.Foundation.XDG.Quadrature {
     /// - rules, once created, should be re-used as much as possible
     /// - multi-threaded creation of these rules
     /// </summary>
-    class CachingQuadRuleFactory : IQuadRuleFactory<QuadRule> {
+    class CachingQuadRuleFactory<TQuadRule> : IQuadRuleFactory<TQuadRule> where TQuadRule : QuadRule {
 
 
-        public CachingQuadRuleFactory(Func<int, IQuadRuleFactory<QuadRule>> __OriginalRuleFactory, ExecutionMask __Domain, int __Order) {
-            //OriginalRuleFactory = __OriginalRuleFactory;
-            Order = __Order;
-            m_MaxDomain = __Domain;
-
-            // serial version, to be multi-threaded
-            var Rule = __OriginalRuleFactory(0);
-            RefElement = Rule.RefElement;
-            m_QuadRule = Rule.GetQuadRuleSet(__Domain, __Order).ToArray();
-
-
-            //
-            m_ItemsToChunk = new int[IMax];
-            m_ItemsToChunk.SetAll(int.MinValue);
-            int NoOfChunks = m_QuadRule.Length;
-            for(int iChunk = 0; iChunk < NoOfChunks; iChunk++) {
-                var crp = m_QuadRule[iChunk];
-                for(int i = 0; i < crp.Chunk.Len; i++) {
-                    m_ItemsToChunk[crp.Chunk.i0 + i] = iChunk;
-                }
-            }
+        public CachingQuadRuleFactory(Func<int, IQuadRuleFactory<TQuadRule>> OriginalRuleFactoryFactory) {
+            int NumThreads = ilPSP.Environment.NumThreads;
+            OriginalRuleFactory = NumThreads.ForLoop(iThread => OriginalRuleFactoryFactory(iThread));
         }
 
         /// <summary>
@@ -60,31 +43,99 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             }
         }
 
-        readonly ExecutionMask m_MaxDomain;
+        ExecutionMask m_MaxDomain;
 
+        IChunkRulePair<TQuadRule>[] m_QuadRule;
 
-
-        IChunkRulePair<QuadRule>[] m_QuadRule;
-
-        //readonly Func<int, IQuadRuleFactory<QuadRule>> OriginalRuleFactor
+        readonly IQuadRuleFactory<TQuadRule>[] OriginalRuleFactory;
 
         /// <summary>
         /// mapping from cell/edge index into <see cref="m_QuadRule"/>
         /// </summary>
         int[] m_ItemsToChunk;
 
-        readonly int Order;
+        int Order = -1;
 
         public RefElement RefElement {
-            get;
-            private set;
+            get {
+                return OriginalRuleFactory[0].RefElement;
+            }
         }
 
         public int[] GetCachedRuleOrders() {
-            return [Order];
+            if(Order < 0)
+                return [];
+            else 
+                return [Order];
         }
 
-        public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask domain, int order) {
+        void Initialize(ExecutionMask __Domain, int __Order) {
+            if(Order < 0) {
+                // 1st-time-call
+                Order = __Order;
+                m_MaxDomain = __Domain;
+            } else {
+                // later call, cells/edges are added
+                m_MaxDomain = m_MaxDomain.Union(__Domain);
+
+                if(__Order != Order)
+                    throw new ArgumentException("cannot mix orders");
+            }
+
+            // serial version, to be multi-threaded
+            var Rule = OriginalRuleFactory[0];
+            var newQuadRule = Rule.GetQuadRuleSet(__Domain, __Order).ToArray();
+
+            if(m_QuadRule == null) {
+                m_QuadRule = newQuadRule;
+            } else {
+                m_QuadRule = MergeRules(m_QuadRule, newQuadRule);
+            }
+
+            //
+            m_ItemsToChunk = new int[IMax];
+            m_ItemsToChunk.SetAll(int.MinValue);
+            int NoOfChunks = m_QuadRule.Length;
+            for(int iChunk = 0; iChunk < NoOfChunks; iChunk++) {
+                var crp = m_QuadRule[iChunk];
+                for(int i = 0; i < crp.Chunk.Len; i++) {
+                    m_ItemsToChunk[crp.Chunk.i0 + i] = iChunk;
+                }
+            }
+
+        }
+
+        static IChunkRulePair<TQuadRule>[] MergeRules(IChunkRulePair<TQuadRule>[] A, IChunkRulePair<TQuadRule>[] B) {
+            IChunkRulePair<TQuadRule>[] M = new IChunkRulePair<TQuadRule>[A.Length + B.Length];
+            int iA = 0;
+            int iB = 0;
+            
+            for(int iM = 0; iM < M.Length; iM++) {
+                if(iB >= B.Length || A[iA].Chunk.i0 < B[iB].Chunk.i0) {
+                    M[iM] = A[iA];
+                    iA++;
+                } else if(iA >= A.Length || B[iB].Chunk.i0 < A[iA].Chunk.i0) {
+                    M[iM] = B[iB];
+                    iB++;
+                } else {
+                    throw new ArgumentException("cannot merge overlapping quadrature rules");
+                }
+
+                if(iM > 0) {
+                    if(M[iM].Chunk.i0 < M[iM - 1].Chunk.JE)
+                        throw new ArgumentException("rules to merge seem to have overlap - not supported");
+                }
+            }
+            return M;
+        }
+
+
+
+        public IEnumerable<IChunkRulePair<TQuadRule>> GetQuadRuleSet(ExecutionMask domain, int order) {
+            var missingPart = m_MaxDomain != null ? domain.Except(m_MaxDomain) : domain;
+            if(this.Order < 0 || missingPart.NoOfItemsLocally > 0)
+                Initialize(missingPart, order);
+
             // init & checks
             // =============
             if(order > this.Order)
@@ -95,8 +146,9 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 throw new ArgumentException($"Expecting an {m_MaxDomain.GetType()}.");
             if(domain.MaskType != MaskType.Geometrical)
                 throw new ArgumentException("Expecting a geometrical mask.");
-            if(!domain.IsSubMaskOf(m_MaxDomain))
-                throw new ArgumentException("Cannot return quadrature rule for mask larger than initially specified");
+            //if(!domain.IsSubMaskOf(m_MaxDomain)) {
+            //    throw new ArgumentException("Cannot return quadrature rule for mask larger than initially specified");
+            //}
             var grd = domain.GridData;
 #if DEBUG
 
@@ -112,7 +164,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 // => no extraction required, return quadrature rule directly
                 return m_QuadRule;
 
-            var Ret = new List<IChunkRulePair<QuadRule>>();
+            var Ret = new List<IChunkRulePair<TQuadRule>>();
 
             foreach(var chunk in domain) {
                 for(int i = chunk.i0; i < chunk.JE; i++) {
@@ -127,7 +179,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                             i0 = i,
                             Len = Math.Min(pair.Chunk.JE, chunk.JE) - i
                         };
-                        Ret.Add(new ChunkRulePair<QuadRule>(newChunk, pair.Rule));
+                        Ret.Add(new ChunkRulePair<TQuadRule>(newChunk, pair.Rule));
                         i += newChunk.Len - 1;
                     }
 #if DEBUG
@@ -145,7 +197,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
 #if DEBUG
             var maskBitMask = domain.GetBitMask();
-            for(int i = 0; i < grd.iLogicalEdges.Count; i++) {
+            for(int i = 0; i < IMax; i++) {
                 Debug.Assert(checkBitMask[i] == maskBitMask[i], "not all cells/edges are covered by the rule.");
             }
 #endif

@@ -63,21 +63,23 @@ namespace BoSSS.Foundation.XDG {
                 // ---------------------
                 // compute all the stuff
                 // ---------------------
-                m_qfHelper = GetXQuadFactoryHelper(lsTrk.CutCellQuadratureType, m_LevelSetData.ToArray());
+                m_qfHelper = new XQuadFactoryHelperCached(
+                    (int iThread) => GetXQuadFactoryHelper(lsTrk.CutCellQuadratureType, m_LevelSetData.ToArray()));
                 m_XQuadSchemeHelper = new XQuadSchemeHelper(this);
+                m_qfHelper.CreateRulesAndMPIExchgange(this.CutCellQuadOrder);
 
                 m_CutCellMetrics = new CutCellMetrics(this);
                 m_MassMatrixFactory = new MassMatrixFactory(this);
             }
         }
 
-        XQuadFactoryHelperBase m_qfHelper;
+        XQuadFactoryHelperCached m_qfHelper;
 
 
         /// <summary>
         /// Provides access to quadrature factories; however, most of the time the user wants to use schemes, <see cref="XQuadSchemeHelper"/>.
         /// </summary>
-        public XQuadFactoryHelperBase XQuadFactoryHelper {
+        public IXQuadFactoryHelper XQuadFactoryHelper {
             get {
                 return m_qfHelper;                
             }
@@ -94,7 +96,7 @@ namespace BoSSS.Foundation.XDG {
                 return m_XQuadSchemeHelper;
             }
         }
-  
+ 
 
         readonly MassMatrixFactory m_MassMatrixFactory;
         

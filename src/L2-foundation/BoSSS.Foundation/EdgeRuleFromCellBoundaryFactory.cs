@@ -74,7 +74,6 @@ namespace BoSSS.Foundation.Quadrature {
         int m_quadorder;
 
         public void CreateRulesAndMPIExchgange(int __quadorder) {
-            //
             m_quadorder = __quadorder;
             CreateInternal(__quadorder);
         }
@@ -213,9 +212,7 @@ namespace BoSSS.Foundation.Quadrature {
 
                         QuadRulesForOtherProc[otherProcRank].Add((null, null, null, -1, jCell0glob, jCell0, iPart, CenterCheck));
                     }
-
                 }
-                
             }
 
             // get cell boundary rule
@@ -312,8 +309,6 @@ namespace BoSSS.Foundation.Quadrature {
                 }
             }
 
-
-
             // build rule
             // ==========
             {
@@ -362,7 +357,6 @@ namespace BoSSS.Foundation.Quadrature {
 
             // return
             // ======
-
 #if DEBUG
             for (int i = 0; i < m_QuadRule.Length; i++) {
                 Chunk c = m_QuadRule[i].Chunk;

@@ -155,7 +155,7 @@ namespace BoSSS.Foundation.XDG {
         /// Writes all the edge rules as vtp files
         /// </summary>
         public void WriteEdgeRulesToVtp() {
-            var schH = new XQuadSchemeHelper(XDGSpaceMetrics);
+            var schH = this.XDGSpaceMetrics.XQuadSchemeHelper;
             var gd = XDGSpaceMetrics.GridDat;
             SpeciesId[] species = this.SpeciesList.ToArray();
 
@@ -173,7 +173,7 @@ namespace BoSSS.Foundation.XDG {
         /// Writes all the volume rules as vtp files
         /// </summary>
         public void WriteVolumeRulesToVtp() {
-            var schH = new XQuadSchemeHelper(XDGSpaceMetrics);
+            var schH = this.XDGSpaceMetrics.XQuadSchemeHelper;
             var gd = XDGSpaceMetrics.GridDat;
             SpeciesId[] species = this.SpeciesList.ToArray();
 
@@ -193,7 +193,7 @@ namespace BoSSS.Foundation.XDG {
         /// Writes all the surface rules (level set=0) as vtp files
         /// </summary>
         public void WriteSurfaceRulesToVtp() {
-            var schH = new XQuadSchemeHelper(XDGSpaceMetrics);
+            var schH = this.XDGSpaceMetrics.XQuadSchemeHelper;
             var gd = XDGSpaceMetrics.GridDat;
             SpeciesId[] species = this.SpeciesList.ToArray();
 
@@ -256,8 +256,8 @@ namespace BoSSS.Foundation.XDG {
                 int NoSpc = species.Count();
                 int[,] E2C = gd.iLogicalEdges.CellIndices;
 
-                var schH = new XQuadSchemeHelper(XDGSpaceMetrics);
-                //var schH = this.XDGSpaceMetrics.XQuadSchemeHelper;
+                //var schH = new XQuadSchemeHelper(XDGSpaceMetrics);
+                var schH = this.XDGSpaceMetrics.XQuadSchemeHelper;
 
                 // collect all per-cell-metrics in the same MultidimArry, for MPI-exchange (only 1 exchange instead of three, saving some overhead)
                 // - 1st index: cell
@@ -518,8 +518,8 @@ namespace BoSSS.Foundation.XDG {
                 int NoOfLevelSets = this.XDGSpaceMetrics.NoOfLevelSets;
                 int[,] E2C = gd.iLogicalEdges.CellIndices;
 
-                var schH = new XQuadSchemeHelper(XDGSpaceMetrics);
-                //var schH = this.XDGSpaceMetrics.XQuadSchemeHelper;
+                //var schH = new XQuadSchemeHelper(XDGSpaceMetrics);
+                var schH = this.XDGSpaceMetrics.XQuadSchemeHelper;
 
                 // collect all per-cell-metrics in the same MultidimArry, for MPI-exchange (only 1 exchange instead of three, saving some overhead)
                 // 1st index: cell

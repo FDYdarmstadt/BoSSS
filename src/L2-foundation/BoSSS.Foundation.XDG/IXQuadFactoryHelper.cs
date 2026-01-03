@@ -7,47 +7,60 @@ using System;
 
 namespace BoSSS.Foundation.XDG {
 
-    abstract public class XQuadFactoryHelperBase : IXQuadFactoryHelper {
-
-
+    /// <summary>
+    /// Different variants of the moment-fitting procedure for the creation
+    /// of the surface and volume quadrature rules.
+    /// </summary>
+    public enum CutCellQuadratureMethod {
 
         /// <summary>
-        /// Used type of the HMF.
+        /// The original hierarchical moment fitting method published in 2013 which uses a two-step 
+        /// procedure: The surface rules are created first and then used to
+        /// create the volume rules
         /// </summary>
-        public CutCellQuadratureMethod CutCellQuadratureType {
-            get;
-            protected set;
-        }
+        Classic = 0,
 
-        internal XQuadFactoryHelperBase(LevelSetTracker.LevelSetData[] lsDatas) {
-            //var lsTrk = lsDatas[0].Tracker;
-            int iHi = lsDatas[0].HistoryIndex;
-            //if(lsDatas.Length != lsTrk.LevelSets.Count)
-            //    throw new ArgumentException();
-            for(int iLs = 0; iLs < lsDatas.Length; iLs++) {
-                if(lsDatas[iLs].LevelSetIndex != iLs)
-                    throw new ArgumentException();
-                //if(!object.ReferenceEquals(lsDatas[iLs].Tracker, lsTrk))
-                //    throw new ArgumentException();
-                if(lsDatas[iLs].HistoryIndex != iHi)
-                    throw new ArgumentException();
-            }
+        /// <summary>
+        /// One-step variant proposed by Florian (see XNSE paper, submitted
+        /// 2015). Surface and volume rules are created using a single
+        /// moment-fitting by additionally enforcing Gauss' theorem on the
+        /// discrete level.
+        /// </summary>
+        OneStepGauss = 1,
 
-            this.m_LevelSetDatas = lsDatas.CloneAs();
-        }
+        /// <summary>
+        /// Same as <see cref="OneStepGauss"/>, but additionally enforces
+        /// Stokes' theorem on a discrete level.
+        /// </summary>
+        OneStepGaussAndStokes = 2,
 
-        protected IGridData gdat {
-            get {
-                return this.m_LevelSetDatas[0].GridDat;
-            }
-        }
+        /// <summary>
+        /// Two step-procedure: using Stokes theorem to create surface rules, 
+        /// and the Gauss theorem to create Volume rules.
+        /// </summary>
+        TwoStepStokesAndGauss = 3,
 
+        /// <summary>
+        /// Gaussian quadrature rules for <see cref="Square"/> and <see cref="Cube"/> elements,
+        /// obtained throug recursive subdivision, as described in 
+        /// (Saye 2015)
+        /// </summary>
+        /// <remarks>
+        /// High-Order Quadrature Methods for Implicitly Defined Surfaces and Volumes in Hyperrectangles,
+        /// R. Saye, SIAM Journal on Scientific Computing, 2015
+        /// </remarks>
+        Saye = 5,
 
-#if DEBUG
-        public static bool CheckQuadRules = true;
-#else
-        public static bool CheckQuadRules = false;
-#endif
+        /// <summary>
+        /// Gaussian quadrature rules for <see cref="Square"/> and <see cref="Cube"/> elements,
+        /// obtained through recursive subdivision, as described in 
+        /// (Saye 2022)
+        /// </summary>
+        Algoim = 6,
+    }
+
+    public interface IXQuadFactoryHelper {
+        CutCellQuadratureMethod CutCellQuadratureType { get; }
 
         /// <summary>
         /// Triggers the creation of all quadrature rules, so that later, the can be retrieved from the cache.
@@ -55,15 +68,14 @@ namespace BoSSS.Foundation.XDG {
         /// Furthermore, in the creation of quadrature rules there are some parts where MPI communication is needed or makes things more robust.
         /// One example are hanging node on MPI boundaries; There, a quadrature rule might be difficult to be created right locally.
         /// </summary>
-        abstract public void CreateRulesAndMPIExchgange(int __quadorder);
+        void CreateRulesAndMPIExchgange(int __quadorder);
 
-        protected readonly LevelSetTracker.LevelSetData[] m_LevelSetDatas;
 
         /// <summary>
         /// Generates a quadrature rule factory for integrating over the zero-level-set surface.
         /// </summary>
-        abstract public IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex, RefElement Kref);
-        // ref (1), on cell
+        IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex, RefElement Kref);
+
 
         /// <summary>
         /// Generates a quadrature rule factory for integrating over a surface.
@@ -75,29 +87,29 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="jmp1">Specifies the side of <paramref name="levSetIndex1"/> that defines the phase of interest.</param>
         /// <param name="KrefVol">The reference element used for the quadrature rule.</param>
         /// <returns></returns>
-        abstract public IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol);
+        IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol);
 
         /// <summary>
         /// Generates a quadrature rule factory for the cut edge integrals.
         /// </summary>
-        abstract public IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex, JumpTypes jmp, RefElement KrefEdge);
+        IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex, JumpTypes jmp, RefElement KrefEdge);
         // ref (2), on edges
 
         /// <summary>
         /// Generates an edge quadrature rule factory for edges cut by two level sets. <see cref="GetEdgeRuleFactory(int, JumpTypes, RefElement)"/>
         /// </summary>
-        abstract public IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol);
+        IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol);
 
         /// <summary>
         /// Generates a quadrature rule factory for the cut volume integrals.
         /// </summary>
-        abstract public IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex, JumpTypes jmp, RefElement Kref);
+        IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex, JumpTypes jmp, RefElement Kref);
         // ref (3), on cells
 
         /// <summary>
         /// Generates a volume quadrature rule factory for cells cut by two level sets. <see cref="GetVolRuleFactory(int, JumpTypes, RefElement)"/>
         /// </summary>
-        abstract public IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol);
+        IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol);
 
         /// <summary>
         /// Returns an edge rule factory for the boundary of surface-elements 
@@ -108,7 +120,7 @@ namespace BoSSS.Foundation.XDG {
         /// (elements on the zero-level-set surface), i.e. on $E  \cap \mathfrak{I} $ for each edge $ E $.
         /// This are point integrals in 2D and line integrals in 3D.
         /// </summary>
-        abstract public IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex, RefElement KrefEdge);
+        IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex, RefElement KrefEdge);
 
         /// <summary>
         /// Returns a cell boundary rule factory for the boundary of surface-elements 
@@ -119,23 +131,22 @@ namespace BoSSS.Foundation.XDG {
         /// (elements on the zero-level-set surface), i.e. on $  \partial K \cap \mathfrak{I} $ for each cell $ k $.
         /// This are point integrals in 2D and line integrals in 3D.
         /// </summary>
-        abstract public IQuadRuleFactory<CellBoundaryQuadRule> _GetSurfaceElement_BoundaryRuleFactory(int levSetIndex, RefElement KrefVol);
+        IQuadRuleFactory<CellBoundaryQuadRule> _GetSurfaceElement_BoundaryRuleFactory(int levSetIndex, RefElement KrefVol);
 
 
         /// <summary>
         /// Generates a volume quadrature rule factory for cells cut by two level sets. <see cref="GetSurfaceElement_BoundaryRuleFactory(int, RefElement)"/>
         /// The surface is defined by two conditions: levelset0 = 0 and on side jmp1 of levelset1
         /// </summary>
-        abstract public IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol);
+        IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol);
         // ref (5a), on edge
 
         /// <summary>
         /// Generates a quadrature rule factory the intersection of levelset0 and levelset1 where levelset0 = levelset1 = 0
         /// This is a point in 2D, a line in 3D.
         /// </summary>
-        abstract public IQuadRuleFactory<QuadRule> GetIntersectionRuleFactory(int levSetIndex0, int levSetIndex1, RefElement KrefVol);
+        IQuadRuleFactory<QuadRule> GetIntersectionRuleFactory(int levSetIndex0, int levSetIndex1, RefElement KrefVol);
         // ref (6), on cell
-
     }
 
 }

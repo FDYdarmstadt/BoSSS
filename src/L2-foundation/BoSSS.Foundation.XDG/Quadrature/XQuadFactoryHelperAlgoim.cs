@@ -32,7 +32,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Xml;
-using static BoSSS.Foundation.XDG.XQuadFactoryHelperBase;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -41,9 +40,9 @@ namespace BoSSS.Foundation.XDG {
 
     /// <summary>
     /// Auxiliary class that helps with the creation of XDG-quadrature schemes for Algoim <see cref="AlgoimFactories"/>;
-    /// instances can be obtained via <see cref="LevelSetTracker.GetXQuadFactoryHelper"/>.
+    /// instances can be obtained via <see cref="LevelSetTracker.GetXDGSpaceMetrics(IEnumerable{SpeciesId}, int, int)"/>, <see cref="XDGSpaceMetrics.XQuadFactoryHelper"/>.
     /// </summary>
-    public class XQuadFactoryHelperAlgoim : XQuadFactoryHelperBase {
+    public class XQuadFactoryHelperAlgoim : BoSSS.Foundation.XDG.XQuadFactoryHelperBase {
 
         Dictionary<RefElement, AlgoimDoubleCutFactories> DoubleCutFactories = new Dictionary<RefElement, AlgoimDoubleCutFactories>();
 
@@ -102,7 +101,7 @@ namespace BoSSS.Foundation.XDG {
         Dictionary<(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, int iKrefEdge), EdgeRuleFromCellBoundaryFactory> m_EdgeRuleFactory2 = new Dictionary<(int, JumpTypes, int, JumpTypes, int), EdgeRuleFromCellBoundaryFactory>();
 
 
-        public override IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
+        public override IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol) {
 			CheckIfVolElement(KrefVol);
 			var jumps = new JumpTypes[] { jmp0, jmp1 };
 
@@ -152,10 +151,10 @@ namespace BoSSS.Foundation.XDG {
                             if(levSetIndex0 == levSetIndex1)
                                 continue;
 
-                            this.GetEdgeRuleFactory(levSetIndex0, JumpTypes.Heaviside, levSetIndex1, JumpTypes.Heaviside, KrefVol, null);
-                            this.GetEdgeRuleFactory(levSetIndex0, JumpTypes.Heaviside, levSetIndex1, JumpTypes.OneMinusHeaviside, KrefVol, null);
-                            this.GetEdgeRuleFactory(levSetIndex0, JumpTypes.OneMinusHeaviside, levSetIndex1, JumpTypes.Heaviside, KrefVol, null);
-                            this.GetEdgeRuleFactory(levSetIndex0, JumpTypes.OneMinusHeaviside, levSetIndex1, JumpTypes.OneMinusHeaviside, KrefVol, null);
+                            this.GetEdgeRuleFactory(levSetIndex0, JumpTypes.Heaviside, levSetIndex1, JumpTypes.Heaviside, KrefVol);
+                            this.GetEdgeRuleFactory(levSetIndex0, JumpTypes.Heaviside, levSetIndex1, JumpTypes.OneMinusHeaviside, KrefVol);
+                            this.GetEdgeRuleFactory(levSetIndex0, JumpTypes.OneMinusHeaviside, levSetIndex1, JumpTypes.Heaviside, KrefVol);
+                            this.GetEdgeRuleFactory(levSetIndex0, JumpTypes.OneMinusHeaviside, levSetIndex1, JumpTypes.OneMinusHeaviside, KrefVol);
 
 
                         }
@@ -169,8 +168,8 @@ namespace BoSSS.Foundation.XDG {
                             if(levSetIndex0 == levSetIndex1)
                                 continue;
 
-                            GetSurfaceElement_BoundaryRuleFactory(levSetIndex0, levSetIndex1, JumpTypes.Heaviside, KrefVol, null);
-                            GetSurfaceElement_BoundaryRuleFactory(levSetIndex0, levSetIndex1, JumpTypes.OneMinusHeaviside, KrefVol, null);
+                            GetSurfaceElement_BoundaryRuleFactory(levSetIndex0, levSetIndex1, JumpTypes.Heaviside, KrefVol);
+                            GetSurfaceElement_BoundaryRuleFactory(levSetIndex0, levSetIndex1, JumpTypes.OneMinusHeaviside, KrefVol);
                         }
                     }
                 }
@@ -190,7 +189,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
 
-        public override IQuadRuleFactory<QuadRule> GetIntersectionRuleFactory(int levSetIndex0, int levSetIndex1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
+        public override IQuadRuleFactory<QuadRule> GetIntersectionRuleFactory(int levSetIndex0, int levSetIndex1, RefElement KrefVol) {
             //
             // use our own implementation, since level-set intersection is not available in Algoim (?)
             //
@@ -260,7 +259,7 @@ namespace BoSSS.Foundation.XDG {
         Dictionary<(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, int iKrefEdge), EdgeRuleFromCellBoundaryFactory> m_SurfaceElement_BoundaryRuleFactory2 = new Dictionary<(int, int, JumpTypes, int), EdgeRuleFromCellBoundaryFactory>();
 
 
-        public override IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
+        public override IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol) {
 			CheckIfVolElement(KrefVol);
             var KrefEdge = gdat.iGeomEdges.EdgeRefElements.Single();
             int iKrefEdge = 0;
@@ -313,7 +312,7 @@ namespace BoSSS.Foundation.XDG {
             return algoimFactory.GetSurfaceFactory(); 
         }
 
-        public override IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
+        public override IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol) {
             CheckIfVolElement(KrefVol);
             JumpTypes[] jumps = [jmp1, jmp1];
             jumps[levSetIndex0] = JumpTypes.Implicit;
@@ -332,7 +331,7 @@ namespace BoSSS.Foundation.XDG {
             return algoimFactory.GetVolumeFactory();
         }
 
-        public override IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement Kref, IQuadRuleFactory<QuadRule> backupFactory) {
+        public override IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement Kref) {
 			CheckIfVolElement(Kref);
 			JumpTypes[] jumps = new JumpTypes[] { jmp0, jmp1};
 

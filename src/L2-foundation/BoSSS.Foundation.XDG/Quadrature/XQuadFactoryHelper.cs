@@ -38,7 +38,7 @@ namespace BoSSS.Foundation.XDG {
 
     /// <summary>
     /// Auxiliary class that helps with the creation of XDG-quadrature schemes;
-    /// instances can be obtained via <see cref="LevelSetTracker.GetXQuadFactoryHelper"/>.
+    /// instances can be obtained via <see cref="LevelSetTracker.GetXDGSpaceMetrics(IEnumerable{SpeciesId}, int, int)"/>, <see cref="XDGSpaceMetrics.XQuadFactoryHelper"/>.
     /// </summary>
     public class XQuadFactoryHelper : XQuadFactoryHelperBase {
 
@@ -111,7 +111,7 @@ namespace BoSSS.Foundation.XDG {
                 // perform the MPI exchange
                 var allFactories = m_SurfaceElement_BoundaryRuleFactory.Values.ToArray();
                 allFactories = allFactories.Cat(m_EdgeRuleFactory1.Values);
-                foreach (EdgeRuleFromCellBoundaryFactory f in  allFactories) {
+                foreach (EdgeRuleFromCellBoundaryFactory f in allFactories) {
                     f.CreateRulesAndMPIExchgange(__quadorder);
                 }
             }
@@ -119,7 +119,7 @@ namespace BoSSS.Foundation.XDG {
 
 
 
-        Quadrature.BruteForce.MultiLevelSetBruteForceQuadratureFactory zwoLSBruteForceFactories;
+        //Quadrature.BruteForce.MultiLevelSetBruteForceQuadratureFactory zwoLSBruteForceFactories;
         //public Quadrature.Beck.MultiLevelSetBeckFactoryCreator zwoLSSayeFactories { get; private set; }
 
 
@@ -260,20 +260,15 @@ namespace BoSSS.Foundation.XDG {
         /// <returns>
         /// the returned factory produces <see cref="QuadRule"/>'s on edges
         /// </returns>
-        public override IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
+        public override IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol) {
             switch (CutCellQuadratureType) {
                 case CutCellQuadratureMethod.Saye:
-                    //var r = GetSurfaceElement_BoundaryRuleFactory_algoim(levSetIndex0, levSetIndex1, jmp1, KrefVol, backupFactory);
-                    //return r;
                     return Quadrature.Intersecting.IntersectingQuadratureFactories.EdgePoint(m_LevelSetDatas[levSetIndex0], m_LevelSetDatas[levSetIndex1], jmp1);
 
                 // rem: for the surface element:
                 //return IntersectingQuadratureFactories.Surface(m_LevelSetDatas[levSetIndex0], m_LevelSetDatas[levSetIndex1], jmp1);
                 default:
-                    if (zwoLSBruteForceFactories == null) {
-                        zwoLSBruteForceFactories = new Quadrature.BruteForce.MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
-                    }
-                    return zwoLSBruteForceFactories.GetEdgePointRuleFactory(levSetIndex0, levSetIndex1, jmp1, backupFactory);
+                    throw new NotSupportedException($"intersecting level sets are not supported for {CutCellQuadratureType}");
             }
         }
 
@@ -430,16 +425,13 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Generates an edge quadrature rule factory for edges cut by two level sets.
         /// </summary>
-        public override IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
+        public override IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol) {
             switch (CutCellQuadratureType) {
                 case CutCellQuadratureMethod.Saye: {
                     return Quadrature.Intersecting.IntersectingQuadratureFactories.Edge(m_LevelSetDatas[levSetIndex0], jmp0, m_LevelSetDatas[levSetIndex1], jmp1);
                 }
                 default: {
-                    if(zwoLSBruteForceFactories == null) {
-                        zwoLSBruteForceFactories = new Quadrature.BruteForce.MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
-                    }
-                    return zwoLSBruteForceFactories.GetEdgeRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1, backupFactory);
+                    throw new NotSupportedException($"intersecting level sets are not supported for {CutCellQuadratureType}");
                 }
             }
         }
@@ -534,20 +526,13 @@ namespace BoSSS.Foundation.XDG {
         /// Generates a volume quadrature rule factory for cells cut by two level sets.
         /// </summary>
 
-        public override IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
+        public override IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol) {
             switch(CutCellQuadratureType) {
                 case CutCellQuadratureMethod.Saye: {
                     return Quadrature.Intersecting.IntersectingQuadratureFactories.Volume(m_LevelSetDatas[levSetIndex0], jmp0, m_LevelSetDatas[levSetIndex1], jmp1);
-                    //if(zwoLSSayeFactories == null) {
-                    //    zwoLSSayeFactories = new Quadrature.Beck.MultiLevelSetBeckFactoryCreator(m_LevelSetDatas);
-                    //}
-                    //return zwoLSSayeFactories.GetVolRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1, backupFactory);
                 }
                 default: {
-                    if(zwoLSBruteForceFactories == null) {
-                        zwoLSBruteForceFactories = new Quadrature.BruteForce.MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
-                    }
-                    return zwoLSBruteForceFactories.GetVolRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1, backupFactory);
+                    throw new NotSupportedException($"intersecting level sets are not supported for {CutCellQuadratureType}");
                 }
             }
         }
@@ -624,18 +609,13 @@ namespace BoSSS.Foundation.XDG {
         /// Generates a quadrature rule factory for integrating over a surface.
         /// The surface is defined by two conditions: <paramref name="levSetIndex0"/> = 0 and on side <paramref name="jmp1"/> of <paramref name="levSetIndex1"/>
         /// </summary>
-        public override IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
+        public override IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol) {
             switch(CutCellQuadratureType) {
                 case CutCellQuadratureMethod.Saye: {
                     return Quadrature.Intersecting.IntersectingQuadratureFactories.Surface(m_LevelSetDatas[levSetIndex0], m_LevelSetDatas[levSetIndex1], jmp1);
                 }
                 default: {
-                    if(zwoLSBruteForceFactories == null) {
-                        zwoLSBruteForceFactories = new Quadrature.BruteForce.MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
-                    }
-                    return zwoLSBruteForceFactories.GetSurfaceFactory(levSetIndex0,
-                        levSetIndex1,
-                        jmp1, backupFactory);
+                    throw new NotSupportedException($"intersecting level sets are not supported for {CutCellQuadratureType}");
                 }
             }
         }
@@ -645,15 +625,12 @@ namespace BoSSS.Foundation.XDG {
         /// Generates a quadrature rule factory the intersection of <paramref name="levSetIndex0"/>-th and <paramref name="levSetIndex1"/>-th level-set.
         /// This is a point in 2D, a line in 3D.
         /// </summary>
-        public override IQuadRuleFactory<QuadRule> GetIntersectionRuleFactory(int levSetIndex0, int levSetIndex1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
+        public override IQuadRuleFactory<QuadRule> GetIntersectionRuleFactory(int levSetIndex0, int levSetIndex1, RefElement KrefVol) {
             switch (CutCellQuadratureType) {
                 case CutCellQuadratureMethod.Saye:
                     return Quadrature.Intersecting.IntersectingQuadratureFactories.Intersection(m_LevelSetDatas[levSetIndex0], m_LevelSetDatas[levSetIndex1]);
                 default:
-                    if (zwoLSBruteForceFactories == null) {
-                        zwoLSBruteForceFactories = new Quadrature.BruteForce.MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
-                    }
-                    return zwoLSBruteForceFactories.GetIntersectionFactory(levSetIndex0, levSetIndex1, backupFactory);
+                    throw new NotSupportedException($"intersecting level sets are not supported for {CutCellQuadratureType}");
             }
         }
 
