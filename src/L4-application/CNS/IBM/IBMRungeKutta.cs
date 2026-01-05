@@ -75,13 +75,11 @@ namespace CNS.IBM {
             IBMControl control = speciesMap.Control;
             SpeciesId species = speciesMap.Tracker.GetSpeciesId(control.FluidSpeciesName);
 
-            CellQuadratureScheme volumeScheme = speciesMap.QuadSchemeHelper.GetVolumeQuadScheme(
-                species, true, fluidCells);
+            CellQuadratureScheme volumeScheme = speciesMap.QuadSchemeHelper.GetVolumeQuadScheme(species, true, fluidCells);
 
             // Does _not_ include agglomerated edges
             EdgeMask nonVoidEdges = speciesMap.QuadSchemeHelper.GetEdgeMask(species);
-            EdgeQuadratureScheme edgeScheme = speciesMap.QuadSchemeHelper.GetEdgeQuadScheme(
-                species, true, nonVoidEdges);
+            EdgeQuadratureScheme edgeScheme = speciesMap.QuadSchemeHelper.GetEdgeQuadScheme(species, true, nonVoidEdges);
 
             this.m_Evaluator = new Lazy<IEvaluatorNonLin>(delegate () {
                 this.Operator.EdgeQuadraturSchemeProvider = g => edgeScheme;
@@ -95,8 +93,7 @@ namespace CNS.IBM {
             });
 
             // Evaluator for boundary conditions at level set zero contour
-            CellQuadratureScheme boundaryVolumeScheme = speciesMap.QuadSchemeHelper.GetLevelSetQuadScheme(
-                0, cutCells);
+            CellQuadratureScheme boundaryVolumeScheme = speciesMap.QuadSchemeHelper.GetLevelSetQuadScheme(0, cutCells);
 
             this.boundaryEvaluator = new Lazy<IEvaluatorNonLin>(delegate() {
                 boundaryOperator.EdgeQuadraturSchemeProvider = g => null; // Contains no boundary terms

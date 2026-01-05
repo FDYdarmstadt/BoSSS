@@ -1161,7 +1161,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 // quadrature schemes
                 //var SchHelper = new XQuadSchemeHelper(Tracker, HMFversion, Tracker.SpeciesIdS.ToArray());
                 //CellQuadratureScheme surfScheme = SchHelper.GetLevelSetquadScheme(0, subMask);
-                var SchHelper = Tracker.GetXDGSpaceMetrics(Tracker.SpeciesIdS.ToArray(), HMForder, 1).XQuadSchemeHelper;
+                var SchHelper = Tracker.GetXDGSpaceMetrics(Tracker.SpeciesIdS.ToArray(), HMForder + 1, 1).XQuadSchemeHelper;
                 
                 EdgeQuadratureScheme emptyEdgeScheme = new EdgeQuadratureScheme(domain: EdgeMask.GetEmptyMask(grdDat));
 

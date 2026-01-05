@@ -65,6 +65,7 @@ namespace BoSSS.Foundation.XDG {
                 // ---------------------
                 m_qfHelper = new XQuadFactoryHelperCached(
                     (int iThread) => GetXQuadFactoryHelper(lsTrk.CutCellQuadratureType, m_LevelSetData.ToArray()));
+                //m_qfHelper = GetXQuadFactoryHelper(lsTrk.CutCellQuadratureType, m_LevelSetData.ToArray());
                 m_XQuadSchemeHelper = new XQuadSchemeHelper(this);
                 m_qfHelper.CreateRulesAndMPIExchgange(this.CutCellQuadOrder);
 
@@ -73,7 +74,9 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        XQuadFactoryHelperCached m_qfHelper;
+        //XQuadFactoryHelperCached m_qfHelper;
+        //XQuadFactoryHelperBase m_qfHelper;
+        IXQuadFactoryHelper m_qfHelper;
 
 
         /// <summary>
