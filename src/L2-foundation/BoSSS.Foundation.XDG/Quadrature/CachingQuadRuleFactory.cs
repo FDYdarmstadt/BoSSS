@@ -7,6 +7,7 @@ using ilPSP.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.Linq;
 
@@ -82,14 +83,37 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                     throw new ArgumentException("cannot mix orders");
             }
 
-            // serial version, to be multi-threaded
-            var Rule = OriginalRuleFactory[0];
-            var newQuadRule = Rule.GetQuadRuleSet(__Domain, __Order).ToArray();
+            //// serial version, to be multi-threaded
+            //var Rule = OriginalRuleFactory[0];
+            //var newQuadRule = Rule.GetQuadRuleSet(__Domain, __Order).ToArray();
+            IChunkRulePair<TQuadRule>[] newQuadRuleCombined;
+            {
+                int NumThreads = ilPSP.Environment.NumThreads;
+                IEnumerable<IChunkRulePair<TQuadRule>>[] newQuadRules = new IEnumerable<IChunkRulePair<TQuadRule>>[NumThreads];
+                var DomainParts = __Domain.SplitUp(NumThreads);
+                Console.WriteLine("Crating from: " + OriginalRuleFactory[0].GetType());
+                ilPSP.Environment.ParallelFor(0, NumThreads, delegate (int iPart) {
+                    var Domain_i = DomainParts[iPart];
+                    if(Domain_i.NoOfItemsLocally > 0)
+                        newQuadRules[iPart] = OriginalRuleFactory[iPart].GetQuadRuleSet(Domain_i, __Order);
+                    else 
+                        newQuadRules[iPart] = [ ];
+                });
+                Console.WriteLine(" .... done.");
+                //for(int iPart = 0; iPart < NumThreads; iPart++) {
+                //    newQuadRules[iPart] = OriginalRuleFactory[iPart].GetQuadRuleSet(DomainParts[iPart], __Order);
+                //}
+
+                newQuadRuleCombined = newQuadRules[0].ToArray();
+                for(int iPart = 1; iPart < NumThreads; iPart++) {
+                    newQuadRuleCombined = newQuadRuleCombined.Cat(newQuadRules[iPart]);
+                }
+            }
 
             if(m_QuadRule == null) {
-                m_QuadRule = newQuadRule;
+                m_QuadRule = newQuadRuleCombined;
             } else {
-                m_QuadRule = MergeRules(m_QuadRule, newQuadRule);
+                m_QuadRule = MergeRules(m_QuadRule, newQuadRuleCombined);
             }
 
             //
