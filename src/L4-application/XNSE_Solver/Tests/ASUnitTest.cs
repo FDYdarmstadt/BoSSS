@@ -319,8 +319,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 //C.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
                 //C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
 
-                C.InitSignedDistance = false;
-
                 LaLa.Add(C);
             }
 

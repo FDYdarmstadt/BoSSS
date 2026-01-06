@@ -120,8 +120,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// <summary>
         /// internal implementation
         /// </summary>
-        class SingleLevelSetUpdater {
+        public class SingleLevelSetUpdater {
             internal ILevelSetEvolver lsMover;
+
+            public ILevelSetEvolver GetLsMover() { 
+                return lsMover;
+            }
 
             ContinuityProjection enforcer;
 
@@ -891,6 +895,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 grid,
                 continuityMode);
             return new SingleLevelSetUpdater(levelSet, enforcer1, quadOrderFunc);
+        }
+
+
+        public IReadOnlyDictionary<string, SingleLevelSetUpdater> Updaters {
+            get { return lsUpdaters; }
         }
 
 

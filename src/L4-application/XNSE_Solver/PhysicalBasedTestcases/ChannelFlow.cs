@@ -141,13 +141,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.PhysicalParameters.rho_B = 1;
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.mu_B = 1;
-            double sigma = 0.1;
+            double sigma = 10.0;
             C.PhysicalParameters.Sigma = sigma;
 
             //C.PhysicalParameters.beta_S = 0.05;
             //C.PhysicalParameters.theta_e = Math.PI / 2.0;
 
-            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.IncludeConvection = false;
             C.PhysicalParameters.Material = true;
 
             #endregion
@@ -159,7 +159,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             double H = 2;
-            int Lscale = 1;
+            int Lscale = 4;
             double L = Lscale * H;
 
             if (!restart)
@@ -190,11 +190,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                                 grd.EdgeTagNames.Add(1, "wall_lower");
                                 grd.EdgeTagNames.Add(2, "wall_upper");
                                 break;
-
-                        }
-                        grd.EdgeTagNames.Add(3, "velocity_inlet_left");
-                        //grd.EdgeTagNames.Add(3, "pressure_outlet_left");
-                        grd.EdgeTagNames.Add(4, "pressure_outlet_right");
+                    }
+                    grd.EdgeTagNames.Add(3, "velocity_inlet_left");
+                    //grd.EdgeTagNames.Add(3, "pressure_outlet_left");
+                    grd.EdgeTagNames.Add(4, "Dong_OutFlow_right");
 
                         //grd.EdgeTagNames.Add(3, "freeslip_left");
                         //grd.EdgeTagNames.Add(4, "freeslip_right");
@@ -455,7 +454,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.ReInitPeriod = 1;
             //C.ReInitOnRestart = true;  
 
-            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+            C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
+            C.StokesExtentionUseBCmap = StokesExtentionBoundaryOption.useBcMap;
 
             //C.Option_LevelSetEvolution = LevelSetEvolution.Prescribed;
             //C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
@@ -470,16 +470,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.SkipSolveAndEvaluateResidual = true;
 
 
-            C.AdaptiveMeshRefinement = false;
-            C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
-            C.AMR_startUpSweeps = 1;
+            C.AdaptiveMeshRefinement = true;
+            int maxRefLvl = 1;
+            C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = maxRefLvl });
+            C.AMR_startUpSweeps = maxRefLvl;
 
             //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
             //C.BaseRefinementLevel = 2;
             //C.RefinementLevel = 2;
-
-            C.InitSignedDistance = false;
-            C.adaptiveReInit = false;
 
             #endregion
 
@@ -490,16 +488,16 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
-            double dt = 0.5; // 0.138; // 5e-2;
+            double dt = 1e-2; // 0.138; // 5e-2;
             C.dtMax = dt;
             C.dtMin = dt;
-            C.Endtime = 7.0;
-            C.NoOfTimesteps = 10; // 500;
-            C.saveperiod = 2;
+            C.Endtime = 1000;
+            C.NoOfTimesteps = 500;
+            C.saveperiod = 10;
 
             #endregion
 

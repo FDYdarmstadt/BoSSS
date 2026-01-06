@@ -355,9 +355,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
             C.AMR_startUpSweeps = 0;
 
-            //C.InitSignedDistance = false;
-            C.adaptiveReInit = false;
-
             //C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             //C.LinearSolver = LinearSolverCode.automatic.GetConfig();
             //C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();

@@ -2390,7 +2390,11 @@ namespace BoSSS.Foundation.IO {
                         break;
                     }
                 case Application.XNSE_Solver.PhysicalBasedTestcases.MovingContactLineLogging.LogfileName: {
-                        values = new string[] { "#timestep", "time", "contact-pointX", "contact-pointY", "contact-VelocityX", "contact-VelocityY", "contact-angle" };
+                    values = new string[] { "#timestep", "time", "contact-pointX", "contact-pointY", "contact-VelocityX", "contact-VelocityY", "contact-angle" };
+                    break;
+                }
+                case Application.XNSE_Solver.PhysicalBasedTestcases.StokesExtensionEvolverLogging.LogfileName: {
+                        values = new string[] { "#timestep", "time", "L2-Norm_NB", "L2-Norm_CC", "MeanTotalValue_NB", "MeanTotalValue_CC", "minVal", "maxVal", "InterfaceDist" };
                         break;
                     }
                 case Application.XNSFE_Solver.PhysicalBasedTestcases.EvaporationLogging.LogfileName: {

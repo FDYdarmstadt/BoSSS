@@ -352,11 +352,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             for(int l = 0; l < L; l++) { // loop over cells...
                 cpv.jCell = prm.j0 + l;
 
-                if (this.volForm.GetType().ToString() == "BoSSS.Solution.XNSECommon.Operator.SurfaceTension.IsotropicSurfaceTension_LaplaceBeltrami"
-                    && cpv.jCell == 7) {
-                    Console.WriteLine("IsotropicSurfaceTension_LaplaceBeltrami.VolumeForm - GetCoeff()");
-                }
-
                 for(int k = 0; k < __K; k++) { // loop over nodes...
                     for(int d = 0; d < D; d++) {
                         cpv.Xglobal[d] = prm.Xglobal[l, k, d];
@@ -870,11 +865,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 cp.EdgeTag = _EdgeTags[cp.iEdge];
                 cp.jCellIn = E2C[cp.iEdge, 0];
                 cp.jCellOut = E2C[cp.iEdge, 1];
-
-                if (this.edgeForm.GetType().ToString() == "BoSSS.Solution.XNSECommon.Operator.SurfaceTension.IsotropicSurfaceTension_LaplaceBeltrami"
-                        && cp.jCellIn == 7) {
-                    Console.WriteLine("IsotropicSurfaceTension_LaplaceBeltrami.InnerEdgeForm - GetCoeff()");
-                }
 
                 for (int k = 0; k < K; k++) { // loop over quadrature nodes
 

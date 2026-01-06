@@ -221,8 +221,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
-            C.InitSignedDistance = false;
-
             //double U_slip = 0.16;
 
             C.InitialValues_Evaluators.Add("VelocityX#A", X => 0.0); // -U_slip + 2 * U_slip * X[1] / H);

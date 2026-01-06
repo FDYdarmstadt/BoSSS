@@ -704,6 +704,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             ColAdd(pM, i, k, -M_ki * diagsign, RowCycM);
 
                             Debug.Assert(Math.Abs(M[k, i]) < 1.0e-8);
+                            //if(Math.Abs(M[k, i]) >= 1.0e-8)
+                            //    Console.WriteLine($"Math.Abs(M[{k}, {i}]) = {Math.Abs(M[k, i])}");
                             Debug.Assert(Math.Abs(M[i, k]) < 1.0e-8);
                             //if(Math.Abs(M[i, k]) >= 1.0e-8 || Math.Abs(M[k, i]) >= 1.0e-8)
                             //    throw new ArithmeticException();

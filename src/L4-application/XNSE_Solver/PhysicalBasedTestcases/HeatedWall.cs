@@ -1895,8 +1895,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.RefineNavierSlipBoundary = false;
             //C.BaseRefinementLevel  1;
 
-            C.InitSignedDistance = false;
-
             #endregion
 
 
@@ -2365,7 +2363,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AMR_startUpSweeps = 3;
 
             //C.ReInitPeriod = 10;
-            C.InitSignedDistance = false;
 
             #endregion
 

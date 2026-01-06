@@ -64,8 +64,9 @@ namespace BoSSS.Application.XNSE_Solver {
         // ===========
         static void Main(string[] args) {
             //InitMPI();
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.BcTest_PressureOutletTest(2, 1, 0.1, CutCellQuadratureMethod.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TaylorCouetteConvergenceTest(2, Tests.TaylorCouette.Mode.Test2Phase, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, false, NonLinearSolverCode.Picard);
+            ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.BcTest_PressureOutletTest(2, 1, 0.1, CutCellQuadratureMethod.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+            ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TaylorCouetteConvergenceTest(2, Tests.TaylorCouette.Mode.Test2Phase, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, false, NonLinearSolverCode.Picard);
+            //BoSSS.Application.XNSE_Solver.Tests.StaticDropletElementalTest.TestStaticDroplet2D_ExactSolution();
             //throw new Exception("remove");
 
 
@@ -840,6 +841,31 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public List<(double, double)> ImbalanceTrack;
 
+
+        static double RoundSignificantDigit(double input, int digit = 1, bool floor = false) {
+
+            if(digit < 1)
+                throw new ArgumentException("digit must be greater than zero");
+
+            if(input == 0.0)
+                return input;
+
+            int precision = 0;
+            double val = input - Math.Round(input, 0);
+            while(Math.Abs(val) < (double)(10.Pow(digit - 1))) {
+                val *= 10.0;
+                precision++;
+            }
+
+            if(floor) {
+                var power = Math.Pow(10, precision);
+                return Math.Floor(input * power) / power;
+            } else {
+                return Math.Round(input, precision);
+            }
+        }
+
+
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using(var f = new FuncTrace()) {
                 Console.WriteLine();
@@ -851,8 +877,20 @@ namespace BoSSS.Application.XNSE_Solver {
                         Console.WriteLine("restricting time-step to reach end-time");
                         dt = this.Control.Endtime - phystime;
                     }
-                    if(TimestepNo == 1) dt = Math.Min(dt, 1e-3 * this.Control.dtFixed); // small start timestep, to get the levelset rolling
-                } else {
+                    if(TimestepNo == 1) 
+                        dt = Math.Min(dt, 1e-3 * this.Control.dtFixed); // small start timestep, to get the levelset rolling
+                } 
+                else if((int)this.Control.TimeSteppingScheme == 1 && this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient && this.Control.UseAdaptiveTimestep) {
+                    dt = this.GetTimestep();
+                    dt = RoundSignificantDigit(dt, 2, true);
+                    if(phystime + dt > this.Control.Endtime) {
+                        Console.WriteLine("restricting time-step to reach end-time");
+                        dt = this.Control.Endtime - phystime;
+                    }
+                    Console.WriteLine($"=== adaptive timestepping in use! ===");
+                    Console.WriteLine($"Setting time step to dt = {dt}");
+                } 
+                else { 
                     // this is a BDF or non-adaptive scheme, use the base implementation, i.e. the fixed timestep
                     dt = base.GetTimestep();
                 }
@@ -889,8 +927,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 Console.WriteLine($"Done with time step {TimestepNo}; solver success: {success}");
                 GC.Collect();
-                if(Control.FailOnSolverFail && !success) {
-                    PlotCurrentState(phystime, TimestepNo, this.Control.SuperSampling);
+                if (Control.FailOnSolverFail && !success) {
+                    PlotCurrentState(phystime, TimestepNo, this.Control.SuperSampling == 0 ? 2 : this.Control.SuperSampling);
                     SaveToDatabase(TimestepNo, phystime);
                     throw new ArithmeticException("Solver did not converge.");
                 }
@@ -1000,6 +1038,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public override double GetTimestep() {
             double dt = this.Control.dtFixed;
+
+            if(this.Control.ChooseTimestepByMethod == XNSE_Control.ChooseTimestepBy.dtFixed)
+                return dt;
+
             double s = 0.5; // safety factor
             int D = this.GridData.SpatialDimension;
 
@@ -1010,6 +1052,9 @@ namespace BoSSS.Application.XNSE_Solver {
                 LevelSetVelocity = GetInterfaceVelocity();
             else
                 LevelSetVelocity = null;
+
+            double dt_cfl_glob = dt;
+            double dt_cap_glob = dt;
 
             int p = 0;
 
@@ -1031,35 +1076,55 @@ namespace BoSSS.Application.XNSE_Solver {
                     Console.WriteLine("Cannot determine DG order of level set");
                 }
 
-                // capillary timestep
-                {
-                    var physParams = this.Control.PhysicalParameters;
-                    if(physParams.Sigma != 0) {
-                        //double dt_cap = s * Math.Sqrt((physParams.rho_A + physParams.rho_B) * Math.Pow(hmin / (double)(p + 1), 3.0) / (2 * Math.PI * Math.Abs(physParams.Sigma)));
-                        double dt_cap = XNSEUtils.GetCapillaryTimeStep(physParams.rho_A, physParams.rho_B, physParams.Sigma, hmin, p);
-                        if(dt_cap < dt) {
-                            //dt = Math.Min(dt_cap, dt);
-                            //Console.WriteLine("Restricting time step size to: {0}, due to capillary timestep restriction", dt_cap);
-                            Console.WriteLine("Warning: time step size larger than capillary timestep restriction {0}", dt_cap);
-                        }
-                    }
-                }
-            }
-
-
-            // level set cfl
-            {
+                // level set cfl
                 if(LevelSetVelocity != null) {
                     // At this point the level set velocity is not updated to the correct value
                     //VectorField<DGField> LevelSetVelocity = new VectorField<DGField>(D.ForLoop(d => RegisteredFields.SingleOrDefault(s => s.Identification == LevelSetVelocityNames[d])));
 
                     double dt_cfl = this.GridData.ComputeCFLTime(LevelSetVelocity.ToArray(), 10000, CC);
                     dt_cfl *= s / Math.Pow(p, 2);
-                    if(dt_cfl < dt) {
-                        dt = Math.Min(dt_cfl, dt);
-                        Console.WriteLine("Restricting time step size to: {0}, due to level set cfl", dt_cfl);
-                    }
+                    dt_cfl_glob = Math.Min(dt_cfl, dt_cfl_glob);
+                    //if(dt_cfl < dt) {
+                    //    dt = Math.Min(dt_cfl, dt);
+                    //    Console.WriteLine("Restricting time step size to: {0}, due to level set cfl", dt_cfl);
+                    //}
                 }
+
+                // capillary timestep   
+                var physParams = this.Control.PhysicalParameters;
+                if(physParams.Sigma != 0) {
+                    //double dt_cap = s * Math.Sqrt((physParams.rho_A + physParams.rho_B) * Math.Pow(hmin / (double)(p + 1), 3.0) / (2 * Math.PI * Math.Abs(physParams.Sigma)));
+                    double dt_cap = XNSEUtils.GetCapillaryTimeStep(physParams.rho_A, physParams.rho_B, physParams.Sigma, hmin, p);
+                    dt_cap_glob = Math.Min(dt_cap, dt_cap_glob);
+                    //if(dt_cap < dt) {
+                    //    dt = Math.Min(dt_cap, dt);
+                    //    Console.WriteLine("Restricting time step size to: {0}, due to capillary timestep restriction", dt_cap);
+                    //    //Console.WriteLine("Warning: time step size larger than capillary timestep restriction {0}", dt_cap);
+                    //}
+                }
+
+            }
+
+            if(this.Control.ChooseTimestepByMethod == XNSE_Control.ChooseTimestepBy.minimum) {
+                dt = (new double[] { dt, dt_cfl_glob, dt_cap_glob }).Min();
+                Console.WriteLine("Setting minimum time step size to: {0}", dt);
+                return dt;
+            }
+
+            if(this.Control.ChooseTimestepByMethod == XNSE_Control.ChooseTimestepBy.maximum) {
+                dt = (new double[] { dt, dt_cfl_glob, dt_cap_glob }).Max();
+                Console.WriteLine("Setting maximum time step size to: {0}", dt);
+                return dt;
+            }
+
+            if(this.Control.ChooseTimestepByMethod == XNSE_Control.ChooseTimestepBy.LevSetCFLcondition) {
+                Console.WriteLine("Setting time step size to: {0}, due to level set cfl", dt_cfl_glob);
+                return dt_cfl_glob;
+            }
+
+            if(this.Control.ChooseTimestepByMethod == XNSE_Control.ChooseTimestepBy.capillaryRestriction) {
+                Console.WriteLine("Setting time step size to: {0}, due to capillary timestep restriction", dt_cap_glob);
+                return dt_cap_glob;
             }
 
             // determine Minimum timestep over all processess

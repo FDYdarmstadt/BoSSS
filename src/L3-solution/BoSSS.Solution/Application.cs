@@ -2882,7 +2882,7 @@ namespace BoSSS.Solution {
         private bool DoMeshAdaption(int TimeStepNo, double physTime, bool IsInit = false) {
             using (var tr = new FuncTrace()) {
 
-                bool plotAdaption = false;
+                bool plotAdaption = true;
 
                 this.AdaptMesh(TimeStepNo, out var newGrid, out var old2newGridCorr);
                 if (newGrid == null)
@@ -3020,6 +3020,9 @@ namespace BoSSS.Solution {
                         PostRestart(physTime, TimeStepNo);
 
                     ReCreateEquationAndSolvers(IsInit, remshDat, physTime);
+
+                    if(plotAdaption)
+                        PlotCurrentState(physTime, new TimestepNumber(new int[] { TimeStepNo, 12 }), 2);
                 }
                 return true;
             }

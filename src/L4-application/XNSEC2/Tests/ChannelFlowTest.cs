@@ -632,9 +632,6 @@ namespace BoSSS.Application.XNSEC {
             ////C.BaseRefinementLevel  2;
             //C.RefinementLevel = 2;
 
-            C.InitSignedDistance = false;
-            C.adaptiveReInit = false;
-
             #endregion solver
 
             // Timestepping
