@@ -75,12 +75,20 @@ namespace ilPSP {
         
         uint m_flushPeriod;
 
-		/// <summary>
-		/// if true, the output to the stream resp. text-writer is suppressed (usually to 0-th processsor or last processor)
-		/// </summary>
-		public bool surpressStream0 {
-            get;
-            set;
+        // Backing field made volatile to ensure reads/writes are atomic and have appropriate memory semantics
+        private volatile bool m_surpressStream0;
+
+        /// <summary>
+        /// if true, the output to the stream resp. text-writer is suppressed (usually to 0-th processor or last processor)
+        /// Thread-safe via a volatile backing field.
+        /// </summary>
+        public bool surpressStream0 {
+            get {
+                return m_surpressStream0;
+            }
+            set {
+                m_surpressStream0 = value;
+            }
         }
 
         private int cnt = 0;

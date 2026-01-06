@@ -640,7 +640,7 @@ namespace BoSSS.Foundation.XDG {
         /// Creates, from a rule for the positive domain (<see cref="JumpTypes.Heaviside"/>)
         /// the rule for the negative domain and vice-versa.
         /// </summary>
-        class ComplementaryRuleFactory : IQuadRuleFactory<QuadRule> {
+        internal class ComplementaryRuleFactory : IQuadRuleFactory<QuadRule> {
 
             public ComplementaryRuleFactory(IQuadRuleFactory<QuadRule> orgRule) {
                 m_orgrule = orgRule;

@@ -15,15 +15,22 @@ using BoSSS.Foundation.IO;
 using ilPSP;
 using BoSSS.Foundation.Grid;
 using System.Numerics;
+using MPI.Wrappers;
 
 namespace ZwoLevelSetSolver {
     class ZLSmain {
 
         static void Main(string[] args) {
-            //BoSSS.Solution.Application.InitMPI(num_threads:1);
-            //BoSSS.Solution.Application.DeleteOldPlotFiles();
+            BoSSS.Solution.Application.InitMPI();
+            BoSSS.Solution.Application.DeleteOldPlotFiles();
 
-            RunSolver(args);
+            OnlinePerformanceMeasurement.ExecuteBenchmarks();
+            OnlinePerformanceMeasurement.Log.WriteStatistics(Console.Out);
+
+            //ReferenceRun();
+            csMPI.Raw.mpiFinalize();
+
+            //RunSolver(args);
         }
 
         static void RunSolver(string[] args) {

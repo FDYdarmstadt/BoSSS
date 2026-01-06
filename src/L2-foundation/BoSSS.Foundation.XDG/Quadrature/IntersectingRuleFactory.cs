@@ -64,9 +64,11 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
 
             foreach(int j in mask.ItemEnum) {
                 QuadRule rule;
-                bool restore = ilPSP.Environment.StdOut.surpressStream0;
+                bool restore = ilPSP.Environment.InParallelSection ? false : ilPSP.Environment.StdOut.surpressStream0;
+                //bool restore = ilPSP.Environment.StdOut.surpressStream0;
                 try {
-                    ilPSP.Environment.StdOut.surpressStream0 = true;
+                    if(!ilPSP.Environment.InParallelSection)
+                        ilPSP.Environment.StdOut.surpressStream0 = true;
                     rule = GetQuadRule(j, order);
                     if(rule.NoOfNodes == 0) {
                         rule = QuadRule.CreateBlank(RefElement, 1, RefElement.SpatialDimension);
@@ -102,7 +104,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
                     rule.OrderOfPrecision = order;
                     rule.Nodes.LockForever();
                 } finally {
-                    ilPSP.Environment.StdOut.surpressStream0 = restore;
+                    if(!ilPSP.Environment.InParallelSection)
+                        ilPSP.Environment.StdOut.surpressStream0 = restore;
                 }
                 rule.OrderOfPrecision = order;
                 rules.Add(new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(j), rule));

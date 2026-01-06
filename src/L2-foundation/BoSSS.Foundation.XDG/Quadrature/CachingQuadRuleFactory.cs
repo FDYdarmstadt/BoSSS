@@ -91,19 +91,16 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 int NumThreads = ilPSP.Environment.NumThreads;
                 IEnumerable<IChunkRulePair<TQuadRule>>[] newQuadRules = new IEnumerable<IChunkRulePair<TQuadRule>>[NumThreads];
                 var DomainParts = __Domain.SplitUp(NumThreads);
-                Console.WriteLine("Crating from: " + OriginalRuleFactory[0].GetType());
+                bool restore = ilPSP.Environment.StdOut.surpressStream0;
                 ilPSP.Environment.ParallelFor(0, NumThreads, delegate (int iPart) {
+                //for(int iPart = 0; iPart < NumThreads; iPart++) {
                     var Domain_i = DomainParts[iPart];
                     if(Domain_i.NoOfItemsLocally > 0)
                         newQuadRules[iPart] = OriginalRuleFactory[iPart].GetQuadRuleSet(Domain_i, __Order);
                     else 
                         newQuadRules[iPart] = [ ];
                 });
-                Console.WriteLine(" .... done.");
-                //for(int iPart = 0; iPart < NumThreads; iPart++) {
-                //    newQuadRules[iPart] = OriginalRuleFactory[iPart].GetQuadRuleSet(DomainParts[iPart], __Order);
-                //}
-
+                ilPSP.Environment.StdOut.surpressStream0 = restore;
                 newQuadRuleCombined = newQuadRules[0].ToArray();
                 for(int iPart = 1; iPart < NumThreads; iPart++) {
                     newQuadRuleCombined = newQuadRuleCombined.Cat(newQuadRules[iPart]);
