@@ -963,6 +963,7 @@ namespace ilPSP {
                 var cpus = DedicatedCPUsForThisRank.GetSubVector(DedicatedCPUsForThisRank.Length - NumThreads, NumThreads); // use the left-over CPUs **at the beginning** for spare; I assume that background threads rather grab those.
                 MKLservice.BindOMPthreads_1To1(cpus);
             } else {
+                //MKLservice.BindOMPthreads_1To1(new int[] { 1, 5, 9, 13 }); Console.WriteLine("Pinning testcode !!!!!!!!!!!!!!!!!!!!!!11111");
                 MKLservice.SetNumThreads(NumThreads);
             }
 

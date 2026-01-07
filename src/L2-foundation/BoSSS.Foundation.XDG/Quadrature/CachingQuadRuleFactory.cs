@@ -93,13 +93,12 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 var DomainParts = __Domain.SplitUp(NumThreads);
                 bool restore = ilPSP.Environment.StdOut.surpressStream0;
                 ilPSP.Environment.ParallelFor(0, NumThreads, delegate (int iPart) {
-                //for(int iPart = 0; iPart < NumThreads; iPart++) {
                     var Domain_i = DomainParts[iPart];
                     if(Domain_i.NoOfItemsLocally > 0)
                         newQuadRules[iPart] = OriginalRuleFactory[iPart].GetQuadRuleSet(Domain_i, __Order);
                     else 
                         newQuadRules[iPart] = [ ];
-                });
+                }, enablePar: true);
                 ilPSP.Environment.StdOut.surpressStream0 = restore;
                 newQuadRuleCombined = newQuadRules[0].ToArray();
                 for(int iPart = 1; iPart < NumThreads; iPart++) {
@@ -110,7 +109,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             if(m_QuadRule == null) {
                 m_QuadRule = newQuadRuleCombined;
             } else {
-                m_QuadRule = MergeRules(m_QuadRule, newQuadRuleCombined);
+                m_QuadRule = m_QuadRule.MergeDisjointRules(newQuadRuleCombined);
             }
 
             //
@@ -126,6 +125,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
         }
 
+        /*
         static IChunkRulePair<TQuadRule>[] MergeRules(IChunkRulePair<TQuadRule>[] A, IChunkRulePair<TQuadRule>[] B) {
             int iA = 0;
             int iB = 0;
@@ -152,7 +152,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             }
             return M;
         }
-
+        */
 
 
         public IEnumerable<IChunkRulePair<TQuadRule>> GetQuadRuleSet(ExecutionMask domain, int order) {
@@ -227,6 +227,10 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 #endif
 
             return Ret;
+        }
+
+        public override string ToString() {
+            return "Caching-" + (this.OriginalRuleFactory?.First()?.GetType()?.Name ?? "null");
         }
     }
 

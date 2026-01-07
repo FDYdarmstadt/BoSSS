@@ -691,7 +691,35 @@ namespace BoSSS.Foundation.Quadrature {
             return scheme.Compile(g, order);
         }
 
-        
+        /// <summary>
+        /// Combines two disjoint rules <paramref name="A"/> and <paramref name="B"/> in the right sequence
+        /// </summary>
+        public static IChunkRulePair<TQuadRule>[] MergeDisjointRules<TQuadRule>(this IEnumerable<IChunkRulePair<TQuadRule>> A, IEnumerable<IChunkRulePair<TQuadRule>> B) where TQuadRule : QuadRule {
+            var enuA = A.GetEnumerator();
+            var enuB = B.GetEnumerator();
+
+
+            var hasNextA = enuA.MoveNext();
+            var hasNextB = enuB.MoveNext();
+
+            var M = new List<IChunkRulePair<TQuadRule>>();
+
+            while(hasNextA || hasNextB) {
+                if(hasNextA && (!hasNextB || enuA.Current.Chunk.i0 < enuB.Current.Chunk.i0)) {
+                    M.Add(enuA.Current);
+                    hasNextA = enuA.MoveNext();
+                } else if(hasNextB && (!hasNextA || enuB.Current.Chunk.i0 < enuA.Current.Chunk.i0)) {
+                    M.Add(enuB.Current);
+                    hasNextB = enuB.MoveNext();
+                } else {
+                    throw new ArgumentException("cannot merge overlapping quadrature rules");
+                }
+
+            }
+
+            return M.ToArray();
+        }
+
     }
 
     /// <summary>

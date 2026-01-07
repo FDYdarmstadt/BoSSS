@@ -21,16 +21,21 @@ namespace ZwoLevelSetSolver {
     class ZLSmain {
 
         static void Main(string[] args) {
-            BoSSS.Solution.Application.InitMPI();
-            BoSSS.Solution.Application.DeleteOldPlotFiles();
+            //BoSSS.Solution.Application.InitMPI(num_threads:4);
+            //BoSSS.Solution.Application.DeleteOldPlotFiles();
 
-            OnlinePerformanceMeasurement.ExecuteBenchmarks();
+            /*OnlinePerformanceMeasurement.MaxNumOfBenchmarks = 1001;
+            for(int i = 0; i < 25; i++) {
+                OnlinePerformanceMeasurement.ExecuteBenchmarks();
+                Console.Write(".");
+            }
+            Console.WriteLine();
             OnlinePerformanceMeasurement.Log.WriteStatistics(Console.Out);
-
+            */
             //ReferenceRun();
-            csMPI.Raw.mpiFinalize();
+            //csMPI.Raw.mpiFinalize();
 
-            //RunSolver(args);
+            RunSolver(args);
         }
 
         static void RunSolver(string[] args) {
@@ -50,7 +55,7 @@ namespace ZwoLevelSetSolver {
             var c = ZwoLevelSetSolver.ControlFiles.Droplet.AlandSL3D(2, 2, 0);
             c.DbPath = db.Path;
             c.savetodb = true;
-            c.NoOfTimesteps = 1;
+            c.NoOfTimesteps = 5;
 
             using(var p = new ZLS()) {
                 p.Init(c);
