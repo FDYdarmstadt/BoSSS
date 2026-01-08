@@ -344,8 +344,10 @@ namespace BoSSS.Solution.Control {
         /// changes a boundary condition in the loaded grid
         /// </summary>
         public void ChangeBoundaryCondition(string oldEdgeTagName, string newEdgeTagName) {
-            if(!this.BoundaryValueChanges.ContainsKey(oldEdgeTagName))
+            if(!this.BoundaryValueChanges.ContainsKey(oldEdgeTagName)) {
                 this.BoundaryValueChanges.Add(oldEdgeTagName, newEdgeTagName);
+                this.BoundaryValues.Remove(oldEdgeTagName);
+            }
         }
 
         /// <summary>
@@ -1168,7 +1170,7 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         /// <seealso cref="BoSSS.Foundation.IO.IDatabaseDriver.InitTraceFile(SessionInfo)"/>
         [DataMember]
-        public string TracingNamespaces = "*";
+        public string TracingNamespaces; 
 
         /// <summary>
         /// Activate/Deactivate memory allocation logging

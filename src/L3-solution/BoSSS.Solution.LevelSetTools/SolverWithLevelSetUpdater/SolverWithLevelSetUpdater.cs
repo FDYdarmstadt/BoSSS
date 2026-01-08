@@ -278,7 +278,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         break;
                     }
                     case LevelSetEvolution.FastMarching: {
-                        var fastMarcher = new FastMarchingEvolver(LevelSetCG, QuadOrder(), D, Control.FastMarchingReInitPeriod);
+                        var fastMarcher = new FastMarchingEvolver(LevelSetCG, QuadOrder(), D, 
+                            ReInitControl: this.Control.ReInitControl, ReInitPeriod: this.Control.ReInitPeriod);
                         lsUpdater.AddEvolver(LevelSetCG, fastMarcher);
                         break;
                     }
@@ -291,8 +292,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         } else {
                             stokesExtEvo = new StokesExtensionEvolver(LevelSetCG, QuadOrder(), D,
                             GetBcMap(),
-                            this.Control.AgglomerationThreshold, this.GridData, useBCmap: this.Control.StokesExtentionUseBCmap);
-                            ((StokesExtensionEvolver)stokesExtEvo).InitializeReInit(this.Control.ReInitControl, this.Control.ReInitPeriod, this.Control.ReInitTimestepIndex);
+                            this.Control.AgglomerationThreshold, this.GridData, useBCmap: this.Control.StokesExtentionUseBCmap, 
+                            ReInitControl: this.Control.ReInitControl, ReInitPeriod: this.Control.ReInitPeriod);
                         }
                         lsUpdater.AddEvolver(LevelSetCG, stokesExtEvo);
                         break;
@@ -429,11 +430,17 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     case LevelSetEvolution.Prescribed:
                     case LevelSetEvolution.PrescribedVelocity:
                     case LevelSetEvolution.StokesExtension:
-                    case LevelSetEvolution.FastMarching:
                     case LevelSetEvolution.None: {
                         pair.DGLevelSet.Clear();
                         if (Phi_InitialValue != null)
                             pair.DGLevelSet.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(time));
+                        break;
+                    }
+                    case LevelSetEvolution.FastMarching: {
+                        pair.DGLevelSet.Clear();
+                        if(Phi_InitialValue != null)
+                            pair.DGLevelSet.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(time));
+                        LsUpdater.ReInitOnStart(pair);
                         break;
                     }
                     case LevelSetEvolution.Phasefield: {
@@ -668,11 +675,20 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             // set restart time, used later in the intial tracker updates
             restartTime = time;
 
+            // set the internal ReInitCpunter for some LevelSetEvolver -> will be removed in near future by adaptive ReInit
+            LsUpdater.SetInternalTimestepNumber(timestep.MajorNumber);
+            
+
             // push stacks, otherwise we get a problem when updating the tracker, parts of the xdg fields are cleared or something
             this.LsUpdater.Tracker.PushStacks();
 
         }
-        
+
+        public override void SetInternalTimestepNumber(TimestepNumber timestep) {
+            // set the internal ReInitCpunter for some LevelSetEvolver -> will be removed in near future by adaptive ReInit
+            LsUpdater.SetInternalTimestepNumber(timestep.MajorNumber - 1);
+        }
+
         /// <summary>
         /// 
         /// </summary>

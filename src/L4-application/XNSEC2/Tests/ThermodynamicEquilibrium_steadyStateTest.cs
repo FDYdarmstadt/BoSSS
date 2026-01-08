@@ -282,8 +282,6 @@ namespace BoSSS.Application.XNSEC {
             //C.RefineNavierSlipBoundary = false;
             //C.BaseRefinementLevel  1;
 
-            C.InitSignedDistance = false;
-
             #endregion
 
 
@@ -578,8 +576,6 @@ namespace BoSSS.Application.XNSEC {
             //C.RefineStrategy = XNSEC_Control.RefinementStrategy.constantInterface;
             //C.RefineNavierSlipBoundary = false;
             //C.BaseRefinementLevel  1;
-
-            C.InitSignedDistance = false;
 
             #endregion
 

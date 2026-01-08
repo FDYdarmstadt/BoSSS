@@ -50,13 +50,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control StaticDroplet_Free(int p = 2, int kelem = 28, int AMRlvl = 0) {
+        public static XNSE_Control StaticDroplet_Free(int p = 3, int kelem = 14, int AMRlvl = 0) {
 
             XNSE_Control C = new XNSE_Control();
 
             int D = 2;
 
-            AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
+            AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Steady;
             bool steadyInterface = false;
 
             //string _DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
@@ -250,8 +250,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             double r = Lscl * 0.25;
 
-            Func<double[], double> PhiFunc = (X => ((X[0] - 0.0).Pow2() + (X[1] - 0.0).Pow2()).Sqrt() - r);         // signed distance
-            //Func<double[], double> PhiFunc = (X => ((X[0] - 0.0).Pow2() + (X[1] - 0.0).Pow2()) - r.Pow2());         // quadratic
+            //Func<double[], double> PhiFunc = (X => ((X[0] - 0.0).Pow2() + (X[1] - 0.0).Pow2()).Sqrt() - r);         // signed distance
+            Func<double[], double> PhiFunc = (X => ((X[0] - 0.0).Pow2() + (X[1] - 0.0).Pow2()) - r.Pow2());         // quadratic
 
             if(D == 3) {
                 double a = 1.25;
@@ -351,19 +351,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            //if (AMRlvl > 0) {
-            //    C.AdaptiveMeshRefinement = true;
-            //    //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            //    //C.BaseRefinementLevel  AMRlvl;
-            //}
-            C.AdaptiveMeshRefinement = false;
-            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            //C.BaseRefinementLevel  1;
-            //C.RefinementLevel = 1;
-            //C.AMR_startUpSweeps = 2;
-
-            //C.InitSignedDistance = false;
-            C.adaptiveReInit = false;
+            C.AdaptiveMeshRefinement = true;
+            C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
+            C.AMR_startUpSweeps = 0;
 
             //C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             //C.LinearSolver = LinearSolverCode.automatic.GetConfig();

@@ -2882,7 +2882,7 @@ namespace BoSSS.Solution {
         private bool DoMeshAdaption(int TimeStepNo, double physTime, bool IsInit = false) {
             using (var tr = new FuncTrace()) {
 
-                bool plotAdaption = false;
+                bool plotAdaption = true;
 
                 this.AdaptMesh(TimeStepNo, out var newGrid, out var old2newGridCorr);
                 if (newGrid == null)
@@ -3005,7 +3005,8 @@ namespace BoSSS.Solution {
                     int trackerVersion = remshDat.SetNewTracker(this.LsTrk);
 
                     CreateFields(); // full user control   
-                                    //PostRestart(physTime, TimeStepNo);
+                    //PostRestart(physTime, TimeStepNo);
+                    SetInternalTimestepNumber(TimeStepNo);
 
                     if(this.LsTrk != null) {
                         if(this.LsTrk.Regions.Time != physTime)
@@ -3014,11 +3015,14 @@ namespace BoSSS.Solution {
 
                     if (plotAdaption)
                         PlotCurrentState(physTime, new TimestepNumber(new int[] { TimeStepNo, 11 }), 2);
-                    
-                    if (IsInit && this.Control.RestartInfo != null)
+
+                    if(IsInit && this.Control.RestartInfo != null)
                         PostRestart(physTime, TimeStepNo);
 
                     ReCreateEquationAndSolvers(IsInit, remshDat, physTime);
+
+                    if(plotAdaption)
+                        PlotCurrentState(physTime, new TimestepNumber(new int[] { TimeStepNo, 12 }), 2);
                 }
                 return true;
             }
@@ -3861,6 +3865,15 @@ namespace BoSSS.Solution {
         /// </summary>
         public virtual void PostRestart(double time, TimestepNumber timestep) {
         }
+
+
+        /// <summary>
+        /// intermediate helper method to update the internal timestep counter, e.g ReInit period after AMR
+        /// </summary>
+        /// <param name="timestep"></param>
+        public virtual void SetInternalTimestepNumber(TimestepNumber timestep) {     
+        }
+
 
         /// <summary>
         /// Override this method in order to construct a

@@ -36,6 +36,7 @@ namespace BoSSS.Application.XdgPoisson3 {
     /// </summary>
     public static class HardCodedControl {
 
+
         /// <summary>
         /// A 45-degree interface in the 2D domain $(-2,2)^2$.
         /// </summary>

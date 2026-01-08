@@ -183,8 +183,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public int ReInitTimestepIndex = 0;
 
 
-
-
         /// <summary>
         /// Controls the behavior of the <see cref="ContinuityProjection"/>, i.e. the algorithm which enforces continuity of the level-set
         /// </summary>

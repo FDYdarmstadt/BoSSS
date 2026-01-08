@@ -279,11 +279,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             CellQuadrature.GetQuadrature(new int[] { D }, LsTrk.GridDat,
                 vqs.Compile(LsTrk.GridDat, order),
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
-                    NodeSet nodes_global = QR.Nodes.CloneAs();
-                    for (int i = i0; i < i0 + Length; i++) {
-                        LsTrk.GridDat.TransformLocal2Global(QR.Nodes, i, 1, nodes_global, i);
-                        EvalResult.AccSubArray(1.0, nodes_global, new int[] { i - i0, -1, -1 });
-                    }
+                    //NodeSet nodes_global = QR.Nodes.CloneAs();     
+                    //for (int i = i0; i < i0 + Length; i++) {
+                    //    LsTrk.GridDat.TransformLocal2Global(QR.Nodes, i, 1, nodes_global, i);
+                    //    EvalResult.AccSubArray(1.0, nodes_global.ExtractSubArrayShallow(new int[] { 0, -1, -1}), new int[] { i - i0, -1, -1 });
+                    //}
+                    MultidimensionalArray nodes_global = MultidimensionalArray.Create(Length, QR.Nodes.GetLength(0), QR.Nodes.GetLength(1));
+                    LsTrk.GridDat.TransformLocal2Global(QR.Nodes, i0, Length, nodes_global, 0);
+                    EvalResult.Acc(1.0, nodes_global);
                 },
                 delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
                     for (int i = 0; i < Length; i++) {
