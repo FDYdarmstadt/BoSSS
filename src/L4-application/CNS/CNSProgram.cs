@@ -38,6 +38,7 @@ using ilPSP.Utils;
 using BoSSS.Solution.LoadBalancing;
 using BoSSS.Solution.Utils;
 using CNS.Tests;
+using NUnit.Framework;
 
 namespace CNS {
 
@@ -55,10 +56,9 @@ namespace CNS {
 
             //Application.InitMPI(args);
             //DeleteOldPlotFiles();
-            //AcousticWaveShockInteraction.Test00();
-            //Debug.Assert(false, "remove me");
-            //return;
-
+            //CNS.Tests.IBMTests.IBMIsentropicVortexTest.IBMVortexClassicHLLCAgglomerationTest();
+            //Assert.True(false, "remove me");
+            
             Application<CNSControl>._Main(
                 args,
                 false,

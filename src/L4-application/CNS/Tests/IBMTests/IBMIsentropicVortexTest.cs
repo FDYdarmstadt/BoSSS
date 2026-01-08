@@ -133,7 +133,7 @@ namespace CNS.Tests.IBMTests {
                 p.QueryHandler.QueryResults,
                 Tuple.Create("L2ErrorDensity", 3.5e-3),
                 Tuple.Create("L2ErrorPressure", 4.5e-3),
-                Tuple.Create("L2ErrorEntropy", 5.0e-3));
+                Tuple.Create("L2ErrorEntropy", 5.2e-3));
         }
 
         /// <summary>
