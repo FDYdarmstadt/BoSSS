@@ -13,6 +13,8 @@ using System.Linq;
 
 namespace BoSSS.Foundation.XDG.Quadrature {
 
+
+
     /// <summary>
     /// Performs two purposes, mainly for quadrature rules which are expensive to generate:
     /// - rules, once created, should be re-used as much as possible
@@ -124,36 +126,6 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             }
 
         }
-
-        /*
-        static IChunkRulePair<TQuadRule>[] MergeRules(IChunkRulePair<TQuadRule>[] A, IChunkRulePair<TQuadRule>[] B) {
-            int iA = 0;
-            int iB = 0;
-            int AL = A.Length;
-            int BL = B.Length;
-            int ML = AL + BL;
-            IChunkRulePair<TQuadRule>[] M = new IChunkRulePair<TQuadRule>[ML];
-            
-            for(int iM = 0; iM < ML; iM++) {
-                if(iA < AL && (iB >= B.Length || A[iA].Chunk.i0 < B[iB].Chunk.i0)) {
-                    M[iM] = A[iA];
-                    iA++;
-                } else if(iB < BL && (iA >= A.Length || B[iB].Chunk.i0 < A[iA].Chunk.i0)) {
-                    M[iM] = B[iB];
-                    iB++;
-                } else {
-                    throw new ArgumentException("cannot merge overlapping quadrature rules");
-                }
-
-                if(iM > 0) {
-                    if(M[iM].Chunk.i0 < M[iM - 1].Chunk.JE)
-                        throw new ArgumentException("rules to merge seem to have overlap - not supported");
-                }
-            }
-            return M;
-        }
-        */
-
 
         public IEnumerable<IChunkRulePair<TQuadRule>> GetQuadRuleSet(ExecutionMask domain, int order) {
             var missingPart = m_MaxDomain != null ? domain.Except(m_MaxDomain) : domain;

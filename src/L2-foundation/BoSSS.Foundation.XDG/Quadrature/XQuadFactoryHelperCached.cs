@@ -89,9 +89,10 @@ namespace BoSSS.Foundation.XDG {
             public IQuadRuleFactory<TQuadRule> GetFactory(Tkey key) {
                 if(!m_QuadRuleFactory.ContainsKey(key)) {
                     var fac0 = m_FactoryFactory(0, key);
-                    if(fac0 is EdgeRuleFromCellBoundaryFactory || fac0 is XQuadFactoryHelper.ComplementaryRuleFactory)
-                        // bypass the caching, because `EdgeRuleFromCellBoundaryFactory` performs its own caching
-                        return fac0; 
+                    if(fac0 is IQuadRuleFactory_ext<TQuadRule> fac0_ext) { 
+                        if(fac0_ext.RuleIsCached)
+                            return fac0; // bypass the caching, because `fac0` performs its own caching
+                    }
 
                     m_QuadRuleFactory.Add(
                         key,

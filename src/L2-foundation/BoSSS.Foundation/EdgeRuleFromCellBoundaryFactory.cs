@@ -35,7 +35,7 @@ namespace BoSSS.Foundation.Quadrature {
     /// Note: the conversion of cell boundary rules into edge rules implicitly assumes that the 
     /// level-set-fields is at least C^0 continuous, i.e. the level-set field is continuous across the cell boundaries.
     /// </summary>
-    public class EdgeRuleFromCellBoundaryFactory : IQuadRuleFactory<QuadRule> {
+    public class EdgeRuleFromCellBoundaryFactory : IQuadRuleFactory_ext<QuadRule> {
                 
 
         /// <summary>
@@ -542,6 +542,9 @@ namespace BoSSS.Foundation.Quadrature {
             private set;
         }
 
-       
+        /// <summary>
+        /// always true, because this class works globally
+        /// </summary>
+        public bool RuleIsCached => true;
     }
 }
