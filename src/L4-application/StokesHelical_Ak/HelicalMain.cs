@@ -48,7 +48,8 @@ namespace StokesHelical_Ak {
         /// <summary>
         /// Entry point of my program
         /// </summary>
-        /// <param name="args"></param>
+        /// <param name="args"></param> 
+        /// 
         static void Main(string[] args) {
 
             // InitMPI();
