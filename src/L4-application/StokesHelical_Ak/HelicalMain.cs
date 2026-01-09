@@ -37,7 +37,7 @@ using BoSSS.Solution.XNSECommon;
 using BoSSS.Foundation.Voronoi;
 using System.Diagnostics.Metrics;
 using BoSSS.Solution.Control;
-using BoSSS.Solution.LevelSetTools.FourierLevelSet;
+using BoSSS.Solution.LevelSetTools;
 using StokesHelical_Ak.TestSpartial;
 using StokesHelical_Ak.TestTransient;
 using StokesHelical_Ak.NUnitTestsR0_fix;
@@ -480,6 +480,8 @@ namespace StokesHelical_Ak {
             // +++++++++++++++++++++++++
             if(Control.NavierStokes) {
                 Globals.ConcetiveTerms_Add_on_Term_2 = this.Control.Conv_AK_2;
+                Globals.ConcetiveTerms_Add_on_Term_3 = this.Control.Conv_AK_3;
+                Globals.ConcetiveTerms_Add_on_Term_4 = this.Control.Conv_AK_4;
                 diffOp_explicit.EquationComponents["rmom"].Add(new convectiveRmom());
                 diffOp_explicit.EquationComponents["etamom"].Add(new convectiveETAmom());
                 diffOp_explicit.EquationComponents["zmom"].Add(new convectiveXImom());

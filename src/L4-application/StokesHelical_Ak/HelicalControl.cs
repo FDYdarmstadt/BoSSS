@@ -177,6 +177,8 @@ namespace StokesHelical_Ak {
 
         [DataMember]
         public bool Conv_AK_2 = false;
+        public bool Conv_AK_3 = false;
+        public bool Conv_AK_4 = false;
     }
 
 }
