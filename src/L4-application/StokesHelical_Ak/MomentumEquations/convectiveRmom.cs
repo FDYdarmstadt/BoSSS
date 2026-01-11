@@ -76,7 +76,7 @@ namespace StokesHelical_Ak.MomentumEquations {
             Acc += -1.0 * B_term * B_term / r * (b / r * uxi0 + a * ueta0) * (b / r * U[1] + a * U[2]) * f_function * V;  // Term 1
 
             if(Globals.ConcetiveTerms_Add_on_Term_3 == true) {
-                Acc += (U[0] / r + GradU[0, 0] + GradU[1, 1] / B_term) * V * ur0; // Additional Term 3 From Akbari Extension
+                Acc += 0.5*(U[0] / r + GradU[0, 0] + GradU[1, 1] / B_term) * f_function * V * ur0; // Additional Term 3 From Akbari Extension
             }
 
             return Acc;
@@ -126,11 +126,12 @@ namespace StokesHelical_Ak.MomentumEquations {
             Acc += ((Flux - Influx) * V_IN - (Flux - Outflux) * V_OT) * f_function;  // 
 
             if(Globals.ConcetiveTerms_Add_on_Term_2 == true) {
-                Acc -= 0.5 * (ur0_IN  + ur0_OT) * (urVel_IN - urVel_OT) * 0.5* (V_IN+ V_OT) * inp.Normal[0] * f_function;
+                Acc -= 0.5 * (ur0_IN  + ur0_OT) * (urVel_IN - urVel_OT) * 0.5* (V_IN + V_OT) * inp.Normal[0] * f_function;
                 Acc -= 0.5 * (uxi0_IN + uxi0_OT) * (urVel_IN - urVel_OT) * 0.5* (V_IN+ V_OT) * inp.Normal[1] * f_function;
             }
             if(Globals.ConcetiveTerms_Add_on_Term_4 == true) {
-                Console.WriteLine("TO_DO");
+                Acc -= 0.5*0.5 * (ur0_IN* V_IN + ur0_OT* V_OT) * (urVel_IN - urVel_OT) * inp.Normal[0] * f_function;
+                Acc -= 0.5*0.5 * (ur0_IN* V_IN + ur0_OT* V_OT) * (uxiVel_IN - uxiVel_OT) * inp.Normal[1] * f_function;
             }
 
 
@@ -216,7 +217,8 @@ namespace StokesHelical_Ak.MomentumEquations {
                     Acc -= uxi0_IN  * urVel_IN  * Vin * inp.Normal[1] * f_function;
                 }
                 if(Globals.ConcetiveTerms_Add_on_Term_4 == true) {
-                    Console.WriteLine("TO_DO");
+                    Acc -= 0.5 *  (ur0_IN * Vin) * (urVel_IN) * inp.Normal[0] * f_function;
+                    Acc -= 0.5 *  (ur0_IN * Vin) * (uxiVel_IN) * inp.Normal[1] * f_function;
                 }
 
             } else if (Globals.BoundaryType(inp.X) == BoundaryTypeE.Dirichlet) {
@@ -246,7 +248,8 @@ namespace StokesHelical_Ak.MomentumEquations {
                     Acc -= uxi0_IN * urVel_IN * Vin * inp.Normal[1] * f_function;
                 }
                 if(Globals.ConcetiveTerms_Add_on_Term_4 == true) {
-                    Console.WriteLine("TO_DO");
+                    Acc -= 0.5 * (ur0_IN * Vin) * (urVel_IN) * inp.Normal[0] * f_function;
+                    Acc -= 0.5 * (ur0_IN * Vin) * (uxiVel_IN) * inp.Normal[1] * f_function;
                 }
             }
 
