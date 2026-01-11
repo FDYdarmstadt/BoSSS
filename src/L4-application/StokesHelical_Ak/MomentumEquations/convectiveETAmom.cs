@@ -63,7 +63,7 @@ namespace StokesHelical_Ak.MomentumEquations {
             double r = cpv.Xglobal[0];
             double xi = cpv.Xglobal[1];
             double a = Globals.a;
-
+            double b = Globals.b;
             double B_term = Globals.B_term_(r);
             double f_function = Globals.f_function_(r);
             double df_function = Globals.df_function_(r);
@@ -73,7 +73,7 @@ namespace StokesHelical_Ak.MomentumEquations {
             Acc += a * a * B_term * B_term / r * ur0 * U[2] * f_function * V;      // Term 1
 
             if(Globals.ConcetiveTerms_Add_on_Term_3 == true) {
-                Console.WriteLine("TO_DO");
+                Acc += (U[0] / r + GradU[0, 0] + GradU[1, 1] / B_term) * B_term *(a -b / r)* V * ueta0; // Additional Term 3 From Akbari Extension
             }
 
             return Acc;

@@ -76,7 +76,7 @@ namespace StokesHelical_Ak.MomentumEquations {
             Acc += -1.0 * B_term * B_term / r * (b / r * uxi0 + a * ueta0) * (b / r * U[1] + a * U[2]) * f_function * V;  // Term 1
 
             if(Globals.ConcetiveTerms_Add_on_Term_3 == true) {
-                Console.WriteLine("TO_DO");
+                Acc += (U[0] / r + GradU[0, 0] + GradU[1, 1] / B_term) * V * ur0; // Additional Term 3 From Akbari Extension
             }
 
             return Acc;
