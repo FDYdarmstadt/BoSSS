@@ -899,14 +899,15 @@ namespace StokesHelical_Ak.TestTransient {
 
         /// <summary>
         /// Full Navier Stokes Hagen Poiseulle flow (aka. Pipe flow),
-        /// With 0,1% White Noise over laminar Solutin
-        /// ATTENTION: CONVEKTIVE PENALTY WITH AKBARI VARIATION. SEE Documentation
-        /// Reynolds 10
+        /// With 0,1% White Noise over laminar Solution
         /// </summary>
         /// <remarks>
+        /// Attention! Modification of Convective Terme
+        /// DiPietro But Helical
+        /// See Annual Report of Akbari 2025/26
         /// </remarks>
-        /// [Test]
-        static public void Transient_HP_Re_10_White_Noise_1_ProMil_with_R0fix_Conv_Ak_1([Values(3)] int pOrder = 3) {
+        [Test]
+        static public void Transient_HP_Re_10_White_Noise_1_ProMil_with_R0fix_Conv_Ak([Values(3)] int pOrder = 3) {
 
             double maxAmpitude = 40;
             var tempDB = DatabaseInfo.CreateOrOpen("tempDB");
@@ -916,6 +917,8 @@ namespace StokesHelical_Ak.TestTransient {
             double b = Globals.b;
             double nu = Globals.nu;
             ctrl.Conv_AK_2 = true;
+            ctrl.Conv_AK_3 = true;
+            ctrl.Conv_AK_4 = true;
             ctrl.savetodb = true;
             ctrl.InitialValues.Clear();
             ctrl.InitialValues_Evaluators.Clear();
@@ -1011,14 +1014,15 @@ namespace StokesHelical_Ak.TestTransient {
 
         /// <summary>
         /// Full Navier Stokes Hagen Poiseulle flow (aka. Pipe flow),
-        /// With 0,1% White Noise over laminar Solutin
-        /// ATTENTION: CONVEKTIVE PENALTY WITH AKBARI VARIATION. SEE Documentation
-        /// Reynolds 25000
+        /// With 0,1% White Noise over turbulent Solution
         /// </summary>
         /// <remarks>
+        /// Attention! Modification of Convective Terme
+        /// DiPietro But Helical
+        /// See Annual Report of Akbari 2025/26
         /// </remarks>
         // [Test]
-        static public void Transient_HP_Re_2500_White_Noise_1_ProMil_with_R0fix_Conv_Ak_1([Values(3)] int pOrder = 3) {
+        static public void Transient_HP_Re_2500_White_Noise_1_ProMil_with_R0fix_Conv_Ak([Values(3)] int pOrder = 3) {
 
             double maxAmpitude = 12000;
             var tempDB = DatabaseInfo.CreateOrOpen("tempDB");
@@ -1636,6 +1640,9 @@ namespace StokesHelical_Ak.TestTransient {
         /// Reynolds 2500
         /// </summary>
         /// <remarks>
+        /// Attention! Modification of Convective Terme
+        /// DiPietro But Helical
+        /// See Annual Report of Akbari 2025/26
         /// </remarks>
         // [Test]
         static public void Transient_CF_Re_2500_White_Noise_10_Procent_with_R0fix([Values(3)] int pOrder = 3) {
@@ -1752,7 +1759,7 @@ namespace StokesHelical_Ak.TestTransient {
 
 
         /// <summary>
-        /// Full Navier Stokes Cylindrical flow 
+        /// Turbulent Case Full Navier Stokes Cylindrical flow 
         /// With 0,1% White Noise over laminar Solutin
         /// Reynolds 2500
         /// </summary>
@@ -1774,7 +1781,7 @@ namespace StokesHelical_Ak.TestTransient {
             ctrl.savetodb = true;
             ctrl.InitialValues.Clear();
             ctrl.InitialValues_Evaluators.Clear();
-            ctrl.ImmediatePlotPeriod = 5;
+            ctrl.ImmediatePlotPeriod = 1;
             ctrl.Conv_AK_2 = true;
             ctrl.Conv_AK_3 = true;
             ctrl.Conv_AK_4 = true;
