@@ -10,9 +10,9 @@ using BoSSS;
 namespace NSE_SIMPLE {
 
     /// <summary>
-    /// \f[ 
-    ///   -\operatorname{div} \left( \mu \nabla \vec{u} \right)
-    /// \f]
+    /// \[ 
+    ///   -\operatorname{div} \left( \mu \nabla \underline{u} \right)
+    /// \]
     /// </summary>
     public class SipViscosity_Term1_segregatedVar : SipViscosityBase {
 

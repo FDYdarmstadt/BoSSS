@@ -2,6 +2,7 @@
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution.NSECommon;
+using BoSSS.Solution.XNSECommon;
 using ilPSP;
 using ilPSP.Utils;
 using System;
@@ -15,10 +16,10 @@ namespace ZwoLevelSetSolver.SolidPhase {
     /// <summary>
     /// Transport term 
     /// ```math
-    ///    \textrm{div} ( \rho u \vec{v} )
+    ///    \textrm{div} ( \rho u \underline{v} )
     /// ```
     /// using a local Lax-Friedrichs form; Version to use in combination with <see cref="BoSSS.Solution.Control.NonLinearSolverCode.Newton"/>, see also <see cref="IDifferentialOperator.LinearizationHint"/>
-    /// Here $` \vec{v} `$ is a velocity field, 
+    /// Here $` \underline{v} `$ is a velocity field, 
     /// $` \rho `$ is a constant density and 
     /// $` u `$ is a property which should be transported;
     /// </summary>
@@ -29,13 +30,17 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         string speciesName;
 
-        double rho;
+        protected double rho;
 
         string[] variableNames;
 
         string[] parameternames;
 
-        int D;
+        protected int D;
+
+        double penaltyScale = 1;
+
+        IncompressibleMultiphaseBoundaryCondMap boundaryMap;
 
 
         /// <summary>
@@ -50,15 +55,18 @@ namespace ZwoLevelSetSolver.SolidPhase {
         /// </param>
         /// <param name="d"></param>
         /// <param name="rho"></param>
-        public NonLinearConvectionForm(string speciesName, string variableName, string[] velocity, int d, double rho) {
+        public NonLinearConvectionForm(string speciesName, string variableName, string[] velocity, double rho) {
             this.speciesName = speciesName;
             this.variableNames = velocity.Cat(variableName);
             this.D = velocity.Length;
             //this.d = d;
             this.rho = rho;
             this.parameternames = new string[] { };
+        }
 
-
+        public NonLinearConvectionForm(string speciesName, string variableName, string[] velocity, double rho, IncompressibleMultiphaseBoundaryCondMap boundaryMap) 
+            : this(speciesName, variableName, velocity, rho) {
+            this.boundaryMap = boundaryMap;
         }
 
         public TermActivationFlags VolTerms {
@@ -79,39 +87,35 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         public string ValidSpecies => speciesName;
 
-        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uA, double _vIN, double[] _Grad_vA) {
+        public virtual double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uA, double _vIN, double[] _Grad_vA) {
             //return 0.0; // solid wall
 
             Vector VelocityIn = new Vector(_uIN, 0, D);
-
-// Upwinding:
-            if(VelocityIn*inp.Normal >= 0) {
-                return rho * _uIN[D] * (VelocityIn * inp.Normal) * (_vIN); // outflow
+            if(boundaryMap != null) {
+                IncompressibleBcType edgType = boundaryMap.EdgeTag2Type[inp.EdgeTag];
+                Vector vDirichlet = new Vector(D);
+                for(int i = 0; i< D; ++i) {
+                    vDirichlet[i] = boundaryMap.bndFunction[variableNames[i]][inp.EdgeTag](inp.X, inp.time);
+                }
+                double uDirichlet = boundaryMap.bndFunction[variableNames[D]][inp.EdgeTag](inp.X, inp.time);
+                switch(edgType) {
+                    case IncompressibleBcType.FreeSlip:
+                    case IncompressibleBcType.Wall:
+                        return rho * uDirichlet * (vDirichlet * inp.Normal) * (_vIN);
+                    case IncompressibleBcType.Velocity_Inlet:
+                    case IncompressibleBcType.SIMPLE_Outflow:
+                    case IncompressibleBcType.Pressure_Outlet:
+                        return rho * _uIN[D] * (VelocityIn * inp.Normal) * (_vIN); // outflow
+                    default:
+                    throw new NotImplementedException();
+                }
             } else {
-                return 0.0 * (_vIN); // inflow
+                if(VelocityIn * inp.Normal >= 0) {
+                    return rho * _uIN[D] * (VelocityIn * inp.Normal) * (_vIN); // outflow
+                } else {
+                    return 0.0 * (_vIN); // inflow
+                }
             }
-
-            /*
-            double r = 0.0;
-            // 2 * {u_i * u_j} * n_j,
-            // resp. 2 * {rho * u_i * u_j} * n_j for variable density
-            //r += _uIN[d] * (_uIN[D+0] * inp.Normal[0] + _uIN[D + 1] * inp.Normal[1]);
-            //if(D == 3) {
-            //    r += _uIN[d] * _uIN[D + 2] * inp.Normal[2];
-            //}
-            r += _uIN[D] + (VelocityIn * inp.Normal);
-
-            // Calculate dissipative part
-            // ==========================
-
-
-            double LambdaIn = LambdaConvection.GetLambda(VelocityIn, inp.Normal);
-            double uJump = _uIN[D];
-            r += LambdaIn * uJump;
-
-            r *= rho;
-            return r * (_vIN);
-            */
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
@@ -126,46 +130,18 @@ namespace ZwoLevelSetSolver.SolidPhase {
             Vector VelocityIn = new Vector(_uIN, 0, D);
             Vector VelocityOt = new Vector(_uOT, 0, D);
             Vector VelocityAvg = 0.5 * (VelocityIn + VelocityOt);
-
             // Upwinding:
+            //*
             if(VelocityAvg*inp.Normal >= 0) {
                 return rho * _uIN[D] * (VelocityIn * inp.Normal) * (_vIN - _vOUT);
             } else {
                 return rho * _uOT[D] * (VelocityOt * inp.Normal) * (_vIN - _vOUT);
             }
-
-            /*
-
-            // 2 * {u_i * u_j} * n_j,
-            // resp. 2 * {rho * u_i * u_j} * n_j for variable density
-            //r += _uIN[d] * (_uIN[D+0] * inp.Normal[0] + _uIN[D + 1] * inp.Normal[1]);
-            //r += _uOUT[d] * (_uOUT[D+0] * inp.Normal[0] + _uOUT[D+1] * inp.Normal[1]);
-            //if(D == 3) {
-            //    r += _uIN[d] * _uIN[D+2] * inp.Normal[2] + _uOUT[d] * _uOUT[D+2] * inp.Normal[2];
-            //}
-            r += _uIN[D] * (VelocityIn * inp.Normal)*0.5;
-            r += _uOT[D] * (VelocityOt * inp.Normal)*0.5;
-
-            // Calculate dissipative part
-            // ==========================
-
-
-            double LambdaIn = LambdaConvection.GetLambda(VelocityIn, inp.Normal);
-            double LambdaOut = LambdaConvection.GetLambda(VelocityOt, inp.Normal);
-            double Lambda = Math.Max(LambdaIn, LambdaOut);
-            //double uJump = _uIN[D + d] - _uOUT[D + d];
-            double uJump = _uIN[D] - _uOT[D];
-            r += Lambda * uJump*0.5;
-
-            r *= rho;
-            return r * (_vIN - _vOUT);
-            */
+            //*/
         }
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double acc = 0;
-
-            //Vector Velocity = new Vector(U, 0, this.D);
 
             for(int dim = 0; dim < D; dim++)
                 acc += U[dim] * U[D] * GradV[dim];

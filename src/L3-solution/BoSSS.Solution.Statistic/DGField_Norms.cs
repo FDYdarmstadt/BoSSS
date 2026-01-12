@@ -23,11 +23,10 @@ namespace BoSSS.Solution.Statistic {
     public static class DGField_Norms {
 
         /// <summary>
-        /// Projects a DG field <paramref name="source"/>, which may be defined on some different mesh,
-        /// onto the DG field <paramref name="target"/>.
+        /// Projects a DG field <paramref name="source"/>, which may be defined on some different mesh, onto the DG field <paramref name="target"/>. (Non-XDG version.)
         /// </summary>
         static public void ProjectFromForeignGrid(this ConventionalDGField target, double alpha, ConventionalDGField source, CellQuadratureScheme scheme = null) {
-            using (new FuncTrace()) {
+            using(new FuncTrace()) {
                 //Console.WriteLine(string.Format("Projecting {0} onto {1}... ", source.Identification, target.Identification));
                 int maxDeg = Math.Max(target.Basis.Degree, source.Basis.Degree);
                 var CompQuadRule = scheme.SaveCompile(target.GridDat, maxDeg * 3 + 3); // use over-integration
@@ -35,7 +34,7 @@ namespace BoSSS.Solution.Statistic {
 
 
 
-                if (object.ReferenceEquals(source.GridDat, target.GridDat)) {
+                if(object.ReferenceEquals(source.GridDat, target.GridDat)) {
                     // +++++++++++++++++
                     // equal grid branch
                     // +++++++++++++++++
@@ -47,7 +46,7 @@ namespace BoSSS.Solution.Statistic {
                     // different grid branch
                     // +++++++++++++++++++++
 
-                    if (source.GridDat.SpatialDimension != D) {
+                    if(source.GridDat.SpatialDimension != D) {
                         throw new ArgumentException("Spatial Dimension Mismatch.");
                     }
 
@@ -73,7 +72,7 @@ namespace BoSSS.Solution.Statistic {
                         Debug.Assert(input.Dimension == 2);
                         Debug.Assert(input.NoOfCols == D);
 
-                        if (allNodes == null) {
+                        if(allNodes == null) {
                             allNodes = input.CloneAs();
                         } else {
                             /*
@@ -105,7 +104,7 @@ namespace BoSSS.Solution.Statistic {
                     int NoOfUnlocated = eval.EvaluateParallel(1.0, new DGField[] { source }, allNodes, 0.0, Res);
 
                     int TotalNumberOfUnlocated = NoOfUnlocated.MPISum();
-                    if (TotalNumberOfUnlocated > 0) {
+                    if(TotalNumberOfUnlocated > 0) {
                         Console.Error.WriteLine($"WARNING: {TotalNumberOfUnlocated} unlocalized points in 'ProjectFromForeignGrid(...)'");
                     }
 
@@ -129,10 +128,75 @@ namespace BoSSS.Solution.Statistic {
             }
         }
 
+        /// <summary>
+        /// Projects a XDG field <paramref name="source"/>, which may be defined on some different mesh, onto the DG field <paramref name="target"/>. (XDG version.)
+        /// </summary>
+        static public void ProjectFromForeignGrid(this XDGField target, double alpha, XDGField source, string[] speciesNames = null) {
+            var trk = target.Basis.Tracker;
+            
+            foreach(var s in trk.SpeciesNames) {
+                var source_s = source.GetSpeciesShadowField(s);
+                var target_s = target.GetSpeciesShadowField(s);
+                target_s.ProjectFromForeignGrid(alpha, source_s);
+            }
+        }
 
-        static public double L2Distance(this XDGField A, XDGField B, string[] speciesNames, bool IgnoreMeanValue = false) {
+
+
+        /// <summary>
+        /// Projects a XDG field <paramref name="source"/>, which may be defined on some different mesh, onto the DG field <paramref name="target"/>. (driver version.)
+        /// </summary>
+        static public void ProjectFromForeignGrid(this DGField target, double alpha, DGField source) {
+            if(target is XDGField xTarget && source is XDGField xSource) {
+                xTarget.ProjectFromForeignGrid(alpha, xSource);
+            } else if(target is ConventionalDGField dTarget && source is ConventionalDGField dSource) {
+                dTarget.ProjectFromForeignGrid(alpha, dSource);
+            } else {
+                throw new NotImplementedException($"unknown/not implemented for DG fields of type {target.GetType()}, {source.GetType()}");
+            }
+        }
+
+
+        /// <summary>
+        /// Approximate L2 distance between two DG fields; this also supports DG fields on different meshes, 
+        /// it could be used for convergence studies.
+        /// </summary>
+        /// <param name="A"></param>
+        /// <param name="B"></param>
+        /// <param name="IgnoreMeanValue">
+        /// if true, the mean value (mean over entire domain) will be subtracted - this mainly useful for comparing pressures 
+        /// </param>
+        /// <remarks>
+        /// driver routin for DG and XDG variations
+        /// </remarks>
+        static public double L2Distance(this DGField A, DGField B, bool IgnoreMeanValue = false) {
+
+            if(A is XDGField xa && B is XDGField xb) {
+                return xa.L2Distance(xb, null, IgnoreMeanValue);
+            } else if(A is ConventionalDGField da && B is ConventionalDGField db) {
+                return da.L2Distance(db, IgnoreMeanValue);
+            } else {
+                throw new NotImplementedException($"unknown/not implemented for DG fields of type {A.GetType()}, {B.GetType()}");
+            }
+
+        }
+
+
+        /// <summary>
+        /// Approximate L2 distance between two XDG fields; this also supports DG fields on different meshes, 
+        /// it could be used for convergence studies.
+        /// </summary>
+        /// <param name="A"></param>
+        /// <param name="B"></param>
+        /// <param name="IgnoreMeanValue">
+        /// if true, the mean value (mean over entire domain) will be subtracted - this mainly useful for comparing pressures 
+        /// </param>
+        /// <param name="speciesNames">
+        /// species to compare; if null, done for all species
+        /// </param>
+        static public double L2Distance(this XDGField A, XDGField B, string[] speciesNames = null, bool IgnoreMeanValue = false) {
             XDGField fine, coarse;
-            if (A.GridDat.CellPartitioning.TotalLength > B.GridDat.CellPartitioning.TotalLength) {
+            if(A.GridDat.CellPartitioning.TotalLength > B.GridDat.CellPartitioning.TotalLength) {
                 fine = A;
                 coarse = B;
             } else {
@@ -144,14 +208,17 @@ namespace BoSSS.Solution.Statistic {
             int maxDeg = Math.Max(A.Basis.Degree, B.Basis.Degree);
             int quadOrder = maxDeg * 3 + 3;
 
+            if(speciesNames == null)
+                speciesNames = trackerB.SpeciesNames.ToArray();
+
             var schemeFactory = trackerB.GetXDGSpaceMetrics(speciesNames.Select(spc => trackerB.GetSpeciesId(spc)), quadOrder).XQuadSchemeHelper;
 
             double totNorm = 0;
-            foreach (string spc in speciesNames) {
+            foreach(string spc in speciesNames) {
 
                 var spc_id = trackerB.GetSpeciesId(spc);
 
-                if (IgnoreMeanValue == true)
+                if(IgnoreMeanValue == true)
                     throw new NotImplementedException();
                 var A_spc = fine.GetSpeciesShadowField(spc);
                 var B_spc = coarse.GetSpeciesShadowField(spc);
@@ -165,7 +232,7 @@ namespace BoSSS.Solution.Statistic {
         }
 
         /// <summary>
-        /// Approximate L2 distance between two DG fields; this also supports DG fields on different meshes, 
+        /// Approximate L2 distance between two conventional DG fields (i.e., non-XDG); this also supports DG fields on different meshes, 
         /// it could be used for convergence studies.
         /// </summary>
         /// <param name="A"></param>
@@ -176,19 +243,18 @@ namespace BoSSS.Solution.Statistic {
         /// <param name="scheme">
         /// a cell quadrature scheme on the coarse of the two meshes
         /// </param>
-        /// <returns></returns>
         static public double L2Distance(this ConventionalDGField A, ConventionalDGField B, bool IgnoreMeanValue = false, CellQuadratureScheme scheme = null) {
-            using (var tr = new FuncTrace()) {
+            using(var tr = new FuncTrace()) {
                 int maxDeg = Math.Max(A.Basis.Degree, B.Basis.Degree);
                 int quadOrder = maxDeg * 3 + 3;
                 tr.Info($"L2Distance {A.Identification} -- {B.Identification}...");
                 tr.Info($"Quad order degree: {quadOrder}, for field {A.Identification} deg = {A.Basis.Degree}, field {B.Identification} deg = {B.Basis.Degree}");
 
 
-                if (A.GridDat.SpatialDimension != B.GridDat.SpatialDimension)
+                if(A.GridDat.SpatialDimension != B.GridDat.SpatialDimension)
                     throw new ArgumentException("Both fields must have the same spatial dimension.");
 
-                if (object.ReferenceEquals(A.GridDat, B.GridDat) && false) {
+                if(object.ReferenceEquals(A.GridDat, B.GridDat) && false) {
                     // ++++++++++++++
                     // equal meshes
                     // ++++++++++++++
@@ -197,11 +263,11 @@ namespace BoSSS.Solution.Statistic {
                     tr.Info("equal meshes");
                     double errPow2 = A.L2Error(B, domain).Pow2();
                     tr.Info("error^2 = " + errPow2);
-                    if (IgnoreMeanValue) {
+                    if(IgnoreMeanValue) {
                         // domain volume
                         double Vol = 0;
                         int J = A.GridDat.iGeomCells.NoOfLocalUpdatedCells;
-                        for (int j = 0; j < J; j++) {
+                        for(int j = 0; j < J; j++) {
                             Vol += A.GridDat.iGeomCells.GetCellVolume(j);
                         }
                         Vol = Vol.MPISum();
@@ -225,7 +291,7 @@ namespace BoSSS.Solution.Statistic {
 
                     tr.Info("Different meshes...");
                     DGField fine, coarse;
-                    if (A.GridDat.CellPartitioning.TotalLength > B.GridDat.CellPartitioning.TotalLength) {
+                    if(A.GridDat.CellPartitioning.TotalLength > B.GridDat.CellPartitioning.TotalLength) {
                         fine = A;
                         coarse = B;
                     } else {
@@ -248,12 +314,12 @@ namespace BoSSS.Solution.Statistic {
                     double errPow2 = coarse.LxError(FineEval, (double[] X, double fC, double fF) => (fC - fF).Pow2(), CompQuadRule, Quadrature_ChunkDataLimitOverride: int.MaxValue);
                     tr.Info("error^2 = " + errPow2);
 
-                    if (IgnoreMeanValue == true) {
+                    if(IgnoreMeanValue == true) {
 
                         // domain volume
                         double Vol = 0;
                         int J = coarse.GridDat.iGeomCells.NoOfLocalUpdatedCells;
-                        for (int j = 0; j < J; j++) {
+                        for(int j = 0; j < J; j++) {
                             Vol += coarse.GridDat.iGeomCells.GetCellVolume(j);
                         }
                         Vol = Vol.MPISum();
@@ -284,14 +350,14 @@ namespace BoSSS.Solution.Statistic {
         /// </param>
         /// <returns></returns>
         static public double H1Distance(this ConventionalDGField A, ConventionalDGField B, CellQuadratureScheme scheme = null) {
-            if (A.GridDat.SpatialDimension != B.GridDat.SpatialDimension)
+            if(A.GridDat.SpatialDimension != B.GridDat.SpatialDimension)
                 throw new ArgumentException("Both fields must have the same spatial dimension.");
 
             int D = A.GridDat.SpatialDimension;
 
             double Acc = 0.0;
             Acc += L2Distance(A, B, false, scheme).Pow2();
-            for (int d = 0; d < D; d++) {
+            for(int d = 0; d < D; d++) {
                 ConventionalDGField dA_dd = new SinglePhaseField(A.Basis);
                 dA_dd.Derivative(1.0, A, d, scheme != null ? scheme.Domain : null);
 
@@ -319,7 +385,7 @@ namespace BoSSS.Solution.Statistic {
 
             double Acc = 0.0;
             Acc += A.L2Norm();
-            for (int d = 0; d < D; d++) {
+            for(int d = 0; d < D; d++) {
                 DGField dA_dd = A.CloneAs();
                 dA_dd.Clear();
                 dA_dd.Derivative(1.0, A, d, mask);
@@ -333,15 +399,15 @@ namespace BoSSS.Solution.Statistic {
 
         /// <summary>
         /// L2 norm of a DG field, without the mean value (i.e. typically a norm used for hydrodynamic pressure, where the mean value is not relevant).
-        /// I.e., for some field $`f `$, we compute $ \left| f -  \langle f \rangle \right| $, where $` \langle f \rangle `$ is the average value;
+        /// I.e., for some field $f$, we compute $\left| f -  \langle f \rangle \right|$, where $\langle f \rangle$ is the average value;
         /// Therefore, we have the relation
-        /// ```math
+        /// \[
         ///   \left| f -  \langle f \rangle \right|^2 = \left| f \right|^2 - \langle f \rangle^2 | \Omega |
-        /// ```
+        /// \]
         /// </summary>
         static public double L2Norm_IgnoreMean(this DGField A, CellMask domain = null) {
 
-            if (domain == null)
+            if(domain == null)
                 domain = CellMask.GetFullMask(A.GridDat);
 
             // L2 norm
@@ -349,7 +415,7 @@ namespace BoSSS.Solution.Statistic {
 
             // domain volume
             double Vol = 0;
-            foreach (int j in domain.ItemEnum) {
+            foreach(int j in domain.ItemEnum) {
                 Vol += A.GridDat.iGeomCells.GetCellVolume(j);
             }
             Vol = Vol.MPISum();

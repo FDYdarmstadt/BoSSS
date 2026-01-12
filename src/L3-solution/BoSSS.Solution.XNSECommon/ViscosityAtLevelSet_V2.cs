@@ -53,7 +53,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
 
         /// <summary>
-        /// computation of penalty parameter according to: $` \mathrm{SafetyFactor} \cdot k^2 / h `$
+        /// computation of penalty parameter according to: $\mathrm{SafetyFactor} \cdot k^2 / h$
         /// </summary>
         protected double Penalty(int jCellIn, int jCellOut) {
 

@@ -8,6 +8,7 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.LoadBalancing;
+using BoSSS.Solution.Timestepping;
 using ilPSP;
 using ilPSP.Tracing;
 using ilPSP.Utils;
@@ -318,7 +319,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 // currently, only supported for the BDF timestepper.
                 
-                Timestepping.DataRestoreAfterBalancing(L, CurrentState.Fields, CurrentResidual.Fields, base.LsTrk, base.MultigridSequence, this.Operator);
+                Timestepping.DataRestoreAfterBalancing(L, CurrentState.Fields, CurrentResidual.Fields, Parameters, base.LsTrk, base.MultigridSequence, this.Operator);
 
                 if (!object.ReferenceEquals(this.Operator, Timestepping.Operator))
                     throw new ApplicationException();
@@ -334,23 +335,24 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <param name="TimestepNo"></param>
         protected override void AfterSolverCreation(double phystime, int TimestepNo) {
 
-            if (Timestepping.m_BDF_Timestepper != null) {
-                if (this.Control.RestartInfo != null) { // for loading restart we only allow for <see cref="BDFDelayedInitLoadRestart"/>
+
+            if(Timestepping.m_BDF_Timestepper != null) {
+                if(this.Control.MultiStepInit) {
                     Timestepping.m_BDF_Timestepper.Timestepper_Init = Solution.Timestepping.TimeStepperInit.MultiInit;
-                    Timestepping.m_BDF_Timestepper.DelayedTimestepperInit(phystime, TimestepNo, this.Control.GetFixedTimestep(),
-                         // delegate for the initialization of previous timesteps from restart session
-                         BDFDelayedInitLoadRestart);
-                } else {
-                    if (this.Control.MultiStepInit) {
-                        Timestepping.m_BDF_Timestepper.Timestepper_Init = Solution.Timestepping.TimeStepperInit.MultiInit;
+                    if(this.Control.RestartInfo != null) { 
+                        Timestepping.m_BDF_Timestepper.DelayedTimestepperInit(phystime, TimestepNo, this.Control.GetFixedTimestep(),
+                             // delegate for the initialization of previous timesteps from restart session
+                             BDFDelayedInitLoadRestart);
+                    } else {
                         Timestepping.m_BDF_Timestepper.DelayedTimestepperInit(phystime, TimestepNo, this.Control.GetFixedTimestep(),
                             // delegate for the initialization of previous timesteps from an analytic solution
                             BDFDelayedInitSetIntial);
-                    } else {
-                        Timestepping.m_BDF_Timestepper.SingleInit();
                     }
+                } else {
+                    Timestepping.m_BDF_Timestepper.SingleInit();
                 }
             }
+
         }
 
 

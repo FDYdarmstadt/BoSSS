@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.XNSECommon;
@@ -45,7 +46,7 @@ namespace BoSSS.Application.XNSE_Solver.Logging {
         /// <summary>
         /// filename
         /// </summary>
-        protected override string LogFileName => "EnergyLogValues";
+        protected override string LogFileName => "Energy";
 
 
         /// <summary>
@@ -53,7 +54,7 @@ namespace BoSSS.Application.XNSE_Solver.Logging {
         /// </summary>
         protected override void WriteHeader(TextWriter textWriter) {
 
-            string header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}", "#timestep", "time", "kineticEnergy", "surfaceEnergy", "totalEnergy", "kineticDissipation");
+            string header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}", "#timestep", "time", "kineticEnergy", "surfaceEnergy", "totalEnergy", "kineticDissipation", "surfaceDivergence");
             Log.WriteLine(header);
 
         }
@@ -77,7 +78,10 @@ namespace BoSSS.Application.XNSE_Solver.Logging {
                 double[] muS = new double[] { Control.PhysicalParameters.mu_A, Control.PhysicalParameters.mu_B };
                 double kineticDissipation = EnergyUtils.GetKineticDissipation(LsTrk, CurrentVel, muS, quadOrder);
 
-                string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}", TimestepNo, physTime, kineticEnergy, surfaceEnergy, totalEnergy, kineticDissipation);
+                ConventionalDGField[] meanVelocity = XNSEUtils.GetMeanVelocity(CurrentVel, LsTrk, rhoS[0], rhoS[1]);
+                double surfaceDivergence = EnergyUtils.GetSurfaceChangerate(LsTrk, meanVelocity, quadOrder);
+
+                string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}", TimestepNo, physTime, kineticEnergy, surfaceEnergy, totalEnergy, kineticDissipation, surfaceDivergence);
                 Log.WriteLine(line);
                 Log.Flush();
             }

@@ -546,7 +546,7 @@ namespace BoSSS.Application.CahnHilliard {
         }
 
         /// <summary>
-        /// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
+        /// Block scaling of the mass matrix: for each species $ \mathfrak{s} $, a vector $ (\rho_\mathfrak{s}, \ldots, \rho_{\mathfrak{s}}, 0 ) $.
         /// </summary>
         protected IDictionary<SpeciesId, IEnumerable<double>> MassScale {
             get {
@@ -830,6 +830,7 @@ namespace BoSSS.Application.CahnHilliard {
             } else {
                 order = 1;
             }
+            order = Math.Max(order, this.m_HMForder);
             var SchemeHelper = RealTracker.GetXDGSpaceMetrics(RealTracker.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;
 
             // area of bubble
@@ -851,7 +852,7 @@ namespace BoSSS.Application.CahnHilliard {
             // surface
             double surface = 0.0;
             //CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
-            var surfElemVol = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(spcId, 0);
+            var surfElemVol = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(spcId, RealTracker.SpeciesIdS[0], 0);
             CellQuadrature.GetQuadrature(new int[] { 1 }, RealTracker.GridDat,
                 surfElemVol.Compile(RealTracker.GridDat, this.m_HMForder),
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {

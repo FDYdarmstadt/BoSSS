@@ -44,7 +44,7 @@ namespace CNS.Source {
 
         /// <summary>
         /// Computes the source term according to
-        /// \f$ m_d / \text{Fr}^2\f$ 
+        /// $m_d / \text{Fr}^2$ 
         /// where d=1 in 2D and d=2 in 3D (cf.
         /// <see cref="ArgumentOrdering"/>).
         /// </summary>

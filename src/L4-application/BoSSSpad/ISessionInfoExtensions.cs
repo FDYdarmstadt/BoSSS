@@ -15,26 +15,31 @@ limitations under the License.
 */
 
 using BoSSS.Application.BoSSSpad;
+using BoSSS.Application.XdgPoisson3;
 using BoSSS.Application.XNSE_Solver;
+using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.XDG;
+using BoSSS.Solution;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.Gnuplot;
+using BoSSS.Solution.Statistic;
 using ilPSP;
 using ilPSP.Connectors.Matlab;
 using ilPSP.Tracing;
 using ilPSP.Utils;
+using MathNet.Numerics.Interpolation;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Xml;
-using MathNet.Numerics.Interpolation;
 using static BoSSS.Solution.Gnuplot.Plot2Ddata;
-using BoSSS.Solution.Statistic;
-using BoSSS.Application.XdgPoisson3;
-using BoSSS.Solution;
 
 namespace BoSSS.Foundation.IO {
 
@@ -1153,7 +1158,7 @@ namespace BoSSS.Foundation.IO {
         /// The name of the DG field whose error should be estimated.
         /// </param>
         /// <param name="xAxis_Is_hOrDof">
-        /// - true: the x-axis (<see cref="Plot2Ddata.XYvalues.Abscissas"/>) is the grid resolution \f$ h \f$
+        /// - true: the x-axis (<see cref="Plot2Ddata.XYvalues.Abscissas"/>) is the grid resolution $h$
         /// - false: the x-axis (<see cref="Plot2Ddata.XYvalues.Abscissas"/>) is the number of degrees-of-freedom
         /// </param>     
         /// <param name="normType">
@@ -1690,10 +1695,24 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
+        /// The number of MPI ranks used
+        /// </summary>
+        public static int MPIsize(this ISessionInfo session) {
+            return session.NumberOfMPIranks();
+        }
+
+        /// <summary>
+        /// The number of MPI ranks used
+        /// </summary>
+        public static int NumberOfMPIranks(this ISessionInfo session) {
+            return session.ComputeNodeNames.Count();
+        }
+
+        /// <summary>
         /// The number of cores/processes that where used for this simulation
         /// </summary>
         public static int NumberOfCores(this ISessionInfo session) {
-            return session.ComputeNodeNames.Count();
+            return session.MPIsize() * session.NumberOfThreadsPerRank();
         }
 
         /// <summary>
@@ -2066,98 +2085,282 @@ namespace BoSSS.Foundation.IO {
             return correctCall.Name;
         }
 
+        /// <summary>
+        /// imports one value data from the specified log file data.
+        /// One may define alternative column names in case of inconsistent headers
+        /// </summary>
+        /// <param name="sessions"></param>
+        /// <param name="logName"></param>
+        /// <param name="valueName"></param>
+        /// <param name="alterNames"></param>
+        /// <param name="output"></param>
+        /// <returns></returns>
+        public static Plot2Ddata ReadLogDataValue(this List<ISessionInfo> sessions, string logName, string valueName, string[] alterNames = null, bool output = true) {
+            using(var tr = new FuncTrace()) {
+                tr.InfoToConsole = output;
+
+                int numberSessions = sessions.Count();
+
+                double[][] times = new double[numberSessions][];
+                double[][] valueDatas = new double[numberSessions][];
+
+                //Debugger.Launch();
+
+                // Read all data
+                for(int j = 0; j < numberSessions; j++) {
+                    var sess = sessions.ElementAt(j);
+                    tr.Info("Processing session: " + sess.Name);
+
+                    // Get session history
+                    List<Guid> restartSessionList = new List<Guid>();
+                    restartSessionList.Add(sess.ID);
+                    Guid restartID = sess.RestartedFrom;
+
+                    var sessionIDs = new List<Guid>();
+                    var directories = Directory.GetDirectories(Path.Combine(sess.Database.Path, "sessions"));
+                    foreach(string dirname in directories) {
+                        string IDname = dirname.Split(new string[] { "\\" }, StringSplitOptions.RemoveEmptyEntries).Last();
+                        sessionIDs.Add(new Guid(IDname));
+                    }
+
+                    while(restartID != Guid.Empty) {
+                        try {
+                            var rSess = sessionIDs.Where(sess => sess == restartID).Single();
+                            tr.Info("  Found restart session: " + rSess);
+                            restartSessionList.Add(rSess);
+                            //restartID = rSess.RestartedFrom;
+
+                            string path_obj = Path.Combine(sess.Database.Path, "sessions", restartID.ToString(), "Control-obj.txt");
+                            string ctrlfileContent = File.ReadAllText(path_obj);
+                            var ctrl = (XNSE_Control)AppControl.Deserialize(ctrlfileContent);
+
+                            if(ctrl.RestartInfo != null) {
+                                restartID = ctrl.RestartInfo.Item1;
+                            } else {
+                                restartID = Guid.Empty;
+                            }
+
+                        } catch { // do nothing if session not found
+                            restartID = Guid.Empty;
+                        }
+                    }
+                    restartSessionList.Reverse();
+
+                    tr.Info("  Merging data from " + restartSessionList.Count + " sessions.");
+
+                    List<double> time = new List<double>();
+                    List<double> valueData = new List<double>();
+
+                    for(int rSi = 0; rSi < restartSessionList.Count(); rSi++) {
+
+                        string path = Path.Combine(sess.Database.Path, "sessions", restartSessionList.ElementAt(rSi).ToString(), logName + ".txt");
+                        string[] lines = File.ReadAllLines(path);
+
+
+                        // get value data index
+                        string[] headerValues = lines[0].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries);
+                        int valIndex = -1;
+                        for(int ind = 0; ind < headerValues.Length; ind++) {
+                            if(headerValues[ind].ToLower() == valueName.ToLower()) {
+                                valIndex = ind;
+                                break;
+                            }
+                            if(alterNames != null) {
+                                for(int altInd = 0; altInd < alterNames.Length; altInd++) {
+                                    if(headerValues[ind].ToLower() == alterNames[altInd].ToLower()) {
+                                        valIndex = ind;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if(valIndex == -1) {
+                            tr.Info($"valueName {valueName} or alternatives not found ... setting values to zero");
+                        }
+
+
+                        // skip SetUpData
+                        int line0 = 0;
+                        for(int i = 0; i < lines.Length; i++) {
+                            string check = lines[i].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[0];
+                            if(check.Equals("#timestep") || check.Contains("#")) {
+                                line0 = i + 1;
+                                break;
+                            }
+                        }
+
+
+                        for(int i = 0; i < lines.Length - line0; i++) {
+                            double l_time = Convert.ToDouble(lines[line0 + i].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[1]);
+                            double l_value = (valIndex > 0) ? Convert.ToDouble(lines[line0 + i].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[valIndex]) : 0.0;
+
+                            if(time.IsNullOrEmpty() || l_time > time.Last()) {
+                                time.Add(l_time);
+                                valueData.Add(l_value);
+                            }
+                        }
+
+                    }
+
+                    tr.Info("... Done");
+
+                    times[j] = time.ToArray();
+                    valueDatas[j] = valueData.ToArray();
+                }
+
+
+                // Build DataSets
+                tr.Info("Build DataSet");
+
+                KeyValuePair<string, double[][]>[] dataRowsValue = new KeyValuePair<string, double[][]>[numberSessions];
+                for(int i = 0; i < numberSessions; i++) {
+                    string sessName = (sessions.Pick(i).Name).Replace("_", "-");
+                    dataRowsValue[i] = new KeyValuePair<string, double[][]>(sessName, new double[][] { times[i], valueDatas[i] });
+                }
+
+                //Console.WriteLine("Element at {0}: time vs {1}", vIdx, values[vIdx + 2]);
+                Plot2Ddata plotData = new Plot2Ddata(dataRowsValue);
+                plotData.Xlabel = "time";
+                plotData.Ylabel = valueName;
+
+                return plotData;
+            }
+        }
+
 
         /// <summary>
         /// imports the specified log file data 
         /// </summary>
-        /// <param name="sess"> List of sessions to be evaluated </param>
+        /// <param name="sessions"> List of sessions to be evaluated </param>
         /// <param name="logName"> which log file to be evaluated </param>
         /// <param name="values"> which log values to be evaluated </param>
         /// <param name="evalName"></param>
         /// <param name="keyName"></param>
         /// <returns></returns>
-        public static List<Plot2Ddata> ReadLogData(this List<ISessionInfo> sess, string logName, string[] values, string evalName = null, string keyName = null) {
+        public static List<Plot2Ddata> ReadLogData(this List<ISessionInfo> sessions, string logName, string[] values, string evalName = null, string keyName = null) {
 
             List<Plot2Ddata> plotData = new List<Plot2Ddata>();
 
-            int numberSessions = sess.Count();
-            int numberValues = values.Count();
-            for (int vIdx = 2; vIdx < numberValues; vIdx++) {
+            int numberSessions = sessions.Count();
+            int numberValues = values.Count() - 2;
+            //for (int vIdx = 2; vIdx < numberValues; vIdx++) {
 
-                double[][] times = new double[numberSessions][];
-                double[][] valueDatas = new double[numberSessions][];
+            double[][] times = new double[numberSessions][];
+            double[][][] valueDatas = new double[numberSessions][][];
 
-                // Read all data
-                for (int j = 0; j < numberSessions; j++) {
-                    string path = Path.Combine(sess.Pick(j).Database.Path, "sessions", sess.Pick(j).ID.ToString(), logName + ".txt");
-                    string[] lines = File.ReadAllLines(path);
+            // Read all data
+            for(int j = 0; j < numberSessions; j++) {
 
-                    if (sess.Pick(j).RestartedFrom == Guid.Empty) {
+                var sess = sessions.ElementAt(j);
+                Console.WriteLine("Processing session: " + sess.Name);
 
-                        double[] time = new double[lines.Length - 1];
-                        double[] valueData = new double[lines.Length - 1];
+                // Get session history
+                List<Guid> restartSessionList = new List<Guid>();
+                restartSessionList.Add(sess.ID);
+                Guid restartID = sess.RestartedFrom;
 
-                        for (int i = 0; i < lines.Length - 1; i++) {
-                            time[i] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[1]);
-                            valueData[i] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[vIdx]);
-                        }
-                        times[j] = time;
-                        valueDatas[j] = valueData;
+                var sessionIDs = new List<Guid>();
+                var directories = Directory.GetDirectories(Path.Combine(sess.Database.Path, "sessions"));
+                foreach(string dirname in directories) {
+                    string IDname = dirname.Split(new string[] { "\\" }, StringSplitOptions.RemoveEmptyEntries).Last();
+                    sessionIDs.Add(new Guid(IDname));
+                }
 
-                    } else {
+                while(restartID != Guid.Empty) {
+                    try {
+                        var rSess = sessionIDs.Where(sess => sess == restartID).Single();
+                        Console.WriteLine("  Found restart session: " + rSess);
+                        restartSessionList.Add(rSess);
+                        //restartID = rSess.RestartedFrom;
 
-                        string pathR = Path.Combine(sess.Pick(j).Database.Path, "sessions", sess.Pick(j).RestartedFrom.ToString(), logName + ".txt");
-                        string[] linesR = File.ReadAllLines(pathR);
+                        string path_obj = Path.Combine(sess.Database.Path, "sessions", restartID.ToString(), "Control-obj.txt");
+                        string ctrlfileContent = File.ReadAllText(path_obj);
+                        var ctrl = (XNSE_Control)AppControl.Deserialize(ctrlfileContent);
 
-                        int len = (lines.Length - 1) + (linesR.Length - 1);
-                        double[] time = new double[len];
-                        double[] valueData = new double[len];
-                        int iL = 0;
-                        for (int i = 0; i < linesR.Length - 1; i++) {
-                            time[iL] = Convert.ToDouble(linesR[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[1]);
-                            valueData[iL] = Convert.ToDouble(linesR[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[vIdx]);
-                            iL++;
-                        }
-                        for (int i = 0; i < lines.Length - 1; i++) {
-                            time[iL] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[1]);
-                            valueData[iL] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[vIdx]);
-                            iL++;
+                        if(ctrl.RestartInfo != null) {
+                            restartID = ctrl.RestartInfo.Item1;
+                        } else {
+                            restartID = Guid.Empty;
                         }
 
-                        // remove doubled time steps 
-                        List<double> rTime = new List<double>();
-                        List<double> rValDat = new List<double>();
-                        rTime.Add(time[len - 1]);
-                        rValDat.Add(valueData[len - 1]);
-                        for (int i = len - 2; i >= 0; i--) {
-                            if (time[i] < rTime.Last()) {
-                                rTime.Add(time[i]);
-                                rValDat.Add(valueData[i]);
-                            }
-                        }
-                        rTime.Reverse();
-                        rValDat.Reverse();
-
-                        times[j] = rTime.ToArray();
-                        valueDatas[j] = rValDat.ToArray();
-
+                    } catch { // do nothing if session not found
+                        restartID = Guid.Empty;
                     }
                 }
+                restartSessionList.Reverse();
 
-                // Build DataSet
-                KeyValuePair<string, double[][]>[] dataRowsValue = new KeyValuePair<string, double[][]>[numberSessions];
-                for (int i = 0; i < numberSessions; i++) {
-                    string sessName;
-                    if (evalName == null || keyName == null)
-                        sessName = (sess.Pick(i).Name).Replace("_", "-");
-                    else
-                        sessName = evalName + (Convert.ToDouble(sess.Pick(i).KeysAndQueries[keyName])).ToString();
+                Console.WriteLine("  Merging data from " + restartSessionList.Count + " sessions.");
 
-                    dataRowsValue[i] = new KeyValuePair<string, double[][]>(sessName, new double[][] { times[i], valueDatas[i] });
+                List<double> time = new List<double>();
+                List<double>[] valueData = new List<double>[numberValues];
+                for(int vIdx = 0; vIdx < numberValues; vIdx++) {
+                    valueData[vIdx] = new List<double>();
                 }
-                Console.WriteLine("Element at {0}: time vs {1}", vIdx - 2, values[vIdx]);
-                plotData.Add(new Plot2Ddata(dataRowsValue));
+
+                for(int rSi = 0; rSi < restartSessionList.Count(); rSi++) {
+
+                    string path = Path.Combine(sess.Database.Path, "sessions", restartSessionList.ElementAt(rSi).ToString(), logName + ".txt");
+                    string[] lines = File.ReadAllLines(path);
+
+                    // skip SetUpData
+                    int line0 = 0;
+                    for(int i = 0; i < lines.Length; i++) {
+                        string check = lines[i].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[0];
+                        if(check.Equals("#timestep") || check.Contains("#")) {
+                            line0 = i + 1;
+                            break;
+                        }
+                    }
+
+                    for(int i = 0; i < lines.Length - line0; i++) {
+                        double l_time = Convert.ToDouble(lines[line0 + i].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[1]);
+                        double[] l_values = new double[numberValues];
+                        for(int vIdx = 0; vIdx < numberValues; vIdx++) {
+                            l_values[vIdx] = Convert.ToDouble(lines[line0 + i].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[vIdx + 2]);
+                        }
+
+                        if(time.IsNullOrEmpty() || l_time > time.Last()) {
+                            time.Add(l_time);
+                            for(int vIdx = 0; vIdx < numberValues; vIdx++) {
+                                valueData[vIdx].Add(l_values[vIdx]);
+                            }
+                        }
+                    }
+
+                }
+
+                Console.WriteLine("... Done");
+
+                times[j] = time.ToArray();
+                valueDatas[j] = new double[numberValues][];
+                for(int vIdx = 0; vIdx < numberValues; vIdx++) {
+                    valueDatas[j][vIdx] = valueData[vIdx].ToArray();
+                }
             }
+
+            // Build DataSets
+            Console.WriteLine("Build DataSets");
+            for(int vIdx = 0; vIdx < numberValues; vIdx++) {
+
+                KeyValuePair<string, double[][]>[] dataRowsValue = new KeyValuePair<string, double[][]>[numberSessions];
+                for(int i = 0; i < numberSessions; i++) {
+                    string sessName;
+                    if(evalName == null || keyName == null)
+                        sessName = (sessions.Pick(i).Name).Replace("_", "-");
+                    else
+                        sessName = evalName + (Convert.ToDouble(sessions.Pick(i).KeysAndQueries[keyName])).ToString();
+
+                    dataRowsValue[i] = new KeyValuePair<string, double[][]>(sessName, new double[][] { times[i], valueDatas[i][vIdx] });
+                }
+                Console.WriteLine("Element at {0}: time vs {1}", vIdx, values[vIdx + 2]);
+                Plot2Ddata plt = new Plot2Ddata(dataRowsValue);
+                plt.Xlabel = "time";
+                plt.Ylabel = values[vIdx + 2];
+                plotData.Add(plt);
+            }
+
+
+            //}
 
             return plotData;
         }
@@ -2187,7 +2390,11 @@ namespace BoSSS.Foundation.IO {
                         break;
                     }
                 case Application.XNSE_Solver.PhysicalBasedTestcases.MovingContactLineLogging.LogfileName: {
-                        values = new string[] { "#timestep", "time", "contact-pointX", "contact-pointY", "contact-VelocityX", "contact-VelocityY", "contact-angle" };
+                    values = new string[] { "#timestep", "time", "contact-pointX", "contact-pointY", "contact-VelocityX", "contact-VelocityY", "contact-angle" };
+                    break;
+                }
+                case Application.XNSE_Solver.PhysicalBasedTestcases.StokesExtensionEvolverLogging.LogfileName: {
+                        values = new string[] { "#timestep", "time", "L2-Norm_NB", "L2-Norm_CC", "MeanTotalValue_NB", "MeanTotalValue_CC", "minVal", "maxVal", "InterfaceDist" };
                         break;
                     }
                 case Application.XNSFE_Solver.PhysicalBasedTestcases.EvaporationLogging.LogfileName: {
@@ -2211,16 +2418,16 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
-        /// special purpose method, most likely legacy stuff
+        /// special purpose method
         /// </summary>
-        public static List<Plot2Ddata>[] ReadLogDataForMovingContactLine(this IEnumerable<ISessionInfo> sess, string[] CustomValues = null) {
+        public static List<Plot2Ddata>[] ReadLogDataForMovingContactLine(this IEnumerable<ISessionInfo> sess, string[] CustomValues = null, bool mergeSess = false) {
 
 
             string[] values;
             if (CustomValues != null) {
                 values = CustomValues;
             } else {
-                values = new string[] { "#timestep", "time", "contact-pointX", "contact-pointY", "contact-VelocityX", "contact-VelocityY", "contact-Velocity", "contact-angle" };
+                values = new string[] { "#timestep", "time", "contact-pointX", "contact-pointY", "contact-VelocityX", "contact-VelocityY", "contact-angle" };
             }
 
             // check number of contact lines
@@ -2267,14 +2474,36 @@ namespace BoSSS.Foundation.IO {
                     }
 
                     // Build DataSet
-                    KeyValuePair<string, double[][]>[] dataRowsValue = new KeyValuePair<string, double[][]>[numberSessions];
-                    for (int i = 0; i < numberSessions; i++) {
-                        dataRowsValue[i] = new KeyValuePair<string, double[][]>(sess.Pick(i).Name, new double[][] { times[i], valueDatas[i] });
-                    }
                     if(c == 0)
                         Console.WriteLine("Element at {0}: time vs {1}", vIdx - 2, values[vIdx]);
 
-                    plotData.Add(new Plot2Ddata(dataRowsValue));
+                    if(!mergeSess) {
+                        KeyValuePair<string, double[][]>[] dataRowsValue = new KeyValuePair<string, double[][]>[numberSessions];
+                        for(int i = 0; i < numberSessions; i++) {
+                            dataRowsValue[i] = new KeyValuePair<string, double[][]>(sess.Pick(i).Name, new double[][] { times[i], valueDatas[i] });
+                        }
+                        plotData.Add(new Plot2Ddata(dataRowsValue));
+
+                    } else { // merging the session data a sorted input is assumed (first session first, followed by restart sessions)
+                        List<double> time_merged = new List<double>();
+                        time_merged.AddRange(times[0]);
+                        List<double> values_merged = new List<double>();
+                        values_merged.AddRange(valueDatas[0]);
+                        for(int i = 1; i < numberSessions; i++) {
+                            double[] time = times[i];
+                            for(int j = 0; j < time.Length; j++) {
+                                if(time[j] > time_merged.Last()) {
+                                    time_merged.Add(time[j]);
+                                    values_merged.Add(valueDatas[i][j]);
+                                }
+                            }
+                            //time_merged.AddRange(times[i].GetSubVector(1, times[i].Length - 1));
+                            //values_merged.AddRange(valueDatas[i].GetSubVector(1, times[i].Length - 1));
+                        }
+
+                        KeyValuePair<string, double[][]> dataRowsValue = new KeyValuePair<string, double[][]>(sess.Pick(0).Name, new double[][] { time_merged.ToArray(), values_merged.ToArray() });
+                        plotData.Add(new Plot2Ddata(dataRowsValue));
+                    }
                 }
 
                 plotDataCL[c] = plotData;
@@ -2283,6 +2512,53 @@ namespace BoSSS.Foundation.IO {
             return plotDataCL;
 
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public static Dictionary<string, double> ComputeErrorNormsForLogData(XYvalues LogData, XYvalues RefData) {
+
+            Dictionary<string, double> ret = new Dictionary<string, double>();
+
+            double[] abs = LogData.Abscissas;
+            double[] val = LogData.Values;
+            int numVal = val.Length;
+
+            double[] refAbs = RefData.Abscissas;
+            double[] refVal = RefData.Values;
+            int numRefVal = refVal.Length;
+
+            double[] diff = new double[numVal];
+
+            if(numRefVal < numVal)
+                throw new ArgumentException("reference data should have at least the same length as comparison data");
+            LinearSpline LinSpline = LinearSpline.InterpolateSorted(refAbs, refVal);
+
+            double[] refSplVal = new double[numVal];
+            for(int p = 0; p < numVal; p++) {
+                double splVal = LinSpline.Interpolate(abs[p]);
+                if(splVal.IsNaN()) {
+                    Console.WriteLine("LinearSpline returned NaN - setting value to 0!");
+                    splVal = 0.0;
+                }
+                refSplVal[p] = splVal;
+            }
+
+            diff = val.Zip(refSplVal, (r, v) => Math.Abs(v - r)).ToArray();
+
+            double l1Norm = diff.Sum() / refSplVal.Sum();
+            double l2Norm = (diff.L2NormPow2() / refSplVal.L2NormPow2()).Sqrt();
+            double linfNorm = diff.Max() / refSplVal.Max();
+
+            ret.Add("l_1 error norm", l1Norm);
+            ret.Add("l_2 error norm", l2Norm);
+            ret.Add("l_inf error norm", linfNorm);
+
+            return ret;
+
+        }
+
 
         /// <summary>
         /// 
@@ -2325,6 +2601,20 @@ namespace BoSSS.Foundation.IO {
                     double[] val = p2d.dataGroups[i].Values;
                     int numVal = val.Length;
 
+                    // check for correct interval
+                    List<double> absList = new List<double>();
+                    List<double> valList = new List<double>();
+                    for(int p = 0; p < numVal; p++) {
+                        if(abs[p] <= refAbs[numRefVal - 1]) { 
+                            absList.Add(abs[p]);
+                            valList.Add(val[p]);
+                        }
+                    }
+
+                    abs = absList.ToArray();
+                    val = valList.ToArray();
+                    numVal = val.Length;
+
                     double[] diff = new double[numRefVal];
                     if (numVal != numRefVal) {
                         if (numRefVal < numVal)
@@ -2336,7 +2626,12 @@ namespace BoSSS.Foundation.IO {
 
                         val = new double[numRefVal];
                         for (int p = 0; p < numRefVal; p++) {
-                            val[p] = LinSpline.Interpolate(refAbs[p]);
+                            double splVal = LinSpline.Interpolate(refAbs[p]);
+                            if(splVal.IsNaN()) {
+                                Console.WriteLine("LinearSpline returned NaN - setting value to 0!");
+                                splVal = 0.0;
+                            }
+                            val[p] = splVal;
                         }
                     }
                     diff = refVal.Zip(val, (r, v) => Math.Abs(v - r)).ToArray();
@@ -2848,7 +3143,113 @@ namespace BoSSS.Foundation.IO {
 
         }
 
+        /// <summary>
+        /// Writes json files for Chrome tracing of the sessions. (Sensetive to the format of BoSSS trace files.)
+        /// The generated JSON file is in Chrome Trace Event format (all ranks in one file).
+        /// To visualize it:
+        /// 1. Open Google Chrome.
+        /// 2. Navigate to chrome://tracing
+        /// 3. Click “Load” and select the generated traceChrome.json file.
+        /// This will display function execution timelines across ranks (PIDs).
+        /// </summary>
+        /// <param name="pSessions"></param>
+        /// <param name="overWrite">true: overwrite existing chromeTrace files (.json)</param>
+        /// <param name="writeDir">null: session directory</param>
+        public static void WriteChromeTraceFile(this IEnumerable<ISessionInfo> pSessions, bool overWrite = false, string writeDir = null) {
+            foreach(var sess in pSessions) {
+                WriteChromeTraceFile(sess, overWrite, writeDir);
+            }
 
+            Console.WriteLine("--------------------");
+            Console.WriteLine("To view the trace:");
+            Console.WriteLine("1. Open Google Chrome.");
+            Console.WriteLine("2. Go to chrome://tracing");
+            Console.WriteLine("3. Click 'Load' and select the generated traceChrome.json file.");
+        }
+
+        /// <summary>
+        /// Writes json files for Chrome tracing of the sessions. (Sensetive to the format of BoSSS trace files.)
+        /// The generated JSON file is in Chrome Trace Event format (all ranks in one file).
+        /// To visualize it:
+        /// 1. Open Google Chrome.
+        /// 2. Navigate to chrome://tracing
+        /// 3. Click “Load” and select the generated traceChrome.json file.
+        /// This will display function execution timelines across ranks (PIDs).
+        /// </summary>
+        /// <param name="sess"></param>
+        /// <param name="overWrite">true: overwrite existing chromeTrace files (.json)</param>
+        /// <param name="writeDir">null: session directory</param>
+        public static void WriteChromeTraceFile(this ISessionInfo sess, bool overWrite = false, string writeDir = null) {
+            var traceFilePaths = sess.FilesInSessionDir("trace*txt");
+
+            if(traceFilePaths.Count() == 0) {
+                Console.WriteLine("No trace files found in session {0}.", sess.ID);
+                return;
+            }
+
+            writeDir ??= sess.GetSessionDirectory();
+            string writePath = writeDir + "\\" + "traceChrome.json";
+
+            if(File.Exists(writePath) && !overWrite) {
+                Console.WriteLine("Chrome trace file already exists at {0}. Use overWrite=true to overwrite.", writePath);
+                return;
+            }
+
+            try {
+                var enterPattern = new Regex(@"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) INFO\s+ilPSP\.Tracing\.FuncTrace: (ENTERING|BLKENTER) (.+?) new stack depth = \d+");
+                var leavePattern = new Regex(@"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) INFO\s+ilPSP\.Tracing\.FuncTrace: LEAVING (.+?) \(([\d.Ee+-]+) sec");
+
+                var allEvents = new List<Dictionary<string, object>>();
+
+                foreach(var traceFilePath in traceFilePaths) {
+                    int rank = int.Parse(Path.GetFileName(traceFilePath).Split('.')[^2]);
+                    var lines = File.ReadAllLines(traceFilePath);
+
+                    foreach(var line in lines) {
+                        var enterMatch = enterPattern.Match(line);
+                        if(enterMatch.Success) {
+                            var timestampStr = enterMatch.Groups[1].Value;
+                            var function = enterMatch.Groups[3].Value;
+                            long ts = (long)(DateTime.ParseExact(timestampStr, "yyyy-MM-dd HH:mm:ss,fff", CultureInfo.InvariantCulture) - DateTime.UnixEpoch).TotalMilliseconds * 1000;
+
+                            allEvents.Add(new Dictionary<string, object> {
+                        { "name", function },
+                        { "cat", "function" },
+                        { "ph", "B" },
+                        { "ts", ts },
+                        { "pid", rank },
+                        { "tid", 0 }
+                    });
+                            continue;
+                        }
+
+                        var leaveMatch = leavePattern.Match(line);
+                        if(leaveMatch.Success) {
+                            var timestampStr = leaveMatch.Groups[1].Value;
+                            var function = leaveMatch.Groups[2].Value;
+                            long ts = (long)(DateTime.ParseExact(timestampStr, "yyyy-MM-dd HH:mm:ss,fff", CultureInfo.InvariantCulture) - DateTime.UnixEpoch).TotalMilliseconds * 1000;
+
+                            allEvents.Add(new Dictionary<string, object> {
+                        { "name", function },
+                        { "cat", "function" },
+                        { "ph", "E" },
+                        { "ts", ts },
+                        { "pid", rank },
+                        { "tid", 0 }
+                    });
+                        }
+                    }
+                }
+
+                var trace = new Dictionary<string, object> { ["traceEvents"] = allEvents };
+
+                var options = new JsonSerializerOptions { WriteIndented = true };
+                File.WriteAllText(writePath, JsonSerializer.Serialize(trace, options));
+                Console.WriteLine("-> traceChrome.json ready at " + writeDir);
+            } catch(Exception ex) {
+                Console.WriteLine(sess.ID + " - Error writing Chrome trace file for: " + ex.Message);
+            }
+        }
 
         // <summary>
         // Plots the temperature profile if a  "Evaporation.txt" exists.

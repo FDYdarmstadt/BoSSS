@@ -26,18 +26,18 @@ using BoSSS.Foundation.Grid.Classic;
 namespace BoSSS.Foundation.Grid.RefElements {
 
     /// <summary>
-    /// The tetrahedral reference element \f$ K^{\textrm{tetra}}  \f$.
+    /// The tetrahedral reference element $K^{\textrm{tetra}}$.
     /// </summary>
     /// <remarks>
     /// The vertices of the tetrahedron are:
-    ///     \f[ 
+    ///     \[ 
     ///     \left[
     ///        \left( 0, 0, \sqrt{2}  \right),
     ///        \left( 0, \frac{4}{3}, -\frac{\sqrt{2}}{3}  \right),
     ///        \left( -\frac{2}{3} \sqrt(3), -\frac{2}{3}, -\frac{\sqrt{2}}{3}  \right),
     ///        \left(  \frac{2}{3} \sqrt(3), -\frac{2}{3}, -\frac{\sqrt{2}}{3}  \right)
     ///     \right]
-    ///     \f]
+    ///     \]
     /// </remarks>
     public class Tetra : RefElement {
 

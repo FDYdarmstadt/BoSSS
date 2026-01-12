@@ -4,30 +4,13 @@ namespace IntersectingLevelSetTest {
     class Program {
         static void Main(string[] args) {
             XQuadFactoryHelper.CheckQuadRules = true;
-            //IntersectingLevelSetTest.AllUpTest.ParabolaTestAlgoim(3);
-            //AllUpTest.AllUp(2, CutCellQuadratureMethod.Saye);
-            //AllUpTest.LocalTestWithPlotting(2, CutCellQuadratureMethod.Saye);
-
-            //AllUpTest.ParabolaTestAlgoim(3);
-            AllUpTest.ParabolaTestSaye(3);
-            //AllUpTest.TwoStraightTest(3);
-            //AllUpTest.TransformTest(3);
-            //AllUpTest.Convergence2DTest(1);
 
 
-            //AllUpTest.Rotation3DTest(3);
-            //AllUpTest.Transform3DTest(2);
-            //AllUpTest.MovingSphere3DTest(2);
-            //AllUpTest.Convergence3DTest(3);
+            BoSSS.Solution.Application<PlotControl>._Main(
+                args,
+                false,
+                () => new ZwoLsCoupledSolver<PlotControl>() { MomentFittingVariant = CutCellQuadratureMethod.Saye });
 
-            //AllUpTest.RandomTest(3);
-            //AllUpTest.RealTransformTest(3);
-
-
-            //BoSSS.Solution.Application<PlotControl>._Main(
-            //    args,
-            //    false,
-            //    () => new ZwoLsCoupledSolver<PlotControl>() { MomentFittingVariant = CutCellQuadratureMethod.Saye });
         }
     }
 }

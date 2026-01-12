@@ -38,6 +38,7 @@ using ilPSP.Utils;
 using BoSSS.Solution.LoadBalancing;
 using BoSSS.Solution.Utils;
 using CNS.Tests;
+using NUnit.Framework;
 
 namespace CNS {
 
@@ -53,18 +54,11 @@ namespace CNS {
         /// <param name="args"></param>
         static void Main(string[] args) {
 
-            Application.InitMPI(args);
-            CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder0th();
-            //CNS.Tests.ConvectiveFlux.ShockTubeTests.Toro2AllButRusanovTest(Convection.ConvectiveFluxTypes.HLL);
-            //CNS.Tests.ArtificialViscosity.ArtificialViscosityShockTubeTests.ToroTest1_ALTS1_3();
-            //CNS.Tests.IBMTests.IBMIsentropicVortexTest.IBMVortexOneStepGaussAndStokesNoAgglomerationTest();
-            //CNS.Tests.BoundaryConditions.EulerBoundaryConditionTest.TestSubsonicInletBoundaryCondition1D();
-            //CNS.Tests.DiffusiveFlux.SIPGConsistency.SIPGconsistencyTest(1);
+            //Application.InitMPI(args);
             //DeleteOldPlotFiles();
-            //AcousticWaveShockInteraction.Test00();
-            Debug.Assert(false, "remove me");
-            return;
-
+            //CNS.Tests.IBMTests.IBMIsentropicVortexTest.IBMVortexClassicHLLCAgglomerationTest();
+            //Assert.True(false, "remove me");
+            
             Application<CNSControl>._Main(
                 args,
                 false,

@@ -64,7 +64,7 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// Central Difference Divergence, <see cref="DGField.DivergenceByFlux{T}"/>
+        /// Central Difference Divergence, <see cref="DGField.DivergenceByFlux{T}(double,VectorField{T},SubGrid,SubGridBoundaryModes)"/>
         /// </summary>
         public static T DivergenceByFlux<T>(this VectorField<T> Vec, SubGrid optionalSubGrid = null, SubGridBoundaryModes bndMode = SubGridBoundaryModes.OpenBoundary) where T : DGField {
             T myDiv = Vec[0].CloneAs() as T;
@@ -76,7 +76,7 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// Broken Divergence, <see cref="DGField.Divergence{T}"/>
+        /// Broken Divergence, <see cref="DGField.Divergence{T}(double, VectorField{T}, CellMask)"/>
         /// </summary>
         public static T Divergence<T>(this VectorField<T> Vec, CellMask em = null) where T : DGField {
             T myDiv = Vec[0].CloneAs() as T;
@@ -88,7 +88,7 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// Central Difference Divergence, <see cref="DGField.DivergenceByFlux{T}"/>
+        /// Central Difference Divergence, <see cref="DGField.DivergenceByFlux{T}(double,VectorField{T},SubGrid,SubGridBoundaryModes)"/>
         /// </summary>
         public static T DivergenceByFlux<T>(this IEnumerable<T> Vec, SubGrid optionalSubGrid = null, SubGridBoundaryModes bndMode = SubGridBoundaryModes.OpenBoundary) where T : DGField {
             return (new VectorField<T>(Vec.ToArray())).DivergenceByFlux();
@@ -96,7 +96,7 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// Broken Divergence, <see cref="DGField.Divergence{T}"/>
+        /// Broken Divergence, <see cref="DGField.Divergence{T}(double, VectorField{T}, CellMask)"/>
         /// </summary>
         public static T Divergence<T>(this IEnumerable<T> Vec, CellMask em = null) where T : DGField {
             return (new VectorField<T>(Vec.ToArray())).Divergence();

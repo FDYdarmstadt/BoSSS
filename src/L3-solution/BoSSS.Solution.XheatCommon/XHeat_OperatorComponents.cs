@@ -92,7 +92,7 @@ namespace BoSSS.Solution.XheatCommon {
                 var Visc = new ConductivityInSpeciesBulk(
                     penalty, // ntParams.UseGhostPenalties ? 0.0 : penalty, 
                     1.0,
-                    BcMap, D, spcName, thermParams.k_A, thermParams.k_B);
+                    BcMap, D, spcName, thermParams.k_A, thermParams.k_B, thermParams.k_C);
 
                 comps.Add(Visc);
 

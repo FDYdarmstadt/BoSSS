@@ -1,16 +1,7 @@
-﻿using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.Grid.Classic;
-using BoSSS.Foundation.Grid.RefElements;
-using BoSSS.Foundation.Quadrature;
+﻿using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace BoSSS.Foundation.XDG.Quadrature {
+namespace BoSSS.Foundation.XDG.Quadrature.BruteForce {
     class MultiLevelSetOnEdgeDetector {
         GridData grddat;
 

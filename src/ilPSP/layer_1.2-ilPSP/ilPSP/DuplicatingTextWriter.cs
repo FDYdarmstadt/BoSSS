@@ -36,11 +36,11 @@ namespace ilPSP {
         /// </summary>
         /// <param name="tw0"></param>
         /// <param name="FlushPerio"></param>
-        /// <param name="SurpStrem0"></param>
-        public DuplicatingTextWriter(TextWriter tw0, uint FlushPerio, bool SurpStrem0) {
+        /// <param name="SurpStrem"></param>
+        public DuplicatingTextWriter(TextWriter tw0, uint FlushPerio, bool SurpStrem) {
             Writer0 = tw0;
             m_flushPeriod = FlushPerio;
-            this.surpressStream0 = SurpStrem0;
+            this.surpressStream0 = SurpStrem;
         }
 
         TextWriter Writer0;
@@ -75,12 +75,20 @@ namespace ilPSP {
         
         uint m_flushPeriod;
 
+        // Backing field made volatile to ensure reads/writes are atomic and have appropriate memory semantics
+        private volatile bool m_surpressStream0;
+
         /// <summary>
-        /// if true, the output to the 0-th stream resp. text-writer is suppressed
+        /// if true, the output to the stream resp. text-writer is suppressed (usually to 0-th processor or last processor)
+        /// Thread-safe via a volatile backing field.
         /// </summary>
         public bool surpressStream0 {
-            get;
-            set;
+            get {
+                return m_surpressStream0;
+            }
+            set {
+                m_surpressStream0 = value;
+            }
         }
 
         private int cnt = 0;

@@ -36,11 +36,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// </summary>
         protected override string LogFileName => LogfileName;
 
-        private int InnerSpecies;
-        public Dropletlike(int InnerSpecies) {
-            this.InnerSpecies = InnerSpecies;
+        private string InnerSpecies;
+        private string OuterSpecies;
+        public Dropletlike(string __InnerSpecies, string __OuterSpecies) {
+            this.InnerSpecies = __InnerSpecies;
+            this.OuterSpecies = __OuterSpecies;
         }
-        public Dropletlike() : this(0) {
+
+
+        public Dropletlike() : this("A", "B") {
         }
 
         /// <summary>
@@ -92,7 +96,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             // area/volume
             double volume = 0.0;
-            SpeciesId spcId = LsTrk.SpeciesIdS[InnerSpecies];
+            SpeciesId spcId = LsTrk.GetSpeciesId(InnerSpecies);
+            SpeciesId spcIdB = LsTrk.GetSpeciesId(OuterSpecies);
+
             var vqs = SchemeHelper.GetVolumeQuadScheme(spcId);
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 vqs.Compile(LsTrk.GridDat, this.m_HMForder),
@@ -108,7 +114,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // surface
             double surface = 0.0;
             //CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
-            var surfElemVol = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(spcId, 0);
+            var surfElemVol = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(spcId, spcIdB, 0);
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 surfElemVol.Compile(LsTrk.GridDat, this.m_HMForder),
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
@@ -123,5 +129,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             return new double[] { volume, surface };
 
         }
+
     }    
 }

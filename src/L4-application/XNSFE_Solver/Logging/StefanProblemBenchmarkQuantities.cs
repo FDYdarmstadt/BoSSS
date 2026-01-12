@@ -148,7 +148,7 @@ namespace BoSSS.Application.XNSFE_Solver.PhysicalBasedTestcases {
             ).Execute();
             mass_vapor *= m_thermParams.rho_B;
             
-            var lqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            var lqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 lqs.Compile(LsTrk.GridDat, order),
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {

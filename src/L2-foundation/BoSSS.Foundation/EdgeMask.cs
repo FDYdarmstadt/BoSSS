@@ -210,6 +210,22 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
+        /// like the ctor.
+        /// </summary>
+        protected override ExecutionMask CreateInstance(int[] _Sequence, MaskType __MaskType) {
+            return new EdgeMask(base.GridData, _Sequence, __MaskType);
+        }
+
+        /// <summary>
+        /// splits this mask into <paramref name="NoOfParts"/> roughly equal parts
+        /// </summary>
+        public new EdgeMask[] SplitUp(int NoOfParts) {
+            return base.SplitUp(NoOfParts).Select(part => (EdgeMask)part).ToArray();
+        }
+
+
+
+        /// <summary>
         /// see <see cref="ExecutionMask.GetUpperIndexBound"/>
         /// </summary>
         protected override int GetUpperIndexBound(IGridData gridData) {

@@ -62,7 +62,15 @@ namespace ilPSP.Utils {
         [DllImport("kernel32.dll")]
         private static extern uint SetThreadIdealProcessor(IntPtr hThread, uint dwIdealProcessor);
 
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern IntPtr OpenThread(uint dwDesiredAccess, bool bInheritHandle, uint dwThreadId);
 
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool CloseHandle(IntPtr hObject);
+
+        private const uint THREAD_SET_INFORMATION = 0x0020;
+        private const uint THREAD_QUERY_INFORMATION = 0x0040;
 
         [StructLayout(LayoutKind.Sequential)]
         struct GROUP_AFFINITY {
@@ -125,44 +133,80 @@ namespace ilPSP.Utils {
             }
         }
 
+        /// <summary>
+        /// testing affinity for more than 64 processors
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="Win32Exception"></exception>
+        unsafe  public static int[] GetFullProcessAffinity() {
+            var proc = Process.GetCurrentProcess();
+            IntPtr hProc = proc.Handle;
+
+            // 1) Get all groups
+            ushort gCount = 0;
+            GetProcessGroupAffinity(hProc, ref gCount, null);
+            var groups = new ushort[gCount];
+            if(!GetProcessGroupAffinity(hProc, ref gCount, groups))
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+
+            // 2) Save original thread affinity
+            IntPtr hThread = GetCurrentThread();
+            GetThreadGroupAffinity(hThread, out var original);
+
+            GROUP_AFFINITY previousAffinity;
+
+            var cpus = new List<int>();
+            foreach(var g in groups) {
+                // 3) Pin this thread to group g with a full-ones mask
+                var pin = new GROUP_AFFINITY { Group = g, Mask = UInt64.MaxValue };
+                if(!SetThreadGroupAffinity(hThread, ref pin, &previousAffinity))
+                    throw new Win32Exception(Marshal.GetLastWin32Error());
+
+                // 4) Read back the thread’s group affinity → this is process-mask ∧ full-mask
+                GetThreadGroupAffinity(hThread, out var actual);
+                for(int b = 0; b < NumberOfCPUsPerGroup; b++)
+                    if(((actual.Mask >> b) & 1) != 0)
+                        cpus.Add(g * NumberOfCPUsPerGroup + b);
+            }
+
+            // 5) Restore original
+            SetThreadGroupAffinity(hThread, ref original, &previousAffinity);
+
+            return cpus.ToArray();
+        }
+
+        public static IEnumerable<int> GetProcessAffinity() {
+            var cpuList = new HashSet<int>();
+            int procsPerGroup = NumberOfCPUsPerGroup;
+
+            Process currentProcess = Process.GetCurrentProcess();
+            foreach(ProcessThread pt in currentProcess.Threads) {
+                IntPtr hThread = OpenThread(THREAD_SET_INFORMATION | THREAD_QUERY_INFORMATION, false, (uint)pt.Id);
+                if(hThread == IntPtr.Zero) continue;
+
+                if(GetThreadGroupAffinity(hThread, out var groupAffinity)) {
+                    var cpus = CheckCpuAffinity(groupAffinity.Mask, groupAffinity.Group, procsPerGroup);
+                    foreach(var cpu in cpus)
+                        cpuList.Add(cpu);
+                }
+                CloseHandle(hThread);
+            }
+            var sortedList = cpuList.ToList();
+            sortedList.Sort();
+            return sortedList;
+        }
 
         /// <summary>
         /// (Windows version) Returns the list of CPU's to which the current process is assigned to.
         /// </summary>
         public static IEnumerable<int> GetCurrentThreadAffinity() {
-            Process currentProcess = Process.GetCurrentProcess();
-            IntPtr processHandle = currentProcess.Handle;
-
-            // first pass: get number of groups
-            ushort groupCount = 0;
-            GetProcessGroupAffinity(processHandle, ref groupCount, null); // second arg 0 on iput -> returns the n umber of processor 
-            if(groupCount != 1) {
-                //Console.WriteLine($"Process associated to more than one processor group ({groupCount}) -- i don't know what to do about it (tell Florian)!");
-                //throw new NotSupportedException("Process associated to more than one processor group -- i don't know what to do about it (tell Florian)!");
-            }
-
-            // second pass: get actual groups
-            ushort[] groups = new ushort[groupCount];
-            if(!GetProcessGroupAffinity(processHandle, ref groupCount, groups)) {
-                Console.Error.WriteLine("Failed to get processor group affinity.");
+            GROUP_AFFINITY groupAffinity;
+            if(!GetThreadGroupAffinity(GetCurrentThread(), out groupAffinity)) {
                 int errorCode = Marshal.GetLastWin32Error();
                 throw new Win32Exception(errorCode);
             }
 
-            var CPUlist = new List<int>();
-
-            for(int cntGroup = 0; cntGroup < groupCount; cntGroup++) {
-                ushort group = groups[cntGroup];
-                GROUP_AFFINITY groupAffinity;
-                if(GetThreadGroupAffinity(GetCurrentThread(), out groupAffinity)) {
-                    CPUlist.AddRange(CheckCpuAffinity(groupAffinity.Mask, group, NumberOfCPUsPerGroup).ToArray());
-                } else {
-                    int errorCode = Marshal.GetLastWin32Error();
-                    throw new Win32Exception(errorCode);
-                }
-            }
-
-            return CPUlist.ToArray();
+            return CheckCpuAffinity(groupAffinity.Mask, groupAffinity.Group, NumberOfCPUsPerGroup).Distinct();
         }
 
         /// <summary>
@@ -178,6 +222,10 @@ namespace ilPSP.Utils {
 
             unsafe {
                 GROUP_AFFINITY* affinities = stackalloc GROUP_AFFINITY[16];
+                for(int i = 0; i < 16; i++) {
+                    affinities[i] = default;  // zeroes Mask and Group
+                }
+
                 int[] iGroup2affinities = new int[16];
                 int NumberOfGroups = 0;
                 foreach(int iCPU in CPUindices) { // sort the CPU indices into processor groups
@@ -200,7 +248,7 @@ namespace ilPSP.Utils {
 
 
                 for(int cntGroup = 0; cntGroup < NumberOfGroups; cntGroup++) {
-
+                    //Console.Error.WriteLine($"Setting {cntGroup + 1}/{NumberOfGroups} group with affinity 0x{affinities[cntGroup].Mask:x} at group-{affinities[cntGroup].Group}");
                     if(SetThreadGroupAffinity(GetCurrentThread(), ref affinities[cntGroup], null)) {
 
                     } else {
@@ -234,6 +282,7 @@ namespace ilPSP.Utils {
         /// </summary>
         public static int[] Decode_CCP_AFFINITY() {
             using(var tr = new FuncTrace()) {
+                tr.InfoToConsole = true;
                 string CCP_AFFINITY = System.Environment.GetEnvironmentVariable("CCP_AFFINITY");
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int MPIrank);
                 csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MPIsize);
@@ -260,7 +309,6 @@ namespace ilPSP.Utils {
 
 
                 var affGroup = CCP_AFFINITY.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
-
                 var CPUlist = new List<int>();
                 int iGroup = 0;
                 var groupOccupied = new List<bool>();
@@ -269,18 +317,25 @@ namespace ilPSP.Utils {
                     // note: at least in our MKL version, it seems that the indices for OMP_PLACES always start at 0 for group 0 and 64 for group 1; Even if the system has e.g. 48 processors per group.
                     //
 
-                    var groupCPUs = CheckCpuAffinity(Convert.ToUInt64(aff, 16), iGroup, NumberOfCPUsPerGroup);
+                    var groupCPUs = CheckCpuAffinity(Convert.ToUInt64(aff, 16), iGroup, NumberOfCPUsPerGroup); //, NumberOfCPUsPerGroup
                     groupOccupied.Add(groupCPUs.Count() > 0);
                     CPUlist.AddRange(groupCPUs);
                     iGroup++;
 
                 }
+
                 CPUlist.Sort();
 
                 return CPUlist.ToArray();
             }
         }
 
+        public static int GetCurrentThreadGroupNumber() {
+            GROUP_AFFINITY groupAffinity;
+            if(!GetThreadGroupAffinity(GetCurrentThread(), out groupAffinity))
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+            return groupAffinity.Group;
+        }
 
         /// <summary>
         /// When MS HPC server is used, it seems to be necessary to define the `OMP_PLACES` environment variable.
@@ -331,7 +386,37 @@ namespace ilPSP.Utils {
         }
 
 
+        static int[] CoresPerGroup() {
+            int G = NumberOfProcessorGroups;
+            var sizes = new int[G];
+            for(int g = 0; g < G; g++)
+                sizes[g] = (int)GetActiveProcessorCount((ushort)g);
+            return sizes;
+        }
 
+        static int[] GroupOffsets() {
+            var sizes = CoresPerGroup();
+            var offs = new int[sizes.Length];
+            int sum = 0;
+            for(int i = 0; i < sizes.Length; i++) {
+                offs[i] = sum;
+                sum += sizes[i];
+            }
+            return offs;
+        }
+
+        //static IEnumerable<int> CheckCpuAffinity(ulong mask, int group) {
+        //    var offs = GroupOffsets();
+        //    int groupOffset = offs[group];
+        //    int groupSize = CoresPerGroup()[group];
+
+        //    var res = new List<int>();
+        //    for(int cpuInGroup = 0; cpuInGroup < groupSize; cpuInGroup++) {
+        //        if((mask & (1UL << cpuInGroup)) != 0)
+        //            res.Add(groupOffset + cpuInGroup);
+        //    }
+        //    return res;
+        //}
 
         static IEnumerable<int> CheckCpuAffinity(ulong mask, int iProcessorGroup, int procsPerGroup) {
             var res = new List<int>();

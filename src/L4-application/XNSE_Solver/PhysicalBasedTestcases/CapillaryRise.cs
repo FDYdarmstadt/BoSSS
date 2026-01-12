@@ -604,7 +604,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 C.AddBoundaryValue("wall_lower");
             } else {
                 //C.AddBoundaryValue("wall_lower");
-                //C.ChangeBoundaryCondition("wall_lower", "pressure_outlet_lower");
+                C.ChangeBoundaryCondition("wall_lower", "pressure_outlet_lower");
                 C.AddBoundaryValue("pressure_outlet_lower");
             }
             C.AddBoundaryValue("pressure_outlet_upper");

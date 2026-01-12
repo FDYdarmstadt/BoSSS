@@ -355,17 +355,17 @@ namespace BoSSS.Application.LsTest {
                 if (IO != null) {
 
 
-                    var projCheck = new TestingIO(solver.GridData, $"{IO}.csv", true, RefMPIsize);
+                    var projCheck = new TestingIO(solver.GridData, $"{IO}.csv", TestingIO.DataCorrelation.GlobalId, RefMPIsize);
                     for (int iLevSet = 0; iLevSet < solver.Control.NoOfLevelSets; iLevSet++) {
                         LevelSet PhiDG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCGidx(iLevSet)].DGLevelSet;
-                        LevelSet PhiCG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCGidx(iLevSet)].CGLevelSet;
+                        LevelSet PhiCG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCGidx(iLevSet)].C0LevelSet;
                         projCheck.AddDGField(PhiDG);
                         projCheck.AddDGField(PhiCG);
                     }
                     projCheck.DoIOnow();
                     for (int iLevSet = 0; iLevSet < solver.Control.NoOfLevelSets; iLevSet++) {
                         LevelSet PhiDG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCGidx(iLevSet)].DGLevelSet;
-                        LevelSet PhiCG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCGidx(iLevSet)].CGLevelSet;
+                        LevelSet PhiCG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCGidx(iLevSet)].C0LevelSet;
                         Assert.Less(projCheck.AbsError(PhiDG), 1.0e-15, "Mismatch in projected PhiDG between single-core and parallel run.");
                         Assert.Less(projCheck.AbsError(PhiCG), 1.0e-15, "Mismatch in projected PhiCG between single-core and parallel run.");
                     }
@@ -607,7 +607,7 @@ namespace BoSSS.Application.LsTest {
         /// <param name="cm"></param>
         /// <returns></returns>
         public double ComputeLevelSetError(int iLevSet, CellMask cm) {
-            SinglePhaseField PhiCG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCGidx(iLevSet)].CGLevelSet;
+            SinglePhaseField PhiCG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCGidx(iLevSet)].C0LevelSet;
             string name = PhiCG.Identification;
 
             double L2Error;
@@ -650,10 +650,10 @@ namespace BoSSS.Application.LsTest {
         public double ComputeContourError(int iLevSet) {
 
             var SchemeHelper = solver.LsTrk.GetXDGSpaceMetrics(solver.LsTrk.SpeciesIdS.ToArray(), solver.QuadOrder(), 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(iLevSet, solver.LsTrk.Regions.GetCutCellMask4LevSet(iLevSet));
+            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(iLevSet, solver.LsTrk.Regions.GetCutCellMask4LevSet(iLevSet));
             int Norm = 2;
             var t_exactPhi = exactPhi[iLevSet].CloneAs();
-            t_exactPhi.AccLaidBack(-1.0, solver.LsUpdater.LevelSets[VariableNames.LevelSetCGidx(iLevSet)].CGLevelSet);
+            t_exactPhi.AccLaidBack(-1.0, solver.LsUpdater.LevelSets[VariableNames.LevelSetCGidx(iLevSet)].C0LevelSet);
             double conterr = DGField.IntegralOverEx(cqs, (X,U,j) => Math.Abs(U[0]), 2, t_exactPhi); // 1-norm of interface position error, only real meaningful in signed distance fields
 
             return conterr;

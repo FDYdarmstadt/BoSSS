@@ -21,12 +21,24 @@ namespace BoSSS.Foundation.XDG {
     /// </summary>
     public sealed class XDGSpaceMetrics {
 
-        XQuadFactoryHelperBase m_qfHelper;
+        
+        static XQuadFactoryHelperBase GetXQuadFactoryHelper(CutCellQuadratureMethod variant, LevelSetTracker.LevelSetData[] lsDatas) {
+            XQuadFactoryHelperBase qfHelper;
+            if(variant == CutCellQuadratureMethod.Algoim) {
+                qfHelper = new XQuadFactoryHelperAlgoim(
+                    lsDatas);
+            } else {
+                qfHelper = new XQuadFactoryHelper(
+                    lsDatas,
+                    variant);
+            }
+            return qfHelper;
+        }
 
         /// <summary>
         /// ctor.
         /// </summary>
-        internal XDGSpaceMetrics(LevelSetTracker lsTrk, XQuadFactoryHelperBase qfHelper, int __quadorder, SpeciesId[] speciesIds, int HistoyIndex) {
+        internal XDGSpaceMetrics(LevelSetTracker lsTrk, int __quadorder, SpeciesId[] speciesIds, int HistoryIndex) {
             using(new FuncTrace("XDGSpaceMetrics.ctor")) {
                 // ----
                 // init 
@@ -39,36 +51,44 @@ namespace BoSSS.Foundation.XDG {
                     throw new ArgumentException();
                 }
                 CutCellQuadOrder = __quadorder;
-                m_qfHelper = qfHelper;
                 this.Tracker = lsTrk;
                 this.m_SpeciesList = speciesIds.ToArray();
 
-                m_LevelSetRegions = lsTrk.RegionsHistory[HistoyIndex];
-                m_LevelSetData = lsTrk.DataHistories.Select(his => his[HistoyIndex]).ToList().AsReadOnly();
+                m_LevelSetRegions = lsTrk.RegionsHistory[HistoryIndex];
+                m_LevelSetData = lsTrk.DataHistories.Select(his => his[HistoryIndex]).ToList().AsReadOnly();
                 foreach(var lsData in m_LevelSetData) {
-                    Debug.Assert(lsData.HistoryIndex == HistoyIndex);
+                    Debug.Assert(lsData.HistoryIndex == HistoryIndex);
                 }
 
                 // ---------------------
                 // compute all the stuff
                 // ---------------------
+                m_qfHelper = new XQuadFactoryHelperCached((int iThread) => GetXQuadFactoryHelper(lsTrk.CutCellQuadratureType, m_LevelSetData.ToArray()));
+                //m_qfHelper = GetXQuadFactoryHelper(lsTrk.CutCellQuadratureType, m_LevelSetData.ToArray());
+                m_XQuadSchemeHelper = new XQuadSchemeHelper(this);
+                m_qfHelper.CreateRulesAndMPIExchgange(this.CutCellQuadOrder);
 
                 m_CutCellMetrics = new CutCellMetrics(this);
                 m_MassMatrixFactory = new MassMatrixFactory(this);
-                m_XQuadSchemeHelper = new XQuadSchemeHelper(this);
             }
         }
+
+        //XQuadFactoryHelperCached m_qfHelper;
+        //XQuadFactoryHelperBase m_qfHelper;
+        IXQuadFactoryHelper m_qfHelper;
+
 
         /// <summary>
         /// Provides access to quadrature factories; however, most of the time the user wants to use schemes, <see cref="XQuadSchemeHelper"/>.
         /// </summary>
-        public XQuadFactoryHelperBase XQuadFactoryHelper {
+        public IXQuadFactoryHelper XQuadFactoryHelper {
             get {
-                return m_qfHelper;
+                return m_qfHelper;                
             }
         }
+        
 
-        XQuadSchemeHelper m_XQuadSchemeHelper;
+        readonly XQuadSchemeHelper m_XQuadSchemeHelper;
 
         /// <summary>
         /// Provides access to quadrature schemes on cut-cell domains.
@@ -78,9 +98,9 @@ namespace BoSSS.Foundation.XDG {
                 return m_XQuadSchemeHelper;
             }
         }
+ 
 
-
-        MassMatrixFactory m_MassMatrixFactory;
+        readonly MassMatrixFactory m_MassMatrixFactory;
         
         /// <summary>
         /// Ye olde provider of the best mass matrices in town. 
@@ -109,7 +129,7 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        LevelSetTracker.LevelSetRegions m_LevelSetRegions;
+        readonly LevelSetTracker.LevelSetRegions m_LevelSetRegions;
 
         /// <summary>
         /// Constant during object lifetime.

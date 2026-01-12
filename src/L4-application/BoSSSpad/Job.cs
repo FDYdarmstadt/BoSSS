@@ -540,7 +540,8 @@ namespace BoSSS.Application.BoSSSpad {
             string[] args = new string[] {
                 "--control", "control.obj",
                 "--prjnmn", PrjName,
-                "--sesnmn", this.Name
+                "--sesnmn", this.Name,
+                "--num_threads", this.NumberOfThreads.ToString()
             };
             if (m_ctrl_index >= 0) {
                 ArrayTools.Cat(args, "--pstudy_case", m_ctrl_index.ToString());
@@ -552,6 +553,19 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
             // 
+        }
+
+        /// <summary>
+        /// Enables explicitly overriding the BoSSS Arguments (e.g,  "--control", "control.obj",)
+        /// </summary>
+        /// <param name="args"></param>
+        public void SetBoSSSArguments(string[] args) {
+            TestActivation();
+
+            m_EnvironmentVars.Clear();
+            for(int i = 0; i < args.Length; i++) {
+                m_EnvironmentVars.Add("BOSSS_ARG_" + i, args[i]);
+            }
         }
 
         /// <summary>
@@ -680,8 +694,10 @@ namespace BoSSS.Application.BoSSSpad {
                     }
 
                     if(Session != null) {
-                        var parts = Session.DeployPath.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
-                        return parts.Last();
+                        if(Session.DeployPath != null) {
+                            var parts = Session.DeployPath.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
+                            return parts.Last();
+                        } 
                     }
 
                     return null; // unable to determine
@@ -835,7 +851,7 @@ namespace BoSSS.Application.BoSSSpad {
                             this.ExitCodeCache = ExitCode;
                         } catch (Exception e) {
                            
-                            tr.Error($"{e.GetType().Name} during Job.Deployment status evaluation: {e.Message}");
+                            tr.Info($"{e.GetType().Name} during Job.Deployment status evaluation: {e.Message}; Most likely reason: job was submitted a long time ago, and the job manager deleted teh respective record."); 
                             tr.Info("Exception trace: " + (e.StackTrace ?? ""));
                             bpc_status = JobStatus.Unknown;
                             ExitCode = null;
@@ -1220,7 +1236,7 @@ namespace BoSSS.Application.BoSSSpad {
                 return m_NumberOfMPIProcs;
             }
             set {
-                if (value <= 0)
+                if(value <= 0)
                     throw new ArgumentOutOfRangeException("number of MPI processes must be at least 1");
                 TestActivation();
                 m_NumberOfMPIProcs = value;
@@ -1238,7 +1254,7 @@ namespace BoSSS.Application.BoSSSpad {
                 return m_NumberOfThreads;
             }
             set {
-                if(value <= 0) 
+                if(value <= 0)
                     throw new ArgumentOutOfRangeException("number of threads must be at least 1");
                 m_EnvironmentVars["OMP_NUM_THREADS"] = this.m_NumberOfThreads.ToString();
                 TestActivation();
@@ -1568,7 +1584,6 @@ namespace BoSSS.Application.BoSSSpad {
             using (var tr = new FuncTrace()) {
                 if (this.AssignedBatchProc == null)
                     throw new NotSupportedException("Job must be activated before.");
-
                 
                 // ================
                 // status
@@ -1601,16 +1616,16 @@ namespace BoSSS.Application.BoSSSpad {
 
                 // deploy additional files
                 string DeploymentDirectory = this.DeployExecuteables();
-                
+
                 // submit job
-                using (new BlockTrace("JOB_SUBMISSION", tr)) {
+                using(new BlockTrace("JOB_SUBMISSION", tr)) {
                     var rr = AssignedBatchProc.Submit(this, DeploymentDirectory);
                     File.WriteAllText(Path.Combine(DeploymentDirectory, "IdentifierToken.txt"), rr.id);
 
                     //Deployment dep = AllDeployments.SingleOrDefault(d => d?.BatchProcessorIdentifierToken == rr.id);
                     Deployment dep = AllDeployments.LastOrDefault(d => (d?.BatchProcessorIdentifierToken == rr.id) && PathMatch(d?.DeploymentDirectory?.FullName, DeploymentDirectory));
-                    
-                    if (dep == null)
+
+                    if(dep == null)
                         m_Deployments.Add(new Deployment(new DirectoryInfo(DeploymentDirectory), this, rr.optJobObj));
                     else
                         dep.optInfo = rr.optJobObj;

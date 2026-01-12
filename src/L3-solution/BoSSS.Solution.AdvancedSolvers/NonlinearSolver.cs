@@ -266,8 +266,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     throw new ApplicationException($"The provided {typeof(OperatorEvalOrLin).Name} is not correctly implemented.");
                 this.AbstractOperator = abstractOp;
 
+               
 #if DEBUG
-            const int TEST_INTERVALL = 10;
+                const int TEST_INTERVALL = 10;
 #else
                 const int TEST_INTERVALL = 1000;
 #endif
@@ -297,77 +298,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 
                     if (l2_err > comp) {
                         //tr.Error($"EvaluateOperator: Mismatch between operator linearization and evaluation: Operator matrix-Jacobian distance: {l2_err}, relative: {l2_err / comp} (comparison value {comp})");
-                        Console.Error.WriteLine($"Mismatch between operator linearization and evaluation: Operator matrix-Jacobian distance: {l2_err}, relative: {l2_err/comp} (comparison value {comp})");
+                        Console.Error.WriteLine($"Mismatch between operator linearization and evaluation: absolute dist.: {l2_err}, relative: {l2_err/comp} (comparison denominator {comp})");
                         //throw new ArithmeticException($"Mismatch between operator linearization and evaluation: Operator matrix-Jacobian distance: { l2_err }, relative: { l2_err/comp} (comparison value { comp})");
-				    }
+				    } else {
+                        //Console.WriteLine($"MATCH between operator linearization and evaluation: absolute dist.:  {l2_err}, relative: {l2_err / comp} (comparison value {comp})");
+                    }
                     //*/
                 }
                 EvaluationCounter++;
 
-
                 CurrentLin.TransformRhsInto(OpEvalRaw, Output, ApplyRef);
-                /*
-                if(ilPSP.Environment.NumThreads == 1) {
-                    OpEvalRaw.SaveToTextFile($"resiRaw{EvaluationCounter}.txt");
-                    Output.SaveToTextFile($"resiTrf{EvaluationCounter}.txt");
-                    CurrentLin.LeftChangeOfBasis.ToMsrMatrix().SaveToFile($"LPC{EvaluationCounter}.bin");
-                } else {
-                    var _OpEvalRaw = VectorIO.LoadFromTextFile($"resiRaw{EvaluationCounter}.txt");
-                    var _Output = VectorIO.LoadFromTextFile($"resiTrf{EvaluationCounter}.txt");
-                    var _LeftChangeOfBasis = MsrMatrix.LoadFromFile($"LPC{EvaluationCounter}.bin", CurrentLin.LeftChangeOfBasis.MPI_Comm, CurrentLin.LeftChangeOfBasis.RowPartitioning, CurrentLin.LeftChangeOfBasis.ColPartition);
-
-                
-                    {
-                        var g = CurrentLin.BaseGridProblemMapping.GridDat;
-                        var b = new Basis(g, 0);
-                        var LpcDiff = new SinglePhaseField(b, "LpcDiff");
-                        var OutDiff = new SinglePhaseField(b, "OutDiff");
-                        var LpcDiffMtx = _LeftChangeOfBasis.CloneAs();
-                        LpcDiffMtx.Acc(-1.0, CurrentLin.LeftChangeOfBasis);
-
-                        var blocking = CurrentLin.OperatorMatrix._RowPartitioning;
-                        for(int j = 0; j < blocking.LocalNoOfBlocks; j++) {
-                            long BlkI0 = blocking.GetBlockI0(j);
-                            int BlkSz = blocking.GetBlockLen(j);
-
-
-                            double acc_outputDiff = 0;
-                            double acc_mtxDiagDiff = 0;
-                            double acc_mtxOffDiagDiff = 0;
-
-                            for(int iRow = (int)BlkI0; iRow < (BlkI0 + BlkSz); iRow++) {
-                                var row = LpcDiffMtx.GetRow(iRow);
-                                for(int k = 0; k < row.entries.Length; k++) {
-                                    if(row.colIdx[k] >= BlkI0 && row.colIdx[k] < BlkI0 + BlkSz) {
-                                        acc_mtxDiagDiff += row.entries[k].Pow2();
-                                    } else {
-                                        acc_mtxOffDiagDiff += row.entries[k].Pow2();
-                                    }
-
-                                    acc_outputDiff += (Output[iRow] - _Output[iRow]).Pow2();
-                                }
-                            }
-                            //Console.Write(" - j" + j + " " + acc_mtxOffDiagDiff + "; ");
-
-                            LpcDiff.SetMeanValue(j, acc_mtxDiagDiff.Sqrt());
-                            OutDiff.SetMeanValue(j, acc_outputDiff.Sqrt());
-                            //stpDiff.SetMeanValue(j, acc_stpDiff.Sqrt());
-                            //mtxDiagDiff.SetMeanValue(j, acc_mtxDiagDiff.Sqrt());
-                            //mtxOffDiagDiff.SetMeanValue(j, acc_mtxOffDiagDiff.Sqrt());
-                        }
-
-                        Tecplot.Tecplot.PlotFields(new DGField[] { LpcDiff, OutDiff }, "pcfuck" + EvaluationCounter, 0.0, 0);
-
-                    }
-                
-
-                    Console.WriteLine($"### EVAL #{EvaluationCounter} ################################  ");
-                    Console.WriteLine("B4 trafo: " + _OpEvalRaw.L2Dist(OpEvalRaw));
-                    Console.WriteLine("Af trafo: " + _Output.L2Dist(Output));
-                    Console.WriteLine("Mtx dist: " + _LeftChangeOfBasis.MatrixDistFrobenius(CurrentLin.LeftChangeOfBasis));
-                    Console.WriteLine("--------------------------------------------------------------");
-                    Console.WriteLine();
-                */
             }
         }
 
@@ -518,17 +458,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 AbstractOperator);
             OpAffineRaw = OpAffineRaw.CloneAs();
 
-            // writing to text files
-            //{
-            //    Console.WriteLine("Writing to text file");
-            //    OpMtxRaw.SaveToTextFileSparse("OpMtxRaw-" + LinearizationCounter);
-            //    MassMtxRaw.SaveToTextFileSparse("MassMtxRaw-" + LinearizationCounter);
-            //    CurrentLin.LeftChangeOfBasis.SaveToTextFileSparse("LeftChangeOfBasis-" + LinearizationCounter);
-            //    CurrentLin.RightChangeOfBasis.SaveToTextFileSparse("RightChangeOfBasis-" + LinearizationCounter);
-            //    CurrentLin.OperatorMatrix.SaveToTextFileSparse("OperatorMatrix-" + LinearizationCounter);
-            //    LinearizationCounter++;
-            //}
-
             // RHS of the linearization
             if (this.RHSRaw != null)
                 OpAffineRaw.AccV(-1.0, this.RHSRaw);
@@ -538,6 +467,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 LinearizationRHS.ClearEntries();
             CurrentLin.TransformRhsInto(OpAffineRaw, this.LinearizationRHS, true);
             this.LinearizationRHS.ScaleV(-1.0);
+
+            //writing to text files
+            //{
+            //    Console.WriteLine("Writing to text file");
+            //    OpMtxRaw.SaveToTextFileSparse("OpMtxRaw-" + LinearizationCounter);
+            //    MassMtxRaw.SaveToTextFileSparse("MassMtxRaw-" + LinearizationCounter);
+            //    CurrentLin.LeftChangeOfBasis.SaveToTextFileSparse("LeftChangeOfBasis-" + LinearizationCounter);
+            //    CurrentLin.RightChangeOfBasis.SaveToTextFileSparse("RightChangeOfBasis-" + LinearizationCounter);
+            //    CurrentLin.OperatorMatrix.SaveToTextFileSparse("OperatorMatrix-" + LinearizationCounter);
+            //    this.LinearizationRHS.SaveToTextFile("RHS-" + LinearizationCounter);
+            //    LinearizationCounter++;
+            //}
+
         }
 
         int LinearizationCounter = 0;
@@ -624,16 +566,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 throw new ApplicationException("internal error");
             if (out_Resi.Length != in_U.Length)
                 out_Resi = new double[in_U.Length];
+
+            double L2_in_U = in_U.L2Norm();
+            double L2_RHS = this.LinearizationRHS.L2Norm();
+
             out_Resi.SetV(this.LinearizationRHS, 1.0);
             CurrentLin.OperatorMatrix.SpMV(-1.0, in_U, 1.0, out_Resi);
+
+            double L2_out_Resi = out_Resi.L2Norm();
         }
 
         /// <summary>
         /// Inner product with respect to the current mass matrix.
         /// 
         /// Note: this is the canonical inner product of the underlying DG-space, since 
-        /// for a DG/XDG field represented in an arbitrary basis $` \phi_{j} $` one verifies that
-        /// ```math
+        /// for a DG/XDG field represented in an arbitrary basis $\phi_{j}$ one verifies that
+        /// \[
         ///         (u, v) = 
         ///     \int_\Omega 
         ///         \left( \sum_{j} \phi_{j} \tilde{u}_{j} \right) 
@@ -642,8 +590,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         ///     \sum_{j l} \tilde{u}_{j} \tilde{v}_{l} ( \phi_{j}, \phi_{l} )
         ///     =
         ///       \tilde{u}^T M \tilde{v},
-        /// ```
-        /// where $`M `$ denotes the mass matrix ($` M_{j l} = ( \phi_ { j}, \phi_ { l} )  `$).
+        /// \]
+        /// where $M$ denotes the mass matrix ($M_{j l} = ( \phi_ { j}, \phi_ { l} )$).
         /// </summary>
         protected double InnerProduct<T1, T2>(T1 vecA, T1 vecB)
             where T1 : IList<double>

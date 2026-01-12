@@ -69,7 +69,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// </summary>
         /// <param name="state">The flow state inside a cell</param>
         /// <returns>
-        /// \f$ \rho (\vec{u} \cdot \vec{e_i}) \vec{u} + p \vec{e_i}\f$ 
+        /// \f$ \rho (\underline{u} \cdot \underline{e_i}) \underline{u} + p \underline{e_i}\f$ 
         /// </returns>
         public ilPSP.Vector Flux(StateVector state) {
             return state.Momentum[MomentumComponent] * state.Velocity
@@ -81,7 +81,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// momentum vector
         /// </summary>
         /// <param name="state">The flow state in a cell</param>
-        /// <returns>\f$ \rho \vec{u} \cdot \vec{e_i}\f$ </returns>
+        /// <returns>\f$ \rho \underline{u} \cdot \underline{e_i}\f$ </returns>
         public double VariableValue(StateVector state) {
             return state.Momentum[MomentumComponent];
         }

@@ -57,13 +57,13 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
 
-        /// <summary>
-        /// See <see cref="PhysicalBasedTestcases.CapillaryWave.CW_Test"/>.
-        /// </summary>
+        ///// <summary>
+        ///// See <see cref="PhysicalBasedTestcases.CapillaryWave.CW_Test"/>.
+        ///// </summary>
         //[Test]
         //public static void TestCapillaryWave() {
         //    var C = BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.CapillaryWave.CW_Test();
-        //    using (var solver = new XNSE_SolverMain()) {
+        //    using(var solver = new XNSE()) {
         //        solver.Init(C);
         //        solver.RunSolverMode();
         //    }

@@ -16,6 +16,7 @@ using log4net.Appender;
 using log4net.Config;
 using log4net.Layout;
 using Microsoft.DotNet.Interactive.Formatting;
+using MPI.Wrappers;
 using NUnit.Framework.Internal;
 using System;
 using System.Collections;
@@ -275,13 +276,16 @@ namespace BoSSS.Application.BoSSSpad {
             WriteProfiling();
 
             tracerfile = new FileStream(baseneme, FileMode.Create, FileAccess.Write, FileShare.Read);
+            //var zipper = new System.IO.Compression.GZipStream(tracerfile, System.IO.Compression.CompressionLevel.Optimal, leaveOpen:false);
+            //tracertxt = new StreamWriter(zipper);
             tracertxt = new StreamWriter(tracerfile);
 
-            TextWriterAppender fa = new TextWriterAppender();
-            fa.ImmediateFlush = true;
-            //fa.Writer = Console.Out;
-            fa.Writer = tracertxt;
-            fa.Layout = new PatternLayout("%date %-5level %logger: %message%newline");
+            TextWriterAppender fa = new TextWriterAppender {
+                ImmediateFlush = true,
+                //fa.Writer = Console.Out;
+                Writer = tracertxt,
+                Layout = new PatternLayout("%date %-5level From__%logger: %message%newline")
+            };
             fa.ActivateOptions();
             BasicConfigurator.Configure(fa);
             logger_output = fa;
@@ -704,8 +708,14 @@ namespace BoSSS.Application.BoSSSpad {
                 }
             }
 
+            bool bExists = false;
+            if(csMPI.Rank_World == 0) {
+                bExists = Directory.Exists(dbDir);
+            }
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+            bExists = MPIExtensions.MPIBroadcast(bExists, 0);
 
-            if (Directory.Exists(dbDir)) {
+            if (bExists) {
                 if (!DatabaseUtils.IsValidBoSSSDatabase(dbDir)) {
                     throw new ArgumentException("Directory '" + dbDir + "' exists, but is not a valid BoSSS database.");
                 }
@@ -714,6 +724,7 @@ namespace BoSSS.Application.BoSSSpad {
                 if (allowCreation) {
                     DatabaseUtils.CreateDatabase(dbDir);
                     Console.WriteLine("Creating database '" + dbDir + "'.");
+                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                 } else {
                     throw new ArgumentException("Database Directory '" + dbDir + "' does not exist.");
                 }

@@ -1,6 +1,4 @@
-﻿#undef LOG_TIME
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,12 +7,15 @@ using System.Collections;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.Quadrature;
+using System.Diagnostics;
 
 
 namespace BoSSS.Foundation.XDG.Quadrature.Saye {
     public class SayeGaussComboRuleFactory {
         ISayeGaussComboRule comboRule;
-        List<ChunkRulePair<QuadRule>>[] rulez;
+
+        readonly List<IChunkRulePair<QuadRule>> vol_rulez;
+        readonly List<IChunkRulePair<QuadRule>> srf_rulez;
 
         //Holds the factories instantiated by CalculateComboQuadRuleSet(...) 
         IQuadRuleFactory<QuadRule> surfaceRuleFactory;
@@ -35,28 +36,26 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
         /// are needed. Before calling GetSurfaceRule() or GetVolumeRule() to receive the respective factories, call 
         /// CalculateComboQuadRuleSet(...).
         /// </summary>
-        public SayeGaussComboRuleFactory(ISayeGaussComboRule ComboRule, CellMask maxGrid) {
+        public SayeGaussComboRuleFactory(ISayeGaussComboRule ComboRule) {
             comboRule = ComboRule;
 
-            rulez = new[] {
-                new List<ChunkRulePair<QuadRule>>(),
-                new List<ChunkRulePair<QuadRule>>()
-            };
+            vol_rulez = new List<IChunkRulePair<QuadRule>>();
+            srf_rulez = new List<IChunkRulePair<QuadRule>>();
 
             ComboStatus = new Status {
                 Initialized = false,
                 Order = -1,
-                MaxGrid = maxGrid,
+                MaxGrid = null,
                 ReferenceElement = comboRule.RefElement
             };
 
             volumeRuleFactory = new SayeFactoryWrapper(
                 CalculateComboQuadRuleSet,
-                rulez[0],
+                vol_rulez,
                 ComboStatus);
             surfaceRuleFactory = new SayeFactoryWrapper(
                 CalculateComboQuadRuleSet,
-                rulez[1],
+                srf_rulez,
                 ComboStatus);
         }
 
@@ -83,14 +82,15 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
         /// <param name="order"></param>
         void CalculateComboQuadRuleSet(ExecutionMask mask, int order) {
             comboRule.order = order;
-            rulez[0].Clear();
-            rulez[1].Clear();
+            //rulez[0].Clear();
+            //rulez[1].Clear();
             //Find quadrature nodes and weights in each cell/chunk
-#if LOG_TIME
-            Stopwatch stopWatch = new Stopwatch();
-            stopWatch.Start();
-#endif
-            foreach (Chunk chunk in mask) {
+
+
+            var ruelz0 = new List<IChunkRulePair<QuadRule>>();
+            var ruelz1 = new List<IChunkRulePair<QuadRule>>();
+
+            foreach(Chunk chunk in mask) {
                 foreach (int cell in chunk.Elements) {
                     QuadRule[] sayeRule = comboRule.ComboEvaluate(cell);
                     ChunkRulePair<QuadRule> sayePair_volume = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), sayeRule[0]); 
@@ -99,16 +99,33 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
                     ChunkRulePair<QuadRule> sayePair_surface = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), sayeRule[1]); 
                     if(sayeRule[1].OrderOfPrecision == 0)
                         sayeRule[1].OrderOfPrecision = order;
-                    rulez[0].Add(sayePair_volume);
-                    rulez[1].Add(sayePair_surface);
+                    ruelz0.Add(sayePair_volume);
+                    ruelz1.Add(sayePair_surface);
                 }
             }
-#if LOG_TIME
-            stopWatch.Stop();
-            long ts = stopWatch.ElapsedMilliseconds;
-            Console.WriteLine("Calculated combo cutcell rule : {0}ms", ts);
-#endif
+
+            // ----
+            if(vol_rulez.Count > 0) {
+                var tmp = vol_rulez.MergeDisjointRules(ruelz0);
+                vol_rulez.Clear();
+                vol_rulez.AddRange(tmp);
+            } else
+                vol_rulez.AddRange(ruelz0);
+            // ----
+            if(srf_rulez.Count > 0) {
+                var tmp = srf_rulez.MergeDisjointRules(ruelz1).ToList();
+                srf_rulez.Clear();
+                srf_rulez.AddRange(tmp);
+            } else {
+                srf_rulez.AddRange(ruelz1);
+            }
+
+            ComboStatus.Order = order;
+            ComboStatus.Initialized = true;
+            ComboStatus.MaxGrid = ComboStatus.MaxGrid != null ? ComboStatus.MaxGrid.Union(mask) : mask;
         }
+
+        
 
         class SayeFactoryWrapper : IQuadRuleFactory<QuadRule> {
             Action<ExecutionMask, int> comboRuleEvaluator;
@@ -130,6 +147,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
 
             //int counter = 0;
 
+            /*
             public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int order) {
                 if (!ruleStatus.Initialized || order != ruleStatus.Order) {
                     InitializeRule(order);
@@ -138,28 +156,51 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
                     return UseExistingRule(mask);
                 }
             }
+            
 
             void InitializeRule(int Order) {
                 comboRuleEvaluator(ruleStatus.MaxGrid, Order);
                 ruleStatus.Order = Order;
                 ruleStatus.Initialized = true;
-            }
+            }*/
 
-            IEnumerable<IChunkRulePair<QuadRule>> UseExistingRule(ExecutionMask subMask) {
-                if (subMask.Equals(ruleStatus.MaxGrid)) {
-                    return rule;
-                }
-                //If not, filter rules to fit subMask
-                else {
-                    //Debug.Assert(subMask.IsSubMaskOf(RuleStatus.initialMask));
-                    if (!subMask.IsSubMaskOf(ruleStatus.MaxGrid)) {
-                        throw new Exception("subMask is probably empty.");
+            public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int order) {
+            
+                if(!ruleStatus.Initialized || !mask.IsSubMaskOf(ruleStatus.MaxGrid)) {
+                    //throw new Exception("subMask is probably empty.");
+
+                    ExecutionMask recomputeMask;
+                    int reqOrder;
+                    if(ruleStatus.Initialized) {
+                        recomputeMask = mask.Except(ruleStatus.MaxGrid);
+                        reqOrder = ruleStatus.Order;
+                    } else {
+                        recomputeMask = mask;
+                        reqOrder = order;
                     }
-                    List<IChunkRulePair<QuadRule>> subRulez = new List<IChunkRulePair<QuadRule>>(subMask.Count());
+
+                    comboRuleEvaluator(recomputeMask, reqOrder);
+                }
+
+                if(order > ruleStatus.Order)
+                    throw new ArgumentException($"was initialized with order {ruleStatus.Order}, so cannot generate order {order}");
+
+                Debug.Assert(mask.IsSubMaskOf(ruleStatus.MaxGrid), "at this point `mask` must be a sub-mask of `MaxGrid`");
+                if (mask.NoOfItemsLocally == ruleStatus.MaxGrid.NoOfItemsLocally) {
+                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    // If it is a sub-mask and has the same number of elements, it must be equal
+                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    return rule;
+                } else {
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    // If not, filter rules to fit subMask
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    
+                    List<IChunkRulePair<QuadRule>> subRulez = new List<IChunkRulePair<QuadRule>>(mask.Count());
 
                     IEnumerator<int> initialMask_enum = ruleStatus.MaxGrid.GetItemEnumerator();
                     int i = 0;
-                    BitArray subMask_bitmask = subMask.GetBitMask();
+                    BitArray subMask_bitmask = mask.GetBitMask();
                     while (initialMask_enum.MoveNext()) {
                         if (subMask_bitmask[initialMask_enum.Current]) {
                             subRulez.Add(rule.ElementAt(i));

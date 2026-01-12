@@ -98,7 +98,7 @@ namespace BoSSS.Application.XNSFE_Solver.PhysicalBasedTestcases {
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), this.m_HMForder).XQuadSchemeHelper;
             SpeciesId spcId = LsTrk.SpeciesIdS[0];
             SpeciesId spcIdOther = LsTrk.SpeciesIdS[1];
-            var clqs = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(spcId, 0);
+            var clqs = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(spcId, spcIdOther, 0);
             var gridDat = (GridData)this.SolverMainOverride.GridData;
             var QuadDom = clqs.Domain;
             var boundaryEdge = gridDat.GetBoundaryEdgeMask().GetBitMask();

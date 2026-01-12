@@ -1,5 +1,4 @@
 ﻿#undef LOG_ACTIONS
-#undef LOG_TIME
 
 using System;
 using System.Collections.Generic;
@@ -161,11 +160,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
             rule.order = order;
             var result = new List<ChunkRulePair<QuadRule>>();
 
-
-#if LOG_TIME
-            Stopwatch stopWatch = new Stopwatch();
-            stopWatch.Start();
-#endif
             //Find quadrature nodes and weights in each cell/chunk
             foreach(Chunk chunk in mask) {
                 foreach(int cell in chunk.Elements) {
@@ -191,11 +185,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
                     ilPSP.Environment.StdoutOnlyOnRank0 = true;
                 }
             }
-#if LOG_TIME
-            stopWatch.Stop();
-            long ts = stopWatch.ElapsedMilliseconds;
-            Console.WriteLine("Calculated cutcell rule : {0}ms", ts);
-#endif
+
             return result;
         }
     }
@@ -217,10 +207,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
         public IEnumerable<IChunkRulePair<CellBoundaryQuadRule>> GetQuadRuleSet(ExecutionMask mask, int order) {
             rule.order = order;
             var result = new List<ChunkRulePair<CellBoundaryQuadRule>>();
-#if LOG_TIME
-            Stopwatch stopWatch = new Stopwatch();
-            stopWatch.Start();
-#endif
+
             //Find quadrature nodes and weights in each cell/chunk
             foreach(Chunk chunk in mask) {
                 foreach(int cell in chunk.Elements) {
@@ -230,11 +217,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
                     result.Add(sayePair);
                 }
             }
-#if LOG_TIME
-            stopWatch.Stop();
-            long ts = stopWatch.ElapsedMilliseconds;
-            Console.WriteLine("Calculated cutcell rule : {0}ms", ts);
-#endif
+
             return result;
         }
 
@@ -248,11 +231,22 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
 
         public static IQuadRuleFactory<CellBoundaryQuadRule> SayeGaussRule_EdgeVolume3D(
             LevelSetTracker.LevelSetData _lsData,
-            IRootFindingAlgorithm RootFinder) {
+            IRootFindingAlgorithm RootFinder,
+            JumpTypes jumpType
+            ) {
+            SayeGaussRule_Cube.QuadratureMode qm;
+            if(jumpType == JumpTypes.Heaviside)
+                qm = SayeGaussRule_Cube.QuadratureMode.PositiveVolume;
+            else if(jumpType == JumpTypes.OneMinusHeaviside)
+                qm = SayeGaussRule_Cube.QuadratureMode.PositiveVolume;
+            else
+                throw new ArgumentOutOfRangeException();
+
+
             ISayeGaussEdgeRule rule = new SayeGaussRule_EdgeCube(
-                _lsData,
-                RootFinder,
-                SayeGaussRule_Cube.QuadratureMode.PositiveVolume);
+                    _lsData,
+                    RootFinder,
+                    qm);
             return new SayeGaussEdgeRuleFactory(rule);
         }
 
@@ -270,7 +264,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
 
         #region Single QuadRules
         /// <summary>
-        /// Gauss rules for \f$ \oint_{\frakI \cap K_j } \ldots \dS \f$ in the 3D case
+        /// Gauss rules for $\oint_{\mathfrak{I} \cap K_j } \ldots \textrm{dS}$ in the 3D case
         /// </summary>
         /// 
         public static IQuadRuleFactory<QuadRule> SayeGaussRule_Volume3D(
@@ -285,7 +279,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
         }
 
         /// <summary>
-        /// Gauss rules for \f$ \oint_{\frakI \cap K_j } \ldots \dS \f$ in the 3D case
+        /// Gauss rules for $\oint_{\mathfrak{I} \cap K_j } \ldots \textrm{dS}$ in the 3D case
         /// </summary>
         /// 
         public static IQuadRuleFactory<QuadRule> SayeGaussRule_NegativeVolume3D(
@@ -300,7 +294,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
         }
 
         /// <summary>
-        /// Gauss rules for \f$ \oint_{\frakI \cap K_j } \ldots \dS \f$ in the 3D case
+        /// Gauss rules for $\oint_{\mathfrak{I} \cap K_j } \ldots \textrm{dS}$ in the 3D case
         /// </summary>
         public static IQuadRuleFactory<QuadRule> SayeGaussRule_Surface3D(
             LevelSetTracker.LevelSetData _lsData,
@@ -315,7 +309,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
         }
 
         /// <summary>
-        /// Gauss rules for \f$ \int_{\frakA \cap K_j } \ldots \dV \f$ in the 2D case
+        /// Gauss rules for $\int_{\mathfrak{A} \cap K_j } \ldots \textrm{dV}$ in the 2D case
         /// </summary>
         public static IQuadRuleFactory<QuadRule> SayeGaussRule_Volume2D(
             LevelSetTracker.LevelSetData _lsData,
@@ -331,7 +325,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
         }
 
         /// <summary>
-        /// Gauss rules for \f$ \int_{\frakA \cap K_j } \ldots \dV \f$ in the 2D case
+        /// Gauss rules for $\int_{\mathfrak{A} \cap K_j } \ldots \textrm{dV}$ in the 2D case
         /// </summary>
         public static IQuadRuleFactory<QuadRule> SayeGaussRule_NegativeVolume2D(
             LevelSetTracker.LevelSetData _lsData,
@@ -347,7 +341,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
         }
 
         /// <summary>
-        /// Gauss rules for \f$ \oint_{\frakI \cap K_j } \ldots \dS \f$ in the 2D case
+        /// Gauss rules for $\oint_{\mathfrak{I} \cap K_j } \ldots \textrm{dS}$ in the 2D case
         /// </summary>
         public static IQuadRuleFactory<QuadRule> SayeGaussRule_Surface2D(
             LevelSetTracker.LevelSetData _lsData,
@@ -415,11 +409,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
                 );
             ISayeGaussComboRule wrappedRule = new LevelSetOnEdgeIntercepter(rule, lsData);
 
-            CellMask maxGrid = lsData.GridDat.Cells.GetCells4Refelement(rule.RefElement).Intersect(
-                lsData.Region.GetCutCellMask().ToGeometicalMask());
+            
             return new SayeGaussComboRuleFactory(
-                wrappedRule,
-                maxGrid);
+                wrappedRule);
         }
 
         public static SayeGaussComboRuleFactory SayeGaussRule_Combo3D(
@@ -434,11 +426,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
             ISayeGaussComboRule wrappedRule = new LevelSetOnEdgeIntercepter(rule, lsData);
 
 
-            CellMask maxGrid = lsData.GridDat.Cells.GetCells4Refelement(rule.RefElement).Intersect(
-                lsData.Region.GetCutCellMask().ToGeometicalMask());
-            return new SayeGaussComboRuleFactory(
-                wrappedRule,
-                maxGrid);
+            return new SayeGaussComboRuleFactory(wrappedRule);
         }
 
         public static SayeGaussComboRuleFactory SayeGaussRule_Combo(

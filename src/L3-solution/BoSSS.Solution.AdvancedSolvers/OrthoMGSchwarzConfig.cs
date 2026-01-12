@@ -27,11 +27,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         CoarseMesh = 1,
 
-
         /// <summary>
         /// force to use the <see cref="Schwarz"/> implementation
         /// </summary>
-        PerProcess = 2
+        PerProcess = 2,
+
+		/// <summary>
+		/// force to use the <see cref="SchwarzForTaskParallel"/> implementation
+		/// </summary>
+		TaskParallel = 3,
+
+        /// <summary>
+        /// A debug config to test the <see cref="Schwarz"/> + <see cref="SchwarzForCoarseMesh"/>  implementation
+        /// </summary>
+        PerProcessWithIdles = 4,
     }
 
     /// <summary>
@@ -127,9 +136,40 @@ namespace BoSSS.Solution.AdvancedSolvers {
         [DataMember]
         public bool SkipPreSmoother = false;
 
-        /// <summary> Pre-smoother and coarse grid correction do not work sequential (i.e., residual from presmoother is not supplied to coarse grid solver) </summary>
+		/// <summary> Smoothers and coarse grid correction do not work sequential 
+		/// (i.e., residual from presmoother is not supplied to coarse grid solver) 
+		/// This is not desired. Used only for testing.
+		/// </summary>
+		[DataMember]
+        public bool AdditiveVariant = false;
+
+        /// <summary>
+        /// Calculates the smoother sweep automatically, based on the DG degree and the number of blocks in each level. 
+        /// (overrides NoOfPostSmootherSweeps, valid only for the original MG variant)
+        /// </summary>
         [DataMember]
-        public bool NonSerialPreSmoother = false;
+        public bool AutomaticSmootherSweepCalculation = true;
+
+        /// <summary>
+        /// Overrides NoOfPostSmootherSweeps (even if AutomaticSmootherSweepCalculation is true)
+        /// Usage: an positive integer (by default turned off)
+        /// </summary>
+        [DataMember]
+        public int ForcedNoOfPostSmootherSweeps = int.MinValue;
+
+        /// <summary>
+        /// Enforces Task Parallel variant after this level (0: finest)
+        /// Usage: an positive integer (by default turn off)
+        /// </summary>
+        [DataMember]
+        public int TaskParallelEnforcedLevel = int.MinValue;
+
+        /// <summary>
+        /// Instead of using Additive Schwarz (<see cref="Schwarz"/>), use this as an alternative smoother on all levels except the coarsest one.
+        /// A debug configuration to test other smoothers than Schwarz. 
+        /// </summary>
+        [DataMember]
+        public bool AlternateSmoother = false;
 
         /// <summary>
         /// 
@@ -187,10 +227,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
-        const double INBALANCE_THRESHOLD = 0.3;
+        const double INBALANCE_THRESHOLD = 0.5;
 
         const int PROCESSLOCAL_SCHWARZBLOCK_MINIMUM = 2;
 
+
+        // After TaskParallizationStarted,it is not compitable with the other implementations using WORLD_COMMUNICATOR. So, solver must be arranged accordingly
+        internal bool TaskParallelizationStarted = false;
+
+        internal bool TaskParallelizationAllowed = true;
 
         /// <summary>
         /// - if true, the <see cref="SchwarzForCoarseMesh"/> smoother should be used
@@ -220,46 +265,79 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double inbal = ComputeInbalance(level);
                 tr.Info("DOF MPI inbalance is " + inbal);
 
-                if (inbal <= INBALANCE_THRESHOLD
-                    && LocalNoOfBlocks >= (this.UsepTG ? 1 : PROCESSLOCAL_SCHWARZBLOCK_MINIMUM)
-                    && FinerLevelLocalBlocks >= 0
-                    && (SchwarzImplementation == SchwarzImplementation.Auto || SchwarzImplementation == SchwarzImplementation.PerProcess)) {
-                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                    // * DOF's seem sufficiently distributed across MPI cores;
-                    // * sufficient number of blocks per process
-                    // * upper/finer level also uses process-local Schwarz blocks
-                    // sufficiently balanced to use Schwarz with process-local blocking strategy
-                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                // check for the task parallel Schwarz smoother
+                if(TaskParallelizationAllowed &&
+                    level.CoarserLevel != null && // Coarser level exists (used as direct solver)
+                    // One of the following must hold:
+                    (   // Auto mode with GlobalNoOfBlocks ≤ MPIsize
+                        (SchwarzImplementation == SchwarzImplementation.Auto && GlobalNoOfBlocks <= MPIsize) ||
+                        // Explicitly set to TaskParallel
+                        SchwarzImplementation == SchwarzImplementation.TaskParallel ||
+                        // Task parallelization has already started in finer levels
+                        TaskParallelizationStarted
+                    ))  {
 
-                    bool Reduce = (FinerLevelLocalBlocks > LocalNoOfBlocks).MPIOr();
+					if (GlobalNoOfBlocks > FinerLevelGlobalBlocks) {
+						tr.Info("Failing to reduce **global** number of blocks (" + GlobalNoOfBlocks + ") wrt. previous level (" + FinerLevelGlobalBlocks + ").");
+						tr.Info($"unable to create Schwarz smoother at level {level.LevelIndex}");
+						return (null, -1, -1);
+					}
+                    if (SchwarzImplementation == SchwarzImplementation.Auto)
+					    tr.Info("GlobalNoOfBlocks <= MPIsize, so using Task Parallel Schwarz with " + GlobalNoOfBlocks + " blocks " + MPIsize + " on cores");
+                    else
+						tr.Info("Solver is set to Task Parallel Ortho MG w/ Schwarz with " + GlobalNoOfBlocks + " blocks " + MPIsize + " on cores");
 
-                    if (Reduce) {
-                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                        // Number of blocks on this level is sufficiently lower then on upper/finer level
-                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    TaskParallelizationStarted = true;
+                    var r = new SchwarzForTaskParallel();
+					r.config.EnableOverlapScaling = true;
+					r.config.Overlap = 1; // overlap seems to help; more overlap seems to help more
+					r.config.NoOfBlocks = GlobalNoOfBlocks;
+					return (r, -1, GlobalNoOfBlocks);
+				}
 
-                        GlobalNoOfBlocks = LocalNoOfBlocks.MPISum();
-                        tr.Info($"per-process blocking Schwarz, number of blocks blocking is " + (LocalNoOfBlocks.MPIAllGather().ToConcatString("[", "-", "]")) + ", sum = " + GlobalNoOfBlocks);
-                        var r = new Schwarz() {
-                            FixedNoOfIterations = 1,
-                            m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                                NoOfPartsOnCurrentProcess = LocalNoOfBlocks
-                            },
-                            //ActivateCachingOfBlockMatrix = SmootherCaching,
+                // check for the per-process blocking Schwarz smoother
+                if(inbal <= INBALANCE_THRESHOLD
+				&& LocalNoOfBlocks >= (this.UsepTG ? 1 : PROCESSLOCAL_SCHWARZBLOCK_MINIMUM)
+				&& FinerLevelLocalBlocks >= 0
+				&& (SchwarzImplementation == SchwarzImplementation.Auto || SchwarzImplementation == SchwarzImplementation.PerProcess || SchwarzImplementation == SchwarzImplementation.PerProcessWithIdles)) {
+					// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+					// * DOF's seem sufficiently distributed across MPI cores;
+					// * sufficient number of blocks per process
+					// * upper/finer level also uses process-local Schwarz blocks
+					// sufficiently balanced to use Schwarz with process-local blocking strategy
+					// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                        };
-                        r.config.EnableOverlapScaling = true;
-                        r.config.Overlap = 1; // overlap seems to help; more overlap seems to help more
-                        r.config.UsePMGinBlocks = this.UsepTG;
-                        //*/
+					bool Reduce = (FinerLevelLocalBlocks > LocalNoOfBlocks).MPIOr();
 
-                        return (r, LocalNoOfBlocks, GlobalNoOfBlocks);
-                    } else {
-                        tr.Info("Failing to reduce **local** number of blocks " + (LocalNoOfBlocks.MPIAllGather().ToConcatString("[", "-", "]")) +  " wrt. previous level " + (LocalNoOfBlocks.MPIAllGather().ToConcatString("[", "-", "]")) + ".");
-                    }
-                }
+					if (Reduce) {
+						// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+						// Number of blocks on this level is sufficiently lower then on upper/finer level
+						// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                if(SchwarzImplementation == SchwarzImplementation.Auto || SchwarzImplementation == SchwarzImplementation.CoarseMesh) {
+						GlobalNoOfBlocks = LocalNoOfBlocks.MPISum();
+						tr.Info($"per-process blocking Schwarz, number of blocks blocking is " + (LocalNoOfBlocks.MPIAllGather().ToConcatString("[", "-", "]")) + ", sum = " + GlobalNoOfBlocks);
+						var r = new Schwarz() {
+							FixedNoOfIterations = 1,
+							m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+								NoOfPartsOnCurrentProcess = LocalNoOfBlocks
+							},
+							//ActivateCachingOfBlockMatrix = SmootherCaching,
+
+						};
+						//var r = new SchwarzForTaskParallel();
+						r.config.EnableOverlapScaling = true;
+						r.config.Overlap = 1; // overlap seems to help; more overlap seems to help more
+											  //r.config.UsePMGinBlocks = this.UsepTG;
+											  //*/
+
+						return (r, LocalNoOfBlocks, GlobalNoOfBlocks);
+					} else {
+						tr.Info("Failing to reduce **local** number of blocks " + (LocalNoOfBlocks.MPIAllGather().ToConcatString("[", "-", "]")) + " wrt. previous level " + (LocalNoOfBlocks.MPIAllGather().ToConcatString("[", "-", "]")) + ".");
+					}
+				}
+
+                // check for the coarse-mesh Schwarz smoother
+                if(SchwarzImplementation == SchwarzImplementation.Auto || SchwarzImplementation == SchwarzImplementation.CoarseMesh || SchwarzImplementation == SchwarzImplementation.PerProcessWithIdles) {
                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // For some reason, we failed using the per-process-blocking Schwarz;
                     // so, try with the coarse-mesh-Schwarz
@@ -268,25 +346,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if (GlobalNoOfBlocks <= 1) {
                         // should use somthing else
                         return (null, -1, -11);
-                    } else if (GlobalNoOfBlocks <= MPIsize) {
-                        // ok with that
-                        // no up-rounding; some processors are allowed to sleep
-                    } else {
-                        GlobalNoOfBlocks = ((int)Math.Round((double)GlobalNoOfBlocks / MPIsize))*MPIsize;
-                    }
+					} else if (GlobalNoOfBlocks <= MPIsize) {
+						// ok with that
+						// no up-rounding; some processors are allowed to sleep
+					} else {
+						GlobalNoOfBlocks = ((int)Math.Round((double)GlobalNoOfBlocks / MPIsize)) * MPIsize;
+					}
 
 
 
-                    if (GlobalNoOfBlocks < FinerLevelGlobalBlocks) {
+					if (GlobalNoOfBlocks <= FinerLevelGlobalBlocks) {
                         // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                         // Number of blocks on this level is sufficiently lower then on upper/finer level
                         // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                         
                         tr.Info($"using coarse-mesh-Schwarz, GlobalNoOfBlocks = {GlobalNoOfBlocks}");
 
-                        var r = new SchwarzForCoarseMesh();
-                        r.config.NoOfBlocks = GlobalNoOfBlocks;
-                        r.config.EnableOverlapScaling = true;
+                        var r = new SchwarzForCoarseMesh(); //new SchwarzForTaskParallel(); //  new SchwarzForCoarseMesh();
+						r.config.EnableOverlapScaling = true;
+						r.config.Overlap = 1; // overlap seems to help; more overlap seems to help more
+						r.config.NoOfBlocks = GlobalNoOfBlocks;
                         return (r, -1, GlobalNoOfBlocks);
                     } else  {
                         tr.Info("Failing to reduce **global** number of blocks (" + GlobalNoOfBlocks + ") wrt. previous level (" + FinerLevelGlobalBlocks + ").");
@@ -298,15 +377,37 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        ISolverSmootherTemplate GetAlternateSmoother() {
-            var altSmooth3 = new SoftGMRES();
-            altSmooth3.MaxKrylovDim = 80;
-            altSmooth3.TerminationCriterion = (iIter, r0, ri) => {
-                return (iIter <= 82 && ri > 1e-7*r0, ri <= 1e-7*r0);
-            };
-            altSmooth3.Precond = new BlockJacobi();
+        /// <summary>
+        /// Notice that there are two options: one can either use a SoftGMRES with smoother where BlockJacobi is used as preconditioner
+        /// Directly can apply BlockJacobi (Used for the paper on TaskParallel MG)
+        /// </summary>
+        /// <param name="DirectlyBlockJacobi"></param>
+        /// <returns></returns>
+        ISolverSmootherTemplate GetAlternateSmoother(bool DirectlyBlockJacobi) {
+            if(DirectlyBlockJacobi) {
+                BlockJacobi altSmooth = new BlockJacobi() {
+                    //NoOfIterations = 30,
+                    omega = 1,
+                };
 
-            return altSmooth3;
+                altSmooth.TerminationCriterion = (iIter, r0, ri) => {
+                    double tol = 1e-1;
+                    bool notTerminate = iIter <= 5 && ri > tol * r0 && (r0 > MachineEpsilon || ri > MachineEpsilon);
+                    bool success = ri <= tol * r0;
+                    return (notTerminate, success);
+                };
+
+                return altSmooth;
+            } else {
+                var altSmooth3 = new SoftGMRES();
+                altSmooth3.MaxKrylovDim = 80;
+                altSmooth3.TerminationCriterion = (iIter, r0, ri) => {
+                    return (iIter <= 82 && ri > 1e-7 * r0, ri <= 1e-7 * r0);
+                };
+                altSmooth3.Precond = new BlockJacobi();
+                return altSmooth3;
+            }
+
         }
 
 
@@ -318,7 +419,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="SchwarzblockSize"></param>
         /// <returns></returns>
         ISolverSmootherTemplate KcycleMultiSchwarz(MultigridOperator op, Func<int, int> SchwarzblockSize) {
-            using (var tr = new FuncTrace()) {
+            //Debugger.Launch();
+			using (var tr = new FuncTrace()) {
                 tr.InfoToConsole = true;
                 int MSLength = op.NoOfLevels;
 
@@ -333,8 +435,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 if (SkipPreSmoother)
                     tr.Info("Skipping pre-smoother is enabled.");
-                else if (NonSerialPreSmoother) {
-                    tr.Info("NonSerialPreSmoother is enabled, so coarse grid and pre-smoother are independent.");
+                else if (AdditiveVariant) {
+                    tr.Info("AdditiveVariant is enabled, so coarse grid and pre-smoother are independent.");
                 }
 
                 for (MultigridOperator op_lv = op; op_lv != null; op_lv = op_lv.CoarserLevel) {
@@ -366,10 +468,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
                     }
 
-                    // instantiate solver at level
-                    // ===========================
+                    if (TaskParallelizationStarted && op_lv.CoarserLevel == null) //Task Parallel MG is not designed without direct solver at the coarsest
+						TerminateMultigrid = true;
 
-                    ISolverSmootherTemplate levelSolver;
+					// instantiate solver at level
+					// ===========================
+
+					ISolverSmootherTemplate levelSolver;
                     if (TerminateMultigrid) {
 
                         // ++++++++++++++++++++++++++++++++++++++
@@ -398,12 +503,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             // ... use direct as coarse solver
                             // + + + + + + + + + + + + + + + + +
 
-                            var _levelSolver3 = new DirectSolver();
-                            _levelSolver3.config.WhichSolver = DirectSolver._whichSolver.PARDISO;
-                            _levelSolver3.config.UseDoublePrecision = (iLevel == 0); // only use double precision id Direct solver is top solver
-                            _levelSolver3.config.TestSolution = false;
-                            _levelSolver3.ActivateCaching = (__1, __2) => true;
+                            var _levelSolver3 = new SubSystemPardiso();
+                            _levelSolver3.UseDoublePrecision = (iLevel == 0); // only use double precision id Direct solver is top solver
+                            _levelSolver3.Parallelism = Parallelism.OMP;
+                            _levelSolver3.CacheFactorization = true;
                             levelSolver = _levelSolver3;
+
+                            //var _levelSolver3 = new DirectSolver();
+                            //_levelSolver3.config.WhichSolver = DirectSolver._whichSolver.PARDISO;
+                            //_levelSolver3.config.UseDoublePrecision = (iLevel == 0); // only use double precision id Direct solver is top solver
+                            //_levelSolver3.config.TestSolution = false;
+                            //_levelSolver3.ActivateCaching = (__1, __2) => true;
+                            //levelSolver = _levelSolver3;
                         }
 
                     } else {
@@ -412,94 +523,58 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         // do some further multigrid recursion
                         // +++++++++++++++++++++++++++++++++++
 
-
-
                         ISolverSmootherTemplate smoother1;
 
+                        CheckTaskParallelizationAllowed(op_lv);
 
                         int locBlk, glbBlk;
                         (smoother1, locBlk, glbBlk) = this.SelectSchwarzSmoother(op_lv, FinerLevelLocalBlocks, FinerLevelGlobalBlocks);
                         FinerLevelGlobalBlocks = glbBlk;
                         FinerLevelLocalBlocks = locBlk;
-                        /*
-                        var smoother1 = new SchwarzForCoarseMesh();
-                        smoother1.config.NoOfBlocks = NoBlocks[iLevel].MPISum();
-                        smoother1.config.EnableOverlapScaling = true;
-                        //*/
 
-                        SoftGMRES altSmooth3;
-                        {   altSmooth3 = new SoftGMRES();
-                            altSmooth3.MaxKrylovDim = 80;
-                            altSmooth3.TerminationCriterion = (iIter, r0, ri) => {
-                                return (iIter <= 82 && ri > 1e-7*r0, ri <= 1e-7*r0);
-                            };
-                            altSmooth3.Precond = new BlockJacobi();
-                        }
-
-                        if(smoother1 == null) {
-                            // failed to init Schwarz smoother 
-                            tr.Info($"KcycleMultiSchwarz: lv {iLevel}, no Schwarz smoother available; using GMRES+BlockJacobi. ");
-                            smoother1 = altSmooth3;
-                            altSmooth3 = null;
+                        // If Schwarz smoother failed, fall back to GMRES+BlockJacobi
+                        if(smoother1 is null) {
+                            var fallback = GetAlternateSmoother(false);
+                                tr.Info($"KcycleMultiSchwarz: lv {iLevel}, no Schwarz smoother; using GMRES+BlockJacobi.");
+                                smoother1 = fallback;
+                        } else if(AlternateSmoother){
+                            var fallback = GetAlternateSmoother(AlternateSmoother);
+                            tr.Info($"KcycleMultiSchwarz: lv {iLevel}, Alternating the smoother option is enabled. Using the alternative smoother exclusively.");
+                            smoother1 = fallback;
                         }
 
 
-                        var _levelSolver4 = new OrthonormalizationMultigrid() {
-                            PreSmoother = smoother1,
-                            PostSmoother = smoother1
-                        };
-                        _levelSolver4.config.m_omega = 1; // v-cycle
-                        //_levelSolver4.config.m_omega = 2; // w-cycle
-                        _levelSolver4.config.SkipPreSmoother = this.SkipPreSmoother;
-                        _levelSolver4.config.NonSerialPreSmoother = this.NonSerialPreSmoother;
 
-                        if (altSmooth3 != null) {
-                            _levelSolver4.AdditionalPostSmoothers = new[] { altSmooth3 }; 
-                        }
-
-
-                        if (iLevel == 0) {
-                            _levelSolver4.config.NoOfPostSmootherSweeps = 20;
-                        } else {
-                            if (glbBlk > 0)
-                                _levelSolver4.config.NoOfPostSmootherSweeps = (int)Math.Max(2, Math.Max(maxDG, Math.Round(Math.Log10(glbBlk) * 3.0) + maxDG - 2));
-                            else
-                                _levelSolver4.config.NoOfPostSmootherSweeps = 2;
-                        }
-                        tr.Info($"KcycleMultiSchwarz: lv {iLevel}, NoOfPostSmootherSweeps = {_levelSolver4.config.NoOfPostSmootherSweeps}");
-
-                        levelSolver = _levelSolver4;
-                    }
+                        if(TaskParallelizationStarted)
+                            levelSolver = GetTaskParallelOrthoMG(tr, iLevel, locBlk, glbBlk, maxDG, smoother1, null);
+                        else
+                            levelSolver = GetNormalOrthoMG(tr, iLevel, locBlk, glbBlk, maxDG, smoother1, null);
+					}
 
                     // Set termination criterion for respective level
                     // ==============================================
 
-                    if (levelSolver is IProgrammableTermination _levelSolver) { 
-                        if (iLevel == 0) {
+                    if (levelSolver is IProgrammableTermination _levelSolver) {
+                        if(iLevel == 0) {
                             (_levelSolver).TerminationCriterion = this.DefaultTermination;
                             //if(maxDG > 3)
                             //    _levelSolver.config.NoOfPostSmootherSweeps = 6;
-                        } else if (iLevel == 1) {
-
-                          
+                        } else if(iLevel == 1) {
                             (_levelSolver).TerminationCriterion = delegate (int i, double r0, double r) {
-                                var ret = (i <= 1 || r > r0 * 0.01, true);
+                                var ret = ((i <= 1 || r > r0 * 0.1) && (r0 > MachineEpsilon || r > MachineEpsilon) && (i <= 20), true);
+                                // do at least one iteration until r < 0.1 r0 or max. 20 iterations, with safeguard for tiny residuals
                                 return ret;
                             };
-
-                            /*
-                            
-
-                            //smoother1.config.Overlap = 0;
-
-                            _levelSolver.AdditionalPostSmoothers = new ISolverSmootherTemplate[] {
-                              altSmooth3
-                                };
-                            */
-
+                        } else if(iLevel == 2) {
+                            (_levelSolver).TerminationCriterion = delegate (int i, double r0, double r) {
+                                var ret = ((i <= 1 || r > r0 * 0.5) && (r0 > MachineEpsilon || r > MachineEpsilon) && (i <= 2), true);
+                                // do at least one iteration until r < 0.1 r0 or max. 20 iterations, with safeguard for tiny residuals
+                                return ret;
+                            };
                         } else {
-                            (_levelSolver).TerminationCriterion = (i, r0, r) => (i <= 1, true);
-                        }            
+                            (_levelSolver).TerminationCriterion = (i, r0, r) => ((i <= 1) && (r0 > MachineEpsilon || r > MachineEpsilon), true);
+                            // at least one and at most two iterations until r < 0.5 r0, with safeguard for tiny residuals
+                        }
                     }
                     SolverChain.Add(levelSolver);
 
@@ -509,7 +584,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if (iLevel > 0) {
                         if (SolverChain[iLevel - 1] is OrthonormalizationMultigrid omg_fine)
                             omg_fine.CoarserLevelSolver = levelSolver;
-                        else if (SolverChain[iLevel - 1] is GenericRestriction rest)
+						else if (SolverChain[iLevel - 1] is TaskParallelOrthoMG TPfine)
+							TPfine.CoarserLevelSolver = levelSolver;
+						else if (SolverChain[iLevel - 1] is GenericRestriction rest)
                             rest.CoarserLevelSolver = levelSolver;
                     }
 
@@ -528,6 +605,84 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 return SolverChain[0];
             }
         }
+
+        /// <summary>
+        /// Checks if the task parallelization is allowed for the given level of the multigrid operator.
+        /// </summary>
+        /// <param name="op_lv"></param>
+        void CheckTaskParallelizationAllowed(MultigridOperator op_lv) {
+            if(TaskParallelEnforcedLevel >= 0) { //TaskParallelEnforcedLevel is enabled
+                if(TaskParallelEnforcedLevel <= op_lv.LevelIndex) {
+                    TaskParallelizationStarted = true;
+                    TaskParallelizationAllowed = true;
+
+                } else
+                    TaskParallelizationAllowed = false;
+            }
+
+            if(op_lv.CoarserLevel == null)
+                    TaskParallelizationAllowed = false;
+        }
+
+        TaskParallelOrthoMG GetTaskParallelOrthoMG(FuncTrace tr, int iLevel, int locBlk, int glbBlk, int maxDG,
+								 ISolverSmootherTemplate smoother1, ISolverSmootherTemplate altSmooth3) {
+			tr.Info($"KcycleMultiSchwarz: lv {iLevel}, Chosing Task Parallel Additive Variant");
+            this.CoarseUsepTG = false;
+            TaskParallelizationStarted = true;
+            ISolverSmootherTemplate[] smoothers;
+
+			if (altSmooth3 != null) {
+				tr.Info($"KcycleMultiSchwarz: lv {iLevel}, added {altSmooth3.GetType().Name}");
+				smoothers = new ISolverSmootherTemplate[] { smoother1, altSmooth3 };
+            }
+            else{
+				smoothers = new ISolverSmootherTemplate[] { smoother1 };
+			}
+
+			var _levelSolver4 = new TaskParallelOrthoMG() { 
+                Smoothers = smoothers,
+			};
+
+            if(ForcedNoOfPostSmootherSweeps > 0) 
+                _levelSolver4.config.MinimumNoOfPostSmootherSweeps = ForcedNoOfPostSmootherSweeps;
+
+            tr.Info($"KcycleMultiSchwarz: lv {iLevel}, MinimumNoOfPostSmootherSweeps = {_levelSolver4.config.MinimumNoOfPostSmootherSweeps}");
+			return _levelSolver4;
+        }
+
+
+        OrthonormalizationMultigrid GetNormalOrthoMG(FuncTrace tr, int iLevel, int locBlk, int glbBlk, int maxDG,
+								 ISolverSmootherTemplate smoother1, ISolverSmootherTemplate altSmooth3) { 
+			OrthonormalizationMultigrid _levelSolver4 = new OrthonormalizationMultigrid() {
+				PreSmoother = smoother1,
+				PostSmoother = smoother1
+			};
+
+			tr.Info($"KcycleMultiSchwarz: lv {iLevel}, Chosing Original Multiplicative Variant");
+
+			_levelSolver4.config.m_omega = 1; // v-cycle
+											  //_levelSolver4.config.m_omega = 2; // w-cycle
+			_levelSolver4.config.SkipPreSmoother = this.SkipPreSmoother;
+			_levelSolver4.config.AdditiveVariant = this.AdditiveVariant;
+
+			if (altSmooth3 != null) {
+				_levelSolver4.AdditionalPostSmoothers = new[] { altSmooth3 };
+				tr.Info($"KcycleMultiSchwarz: lv {iLevel}, added {altSmooth3.GetType().Name}");
+			}
+
+            if(ForcedNoOfPostSmootherSweeps > 0)
+                _levelSolver4.config.NoOfPostSmootherSweeps = ForcedNoOfPostSmootherSweeps;
+            else if(this.AutomaticSmootherSweepCalculation) {
+                if(iLevel == 0) {
+                    _levelSolver4.config.NoOfPostSmootherSweeps = 20;
+                } else {
+                        _levelSolver4.config.NoOfPostSmootherSweeps = glbBlk > 0 ? (int)Math.Max(2, Math.Max(maxDG, Math.Round(Math.Log10(glbBlk) * 3.0) + maxDG - 2)) : 2;
+                }
+            }
+
+			tr.Info($"KcycleMultiSchwarz: lv {iLevel}, NoOfPostSmootherSweeps = {_levelSolver4.config.NoOfPostSmootherSweeps}");
+			return _levelSolver4;
+		}
 
                  /*
         ISolverSmootherTemplate KcycleMultiSchwarz(MultigridOperator op, Func<int, int> SchwarzblockSize) {

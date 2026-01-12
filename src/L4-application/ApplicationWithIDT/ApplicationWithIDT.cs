@@ -188,7 +188,7 @@ namespace ApplicationWithIDT {
         double res_l1 { get; set; } = 0;
         /// <summary>
         /// computes the predicted value of the merit function for a step s (used for Globalization)
-        /// $$ f_m(s) \approx f_m(0) + s^T \beta f_m'(0) $$
+        /// $$f_m(s) \approx f_m(0) + s^T \beta f_m'(0)$$
         /// 
         /// we have that f_m'(0)= 0.5* (J_R * R + mu* J_r *r)
         /// /// </summary>
@@ -891,7 +891,7 @@ namespace ApplicationWithIDT {
                 case MeritFunctionType.L1Merit:
                 ///// <summary>
                 ///// computes the merit function for a step s (used for Globalization)
-                ///// $$ f_m(s) = 0.5*\Vert R(z_k + s) \Vert^2 + \mu \Vert r(z_k + s) \Vert_1$$
+                ///// $$f_m(s) = 0.5*\Vert R(z_k + s) \Vert^2 + \mu \Vert r(z_k + s) \Vert_1$$
                 ///// 
                 ///// cf. (18.27) Numerical Optimization - Nocedal and Wright 2006
                 ///// </summary>
@@ -914,19 +914,19 @@ namespace ApplicationWithIDT {
 
                 /// <summary>
                 /// computes the predicted value of the merit function for a step s_k=\m_alpha * s (used for Globalization)
-                /// $$ f_m(s) \approx f_m(0) + s^T \beta f_m'(0) $$
+                /// $$f_m(s) \approx f_m(0) + s^T \beta f_m'(0)$$
                 /// 
                 /// we have that 
                 /// 
-                /// $$ s^T * f_m'(0)= s^T * J_R * R  - mu* \vert r \vert_1  $$
+                /// $$s^T * f_m'(0)= s^T * J_R * R  - mu* \vert r \vert_1$$
                 /// 
                 /// so in total this should be 
                 /// 
-                /// $$ f_m(s)=  0.5*R^T*R + \mu * \vert r \vert_1 +  \beta \alpha_k (J_R * R *s - mu* \vert r \vert_1) $$#
+                /// $$f_m(s)=  0.5*R^T*R + \mu * \vert r \vert_1 +  \beta \alpha_k (J_R * R *s - mu* \vert r \vert_1)$$#
                 /// 
                 /// which is the same as
                 /// 
-                /// $$ f_m(s)=  0.5*R^T*R + \mu * \vert r \vert_1 +  \beta \alpha_k (J_R * R *s - mu* \vert r \vert_1) $$
+                /// $$f_m(s)=  0.5*R^T*R + \mu * \vert r \vert_1 +  \beta \alpha_k (J_R * R *s - mu* \vert r \vert_1)$$
                 /// /// </summary>
                 predictedMerit = delegate (double m_alpha, double[] step, double beta) {
 
@@ -957,7 +957,7 @@ namespace ApplicationWithIDT {
                 };
                 /// <summary>
                 /// computes the l2 merit function for a step s and an alpha (used for Globalization)
-                /// $$ f_m(s) = 0.5*(\mu \Vert r(z_k + s) \Vert^2 +\Vert R(z_k + s) \Vert^2)$$
+                /// $$f_m(s) = 0.5*(\mu \Vert r(z_k + s) \Vert^2 +\Vert R(z_k + s) \Vert^2)$$
                 /// </summary>
                 actualMerit = delegate (double[] step, double alpha) {
                     double[] objStep = new double[(int)obj_f_map.TotalLength];
@@ -2745,9 +2745,12 @@ namespace ApplicationWithIDT {
         }
 
         /// <summary>
-        /// This method serves as a globalization to this solver. Starting with the computed step s^{IN} and depending on the globalization chosen a new step s
+        /// This method serves as a globalization to this solver. 
+        /// Starting with the computed step $ s^{IN} $ and depending on the globalization chosen a new step $ s $
         /// is computed which either satisfies the condition of sufficient decrease
-        /// $$ f_m(z_k +s) \leq f_m(z_k) + s^T f_M'(z_k), $$ 
+        /// \[
+        ///    f_m(z_k + s ) \leq f_m(z_k) + s^T f_M'(z_k), 
+        /// \]
         /// or was shortened by $alpha_min$.
         /// 
         /// The globalization strategies implemented so far:

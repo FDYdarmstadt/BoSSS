@@ -247,13 +247,6 @@ namespace BoSSS.Application.BoSSSpad {
         public int NumOfAdditionalServiceCoresMPISerial = 0;
         */
 
-
-        /// <summary>
-        /// Additional number of cores which are allocated for each MPI rank for 'service', e.g., background threads, IO, garbage collection, etc.;
-        /// </summary>
-        [DataMember]
-        public int NumOfServiceCoresPerMPIprocess = 1;
-
        
         /// <summary>
         /// Active directory computer name of head node

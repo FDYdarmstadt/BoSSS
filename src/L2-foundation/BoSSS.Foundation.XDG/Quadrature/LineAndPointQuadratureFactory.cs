@@ -29,6 +29,7 @@ using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Platform.LinAlg;
+using MPI.Wrappers;
 
 namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
@@ -37,13 +38,16 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
     /// - a quadrature rule the cell boundary, <see cref="GetLineFactory(bool)"/>
     /// - a point measure where the level-set enters and exits a cell, <see cref="GetPointFactory"/>
     /// </summary>
+    /// <remarks>
+    /// Collecting bothy duties (line and point factory) in this one meta-class ensures that the expensive root-finding has to be done only once.
+    /// </remarks>
     public class LineAndPointQuadratureFactory {
 
         /// <summary>
         /// ctor
         /// </summary>
-        public LineAndPointQuadratureFactory(RefElement Kref, 
-            LevelSetTracker.LevelSetData levelSetData, 
+        public LineAndPointQuadratureFactory(RefElement Kref,
+            LevelSetTracker.LevelSetData levelSetData,
             bool SupportPointrule, LineSegment.IRootFindingAlgorithm rootFindingAlgorithm = null) {
             this.m_RefElement = Kref;
             this.Tolerance = 1e-13;
@@ -51,7 +55,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             this.SupportPointrule = SupportPointrule;
             this.RootFindingAlgorithm = rootFindingAlgorithm ?? new LineSegment.SafeGuardedNewtonMethod(this.Tolerance*0.1);
             this.referenceLineSegments = GetReferenceLineSegments(out this.segmentSorting, this.m_RefElement, this.RootFindingAlgorithm, levelSetData, this.LevelSetIndex);
-           
+
 
             if (this.LevelSetData.GridDat.Grid.SpatialDimension != 2)
                 throw new NotSupportedException();
@@ -60,11 +64,14 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             if (this.iKref < 0)
                 throw new ArgumentException("Reference element cannot be found in the provided grid.");
 
-            
+
 
             this.MaxGrid = this.LevelSetData.GridDat.Cells.GetCells4Refelement(this.iKref).Intersect(
                 LevelSetData.Region.GetCutCellMask4LevSet(this.LevelSetIndex).ToGeometicalMask());
         }
+
+
+
 
         int LevelSetIndex {
             get {
@@ -116,9 +123,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             internal LineAndPointQuadratureFactory m_Owner;
 
             /// <summary>
-            /// cache<br/>
-            /// key: quadrature order; <br/>
-            /// value: cached quadrature rule
+            /// cache
+            /// - key: quadrature order; 
+            /// - value: cached quadrature rule
             /// </summary>
             internal Dictionary<int, ChunkRulePair<CellBoundaryQuadRule>[]> Rules;
 
@@ -140,7 +147,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             private ChunkRulePair<CellBoundaryQuadRule> GetUncutRule(int jCell, int order) {
                 int iLs = this.m_Owner.LevelSetData.LevelSetIndex;
                 int iDist = LevelSetTracker.DecodeLevelSetDist(this.m_Owner.LevelSetData.Region.m_LevSetRegions[jCell], iLs);
-                if ( this.m_Owner.LevelSetData.GridDat.Cells.GetRefElementIndex(jCell) != m_Owner.iKref)
+                if (this.m_Owner.LevelSetData.GridDat.Cells.GetRefElementIndex(jCell) != m_Owner.iKref)
                     throw new ArgumentException("illegal cell mask.");
                 if (iDist > 0)
                     return new ChunkRulePair<CellBoundaryQuadRule>(Chunk.GetSingleElementChunk(jCell), GetPosRule(order));
@@ -215,7 +222,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         }
                     }
 
-                    
+
 
                 }
 
@@ -297,7 +304,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
 
         public IQuadRuleFactory<CellBoundaryQuadRule> GetPointFactory() {
-            if(!this.SupportPointrule)
+            if (!this.SupportPointrule)
                 throw new NotSupportedException("point measure creation is turned off");
             return new PointQRF(this);
         }
@@ -333,8 +340,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             var _Cells = grdDat.Cells;
             //var scalings = grdDat.Edges.SqrtGramian;
             var cell2Edge = grdDat.Cells.Cells2Edges;
-            //var edge2Cell = tracker.GridDat.Edges.CellIndices;
-            //var FaceIdx = tracker.GridDat.Edges.FaceIndices;
             var EdgeData = grdDat.Edges;
             int levSetIndex = this.LevelSetIndex;
             var Vertices = this.m_RefElement.Vertices;
@@ -355,6 +360,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             double rootFilterTol = isVertexSaveTol*4;
 
 #if DEBUG
+            // check that the reference line segment `iVertexStart` and `iVertexEnd` are correct
             for (int e = 0; e < referenceLineSegments.Length; e++) {
                 LineSegment referenceSegment = referenceLineSegments[e];
 
@@ -377,8 +383,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             // required for the point rule
             // ===========================
 
-
-
+            
+            
             var PointMeasure_result = new List<ChunkRulePair<CellBoundaryQuadRule>>(mask.NoOfItemsLocally);
             var LineMeasurePos_result = new List<ChunkRulePair<CellBoundaryQuadRule>>(mask.NoOfItemsLocally);
             var LineMeasureNeg_result = new List<ChunkRulePair<CellBoundaryQuadRule>>(mask.NoOfItemsLocally);
@@ -386,164 +392,170 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             List<double> LnMeasPos_weights = new List<double>();
             List<Vector> LnMeasNeg_nodes = new List<Vector>();
             List<double> LnMeasNeg_weights = new List<double>();
-            foreach (Chunk chunk in mask) {            // loop over cells
-                for (int i = 0; i < chunk.Len; i++) {  // loop over cells...
-                    int jCell = i + chunk.i0;
-                    Debug.Assert(iKref == _Cells.GetRefElementIndex(jCell));
 
-                    int[] cell2Edge_j = cell2Edge[jCell];
+           
+
+            foreach (int jCell in mask.ItemEnum) {  // loop over cells...
+
+                Debug.Assert(iKref == _Cells.GetRefElementIndex(jCell));
+
+                int[] cell2Edge_j = cell2Edge[jCell];
+
+
+                //bool forgetSubdiv = false;
+                //if (grdDat.MpiRank == 1 && jCell == 33) {
+                //    var marker = new CellMask(grdDat, Chunk.GetSingleElementChunk(33), MaskType.Geometrical);
+                //    marker.SaveToTextFile("fuckedCell.csv", WriteHeader: false);
+                //    forgetSubdiv = true;
+                //    Debugger.Launch();
+                //}
 
 
 
-                    //if (cache.ContainsKey(cell)) {
-                    //    result.Add(new ChunkRulePair<CellBoundaryQuadRule>(
-                    //        Chunk.GetSingleElementChunk(cell), cache[cell]));
-                    //    continue;
-                    //}
+                //if (cache.ContainsKey(cell)) {
+                //    result.Add(new ChunkRulePair<CellBoundaryQuadRule>(
+                //        Chunk.GetSingleElementChunk(cell), cache[cell]));
+                //    continue;
+                //}
 
-                    LnMeasNeg_nodes.Clear();
-                    LnMeasPos_nodes.Clear();
-                    LnMeasNeg_weights.Clear();
-                    LnMeasPos_weights.Clear();
-                    int[] LnMeasPos_noOfNodesPerEdge = new int[referenceLineSegments.Length];
-                    int[] LnMeasNeg_noOfNodesPerEdge = new int[referenceLineSegments.Length];
-                    int[] PtMeas_noOfNodesPerEdge = new int[referenceLineSegments.Length];
+                LnMeasNeg_nodes.Clear();
+                LnMeasPos_nodes.Clear();
+                LnMeasNeg_weights.Clear();
+                LnMeasPos_weights.Clear();
+                int[] LnMeasPos_noOfNodesPerEdge = new int[referenceLineSegments.Length];
+                int[] LnMeasNeg_noOfNodesPerEdge = new int[referenceLineSegments.Length];
+                int[] PtMeas_noOfNodesPerEdge = new int[referenceLineSegments.Length];
 
-                    // ==================
-                    // find roots
-                    // ==================
+                // ==================
+                // find roots
+                // ==================
 
-                    double[][] _roots = new double[referenceLineSegments.Length][];
-                    int TotalNoOfRoots = 0;
-                    for (int e = 0; e < referenceLineSegments.Length; e++) {
-                        LineSegment referenceSegment = referenceLineSegments[e];
-                        double[] roots = referenceSegment.GetRoots(LevelSetData.LevelSet, jCell, iKref);
-                        _roots[e] = FilterRoots(roots, rootFilterTol);
-                        TotalNoOfRoots += _roots[e].Length;
-                    }
+                double[][] _roots = new double[referenceLineSegments.Length][];
+                int TotalNoOfRoots = 0;
+                for (int e = 0; e < referenceLineSegments.Length; e++) {
+                    LineSegment referenceSegment = referenceLineSegments[e];
+                    double[] roots = referenceSegment.GetRoots(LevelSetData.LevelSet, jCell, iKref);
+                    _roots[e] = FilterRoots(roots, rootFilterTol);
+                    TotalNoOfRoots += _roots[e].Length;
+                }
 
-                    // ==================
-                    // divide non-conformal line segments
-                    // ==================
-                    double[][] subdivisions = new double[referenceLineSegments.Length][]; // collect the endpoint of edges for additional subdivisions of the subsegment in a different array, to not mess up the point measures
-                    for (int e = 0; e < referenceLineSegments.Length; e++) {
-                        // check if line segment (i.e. face) contains hanging nodes
-                        int edg = grdDat.GetEdgesForFace(jCell, e, out _, out int[] FurtherEdges);
-                        var rootList = _roots[e].ToList();
-                        if (!FurtherEdges.IsNullOrEmpty()) {
-                            // if so add an additional (artificial) roots at the hanging nodes
-                            foreach (int edge in new int[] { edg }.Concat(FurtherEdges)) {
-                                var EdgeNodes = grdDat.Edges.GetRefElement(edge).Vertices;
-                                // Transform to cell
-                                int trf;
-                                if (grdDat.Edges.CellIndices[edge, 0] == jCell) {
-                                    trf = grdDat.Edges.Edge2CellTrafoIndex[edge, 0];
-                                } else {
-                                    trf = grdDat.Edges.Edge2CellTrafoIndex[edge, 1];
-                                }
-                                // transform edgerule to volume rule
-                                var CellNodes = EdgeNodes.GetVolumeNodeSet(grdDat, trf, false);                               
+                // ===================================
+                // divide non-conformal line segments
+                // 
+                // When we have a hanging node, especially at an MPI boundary:
+                // We might need to split up the rule for the face to two edges.
+                // ===================================
+                double[][] subdivisions = new double[referenceLineSegments.Length][]; // collect the endpoint of edges for additional subdivisions of the subsegment in a different array, to not mess up the point measures
+                for (int e = 0; e < referenceLineSegments.Length; e++) {
+                    // check if line segment (i.e. face) contains hanging nodes
+                    int edg = grdDat.GetEdgesForFace(jCell, e, out _, out int[] FurtherEdges);
+                    var rootList = _roots[e].ToList();
+                    if (!FurtherEdges.IsNullOrEmpty()) {
+                        // if so add an additional (artificial) roots at the hanging nodes
+                        foreach (int edge in new int[] { edg }.Concat(FurtherEdges)) {
+                            var EdgeNodes = grdDat.Edges.GetRefElement(edge).Vertices;
+                            // Transform to cell
+                            int trf;
+                            if (grdDat.Edges.CellIndices[edge, 0] == jCell) {
+                                trf = grdDat.Edges.Edge2CellTrafoIndex[edge, 0];
+                            } else {
+                                trf = grdDat.Edges.Edge2CellTrafoIndex[edge, 1];
+                            }
+                            // transform edgerule to volume rule
+                            var CellNodes = EdgeNodes.GetVolumeNodeSet(grdDat, trf, false);
 
-                                for (int k = 0; k < CellNodes.NoOfNodes; k++) {
-                                    // Transform to referenceLineSegment
-                                    var LineNode = referenceLineSegments[e].GetSegmentCoordinateForPoint(CellNodes.ExtractSubArrayShallow(k, -1).To1DArray());
-                                    if (!rootList.Any(r => r.ApproxEqual(LineNode, AbsTol: BLAS.MachineEps * 1e3)))
-                                        rootList.Add(LineNode);                                    
-                                }
+                            for (int k = 0; k < CellNodes.NoOfNodes; k++) {
+                                // Transform to referenceLineSegment
+                                var LineNode = referenceLineSegments[e].GetSegmentCoordinateForPoint(CellNodes.ExtractSubArrayShallow(k, -1).To1DArray());
+                                if (!rootList.Any(r => r.ApproxEqual(LineNode, AbsTol: BLAS.MachineEps * 1e3)))
+                                    rootList.Add(LineNode);
                             }
                         }
-                        subdivisions[e] = rootList.OrderBy(s => s).ToArray();
                     }
-
-                    // ============================
-                    // create line measure
-                    // ============================
-                    bool LineMeasureEmptyOrFull = false;
-                    List<LineSegment>[] ActiveSegments = new List<LineSegment>[subdivisions.Length];
-                    double nodesSum = 0;
-                    {
-                        double Fullsum = 0;
-                        for (int e = 0; e < referenceLineSegments.Length; e++) {
-                            ActiveSegments[e] = new List<LineSegment>();
-                            LineSegment referenceSegment = referenceLineSegments[e];
-                            double edgeDet = EdgeToVolumeTransformationDeterminants[e];
-                            double[] roots = subdivisions[e];
-                            Fullsum += referenceSegment.Length*edgeDet;
-                            LineSegment[] subSegments = referenceSegment.Split(roots);
+                    subdivisions[e] = rootList.OrderBy(s => s).ToArray();
+                }
+                //if (forgetSubdiv)
+                //    subdivisions = _roots;
 
 
-                            for (int k = 0; k < subSegments.Length; k++) {
-                                // Evaluate sub segment at center to determine sign
-                                NodeSet _point = new NodeSet(this.m_RefElement, subSegments[k].GetPointOnSegment(0.0), false);
+                // ============================
+                // create line measure
+                // ============================
+                bool LineMeasureEmptyOrFull = false;
+                List<LineSegment>[] ActiveSegments = new List<LineSegment>[subdivisions.Length];
+                double nodesSum = 0;
+                {
+                    double Fullsum = 0;
+                    for (int e = 0; e < referenceLineSegments.Length; e++) {
+                        ActiveSegments[e] = new List<LineSegment>();
+                        LineSegment referenceSegment = referenceLineSegments[e];
+                        double edgeDet = EdgeToVolumeTransformationDeterminants[e];
+                        double[] roots = subdivisions[e];
+                        Fullsum += referenceSegment.Length*edgeDet;
+                        LineSegment[] subSegments = referenceSegment.Split(roots);
 
-                                double weightFactor = subSegments[k].Length / referenceSegment.Length;
 
-                                if (weightFactor < this.Tolerance)
-                                    // segment has a length of approximately 0.0 => no need to care about it.
-                                    continue;
+                        for (int k = 0; k < subSegments.Length; k++) {
+                            // Evaluate sub segment at center to determine sign
+                            NodeSet _point = new NodeSet(this.m_RefElement, subSegments[k].GetPointOnSegment(0.0), false);
 
-                                weightFactor *= edgeDet;
+                            double weightFactor = subSegments[k].Length / referenceSegment.Length;
+
+                            if (weightFactor < this.Tolerance)
+                                // segment has a length of approximately 0.0 => no need to care about it.
+                                continue;
+
+                            weightFactor *= edgeDet;
 
 
-                                //bool center = false;
-                                MultidimensionalArray levelSetValue = LevelSetData.GetLevSetValues(_point, jCell, 1);
-                                List<Vector> LnMeas_nodes;
-                                List<double> LnMeas_weights;
-                                int[] LnMeas_noOfNodesPerEdge;
-                                bool PositiveSegment;
-                                bool Skip = false;
-                                if (levelSetValue[0, 0].Abs() < BLAS.MachineEps) {
-                                    // probably level set parallel to edge, skip this edge, no "normal" quadrature.
-                                    // alternative, check conformality of adjacent cells, edge should contain a quad rule of the opposite phase of the conformal cell.
-                                    // then the edge should be a quad rule for the opposite phase, dont ask me why, but any other way gives weird results in cells with hanging nodes.
-                                    bool empty = true;
-                                    if (!empty) {
-                                        //NodeSet center_point = new NodeSet(this.m_RefElement, this.m_RefElement.Center, false);
-                                        MultidimensionalArray j_levelSetValue = LevelSetData.GetLevSetValues(this.m_RefElement.Center, jCell, 1);
+                            //bool center = false;
+                            MultidimensionalArray levelSetValue = LevelSetData.GetLevSetValues(_point, jCell, 1);
+                            List<Vector> LnMeas_nodes;
+                            List<double> LnMeas_weights;
+                            int[] LnMeas_noOfNodesPerEdge;
+                            bool PositiveSegment;
+                            bool Skip = false;
+                            if (levelSetValue[0, 0].Abs() < BLAS.MachineEps) {
+                                // probably level set parallel to edge, skip this edge, no "normal" quadrature.
+                                // alternative, check conformality of adjacent cells, edge should contain a quad rule of the opposite phase of the conformal cell.
+                                // then the edge should be a quad rule for the opposite phase, dont ask me why, but any other way gives weird results in cells with hanging nodes.
+                                bool empty = true;
+                                if (!empty) {
+                                    //NodeSet center_point = new NodeSet(this.m_RefElement, this.m_RefElement.Center, false);
+                                    MultidimensionalArray j_levelSetValue = LevelSetData.GetLevSetValues(this.m_RefElement.Center, jCell, 1);
 
-                                        int iEdge = -1;
-                                        int otherCell = -1;
-                                        bool jConformal = false;
-                                        bool otherConformal = false;
-                                        foreach (int em in cell2Edge_j) {
-                                            int _iedge = Math.Abs(em) - 1;
-                                            int _inOut = em > 0 ? 0 : 1;
+                                    int iEdge = -1;
+                                    int otherCell = -1;
+                                    bool jConformal = false;
+                                    bool otherConformal = false;
+                                    foreach (int em in cell2Edge_j) {
+                                        int _iedge = Math.Abs(em) - 1;
+                                        int _inOut = em > 0 ? 0 : 1;
 
-                                            if (EdgeData.CellIndices[_iedge, _inOut] == jCell && EdgeData.FaceIndices[_iedge, _inOut] == e) {
-                                                iEdge = _iedge;
-                                                if (_inOut == 0) {
-                                                    otherCell = EdgeData.CellIndices[_iedge, 1];
-                                                    jConformal = grdDat.Edges.IsEdgeConformalWithCell1(iEdge);
-                                                    otherConformal = grdDat.Edges.IsEdgeConformalWithCell2(iEdge);
-                                                } else {
-                                                    otherCell = EdgeData.CellIndices[_iedge, 0];
-                                                    jConformal = grdDat.Edges.IsEdgeConformalWithCell2(iEdge);
-                                                    otherConformal = grdDat.Edges.IsEdgeConformalWithCell1(iEdge);
-                                                }
-                                                break;
-                                            }
-                                        }
-
-                                        if (jConformal && otherConformal) {
-                                            // both conformal evaluate levelset in globally lower index cell and choose the phase of this edge quadrature accordingly (the levelset quadrature is valid in the lower index cell...)
-                                            int J = grdDat.Cells.NoOfLocalUpdatedCells;
-                                            long jCellGlob = jCell + grdDat.CellPartitioning.i0;
-                                            long otherCellGlob = otherCell < J ? otherCell + grdDat.CellPartitioning.i0 : grdDat.Parallel.GlobalIndicesExternalCells[otherCell - J];
-                                            bool jLower = jCellGlob < otherCellGlob;
-                                            // the relevant part for conformal cells is not in which phase this quadrature holds, but for parallel simulations, that all procs use the same phase!!!
-                                            // we could probably also just use the negative phase always, but this way this is consistent with the handling of hanging nodes below, where it matters which phase we choose!
-                                            if ((jLower && j_levelSetValue[0, 0] > 0) || (!jLower && j_levelSetValue[0, 0] <= 0)) {
-                                                LnMeas_nodes = LnMeasNeg_nodes;
-                                                LnMeas_weights = LnMeasNeg_weights;
-                                                LnMeas_noOfNodesPerEdge = LnMeasNeg_noOfNodesPerEdge;
-                                                PositiveSegment = false;
+                                        if (EdgeData.CellIndices[_iedge, _inOut] == jCell && EdgeData.FaceIndices[_iedge, _inOut] == e) {
+                                            iEdge = _iedge;
+                                            if (_inOut == 0) {
+                                                otherCell = EdgeData.CellIndices[_iedge, 1];
+                                                jConformal = grdDat.Edges.IsEdgeConformalWithCell1(iEdge);
+                                                otherConformal = grdDat.Edges.IsEdgeConformalWithCell2(iEdge);
                                             } else {
-                                                LnMeas_nodes = LnMeasPos_nodes;
-                                                LnMeas_weights = LnMeasPos_weights;
-                                                LnMeas_noOfNodesPerEdge = LnMeasPos_noOfNodesPerEdge;
-                                                PositiveSegment = true;
+                                                otherCell = EdgeData.CellIndices[_iedge, 0];
+                                                jConformal = grdDat.Edges.IsEdgeConformalWithCell2(iEdge);
+                                                otherConformal = grdDat.Edges.IsEdgeConformalWithCell1(iEdge);
                                             }
-                                        } else if ((jConformal && j_levelSetValue[0, 0] > 0) || (!jConformal && j_levelSetValue[0, 0] <= 0)) {
+                                            break;
+                                        }
+                                    }
+
+                                    if (jConformal && otherConformal) {
+                                        // both conformal evaluate levelset in globally lower index cell and choose the phase of this edge quadrature accordingly (the levelset quadrature is valid in the lower index cell...)
+                                        int J = grdDat.Cells.NoOfLocalUpdatedCells;
+                                        long jCellGlob = jCell + grdDat.CellPartitioning.i0;
+                                        long otherCellGlob = otherCell < J ? otherCell + grdDat.CellPartitioning.i0 : grdDat.Parallel.GlobalIndicesExternalCells[otherCell - J];
+                                        bool jLower = jCellGlob < otherCellGlob;
+                                        // the relevant part for conformal cells is not in which phase this quadrature holds, but for parallel simulations, that all procs use the same phase!!!
+                                        // we could probably also just use the negative phase always, but this way this is consistent with the handling of hanging nodes below, where it matters which phase we choose!
+                                        if ((jLower && j_levelSetValue[0, 0] > 0) || (!jLower && j_levelSetValue[0, 0] <= 0)) {
                                             LnMeas_nodes = LnMeasNeg_nodes;
                                             LnMeas_weights = LnMeasNeg_weights;
                                             LnMeas_noOfNodesPerEdge = LnMeasNeg_noOfNodesPerEdge;
@@ -554,616 +566,628 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                             LnMeas_noOfNodesPerEdge = LnMeasPos_noOfNodesPerEdge;
                                             PositiveSegment = true;
                                         }
-                                    } else {
+                                    } else if ((jConformal && j_levelSetValue[0, 0] > 0) || (!jConformal && j_levelSetValue[0, 0] <= 0)) {
                                         LnMeas_nodes = LnMeasNeg_nodes;
                                         LnMeas_weights = LnMeasNeg_weights;
                                         LnMeas_noOfNodesPerEdge = LnMeasNeg_noOfNodesPerEdge;
                                         PositiveSegment = false;
-                                        Skip = true;
+                                    } else {
+                                        LnMeas_nodes = LnMeasPos_nodes;
+                                        LnMeas_weights = LnMeasPos_weights;
+                                        LnMeas_noOfNodesPerEdge = LnMeasPos_noOfNodesPerEdge;
+                                        PositiveSegment = true;
                                     }
-                                } else if (levelSetValue[0, 0] < 0) {
-                                    // negative segment...
+                                } else {
                                     LnMeas_nodes = LnMeasNeg_nodes;
                                     LnMeas_weights = LnMeasNeg_weights;
                                     LnMeas_noOfNodesPerEdge = LnMeasNeg_noOfNodesPerEdge;
-                                    PositiveSegment = false;                                    
-                                } else {
-                                    // positive segment
-                                    LnMeas_nodes = LnMeasPos_nodes;
-                                    LnMeas_weights = LnMeasPos_weights;
-                                    LnMeas_noOfNodesPerEdge = LnMeasPos_noOfNodesPerEdge;
-                                    PositiveSegment = true;
+                                    PositiveSegment = false;
+                                    Skip = true;
                                 }
-
-                                
-                                if(PositiveSegment)
-                                    ActiveSegments[e].Add(subSegments[k]);
-
-                                //bool start, end;
-                                //double[] StPoint = subSegments[k].GetPointOnSegment(-1.0);
-                                //using (tracker.GridDat.NSC.CreateLock(MultidimensionalArray.CreateWrapper(point, 1, D), this.iKref, -1.0)) {
-                                //    MultidimensionalArray levelSetValue = tracker.GetLevSetValues(levSetIndex, 0, jCell, 1);
-                                //    start = levelSetValue[0, 0] > -Tolerance;
-                                //}
-                                //double[] EnPoint = subSegments[k].GetPointOnSegment(+1.0);
-                                //using (tracker.GridDat.NSC.CreateLock(MultidimensionalArray.CreateWrapper(point, 1, D), this.iKref, -1.0)) {
-                                //    MultidimensionalArray levelSetValue = tracker.GetLevSetValues(levSetIndex, 0, jCell, 1);
-                                //    end = levelSetValue[0, 0] > -Tolerance;
-                                //}
-                                if (!Skip) {
-                                    for (int m = 0; m < baseRule.NoOfNodes; m++) {
-                                        // Base rule _always_ is a line rule, thus Nodes[*, _0_]
-                                        Vector point = subSegments[k].GetPointOnSegment(baseRule.Nodes[m, 0]);
-
-                                        LnMeas_weights.Add(weightFactor * baseRule.Weights[m]);
-                                        LnMeas_nodes.Add(point);
-
-                                        LnMeas_noOfNodesPerEdge[e]++;
-                                    }
-                                }
-                            }
-                        }
-
-                        for (int posneg = 0; posneg < 2; posneg++) {
-                            List<Vector> LnMeas_nodes;
-                            List<double> LnMeas_weights;
-                            List<ChunkRulePair<CellBoundaryQuadRule>> LineMeasure_result;
-                            int[] LnMeas_noOfNodesPerEdge;
-                            bool PositiveSegment;
-
-                            if (posneg == 0) {
+                            } else if (levelSetValue[0, 0] < 0) {
                                 // negative segment...
                                 LnMeas_nodes = LnMeasNeg_nodes;
                                 LnMeas_weights = LnMeasNeg_weights;
-                                LineMeasure_result = LineMeasureNeg_result;
                                 LnMeas_noOfNodesPerEdge = LnMeasNeg_noOfNodesPerEdge;
                                 PositiveSegment = false;
                             } else {
                                 // positive segment
                                 LnMeas_nodes = LnMeasPos_nodes;
                                 LnMeas_weights = LnMeasPos_weights;
-                                LineMeasure_result = LineMeasurePos_result;
                                 LnMeas_noOfNodesPerEdge = LnMeasPos_noOfNodesPerEdge;
                                 PositiveSegment = true;
                             }
 
 
-                            if (LnMeas_weights.Count == 0) {
-                                var emptyrule = CellBoundaryQuadRule.CreateEmpty(this.m_RefElement, 1, D, referenceLineSegments.Length);
-                                // create a rule with just one node and weight zero;
-                                // this should avoid some special-case handling for empty rules
-                                emptyrule.NumbersOfNodesPerFace[0] = 1;
-                                emptyrule.Nodes.LockForever();
-                                emptyrule.OrderOfPrecision = int.MaxValue;
-                                LineMeasure_result.Add(new ChunkRulePair<CellBoundaryQuadRule>(Chunk.GetSingleElementChunk(jCell), emptyrule));
+                            if (PositiveSegment)
+                                ActiveSegments[e].Add(subSegments[k]);
 
-                                if(PositiveSegment)
-                                    LineMeasureEmptyOrFull = true;
-                            } else {
-                                NodeSet localNodes = new NodeSet(this.m_RefElement, LnMeas_nodes.Count, D, true);
-                                for (int j = 0; j < LnMeas_nodes.Count; j++) {
-                                    //for (int d = 0; d < D; d++) {
-                                    //    localNodes[j, d] = LnMeas_nodes[j][d];
-                                    //}
-                                    localNodes.SetRowPt(j, LnMeas_nodes[j]);
-                                }
-                                localNodes.LockForever();
+                            //bool start, end;
+                            //double[] StPoint = subSegments[k].GetPointOnSegment(-1.0);
+                            //using (tracker.GridDat.NSC.CreateLock(MultidimensionalArray.CreateWrapper(point, 1, D), this.iKref, -1.0)) {
+                            //    MultidimensionalArray levelSetValue = tracker.GetLevSetValues(levSetIndex, 0, jCell, 1);
+                            //    start = levelSetValue[0, 0] > -Tolerance;
+                            //}
+                            //double[] EnPoint = subSegments[k].GetPointOnSegment(+1.0);
+                            //using (tracker.GridDat.NSC.CreateLock(MultidimensionalArray.CreateWrapper(point, 1, D), this.iKref, -1.0)) {
+                            //    MultidimensionalArray levelSetValue = tracker.GetLevSetValues(levSetIndex, 0, jCell, 1);
+                            //    end = levelSetValue[0, 0] > -Tolerance;
+                            //}
+                            if (!Skip) {
+                                for (int m = 0; m < baseRule.NoOfNodes; m++) {
+                                    // Base rule _always_ is a line rule, thus Nodes[*, _0_]
+                                    Vector point = subSegments[k].GetPointOnSegment(baseRule.Nodes[m, 0]);
 
-                                CellBoundaryQuadRule subdividedRule = new CellBoundaryQuadRule() {
-                                    OrderOfPrecision = order,
-                                    Weights = MultidimensionalArray.Create(LnMeas_weights.Count),
-                                    Nodes = localNodes,
-                                    NumbersOfNodesPerFace = LnMeas_noOfNodesPerEdge
-                                };
-                                subdividedRule.Weights.SetSubVector(LnMeas_weights, -1);
+                                    LnMeas_weights.Add(weightFactor * baseRule.Weights[m]);
+                                    LnMeas_nodes.Add(point);
 
-                                LineMeasure_result.Add(new ChunkRulePair<CellBoundaryQuadRule>(
-                                    Chunk.GetSingleElementChunk(jCell), subdividedRule));
-
-                                if (PositiveSegment) {
-                                    nodesSum = subdividedRule.Weights.Sum();
-                                    LineMeasureEmptyOrFull = (Math.Abs(nodesSum) <= this.Tolerance * 10) || (Math.Abs(nodesSum - Fullsum) <= this.Tolerance * 10);
+                                    LnMeas_noOfNodesPerEdge[e]++;
                                 }
                             }
                         }
                     }
 
+                    for (int posneg = 0; posneg < 2; posneg++) {
+                        List<Vector> LnMeas_nodes;
+                        List<double> LnMeas_weights;
+                        List<ChunkRulePair<CellBoundaryQuadRule>> LineMeasure_result;
+                        int[] LnMeas_noOfNodesPerEdge;
+                        bool PositiveSegment;
 
-                    // ============================
-                    // create point measure
-                    // ============================
-                    if (D == 2 && this.SupportPointrule) { // only in 2D
-
-                        double[][] _newRoots = new double[_roots.Length][];
-                        List<double> newRoot = new List<double>(5);
-                        int[][] _rootIsAtVertex = new int[_roots.GetLength(0)][]; // indices correspond with '_roots':
-                        //                                                           1st index: reference line segment; 
-                        //                                                           2nd index: root enumeration
-                        //                                              content: negative, if the root is not located at a vertex (of the ref element),
-                        //                                                       otherwise the vertex index.
-                        bool bRootAtVertex = false; 
-                        List<int> rootIsAtVertex = new List<int>(5);
-                        
-                        int newRootCounter = 0;
-                        for (int _e = 0; _e < _roots.Length; _e++) {
-                            newRoot.Clear();
-                            rootIsAtVertex.Clear();
-
-                            int e_curr = this.segmentSorting[_e];
-                            int e_next = this.segmentSorting[(_e + 1)%_roots.Length];
-                            int e_prev = this.segmentSorting[_e > 0 ? _e - 1 : _roots.Length - 1];
-
-                            var segs_curr = ActiveSegments[Math.Abs(e_curr)];
-                            if (segs_curr.Count == 0) {
-                                _newRoots[Math.Abs(e_curr)] = new double[0];
-                                _rootIsAtVertex[Math.Abs(e_curr)] = new int[0];
-                                continue;
-                            }
-                            var segs_prev = ActiveSegments[Math.Abs(e_prev)];
-                            var segs_next = ActiveSegments[Math.Abs(e_next)];
-
-                            int iVtxStart, iVtxEnd;
-                            if(e_curr >= 0) {
-                                iVtxStart = this.referenceLineSegments[Math.Abs(e_curr)].iVertexStart;
-                                iVtxEnd = this.referenceLineSegments[Math.Abs(e_curr)].iVertexEnd;
-                            } else {
-                                iVtxStart = this.referenceLineSegments[Math.Abs(e_curr)].iVertexEnd;
-                                iVtxEnd = this.referenceLineSegments[Math.Abs(e_curr)].iVertexStart;
-                            }
-
-                            bool prevOnEdge;
-                            if (segs_prev.Count > 0) {
-                                double endCoord;
-                                if (e_prev >= 0) {
-                                    endCoord = segs_prev.Last().EndCoord;
-                                } else {
-                                    endCoord = -segs_prev.First().StartCoord;
-                                }
-
-                                prevOnEdge = (endCoord == 1.0);
-                            } else {
-                                prevOnEdge = false;
-                            }
-
-                            bool nextOnEdge;
-                            if (segs_next.Count > 0) {
-                                double endCoord;
-                                if (e_next >= 0) {
-                                    endCoord = segs_next.First().StartCoord;
-                                } else {
-                                    endCoord = -segs_next.Last().EndCoord;
-                                }
-
-                                nextOnEdge = (endCoord == -1.0);
-                            } else {
-                                nextOnEdge = false;
-                            }
-
-                            if (e_curr >= 0) {
-                                int I = segs_curr.Count;
-                                for (int j = 0; j < I; j++) {
-                                    var seg = segs_curr[j];
-
-                                    if (j <= 0) {
-                                        bool startAtVertex = seg.StartCoord == -1.0;
-                                        if (!(startAtVertex && prevOnEdge)) {
-                                            newRoot.Add(seg.StartCoord);
-                                            if (startAtVertex) {
-                                                rootIsAtVertex.Add(iVtxStart);
-                                                bRootAtVertex = true;
-                                            } else {
-                                                rootIsAtVertex.Add(int.MinValue);
-                                            }
-                                        }
-                                    } else {
-                                        if (!(seg.StartCoord == segs_curr[j - 1].EndCoord)) {
-                                            newRoot.Add(seg.StartCoord);
-                                            rootIsAtVertex.Add(int.MinValue);
-                                        }
-                                    }
-
-                                    if (j >= (I - 1)) {
-                                        bool endAtVertex = seg.EndCoord == +1.0;
-                                        if (!(endAtVertex && nextOnEdge)) {
-                                            newRoot.Add(seg.EndCoord);
-                                            if (endAtVertex) {
-                                                rootIsAtVertex.Add(iVtxEnd);
-                                                bRootAtVertex = true;
-                                            } else {
-                                                rootIsAtVertex.Add(int.MinValue);
-                                            }
-                                        }
-                                    } else {
-                                        if (!(seg.EndCoord == segs_curr[j + 1].StartCoord)) {
-                                            newRoot.Add(seg.EndCoord);
-                                            rootIsAtVertex.Add(int.MinValue);
-                                        }
-                                    }
-                                }
-                            } else {
-                                int I = segs_curr.Count;
-                                for (int j = I - 1; j >= 0; j--) {
-                                    var seg = segs_curr[j];
-
-                                    if (j >= (I - 1)) {
-                                        bool startAtVertex = (-seg.EndCoord == -1.0);
-                                        if (!(startAtVertex && prevOnEdge)) {
-                                            newRoot.Add(seg.EndCoord);
-                                            if (startAtVertex) {
-                                                rootIsAtVertex.Add(iVtxStart);
-                                                bRootAtVertex = true;
-                                            } else {
-                                                rootIsAtVertex.Add(int.MinValue);
-                                            }
-                                        }
-                                    } else {
-                                        if (!(seg.EndCoord == segs_curr[j + 1].StartCoord)) {
-                                            newRoot.Add(seg.EndCoord);
-                                            rootIsAtVertex.Add(int.MinValue);
-                                        }
-                                    }
-
-                                    if (j <= 0) {
-                                        bool endAtVertex = (-seg.StartCoord == +1.0);
-                                        if (!(endAtVertex && nextOnEdge)) {
-                                            newRoot.Add(seg.StartCoord);
-                                            if (endAtVertex) {
-                                                rootIsAtVertex.Add(iVtxEnd);
-                                                bRootAtVertex = true;
-                                            } else {
-                                                rootIsAtVertex.Add(int.MinValue);
-                                            }
-                                        }
-                                    } else {
-                                        if (!(seg.StartCoord == segs_curr[j - 1].EndCoord)) {
-                                            newRoot.Add(seg.StartCoord);
-                                            rootIsAtVertex.Add(int.MinValue);
-                                        }
-                                    }
-                                }
-                            }
-
-                            Debug.Assert(newRoot.Count == rootIsAtVertex.Count);
-                            _newRoots[Math.Abs(e_curr)] = newRoot.ToArray();
-                            _rootIsAtVertex[Math.Abs(e_curr)] = rootIsAtVertex.ToArray();
-                            newRootCounter += newRoot.Count();
+                        if (posneg == 0) {
+                            // negative segment...
+                            LnMeas_nodes = LnMeasNeg_nodes;
+                            LnMeas_weights = LnMeasNeg_weights;
+                            LineMeasure_result = LineMeasureNeg_result;
+                            LnMeas_noOfNodesPerEdge = LnMeasNeg_noOfNodesPerEdge;
+                            PositiveSegment = false;
+                        } else {
+                            // positive segment
+                            LnMeas_nodes = LnMeasPos_nodes;
+                            LnMeas_weights = LnMeasPos_weights;
+                            LineMeasure_result = LineMeasurePos_result;
+                            LnMeas_noOfNodesPerEdge = LnMeasPos_noOfNodesPerEdge;
+                            PositiveSegment = true;
                         }
 
-                        if (newRootCounter%2 != 0)
-                            throw new ArgumentException("error in alg");
 
-                        _roots = _newRoots;
-
-
-                        if (LineMeasureEmptyOrFull) {
-                            // ++++++++++++++
-                            // the empty case
-                            // ++++++++++++++
-
+                        if (LnMeas_weights.Count == 0) {
                             var emptyrule = CellBoundaryQuadRule.CreateEmpty(this.m_RefElement, 1, D, referenceLineSegments.Length);
                             // create a rule with just one node and weight zero;
                             // this should avoid some special-case handling for empty rules
                             emptyrule.NumbersOfNodesPerFace[0] = 1;
                             emptyrule.Nodes.LockForever();
-                            emptyrule.OrderOfPrecision = order;
-                            PointMeasure_result.Add(new ChunkRulePair<CellBoundaryQuadRule>(Chunk.GetSingleElementChunk(jCell), emptyrule));
-                        }
-                        else  
-                        {
-                            // identify if roots are at vertices of the RefElement
-                            // ===================================================
+                                emptyrule.OrderOfPrecision = int.MaxValue;
+                            LineMeasure_result.Add(new ChunkRulePair<CellBoundaryQuadRule>(Chunk.GetSingleElementChunk(jCell), emptyrule));
 
-                            List<Vector> PtMeas_nodes = new List<Vector>();
-                            for (int e = 0; e < referenceLineSegments.Length; e++) {
-                                LineSegment referenceSegment = referenceLineSegments[e];
-                                double[] roots = _roots[e];
-                                
-                                /*
-                                 _rootIsAtVertex[e] = new int[roots.Length];
-                                //_rootIsAtVertex[e].SetAll(int.MinValue);
-                                 */
-
-                                // check whether the first and/or last root correspond with a vertex
-                                for (int h = 0; h < roots.Length; h += Math.Max(roots.Length - 1, 1)) {
-                                    PtMeas_nodes.Add(referenceSegment.GetPointOnSegment(roots[h]));
-
-                                    /*
-                                    if (Math.Abs(roots[h] - (-1.0)) < isVertexTol) {
-                                        // found a root at a RefElement-Vertex
-                                        // this happens seldom and needs special treatment (see below)
-                                        
-                                        _rootIsAtVertex[e][h] = referenceSegment.iVertexStart;
-                                        bRootAtVertex = true;
-                                    }
-
-                                    if (Math.Abs(roots[h] - (+1.0)) < isVertexTol) {
-                                        // found a root at a RefElement-Vertex
-                                        // this happens seldom and needs special treatment (see below)
-                                        
-                                        _rootIsAtVertex[e][h] = referenceSegment.iVertexEnd;
-                                        bRootAtVertex = true;
-                                    }
-                                     */
-                                }
+                            if (PositiveSegment)
+                                LineMeasureEmptyOrFull = true;
+                        } else {
+                            NodeSet localNodes = new NodeSet(this.m_RefElement, LnMeas_nodes.Count, D, true);
+                            for (int j = 0; j < LnMeas_nodes.Count; j++) {
+                                //for (int d = 0; d < D; d++) {
+                                //    localNodes[j, d] = LnMeas_nodes[j][d];
+                                //}
+                                localNodes.SetRowPt(j, LnMeas_nodes[j]);
                             }
+                            localNodes.LockForever();
 
-                            if (TotalNoOfRoots == 2 && !bRootAtVertex) {
-                                // +++++++++++++++++++++++++++++++++++++++++++++++++++
-                                // this will hopefully cover most of the cases;
-                                // we try to omit expensive handling of special cases
-                                // +++++++++++++++++++++++++++++++++++++++++++++++++++
+                            CellBoundaryQuadRule subdividedRule = new CellBoundaryQuadRule() {
+                                OrderOfPrecision = order,
+                                Weights = MultidimensionalArray.Create(LnMeas_weights.Count),
+                                Nodes = localNodes,
+                                NumbersOfNodesPerFace = LnMeas_noOfNodesPerEdge
+                            };
+                            subdividedRule.Weights.SetSubVector(LnMeas_weights, -1);
 
-                                Debug.Assert(PtMeas_nodes.Count == 2);
-                                //if (PtMeas_nodes.Count != 2)
-                                //    Console.WriteLine("Point measure nodes != 2");
+                            LineMeasure_result.Add(new ChunkRulePair<CellBoundaryQuadRule>(
+                                Chunk.GetSingleElementChunk(jCell), subdividedRule));
 
-                                CellBoundaryQuadRule subdividedRule = new CellBoundaryQuadRule() {
-                                    OrderOfPrecision = order,
-                                    Weights = MultidimensionalArray.Create(PtMeas_nodes.Count),
-                                    Nodes = new NodeSet(this.m_RefElement, PtMeas_nodes.Count, D, true),
-                                    NumbersOfNodesPerFace = PtMeas_noOfNodesPerEdge
-                                };
-
-                                var PtMeas_weights = NewMethod(EdgeData, jCell, cell2Edge_j, _roots);
-
-                                subdividedRule.Weights.SetVector(PtMeas_weights);
-
-                                for (int j = 0; j < PtMeas_nodes.Count; j++) {
-                                    subdividedRule.Nodes.SetRowPt(j, PtMeas_nodes[j]);
-                                }
-
-                                for (int e = 0; e < _roots.Length; e++) {
-                                    subdividedRule.NumbersOfNodesPerFace[e] = _roots[e].Length;
-                                }
-
-                                subdividedRule.Nodes.LockForever();
-
-                                PointMeasure_result.Add(new ChunkRulePair<CellBoundaryQuadRule>(
-                                    Chunk.GetSingleElementChunk(jCell), subdividedRule));
-                            } else {
-                                // +++++++++++++++++++++++++++++++++++
-                                // the general case -- a bit tricky
-                                // +++++++++++++++++++++++++++++++++++
-
-                                // ----
-                                // this is one of the most fucked-up pieces of code that I have ever written.
-                                // ----
-
-                                // ensure that roots at Refelement-vertices are present on all faces
-                                // =================================================================
-                                List<Tuple<int, int>>[] NodesAtVertices = null;
-                                if (bRootAtVertex) {
-                                    NodesAtVertices = new List<Tuple<int, int>>[this.m_RefElement.NoOfVertices];
-
-                                    for (int e = 0; e < referenceLineSegments.Length; e++) {
-                                        LineSegment referenceSegment = referenceLineSegments[e];
-                                        double[] roots = _roots[e];
-
-                                        for (int h = roots.Length - 1; h >= 0; h--) {
-                                            int iVertex = _rootIsAtVertex[e][h];
-
-                                            Vector pt = default(Vector);
-                                            bool pt_initialized = false;
-
-                                            if (iVertex >= 0) {
-                                                // ensure that this root is present for all other faces
-                                                // ++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-
-                                                if (NodesAtVertices[iVertex] == null)
-                                                    NodesAtVertices[iVertex] = new List<Tuple<int, int>>();
-
-                                                var nodeFace = new Tuple<int, int>(e, h);
-                                                if (!NodesAtVertices[iVertex].Contains(nodeFace))
-                                                    NodesAtVertices[iVertex].Add(nodeFace);
-
-                                                foreach (int iF in Vtx2Face[iVertex]) {
-                                                    if (iF == e)
-                                                        continue;
-
-                                                    if (!_rootIsAtVertex[iF].Contains(iVertex)) {
-                                                        if (!pt_initialized) {
-                                                            pt = referenceSegment.GetPointOnSegment(roots[h]);
-                                                            pt_initialized = true;
-                                                        }
-
-                                                        var alpha = referenceLineSegments[iF].GetSegmentCoordinateForPoint(pt);
-                                                        Debug.Assert(alpha >= -1.00000001);
-                                                        Debug.Assert(alpha <= +1.00000001);
-                                                        Debug.Assert(GenericBlas.L2DistPow2(pt, referenceLineSegments[iF].GetPointOnSegment(alpha)) < this.Tolerance*1000);
-
-
-                                                        alpha.AddToArray(ref _roots[iF]);
-                                                        iVertex.AddToArray(ref _rootIsAtVertex[iF]);
-
-
-                                                        var nodeFace2 = new Tuple<int, int>(iF, _roots[iF].Length - 1);
-                                                        if (!NodesAtVertices[iVertex].Contains(nodeFace2))
-                                                            NodesAtVertices[iVertex].Add(nodeFace2);
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                TotalNoOfRoots = _roots.Sum(r => r.Length);
-
-                                // compute inner products between cell normals and level-set normals
-                                // ==================================================================
-
-
-                                //NodeSet[] Nodes = new NodeSet[referenceLineSegments.Length];
-                                MultidimensionalArray[] LevSetNormals = new MultidimensionalArray[referenceLineSegments.Length];
-                                var simplexNormals = this.m_RefElement.FaceNormals;
-                                double[][] Innerproducts = new double[referenceLineSegments.Length][];
-                                for (int e = 0; e < referenceLineSegments.Length; e++) {
-                                    double[] roots = _roots[e];
-                                    int K = roots.Length;
-                                    //Nodes[e] = new NodeSet(this.m_RefElement, K, D, true);
-                                    //var Nodes_e = Nodes[e];
-                                    var Nodes_e = new NodeSet(this.m_RefElement, K, D, false);
-
-                                    LineSegment referenceSegment = referenceLineSegments[e];
-                                    for (int k = 0; k < K; k++) {
-                                        Nodes_e.SetRow(k, referenceSegment.GetPointOnSegment(roots[k]));
-                                    }
-                                    Nodes_e.LockForever();
-                                    Innerproducts[e] = new double[K];
-
-                                    if (K > 0) {
-                                        LevSetNormals[e] = this.LevelSetData.GetLevelSetReferenceNormals(Nodes_e, jCell, 1);
-                                        var LevSetNormals_e = LevSetNormals[e];
-
-
-                                        var Innerproducts_e =  Innerproducts[e];
-                                        for (int k = 0; k < K; k++) {
-                                            double acc = 0;
-                                            acc += simplexNormals[e, 0]*LevSetNormals_e[0, k, 0];
-                                            acc += simplexNormals[e, 1]*LevSetNormals_e[0, k, 1];
-                                            Innerproducts_e[k] = acc;
-                                        }
-                                    }
-                                }
-
-
-                                // treatment of vertex-nodes
-                                // =========================
-                                bool[][] KilledRoots = _roots.Select(rr => new bool[rr.Length]).ToArray();
-                                if (bRootAtVertex) {
-                                    for (int iVtx = 0; iVtx < this.m_RefElement.NoOfVertices; iVtx++) {
-                                        var Nodes_iVtx = NodesAtVertices[iVtx];
-                                        if (Nodes_iVtx == null || Nodes_iVtx.Count == 0) {
-                                            continue;
-
-                                        } else if (Nodes_iVtx.Count == 2) {
-
-                                            var t0 = Nodes_iVtx[0];
-                                            var t1 = Nodes_iVtx[1];
-
-                                            double ip0 = Innerproducts[t0.Item1][t0.Item2];
-                                            double ip1 = Innerproducts[t1.Item1][t1.Item2];
-                                            
-                                            if (Math.Abs(ip0) < Math.Abs(ip1)) {
-                                                // choose node 0
-                                                KilledRoots[t1.Item1][t1.Item2] = true;
-                                            } else {
-                                                // choose node 1
-                                                KilledRoots[t0.Item1][t0.Item2] = true;
-                                            }
-
-                                        } else {
-                                            throw new ApplicationException("error in alg");
-                                        }
-                                    }
-                                }
-                                
-                                // wackelkandidaten finden
-                                // =======================
-                                List<Tuple<int, int>> SaveNodes = new List<Tuple<int, int>>();
-                                Tuple<int, int> Least_UncertainNode = null;
-                                double Least_UncertainNode_flatness = 0;
-
-                                for (int e = 0; e < _roots.Length; e++) {
-                                    var Innerproducts_e =  Innerproducts[e];
-                                    int K = Innerproducts_e.Length;
-                                    for (int k = 0; k < K; k++) {
-                                        if (KilledRoots[e][k])
-                                            continue;
-
-
-                                        double flatNess = Math.Abs(Math.Abs(Innerproducts_e[k]) - 1.0);
-
-                                        if (flatNess <= this.Tolerance*10) {
-                                            // level-set at node 'k' is almost tangential to face/co-face 'e'
-
-                                            if (Least_UncertainNode == null) {
-                                                Least_UncertainNode = new Tuple<int, int>(e, k);
-                                                Least_UncertainNode_flatness = flatNess;
-                                            } else {
-                                                if (flatNess > Least_UncertainNode_flatness) {
-                                                    Least_UncertainNode = new Tuple<int, int>(e, k);
-                                                    Least_UncertainNode_flatness = flatNess;
-                                                }
-                                            }
-                                        } else {
-                                            SaveNodes.Add(new Tuple<int, int>(e, k));
-                                        }
-                                    }
-                                }
-                                
-                                // create point measure
-                                // ====================
-                                if (SaveNodes.Count == 0) {
-                                    var emptyrule = CellBoundaryQuadRule.CreateEmpty(this.m_RefElement, 1, D, referenceLineSegments.Length);
-                                    // create a rule with just one node and weight zero;
-                                    // this should avoid some special-case handling for empty rules
-                                    emptyrule.NumbersOfNodesPerFace[0] = 1;
-                                    emptyrule.Nodes.LockForever();
-
-                                    PointMeasure_result.Add(new ChunkRulePair<CellBoundaryQuadRule>(Chunk.GetSingleElementChunk(jCell), emptyrule));
-                                    
-                                } else {
-
-                                    if ((SaveNodes.Count % 2) != 0) {
-                                        if (Least_UncertainNode == null)
-                                            throw new ApplicationException();
-                                        
-                                        if(Least_UncertainNode.Item1 < SaveNodes[0].Item1) {
-                                            SaveNodes.Insert(0,Least_UncertainNode);
-                                        } else {
-                                            bool notatend = false;
-                                            for(int jj = 0; jj < SaveNodes.Count; jj++) {
-                                                var t = SaveNodes[jj];
-                                                if(t.Item1 == Least_UncertainNode.Item1) {
-                                                    SaveNodes.Insert(jj, Least_UncertainNode);
-                                                    notatend = true;
-                                                    break;
-                                                }
-                                            }
-                                            if(!notatend)
-                                                SaveNodes.Add(Least_UncertainNode);
-                                        }
-                                    }
-
-                                    CellBoundaryQuadRule subdividedRule = new CellBoundaryQuadRule() {
-                                        OrderOfPrecision = order,
-                                        Weights = MultidimensionalArray.Create(SaveNodes.Count),
-                                        Nodes = new NodeSet(this.m_RefElement, SaveNodes.Count, D, true),
-                                        NumbersOfNodesPerFace = new int[_roots.Length]
-                                    };
-
-                                    var PtMeas_weights = NewMethod(grdDat.Edges, jCell, cell2Edge_j, _roots);
-                                    double[][] _PtMeas_weights = new double[_roots.Length][];
-                                    int cnt = 0;
-                                    for (int e = 0; e < _roots.Length; e++) {
-                                        _PtMeas_weights[e] = PtMeas_weights.GetSubVector(cnt, _roots[e].Length);
-                                        cnt += _roots[e].Length;
-                                    }
-
-                                    int k = 0;
-                                    foreach (var t in SaveNodes) {
-                                        int e = t.Item1;
-                                        int kk = t.Item2;
-                                        subdividedRule.NumbersOfNodesPerFace[e]++;
-                                        var pt = referenceLineSegments[e].GetPointOnSegment(_roots[e][kk]);
-                                        for (int d = 0; d < D; d++) {
-                                            subdividedRule.Nodes[k, d] = pt[d];
-                                        }
-                                        subdividedRule.Weights[k] = _PtMeas_weights[e][kk];
-                                        k++;
-                                    }
-
-                                    subdividedRule.Nodes.LockForever();
-
-                                    PointMeasure_result.Add(new ChunkRulePair<CellBoundaryQuadRule>(
-                                        Chunk.GetSingleElementChunk(jCell), subdividedRule));
-                                }
-
+                            if (PositiveSegment) {
+                                nodesSum = subdividedRule.Weights.Sum();
+                                LineMeasureEmptyOrFull = (Math.Abs(nodesSum) <= this.Tolerance * 10) || (Math.Abs(nodesSum - Fullsum) <= this.Tolerance * 10);
                             }
                         }
                     }
                 }
+
+
+                // ============================
+                // create point measure
+                // ============================
+                if (D == 2 && this.SupportPointrule) { // only in 2D
+
+                    double[][] _newRoots = new double[_roots.Length][];
+                    List<double> newRoot = new List<double>(5);
+                    int[][] _rootIsAtVertex = new int[_roots.GetLength(0)][]; // indices correspond with '_roots':
+                                                                              //       1st index: reference line segment; 
+                                                                              //       2nd index: root enumeration
+                                                                              //       content: negative, if the root is not located at a vertex (of the ref element),
+                                                                              //                otherwise the vertex index.
+                    bool bRootAtVertex = false; // marks that one or more roots are detected to lie at a vertex of the element
+                    List<int> rootIsAtVertex = new List<int>(5);
+
+                    int newRootCounter = 0;
+                    for (int _e = 0; _e < _roots.Length; _e++) {
+                        newRoot.Clear();
+                        rootIsAtVertex.Clear();
+
+                        int e_curr = this.segmentSorting[_e];
+                        int e_next = this.segmentSorting[(_e + 1)%_roots.Length];
+                        int e_prev = this.segmentSorting[_e > 0 ? _e - 1 : _roots.Length - 1];
+
+
+                        // e_curr, ... are no valid indices into `ActiveSegments`
+
+                        var segs_curr = ActiveSegments[Math.Abs(e_curr)];
+                        if (segs_curr.Count == 0) {
+                            _newRoots[Math.Abs(e_curr)] = new double[0];
+                            _rootIsAtVertex[Math.Abs(e_curr)] = new int[0];
+                            continue;
+                        }
+                        var segs_prev = ActiveSegments[Math.Abs(e_prev)];
+                        var segs_next = ActiveSegments[Math.Abs(e_next)];
+
+                        int iVtxStart, iVtxEnd;
+                        if (e_curr >= 0) {
+                            iVtxStart = this.referenceLineSegments[Math.Abs(e_curr)].iVertexStart;
+                            iVtxEnd = this.referenceLineSegments[Math.Abs(e_curr)].iVertexEnd;
+                        } else {
+                            iVtxStart = this.referenceLineSegments[Math.Abs(e_curr)].iVertexEnd;
+                            iVtxEnd = this.referenceLineSegments[Math.Abs(e_curr)].iVertexStart;
+                        }
+
+                        bool prevOnEdge;
+                        if (segs_prev.Count > 0) {
+                            double endCoord;
+                            if (e_prev >= 0) {
+                                endCoord = segs_prev.Last().EndCoord;
+                            } else {
+                                endCoord = -segs_prev.First().StartCoord;
+                            }
+
+                            prevOnEdge = (endCoord == 1.0);
+                        } else {
+                            prevOnEdge = false;
+                        }
+
+                        bool nextOnEdge;
+                        if (segs_next.Count > 0) {
+                            double endCoord;
+                            if (e_next >= 0) {
+                                endCoord = segs_next.First().StartCoord;
+                            } else {
+                                endCoord = -segs_next.Last().EndCoord;
+                            }
+
+                            nextOnEdge = (endCoord == -1.0);
+                        } else {
+                            nextOnEdge = false;
+                        }
+
+                        if (e_curr >= 0) {
+                            int I = segs_curr.Count;
+                            for (int j = 0; j < I; j++) {
+                                var seg = segs_curr[j];
+
+                                if (j <= 0) {
+                                    bool startAtVertex = seg.StartCoord == -1.0;
+                                    if (!(startAtVertex && prevOnEdge)) {
+                                        newRoot.Add(seg.StartCoord);
+                                        if (startAtVertex) {
+                                            rootIsAtVertex.Add(iVtxStart);
+                                            bRootAtVertex = true;
+                                        } else {
+                                            rootIsAtVertex.Add(int.MinValue);
+                                        }
+                                    }
+                                } else {
+                                    if (!(seg.StartCoord == segs_curr[j - 1].EndCoord)) {
+                                        newRoot.Add(seg.StartCoord);
+                                        rootIsAtVertex.Add(int.MinValue);
+                                    }
+                                }
+
+                                if (j >= (I - 1)) {
+                                    bool endAtVertex = seg.EndCoord == +1.0;
+                                    if (!(endAtVertex && nextOnEdge)) {
+                                        newRoot.Add(seg.EndCoord);
+                                        if (endAtVertex) {
+                                            rootIsAtVertex.Add(iVtxEnd);
+                                            bRootAtVertex = true;
+                                        } else {
+                                            rootIsAtVertex.Add(int.MinValue);
+                                        }
+                                    }
+                                } else {
+                                    if (!(seg.EndCoord == segs_curr[j + 1].StartCoord)) {
+                                        newRoot.Add(seg.EndCoord);
+                                        rootIsAtVertex.Add(int.MinValue);
+                                    }
+                                }
+                            }
+                        } else {
+                            int I = segs_curr.Count;
+                            for (int j = I - 1; j >= 0; j--) {
+                                var seg = segs_curr[j];
+
+                                if (j >= (I - 1)) {
+                                    bool startAtVertex = (-seg.EndCoord == -1.0);
+                                    if (!(startAtVertex && prevOnEdge)) {
+                                        newRoot.Add(seg.EndCoord);
+                                        if (startAtVertex) {
+                                            rootIsAtVertex.Add(iVtxStart);
+                                            bRootAtVertex = true;
+                                        } else {
+                                            rootIsAtVertex.Add(int.MinValue);
+                                        }
+                                    }
+                                } else {
+                                    if (!(seg.EndCoord == segs_curr[j + 1].StartCoord)) {
+                                        newRoot.Add(seg.EndCoord);
+                                        rootIsAtVertex.Add(int.MinValue);
+                                    }
+                                }
+
+                                if (j <= 0) {
+                                    bool endAtVertex = (-seg.StartCoord == +1.0);
+                                    if (!(endAtVertex && nextOnEdge)) {
+                                        newRoot.Add(seg.StartCoord);
+                                        if (endAtVertex) {
+                                            rootIsAtVertex.Add(iVtxEnd);
+                                            bRootAtVertex = true;
+                                        } else {
+                                            rootIsAtVertex.Add(int.MinValue);
+                                        }
+                                    }
+                                } else {
+                                    if (!(seg.StartCoord == segs_curr[j - 1].EndCoord)) {
+                                        newRoot.Add(seg.StartCoord);
+                                        rootIsAtVertex.Add(int.MinValue);
+                                    }
+                                }
+                            }
+                        }
+
+                        Debug.Assert(newRoot.Count == rootIsAtVertex.Count);
+                        _newRoots[Math.Abs(e_curr)] = newRoot.ToArray();
+                        _rootIsAtVertex[Math.Abs(e_curr)] = rootIsAtVertex.ToArray();
+                        newRootCounter += newRoot.Count();
+                    }
+
+                    if (newRootCounter%2 != 0)
+                        // a level-set cannot jus enter, it must also exit
+                        throw new ArithmeticException("un-even number of level-set intersection on cell boundary");
+
+                    _roots = _newRoots;
+
+
+                    if (LineMeasureEmptyOrFull) {
+                        // ++++++++++++++
+                        // the empty case
+                        // ++++++++++++++
+
+                        var emptyrule = CellBoundaryQuadRule.CreateEmpty(this.m_RefElement, 1, D, referenceLineSegments.Length);
+                        // create a rule with just one node and weight zero;
+                        // this should avoid some special-case handling for empty rules
+                        emptyrule.NumbersOfNodesPerFace[0] = 1;
+                        emptyrule.Nodes.LockForever();
+                            emptyrule.OrderOfPrecision = order;
+                        PointMeasure_result.Add(new ChunkRulePair<CellBoundaryQuadRule>(Chunk.GetSingleElementChunk(jCell), emptyrule));
+                    } else {
+                        // identify if roots are at vertices of the RefElement
+                        // ===================================================
+
+                        List<Vector> PtMeas_nodes = new List<Vector>();
+                        for (int e = 0; e < referenceLineSegments.Length; e++) {
+                            LineSegment referenceSegment = referenceLineSegments[e];
+                            double[] roots = _roots[e];
+
+                            /*
+                             _rootIsAtVertex[e] = new int[roots.Length];
+                            //_rootIsAtVertex[e].SetAll(int.MinValue);
+                             */
+
+                            // check whether the first and/or last root correspond with a vertex
+                            for (int h = 0; h < roots.Length; h += Math.Max(roots.Length - 1, 1)) {
+                                PtMeas_nodes.Add(referenceSegment.GetPointOnSegment(roots[h]));
+
+                                /*
+                                if (Math.Abs(roots[h] - (-1.0)) < isVertexTol) {
+                                    // found a root at a RefElement-Vertex
+                                    // this happens seldom and needs special treatment (see below)
+
+                                    _rootIsAtVertex[e][h] = referenceSegment.iVertexStart;
+                                    bRootAtVertex = true;
+                                }
+
+                                if (Math.Abs(roots[h] - (+1.0)) < isVertexTol) {
+                                    // found a root at a RefElement-Vertex
+                                    // this happens seldom and needs special treatment (see below)
+
+                                    _rootIsAtVertex[e][h] = referenceSegment.iVertexEnd;
+                                    bRootAtVertex = true;
+                                }
+                                 */
+                            }
+                        }
+
+                        if (TotalNoOfRoots == 2 && !bRootAtVertex) {
+                            // +++++++++++++++++++++++++++++++++++++++++++++++++++
+                            // this will hopefully cover most of the cases;
+                            // we try to omit expensive handling of special cases
+                            // +++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                            Debug.Assert(PtMeas_nodes.Count == 2);
+                            //if (PtMeas_nodes.Count != 2)
+                            //    Console.WriteLine("Point measure nodes != 2");
+
+                            CellBoundaryQuadRule subdividedRule = new CellBoundaryQuadRule() {
+                                OrderOfPrecision = order,
+                                Weights = MultidimensionalArray.Create(PtMeas_nodes.Count),
+                                Nodes = new NodeSet(this.m_RefElement, PtMeas_nodes.Count, D, true),
+                                NumbersOfNodesPerFace = PtMeas_noOfNodesPerEdge
+                            };
+
+                            var PtMeas_weights = NewMethod(EdgeData, jCell, cell2Edge_j, _roots);
+
+                            subdividedRule.Weights.SetVector(PtMeas_weights);
+
+                            for (int j = 0; j < PtMeas_nodes.Count; j++) {
+                                subdividedRule.Nodes.SetRowPt(j, PtMeas_nodes[j]);
+                            }
+
+                            for (int e = 0; e < _roots.Length; e++) {
+                                subdividedRule.NumbersOfNodesPerFace[e] = _roots[e].Length;
+                            }
+
+                            subdividedRule.Nodes.LockForever();
+
+                            PointMeasure_result.Add(new ChunkRulePair<CellBoundaryQuadRule>(
+                                Chunk.GetSingleElementChunk(jCell), subdividedRule));
+                        } else {
+                            // +++++++++++++++++++++++++++++++++++
+                            // the general case -- a bit tricky
+                            // +++++++++++++++++++++++++++++++++++
+
+                            // ----
+                            // this is one of the most fucked-up pieces of code that I have ever written.
+                            // ----
+
+                            // ensure that roots at Refelement-vertices are present on all faces
+                            // =================================================================
+                            List<Tuple<int, int>>[] NodesAtVertices = null;
+                            if (bRootAtVertex) {
+                                NodesAtVertices = new List<Tuple<int, int>>[this.m_RefElement.NoOfVertices];
+
+                                for (int e = 0; e < referenceLineSegments.Length; e++) {
+                                    LineSegment referenceSegment = referenceLineSegments[e];
+                                    double[] roots = _roots[e];
+
+                                    for (int h = roots.Length - 1; h >= 0; h--) {
+                                        int iVertex = _rootIsAtVertex[e][h];
+
+                                        Vector pt = default(Vector);
+                                        bool pt_initialized = false;
+
+                                        if (iVertex >= 0) {
+                                            // ensure that this root is present for all other faces
+                                            // ++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+                                            if (NodesAtVertices[iVertex] == null)
+                                                NodesAtVertices[iVertex] = new List<Tuple<int, int>>();
+
+                                            var nodeFace = new Tuple<int, int>(e, h);
+                                            if (!NodesAtVertices[iVertex].Contains(nodeFace))
+                                                NodesAtVertices[iVertex].Add(nodeFace);
+
+                                            foreach (int iF in Vtx2Face[iVertex]) {
+                                                if (iF == e)
+                                                    continue;
+
+                                                if (!_rootIsAtVertex[iF].Contains(iVertex)) {
+                                                    if (!pt_initialized) {
+                                                        pt = referenceSegment.GetPointOnSegment(roots[h]);
+                                                        pt_initialized = true;
+                                                    }
+
+                                                    var alpha = referenceLineSegments[iF].GetSegmentCoordinateForPoint(pt);
+                                                    Debug.Assert(alpha >= -1.00000001);
+                                                    Debug.Assert(alpha <= +1.00000001);
+                                                    Debug.Assert(GenericBlas.L2DistPow2(pt, referenceLineSegments[iF].GetPointOnSegment(alpha)) < this.Tolerance*1000);
+
+
+                                                    alpha.AddToArray(ref _roots[iF]);
+                                                    iVertex.AddToArray(ref _rootIsAtVertex[iF]);
+
+
+                                                    var nodeFace2 = new Tuple<int, int>(iF, _roots[iF].Length - 1);
+                                                    if (!NodesAtVertices[iVertex].Contains(nodeFace2))
+                                                        NodesAtVertices[iVertex].Add(nodeFace2);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            TotalNoOfRoots = _roots.Sum(r => r.Length);
+
+                            // compute inner products between cell normals and level-set normals
+                            // ==================================================================
+
+
+                            //NodeSet[] Nodes = new NodeSet[referenceLineSegments.Length];
+                            MultidimensionalArray[] LevSetNormals = new MultidimensionalArray[referenceLineSegments.Length];
+                            var simplexNormals = this.m_RefElement.FaceNormals;
+                            double[][] Innerproducts = new double[referenceLineSegments.Length][];
+                            for (int e = 0; e < referenceLineSegments.Length; e++) {
+                                double[] roots = _roots[e];
+                                int K = roots.Length;
+                                //Nodes[e] = new NodeSet(this.m_RefElement, K, D, true);
+                                //var Nodes_e = Nodes[e];
+                                var Nodes_e = new NodeSet(this.m_RefElement, K, D, false);
+
+                                LineSegment referenceSegment = referenceLineSegments[e];
+                                for (int k = 0; k < K; k++) {
+                                    Nodes_e.SetRow(k, referenceSegment.GetPointOnSegment(roots[k]));
+                                }
+                                Nodes_e.LockForever();
+                                Innerproducts[e] = new double[K];
+
+                                if (K > 0) {
+                                    LevSetNormals[e] = this.LevelSetData.GetLevelSetReferenceNormals(Nodes_e, jCell, 1);
+                                    var LevSetNormals_e = LevSetNormals[e];
+
+
+                                    var Innerproducts_e = Innerproducts[e];
+                                    for (int k = 0; k < K; k++) {
+                                        double acc = 0;
+                                        acc += simplexNormals[e, 0]*LevSetNormals_e[0, k, 0];
+                                        acc += simplexNormals[e, 1]*LevSetNormals_e[0, k, 1];
+                                        Innerproducts_e[k] = acc;
+                                    }
+                                }
+                            }
+
+
+                            // treatment of vertex-nodes
+                            // =========================
+                            bool[][] KilledRoots = _roots.Select(rr => new bool[rr.Length]).ToArray();
+                            if (bRootAtVertex) {
+                                for (int iVtx = 0; iVtx < this.m_RefElement.NoOfVertices; iVtx++) {
+                                    var Nodes_iVtx = NodesAtVertices[iVtx];
+                                    if (Nodes_iVtx == null || Nodes_iVtx.Count == 0) {
+                                        continue;
+
+                                    } else if (Nodes_iVtx.Count == 2) {
+
+                                        var t0 = Nodes_iVtx[0];
+                                        var t1 = Nodes_iVtx[1];
+
+                                        double ip0 = Innerproducts[t0.Item1][t0.Item2];
+                                        double ip1 = Innerproducts[t1.Item1][t1.Item2];
+
+                                        if (Math.Abs(ip0) < Math.Abs(ip1)) {
+                                            // choose node 0
+                                            KilledRoots[t1.Item1][t1.Item2] = true;
+                                        } else {
+                                            // choose node 1
+                                            KilledRoots[t0.Item1][t0.Item2] = true;
+                                        }
+
+                                    } else {
+                                        throw new ApplicationException("error in alg");
+                                    }
+                                }
+                            }
+
+                            // wackelkandidaten finden
+                            // =======================
+                            List<Tuple<int, int>> SaveNodes = new List<Tuple<int, int>>();
+                            Tuple<int, int> Least_UncertainNode = null;
+                            double Least_UncertainNode_flatness = 0;
+
+                            for (int e = 0; e < _roots.Length; e++) {
+                                var Innerproducts_e = Innerproducts[e];
+                                int K = Innerproducts_e.Length;
+                                for (int k = 0; k < K; k++) {
+                                    if (KilledRoots[e][k])
+                                        continue;
+
+
+                                    double flatNess = Math.Abs(Math.Abs(Innerproducts_e[k]) - 1.0);
+
+                                    if (flatNess <= this.Tolerance*10) {
+                                        // level-set at node 'k' is almost tangential to face/co-face 'e'
+
+                                        if (Least_UncertainNode == null) {
+                                            Least_UncertainNode = new Tuple<int, int>(e, k);
+                                            Least_UncertainNode_flatness = flatNess;
+                                        } else {
+                                            if (flatNess > Least_UncertainNode_flatness) {
+                                                Least_UncertainNode = new Tuple<int, int>(e, k);
+                                                Least_UncertainNode_flatness = flatNess;
+                                            }
+                                        }
+                                    } else {
+                                        SaveNodes.Add(new Tuple<int, int>(e, k));
+                                    }
+                                }
+                            }
+
+                            // create point measure
+                            // ====================
+                            if (SaveNodes.Count == 0) {
+                                var emptyrule = CellBoundaryQuadRule.CreateEmpty(this.m_RefElement, 1, D, referenceLineSegments.Length);
+                                // create a rule with just one node and weight zero;
+                                // this should avoid some special-case handling for empty rules
+                                emptyrule.NumbersOfNodesPerFace[0] = 1;
+                                emptyrule.Nodes.LockForever();
+
+                                PointMeasure_result.Add(new ChunkRulePair<CellBoundaryQuadRule>(Chunk.GetSingleElementChunk(jCell), emptyrule));
+
+                            } else {
+
+                                if ((SaveNodes.Count % 2) != 0) {
+                                    if (Least_UncertainNode == null)
+                                        throw new ApplicationException();
+
+                                    if (Least_UncertainNode.Item1 < SaveNodes[0].Item1) {
+                                        SaveNodes.Insert(0, Least_UncertainNode);
+                                    } else {
+                                        bool notatend = false;
+                                        for (int jj = 0; jj < SaveNodes.Count; jj++) {
+                                            var t = SaveNodes[jj];
+                                            if (t.Item1 == Least_UncertainNode.Item1) {
+                                                SaveNodes.Insert(jj, Least_UncertainNode);
+                                                notatend = true;
+                                                break;
+                                            }
+                                        }
+                                        if (!notatend)
+                                            SaveNodes.Add(Least_UncertainNode);
+                                    }
+                                }
+
+                                CellBoundaryQuadRule subdividedRule = new CellBoundaryQuadRule() {
+                                    OrderOfPrecision = order,
+                                    Weights = MultidimensionalArray.Create(SaveNodes.Count),
+                                    Nodes = new NodeSet(this.m_RefElement, SaveNodes.Count, D, true),
+                                    NumbersOfNodesPerFace = new int[_roots.Length]
+                                };
+
+                                var PtMeas_weights = NewMethod(grdDat.Edges, jCell, cell2Edge_j, _roots);
+                                double[][] _PtMeas_weights = new double[_roots.Length][];
+                                int cnt = 0;
+                                for (int e = 0; e < _roots.Length; e++) {
+                                    _PtMeas_weights[e] = PtMeas_weights.GetSubVector(cnt, _roots[e].Length);
+                                    cnt += _roots[e].Length;
+                                }
+
+                                int k = 0;
+                                foreach (var t in SaveNodes) {
+                                    int e = t.Item1;
+                                    int kk = t.Item2;
+                                    subdividedRule.NumbersOfNodesPerFace[e]++;
+                                    var pt = referenceLineSegments[e].GetPointOnSegment(_roots[e][kk]);
+                                    for (int d = 0; d < D; d++) {
+                                        subdividedRule.Nodes[k, d] = pt[d];
+                                    }
+                                    subdividedRule.Weights[k] = _PtMeas_weights[e][kk];
+                                    k++;
+                                }
+
+                                subdividedRule.Nodes.LockForever();
+
+                                PointMeasure_result.Add(new ChunkRulePair<CellBoundaryQuadRule>(Chunk.GetSingleElementChunk(jCell), subdividedRule));
+                            }
+
+                        }
+                    }
+                }
             }
+
             // cache result
             Debug.Assert(PointMeasure_result.Any(crp => crp.Rule.Nodes.IsLocked == false) == false);
             Debug.Assert(LineMeasurePos_result.Any(crp => crp.Rule.Nodes.IsLocked == false) == false);
@@ -1176,7 +1200,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         private static List<double> NewMethod(GridData.EdgeData EdgeData, int jCell, int[] cell2Edge_j, double[][] _roots) {
             var edge2Cell = EdgeData.CellIndices;
             var FaceIdx = EdgeData.FaceIndices;
-            
+
             var PtMeas_weights = new List<double>();
             for (int e = 0; e < _roots.Length; e++) { // loop over faces...
 
@@ -1253,7 +1277,11 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             }
         }
 
-
+        /// <summary>
+        /// returns the 1D lines of the reference element
+        /// - if <paramref name="Simplex"/> is 2D (quad or triangle), the edges
+        /// - if <paramref name="Simplex"/> is 3D (cube or tetra) the edges of the faces (aka. geometrical edges, aka. co-face)
+        /// </summary>
         static private LineSegment[] GetReferenceLineSegments(out int[] segmentSort, RefElement Simplex, LineSegment.IRootFindingAlgorithm RootFindingAlgorithm, LevelSetTracker.LevelSetData levelSetData, int LevelSetIndex) {
             Stack<RefElement> simplexHierarchy = new Stack<RefElement>();
             RefElement currentSimplex = Simplex;
@@ -1334,7 +1362,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
 
             // in 2D, permute the line segments so that they form a continuous line-stroke
-            // (required to obtain a 'stable' point measure)
+            // (we use this to - hopefully - to obtain a 'stable' point measure, where we have no double counting on edges an even number of total roots)
 
             if (spatialDimension == 2) {
                 var sotierung = new List<int>();
@@ -1350,14 +1378,14 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     foreach (var segment in lineSegments) {
                         j++;
                         if (sotierung
-                            .Contains(segment, delegate(int a, LineSegment b) {
-                            LineSegment _a = lineSegments[Math.Abs(a)];
-                            if (a >= 0) {
-                                return (_a.iVertexStart == b.iVertexStart && _a.iVertexEnd == b.iVertexEnd);
-                            } else {
-                                return (_a.iVertexEnd == b.iVertexStart && _a.iVertexStart == b.iVertexEnd);
-                            }
-                        }))
+                            .Contains(segment, delegate (int a, LineSegment b) {
+                                LineSegment _a = lineSegments[Math.Abs(a)];
+                                if (a >= 0) {
+                                    return (_a.iVertexStart == b.iVertexStart && _a.iVertexEnd == b.iVertexEnd);
+                                } else {
+                                    return (_a.iVertexEnd == b.iVertexStart && _a.iVertexStart == b.iVertexEnd);
+                                }
+                            }))
                             continue;
 
                         if (Soll_iVtxEnd < 0) {
@@ -1406,7 +1434,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             } else {
                 segmentSort = null;
             }
-            
+
             return lineSegments.ToArray();
         }
 

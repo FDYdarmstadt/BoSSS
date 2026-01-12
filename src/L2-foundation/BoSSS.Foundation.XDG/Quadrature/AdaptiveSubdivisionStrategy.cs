@@ -118,9 +118,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.Subdivision {
         /// edges is straightforward (since we don't have enough information to
         /// do something sophisticated). For cells, we use a modified version of
         /// a formular given by MinGibou2007:
-        /// \f$ 
+        /// $ 
         /// \max |\Phi(v)| \leq 0.5 * \mathrm{Lip}(\Phi) h_\mathrm{max}.
-        /// \f$ 
+        /// $ 
         /// In particular, we assume that the Lipschitz constant is close to 1
         /// which is true if the level set is signed distance. A more
         /// sophisticated method would evaluate the gradients at the vertices

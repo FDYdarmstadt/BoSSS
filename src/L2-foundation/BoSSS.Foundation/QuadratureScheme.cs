@@ -167,7 +167,7 @@ namespace BoSSS.Foundation.Quadrature {
         public readonly IIntegrationMetric IntegrationMetric;
 
 
-        bool m_UseDefaultFactories;
+        protected readonly bool m_UseDefaultFactories;
 
         #region IQuadratureInstruction<TQuadRule,TDomain> Members
 
@@ -250,6 +250,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// </summary>
         public ICompositeQuadRule<TQuadRule> Compile(IGridData gridData, int order) {
             using(var tr = new FuncTrace()) {
+
                 tr.Info("order = " + order);
                 // set domain
                 TDomain baseDomain = Domain ?? GetDefaultDomain(gridData);
@@ -296,6 +297,19 @@ namespace BoSSS.Foundation.Quadrature {
                     } else {
                         currentDomain = baseDomain.Intersect(factoryDomainPair.Domain);
                         Debug.Assert(currentDomain.Except(GetDomainForRefElement(RefElm, gridData)).NoOfItemsLocally <= 0);
+                    }
+                    if(i < factoryDomainPairs.Count() - 1) {
+                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                        // exclude cells from later quadrature rule factories;
+                        // this avoid creating unnecessary rules, since rules form this factory might be overwritten anyway.
+                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                        for(int iOther = i + 1; iOther < factoryDomainPairs.Count(); iOther++) {
+                            var other = factoryDomainPairs.ElementAt(iOther);
+                            if(other.Domain != null)
+                                currentDomain = currentDomain.Except(other.Domain);
+                        }
+
                     }
 
                     // check the type of factory
@@ -406,6 +420,7 @@ namespace BoSSS.Foundation.Quadrature {
             return RefElements;
         }
 
+            
 #endregion
 
         /// <summary>
@@ -488,7 +503,8 @@ namespace BoSSS.Foundation.Quadrature {
                 private set;
             }
 
-#endregion
+            #endregion
+
         }
     }
 
@@ -674,6 +690,36 @@ namespace BoSSS.Foundation.Quadrature {
             scheme = (scheme ?? new EdgeQuadratureScheme(true));
             return scheme.Compile(g, order);
         }
+
+        /// <summary>
+        /// Combines two disjoint rules <paramref name="A"/> and <paramref name="B"/> in the right sequence
+        /// </summary>
+        public static IChunkRulePair<TQuadRule>[] MergeDisjointRules<TQuadRule>(this IEnumerable<IChunkRulePair<TQuadRule>> A, IEnumerable<IChunkRulePair<TQuadRule>> B) where TQuadRule : QuadRule {
+            var enuA = A.GetEnumerator();
+            var enuB = B.GetEnumerator();
+
+
+            var hasNextA = enuA.MoveNext();
+            var hasNextB = enuB.MoveNext();
+
+            var M = new List<IChunkRulePair<TQuadRule>>();
+
+            while(hasNextA || hasNextB) {
+                if(hasNextA && (!hasNextB || enuA.Current.Chunk.i0 < enuB.Current.Chunk.i0)) {
+                    M.Add(enuA.Current);
+                    hasNextA = enuA.MoveNext();
+                } else if(hasNextB && (!hasNextA || enuB.Current.Chunk.i0 < enuA.Current.Chunk.i0)) {
+                    M.Add(enuB.Current);
+                    hasNextB = enuB.MoveNext();
+                } else {
+                    throw new ArgumentException("cannot merge overlapping quadrature rules");
+                }
+
+            }
+
+            return M.ToArray();
+        }
+
     }
 
     /// <summary>
@@ -789,6 +835,19 @@ namespace BoSSS.Foundation.Quadrature {
         //    return this;
         //}
 
+        /// <summary>
+        /// Restricts the <see cref="QuadratureScheme{TQuadRule, TDomain}.Domain"/> to elements which are included in <paramref name="mask"/>
+        /// </summary>
+        public CellQuadratureScheme Restrict(CellMask mask) {
+            if(mask.MaskType == MaskType.Logical)
+                mask = mask.ToGeometicalMask();
+            var restDomain = this.Domain.Intersect(mask);
+            var ret = new CellQuadratureScheme(this.IntegrationMetric, this.m_UseDefaultFactories, restDomain);
+            foreach(var kkk in this.FactoryChain) {
+                this.AddFactoryDomainPair(kkk.RuleFactory, kkk.Domain);
+            }
+            return ret;
+        }
 
     }
 
@@ -896,6 +955,20 @@ namespace BoSSS.Foundation.Quadrature {
         /// </param>
         protected override IQuadRuleFactory<QuadRule> GetDefaultRuleFactory(IGridData gridData, RefElement Kref) {
             return new StandardQuadRuleFactory(Kref);
+        }
+
+        /// <summary>
+        /// Restricts the <see cref="QuadratureScheme{TQuadRule, TDomain}.Domain"/> to elements which are included in <paramref name="mask"/>
+        /// </summary>
+        public EdgeQuadratureScheme Restrict(EdgeMask mask) {
+            if(mask.MaskType == MaskType.Logical)
+                mask = mask.ToGeometicalMask();
+            var restDomain = this.Domain.Intersect(mask);
+            var ret = new EdgeQuadratureScheme(this.IntegrationMetric, this.m_UseDefaultFactories, restDomain);
+            foreach(var kkk in this.FactoryChain) {
+                this.AddFactoryDomainPair(kkk.RuleFactory, kkk.Domain);
+            }
+            return ret;
         }
     }
 

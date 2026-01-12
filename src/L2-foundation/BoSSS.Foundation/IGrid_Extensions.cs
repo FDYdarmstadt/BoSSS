@@ -450,13 +450,13 @@ namespace BoSSS.Foundation.Grid {
 
                 g.InvalidateGridData();
 
-                int _i0(int rnk) {
-                    return (rnk * J) / MpiSz;
+                long _i0(int rnk) {
+                    return (rnk * JG) / MpiSz;
                 }
-                int _iE(int rnk) {
-                    return ((rnk + 1) * J) / MpiSz;
+                long _iE(int rnk) {
+                    return ((rnk + 1) * JG) / MpiSz;
                 }
-                int FindRank(int j) {
+                int FindRank(long j) {
                     for (int r = 0; r < MpiSz; r++) {
                         if (_i0(r) <= j && j < _iE(r))
                             return r;
@@ -469,7 +469,7 @@ namespace BoSSS.Foundation.Grid {
                 int[] newPart = new int[J];
                 long j0G = g.CellPartitioning.i0;
                 for (int j = 0; j < J; j++) {
-                    newPart[j] = FindRank(j);
+                    newPart[j] = FindRank(j + j0G);
                 }
 
                 g.RedistributeGrid(newPart);

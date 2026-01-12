@@ -120,8 +120,8 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         /// <param name="LevSetIdx"></param>
         /// <returns>
-        /// true: positive sign
-        /// false: negative sign
+        /// - true: positive sign
+        /// - false: negative sign or zero
         /// </returns>
         public bool GetSign(int LevSetIdx) {
             if (LevSetIdx < 0 || LevSetIdx >= 4)
@@ -134,8 +134,8 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         /// <param name="LevSetIdx"></param>
         /// <param name="sign">
-        /// true: positive sign
-        /// false: negative sign
+        /// - true: positive sign
+        /// - false: negative sign or zero
         /// </param>
         public void SetSign(int LevSetIdx, bool sign) {
             if (LevSetIdx < 0 || LevSetIdx >= 4)
@@ -146,6 +146,13 @@ namespace BoSSS.Foundation.XDG {
             mask = sign ? mask : 0;
 
             val = (val & NotMask) | mask;
+        }
+
+        /// <summary>
+        /// manipulates the sign of one level set;
+        /// </summary>
+        public void SetSign(int LevSetIdx, double sign) {
+            SetSign(LevSetIdx, sign >= 0);
         }
 
         /// <summary>

@@ -1895,8 +1895,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.RefineNavierSlipBoundary = false;
             //C.BaseRefinementLevel  1;
 
-            C.InitSignedDistance = false;
-
             #endregion
 
 
@@ -2196,7 +2194,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 Func<double[], double, double> PhiFunc = ((X, t) => zi(t) - X[1]);
 
                 C.InitialValues_Evaluators.Add("Phi", X => PhiFunc(X, 0.0));
-                C.Phi = PhiFunc;
+                C.AddExactSolution("Phi", PhiFunc);
 
             }
 
@@ -2290,17 +2288,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     PhiFunc = ((X, t) => (X[0].Pow2() + X[1].Pow2()).Sqrt() - zi(t));
 
                 C.InitialValues_Evaluators.Add("Phi", X => PhiFunc(X, 0.0));
-                C.Phi = PhiFunc;
+                C.AddExactSolution("Phi", PhiFunc);
 
             }
-
-
-            //C.InitialValues_Evaluators.Add("VelocityY#B", X => 0.0);
-            //C.InitialValues_Evaluators.Add("Pressure#A", X => P0);
-
-
-            //C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, null);
-
 
             #endregion
 
@@ -2373,7 +2363,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AMR_startUpSweeps = 3;
 
             //C.ReInitPeriod = 10;
-            C.InitSignedDistance = false;
 
             #endregion
 
@@ -3433,7 +3422,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             Func<double[], double, double> PhiFunc = ((X, t) => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - (2.0 * beta * Math.Sqrt(alpha * (t_0 + t))));
 
             C.InitialValues_Evaluators.Add("Phi", X => PhiFunc(X, 0.0));
-            C.Phi = PhiFunc;
+            C.AddExactSolution("Phi", PhiFunc);
 
 
             #endregion

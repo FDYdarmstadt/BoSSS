@@ -136,7 +136,7 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Gets the partitioning of cells over the MPI processes;
+        /// Gets the partitioning of logical cells over the MPI processes;
         /// </summary>
         Partitioning CellPartitioning {
             get;
@@ -305,7 +305,7 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Jacobian of transformation from reference to physical space, \f$ (\nabla T_j) \f$.
+        /// Jacobian of transformation from reference to physical space, $(\nabla T_j)$.
         /// </summary>
         Caching.CacheLogicImplBy_CNs Jacobian {
             get;
@@ -313,21 +313,21 @@ namespace BoSSS.Foundation.Grid {
 
         /// <summary>
         /// Adjungate of the Jacobian of the reference-to-physical coordinate transformation, 
-        /// \f$ \mathrm{Adj}( \nabla T_j ) =  \determinant{ \nabla T_j } ( \nabla T_j )^{-1} \f$.
+        /// $\mathrm{Adj}( \nabla T_j ) =  \mathrm{Adj}( \nabla T_j ) ( \nabla T_j )^{-1}$.
         /// </summary>
         Caching.CacheLogicImplBy_CNs AdjungateJacobian {
             get;
         }
 
         /// <summary>
-        /// Inverse of the Jacobian of the reference-to-physical coordinate transformation, \f$ ( \nabla T_j )^{-1} \f$.
+        /// Inverse of the Jacobian of the reference-to-physical coordinate transformation, $( \nabla T_j )^{-1}$.
         /// </summary>
         Caching.CacheLogicImplBy_CNs InverseJacobian {
             get;
         }
 
         /// <summary>
-        /// Determinant of the Jacobian of the reference-to-physical coordinate transformation, \f$ \determinant{ \nabla T_j } \f$.
+        /// Determinant of the Jacobian of the reference-to-physical coordinate transformation, $\mathrm{Adj}( \nabla T_j )$.
         /// </summary>
         Caching.CacheLogicImplBy_CNs JacobianDeterminat {
             get;
@@ -587,9 +587,9 @@ namespace BoSSS.Foundation.Grid {
         /// Which edges (see <see cref="ILogicalEdgeData.CellIndices"/>) bound to which cells? 
         /// - 1st index: local cell index <em>j</em>, only local updated
         /// - 2nd index: collection, order is arbitrary; 
-        /// - content <em>e</em>: If <em>e</em> is positive, then cell <em>j</em> is the first
-        ///   (IN) cell of edge <em>e - 1</em>. Otherwise, if <em>e</em> is
-        ///   negative, then cell <em>j</em> is the second (OUT) cell of edge <em>-e - 1</em>.
+        /// - content: <em>e</em>: edge index, plus an information whether <em>j</em> is actually the IN- or the OUT-cell with respect to edge <em>e</em>.
+        ///    - If <em>e</em> is positive, then cell <em>j</em> is the first (IN) cell of edge <em>e - 1</em>. 
+        ///    - Otherwise, if <em>e</em> is negative, then cell <em>j</em> is the second (OUT) cell of edge <em>-e - 1</em>.
         /// </summary>
         /// <remarks>
         /// Note: the second index does NOT correlate with the face index
@@ -658,7 +658,7 @@ namespace BoSSS.Foundation.Grid {
 
 
         /// <summary>
-        /// For each vertex, the local indices of the adjacent cells;
+        /// For each vertex, the local indices of the adjacent geometrical cells;
         ///  - 1st index: local vertex index
         ///  - 2nd index: collection
         /// </summary>
@@ -688,9 +688,9 @@ namespace BoSSS.Foundation.Grid {
 
         /// <summary>
         /// Square-root of the Gramian determinant for each transformation in <see cref="Edge2CellTrafos"/>, i.e.
-        /// if \f$ \myMatrix{M} \f$ 
+        /// if $\boldsymbol{M}$ 
         /// is the matrix of the transformation, this number is 
-        /// \f$ \sqrt{ \operatorname{det} ( \myMatrix{M}^T \cdot \myMatrix{M} ) } \f$.
+        /// $\sqrt{ \operatorname{det} ( \boldsymbol{M}^T \cdot \boldsymbol{M} ) }$.
         /// </summary>
         MultidimensionalArray Edge2CellTrafos_SqrtGramian {
             get;
@@ -795,35 +795,35 @@ namespace BoSSS.Foundation.Grid {
         /// </summary>
         /// <remarks>
         /// Let be 
-        /// \f[ 
+        /// \[ 
         ///   \mathbb{R}^{D-1} 
-        ///     \ni \vec{\xi} 
+        ///     \ni \underline{\xi} 
         ///       \mapsto
-        ///         \gamma(\vec{\xi}) \in
+        ///         \gamma(\underline{\xi}) \in
         ///           \mathbb{R}^{D-1}
-        /// \f]
+        /// \]
         /// the mapping from the edge coordinate system to the physical coordinate system.
-        /// Then the integral of \f$  f \f$  over the edge 
-        /// \f$ \gamma(K_\textrm{ref}) \f$ 
+        /// Then the integral of $f$  over the edge 
+        /// $\gamma(K_\textrm{ref})$ 
         /// is given as 
-        /// \f[ 
-        ///   \int_{\vec{x} \in \gamma(K_\textrm{ref})} f(\vec{x}) \ \textrm{dS}
+        /// \[ 
+        ///   \int_{\underline{x} \in \gamma(K_\textrm{ref})} f(\underline{x}) \ \textrm{dS}
         ///   =
-        ///   \int_{\xi \in K_\textrm{ref}} f(\gamma(\xi)) g(\vec{\xi}) \ \textrm{d} \vec{\xi}
-        /// \f]
+        ///   \int_{\xi \in K_\textrm{ref}} f(\gamma(\xi)) g(\underline{\xi}) \ \textrm{d} \underline{\xi}
+        /// \]
         /// with the square-root of the Gram determinant
-        /// \f[ 
-        ///   g(\vec{xi}) = \sqrt{ 
+        /// \[ 
+        ///   g(\underline{xi}) = \sqrt{ 
         ///      \textrm{det} ( (\partial \gamma)^T \cdot (\partial \gamma) )  
         ///   }.
-        /// \f]
+        /// \]
         /// If the transformation 
-        /// \f$ \gamma \f$
+        /// $\gamma$
         /// of the edge to the global coordinate system 
         /// is affine-linear, the Jacobian 
-        /// \f$ \partial \gamma \f$
+        /// $\partial \gamma$
         /// is constant and 
-        /// \f$ g \f$
+        /// $g$
         /// can be precomputed.
         /// (see Analysis 2, Königsberger, Springer-Verlag 2000, pp. 343)
         /// </remarks>

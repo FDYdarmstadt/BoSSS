@@ -241,6 +241,20 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
+        /// like the ctor.
+        /// </summary>
+        protected override ExecutionMask CreateInstance(int[] _Sequence, MaskType __MaskType) {
+            return new CellMask(base.GridData, _Sequence, __MaskType);
+        }
+
+        /// <summary>
+        /// splits this mask into <paramref name="NoOfParts"/> roughly equal parts
+        /// </summary>
+        public new CellMask[] SplitUp(int NoOfParts) {
+            return base.SplitUp(NoOfParts).Select(part => (CellMask)part).ToArray();
+        }
+
+        /// <summary>
         /// see <see cref="ExecutionMask.GetUpperIndexBound"/>
         /// </summary>
         protected override int GetUpperIndexBound(IGridData gridData) {
@@ -442,24 +456,56 @@ namespace BoSSS.Foundation.Grid {
         /// Returns all connected Edges
         /// </summary>
         public EdgeMask AllEdges() {
-            int[][] C2E = this.GridData.iLogicalCells.Cells2Edges;
+            if(base.MaskType == MaskType.Logical) {
+                int[][] C2E = this.GridData.iLogicalCells.Cells2Edges;
+                int[][] Edge_Log2Geom = this.GridData.iLogicalEdges.EdgeToParts;
 
-            HashSet<int> edges = new HashSet<int>();
+                HashSet<int> edgesPlusOne = new HashSet<int>();
 
-            foreach (int jCell in this.ItemEnum) {
-                int cell;
-                if(base.MaskType == MaskType.Geometrical && this.GridData.iGeomCells.GeomCell2LogicalCell != null) {
-                    cell = this.GridData.iGeomCells.GeomCell2LogicalCell[jCell];
-                } else {
-                    cell = jCell;
+                foreach(int jCell in this.ItemEnum) {
+                    //int cell;
+                    //if(base.MaskType == MaskType.Geometrical && this.GridData.iGeomCells.GeomCell2LogicalCell != null) {
+                    //    cell = this.GridData.iGeomCells.GeomCell2LogicalCell[jCell];
+                    //} else {
+                    //    cell = jCell;
+                    //}
+                    int[] Edges = C2E[jCell];
+
+                    // must return a logical mask => go with logical edge indices
+                    foreach(int e in Edges) {
+                        edgesPlusOne.Add(Math.Abs(e));
+                    }
+
                 }
-                int[] Edges = C2E[cell];
-                foreach(int e in Edges) {
-                    edges.Add(Math.Abs(e));
+                int[] sequence = edgesPlusOne.ToArray(); // note: all edge indices in this array are shifted by +1, because `EdgeToParts` is!
+                                                         //                                          but this is exactly what is required as a `sequence` for the `EdgeMask`ctor
+                return new EdgeMask(this.GridData, sequence, base.MaskType);
+            } else if(base.MaskType == MaskType.Geometrical) {
+                //
+                // for geometrical cells, we don't have the cell-to-edge mapping, therefore we must loop over all cells and use bit-masks.
+                // very likely, less efficient if this mask only contains a small number of cells.
+                // (However, if we would go like: geometrical cell -> logical cell -> logical edge -> geometrical edge,
+                //  this might result in edges which are not connected to any cell.)
+
+
+                int[,] E2C = this.GridData.iGeomEdges.CellIndices;
+                var bCellMask = this.GetBitMask(); 
+                int NoOfEdges = this.GridData.iGeomEdges.Count;
+                var bEdgeMask = new BitArray(NoOfEdges);
+
+                for(int iEdge = 0; iEdge < NoOfEdges; iEdge++) {
+                    if(bCellMask[E2C[iEdge, 0]])
+                        bEdgeMask[iEdge] = true;
+
+                    if(E2C[iEdge, 1] >= 0 && bCellMask[E2C[iEdge, 1]])
+                        bEdgeMask[iEdge] = true;
                 }
+
+                return new EdgeMask(this.GridData, bEdgeMask, MaskType.Geometrical);
+
+            } else {
+                throw new NotImplementedException($"unknown mask type: {base.MaskType}");
             }
-            int[] sequence = edges.ToArray();
-            return new EdgeMask(this.GridData, sequence, base.MaskType);
         }
 
         /// <summary>

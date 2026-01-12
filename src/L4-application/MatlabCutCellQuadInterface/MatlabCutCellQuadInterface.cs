@@ -60,9 +60,9 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         static void Main(string[] args) {
             
             Console.WriteLine("External binder for Matlab");
-            Console.WriteLine("Running an example 2d circle test case");
-            MatlabCutCellQuadInterfaceTests.circle2D();
-        }
+			Console.WriteLine("Running an example 2d ellipse test case");
+			MatlabCutCellQuadInterfaceTests.ellipse2D();
+		}
 
 
         /// <summary>
@@ -113,39 +113,6 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             }
             grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
         }
-
-        /// <summary>
-        /// Combination of <see cref="Submit2DLevelSet(_2D)">  + <see cref="ProjectLevelSet(int)" >
-        /// Supports only 1 level set
-        /// </summary>
-        /// <param name="degree">Degree of level set</param>
-        /// <param name="inLevelSet"></param>
-        public void SetLevelSet(int degree, _2D inLevelSet) {
-
-            Basis b = new Basis(grd, degree);
-            var levSet0 = new LevelSet(b, "LevelSetField0");
-            levSet0.ProjectField(inLevelSet);
-
-            lsTrk = new LevelSetTracker(grd.GridData, CutCellQuadratureMethod.Classic, 1, new string[] { "A", "B" }, levSet0);
-            lsTrk.UpdateTracker(0.0);
-        }
-
-        /// <summary>
-        /// Combination of <see cref="Submit3DLevelSet(_3D)">  + <see cref="ProjectLevelSet(int)" >
-        /// Supports only 1 level set
-        /// </summary>
-        /// <param name="degree">Degree of level set</param>
-        /// <param name="inLevelSet"></param>
-        public void SetLevelSet(int degree, _3D inLevelSet) {
-
-            Basis b = new Basis(grd, degree);
-            var levSet0 = new LevelSet(b, "LevelSetField0");
-            levSet0.ProjectField(inLevelSet);
-
-            lsTrk = new LevelSetTracker(grd.GridData, CutCellQuadratureMethod.Classic, 1, new string[] { "A", "B" }, levSet0);
-            lsTrk.UpdateTracker(0.0);
-        }
-
 
         /// <summary>
         /// When multiple level sets are supplied, this method returns a delegate that gives the maximum value from the list of level sets.
@@ -234,12 +201,21 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         }
 
         /// <summary>
+        /// Project the submitted level sets with the classic HMF quadrature rule
+        /// </summary>
+        /// <param name="degree">degree of the level set</param>
+        public void ProjectLevelSetWithClassic(int degree) {
+            Console.WriteLine("Using classic HMF quadrature rule");
+            ProjectLevelSet(degree, CutCellQuadratureMethod.Classic);
+        }
+
+        /// <summary>
         /// Project the submitted level sets with the GaussAndStokes HMF quadrature rule
         /// </summary>
         /// <param name="degree">degree of the level set</param>
         public void ProjectLevelSetWithGaussAndStokes(int degree) {
             Console.WriteLine("Using GaussAndStokes HMF quadrature rule");
-            ProjectLevelSet(degree, XQuadFactoryHelperBase.MomentFittingVariants.OneStepGaussAndStokes);
+            ProjectLevelSet(degree, CutCellQuadratureMethod.OneStepGaussAndStokes);
         }
 
         /// <summary>
@@ -248,7 +224,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         /// <param name="degree">degree of the level set</param>
         public void ProjectLevelWithTwoStepStokesAndGauss(int degree) {
             Console.WriteLine("Using GaussAndStokes HMF quadrature rule");
-            ProjectLevelSet(degree, XQuadFactoryHelperBase.MomentFittingVariants.TwoStepStokesAndGauss);
+            ProjectLevelSet(degree, CutCellQuadratureMethod.TwoStepStokesAndGauss);
         }
 
         /// <summary>
@@ -257,14 +233,14 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         /// <param name="degree">degree of the level set</param>
         public void ProjectLevelSet(int degree) {
             Console.WriteLine("Using classic HMF quadrature rule");
-            ProjectLevelSet(degree, XQuadFactoryHelperBase.MomentFittingVariants.Classic);
+            ProjectLevelSet(degree, CutCellQuadratureMethod.Classic);
         }
 
         /// <summary>
         /// Project the submitted level sets
         /// </summary>
         /// <param name="degree">degree of the level set</param>
-        public void ProjectLevelSet(int degree, XQuadFactoryHelperBase.MomentFittingVariants cellQuadratureMethod, string CalculateMethod = "Max") {
+        public void ProjectLevelSet(int degree, CutCellQuadratureMethod cellQuadratureMethod) {
             Basis b = new Basis(grd, degree);
             var levSet0 = new LevelSet(b, "LevelSetField0");
 
@@ -281,25 +257,9 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
                 throw new Exception("Only 2D and 3D meshes are supported.");
             }
 
-
-            lsTrk = new LevelSetTracker(grd.GridData, CutCellQuadratureMethod.Classic, 1, new string[] { "A", "B" }, levSet0);
+            lsTrk = new LevelSetTracker(grd.GridData, cellQuadratureMethod, 1, new string[] { "A", "B" }, levSet0);
             lsTrk.UpdateTracker(0.0);
             Console.WriteLine($"Successful projection of level set with {cellQuadratureMethod.ToString()}");
-        }
-
-        /// <summary>
-        /// Combines SubmitLevelSe
-        /// </summary>
-        /// <param name="degree"></param>
-        /// <param name="inLevelSets"></param>
-        public void SetLevelSets(int degree, _3D[] inLevelSets) {
-            _3D inLevelSet = ReturnMaxDelegate(inLevelSets);
-            Basis b = new Basis(grd, degree);
-            var levSet0 = new LevelSet(b, "LevelSetField0");
-            levSet0.ProjectField(inLevelSet);
-
-            lsTrk = new LevelSetTracker(grd.GridData, CutCellQuadratureMethod.Classic, 1, new string[] { "A", "B" }, levSet0);
-            lsTrk.UpdateTracker(0.0);
         }
 
         /// <summary>
@@ -357,10 +317,8 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         /// <param name="deg"></param>
         /// <param name="levelSetIndex">Integer value for the level set</param>
         public void CompileLevelsetQuadRules(int deg, int levelSetIndex = 0) {
-            var spcA = lsTrk.GetSpeciesId("A");
-
-            var metrics = lsTrk.GetXDGSpaceMetrics(new SpeciesId[] { spcA }, deg);
-            var scheme = metrics.XQuadSchemeHelper.GetLevelSetquadScheme(levelSetIndex, spcA, lsTrk.Regions.GetCutCellMask4LevSet(levelSetIndex));
+            var metrics = lsTrk.GetXDGSpaceMetrics();
+            var scheme = metrics.XQuadSchemeHelper.GetLevelSetQuadScheme(levelSetIndex, lsTrk.Regions.GetCutCellMask4LevSet(levelSetIndex));
             var rules = scheme.Compile(grd.GridData, deg);
 
             rulesInterface = rules;
@@ -397,8 +355,10 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
                     //qr.OutputQuadratureRuleAsVtpXML("NodesJ" + jCell + ".vtp");
                     //var globTr = qr.CloneAs();
                     var globTr = qr.Nodes.TransformLocal2Global(grd.GridData, jCell);
+
+#if DEBUG
                     globTr.OutputQuadratureRuleAsVtpXML(qr.Weights, "NodestransformedJ" + jCell + ".vtp");
-                    
+#endif                    
 
                     double metric_jCell = JacobiDet[jCell];
                     var WeightsGlobal_jCell = qr.Weights.CloneAs();
@@ -406,7 +366,6 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
 
                     int SpatialDim = grd.SpatialDimension;
                     ret = MultidimensionalArray.Create(qr.NoOfNodes, SpatialDim + 1);
-
 
                     for (int n = 0; n < qr.NoOfNodes; n++) {
                         for (int d=0; d < qr.SpatialDim; d++) {
@@ -472,12 +431,10 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         /// <exception cref="NotSupportedException"></exception>
         public void WriteSrfQuadRules(int deg) {
 
-            var spcA = lsTrk.GetSpeciesId("A");
-
             int iLevSet = 0;
 
-            var metrics = lsTrk.GetXDGSpaceMetrics(new SpeciesId[] { spcA }, deg);
-            var scheme = metrics.XQuadSchemeHelper.GetLevelSetquadScheme(iLevSet, spcA, lsTrk.Regions.GetCutCellMask4LevSet(iLevSet));
+            var metrics = lsTrk.GetXDGSpaceMetrics();
+            var scheme = metrics.XQuadSchemeHelper.GetLevelSetQuadScheme(iLevSet, lsTrk.Regions.GetCutCellMask4LevSet(iLevSet));
             var rule = scheme.Compile(grd.GridData, deg);
 
             var JacobiDet = grd.GridData.iGeomCells.JacobiDet;

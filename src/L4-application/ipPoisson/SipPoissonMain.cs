@@ -136,6 +136,17 @@ namespace BoSSS.Application.SipPoisson {
             Console.WriteLine("Available multi-grid levels: " + this.MGColoring.Count);
         }
 
+        /*
+#if !DEBUG
+        static void MyHandler(object sender, UnhandledExceptionEventArgs args) {
+            Exception e = (Exception)args.ExceptionObject;
+            Console.WriteLine("MyHandler caught : " + e.Message);
+            Console.WriteLine("Runtime terminating: {0}", args.IsTerminating);
+            System.Environment.Exit(-1234);
+        }
+#endif
+*/
+
         /// <summary>
         /// Ensures availability of <see cref="BoSSS.Solution.Statistic.ForeignGridValue"/>
         /// </summary>
@@ -226,7 +237,6 @@ namespace BoSSS.Application.SipPoisson {
                 //LastMatrix = this.LapaceIp.GetMatrix(T.Mapping, MgConfig: this.MgConfig);
                 //Console.WriteLine("Remember to re-activate solver !!!!!!!");
                 this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, verbose: true, queryHandler: base.QueryHandler);
-
 
 
                 if(base.Control.ExactSolution_provided) {

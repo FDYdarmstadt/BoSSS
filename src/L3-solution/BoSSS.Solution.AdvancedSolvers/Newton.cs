@@ -34,6 +34,7 @@ using BoSSS.Solution.AdvancedSolvers.Testing;
 using System.Collections.Concurrent;
 using BoSSS.Foundation.Grid;
 using System.Collections;
+using NUnit.Framework.Constraints;
 
 
 namespace BoSSS.Solution.AdvancedSolvers {
@@ -627,9 +628,60 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        void CheckLinearizationStep(int itc, double[] _step, double[] curSol, CoordinateVector SolutionVec) {
+            var step = _step.CloneAs();
+            step.Normalize();
+
+
+            double[] bkup_SolutionVec = SolutionVec.ToArray();
+            double eps = GenericBlas.MachineEps.Sqrt();
+
+            // F0 = OpEval(curSol);
+            SolutionVec.Clear();
+            this.CurrentLin.TransformSolFrom(SolutionVec, curSol);
+            double[] F0 = new double[step.Length];
+            EvaluateOperator(1.0, SolutionVec.Fields, F0, 1.0);
+
+            // F0 = OpEval(curSol + step*eps);
+            var SolutionVec1 = SolutionVec.ToArray(); // == curSol
+            SolutionVec.Clear();
+            this.CurrentLin.TransformSolFrom(SolutionVec, step); // == step
+            SolutionVec.Scale(eps); // = step*eps
+            SolutionVec.AccV(1.0, SolutionVec1); // = curSol + step*eps
+            double[] F1 = new double[step.Length];
+            EvaluateOperator(1.0, SolutionVec.Fields, F1, 1.0);
+
+            // (1/eps)*(F1 - F0)
+            double[] Mxstep_aggSpace = new double[step.Length];
+            Mxstep_aggSpace.SetV(F1);
+            Mxstep_aggSpace.AccV(-1.0, F0);
+            Mxstep_aggSpace.ScaleV(1.0 / eps);
+
+            // 
+            double[] Mxstep_aggSpace_2 = new double[step.Length];
+            this.CurrentLin.OperatorMatrix.SpMV(1.0, step, 0.0, Mxstep_aggSpace_2);
+
+            //
+            var l2Dist = Mxstep_aggSpace.L2Distance(Mxstep_aggSpace_2);
+            var l2Dist_rel = l2Dist / Math.Max(Mxstep_aggSpace.L2Norm(), Mxstep_aggSpace_2.L2Norm());
+            Console.WriteLine($" $$$$$ dist fin diff/matrix: {l2Dist_rel:0.##e-00}   ( {l2Dist:0.##e-00} / max{{{Mxstep_aggSpace.L2Norm():0.##e-00}, {Mxstep_aggSpace_2.L2Norm():0.##e-00}}})");
+
+
+            var curSol_dg = this.CurrentLin.ProlongateSolToDg(curSol, "solution");
+            var findiff_dg = this.CurrentLin.ProlongateSolToDg(Mxstep_aggSpace, "findiff");
+            var jacdir = this.CurrentLin.ProlongateSolToDg(Mxstep_aggSpace_2, "JacDir");
+            var diff = this.CurrentLin.ProlongateSolToDg(Mxstep_aggSpace.Minus(Mxstep_aggSpace_2), "Difference");
+
+            Tecplot.Tecplot.PlotFields(ArrayTools.Cat(curSol_dg, findiff_dg, jacdir, diff), "JacobiCheck-" + itc, 0.0, 3);
+
+            // restore inital state of solution vector
+            SolutionVec.SetV(bkup_SolutionVec);
+        }
+
+        public static Action<DGField[]> DiagnosticFunction;
         private void NewtonStep(CoordinateVector SolutionVec, int itc, double[] CurSol, double[] CurRes, double HomotopyValue, ref double norm_CurRes, ref double TrustRegionDelta) {
             using (var tr = new FuncTrace()) {
-                tr.InfoToConsole = true;
+                tr.InfoToConsole = false;
                 // computation of Newton step
                 // --------------------------
 
@@ -683,214 +735,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             };
                         }
 
-
-                        //Writing to text files
-                        //{
-                        //    Console.WriteLine("Writing to text file");
-                        //    CurrentLin.OperatorMatrix.SaveToTextFileSparse("CurrentLinOpMtx");
-                        //    CurrentLin.MassMatrix.SaveToTextFileSparse("CurrentLinMassMtx");
-                        //    CurRes.SaveToTextFile("CurRes");
-                        //}
-
-                        //var ana = new OpAnalysisBase(CurrentLin.OperatorMatrix, CurRes, (UnsetteledCoordinateMapping)CurrentLin.DgMapping, CurrentLin.Config, CurrentLin.AbstractOperator);
-                        //Arnoldi iteration
-                        //{
-                        //    var Mtx = CurrentLin.OperatorMatrix;
-                        //    int L = Mtx.RowPartitioning.LocalLength;
-
-                        //    var FullSel = new SubBlockSelector(CurrentLin.Mapping);
-                        //    var VarGroup = CurrentLin.Mapping.ProblemMapping.BasisS.Count.ForLoop(i => i);
-                        //    FullSel.SetVariableSelector(VarGroup);
-                        //    var mask = new BlockMask(FullSel);
-                        //    var Part = mask.GetSubBlockMatrix(Mtx, Mtx.MPI_Comm);
-
-                        //    //Console.WriteLine("Computing minimal Eigenvalue and Eigenvector");
-                        //    var minEig = Part.MinimalEigen();
-
-                        //    double[] minVret = new double[L];
-                        //    mask.AccSubVec(minEig.V, minVret);
-
-                        //    //Console.WriteLine("done: " + minEig.lambdaMin);
-                        //    var minEigDG = CurrentLin.ProlongateSolToDg(minEig.V, "minSpurious_");
-
-                        //    //Console.WriteLine("Computing maximal Eigenvalue and Eigenvector");
-                        //    var maxEig = Part.MaximalEigen();
-
-                        //    //double[] maxVret = new double[L];
-                        //    //mask.AccSubVec(maxEig.V, maxVret);
-
-                        //    //Console.WriteLine("done: " + maxEig.lambdaMax);
-                        //    //var maxEigDG = CurrentLin.ProlongateSolToDg(maxEig.V, "maxSpurious_");
-
-                        //    double EigRatio = maxEig.lambdaMax / minEig.lambdaMin;
-                        //    Console.WriteLine($"Eigenvalue ratio: {EigRatio} (lambdaMax {maxEig.lambdaMax} / lambdaMin {minEig.lambdaMin})");
-
-                        //    var dgList = new List<DGField>();
-                        //    dgList.AddRange(minEigDG);
-                        //    //dgList.AddRange(maxEigDG);
-                        //    dgList.Add((this.ProblemMapping.BasisS[0] as XDGBasis).Tracker.LevelSets[0] as LevelSet);
-
-                        //    Tecplot.Tecplot.PlotFields(dgList, "Arnoldi_Eigenvectors-" + itc, minEig.lambdaMin, 3);
-                        //    //Tecplot.Tecplot.PlotFields(Suprious, $"SpuriousModes-{itc}", minEig.lambdaMin, 2);
-                        //}
-
-                        //MATLAB
-                        //{
-                        //    var Mtx = CurrentLin.OperatorMatrix;
-
-                        //    MultidimensionalArray outputD = MultidimensionalArray.Create(1, 1);
-                        //    MultidimensionalArray outputV = MultidimensionalArray.Create((int)Mtx.NoOfRows, 1);
-
-                        //    int[] DepVars = CurrentLin.Mapping.AggBasis.Count().ForLoop(i => i);
-                        //    double[] DepVars_subvec = CurrentLin.Mapping.GetSubvectorIndices(DepVars).Select(i => i + 1.0).ToArray();
-
-                        //    Console.WriteLine("Computing minimal Eigenvalue and Eigenvector. Calling MATLAB ...");
-                        //    using(BatchmodeConnector bmc = new BatchmodeConnector()) {
-
-                        //        bmc.PutSparseMatrix(Mtx, "FullMatrix");
-                        //        bmc.PutVector(DepVars_subvec, "DepVars_subvec");
-                        //        bmc.Cmd("[V,D] = eigs(FullMatrix(DepVars_subvec,DepVars_subvec),1,'sm');");
-                        //        bmc.GetMatrix(outputV, "V");
-                        //        bmc.GetMatrix(outputD, "D");
-                        //        bmc.Execute(false);
-                        //    }
-
-                        //    Console.WriteLine("done: " + outputD[0, 0]);
-                        //    var Suprious = CurrentLin.ProlongateSolToDg(outputV.ExtractSubArrayShallow(-1, 0).To1DArray(), "Spurious_");
-                        //    Tecplot.Tecplot.PlotFields(Suprious, $"SpuriousModes-{itc}", outputD[0, 0], 2);
-
-                        //    Console.WriteLine("Computing condition number. Calling MATLAB ...");
-                        //    double condest = Mtx.condest();
-                        //    Console.WriteLine("done: " + condest);
-                        //}
-
-                        //dgREs = CurrentLin.ProlongateRhsToDg(CurRes, "Rhs_");
-                        //Console.WriteLine("RHS in ref cell: " + dgREs[2].GetMeanValue(CurrentLin.ReferenceCell_local));
+                        
+                        if(DiagnosticFunction != null) {
+                            DiagnosticFunction(this.CurrentLin.ProlongateRhsToDg(CurRes, "RHS"));
+                        }
+                        
                         solver.Solve(step, CurRes);
 
-                        //this.CurrentLin.OperatorMatrix.Solve_Direct(step, CurRes);
 
-
-                        //{
-                        //    var CurSolDG = base.CurrentLin.ProlongateSolToDg(CurSol, "Sol");
-                        //    var CurStpDG = base.CurrentLin.ProlongateSolToDg(step, "Stp");
-                        //    var CurStpDGtot = CurStpDG[0].CloneAs(); CurStpDGtot.Identification = "StpTot";
-                        //    CurStpDGtot.Clear();
-                        //    foreach(var f in CurStpDG) {
-                        //        CurStpDGtot.ProjectPow(1.0, f, 2);
-                        //    }
-
-                        //    var CurResDG = base.CurrentLin.ProlongateRhsToDg(CurRes, "Res");
-                        //    var CurResDGtot = CurResDG[0].CloneAs(); CurResDGtot.Identification = "ResTot";
-                        //    CurResDGtot.Clear();
-                        //    foreach(var f in CurResDG) {
-                        //        CurResDGtot.ProjectPow(1.0, f, 2);
-                        //    }
-
-
-                        //    //var MinEig = base.CurrentLin.OperatorMatrix.MinimalEigen(tol: 1e-9);
-                        //    //var MinEigDG = base.CurrentLin.ProlongateSolToDg(MinEig.V, "Eig");
-                        //    //Console.WriteLine("Minimal Eigenvalue: " + MinEig.lambdaMin);
-
-
-                        //    var dgList = new List<DGField>();
-                        //    dgList.AddRange(CurSolDG);
-                        //    dgList.AddRange(CurStpDG);
-                        //    dgList.Add(CurStpDGtot);
-                        //    dgList.AddRange(CurResDG);
-                        //    dgList.Add(CurResDGtot);
-                        //    //dgList.AddRange(MinEigDG);
-                        //    dgList.Add((this.ProblemMapping.BasisS[0] as XDGBasis).Tracker.LevelSets[0] as LevelSet);
-
-                        //    //foreach(var f in CurSolDG.Cat(CurStpDG, MinEigDG)) {
-                        //    //    f.GetExtremalValues(out double fMin, out double fMax);
-                        //    //    Console.WriteLine($"  .....  {f.Identification}:     \tmin: {fMin:0.###E-00}\tmax: {fMax:0.###E-00}");
-                        //    //}
-
-                        //    Tecplot.Tecplot.PlotFields(dgList, "Newton-" + itc, 0.0, 3);
-                        //}
-
+                        if (DiagnosticFunction != null) {
+                            DiagnosticFunction(this.CurrentLin.ProlongateSolToDg(step, "sol"));
+                        }
                         step.ScaleV(-1);
 
-                        //Console.WriteLine($"NewtonStep: linear solver converged? {solver.Converged}");
-                        tr.Info($"NewtonStep: linear solver converged? {solver.Converged}");
-
-                        //if(!solver.Converged) {
-                        //    // check for high residual in single cells
-                        //    var checkCurStpDG = base.CurrentLin.ProlongateSolToDg(step, "checkStp");
-                        //    var checkCurStpDGtot = checkCurStpDG[0].CloneAs(); checkCurStpDGtot.Identification = "StpTot";
-                        //    checkCurStpDGtot.Clear();
-                        //    foreach(var f in checkCurStpDG) {
-                        //        checkCurStpDGtot.ProjectPow(1.0, f, 2);
-                        //    }
-                        //    var checkCurResDG = base.CurrentLin.ProlongateRhsToDg(CurRes, "checkRes");
-                        //    var checkCurResDGtot = checkCurResDG[0].CloneAs(); checkCurResDGtot.Identification = "ResTot";
-                        //    checkCurResDGtot.Clear();
-                        //    foreach(var f in checkCurResDG) {
-                        //        checkCurResDGtot.ProjectPow(1.0, f, 2);
-                        //    }
-
-                        //    var checkDGList = new List<DGField>();
-                        //    checkDGList.Add(checkCurStpDGtot);
-                        //    checkDGList.Add(checkCurResDGtot);
-
-                        //    var grdDat = checkDGList[0].GridDat;
-                        //    int J = grdDat.iLogicalCells.NoOfLocalUpdatedCells;
-                        //    foreach(var f in checkDGList) {
-                        //        double[] L2NormPerCell = new double[J];
-                        //        BitArray cellBA = new BitArray(J);
-                        //        for(int j = 0; j < J; j++) {
-                        //            cellBA[j] = true;
-                        //            L2NormPerCell[j] = f.L2Norm(new CellMask(grdDat, cellBA));
-                        //            cellBA[j] = false;
-                        //        }
-
-                        //        int maxNormInd = L2NormPerCell.IndexOfMax();
-                        //        cellBA.SetAll(true);
-                        //        cellBA[maxNormInd] = false;
-                        //        double remainderNorm = f.L2Norm(new CellMask(grdDat, cellBA));
-
-                        //        tr.Info($"Field {f.Identification}: max L2-Norm in cell {maxNormInd}. L2-Norm is {L2NormPerCell[maxNormInd]} (remainder norm = {remainderNorm})");
-                        //        tr.Info($"Cell center coordinates of cell {maxNormInd}: ({grdDat.iGeomCells.GetCenter(maxNormInd).ToConcatString("( ", ", ", ")")})");
-
-                        //        //// check the norm per Mode
-                        //        //cellBA.SetAll(false);
-                        //        //cellBA[maxNormInd] = true;
-                        //        //if(f is XDGField xField) {
-                        //        //    foreach(var spc in xField.Basis.Tracker.SpeciesNames) {
-                        //        //        ConventionalDGField spcField = xField.GetSpeciesShadowField(spc);
-                        //        //        for(int p = 0; p <= f.Basis.Degree; p++) {
-                        //        //            double L2err_p = spcField.L2NormPerMode(p, new CellMask(grdDat, cellBA));
-                        //        //            tr.Info($"Field {spcField.Identification}: L2-Norm of DG mode {p} in cell {maxNormInd}: {L2err_p}");
-                        //        //        }
-                        //        //    }
-                        //        //}
-
-                        //        //List<double> troubledCells = new List<double>();
-                        //        //for(int j = 0; j < J; j++) {
-                        //        //    if(L2NormPerCell[j] > thrshld) {
-                        //        //        tr.Info($"Field {f.Identification}: L2-Norm of cell {j} is above threshold factor ({thrshld}): L2-Norm is {L2NormPerCell[j]} (minimal Norm = {minNorm})");
-                        //        //        tr.Info($"Cell center coordinates of cell {j}: ({grdDat.iGeomCells.GetCenter(j).ToConcatString("( ", ", ", ")")})");
-                        //        //        troubledCells.Add(j);
-
-                        //        //        // check the norm per Mode
-                        //        //        cellBA[j] = true;
-                        //        //        if(f is XDGField xField) {
-                        //        //            foreach(var spc in xField.Basis.Tracker.SpeciesNames) {
-                        //        //                ConventionalDGField spcField = xField.GetSpeciesShadowField(spc);
-                        //        //                for(int p = 0; p <= f.Basis.Degree; p++) {
-                        //        //                    double L2err_p = spcField.L2NormPerMode(p, new CellMask(grdDat, cellBA));
-                        //        //                    tr.Info($"Field {spcField.Identification}: L2-Norm of DG mode {p} in cell {j}: {L2err_p}");
-                        //        //                }
-                        //        //            }
-                        //        //        }
-                        //        //        cellBA[j] = false;
-                        //        //    }
-                        //        //}
-                        //        //tr.Info($"Field {f.Identification}: No of troubled cells = {troubledCells.Count}");
-                        //    }
-
-                        //}
+                        if(solver.Converged)
+                            tr.Info($"NewtonStep: linear solver converged? {solver.Converged}");
+                        else
+                            tr.Error($"NewtonStep: linear solver converged? {solver.Converged}");
 
                     }
                 } else {
@@ -907,78 +768,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     OldSolClone = null;
                 }
 
-                /*
-                if(ilPSP.Environment.NumThreads == 1) {
-                    CurSol.SaveToTextFile($"sol{itc}.txt");
-                    CurRes.SaveToTextFile($"res{itc}.txt");
-                    step.SaveToTextFile($"stp{itc}.txt");
-                    CurrentLin.OperatorMatrix.ToMsrMatrix().SaveToFile($"mtx{itc}.bin");
-                    CurrentLin.OperatorMatrix.SaveToTextFileSparse($"mtx{itc}.txt");
-                } else {
-                    CurSol.SaveToTextFile($"sol{itc}t{ilPSP.Environment.NumThreads}.txt");
-                    CurRes.SaveToTextFile($"res{itc}t{ilPSP.Environment.NumThreads}.txt");
-                    step.SaveToTextFile($"stp{itc}t{ilPSP.Environment.NumThreads}.txt");
-                    CurrentLin.OperatorMatrix.ToMsrMatrix().SaveToFile($"mtx{itc}t{ilPSP.Environment.NumThreads}.bin");
-                    CurrentLin.OperatorMatrix.SaveToTextFileSparse($"mtx{itc}t{ilPSP.Environment.NumThreads}.txt");
-
-                    var __CurSol = VectorIO.LoadFromTextFile($"sol{itc}.txt");
-                    var __CurRes = VectorIO.LoadFromTextFile($"res{itc}.txt");
-                    var __step = VectorIO.LoadFromTextFile($"stp{itc}.txt");
-
-                    var _CurrentLin = CurrentLin.OperatorMatrix.ToMsrMatrix();
-                    var __CurrentLin = MsrMatrix.LoadFromFile($"mtx{itc}.bin", _CurrentLin.MPI_Comm, _CurrentLin.RowPartitioning, _CurrentLin.ColPartition);
-                    MsrMatrix err = _CurrentLin.CloneAs();
-                    err.Acc(-1, __CurrentLin);
-                    {
-                        var g = CurrentLin.BaseGridProblemMapping.GridDat;
-                        var b = new Basis(g, 0);
-                        var rhsDiff = new SinglePhaseField(b, "rhsDiff");
-                        var stpDiff = new SinglePhaseField(b, "stpDiff");
-                        var mtxOffDiagDiff = new SinglePhaseField(b, "mtxOffDiagDiff");
-                        var mtxDiagDiff = new SinglePhaseField(b, "mtxDiagDiff");
-
-                        var blocking = CurrentLin.OperatorMatrix._RowPartitioning;
-                        for(int j = 0; j < blocking.LocalNoOfBlocks; j++) {
-                            long BlkI0 = blocking.GetBlockI0(j);
-                            int BlkSz = blocking.GetBlockLen(j);
-
-                            double acc_rhsDiff = 0;
-                            double acc_stpDiff = 0;
-                            double acc_mtxDiagDiff = 0;
-                            double acc_mtxOffDiagDiff = 0;
-
-                            for(int iRow = (int)BlkI0;  iRow < (BlkI0 + BlkSz); iRow++) {
-                                acc_stpDiff += step[iRow].Pow2();
-                                acc_rhsDiff += CurRes[iRow].Pow2();
-
-                                var row = err.GetRow(iRow);
-                                for(int k = 0; k < row.entries.Length; k++) {
-                                    if(row.colIdx[k] >= BlkI0 && row.colIdx[k] < BlkI0 + BlkSz) {
-                                        acc_mtxDiagDiff += row.entries[k].Pow2();
-                                    } else {
-                                        acc_mtxOffDiagDiff += row.entries[k].Pow2();
-                                    }
-                                }
-                            }
-
-                            rhsDiff.SetMeanValue(j, acc_rhsDiff.Sqrt());
-                            stpDiff.SetMeanValue(j, acc_stpDiff.Sqrt());
-                            mtxDiagDiff.SetMeanValue(j, acc_mtxDiagDiff.Sqrt());
-                            mtxOffDiagDiff.SetMeanValue(j, acc_mtxOffDiagDiff.Sqrt());
-                        }
-
-                        Tecplot.Tecplot.PlotFields(new DGField[] { rhsDiff, stpDiff, mtxDiagDiff, mtxOffDiagDiff }, "fuck" + itc, 0.0, 0);
-
-                    }
-
-
-                    Console.WriteLine($"--------------- {itc} sol  : " + CurSol.L2Distance(__CurSol));
-                    Console.WriteLine($"--------------- {itc} res  : " + CurRes.L2Distance(__CurRes));
-                    Console.WriteLine($"--------------- {itc} stp  : " + step.L2Distance(__step));
-                    Console.WriteLine($"--------------- {itc} lin  : " + err.FrobeniusNorm());
-                }
-                */
-
+         
                 tr.Info("Using Globalization: " + Globalization);
                 switch (Globalization) {
                     case GlobalizationOption.Dogleg:

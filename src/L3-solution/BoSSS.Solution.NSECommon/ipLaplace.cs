@@ -25,7 +25,7 @@ namespace BoSSS.Solution.NSECommon {
 
     /// <summary>
     /// Symmetric Interior Penalty - discetization of the (positive) Laplace operator,
-    /// i.e. \f$ + \text{div}( \nu \nabla u ) \f$.
+    /// i.e. $+ \text{div}( \nu \nabla u )$.
     /// </summary>
     abstract public class SIPLaplace : IEdgeForm, IVolumeForm, IEquationComponentCoefficient, ISupportsJacobianComponent, IDGdegreeConstraint {
 

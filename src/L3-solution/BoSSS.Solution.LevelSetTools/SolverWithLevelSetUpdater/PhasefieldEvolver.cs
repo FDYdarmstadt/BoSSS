@@ -79,8 +79,20 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         public IList<string> VariableNames => null;
 
-        // nothing to do
-        public Func<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>, bool> AfterMovePhaseInterface => MassCorrection;
+        
+        /// <summary>
+        /// <see cref="MassCorrection(DualLevelSet, double, double, bool, IReadOnlyDictionary{string, DGField}, IReadOnlyDictionary{string, DGField})"/>
+        /// </summary>
+        public bool AfterMovePhaseInterface(
+            DualLevelSet levelSet,
+            double time,
+            double dt,
+            bool incremental,
+            IReadOnlyDictionary<string, DGField> DomainVarFields,
+            IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+
+            return MassCorrection(levelSet, time, dt, incremental, DomainVarFields, ParameterVarFields);
+        }
 
         static Dictionary<string,double> mass;
         /// <summary>
@@ -93,6 +105,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// <param name="incremental"></param>
         /// <param name="DomainVarFields"></param>
         /// <param name="ParameterVarFields"></param>
+        /// <returns>
+        /// - true: the level-set-field has been changed
+        /// - false: the level-set-field remains unchanged
+        /// </returns>
         public bool MassCorrection(DualLevelSet phaseInterface,
             double time,
             double dt,
@@ -327,15 +343,16 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         f.Clear();
                 }
 
-                var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold, true, true);
+                var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold, true, StokesExtentionBoundaryOption.useBcMap);
                 ExtVelBuilder.SolveExtension(levelSet.LevelSetIndex, levelSet.Tracker, meanVelocity, extensionVelocity);
 
                 if (timestepper == null) {
-                    //timeStepper = InitializeAdamsBashforth(levelSet.DGLevelSet, extensionVelocity);
                     timestepper = GetTimestepper(levelSet.DGLevelSet, extensionVelocity);
+                    //Phasefield = new Phasefield(null, levelSet.C0LevelSet, levelSet.DGLevelSet, levelSet.Tracker, extensionVelocity, m_grd, m_control, null);
                 }
                 timestepper.LsTrk.UpdateTracker(time);
 
+                //Phasefield.UpdateFields(levelSet.C0LevelSet, levelSet.DGLevelSet, levelSet.Tracker, extensionVelocity, m_grd, m_control, null);
                 if (!ReferenceEquals(timestepper.CurrentState.Fields[0], levelSet.DGLevelSet)) {
                     throw new Exception("Something went wrong with the internal pointer magic of the levelSetTracker. Definitely a weakness of ObjectOrientation.");
                 }

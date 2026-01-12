@@ -31,8 +31,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
     /// <summary>
     /// One-step rules (creating 
-    /// surface rules for integrals \f$ \oint_{\frakI \cap K_j } \ldots \dS \f$ and 
-    /// volume  rules for integrals \f$ \int_{ \frakB \cap K_j } \ldots \dV \f$ 
+    /// surface rules for integrals $\oint_{\mathfrak{I} \cap K_j } \ldots \textrm{dS}$ and 
+    /// volume  rules for integrals $\int_{ \mathfrak{B} \cap K_j } \ldots \textrm{dV}$ 
     /// in one step), using Gauss and optionally, the Stokes theorem.
     /// Supports only 2D.
     /// </summary>
@@ -296,7 +296,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                         int K = (int)Math.Ceiling(Math.Sqrt(NoOfEqTotal * 1.75)) + 1;
 
-                        var Nodes1D = GenericBlas.Linspace(-1, 1, K);
+                        //var Nodes1D = GenericBlas.Linspace(-1, 1, K);
+                        var Nodes1D = GenericBlas.Linspace(-1, 1, K + 2).Skip(1).Take(K).ToArray();
 
                         var _NodeSet = new NodeSet(this.RefElement, K*K, 2, true);
                         int n = 0;

@@ -280,11 +280,6 @@ namespace IntersectingLevelSetTest {
             //MassInv.SaveToTextFile("C:\\tmp\\massinvK2.txt");
             //Mass.SaveToTextFile("C:\\tmp\\massK2.txt");
 
-            // compute integrals 
-            Integrals integrals = new Integrals();
-            //integrals.Evaluate(LsTrk, 2, LsTrk.GetSpeciesId("B"), LsTrk.GetSpeciesId("A"));
-
-
             // compute error
             ERR.Clear();
             ERR.Acc(1.0, du_dx_Exact, LsTrk.Regions.GetSpeciesSubGrid("B").VolumeMask);

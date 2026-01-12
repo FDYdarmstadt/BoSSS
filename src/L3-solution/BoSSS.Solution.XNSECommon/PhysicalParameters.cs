@@ -33,7 +33,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// Resp.: Navier-Stokes vs. Stokes
         /// </summary>
         [DataMember]
-        public bool IncludeConvection;
+        public bool IncludeConvection = true;
 
         /// <summary>
         /// Include Diffusive Term, standard: this is on
@@ -82,14 +82,22 @@ namespace BoSSS.Solution.XNSECommon {
         public double pFree = 0.0;
 
         /// <summary>
+        /// If the Boussinesq-Scriven surface tension model is set (<see cref="DoNotTouchParameters.SurfStressTensor"/>), the 
         /// surface shear viscosity
         /// </summary>
+        /// <seealso cref="BoSSS.Solution.XNSECommon.Operator.SurfaceTension.BoussinesqScriven_SurfaceDeformationRate_GradU"/>
+        /// <seealso cref="BoSSS.Solution.XNSECommon.Operator.SurfaceTension.BoussinesqScriven_SurfaceDeformationRate_GradUTranspose"/>
+        /// <seealso cref="BoSSS.Solution.XNSECommon.Operator.SurfaceTension.BoussinesqScriven_SurfaceVelocityDivergence"/>
         [DataMember]
         public double mu_I = 0.0;
 
         /// <summary>
+        /// If the Boussinesq-Scriven surface tension model is set (<see cref="DoNotTouchParameters.SurfStressTensor"/>), the 
         /// surface dilatational viscosity
         /// </summary>
+        /// <seealso cref="BoSSS.Solution.XNSECommon.Operator.SurfaceTension.BoussinesqScriven_SurfaceDeformationRate_GradU"/>
+        /// <seealso cref="BoSSS.Solution.XNSECommon.Operator.SurfaceTension.BoussinesqScriven_SurfaceDeformationRate_GradUTranspose"/>
+        /// <seealso cref="BoSSS.Solution.XNSECommon.Operator.SurfaceTension.BoussinesqScriven_SurfaceVelocityDivergence"/>
         [DataMember]
         public double lambda_I = 0.0;
 
@@ -97,6 +105,9 @@ namespace BoSSS.Solution.XNSECommon {
         /// coefficient for the surface divergence term in the Boussinesq-Scriven surface model
         /// if negative the value will be computed by (surface dilatational viscosity(lambda_I) - surface shear viscosity(mu_I))
         /// </summary>
+        /// <seealso cref="BoSSS.Solution.XNSECommon.Operator.SurfaceTension.BoussinesqScriven_SurfaceDeformationRate_GradU"/>
+        /// <seealso cref="BoSSS.Solution.XNSECommon.Operator.SurfaceTension.BoussinesqScriven_SurfaceDeformationRate_GradUTranspose"/>
+        /// <seealso cref="BoSSS.Solution.XNSECommon.Operator.SurfaceTension.BoussinesqScriven_SurfaceVelocityDivergence"/>
         [DataMember]
         public double lambdaI_tilde = -1.0;
 
@@ -207,7 +218,7 @@ namespace BoSSS.Solution.XNSECommon {
 
         public override bool Equals(object obj) {
             var other = obj as PhysicalParameters;
-            if (other == null)
+            if(other == null)
                 return false;
 
             return
@@ -230,6 +241,10 @@ namespace BoSSS.Solution.XNSECommon {
                 this.lambda_I == other.lambda_I &&
                 this.lambdaI_tilde == other.lambdaI_tilde &&
                 this.useArtificialSurfaceForce == other.useArtificialSurfaceForce;
+        }
+
+        public override int GetHashCode() {
+            return (int)(rho_A * 1000);
         }
     }
 

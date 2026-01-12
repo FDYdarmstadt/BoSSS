@@ -40,24 +40,24 @@ namespace BoSSS.Foundation {
         /// </param>
         /// <param name="Minv">the inverse of <paramref name="M"/></param>
         /// <remarks>
-        /// Let \f$ K_j \f$ and \f$ K_i \f$ be two different cells with a linear-affine 
+        /// Let $K_j$ and $K_i$ be two different cells with a linear-affine 
         /// transformation to the reference element.
-        /// Here, \f$ j \f$=<paramref name="CellPairs"/>[a,0] and \f$ i \f$=<paramref name="CellPairs"/>[a,1]. 
+        /// Here, $j$=<paramref name="CellPairs"/>[a,0] and $i$=<paramref name="CellPairs"/>[a,1]. 
         /// The DG-basis in these cells can uniquely be represented as
-        /// \f[ 
-        /// \phi_{j n} (\vec{x}) = p_n (\vec{x}) \vec{1}_{K_j} (\vec{x})
+        /// \[ 
+        /// \phi_{j n} (\underline{x}) = p_n (\underline{x}) \underline{1}_{K_j} (\underline{x})
         /// \textrm{ and }
-        /// \phi_{i m} (\vec{x}) = q_m (\vec{x}) \vec{1}_{K_i} (\vec{x})
-        /// \f]
-        /// where \f$ \vec{1}_X \f$ denotes the characteristic function for set \f$ X \f$
-        /// and \f$ p_n\f$  and \f$ p_m\f$  are polynomials.
+        /// \phi_{i m} (\underline{x}) = q_m (\underline{x}) \underline{1}_{K_i} (\underline{x})
+        /// \]
+        /// where $\underline{1}_X$ denotes the characteristic function for set $X$
+        /// and $p_n$  and $p_m$  are polynomials.
         /// 
-        /// Then, for the output \f$ M \f$ =<paramref name="M"/>[a,-,-] fulfills
-        /// \f[ 
+        /// Then, for the output $M$ =<paramref name="M"/>[a,-,-] fulfills
+        /// \[ 
         /// \phi_{j n} + \sum_{m} M_{m n} \phi_{i m}
         /// =
-        /// p_n \vec{1}_{K_j \cup K_i}
-        /// \f]
+        /// p_n \underline{1}_{K_j \cup K_i}
+        /// \]
         /// </remarks>
         public void GetExtrapolationMatrices(int[,] CellPairs, MultidimensionalArray M, MultidimensionalArray Minv = null) {
             // turn of instrumentation:

@@ -101,6 +101,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             }
         }
 
+#region HIGKLY_SPECIFIC_CONFIGURATIONS
 
         /// <summary>
         /// options for additional penalization terms for fast marching
@@ -126,6 +127,16 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         [DataMember]
         public PhasefieldSettings PhasefieldControl;
 
+        /// <summary>
+        /// Control Options for ExtVel
+        /// </summary>
+        public EllipticExtVelAlgoControl EllipticExtVelAlgoControl = new EllipticExtVelAlgoControl();
+        
+        /// <summary>
+        /// Reinitilization period for Fastmarching
+        /// </summary>
+        [DataMember]
+        public int FastMarchingReInitPeriod = 0;
 
         /// <summary>
         /// An explicit expression (y = f(x)) of the initial 0 Level-set. Used for <see cref="SplineLevelSet"/>
@@ -134,17 +145,30 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         [JsonIgnore]
         public Func<double, double> Phi0Initial;
 
+
+
+        /// <summary>
+        /// Control Options for ReInit
+        /// </summary>
+        [DataMember]
+        public EllipticReInitAlgoControl ReInitControl = new EllipticReInitAlgoControl();
+
+        /// <summary>
+        /// if false, Neumann boundary conditions are applied everywhere. If true, the boundary conditions from the BoundaryConditionMap are applied.
+        /// </summary>
+        [DataMember]
+        public StokesExtentionBoundaryOption StokesExtentionUseBCmap = StokesExtentionBoundaryOption.FreeSlipAtWall;
+
+
+        #endregion
+
         /// <summary>
         /// Width of the narrow band.
         /// </summary>
         [DataMember]
         public int LS_TrackerWidth = 1;
 
-        /// <summary>
-        /// Reinitilization period for Fastmarching
-        /// </summary>
-        [DataMember]
-        public int FastMarchingReInitPeriod = 0;
+
 
         /// <summary>
         /// Reinitilization period for the LevelSetUpdater
@@ -158,25 +182,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         [DataMember]
         public int ReInitTimestepIndex = 0;
 
-        /// <summary>
-        /// if false, Neumann boundary condtions are applied everywhere. If true, the boundary conditions from the BoundaryConditionMap are applied.
-        /// </summary>
-        [DataMember]
-        public bool StokesExtentionUseBCmap = false;
-
-
-        /// <summary>
-        /// Control Options for ReInit
-        /// </summary>
-        [DataMember]
-        public EllipticReInitAlgoControl ReInitControl = new EllipticReInitAlgoControl();
-
-        /// <summary>
-        /// Control Options for ExtVel
-        /// </summary>
-        public EllipticExtVelAlgoControl EllipticExtVelAlgoControl = new EllipticExtVelAlgoControl();
-
-
 
         /// <summary>
         /// Controls the behavior of the <see cref="ContinuityProjection"/>, i.e. the algorithm which enforces continuity of the level-set
@@ -184,9 +189,36 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         [DataMember]
         public ContinuityProjectionOption LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
 
-
+        /// <summary>
+        /// Controls the behavior of the <see cref="ContinuityProjection"/>, i.e. the algorithm which enforces continuity of the second level-set 
+        /// </summary>
+        [DataMember]
+        public ContinuityProjectionOption LSContiProjectionMethod2 = ContinuityProjectionOption.ConstrainedDG;
     }
 
 
+    /// <summary>
+    /// Configuration options for the Stokes extension;
+    /// This is (also) intended to be a transitional development setting which will be removed from the code when a final conclusion on boundary conditions for the Stokes extension is reached.
+    /// </summary>
+    public enum StokesExtentionBoundaryOption {
+        
+        /// <summary>
+        /// Zero flux, old option, used mainly by the FSI-Codes (chen Miao, Lauritz Beck)
+        /// </summary>
+        ZeroFlux,
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        FreeSlipAtWall,
+
+
+        /// <summary>
+        /// apply the normal boundary conditions from the physical code
+        /// </summary>
+        useBcMap
+    }
 }
 

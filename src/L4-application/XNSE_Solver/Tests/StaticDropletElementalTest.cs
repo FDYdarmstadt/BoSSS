@@ -18,8 +18,6 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 using ilPSP;
 using ilPSP.Utils;
@@ -30,7 +28,6 @@ using BoSSS.Solution.Utils;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Foundation.XDG;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
@@ -274,31 +271,13 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
 
-        static void GetResidualCoordinates(DGField field, CellMask mask = null) {
-
-            if (mask == null) {
-                mask = CellMask.GetFullMask(field.GridDat);
-            }
-
-            foreach (int jCell in mask.ItemEnum) {
-                Console.WriteLine($"==============");
-                Console.WriteLine($"jCell {jCell}:");
-                double[] coords = field.Coordinates.GetRow(jCell);
-                for (int i = 0; i < coords.Length; i++) {
-                    Console.WriteLine($"coord[{i}] = {coords[i]}");
-                }
-            }
-
-        }
-
-
         [Test]
         public static void TestStaticDroplet2D_ExactSolution() {
 
             var ctrl = StaticDroplet2D_ExactEvalution(1);
 
-            ctrl.ImmediatePlotPeriod = 1;
-            ctrl.SuperSampling = 5;
+            //ctrl.ImmediatePlotPeriod = 1;
+            //ctrl.SuperSampling = 5;
 
             using (var TestSolver = new XNSE()) {
 
@@ -306,15 +285,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 TestSolver.RunSolverMode();
 
                 CheckIntegralProperties(TestSolver);
-
-                //CellMask ccMask = TestSolver.LsTrk.Regions.GetCutCellMask();
-                //DGField ResXmom = TestSolver.CurrentResidual.Fields[0];
-                //Console.WriteLine("Residual X-momentum");
-                //GetResidualCoordinates(ResXmom, ccMask);
-
-                //DGField ResYmom = TestSolver.CurrentResidual.Fields[1];
-                //Console.WriteLine("Residual Y-momentum");
-                //GetResidualCoordinates(ResYmom, ccMask);
 
             }
 

@@ -275,7 +275,6 @@ namespace BoSSS.Foundation.XDG {
                     Debug.Assert(m_DataHistories[iLs].HistoryLength == L);
                     Debug.Assert(m_LevelSetHistories[iLs].HistoryLength == L);
                 }
-                Debug.Assert(m_QuadFactoryHelpersHistory.HistoryLength == L);
                 Debug.Assert(m_XDGSpaceMetricsHistory.HistoryLength == L);
                 return L;
             }
@@ -287,7 +286,6 @@ namespace BoSSS.Foundation.XDG {
                         m_DataHistories[iLs].HistoryLength = value;
                         m_LevelSetHistories[iLs].HistoryLength = value;
                     }
-                    m_QuadFactoryHelpersHistory.HistoryLength = value;
                     m_XDGSpaceMetricsHistory.HistoryLength = value;
                 }
                 Debug.Assert(HistoryLength == value);
@@ -315,7 +313,6 @@ namespace BoSSS.Foundation.XDG {
                     Debug.Assert(m_DataHistories[iLs].PushCount == L);
                     Debug.Assert(m_LevelSetHistories[iLs].PushCount == L);
                 }
-                Debug.Assert(m_QuadFactoryHelpersHistory.PushCount == L);
                 Debug.Assert(m_XDGSpaceMetricsHistory.PushCount == L);
 
                 return L;
@@ -333,7 +330,6 @@ namespace BoSSS.Foundation.XDG {
                     Debug.Assert(m_DataHistories[iLs].GetPopulatedLength() == L);
                     Debug.Assert(m_LevelSetHistories[iLs].GetPopulatedLength() == L);
                 }
-                Debug.Assert(m_QuadFactoryHelpersHistory.GetPopulatedLength() == L);
                 Debug.Assert(m_XDGSpaceMetricsHistory.GetPopulatedLength() == L);
                 
                 return L;
@@ -370,8 +366,6 @@ namespace BoSSS.Foundation.XDG {
             m_DataHistories = _DataHistories.ToList().AsReadOnly();
             m_LevelSetHistories = _LevelSetHistories.ToList().AsReadOnly();
             m_RegionsHistory = new HistoryStack<LevelSetRegions>(new LevelSetRegions(this));
-            m_QuadFactoryHelpersHistory = new HistoryStack<Dictionary<CutCellQuadratureMethod, XQuadFactoryHelperBase>>(
-                new Dictionary<CutCellQuadratureMethod, XQuadFactoryHelperBase>());
             m_XDGSpaceMetricsHistory = new HistoryStack<Dictionary<Tuple<SpeciesId[], CutCellQuadratureMethod, int>, XDGSpaceMetrics>>(NewXDGSpaceMetricsCache());
 
             this.IncreaseHistoryLength(1); // at least one previous time-step is required to support update of XDG fields
@@ -739,7 +733,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// Returns the species that are speratated by Level Set <paramref name="levSetIdx"/>, as defined in <see cref="m_SpeciesTable"/>. 
+        /// Returns the species that are separated by Level Set <paramref name="levSetIdx"/>, as defined in <see cref="m_SpeciesTable"/>. 
         /// </summary>
         /// <param name="levSetIdx"></param>
         /// <returns></returns>
@@ -755,6 +749,39 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
             return speciesOfLevelSet;
+        }
+
+        /// <summary>
+        /// Returns the levelSets that are sperating the 
+        /// species <paramref name="species"/> as defined in <see cref="m_SpeciesTable"/>. 
+        /// </summary>
+        /// <param name="species"></param>
+        /// <returns></returns>
+        public IEnumerable<int> GetLevelSetsSeparatingSpecies(IList<string> species) {
+
+            LinkedList<int> levelSetIndices = new LinkedList<int>();
+            for(int levSetIdx = 0; levSetIdx < SpeciesTable.Rank; ++levSetIdx) {
+                LinkedList<SpeciesPair> speciesOfLevelSet = FindSeparatedSpeciesPairs(levSetIdx);
+                foreach(SpeciesPair ofLevelSet in speciesOfLevelSet) {
+                    if (ContainsPair(species, ofLevelSet)) {
+                        levelSetIndices.AddLast(levSetIdx);
+                        break;
+                    }
+                }
+            }
+            return levelSetIndices;
+        }
+
+        bool ContainsPair(IList<string> candidates, SpeciesPair pair) {
+            for (int j = 0; j < candidates.Count() - 1; ++j) {
+                for (int k = j; k < candidates.Count(); ++k) {
+                    SpeciesPair candidatePair = new SpeciesPair(candidates[j], candidates[k]);
+                    if (pair.Equals(candidatePair)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
 
         /// <summary>
@@ -842,10 +869,10 @@ namespace BoSSS.Foundation.XDG {
         /// Consider two level sets "Phi_0" and "Phi_1" (with level set indices 0 and
         /// 1, respectively) and three species "a", "b" and "c". Consider the
         /// following <see cref="SpeciesTable"/>:
-        /// [0, 0] = "a"
-        /// [0, 1] = "b"
-        /// [1, 0] = "c"
-        /// [1, 1] = "c"
+        /// - [0, 0] = "a"
+        /// - [0, 1] = "b"
+        /// - [1, 0] = "c"
+        /// - [1, 1] = "c"
         /// That is, if "Phi_0" and "Phi_1" are both negative, we have species "a". If
         /// "Phi_0" is negative and "Phi_1" is positive, we have "b". If "Phi_0" is
         /// positive, we have "c", irrespective of the value of "Phi_1". Thus,
@@ -862,6 +889,30 @@ namespace BoSSS.Foundation.XDG {
         /// </returns>
         public LevelSetSignCode[] GetLevelSetSignCodes(string species) {
             return GetLevelSetSignCodes(GetSpeciesId(species));
+        }
+
+        /// <summary>
+        /// Find all indices of bordering level sets
+        /// </summary>
+        /// <param name="species">
+        /// name of species
+        /// </param>
+        /// <returns>
+        /// Level Set indices that border species 
+        /// </returns>
+        public int[] GetLevelSetIndicesOfSpecies(string species)
+        {
+            LinkedList<int> levelSetIndices = new LinkedList<int>();
+            for(int i = 0; i < SpeciesTable.Rank; ++i)
+            {
+                var speciesDividedByLevSet = GetSpeciesSeparatedByLevSet(i);
+                if (speciesDividedByLevSet.Contains(species))
+                {
+                    levelSetIndices.AddLast(i);
+                }
+            }
+            return levelSetIndices.ToArray();
+            
         }
 
         /// <summary>
@@ -962,8 +1013,6 @@ namespace BoSSS.Foundation.XDG {
 
             m_RegionsHistory.Push((r1) => r1.CloneAs(), (r1, r0) => r1);
 
-            m_QuadFactoryHelpersHistory.Push((r1) => new Dictionary<CutCellQuadratureMethod, XQuadFactoryHelperBase>(), (r1, r0) => r1);
-
             m_XDGSpaceMetricsHistory.Push((r1) => NewXDGSpaceMetricsCache(), (r1,r0) => r1);
 
 
@@ -1020,8 +1069,6 @@ namespace BoSSS.Foundation.XDG {
             }
 
             m_RegionsHistory.Pop((r1, r0) => r0); // .Push((r1) => r1.CloneAs(), (r1, r0) => r1);
-
-            m_QuadFactoryHelpersHistory.Pop((r1, r0) => r0);
 
             m_XDGSpaceMetricsHistory.Pop((r1, r0) => r0);
 
@@ -1585,7 +1632,7 @@ namespace BoSSS.Foundation.XDG {
                 // check whether they are in Near - region of the previous state;
                 foreach(int j in newCut.ItemEnum) {
                     int old_dist = LevelSetTracker.DecodeLevelSetDist(oldCode[j], LevSetIdx);
-                if (Math.Abs(old_dist) > 1) {
+                    if (Math.Abs(old_dist) > 1) {
                         fail_count++;
                         msk[j] = true;
                     }
@@ -1751,8 +1798,6 @@ namespace BoSSS.Foundation.XDG {
                 this.DataHistories[iLs].Current.ClearCaches();
             }
 
-            m_QuadFactoryHelpersHistory.Current.Clear();
-
             m_XDGSpaceMetricsHistory.Current.Clear();
 
             // set level-set data
@@ -1804,8 +1849,6 @@ namespace BoSSS.Foundation.XDG {
                 this.DataHistories[iLs].Current.ClearCaches();
             }
 
-            m_QuadFactoryHelpersHistory.Current.Clear();
-
             m_XDGSpaceMetricsHistory.Current.Clear();
 
             // set level-set data
@@ -1854,8 +1897,6 @@ namespace BoSSS.Foundation.XDG {
             for (int iLs = 0; iLs < NoOfLevelSets; iLs++) {
                 this.DataHistories[iLs].Current.ClearCaches();
             }
-
-            m_QuadFactoryHelpersHistory.Current.Clear();
 
             m_XDGSpaceMetricsHistory.Current.Clear();
 
@@ -2513,7 +2554,6 @@ namespace BoSSS.Foundation.XDG {
 
                 // forget values that are not correct anymore
                 // ==========================================
-                this.m_QuadFactoryHelpersHistory.Current.Clear();
                 this.m_XDGSpaceMetricsHistory.Current.Clear();
 
                 // Check Level-Set Topology
@@ -2646,7 +2686,6 @@ namespace BoSSS.Foundation.XDG {
             this.m_NoOfSpecies = null;
             this.m_Observers = null;
             this.m_XDGSpaceMetricsHistory = null;
-            this.m_QuadFactoryHelpersHistory = null;
             this.m_SpeciesId2Index = null;
             this.TestNodes = null;
             this.TestNodes_QuadWeights = null;
