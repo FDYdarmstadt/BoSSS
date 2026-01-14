@@ -467,6 +467,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 LinearizationRHS.ClearEntries();
             CurrentLin.TransformRhsInto(OpAffineRaw, this.LinearizationRHS, true);
             this.LinearizationRHS.ScaleV(-1.0);
+
+            //writing to text files
+            //{
+            //    Console.WriteLine("Writing to text file");
+            //    OpMtxRaw.SaveToTextFileSparse("OpMtxRaw-" + LinearizationCounter);
+            //    MassMtxRaw.SaveToTextFileSparse("MassMtxRaw-" + LinearizationCounter);
+            //    CurrentLin.LeftChangeOfBasis.SaveToTextFileSparse("LeftChangeOfBasis-" + LinearizationCounter);
+            //    CurrentLin.RightChangeOfBasis.SaveToTextFileSparse("RightChangeOfBasis-" + LinearizationCounter);
+            //    CurrentLin.OperatorMatrix.SaveToTextFileSparse("OperatorMatrix-" + LinearizationCounter);
+            //    this.LinearizationRHS.SaveToTextFile("RHS-" + LinearizationCounter);
+            //    LinearizationCounter++;
+            //}
+
         }
 
         int LinearizationCounter = 0;

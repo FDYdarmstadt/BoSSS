@@ -211,12 +211,13 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ctrl.saveperiod = 6;
             ctrl.rollingSaves = true;
 
+            ctrl.MultiStepInit = true;
 
             ExpectedTimeSteps = new int[] { }; // { 3, 4, 5, 6 };
 
             switch (timeStepScheme) {
                 case TimeSteppingScheme.ImplicitEuler:
-                    ctrl.MultiStepInit = false;
+                    //ctrl.MultiStepInit = false;
                     if (savePeriod == 3)
                         ExpectedTimeSteps = new int[] { 3, 6 };
                     if (savePeriod == 4)
@@ -226,7 +227,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
                     break;
                 case TimeSteppingScheme.BDF2:
-                    ctrl.MultiStepInit = true;
+                    //ctrl.MultiStepInit = true;
                     if (savePeriod == 3)
                         ExpectedTimeSteps = new int[] { 3, 5, 6 };
                     if (savePeriod == 4)
@@ -235,7 +236,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                         ExpectedTimeSteps = new int[] { 5, 6 };
                     break;
                 case TimeSteppingScheme.BDF3:
-                    ctrl.MultiStepInit = true;
+                    //ctrl.MultiStepInit = true;
                     if (savePeriod == 3)
                         ExpectedTimeSteps = new int[] { 3, 4, 5, 6 };
                     if (savePeriod == 4)

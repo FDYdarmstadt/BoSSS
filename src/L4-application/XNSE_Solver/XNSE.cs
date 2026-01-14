@@ -63,13 +63,20 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
+            //InitMPI();
+            ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.BcTest_PressureOutletTest(2, 1, 0.1, CutCellQuadratureMethod.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+            ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TaylorCouetteConvergenceTest(2, Tests.TaylorCouette.Mode.Test2Phase, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, false, NonLinearSolverCode.Picard);
+            //BoSSS.Application.XNSE_Solver.Tests.StaticDropletElementalTest.TestStaticDroplet2D_ExactSolution();
+            //throw new Exception("remove");
+
+
             {
                 XNSE._Main(args, false, delegate () {
                     var p = new XNSE();
                     return p;
                 });
             }
-            //*/
+
             ilPSP.LinSolvers.BlockMsrMatrix.PrintPerfStat();
         }
     }
@@ -347,6 +354,227 @@ namespace BoSSS.Application.XNSE_Solver {
             return XOP;
         }
 
+        /*
+        protected override XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
+
+            // instantiate operator
+            // ====================
+            string[] gravitySpeciesVector = new string[] { "GravityX#A", "GravityX#B", "GravityY#A", "GravityY#B" };
+            string[] parameterVars = (this.Control.PhysicalParameters.IncludeConvection) ?
+            BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D).Cat(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)).Cat(gravitySpeciesVector).Cat(BoSSS.Solution.NSECommon.VariableNames.NormalVector(D))
+            : gravitySpeciesVector.Cat(BoSSS.Solution.NSECommon.VariableNames.NormalVector(D));
+
+            string[] coDomainVars = (new[] { "ResidualMomentumX", "ResidualMomentumY" }).Cat("ResidualConti");
+
+            int quadOrder = QuadOrder();
+            int QuadOrderFunc(int[] DomvarDegs, int[] ParamDegs, int[] CodvarDegs) {
+                return quadOrder;
+            };
+
+            string[] species = new string[] { "A", "B" };
+
+            XSpatialOperatorMk2 XOP = new XSpatialOperatorMk2(
+                __DomainVar: VariableNames.VelocityVector(D).Cat(VariableNames.Pressure),
+                __ParameterVar: parameterVars,
+                __CoDomainVar: coDomainVars,
+                QuadOrderFunc,
+                __Species: species);
+
+
+            // instantiate boundary condition mapping
+            // ======================================
+            GetBcMap();
+
+            OperatorFactory.ParameterList Parameters = new OperatorFactory.ParameterList();
+
+            var physParams = this.Control.PhysicalParameters;
+
+            // momentum equations
+            // ==================
+            for (int d = 0; d < D; ++d) {
+                foreach (string spc in species) {
+
+                    // set species arguments
+                    double rhoSpc, LFFSpc, muSpc;
+                    switch (spc) {
+                        case "A": { rhoSpc = physParams.rho_A; LFFSpc = this.Control.AdvancedDiscretizationOptions.LFFA; muSpc = physParams.mu_A; break; }
+                        case "B": { rhoSpc = physParams.rho_B; LFFSpc = this.Control.AdvancedDiscretizationOptions.LFFB; muSpc = physParams.mu_B; break; }
+                        default: throw new ArgumentException("Unknown species.");
+                    }
+
+                    // convective operator
+                    // ===================
+                    if (this.Control.PhysicalParameters.IncludeConvection) {
+                        var conv = new BoSSS.Solution.XNSECommon.Operator.Convection.ConvectionInSpeciesBulk_LLF(D, boundaryMap, spc, d, rhoSpc, LFFSpc);
+                        XOP.EquationComponents[coDomainVars[d]].Add(conv);
+                    }
+
+
+                    // pressure gradient
+                    // =================
+                    var pres = new BoSSS.Solution.XNSECommon.Operator.Pressure.PressureInSpeciesBulk(d, boundaryMap, spc);
+                    XOP.EquationComponents[coDomainVars[d]].Add(pres);
+
+
+
+                    // viscous operator
+                    // ================
+                    var Visc1 = new BoSSS.Solution.XNSECommon.Operator.Viscosity.ViscosityInSpeciesBulk_GradUTerm(
+                        this.Control.AdvancedDiscretizationOptions.PenaltySafety, 1.0,
+                        boundaryMap, spc, d, D, physParams.mu_A, physParams.mu_B);
+                    XOP.EquationComponents[coDomainVars[d]].Add(Visc1);
+
+                    var Visc2 = new BoSSS.Solution.XNSECommon.Operator.Viscosity.ViscosityInSpeciesBulk_GradUtranspTerm(
+                        this.Control.AdvancedDiscretizationOptions.PenaltySafety, 1.0,
+                        boundaryMap, spc, d, D, physParams.mu_A, physParams.mu_B);
+                    XOP.EquationComponents[coDomainVars[d]].Add(Visc2);
+
+
+                    // gravity source term
+                    // ===================
+                    string gravity = BoSSS.Solution.NSECommon.VariableNames.GravityVector(D)[d];
+                    string gravityOfSpecies = gravity + "#" + spc;
+                    var gravityComponent = new BoSSS.Solution.XNSECommon.Operator.MultiPhaseSource(gravityOfSpecies, spc);
+                    XOP.EquationComponents[coDomainVars[d]].Add(gravityComponent);
+                    var GravParam = Gravity.CreateFrom(spc, d, D, Control, rhoSpc, Control.GetGravity(spc, d));
+                    Parameters.AddParameter(GravParam);
+
+                }
+            }
+
+            // continuity equation
+            // ===================
+            for (int d = 0; d < D; ++d) {
+                foreach (string spc in species) {
+
+                    // set species arguments
+                    double rhoSpc, LFFSpc, muSpc;
+                    switch (spc) {
+                        case "A": { rhoSpc = physParams.rho_A; LFFSpc = this.Control.AdvancedDiscretizationOptions.LFFA; muSpc = physParams.mu_A; break; }
+                        case "B": { rhoSpc = physParams.rho_B; LFFSpc = this.Control.AdvancedDiscretizationOptions.LFFB; muSpc = physParams.mu_B; break; }
+                        default: throw new ArgumentException("Unknown species.");
+                    }
+
+                    var src = new BoSSS.Solution.XNSECommon.Operator.Continuity.DivergenceInSpeciesBulk_Volume(d, D, spc, rhoSpc, -1, false);
+                    XOP.EquationComponents[coDomainVars[D]].Add(src);
+
+                    var flx = new BoSSS.Solution.XNSECommon.Operator.Continuity.DivergenceInSpeciesBulk_Edge(d, boundaryMap, spc, rhoSpc, -1, false);
+                    XOP.EquationComponents[coDomainVars[D]].Add(flx);
+
+                }
+            }
+
+
+            // interface conditions
+            // ====================
+
+
+            // momentum equations //
+            for (int d = 0; d < D; ++d) {
+
+
+                // convective term
+                if (this.Control.PhysicalParameters.IncludeConvection) {
+                    var convLS = new BoSSS.Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF(d, D, physParams.rho_A, physParams.rho_B,
+                        this.Control.AdvancedDiscretizationOptions.LFFA, this.Control.AdvancedDiscretizationOptions.LFFB, _MaterialInterface: true, boundaryMap, _movingmesh: false);
+                    XOP.EquationComponents[coDomainVars[d]].Add(convLS);
+                }
+
+                // pressure term
+                var presLs = new BoSSS.Solution.XNSECommon.Operator.Pressure.PressureFormAtLevelSet(d, D);
+                XOP.EquationComponents[coDomainVars[d]].Add(presLs);
+
+                // viscosity term
+                var viscLS = new BoSSS.Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(D, physParams.mu_A, physParams.mu_B,
+                    this.Control.AdvancedDiscretizationOptions.PenaltySafety, d, false);
+                //var viscLS = new BoSSS.Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_Standard(muA, muB, penalty * 1.0, D, d, false);
+                XOP.EquationComponents[coDomainVars[d]].Add(viscLS);
+
+                // surface tension force
+                // =====================
+                {
+                    // XOP.EquationComponents[coDomainVars[d]].Add(new CurvatureBasedSurfaceTension(d, D, physParams.Sigma));  
+                    // Parameters.AddParameter(FromControl.BeltramiGradientAndCurvature(Control, "Phi", quadOrder, D));               
+                }
+
+                IEquationComponent isoSurfT = new BoSSS.Solution.XNSECommon.Operator.SurfaceTension.IsotropicSurfaceTension_LaplaceBeltrami(d, D, physParams.Sigma * 0.5, boundaryMap.EdgeTag2Type, boundaryMap, physParams.theta_e, physParams.betaL);
+                XOP.SurfaceElementOperator_Ls0.EquationComponents[coDomainVars[d]].Add(isoSurfT);
+                
+            }
+
+            // continuity equation //
+
+            var divPen = new BoSSS.Solution.XNSECommon.Operator.Continuity.DivergenceAtLevelSet(D, physParams.rho_A, physParams.rho_B, _MaterialInterface: true, -1, false);
+            XOP.EquationComponents[coDomainVars[D]].Add(divPen);
+
+
+
+            // temporal term
+            // =============
+            (string, double[])[] diagonal = new (string, double[])[species.Length];
+            diagonal[0] = ("A", new double[] { 1, 1, 0 });
+            diagonal[1] = ("B", new double[] { 1, 1, 0 });
+            XOP.TemporalOperator = new ConstantXTemporalOperator(XOP, diagonal);
+
+
+            // additional parameters
+            // =====================
+            Velocity0Mean v0Mean = new Velocity0Mean(D, LsTrk, quadOrder);
+            if (this.Control.PhysicalParameters.IncludeConvection) {
+                Parameters.AddParameter(new Velocity0(D));
+                Parameters.AddParameter(v0Mean);
+            }
+            Normals normalsParameter = new Normals(D, ((LevelSet)levelSetUpdater.Tracker.LevelSets[0]).Basis.Degree);
+            Parameters.AddParameter(normalsParameter);
+
+            ICollection<DelParameterFactory> factories = Parameters.Factories(XOP.ParameterVar);
+            foreach (DelParameterFactory factory in factories) {
+                XOP.ParameterFactories.Add(factory);
+            }
+            ICollection<DelPartialParameterUpdate> updates = Parameters.ParameterUpdates(XOP.ParameterVar);
+            foreach (DelPartialParameterUpdate update in updates) {
+                XOP.ParameterUpdates.Add(update);
+            }
+
+            // level set related parameters 
+            // ============================
+            levelSetUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, v0Mean);
+            levelSetUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, normalsParameter);
+            levelSetUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, FromControl.BeltramiGradient(Control, "Phi", D));
+
+
+            // coefficients
+            // ============
+            XOP.OperatorCoefficientsProvider = delegate (LevelSetTracker lstrk, SpeciesId spc, int quadOrder, int TrackerHistoryIdx, double time) {
+                CoefficientSet CoeffSet = new CoefficientSet() {
+                    GrdDat = lstrk.GridDat
+                };
+                CoeffSet.CellLengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)CoeffSet.GrdDat).Cells.CellLengthScale;
+                CoeffSet.EdgeLengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)CoeffSet.GrdDat).Edges.h_min_Edge;
+                CoeffSet.SpeciesSubGrdMask = lstrk.Regions.GetSpeciesSubGrid(spc).VolumeMask.GetBitMaskWithExternal();
+
+                return CoeffSet;
+            };
+
+
+            // final settings
+            // ==============
+
+            // if there is no Dirichlet boundary condition,
+            // the mean value of the pressure is free:
+            XOP.FreeMeanValue[VariableNames.Pressure] = !GetBcMap().DirichletPressureBoundary;
+
+            XOP.IsLinear = !this.Control.PhysicalParameters.IncludeConvection;
+            XOP.LinearizationHint = LinearizationHint.AdHoc;
+            XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;
+
+
+            XOP.Commit();
+
+            return XOP;
+        }
+        */
+
         /// <summary>
         /// Misc adjustments to the spatial operator before calling <see cref="IDifferentialOperator.Commit"/>
         /// </summary>
@@ -613,6 +841,31 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public List<(double, double)> ImbalanceTrack;
 
+
+        static double RoundSignificantDigit(double input, int digit = 1, bool floor = false) {
+
+            if(digit < 1)
+                throw new ArgumentException("digit must be greater than zero");
+
+            if(input == 0.0)
+                return input;
+
+            int precision = 0;
+            double val = input - Math.Round(input, 0);
+            while(Math.Abs(val) < (double)(10.Pow(digit - 1))) {
+                val *= 10.0;
+                precision++;
+            }
+
+            if(floor) {
+                var power = Math.Pow(10, precision);
+                return Math.Floor(input * power) / power;
+            } else {
+                return Math.Round(input, precision);
+            }
+        }
+
+
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using(var f = new FuncTrace()) {
                 Console.WriteLine();
@@ -624,8 +877,20 @@ namespace BoSSS.Application.XNSE_Solver {
                         Console.WriteLine("restricting time-step to reach end-time");
                         dt = this.Control.Endtime - phystime;
                     }
-                    if(TimestepNo == 1) dt = Math.Min(dt, 1e-3 * this.Control.dtFixed); // small start timestep, to get the levelset rolling
-                } else {
+                    if(TimestepNo == 1) 
+                        dt = Math.Min(dt, 1e-3 * this.Control.dtFixed); // small start timestep, to get the levelset rolling
+                } 
+                else if((int)this.Control.TimeSteppingScheme == 1 && this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient && this.Control.UseAdaptiveTimestep) {
+                    dt = this.GetTimestep();
+                    dt = RoundSignificantDigit(dt, 2, true);
+                    if(phystime + dt > this.Control.Endtime) {
+                        Console.WriteLine("restricting time-step to reach end-time");
+                        dt = this.Control.Endtime - phystime;
+                    }
+                    Console.WriteLine($"=== adaptive timestepping in use! ===");
+                    Console.WriteLine($"Setting time step to dt = {dt}");
+                } 
+                else { 
                     // this is a BDF or non-adaptive scheme, use the base implementation, i.e. the fixed timestep
                     dt = base.GetTimestep();
                 }
@@ -662,8 +927,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 Console.WriteLine($"Done with time step {TimestepNo}; solver success: {success}");
                 GC.Collect();
-                if(Control.FailOnSolverFail && !success) {
-                    PlotCurrentState(phystime, TimestepNo, this.Control.SuperSampling);
+                if (Control.FailOnSolverFail && !success) {
+                    PlotCurrentState(phystime, TimestepNo, this.Control.SuperSampling == 0 ? 2 : this.Control.SuperSampling);
                     SaveToDatabase(TimestepNo, phystime);
                     throw new ArithmeticException("Solver did not converge.");
                 }
@@ -773,6 +1038,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public override double GetTimestep() {
             double dt = this.Control.dtFixed;
+
+            if(this.Control.ChooseTimestepByMethod == XNSE_Control.ChooseTimestepBy.dtFixed)
+                return dt;
+
             double s = 0.5; // safety factor
             int D = this.GridData.SpatialDimension;
 
@@ -783,6 +1052,9 @@ namespace BoSSS.Application.XNSE_Solver {
                 LevelSetVelocity = GetInterfaceVelocity();
             else
                 LevelSetVelocity = null;
+
+            double dt_cfl_glob = dt;
+            double dt_cap_glob = dt;
 
             int p = 0;
 
@@ -804,35 +1076,55 @@ namespace BoSSS.Application.XNSE_Solver {
                     Console.WriteLine("Cannot determine DG order of level set");
                 }
 
-                // capillary timestep
-                {
-                    var physParams = this.Control.PhysicalParameters;
-                    if(physParams.Sigma != 0) {
-                        //double dt_cap = s * Math.Sqrt((physParams.rho_A + physParams.rho_B) * Math.Pow(hmin / (double)(p + 1), 3.0) / (2 * Math.PI * Math.Abs(physParams.Sigma)));
-                        double dt_cap = XNSEUtils.GetCapillaryTimeStep(physParams.rho_A, physParams.rho_B, physParams.Sigma, hmin, p);
-                        if(dt_cap < dt) {
-                            //dt = Math.Min(dt_cap, dt);
-                            //Console.WriteLine("Restricting time step size to: {0}, due to capillary timestep restriction", dt_cap);
-                            Console.WriteLine("Warning: time step size larger than capillary timestep restriction {0}", dt_cap);
-                        }
-                    }
-                }
-            }
-
-
-            // level set cfl
-            {
+                // level set cfl
                 if(LevelSetVelocity != null) {
                     // At this point the level set velocity is not updated to the correct value
                     //VectorField<DGField> LevelSetVelocity = new VectorField<DGField>(D.ForLoop(d => RegisteredFields.SingleOrDefault(s => s.Identification == LevelSetVelocityNames[d])));
 
                     double dt_cfl = this.GridData.ComputeCFLTime(LevelSetVelocity.ToArray(), 10000, CC);
                     dt_cfl *= s / Math.Pow(p, 2);
-                    if(dt_cfl < dt) {
-                        dt = Math.Min(dt_cfl, dt);
-                        Console.WriteLine("Restricting time step size to: {0}, due to level set cfl", dt_cfl);
-                    }
+                    dt_cfl_glob = Math.Min(dt_cfl, dt_cfl_glob);
+                    //if(dt_cfl < dt) {
+                    //    dt = Math.Min(dt_cfl, dt);
+                    //    Console.WriteLine("Restricting time step size to: {0}, due to level set cfl", dt_cfl);
+                    //}
                 }
+
+                // capillary timestep   
+                var physParams = this.Control.PhysicalParameters;
+                if(physParams.Sigma != 0) {
+                    //double dt_cap = s * Math.Sqrt((physParams.rho_A + physParams.rho_B) * Math.Pow(hmin / (double)(p + 1), 3.0) / (2 * Math.PI * Math.Abs(physParams.Sigma)));
+                    double dt_cap = XNSEUtils.GetCapillaryTimeStep(physParams.rho_A, physParams.rho_B, physParams.Sigma, hmin, p);
+                    dt_cap_glob = Math.Min(dt_cap, dt_cap_glob);
+                    //if(dt_cap < dt) {
+                    //    dt = Math.Min(dt_cap, dt);
+                    //    Console.WriteLine("Restricting time step size to: {0}, due to capillary timestep restriction", dt_cap);
+                    //    //Console.WriteLine("Warning: time step size larger than capillary timestep restriction {0}", dt_cap);
+                    //}
+                }
+
+            }
+
+            if(this.Control.ChooseTimestepByMethod == XNSE_Control.ChooseTimestepBy.minimum) {
+                dt = (new double[] { dt, dt_cfl_glob, dt_cap_glob }).Min();
+                Console.WriteLine("Setting minimum time step size to: {0}", dt);
+                return dt;
+            }
+
+            if(this.Control.ChooseTimestepByMethod == XNSE_Control.ChooseTimestepBy.maximum) {
+                dt = (new double[] { dt, dt_cfl_glob, dt_cap_glob }).Max();
+                Console.WriteLine("Setting maximum time step size to: {0}", dt);
+                return dt;
+            }
+
+            if(this.Control.ChooseTimestepByMethod == XNSE_Control.ChooseTimestepBy.LevSetCFLcondition) {
+                Console.WriteLine("Setting time step size to: {0}, due to level set cfl", dt_cfl_glob);
+                return dt_cfl_glob;
+            }
+
+            if(this.Control.ChooseTimestepByMethod == XNSE_Control.ChooseTimestepBy.capillaryRestriction) {
+                Console.WriteLine("Setting time step size to: {0}, due to capillary timestep restriction", dt_cap_glob);
+                return dt_cap_glob;
             }
 
             // determine Minimum timestep over all processess

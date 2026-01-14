@@ -18,6 +18,12 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
     public static class Droplet {
 
+
+        public static ZLS_Control WTF() {
+            return null;
+        }
+
+        
         public static ZLS_Control Aland( int p = 1, int AMRlvl = 0) {
             ZLS_Control C = new ZLS_Control(p);
             C.ImmediatePlotPeriod = 1;
@@ -244,7 +250,496 @@ namespace ZwoLevelSetSolver.ControlFiles {
             return C;
         }
 
+        public static ZLS_Control AlandSL(int p = 2, int AMRlvl = 3, double SL = 1e-5) {
+            ZLS_Control C = new ZLS_Control(p);
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 3;
 
+            C.AgglomerationThreshold = 0.3;
+            C.NoOfMultigridLevels = 1;
+
+            int D = 3;
+
+            AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
+
+            //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
+            //_DbPath = @"D:\local\local_Testcase_databases\Testcase_ContactLine";
+            //_DbPath = @"D:\local\local_spatialConvStudy\StaticDropletOnPlateConvergence\SDoPConvDB";
+
+            // basic database options
+            // ======================
+            #region db
+
+            C.savetodb = false;
+            //C.DbPath = @"C:\Users\miao\Documents\Database\Droplet-EE";
+            C.ProjectName = "Droplet";
+            C.SessionName = "Droplet-check";
+            C.ProjectDescription = "Droplet running on pc";
+
+            C.ContinueOnIoError = false;
+
+            //C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
+            //C.PostprocessingModules.Add(new MovingContactLineLogging());
+
+            #endregion
+
+            //if(D == 3) {
+            //    C.FieldOptions.Add("DisplacementZ", new FieldOpts() {
+            //        Degree = p,
+            //        SaveToDB = FieldOpts.SaveToDBOpt.FALSE
+            //    });
+            //}
+
+            // Physical Parameters
+            // ===================
+            #region physics
+
+            double scale = 4.4175e-4; // For a droplet with radius r = 176.7 micrometre
+            //double SL = 0;// 5e-6 / scale;
+
+            C.PhysicalParameters.rho_A = 1260 * scale * scale * scale; //Liquid
+            C.PhysicalParameters.rho_B = 10 * scale * scale * scale; //Gas
+            C.PhysicalParameters.mu_A = 1.41 * scale;
+            C.PhysicalParameters.mu_B = 0.1 * scale;
+            double sigma = 0.046;
+            C.PhysicalParameters.Sigma = sigma;
+
+            C.PhysicalParameters.betaS_A = C.PhysicalParameters.mu_A / SL;
+            C.PhysicalParameters.betaS_B = C.PhysicalParameters.mu_B / SL;
+
+            //C.PhysicalParameters.betaL = (C.PhysicalParameters.mu_A + C.PhysicalParameters.mu_B) / SL / 2.0;
+            C.PhysicalParameters.betaL = 0;
+            C.PhysicalParameters.theta_e = 0.4655 * Math.PI;
+
+            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.Material = true;
+
+            C.Material = new Solid() {
+                Density = 1000 * scale * scale * scale,
+                Lame2 = 1e3 * scale,
+                Viscosity = 1 * scale
+            };
+
+            #endregion
+
+
+            // grid generation
+            // ===============
+            #region grid
+
+            double xSize = 2;
+            double yTop = 1.5 - 20.0 / 176.7;
+            double yBottom = -20.0 / 176.7;
+            int kelem = 8;
+
+            C.GridFunc = delegate () {
+                double[] Xnodes = GenericBlas.Linspace(-xSize, xSize, kelem + 1);
+                double[] Ynodes = GenericBlas.Linspace(yBottom, yTop, kelem / 8 * 3 + 1);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false);
+
+                //grd.EdgeTagNames.Add(1, "NavierSlip_Linear_lower");
+                grd.EdgeTagNames.Add(1, "wall_lower");
+                grd.EdgeTagNames.Add(2, "pressure_outlet_upper");
+                grd.EdgeTagNames.Add(3, "freeslip_left");
+                grd.EdgeTagNames.Add(4, "freeslip_right");
+
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    byte et = 0;
+                    if(Math.Abs(X[1] - yBottom) <= 1.0e-8)
+                        et = 1;
+                    if(Math.Abs(X[1] - yTop) <= 1.0e-8)
+                        et = 2;
+                    if(Math.Abs(X[0] + xSize) <= 1.0e-8)
+                        et = 3;
+                    if(Math.Abs(X[0] - xSize) <= 1.0e-8)
+                        et = 4;
+
+                    return et;
+                });
+
+                return grd;
+            };
+
+            #endregion
+
+
+            // Initial Values
+            // ==============
+            #region init
+
+            double R = 0.4;
+            //double Theta_e = Math.PI / 2;
+            //double s = 2 * R * Math.Sin(Theta_e);
+            //double h = Math.Sqrt(R.Pow2() - (0.25 * s.Pow2()));
+
+            //double[] center = new double[] { 0.0, -1.5 };
+
+            Func<double[], double> PhiFunc = Phi;
+
+            double Phi(double[] X) {
+                if(X[1] >= (0)) {
+                    return ((X[0] - 0.0).Pow2() + (X[1] - 0.0).Pow2() - 0.16);
+                }
+                return  ((X[0] - 0.0).Pow2() + (0.0 - 0.0).Pow2() - 0.16);
+            }
+
+
+            double pJump = sigma / R;
+
+            C.InitialValues_Evaluators.Add("Pressure#A", X => pJump);
+            C.InitialValues_Evaluators.Add("Pressure#B", X => 0.0);
+            //C.AddInitialValue("GravityY#A", new Formula($"X => -9.8 / 4.4175e-4 / 4.4175e-4", false));
+            //C.AddInitialValue("GravityY#B", new Formula($"X => -9.8 / 4.4175e-4 / 4.4175e-4", false));
+            //C.AddInitialValue("GravityY#C", new Formula($"X => -9.8 / 4.4175e-4 / 4.4175e-4", false));
+
+
+            C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+
+
+            //Func<double[], double> Phi1Func = (X => -(X[1] + 0.1 * X[0] + 0.04));
+            Func<double[], double> Phi1Func = (X => -(X[1] + 0.0));
+            C.InitialValues_Evaluators.Add(VariableNames.SolidLevelSetCG, Phi1Func);
+
+            #endregion
+
+
+            // boundary conditions
+            // ===================
+            #region BC
+
+
+            C.AddBoundaryValue("wall_lower");
+            C.AddBoundaryValue("pressure_outlet_upper");
+            C.AddBoundaryValue("freeslip_left");
+            C.AddBoundaryValue("freeslip_right");
+
+            C.AdvancedDiscretizationOptions.GNBC_Localization = NavierSlip_Localization.Bulk;
+            C.AdvancedDiscretizationOptions.GNBC_SlipLength = NavierSlip_SlipLength.Prescribed_Beta;
+            C.AdvancedDiscretizationOptions.IBM_BoundaryType = IBM_BoundaryType.NavierSlip;
+            //C.AdvancedDiscretizationOptions.IBM_BoundaryType = IBM_BoundaryType.NavierSlip_Linear;
+            //C.PhysicalParameters.sliplength = 0.001;
+
+            #endregion
+
+            // misc. solver options
+            // ====================
+            #region solver
+
+
+            //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
+            //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
+
+            C.NonLinearSolver.MaxSolverIterations = 10;
+            C.NonLinearSolver.MinSolverIterations = 2;
+            //C.Solver_MaxIterations = 50;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            //C.Solver_ConvergenceCriterion = 1e-8;
+            C.LevelSet_ConvergenceCriterion = 1e-12;
+            C.NonLinearSolver.Globalization = BoSSS.Solution.AdvancedSolvers.Newton.GlobalizationOption.Dogleg;
+
+
+            //C.Option_LevelSetEvolution = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
+            //C.EllipticExtVelAlgoControl.solverFactory = () => new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
+            //C.EllipticExtVelAlgoControl.IsotropicViscosity = 1e-3;
+            //C.fullReInit = false; 
+
+            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
+            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+
+            C.AdaptiveMeshRefinement = true;
+            C.activeAMRlevelIndicators.Add(new ContactPointRefiner { maxRefinementLevel = AMRlvl });
+            C.AMR_startUpSweeps = AMRlvl;
+            //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { levelSet = 0, maxRefinementLevel = AMRlvl - 2});
+            //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { levelSet = 1, maxRefinementLevel = AMRlvl });
+            //C.AMR_startUpSweeps = AMRlvl;
+
+            #endregion
+
+            C.DynamicLoadBalancing_On = false;
+            C.DynamicLoadBalancing_Period = 1000;
+            C.DynamicLoadBalancing_RedistributeAtStartup = false;
+            C.GridPartType = GridPartType.METIS;
+
+            //C.ReInitPeriod = 10;
+            C.FailOnSolverFail = false;
+
+            // Timestepping
+            // ============
+            #region time
+
+            //C.CheckJumpConditions = true;
+
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
+            //C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+
+
+            C.TimesteppingMode = compMode;
+            //double dt = 5e-7;
+            double dt = 1e-3;
+            C.dtMax = dt;
+            C.dtMin = dt;
+            C.Endtime = 100;
+            C.NoOfTimesteps = 5000;
+            C.saveperiod = 1;
+
+            #endregion
+
+            return C;
+        }
+
+        
+        public static ZLS_Control AlandSL3D(int p = 2, int AMRlvl = 5, double SL = 1e-5) {
+            // -c 'cs:ZwoLevelSetSolver.ControlFiles.Droplet.AlandSL3D(2,2,0)'
+            ZLS_Control C = new ZLS_Control(p);
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 3;
+
+            C.AgglomerationThreshold = 0.3;
+            C.NoOfMultigridLevels = 1;
+
+            int D = 3;
+
+            AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
+
+            //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
+            //_DbPath = @"D:\local\local_Testcase_databases\Testcase_ContactLine";
+            //_DbPath = @"D:\local\local_spatialConvStudy\StaticDropletOnPlateConvergence\SDoPConvDB";
+
+            // basic database options
+            // ======================
+            #region db
+
+            C.savetodb = false;
+            //C.DbPath = @"C:\Users\miao\Documents\Database\Droplet-EE";
+            C.ProjectName = "Droplet";
+            C.SessionName = "Droplet-check";
+            C.ProjectDescription = "Droplet running on pc";
+
+            C.ContinueOnIoError = false;
+
+            //C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
+            //C.PostprocessingModules.Add(new MovingContactLineLogging());
+
+            #endregion
+
+            //if(D == 3) {
+            //    C.FieldOptions.Add("DisplacementZ", new FieldOpts() {
+            //        Degree = p,
+            //        SaveToDB = FieldOpts.SaveToDBOpt.FALSE
+            //    });
+            //}
+
+            // Physical Parameters
+            // ===================
+            #region physics
+
+            double scale = 4.4175e-4; // For a droplet with radius r = 176.7 micrometre
+            //double SL = 0;// 5e-6 / scale;
+            C.PhysicalParameters.rho_A = 10 * scale * scale * scale; //Gas
+            C.PhysicalParameters.rho_B = 1260 * scale * scale * scale; //Liquid
+            C.PhysicalParameters.mu_A = 0.1 * scale;
+            C.PhysicalParameters.mu_B = 1.41 * scale;
+            double sigma = 0.046;
+            C.PhysicalParameters.Sigma = sigma;
+
+            C.PhysicalParameters.betaS_A = C.PhysicalParameters.mu_A / SL;
+            C.PhysicalParameters.betaS_B = C.PhysicalParameters.mu_B / SL;
+
+            C.PhysicalParameters.betaL = (C.PhysicalParameters.mu_A + C.PhysicalParameters.mu_B) / SL / 2.0;
+            C.PhysicalParameters.theta_e = 0.4655 * Math.PI;
+
+            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.Material = false;
+
+            C.Material = new Solid() {
+                Density = 1000 * scale * scale * scale,
+                Lame2 = 1000 * scale,
+                Viscosity = 1 * scale
+            };
+
+            #endregion
+
+
+            // grid generation
+            // ===============
+            #region grid
+
+            double xSize = 2;
+            double yTop = 1.5 - 20.0 / 176.7;
+            double yBottom = -20.0 / 176.7;
+            int kelem = 8;
+
+            C.GridFunc = delegate () {
+                double[] Xnodes = GenericBlas.Linspace(-xSize, 0, kelem / 2 + 1);
+                double[] Ynodes = GenericBlas.Linspace(yBottom, yTop, kelem / 8 * 3 + 1);
+                double[] Znodes = GenericBlas.Linspace(-xSize, 0, kelem / 2 + 1);
+                var grd = Grid3D.Cartesian3DGrid(Xnodes, Ynodes, Znodes);
+
+                grd.EdgeTagNames.Add(1, "wall_lower");
+                grd.EdgeTagNames.Add(2, "pressure_outlet_upper");
+                grd.EdgeTagNames.Add(3, "freeslip_left");
+                grd.EdgeTagNames.Add(4, "freeslip_right");
+                grd.EdgeTagNames.Add(5, "freeslip_back");
+                grd.EdgeTagNames.Add(6, "freeslip_front");
+
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    byte et = 0;
+                    if(Math.Abs(X[1] - yBottom) <= 1.0e-8)
+                        et = 1;
+                    if(Math.Abs(X[1] - yTop) <= 1.0e-8)
+                        et = 2;
+                    if(Math.Abs(X[0] + xSize) <= 1.0e-8)
+                        et = 3;
+                    if(Math.Abs(X[0] - 0) <= 1.0e-8)
+                        et = 4;
+                    if(Math.Abs(X[2] + xSize) <= 1.0e-8)
+                        et = 5;
+                    if(Math.Abs(X[2] - 0) <= 1.0e-8)
+                        et = 6;
+
+                    return et;
+                });
+
+                return grd;
+            };
+
+            #endregion
+
+
+            // Initial Values
+            // ==============
+            #region init
+
+            double R = 0.4;
+            //double Theta_e = Math.PI / 2;
+            //double s = 2 * R * Math.Sin(Theta_e);
+            //double h = Math.Sqrt(R.Pow2() - (0.25 * s.Pow2()));
+
+            //double[] center = new double[] { 0.0, -1.5 };
+
+            Func<double[], double> PhiFunc = Phi;
+
+            double Phi(double[] X) {
+                if(X[1] >= (0)) {
+                    return -((X[0] - 0.0).Pow2() + (X[1] - 0.0).Pow2() + (X[2] - 0.0).Pow2() - 0.16);
+                }
+                return -((X[0] - 0.0).Pow2() + (X[2] - 0.0).Pow2() + (0.0 - 0.0).Pow2() - 0.16);
+            }
+
+
+            double pJump = 2 * sigma / R;
+
+            C.InitialValues_Evaluators.Add("Pressure#B", X => pJump);
+            C.InitialValues_Evaluators.Add("Pressure#A", X => 0.0);
+            //C.AddInitialValue("GravityY#A", new Formula($"X => -9.8 / 4.4175e-4 / 4.4175e-4", false));
+            //C.AddInitialValue("GravityY#B", new Formula($"X => -9.8 / 4.4175e-4 / 4.4175e-4", false));
+            //C.AddInitialValue("GravityY#C", new Formula($"X => -9.8 / 4.4175e-4 / 4.4175e-4", false));
+
+
+            C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+
+
+            //Func<double[], double> Phi1Func = (X => -(X[1] + 0.1 * X[0] + 0.04));
+            Func<double[], double> Phi1Func = (X => -(X[1] + 0.0));
+            C.InitialValues_Evaluators.Add(VariableNames.SolidLevelSetCG, Phi1Func);
+
+            #endregion
+
+
+            // boundary conditions
+            // ===================
+            #region BC
+
+
+            C.AddBoundaryValue("wall_lower");
+            C.AddBoundaryValue("pressure_outlet_upper");
+            C.AddBoundaryValue("freeslip_left");
+            C.AddBoundaryValue("freeslip_right");
+            C.AddBoundaryValue("freeslip_back");
+            C.AddBoundaryValue("freeslip_front");
+
+            C.AdvancedDiscretizationOptions.GNBC_Localization = NavierSlip_Localization.Bulk;
+            C.AdvancedDiscretizationOptions.GNBC_SlipLength = NavierSlip_SlipLength.Prescribed_Beta;
+            //C.AdvancedDiscretizationOptions.IBM_BoundaryType = IBM_BoundaryType.NavierSlip;
+            //C.PhysicalParameters.sliplength = 0.001;
+
+            #endregion
+
+            // misc. solver options
+            // ====================
+            #region solver
+
+
+            //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
+            //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
+
+            C.NonLinearSolver.MaxSolverIterations = 20;
+            C.NonLinearSolver.MinSolverIterations = 2;
+            //C.Solver_MaxIterations = 50;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            //C.Solver_ConvergenceCriterion = 1e-8;
+            C.LevelSet_ConvergenceCriterion = 1e-12;
+            C.NonLinearSolver.Globalization = BoSSS.Solution.AdvancedSolvers.Newton.GlobalizationOption.Dogleg;
+
+
+            //C.Option_LevelSetEvolution = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
+            //C.EllipticExtVelAlgoControl.solverFactory = () => new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
+            //C.EllipticExtVelAlgoControl.IsotropicViscosity = 1e-3;
+            //C.fullReInit = false; 
+
+            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
+            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+
+            C.AdaptiveMeshRefinement = true;
+            C.activeAMRlevelIndicators.Add(new ContactPointRefiner { maxRefinementLevel = AMRlvl });
+            C.AMR_startUpSweeps = AMRlvl;
+            //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { levelSet = 0, maxRefinementLevel = AMRlvl - 2});
+            //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { levelSet = 1, maxRefinementLevel = AMRlvl });
+            //C.AMR_startUpSweeps = AMRlvl;
+
+            #endregion
+
+            C.DynamicLoadBalancing_On = false;
+            C.DynamicLoadBalancing_Period = 1000;
+            C.DynamicLoadBalancing_RedistributeAtStartup = false;
+            C.GridPartType = GridPartType.METIS;
+
+            //C.ReInitPeriod = 10;
+            C.FailOnSolverFail = false;
+
+            // Timestepping
+            // ============
+            #region time
+
+            //C.CheckJumpConditions = true;
+
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
+            //C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+
+
+            C.TimesteppingMode = compMode;
+            //double dt = 5e-7;
+            double dt = 1e-4;
+            C.dtMax = dt;
+            C.dtMin = dt;
+            C.Endtime = 100;
+            C.NoOfTimesteps = 5000;
+            C.saveperiod = 1;
+
+            #endregion
+
+            return C;
+        }
+        
+        
         public static ZLS_Control Wiki(int p = 4, int AMRlvl = 2, double SlipLength = 0, bool useGravity = true) {
             // --control "cs:ZwoLevelSetSolver.ControlFiles.Droplet.Wiki()"
             ZLS_Control C = new ZLS_Control(p);
@@ -512,7 +1007,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
         }
 
 
-
+/*
         public static ZLS_Control OnDB(int p = 2, int AMRlvl = 2) {
             ZLS_Control C = new ZLS_Control(p);
             C.ImmediatePlotPeriod = 1;
@@ -1426,5 +1921,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             return C;
         }
+    
+    
+        //*/
     }
 }

@@ -1299,8 +1299,6 @@ namespace BoSSS.Foundation.XDG {
         //}
 
         public double L2NormAllSpecies(CellMask cm = null) {
-            
-
             double acc = 0;
             foreach (SpeciesId spc in this.Basis.Tracker.SpeciesIdS) {
                 acc += L2NormSpecies(spc, cm).Pow2();
@@ -1401,7 +1399,7 @@ namespace BoSSS.Foundation.XDG {
 
                 MM_j.GEMV(1.0, Coords, 0.0, tmp);
                 double res_j = Coords.InnerProd(tmp);
-                acc += res_j;
+                acc += Math.Max(0.0, res_j); // in rare occasions, it might happen that this gets **sightly** negative due to round-off errors; best to ignore it?
 
                 cmMask[jCell] = false; // mark that we have taken care of this cell
             }
@@ -1430,27 +1428,32 @@ namespace BoSSS.Foundation.XDG {
             return acc;
         }
 
+        public override double JumpNorm(EdgeMask innerEM = null) {
+            
+            var trk = this.Basis.Tracker;
+            int deg = this.Basis.Degree;
+            
+            var AvailOrders = trk.GetCachedOrders().Where(order => order >= 2 * deg);
+            int order2Pick = AvailOrders.Any() ? AvailOrders.Min() : 2 * deg;
 
-        ///// <summary>
-        ///// L2 Error; for the cut cells, some precise quadrature is used
-        ///// </summary>
-        //public override double L2Error(ScalarFunction function, CellQuadratureScheme qr = null) {
-        //    using (new FuncTrace()) {
-        //        if (qr == null)
-        //            qr = new CellQuadratureScheme();
-        //        if (qr.FactoryChain.Count() <= 0) {
-        //            var splx = this.m_context.Grid.GridSimplex;
-        //            var trk = this.Basis.Tracker;
+            
+            var schemeHelper = trk.GetXDGSpaceMetrics(order2Pick, 1).XQuadSchemeHelper;
+            
+            this.MPIExchange();
+            
+            double acc = 0;
+            foreach (SpeciesId spc in this.Basis.Tracker.SpeciesIdS) {
+                var quadScheme = schemeHelper.GetEdgeQuadScheme(sp:spc, UseDefaultFactories: true, IntegrationDomain: innerEM);
+                
+                double speciesJumpNorm = this.GetSpeciesShadowField(spc).JumpNorm (eqs: quadScheme, exchange: false);
 
-        //            qr.AddStandardRule(splx, (CellMask)null)
-        //              .AddFixedRule(splx, trk.RecommendedVolQR, trk.GetCutCellSubGrid().VolumeMask);
+                acc += speciesJumpNorm.Pow2();
+            }
 
-        //        }
+            return acc.Sqrt();
+        }
 
-        //        return base.L2Error(function, qr);
-        //    }
-        //}
-
+       
         #region IObserver<LevelSetInfo> Members
 
         /// <summary>

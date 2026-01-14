@@ -26,6 +26,8 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
 
         protected override double BorderEdgeFlux(ref CommonParamsBnd inp, double[] Uin) {
             var EdgeType = m_map.EdgeTag2Type[inp.EdgeTag];
+            Vector n = inp.Normal;
+            var vel = ((Vector)inp.Parameters_IN);
 
             switch(EdgeType) {
                 case IncompressibleBcType.FreeSlip:
@@ -33,11 +35,22 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                 case IncompressibleBcType.NoSlipNeumann:
                 case IncompressibleBcType.Wall:
                 return 0.0;
+                //case IncompressibleBcType.Velocity_Inlet:
+                //    Vector bndVel = new Vector(m_spatDim);
+                //    var velFunction = m_spatDim.ForLoop(d => m_map.bndFunction[VariableNames.Velocity_d(d)]);
+                //    for(int d = 0; d < m_spatDim; d++) {
+                //        bndVel[d] = velFunction[d][inp.EdgeTag](inp.X, inp.time);
+                //    }
+                //    return (bndVel * Uin[0]) * n;
+                //case IncompressibleBcType.Dong_OutFlow:
+                //    if(n * vel >= 0) {
+                //        // flow from inside 
+                //        return (vel * Uin[0]) * n;
+                //    } else {
+                //        // flow from outside into the domain
+                //        return 0.0;
+                //    }
                 default:
-                Vector n = inp.Normal;
-
-                var vel = ((Vector)inp.Parameters_IN);
-
                 if(n * vel >= 0) {
                     // flow from inside->outside, i.e., characteristic is leaving the domain, i.e., an open boundary
                     return (vel * Uin[0]) * n;

@@ -377,6 +377,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 B.CheckForNanOrInfV(true, true, true, typeof(DirectSolver).Name + ", RHS on entry: ");
                 
                 double[] Residual = this.config.TestSolution ? B.ToArray() : null;
+                if (!this.config.TestSolution)
+                    tr.Info($"Solution will not be tested!");
 
                 string SolverName = "NotSet";
                 Exception lastException = null;

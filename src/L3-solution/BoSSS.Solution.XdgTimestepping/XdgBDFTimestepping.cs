@@ -1275,8 +1275,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 throw new ArgumentOutOfRangeException();
             //if (m_CurrentDt_Timestep > 0 && Math.Abs(dt / m_CurrentDt_Timestep - 1.0) > 1.0e-14)
             //    throw new ArgumentOutOfRangeException();
-            if (m_CurrentDt_Timestep > 0 && Math.Abs(m_CurrentDt_Timestep - dt) > 1e-14)
-                AdaptToNewTimestep(dt, m_CurrentDt_Timestep);
+            //if(m_CurrentDt_Timestep > 0 && Math.Abs(m_CurrentDt_Timestep - dt) > 1e-14)
+            //    AdaptToNewTimestep(dt, m_CurrentDt_Timestep);
 
             m_CurrentDt_Timestep = dt;
 

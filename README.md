@@ -8,16 +8,16 @@ application of numerical discretization schemes based on the Discontinuous Galer
 
 ### Wiki:
 - [Public BoSSS Wiki](https://git.rwth-aachen.de/kummer/bosss-public/-/wikis/home) (mirror/clone, publicly accessible)
-- [Internal BoSSS Wiki](https://git.rwth-aachen.de/bosss1/experimental/-/wikis/home) (primary, restricted access)
+- [Internal BoSSS Wiki](https://git.rwth-aachen.de/bosss1/bosss-experimental-3/-/wikis/home) (primary, restricted access)
 
 ### Installation instructions:
 - [Installation/Public Wiki](https://git.rwth-aachen.de/kummer/bosss-public/-/wikis/Getting-Started/Installation-and-Testing)
-- [Installation/Internal Wiki](https://git.rwth-aachen.de/bosss1/experimental/-/wikis/Getting-Started/Installation-and-Testing)
+- [Installation/Internal Wiki](https://git.rwth-aachen.de/bosss1/bosss-experimental-3/-/wikis/Getting-Started/Installation-and-Testing)
 
 ### Developer Starting Guide:
 (Compiling from source code, etc.)
 - [Getting Started as Developer/Public Wiki](https://git.rwth-aachen.de/kummer/bosss-public/-/wikis/Getting-Started/Working-with-BoSSS-as-a-Developer)
-- [Getting Started as Developer/Internal Wiki](https://git.rwth-aachen.de/bosss1/experimental/-/wikis/Getting-Started/Working-with-BoSSS-as-a-Developer)
+- [Getting Started as Developer/Internal Wiki](https://git.rwth-aachen.de/bosss1/bosss-experimental-3/-/wikis/Getting-Started/Working-with-BoSSS-as-a-Developer)
 
 ### Latest Installers:
 - Please Read [Installation/Public Wiki](https://git.rwth-aachen.de/kummer/bosss-public/-/wikis/Getting-Started/Installation-and-Testing) first!

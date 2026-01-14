@@ -30,6 +30,7 @@ using System.Security.Permissions;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace BoSSS.Foundation.Grid {
 
@@ -1144,19 +1145,25 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// For edge number <paramref name="e"/>, whether it is conformal
-        /// with cell 1
+        /// For edge number <paramref name="e"/>, whether it is conformal with cell 1
         /// </summary>
         static public bool IsEdgeConformalWithCell1(this IGeometricalEdgeData ge, int e) {
             return ((ge.Info[e] & EdgeInfo.Cell1_Nonconformal) == 0);
         }
 
         /// <summary>
-        /// For edge number <paramref name="e"/>, whether it is conformal
-        /// with cell 2
+        /// For edge number <paramref name="e"/>, whether it is conformal with cell 2
         /// </summary>
         static public bool IsEdgeConformalWithCell2(this IGeometricalEdgeData ge, int e) {
             return ((ge.Info[e] & EdgeInfo.Cell2_Nonconformal) == 0);
+        }
+
+        /// <summary>
+        /// For edge number <paramref name="e"/>, whether it is between to MPI processes.
+        /// </summary>
+        static public bool IsInterprocess(this IGeometricalEdgeData ge, int e) {
+            bool ret = ((ge.Info[e] & EdgeInfo.Interprocess) != 0);
+            return ret;
         }
 
 
@@ -1602,6 +1609,24 @@ namespace BoSSS.Foundation.Grid {
 
             MoreEdges = _MoreEdges;
             return Ret;
+        }
+
+        /// <summary>
+        /// A mask containing all edges between two MPI processes, i.e., between an ordinary cell and a ghost cell.
+        /// </summary>
+        static public EdgeMask GetInterprocessEdges(this IGridData g) {
+            int E = g.iGeomEdges.Count;
+            var bm = new BitArray(E);
+            for(int e = 0; e < E; e++) {
+                bm[e] = g.iGeomEdges.IsInterprocess(e);
+
+                int jCell2 = g.iGeomEdges.CellIndices[e, 1];
+                bool ext2 = jCell2 >= g.iGeomCells.NoOfLocalUpdatedCells;
+                if(bm[e] != ext2)
+                    throw new ApplicationException("invalid grid structure: interprocess edges seem to be marked inconsistent with cell indices.");
+            }
+
+            return new EdgeMask(g, bm, MaskType.Geometrical);
         }
 
 

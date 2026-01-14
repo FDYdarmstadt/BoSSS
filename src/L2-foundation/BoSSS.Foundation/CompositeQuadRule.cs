@@ -158,7 +158,7 @@ namespace BoSSS.Foundation.Quadrature {
                 tr.Info("This is: " + ruleFactory.GetType());
 #endif
                 IEnumerable<IChunkRulePair<TQuadRule>> ruleSet;
-                using(new BlockTrace("Rule_Compilation_" + ruleFactory.GetType().Name, tr)) {
+                using(new BlockTrace("Rule_Compilation_" + ruleFactory.ToString(), tr)) {
                     ruleSet = ruleFactory.GetQuadRuleSet(domain, order);
                     foreach(var rule in ruleSet) {
                         if(rule.Rule.OrderOfPrecision < order) {

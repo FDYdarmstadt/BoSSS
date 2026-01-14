@@ -86,6 +86,13 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
         /// </summary>
         public bool PrintIterations = false;
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [DataMember]
+        public bool UseAdaptiveReInit = false;
+
     }
 
 

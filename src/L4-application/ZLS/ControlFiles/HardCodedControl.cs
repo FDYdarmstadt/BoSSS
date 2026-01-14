@@ -637,9 +637,6 @@ namespace ZwoLevelSetSolver.ControlFiles {
             //C.RefinementLevel = 0;
             //C.AMR_startUpSweeps = 2;
 
-            //C.InitSignedDistance = false;
-            C.adaptiveReInit = false;
-
             //C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             C.LinearSolver = LinearSolverCode.automatic.GetConfig();
             //C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();

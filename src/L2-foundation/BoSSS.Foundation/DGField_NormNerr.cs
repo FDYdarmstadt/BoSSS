@@ -609,26 +609,62 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// computes the jump norm of this field at edges in<paramref name="innerEM"/>
         /// </summary>
-        /// <param name="innerEM"> if null full mask is chosen </param>
+        /// <param name="innerEM">optional domain restriction; if null, all inner edges are chosen </param>
         virtual public double JumpNorm(EdgeMask innerEM = null) {
+
+            if (innerEM == null) {
+                innerEM = EdgeMask.GetFullMask(this.GridDat, MaskType.Geometrical);
+            }
+            var eqs =  (new EdgeQuadratureScheme(true, innerEM));
+
+            return JumpNorm(eqs);
+        }
+
+
+        /// <summary>
+        /// computes the jump norm of this field using the quadrature scheme <paramref name="eqs"/>
+        /// </summary>
+        /// <param name="eqs"></param>
+        /// <param name="exchange">perform an MPI exchange of external/ghost cells before computation</param>
+        virtual public double JumpNorm(EdgeQuadratureScheme eqs, bool exchange = true) {
             var grd = this.GridDat;
             int D = grd.SpatialDimension;
             var e2cTrafo = grd.iGeomEdges.Edge2CellTrafos;
 
-            if (innerEM == null) {
-                innerEM = EdgeMask.GetFullMask(grd, MaskType.Geometrical);
-            }
+            
 
             int[,] CellIndices = grd.iGeomEdges.CellIndices;
+            int Jup = grd.iGeomCells.NoOfLocalUpdatedCells;
 
 
-            this.MPIExchange();
+            bool CountInterprocessEdge(int iEdge) {
+                int jCell0 = CellIndices[iEdge, 0];
+                int jCell1 = CellIndices[iEdge, 1];
+
+                if(jCell0 < 0)
+                    // boundary edge: there can be no jump, don't count this
+                    return false;
+                if(jCell1 < Jup)
+                    // edge between local edges - count that
+                    return true;                
+
+                int jCell0_log = grd.GetLogicalCellIndex(jCell0);
+                int jCell1_log = grd.GetLogicalCellIndex(jCell1);
+                long Gidx0 = jCell0_log + grd.CellPartitioning.i0;
+                long Gidx1 = grd.iParallel.GlobalIndicesExternalCells[jCell1_log - Jup];
+
+                return (Gidx0 < Gidx1); // convention: only count interprocess edge if the locally updated cell has the smaller index.
+            }
+
+            if(exchange)
+                this.MPIExchange();
+            var rule = eqs.Compile(grd, this.Basis.Degree * 2);
 
             double Unorm = 0;
 
             EdgeQuadrature.GetQuadrature(
                 new int[] { 1 }, grd,
-                (new EdgeQuadratureScheme(true, innerEM)).Compile(grd, this.Basis.Degree * 2),
+                rule,
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) { // Evaluate
                     NodeSet NS = QR.Nodes;
                     EvalResult.Clear();
@@ -649,7 +685,11 @@ namespace BoSSS.Foundation {
                     EvalResult.ApplyAll(x => x * x);
                 },
                 delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) { // SaveIntegrationResults
-                    Unorm += ResultsOfIntegration.Sum();
+                    for(int i = 0; i < Length; i++) {
+                        int iEdge = i + i0;
+                        if(CountInterprocessEdge(iEdge))
+                            Unorm += ResultsOfIntegration[i, 0];
+                    }
                 }).Execute();
 
             Unorm = Unorm.MPISum();

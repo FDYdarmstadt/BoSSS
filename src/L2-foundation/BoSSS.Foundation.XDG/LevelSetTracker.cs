@@ -275,7 +275,6 @@ namespace BoSSS.Foundation.XDG {
                     Debug.Assert(m_DataHistories[iLs].HistoryLength == L);
                     Debug.Assert(m_LevelSetHistories[iLs].HistoryLength == L);
                 }
-                Debug.Assert(m_QuadFactoryHelpersHistory.HistoryLength == L);
                 Debug.Assert(m_XDGSpaceMetricsHistory.HistoryLength == L);
                 return L;
             }
@@ -287,7 +286,6 @@ namespace BoSSS.Foundation.XDG {
                         m_DataHistories[iLs].HistoryLength = value;
                         m_LevelSetHistories[iLs].HistoryLength = value;
                     }
-                    m_QuadFactoryHelpersHistory.HistoryLength = value;
                     m_XDGSpaceMetricsHistory.HistoryLength = value;
                 }
                 Debug.Assert(HistoryLength == value);
@@ -315,7 +313,6 @@ namespace BoSSS.Foundation.XDG {
                     Debug.Assert(m_DataHistories[iLs].PushCount == L);
                     Debug.Assert(m_LevelSetHistories[iLs].PushCount == L);
                 }
-                Debug.Assert(m_QuadFactoryHelpersHistory.PushCount == L);
                 Debug.Assert(m_XDGSpaceMetricsHistory.PushCount == L);
 
                 return L;
@@ -333,7 +330,6 @@ namespace BoSSS.Foundation.XDG {
                     Debug.Assert(m_DataHistories[iLs].GetPopulatedLength() == L);
                     Debug.Assert(m_LevelSetHistories[iLs].GetPopulatedLength() == L);
                 }
-                Debug.Assert(m_QuadFactoryHelpersHistory.GetPopulatedLength() == L);
                 Debug.Assert(m_XDGSpaceMetricsHistory.GetPopulatedLength() == L);
                 
                 return L;
@@ -370,8 +366,6 @@ namespace BoSSS.Foundation.XDG {
             m_DataHistories = _DataHistories.ToList().AsReadOnly();
             m_LevelSetHistories = _LevelSetHistories.ToList().AsReadOnly();
             m_RegionsHistory = new HistoryStack<LevelSetRegions>(new LevelSetRegions(this));
-            m_QuadFactoryHelpersHistory = new HistoryStack<Dictionary<(CutCellQuadratureMethod, int), XQuadFactoryHelperBase>>(
-                new Dictionary<(CutCellQuadratureMethod, int), XQuadFactoryHelperBase>());
             m_XDGSpaceMetricsHistory = new HistoryStack<Dictionary<Tuple<SpeciesId[], CutCellQuadratureMethod, int>, XDGSpaceMetrics>>(NewXDGSpaceMetricsCache());
 
             this.IncreaseHistoryLength(1); // at least one previous time-step is required to support update of XDG fields
@@ -1019,8 +1013,6 @@ namespace BoSSS.Foundation.XDG {
 
             m_RegionsHistory.Push((r1) => r1.CloneAs(), (r1, r0) => r1);
 
-            m_QuadFactoryHelpersHistory.Push((r1) => new Dictionary<(CutCellQuadratureMethod, int), XQuadFactoryHelperBase>(), (r1, r0) => r1);
-
             m_XDGSpaceMetricsHistory.Push((r1) => NewXDGSpaceMetricsCache(), (r1,r0) => r1);
 
 
@@ -1077,8 +1069,6 @@ namespace BoSSS.Foundation.XDG {
             }
 
             m_RegionsHistory.Pop((r1, r0) => r0); // .Push((r1) => r1.CloneAs(), (r1, r0) => r1);
-
-            m_QuadFactoryHelpersHistory.Pop((r1, r0) => r0);
 
             m_XDGSpaceMetricsHistory.Pop((r1, r0) => r0);
 
@@ -1808,8 +1798,6 @@ namespace BoSSS.Foundation.XDG {
                 this.DataHistories[iLs].Current.ClearCaches();
             }
 
-            m_QuadFactoryHelpersHistory.Current.Clear();
-
             m_XDGSpaceMetricsHistory.Current.Clear();
 
             // set level-set data
@@ -1861,8 +1849,6 @@ namespace BoSSS.Foundation.XDG {
                 this.DataHistories[iLs].Current.ClearCaches();
             }
 
-            m_QuadFactoryHelpersHistory.Current.Clear();
-
             m_XDGSpaceMetricsHistory.Current.Clear();
 
             // set level-set data
@@ -1911,8 +1897,6 @@ namespace BoSSS.Foundation.XDG {
             for (int iLs = 0; iLs < NoOfLevelSets; iLs++) {
                 this.DataHistories[iLs].Current.ClearCaches();
             }
-
-            m_QuadFactoryHelpersHistory.Current.Clear();
 
             m_XDGSpaceMetricsHistory.Current.Clear();
 
@@ -2570,7 +2554,6 @@ namespace BoSSS.Foundation.XDG {
 
                 // forget values that are not correct anymore
                 // ==========================================
-                this.m_QuadFactoryHelpersHistory.Current.Clear();
                 this.m_XDGSpaceMetricsHistory.Current.Clear();
 
                 // Check Level-Set Topology
@@ -2703,7 +2686,6 @@ namespace BoSSS.Foundation.XDG {
             this.m_NoOfSpecies = null;
             this.m_Observers = null;
             this.m_XDGSpaceMetricsHistory = null;
-            this.m_QuadFactoryHelpersHistory = null;
             this.m_SpeciesId2Index = null;
             this.TestNodes = null;
             this.TestNodes_QuadWeights = null;

@@ -1,5 +1,4 @@
 ﻿#undef LOG_ACTIONS
-#undef LOG_TIME
 
 using System;
 using System.Collections.Generic;
@@ -161,11 +160,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
             rule.order = order;
             var result = new List<ChunkRulePair<QuadRule>>();
 
-
-#if LOG_TIME
-            Stopwatch stopWatch = new Stopwatch();
-            stopWatch.Start();
-#endif
             //Find quadrature nodes and weights in each cell/chunk
             foreach(Chunk chunk in mask) {
                 foreach(int cell in chunk.Elements) {
@@ -191,11 +185,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
                     ilPSP.Environment.StdoutOnlyOnRank0 = true;
                 }
             }
-#if LOG_TIME
-            stopWatch.Stop();
-            long ts = stopWatch.ElapsedMilliseconds;
-            Console.WriteLine("Calculated cutcell rule : {0}ms", ts);
-#endif
+
             return result;
         }
     }
@@ -217,10 +207,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
         public IEnumerable<IChunkRulePair<CellBoundaryQuadRule>> GetQuadRuleSet(ExecutionMask mask, int order) {
             rule.order = order;
             var result = new List<ChunkRulePair<CellBoundaryQuadRule>>();
-#if LOG_TIME
-            Stopwatch stopWatch = new Stopwatch();
-            stopWatch.Start();
-#endif
+
             //Find quadrature nodes and weights in each cell/chunk
             foreach(Chunk chunk in mask) {
                 foreach(int cell in chunk.Elements) {
@@ -230,11 +217,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
                     result.Add(sayePair);
                 }
             }
-#if LOG_TIME
-            stopWatch.Stop();
-            long ts = stopWatch.ElapsedMilliseconds;
-            Console.WriteLine("Calculated cutcell rule : {0}ms", ts);
-#endif
+
             return result;
         }
 
@@ -426,11 +409,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
                 );
             ISayeGaussComboRule wrappedRule = new LevelSetOnEdgeIntercepter(rule, lsData);
 
-            CellMask maxGrid = lsData.GridDat.Cells.GetCells4Refelement(rule.RefElement).Intersect(
-                lsData.Region.GetCutCellMask().ToGeometicalMask());
+            
             return new SayeGaussComboRuleFactory(
-                wrappedRule,
-                maxGrid);
+                wrappedRule);
         }
 
         public static SayeGaussComboRuleFactory SayeGaussRule_Combo3D(
@@ -445,11 +426,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
             ISayeGaussComboRule wrappedRule = new LevelSetOnEdgeIntercepter(rule, lsData);
 
 
-            CellMask maxGrid = lsData.GridDat.Cells.GetCells4Refelement(rule.RefElement).Intersect(
-                lsData.Region.GetCutCellMask().ToGeometicalMask());
-            return new SayeGaussComboRuleFactory(
-                wrappedRule,
-                maxGrid);
+            return new SayeGaussComboRuleFactory(wrappedRule);
         }
 
         public static SayeGaussComboRuleFactory SayeGaussRule_Combo(

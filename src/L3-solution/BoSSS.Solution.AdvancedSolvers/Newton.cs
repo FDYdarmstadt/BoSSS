@@ -34,6 +34,7 @@ using BoSSS.Solution.AdvancedSolvers.Testing;
 using System.Collections.Concurrent;
 using BoSSS.Foundation.Grid;
 using System.Collections;
+using NUnit.Framework.Constraints;
 
 
 namespace BoSSS.Solution.AdvancedSolvers {
@@ -751,7 +752,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             tr.Info($"NewtonStep: linear solver converged? {solver.Converged}");
                         else
                             tr.Error($"NewtonStep: linear solver converged? {solver.Converged}");
-
 
                     }
                 } else {

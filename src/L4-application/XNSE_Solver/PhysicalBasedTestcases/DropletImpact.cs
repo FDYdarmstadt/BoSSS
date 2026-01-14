@@ -808,8 +808,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 "double initHeight = 7.5;" +
                 "return Math.Sqrt(X[0].Pow2() + (X[1] - initHeight).Pow2()) - radiusDrop; } "
             );
-            //C.AddInitialValue("Phi", PhiFunc);
-            C.AddInitialValue("Phi", new Formula("X => -1.0", false));
+            C.AddInitialValue("Phi", PhiFunc);
+            //C.AddInitialValue("Phi", new Formula("X => -1.0", false));
 
             // C.AddInitialValue("VelocityZ#A", InitVelocity);
 
@@ -825,33 +825,238 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
 
 
-            C.SkipSolveAndEvaluateResidual = true;
+            C.ReInitControl = new BoSSS.Solution.LevelSetTools.EllipticReInit.EllipticReInitAlgoControl() {
+                UseAdaptiveReInit = false,
+            };
+            //C.PostprocessingModules.Add(new StokesExtensionEvolverLogging() { SolverStage = 2 });
 
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
-            C.NonLinearSolver.ConvergenceCriterion = 1e-9;
-            C.NonLinearSolver.MaxSolverIterations = 20;
+            //C.SkipSolveAndEvaluateResidual = true;
 
-            // C.LinearSolver = LinearSolverCode.exp_Kcycle_schwarz.GetConfig();
+            //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            C.NonLinearSolver.Globalization = Newton.GlobalizationOption.LineSearch;
+            // C.NonLinearSolver.ConvergenceCriterion = 1e-9;
+            C.NonLinearSolver.MaxSolverIterations = 50;
 
+            C.LinearSolver = LinearSolverCode.exp_Kcycle_schwarz.GetConfig();
+            //C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
+
+            C.TracingNamespaces = "BoSSS.Solution.AdvancedSolvers";
 
             //C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.None;
-            C.Option_LevelSetEvolution = LevelSetEvolution.None;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+            C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             // C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
             // C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.dtFixed = 1.0e-6;
-            C.NoOfTimesteps = 1;
+            C.NoOfTimesteps = 10;
 
             {
                 C.AdaptiveMeshRefinement = true;
-                int AMRlevel = 3;
+                int AMRlevel = 1;
+                C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = AMRlevel });
+                C.activeAMRlevelIndicators.Add(new AMRatInterfaceKinks());
                 //C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = AMRlevel });
-                C.activeAMRlevelIndicators.Add(new AMRLevelIndicatorLibrary.AMRonBoundaryByResolution(new byte[] { 1 }, (h_axial/res_axial)*1.5) { maxRefinementLevel = AMRlevel });
+                //C.activeAMRlevelIndicators.Add(new AMRLevelIndicatorLibrary.AMRonBoundaryByResolution(new byte[] { 1 }, (h_axial/res_axial)*1.5) { maxRefinementLevel = AMRlevel });
                 C.AMR_startUpSweeps = AMRlevel + 1;
             }
+
+            return C;
+        }
+
+
+        static public Grid2D RotatingDiskSlice_CartesianCutOut(double radiusOP, double l_upstream, double l_downstream, double h_axial, int res_azimuthal, int res_axial) {
+
+            double[] yNodes = GenericBlas.Linspace(-l_upstream, l_downstream, res_azimuthal + 1);    // azimuthal direction
+                                                                                                     // double[] yNodes = GenericBlas.Linspace(-l_azimuthal / 3.0, (2.0 * l_azimuthal) / 3.0, res_azimuthal + 1);    // azimuthal direction
+            double[] zNodes = GenericBlas.Linspace(0.0, h_axial, res_axial + 1);    // axial direction
+
+            var grd = Grid2D.Cartesian2DGrid(yNodes, zNodes, periodicY: false);
+            grd.Name = $"RotatingDiskSlice2D_CartesianCutOut_{res_azimuthal}x{res_axial}";
+
+            grd.EdgeTagNames.Add(1, "FreeSlip_rotatingDisk");
+
+            grd.EdgeTagNames.Add(2, "dong_outflow_top");
+            grd.EdgeTagNames.Add(3, "velocity_inlet_upstream");
+            grd.EdgeTagNames.Add(4, "dong_outflow_downstream");
+
+            grd.DefineEdgeTags(delegate (Vector X) {
+                byte et = 0;
+                if(X.y.Abs() <= 1e-8)
+                    et = 1;
+                if((X.y - h_axial).Abs() <= 1e-8)
+                    et = 2;
+                if((X.x + (l_upstream)).Abs() <= 1e-8)
+                    et = 3;
+                if((X.x - (l_downstream)).Abs() <= 1e-8)
+                    et = 4;
+
+                return et;
+            });
+
+            return grd;
+        }
+
+
+        public static XNSE_Control DropletReboundGauthier2D(int k = 3) {
+
+            var C = new XNSE_Control();
+
+            // basic database options
+            // ======================
+            #region db
+
+            string _DbPath = @"C:\BoSSS-localJobs\DropletRebound_Gauthier";
+            C.DbPath = _DbPath;
+            C.savetodb = false; // C.DbPath != null;
+            C.ProjectName = "DropletReboundGauthier";
+
+            #endregion
+
+            int DgLsDegree = k;
+            int CgLsDegree = k + 1;
+            C.SetFieldOptions(k, DgLsDegree, CgLsDegree);
+            //C.SetDGdegree(k);
+            C.FieldOptions.Add(VariableNames.GravityY, new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+
+            // physical parameters
+            double radiusOP = 90e-3; // operating point (droplet injection point) -> Re = radiusOp / Lstar
+            double density = 1.2;
+            double kinViscosity = 2.0e-5 / density; // kinematic viscosity
+                                                    //double omega = 46.11514476; // rotation rate
+            double velOP = 38.0;
+            double omega = velOP / radiusOP; //46.11514476; // rotation rate
+            double Lstar = Math.Sqrt(kinViscosity / omega);  // used for non-dimensionalization of the flow fields
+
+            double densityDrop = 960;
+            double sigma = 21e-3;
+
+
+            C.PhysicalParameters.rho_A = densityDrop;
+            C.PhysicalParameters.mu_A = 96e-3;
+
+            C.PhysicalParameters.rho_B = density;
+            C.PhysicalParameters.mu_B = density * kinViscosity;
+
+            C.PhysicalParameters.Sigma = sigma;
+
+            C.PhysicalParameters.IncludeConvection = false;
+
+
+            // set grid 
+            int res_global = 8;
+
+            double zTop = 20;
+            double zTopStar = zTop * Lstar;
+
+            double l_upstream = zTopStar * (2.0 / 2.0);
+            double l_downstream = zTopStar * (3.0 / 2.0);
+            double h_axial = 1.0 * zTopStar;
+
+            int res_azimuthal = (int)((5.0 / 2.0) * res_global);
+            int res_axial = 1 * res_global;
+
+            Grid2D grd = RotatingDiskSlice_CartesianCutOut(radiusOP, l_upstream, l_downstream, h_axial, res_azimuthal, res_axial);
+            //C.GridFunc = delegate () { return grd; };
+
+            // initial conditions
+            // C.AddInitialValue("VelocityX#B", vonKarmanHAM_velX);
+
+
+            var database = DatabaseInfo.Open(_DbPath);
+            Guid restartID = new Guid("26d82b4f-2398-44a9-b2d2-6f3da584218f");
+            C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, 82);
+
+
+
+            Formula PhiFunc = new Formula(
+                "Phi",
+                false,
+                "double Phi(double[] X) { " +
+                "double radiusOP = 0.09;" +
+                "double radiusDrop = 0.91e-3;" +
+                "double initHeight = 1.5e-3;" +
+                "return Math.Sqrt(X[0].Pow2() + (X[1] - initHeight).Pow2()) - radiusDrop; } "
+            );
+            //C.AddInitialValue("Phi", PhiFunc);
+
+            Formula InitVelocity = new Formula(
+                "VelY",
+                false,
+                "double VelY(double[] X) { return -0.23; } "
+            );
+            //C.AddInitialValue("VelocityY#A", InitVelocity);
+
+            Formula GravityValue = new Formula(
+                "GravY",
+                false,
+                "double GravY(double[] X) { return -9.81; } "
+            );
+            //C.AddInitialValue("GravityY#A", GravityValue);
+            //C.AddInitialValue("GravityY#B", GravityValue);
+
+
+            // boundary conditions
+            // C.AddBoundaryValue("wall_rotatingDisk", "VelocityX#B", RotatingDiskVelocityX);
+            // C.AddBoundaryValue("velocity_inlet_upstream", "VelocityX#B", vonKarmanHAM_velX);
+
+            C.StokesExtentionUseBCmap = StokesExtentionBoundaryOption.useBcMap;
+            // C.AddBoundaryValue("velocity_inlet_rotatingDisk", "VelocityX", RotatingDiskVelocityX);
+            // C.AddBoundaryValue("velocity_inlet_upstream", "VelocityX", vonKarmanHAM_velX);
+
+            //C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Algoim;
+
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
+
+            //C.ReInitPeriod = 10;
+            C.ReInitControl = new BoSSS.Solution.LevelSetTools.EllipticReInit.EllipticReInitAlgoControl() {
+                UseAdaptiveReInit = true,
+                //FastMarchingPrecond = true,
+            };
+            C.PostprocessingModules.Add(new StokesExtensionEvolverLogging() { SolverStage = 2 });
+
+            // C.SkipSolveAndEvaluateResidual = true;
+
+            // C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.NonLinearSolver.Globalization = Newton.GlobalizationOption.LineSearch;
+            // C.NonLinearSolver.ConvergenceCriterion = 1e-9;
+            C.NonLinearSolver.MaxSolverIterations = 50;
+
+            // C.LinearSolver = LinearSolverCode.exp_Kcycle_schwarz.GetConfig();
+
+            C.AgglomerationThreshold = 0.2;
+
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+
+            C.UseAdaptiveTimestep = true;
+            C.ChooseTimestepByMethod = XNSE_Control.ChooseTimestepBy.capillaryRestriction;
+            //C.dtFixed = 4e-5;
+            C.NoOfTimesteps = 2000;
+            C.Endtime = 0.1;
+
+            C.AdaptiveMeshRefinement = true;
+            int maxAMRlevel = 2;
+            //C.activeAMRlevelIndicators.Add(new AMRwithIntegralTheoremChecks() { maxRefinementLevel = 0, errThreshold_Gauss = 1e-8, errThreshold_Stokes = 1e-8, printErrors = true });
+            C.activeAMRlevelIndicators.Add(new AMRcurvaturebased() { maxRefinementLevel = maxAMRlevel, radiusMaxThreshold = 2.0, curvSignThreshold = 0.2, printErrors = true });
+            //C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = maxAMRlevel });
+            //C.activeAMRlevelIndicators.Add(new AMRatInterfaceKinks() { maxRefinementLevel = maxAMRlevel });
+            //C.activeAMRlevelIndicators.Add(new AMRonNarrowbandAtBoundary(new byte[] { 1 }) { maxRefinementLevel = AMRlevel_dropBL });
+            // double minResAMR = (h_axial / (2.0 * (double)res_axial)) * 1.5;
+            // C.activeAMRlevelIndicators.Add(new AMRLevelIndicatorLibrary.AMRonBoundaryByResolution(new byte[] { 1 }, minResAMR)  { maxRefinementLevel = 3 });
+            C.AMR_startUpSweeps = maxAMRlevel;
+
+            //C.PostprocessingModules.Add(new EnergyLogging());
+            //C.TracingNamespaces = "BoSSS.Solution.AdvancedSolvers,BoSSS.Foundation.ConstrainedDGprojection";
+
+            C.SessionName = $"DropletReboundGauthier_2D_{res_azimuthal}x{res_axial}_AMR{maxAMRlevel}_k{k}_Stokes_noRotDisk";
 
             return C;
         }

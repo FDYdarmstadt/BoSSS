@@ -364,7 +364,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
                 else {
                     slv.DefineMatrix(OpMatrix);
 #if DEBUG
-                    Console.WriteLine("ConditionNumber of ReInit-Matrix is " + OpMatrix.condest().ToString("E"));
+                    //Console.WriteLine("ConditionNumber of ReInit-Matrix is " + OpMatrix.condest().ToString("E"));
 #endif
                 }
 

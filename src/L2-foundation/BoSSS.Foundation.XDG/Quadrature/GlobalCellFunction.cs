@@ -13,12 +13,14 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
         readonly LevelSetData levelSet;
         readonly RefElement Kref;
         readonly int jCell;
-        public int EvalCounterV = 0;
-        public int EvalCounterG = 0;
-        public int EvalCounterH = 0;
-        public Stopwatch stwV = new Stopwatch();
-        public Stopwatch stwG = new Stopwatch();
-        public Stopwatch stwH = new Stopwatch();
+        /*
+        static public int EvalCounterV = 0;
+        static public int EvalCounterG = 0;
+        static public int EvalCounterH = 0;
+        static public Stopwatch stwV = new Stopwatch();
+        static public Stopwatch stwG = new Stopwatch();
+        static public Stopwatch stwH = new Stopwatch();
+        */
 
         public GlobalCellFunction(LevelSetData levelSet, int jCell) {
             this.jCell = jCell;
@@ -31,33 +33,33 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
         public int M { get; private set; }
 
         public double Evaluate(Tensor1 x) {
-            stwV.Start();
+            //stwV.Start();
             NodeSet X = FromGlobalToReferenceNodeSet(x);
             var _evaluation = levelSet.GetLevSetValues(X, jCell, 1);
-            EvalCounterV++;
-            stwV.Stop();
+            //EvalCounterV++;
+            //stwV.Stop();
             return _evaluation[0, 0];
         }
 
         public (double evaluation, Tensor1 gradient) EvaluateAndGradient(Tensor1 x) {
-            stwG.Start();
+            //stwG.Start();
             NodeSet X = FromGlobalToReferenceNodeSet(x);
             var _evaluation = levelSet.GetLevSetValues(X, jCell, 1);
             var _gradient = levelSet.GetLevelSetReferenceGradients(X, jCell, 1);
-            EvalCounterG++;
-            stwG.Stop();
+            //EvalCounterG++;
+            //stwG.Stop();
             return (_evaluation[0, 0], ToTensor1(_gradient));
         }
 
         public (double evaluation, Tensor1 gradient, Tensor2 hessian) EvaluateAndGradientAndHessian(Tensor1 x) {
-            stwH.Start(); 
+            //stwH.Start(); 
             NodeSet X = FromGlobalToReferenceNodeSet(x);
             X.LockForever();
             var _evaluation = levelSet.GetLevSetValues(X, jCell, 1);
             var _gradient = levelSet.GetLevelSetReferenceGradients(X, jCell, 1);
             var _hessian = levelSet.GetLevelSetReferenceHessian(X, jCell, 1);
-            EvalCounterH++;
-            stwH.Stop();
+            //EvalCounterH++;
+            //stwH.Stop();
             return (_evaluation[0, 0], ToTensor1(_gradient), ToTensor2(_hessian));
         }
 

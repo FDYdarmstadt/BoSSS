@@ -1478,8 +1478,7 @@ namespace BoSSS.Solution.LevelSetTools {
             int[] jSub2jCell = CutCellsGrid.SubgridIndex2LocalCellIndex;
             int[] jCell2jSub = CutCellsGrid.LocalCellIndex2SubgridIndex;
 
-            //var SchemeHelper = new XQuadSchemeHelper(lsTrk, momentFittingVariant, lsTrk.GetSpeciesId("A"));
-            var SchemeHelper = lsTrk.GetXDGSpaceMetrics(new[] { lsTrk.GetSpeciesId("A") }, HMForder).XQuadSchemeHelper; // new XQuadSchemeHelper(lsTrk, momentFittingVariant, );
+            var SchemeHelper = lsTrk.GetXDGSpaceMetrics(new[] { lsTrk.GetSpeciesId("A") }, HMForder).XQuadSchemeHelper;
             
 
             /*

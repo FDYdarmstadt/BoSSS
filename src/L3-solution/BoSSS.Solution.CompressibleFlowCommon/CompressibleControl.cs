@@ -52,8 +52,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// The configured Reynolds number in the far field.
         /// </summary>
         /// <remarks>
-        /// This option is ignored if <see cref="DomainType"/> is equal
-        /// to "Euler"
+        /// This option is ignored if <see cref="DomainType"/> is equal to "Euler"
         /// </remarks>
         public double ReynoldsNumber=1.0;
 
@@ -61,8 +60,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// The configured Prandtl number in the far field.
         /// </summary>
         /// <remarks>
-        /// This option is ignored if <see cref="DomainType"/> is equal
-        /// to "Euler"
+        /// This option is ignored if <see cref="DomainType"/> is equal to "Euler"
         /// </remarks>
         public double PrandtlNumber=0.71;
 

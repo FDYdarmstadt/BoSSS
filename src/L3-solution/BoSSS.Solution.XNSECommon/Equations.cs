@@ -95,7 +95,6 @@ namespace BoSSS.Solution.XNSECommon {
             // ================
             if (config.isViscous && !(muSpc == 0.0)) {
                 AddCoefficient("SlipLengths");
-                //Console.WriteLine("!!!!!!!!!!!!!!!!!!  Erinn: slip längen deakt");
                 double penalty = dntParams.PenaltySafety;
                 DefineViscous(spcName, d, D, boundaryMap, physParams, dntParams, penalty);
             }

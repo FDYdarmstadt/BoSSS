@@ -86,8 +86,6 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
                     CutCellQuadratureType: CutCellQuadratureMethod.Saye);
                 C.SkipSolveAndEvaluateResidual = true;
 
-                C.InitSignedDistance = false;
-
                 LaLa.Add(C);
             }
 

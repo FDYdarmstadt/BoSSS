@@ -43,12 +43,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         string levelSetName;
 
-        public FastMarchingEvolver(string levelSetName, int hMForder, int D, int ReInitPeriod) {
+        public FastMarchingEvolver(string levelSetName, int hMForder, int D, EllipticReInitAlgoControl ReInitControl = null, int ReInitPeriod = 0) {
             this.m_HMForder = hMForder;
             this.levelSetName = levelSetName;
 
+            ReInit_Control = ReInitControl != null ? ReInitControl : new EllipticReInitAlgoControl();
             this.ReInit_Period = ReInitPeriod;
-            ReInit_Control = new EllipticReInitAlgoControl();
 
             if(levelSetName == BoSSS.Solution.NSECommon.VariableNames.LevelSetCG) {
                 parameters = BoSSS.Solution.NSECommon.VariableNames.LevelSetGradient(D);
@@ -152,9 +152,20 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             //Tecplot.Tecplot.PlotFields(plotFields, this.GetType().ToString().Split('.').Last() + "-" + TimestepNo, (double)TimestepNo, 2);            
         }
 
+
         private EllipticReInitAlgoControl ReInit_Control;
+        private int ReInit_Period;
         private int ReInit_TimestepIndex = 0;
-        private int ReInit_Period = 0;
+
+        /// <summary>
+        /// sets the ReinitCounter after LoadRestart (also in case of mesh adaption)
+        /// </summary>
+        /// <param name="RI_Timestep"></param>
+        public void SetReInitTimestepNumber(int RI_Timestep) {
+            ReInit_TimestepIndex = RI_Timestep;
+        } 
+
+
         public bool Reinitialize(
             DualLevelSet phaseInterface,
             double time,
@@ -164,6 +175,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             IReadOnlyDictionary<string, DGField> ParameterVarFields) {
 
             bool changed = false;
+            ReInit_TimestepIndex++;
+
+            //Console.WriteLine($"ReInit_TimestepIndex = {ReInit_TimestepIndex}");
 
             // after level-set evolution and for initializing non-signed-distance level set fields
             if (ReInit_Period > 0 && ReInit_TimestepIndex % ReInit_Period == 0) {
@@ -181,7 +195,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 changed = true;
             }
 
-            ReInit_TimestepIndex++;
             return changed;
         }
     }

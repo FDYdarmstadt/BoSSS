@@ -680,8 +680,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.RefinementLevel = 2;
             //C.AMR_startUpSweeps = 2;
 
-            C.adaptiveReInit = true;
-
             #endregion
 
 
@@ -947,8 +945,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.BaseRefinementLevel  1;
             //C.RefinementLevel = 1;
             //C.ReInitPeriod = 100;
-
-            C.ReInitOnRestart = true;
 
             #endregion
 
