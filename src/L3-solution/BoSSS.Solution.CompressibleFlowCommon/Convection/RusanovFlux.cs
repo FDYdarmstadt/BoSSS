@@ -16,11 +16,12 @@ limitations under the License.
 
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
-using BoSSS.Solution.CompressibleFlowCommon.Convection;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.Convection;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using System;
 
-namespace CNS.Convection {
+namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
 
     /// <summary>
     /// Implementation of the Rusanov flux (also known as the local
@@ -31,12 +32,17 @@ namespace CNS.Convection {
         /// <summary>
         /// <see cref="EulerFlux"/>
         /// </summary>
-        /// <param name="config"><see cref="EulerFlux"/></param>
-        /// <param name="boundaryMap"><see cref="EulerFlux"/></param>
-        /// <param name="equationComponent"><see cref="EulerFlux"/></param>
-        /// <param name="speciesMap"><see cref="EulerFlux"/></param>
         public RusanovFlux(CompressibleControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, ISpeciesMap speciesMap)
             : base(config, boundaryMap, equationComponent, speciesMap.GetMaterial(double.NaN)) {
+        }
+
+
+        /// <summary>
+        /// <see cref="EulerFlux.EulerFlux"/>
+        /// </summary>
+        public RusanovFlux(CompressibleControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, Material material)
+            : base(config, boundaryMap, equationComponent, material) {
+            
         }
 
         /// <summary>

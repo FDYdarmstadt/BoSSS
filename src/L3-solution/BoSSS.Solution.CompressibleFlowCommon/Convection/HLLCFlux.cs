@@ -30,13 +30,9 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <summary>
         /// <see cref="EulerFlux"/>
         /// </summary>
-        /// <param name="config"><see cref="EulerFlux"/></param>
-        /// <param name="boundaryMap"><see cref="EulerFlux"/></param>
-        /// <param name="equationComponent"><see cref="EulerFlux"/></param>
-        /// <param name="speciesMap"><see cref="EulerFlux"/></param>
         protected HLLCFlux(CompressibleControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, ISpeciesMap speciesMap)
             : base(config, boundaryMap, equationComponent, speciesMap.GetMaterial(double.NaN)) {
-            if (config.EquationOfState is IdealGas == false) {
+            if(config.EquationOfState is IdealGas == false) {
                 throw new Exception("HLLC flux currently only works for ideal gases");
             }
         }

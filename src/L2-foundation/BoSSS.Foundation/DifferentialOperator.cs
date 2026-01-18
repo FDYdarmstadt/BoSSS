@@ -1023,6 +1023,14 @@ namespace BoSSS.Foundation {
                 if(!IsCommitted)
                     throw new NotSupportedException("Commit() (finishing operator assembly) must be called prior to evaluation.");
 
+
+                if(DomainFields.Count != this.DomainVar.Count)
+                    throw new ArgumentException($"mismatch in domain variables: got {DomainFields.Count}, {DomainFields.Select(f => f.Identification ?? "null").ToConcatString("[", ", ", "]")}, but expecting {this.DomainVar.Count} {this.DomainVar.ToConcatString("[", ", ", "]")}");
+                if(CodomainVarMap.BasisS.Count != this.CodomainVar.Count)
+                    throw new ArgumentException($"mismatch in codomain variables: got {CodomainVarMap.BasisS.Count}, but expecting {this.DomainVar.Count} {this.DomainVar.ToConcatString("[", ", ", "]")}");
+                if((ParameterMap?.Count ?? 0) != this.ParameterVar.Count)
+                    throw new ArgumentException($"mismatch in parameter variables: got {(ParameterMap?.Count ?? 0)}, but expecting {this.ParameterVar.Count} {this.ParameterVar.ToConcatString("[", ", ", "]")}");
+
                 var rulz = CompileQuadratureRules(DomainFields.Select(f=>f.Basis), 
                     GetBasisS(ParameterMap),
                     CodomainVarMap.BasisS);
@@ -1043,6 +1051,14 @@ namespace BoSSS.Foundation {
             using(new FuncTrace()) {
                 if(!IsCommitted)
                     throw new NotSupportedException("Commit() (finishing operator assembly) must be called prior to evaluation.");
+
+                if(DomainVarMap.BasisS.Count != this.DomainVar.Count)
+                    throw new ArgumentException($"mismatch in domain variables: got {DomainVarMap.BasisS.Count}, but expecting {this.DomainVar.Count} {this.DomainVar.ToConcatString("[", ", ", "]")}");
+                if(CodomainVarMap.BasisS.Count != this.CodomainVar.Count)
+                    throw new ArgumentException($"mismatch in codomain variables: got {CodomainVarMap.BasisS.Count}, but expecting {this.DomainVar.Count} {this.DomainVar.ToConcatString("[", ", ", "]")}");
+                if((ParameterMap?.Count ?? 0) != this.ParameterVar.Count)
+                    throw new ArgumentException($"mismatch in parameter variables: got {(ParameterMap?.Count ?? 0)}, but expecting {this.ParameterVar.Count} {this.ParameterVar.ToConcatString("[", ", ", "]")}");
+
 
                 var rulz = CompileQuadratureRules((Basis[])DomainVarMap, 
                     GetBasisS(ParameterMap),

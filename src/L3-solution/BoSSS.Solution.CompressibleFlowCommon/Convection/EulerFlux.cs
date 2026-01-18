@@ -89,27 +89,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// instances of <see cref="StateVector"/> and calls
         /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
         /// </summary>
-        /// <param name="time">
-        /// <see cref="NonlinearFlux.InnerEdgeFlux(double, double[], double[],double[], double[], int)"/>
-        /// </param>
-        /// <param name="x">
-        /// <see cref="NonlinearFlux.InnerEdgeFlux(double, double[], double[],double[], double[], int)"/>
-        /// </param>
-        /// <param name="normal">
-        /// <see cref="NonlinearFlux.InnerEdgeFlux(double, double[], double[],double[], double[], int)"/>
-        /// </param>
-        /// <param name="Uin">
-        /// <see cref="NonlinearFlux.InnerEdgeFlux(double, double[], double[],double[], double[], int)"/>
-        /// </param>
-        /// <param name="Uout">
-        /// <see cref="NonlinearFlux.InnerEdgeFlux(double, double[], double[],double[], double[], int)"/>
-        /// </param>
-        /// <param name="jEdge">
-        /// <see cref="NonlinearFlux.InnerEdgeFlux(double, double[], double[],double[], double[], int)"/>
-        /// </param>
-        /// <returns>
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </returns>
         protected override double InnerEdgeFlux(double time, double[] x, double[] normal, double[] Uin, double[] Uout, int jEdge) {
             StateVector stateIn = new StateVector(Uin, material);
             StateVector stateOut = new StateVector(Uout, material);
@@ -178,18 +157,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// calculate the flux which will be stored in
         /// <paramref name="output"/>.
         /// </summary>
-        /// <param name="time">
-        /// <see cref="NonlinearFlux.Flux(double, double[], double[], double[])"/>
-        /// </param>
-        /// <param name="x">
-        /// <see cref="NonlinearFlux.Flux(double, double[], double[], double[])"/>
-        /// </param>
-        /// <param name="U">
-        /// <see cref="NonlinearFlux.Flux(double, double[], double[], double[])"/>
-        /// </param>
-        /// <param name="output">
-        /// <see cref="NonlinearFlux.Flux(double, double[], double[], double[])"/>
-        /// </param>
         protected override void Flux(double time, double[] x, double[] U, double[] output) {
             StateVector state = new StateVector(U, material);
             equationComponent.Flux(state).CopyTo(output, 0);
