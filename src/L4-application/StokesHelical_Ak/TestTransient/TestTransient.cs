@@ -1781,7 +1781,7 @@ namespace StokesHelical_Ak.TestTransient {
             ctrl.savetodb = true;
             ctrl.InitialValues.Clear();
             ctrl.InitialValues_Evaluators.Clear();
-            ctrl.ImmediatePlotPeriod = 1;
+            ctrl.ImmediatePlotPeriod = -1;
             ctrl.Conv_AK_2 = true;
             ctrl.Conv_AK_3 = true;
             ctrl.Conv_AK_4 = true;
