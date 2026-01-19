@@ -68,9 +68,15 @@ namespace BoSSS.Application.XNSERO_Solver {
             m_Length = length;
             m_Thickness = thickness;
             m_Exponent = superEllipsoidExponent;
-            Aux.TestArithmeticException(length, "Particle length");
-            Aux.TestArithmeticException(thickness, "Particle thickness");
-            Aux.TestArithmeticException(superEllipsoidExponent, "super ellipsoid exponent");
+
+            Circumference = (2.0 * length + 2.0 * thickness + 2.0 * Math.PI * thickness) / 2.0;
+            Volume = 4.0 * length * thickness;// * (SpecialFunctions.Gamma(1 + 1 / m_Exponent)).Pow2() / SpecialFunctions.Gamma(1 + 2 / m_Exponent);
+            Mass = Volume * motion.Density;
+            MomentOfInertia = (1.0 / 4.0) * Mass * (length * length + thickness * thickness);
+
+            //Aux.TestArithmeticException(length, "Particle length");
+            //Aux.TestArithmeticException(thickness, "Particle thickness");
+            //Aux.TestArithmeticException(superEllipsoidExponent, "super ellipsoid exponent");
 
             Motion.CharacteristicLength = GetLengthScales().Max();
             Motion.Volume = this.Volume;
@@ -87,18 +93,18 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Circumference. Extremely rough approximation.
         /// </summary>
-        public override double Circumference => (2 * m_Length + 2 * m_Thickness + 2 * Math.PI * m_Thickness) / 2;
+        //public override double Circumference => (2 * m_Length + 2 * m_Thickness + 2 * Math.PI * m_Thickness) / 2;
 
         /// <summary>
         /// Area occupied by the particle. 
         /// </summary>
-        public override double Volume => 4 * m_Length * m_Thickness;// * (SpecialFunctions.Gamma(1 + 1 / m_Exponent)).Pow2() / SpecialFunctions.Gamma(1 + 2 / m_Exponent);
+        //public override double Volume => 4 * m_Length * m_Thickness;// * (SpecialFunctions.Gamma(1 + 1 / m_Exponent)).Pow2() / SpecialFunctions.Gamma(1 + 2 / m_Exponent);
 
         /// <summary>
         /// Moment of inertia. 
         /// </summary>
-        override public double MomentOfInertia => (1 / 4.0) * Mass * (m_Length * m_Length + m_Thickness * m_Thickness);
-
+        //override public double MomentOfInertia => (1 / 4.0) * Mass * (m_Length * m_Length + m_Thickness * m_Thickness);
+        
         /// <summary>
         /// Level set function of the particle.
         /// </summary>

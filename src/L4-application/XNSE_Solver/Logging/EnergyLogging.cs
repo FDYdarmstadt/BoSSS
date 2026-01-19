@@ -64,26 +64,36 @@ namespace BoSSS.Application.XNSE_Solver.Logging {
         /// 
         /// </summary>
         protected override void PerformTimestepPostProcessing(int TimestepNo, double physTime) {
-            using(new FuncTrace()) {
+            using(var tr = new FuncTrace()) {
+
+                List<double> line = new List<double>();
+                line.Add(TimestepNo);
+                line.Add(physTime);
 
                 double[] rhoS = new double[] {Control.PhysicalParameters.rho_A, Control.PhysicalParameters.rho_B };
                 int quadOrder = CurrentVel[0].Basis.Degree * CurrentVel[0].Basis.Degree;
                 double kineticEnergy = EnergyUtils.GetKineticEnergy(LsTrk, CurrentVel, rhoS, quadOrder);
+                line.Add(kineticEnergy);
 
                 double sigma = Control.PhysicalParameters.Sigma;
                 double surfaceEnergy = EnergyUtils.GetSurfaceEnergy(LsTrk, sigma, quadOrder);
+                line.Add(surfaceEnergy);
 
                 double totalEnergy = kineticEnergy + surfaceEnergy;
+                line.Add(totalEnergy);
 
                 double[] muS = new double[] { Control.PhysicalParameters.mu_A, Control.PhysicalParameters.mu_B };
                 double kineticDissipation = EnergyUtils.GetKineticDissipation(LsTrk, CurrentVel, muS, quadOrder);
+                line.Add(kineticDissipation);
 
                 ConventionalDGField[] meanVelocity = XNSEUtils.GetMeanVelocity(CurrentVel, LsTrk, rhoS[0], rhoS[1]);
                 double surfaceDivergence = EnergyUtils.GetSurfaceChangerate(LsTrk, meanVelocity, quadOrder);
+                line.Add(surfaceDivergence);
 
-                string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}", TimestepNo, physTime, kineticEnergy, surfaceEnergy, totalEnergy, kineticDissipation, surfaceDivergence);
-                Log.WriteLine(line);
-                Log.Flush();
+                //string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}", TimestepNo, physTime, kineticEnergy, surfaceEnergy, totalEnergy, kineticDissipation, surfaceDivergence);
+                //Log.WriteLine(line);
+                //Log.Flush();
+                AppendToLog(line);
             }
         }
     }

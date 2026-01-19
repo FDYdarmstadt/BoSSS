@@ -64,8 +64,13 @@ namespace BoSSS.Application.XNSERO_Solver {
 
             m_Length = length;
             m_Thickness = thickness;
-            Aux.TestArithmeticException(length, "Particle length");
-            Aux.TestArithmeticException(thickness, "Particle thickness");
+            Circumference = Math.PI * length * thickness;
+            Volume = Math.PI * length * thickness;
+            Mass = Volume * motion.Density;
+            MomentOfInertia = (1.0 / 2.0) * (Mass * length * thickness);
+
+            //Aux.TestArithmeticException(length, "Particle length");
+            //Aux.TestArithmeticException(thickness, "Particle thickness");
             Motion.CharacteristicLength = GetLengthScales().Max();
             Motion.Volume = this.Volume;
             Motion.MomentOfInertia = this.MomentOfInertia;
@@ -79,17 +84,17 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Circumference. Approximated with sphere.
         /// </summary>
-        public override double Circumference => Math.PI * m_Length * m_Thickness;
+        //public override double Circumference => Math.PI * m_Length * m_Thickness;
 
         /// <summary>
         /// Area occupied by the particle. Approximated with sphere.
         /// </summary>
-        public override double Volume => Math.PI * m_Length * m_Thickness;
+        //public override double Volume => Math.PI * m_Length * m_Thickness;
 
         /// <summary>
         /// Moment of inertia of the particle. Approximated with sphere.
         /// </summary>
-        override public double MomentOfInertia => (1 / 2.0) * (Mass * m_Length * m_Thickness);
+        //override public double MomentOfInertia => (1 / 2.0) * (Mass * m_Length * m_Thickness);
 
         /// <summary>
         /// Level set function of the particle.
