@@ -1154,7 +1154,7 @@ namespace BoSSS.Solution.LevelSetTools {
                                         jCellNeigh = Neighs[ii];
 
                                     int jSubNeigh = jCell_to_jSub[jCellNeigh];
-                                    if(jSubNeigh < 0)
+                                    if(jSubNeigh < 0 || jSubNeigh >= JSUB)
                                         continue;
 
                                     int I0neigh = I[jSubNeigh];

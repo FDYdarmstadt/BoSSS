@@ -167,13 +167,18 @@ namespace StokesHelical_Ak {
         public double maxAmpli = 1;
 
         [DataMember]
-        public double rMax = 1;
+        public double rMax = 1; 
 
         [DataMember]
         public string grid;
 
         [DataMember]
         public int restartTimeStep;
+
+        [DataMember]
+        public bool Conv_AK_2 = false;
+        public bool Conv_AK_3 = false;
+        public bool Conv_AK_4 = false;
     }
 
 }

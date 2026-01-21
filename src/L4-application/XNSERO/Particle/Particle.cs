@@ -23,6 +23,7 @@ using System.Collections;
 using System.Linq;
 using ilPSP.Tracing;
 using System.Text.Json.Serialization;
+using NUnit.Options;
 
 namespace BoSSS.Application.XNSERO_Solver {
 
@@ -64,12 +65,26 @@ namespace BoSSS.Application.XNSERO_Solver {
         public Particle(IMotion motion, double[] startPos, double startAngl = 0.0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) {
             SpatialDim = startPos.Length;
             ActiveStress = activeStress;
-            Aux = new Auxillary();
+            //Aux = new Auxillary();
             this.Motion = motion.CloneAs() ?? throw new ArgumentNullException("Missing definition of particle motion");
             this.Motion.InitializeParticlePositionAndAngle(startPos, startAngl);
             this.Motion.InitializeParticleVelocity(startTransVelocity, startRotVelocity);
             Density = this.Motion.Density;
         }
+
+
+        public Particle(IMotion motion, double activeStress = 0) {
+            ActiveStress = activeStress;
+            Density = motion.Density;
+        }
+
+
+        public void InitializeMotionComponent(IMotion motion, double[] initPos, double initRot, double[] initVelocity, double initRotVelocity) {
+            this.Motion = motion;
+            this.Motion.InitializeParticlePositionAndAngle(initPos, initRot);
+            this.Motion.InitializeParticleVelocity(initVelocity, initRotVelocity);
+        }
+
 
         [DataMember]
         public bool IncludeRotation = true;
@@ -88,14 +103,14 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Provides additional methods for testing and checking variables.
         /// </summary>
-        [NonSerialized]
-        protected Auxillary Aux;
+        //[NonSerialized]
+        //protected Auxillary Aux;
 
         /// <summary>
         /// The density of the particle.
         /// </summary>
         [DataMember]
-        private readonly double Density;
+        protected readonly double Density;
 
         /// <summary>
         /// The spatial dimension.
@@ -112,8 +127,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Mass of the current particle.
         /// </summary>
-        [DataMember]
-        public double Mass => Volume * Density;
+        public double Mass;
 
         /// <summary>
         /// Check whether any particles is collided with another particle
@@ -124,8 +138,8 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// No of convex (!) sub-particles (for GJK algorithm, distance calculation)
         /// </summary>
-        [DataMember]
-        public virtual int NoOfSubParticles => 1;
+        //[DataMember]
+        public int NoOfSubParticles = 1;
         
         /// <summary>
         /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
@@ -143,17 +157,19 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Area of the current particle. Implementation within the specific particle shapes.
         /// </summary>
         [DataMember]
-        public virtual double Volume => throw new NotImplementedException();
-        
+        public double Volume;
+
         /// <summary>
         /// Circumference of the current particle.
         /// </summary>
-        public abstract double Circumference { get; }
+        [DataMember]
+        public double Circumference;
 
         /// <summary>
         /// Moment of inertia of the current particle.
         /// </summary>
-        public abstract double MomentOfInertia { get; }
+        [DataMember]
+        public double MomentOfInertia;
 
         /// <summary>
         /// Level set function describing the particle. Adds also particle level set over periodic boundaries.
@@ -174,7 +190,9 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="X">A point within the computational domain.</param>
         /// <param name="Postion">The position of the particle.</param>
         /// <returns></returns>
-        protected virtual double ParticleLevelSetFunction(double[] X, Vector Postion) => throw new NotImplementedException();
+        protected virtual double ParticleLevelSetFunction(double[] X, Vector Postion) {
+            throw new NotImplementedException();
+        }
 
         /// <summary>
         /// get cut cells describing the boundary of this particle
@@ -188,7 +206,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             double h = 1;// LsTrk.GridDat.Cells.h_maxGlobal;
             for (int i = 0; i < CellArray.Length; i++) {
                 if (CellArray[i]) {
-                    ContainArray[i] = Contains(new Vector(CellCenters[i, 0], CellCenters[i, 1]),h);
+                    ContainArray[i] = Contains(new Vector(CellCenters[i, 0], CellCenters[i, 1]), h);
                 }
             }
             CellMask CutCells = new(LsTrk.GridDat, ContainArray, MaskType.Logical);
@@ -201,7 +219,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="Point">The point to be checked.</param>
         /// <param name="Tolerance">A tolerance parameter</param>
         /// <returns></returns>
-        public bool Contains(Vector Point, double Tolerance = 0) {
+        public bool Contains(Vector Point, double Tolerance = 0.0) {
             bool contains = ParticleContains(Point, Motion.GetPosition(), Tolerance);
             if (!contains) {
                 for (int i = 0; i < Motion.OriginInVirtualPeriodicDomain.Count; i++) {
@@ -217,12 +235,12 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Gives a bool whether the particle contains a certain point or not. Implementation depends on particle shape.
         /// </summary>
         /// <param name="point"></param>
-        protected virtual bool ParticleContains(Vector point, Vector Position, double tolerance = 0) => throw new NotImplementedException();
+        protected abstract bool ParticleContains(Vector point, Vector Position, double tolerance = 0);
 
         /// <summary>
         /// Return the length-scales of the particle (length and thickness)
         /// </summary>
-        public virtual double[] GetLengthScales() => throw new NotImplementedException();
+        public abstract double[] GetLengthScales();
 
         /// <summary>
         /// Returns surface points (for distance calc)
@@ -230,7 +248,9 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="hMin"></param>
         /// <param name="searchAngle"></param>
         /// <param name="subParticleID">between 0 and <see cref="NoOfSubParticles"/>, i guess</param>
-        public virtual MultidimensionalArray GetSurfacePoints(double hMin, double searchAngle, int subParticleID) => throw new NotImplementedException();
+        public virtual MultidimensionalArray GetSurfacePoints(double hMin, double searchAngle, int subParticleID) {
+            throw new NotImplementedException();
+        }
 
         /// <summary>
         /// Calculates the support point with an analytic formula (if applicable), else it uses a binary search.
@@ -268,7 +288,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                     R = searchStartAngle; // Search on the left side.
             }
             currentSupportPoint.Acc(Position);
-            Aux.TestArithmeticException(currentSupportPoint, "supportPoint");
+            //Aux.TestArithmeticException(currentSupportPoint, "supportPoint");
             return currentSupportPoint;
         }
 
@@ -278,7 +298,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="Point">
         /// </param>
         internal Vector CalculateRadialVector(Vector Point) {
-            Aux = new Auxillary();
+            //Aux = new Auxillary();
             Vector RadialVector = new(Point[0] - Motion.GetPosition(0)[0], Point[1] - Motion.GetPosition(0)[1]);
             if(RadialVector.L2Norm() > GetLengthScales().Max()) {//Point is in a different virtual domain (Periodic bndy only):
                 for (int i = 0; i < Motion.OriginInVirtualPeriodicDomain.Count; i++) {
@@ -290,7 +310,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             }
             if (RadialVector.L2Norm() == 0)
                 throw new ArithmeticException("The radial vector has no length. Surface point: " + Point + " Position: " + Motion.GetPosition(0));
-            Aux.TestArithmeticException(RadialVector, "particle radial vector");
+            //Aux.TestArithmeticException(RadialVector, "particle radial vector");
             return RadialVector;
         }
 
@@ -313,7 +333,9 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// clone, not implemented
         /// </summary>
-        public virtual object Clone() => throw new NotImplementedException("Currently cloning of this type of particle is not available");
+        public virtual object Clone() {
+            throw new NotImplementedException("Currently cloning of this type of particle is not available");
+        }
     }
 }
 

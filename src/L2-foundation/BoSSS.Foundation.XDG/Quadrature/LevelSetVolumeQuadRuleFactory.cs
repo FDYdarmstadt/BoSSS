@@ -347,10 +347,14 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     }
                 }
 
-                BitArray voidCellsArray = new BitArray(LevelSetData.GridDat.iGeomCells.Count);
-                BitArray fullCellsArray = new BitArray(LevelSetData.GridDat.iGeomCells.Count);
+                int J = LevelSetData.GridDat.iGeomCells.NoOfLocalUpdatedCells;
+                BitArray voidCellsArray = new BitArray(J);
+                BitArray fullCellsArray = new BitArray(J);
                 Debug.Assert(cellMask.MaskType == MaskType.Geometrical);
                 foreach (int cell in cellMask.ItemEnum) {
+                    if(cell >= J)
+                        continue;
+
                     double rhsL2Norm = 0.0;
                     for (int k = 0; k < noOfLambdas; k++) {
                         double entry = quadResults[localCellIndex2SubgridIndex[cell], k];

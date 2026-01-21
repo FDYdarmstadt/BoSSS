@@ -1782,6 +1782,8 @@ namespace BoSSS.Solution.NSECommon {
         public static string[] OrientationVector(int D) {
             if (D == 2)
                 return new string[] { OrientationVectorX, OrientationVectorY };
+            else if (D == 3)
+                return new string[] { OrientationVectorX, OrientationVectorY, OrientationVectorZ };
             else
                 throw new NotSupportedException("unsupported spatial dimension: D = " + D + ".");
         }
@@ -1797,6 +1799,7 @@ namespace BoSSS.Solution.NSECommon {
             switch (d) {
                 case 0: return OrientationVectorX;
                 case 1: return OrientationVectorY;
+                case 2: return OrientationVectorZ;
                 default: throw new NotSupportedException("unsupported spatial dimension: d = " + d + ".");
             }
         }
@@ -1811,6 +1814,10 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public const string OrientationVectorY = "OrientationVectorY";
 
+        /// <summary>
+        /// vector of orientation of a rigid object, used in XNSERO - z component
+        /// </summary>
+        public const string OrientationVectorZ = "OrientationVectorZ";
 
         /// <summary>
         /// Electric potential, dimensi is Voltage

@@ -17,11 +17,21 @@ limitations under the License.
 using BoSSS.Foundation.Grid;
 using ilPSP;
 using ilPSP.Tracing;
+using ilPSP.Utils;
 using System;
 
 namespace BoSSS.Application.XNSERO_Solver {
+
     [Serializable]
     public class Motion : MotionBase {
+
+
+        /// <summary>
+        /// Empty constructor used during de-serialization
+        /// </summary>
+        protected Motion() {
+            // noop
+        }
 
         /// <summary>
         /// The standard description of motion including hydrodynamics.
@@ -29,7 +39,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="density">
         /// The density of the particle.
         /// </param>
-        public Motion(double density) : base(density) { }
+        public Motion(double density, int spatDim = 2) : base(density, spatDim) { }
 
         public override bool IncludeRotation() {
             return true;
@@ -139,26 +149,27 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Calls the integration of the hydrodynamic stress at this particles level-set
         /// </summary>
         /// <param name="hydrodynamicsIntegration"></param>
-        public override Vector CalculateHydrodynamics(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, CellMask cutCells, string[] FluidSpecies, double dt = 0) {
-            Vector returnVec;
+        public override double[] CalculateHydrodynamics(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, CellMask cutCells, string[] FluidSpecies, double dt = 0) {
+            double[] returnArray;
 
             int NoOfFluidSpecies = FluidSpecies.Length;
-            Vector forcesAndTorque = new Vector(SpatialDim + 1);
+            //double[] forcesAndTorque = new double[SpatialDim + 1];
+            MultidimensionalArray forcesAndTorque = MultidimensionalArray.Create(SpatialDim + 1);
             for (int i = 0; i < NoOfFluidSpecies; i++) {
                 forcesAndTorque += hydrodynamicsIntegration.Main(Position[0], cutCells, FluidSpecies[i]);
             }
-            Aux.TestArithmeticException(forcesAndTorque, "during calculation of hydrodynamics");
+            Aux.TestArithmeticException(forcesAndTorque.To1DArray(), "during calculation of hydrodynamics");
 
             if (cutCells.IsEmptyOnRank)
-                returnVec = new Vector(SpatialDim + 1);
+                returnArray = new double[SpatialDim + 1];
             else {
-                returnVec = forcesAndTorque;
+                returnArray = forcesAndTorque.To1DArray();
             }
-            return returnVec;
+            return returnArray;
         }
 
         public override object Clone() {
-            Motion clonedMotion = new Motion(Density);
+            Motion clonedMotion = new Motion(Density, SpatialDim);
             clonedMotion.Volume = this.Volume;
             clonedMotion.MomentOfInertia = this.MomentOfInertia;
             return clonedMotion;

@@ -738,4 +738,10 @@ namespace BoSSS.Application.XNSE_Solver {
             m_ctrl.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCGidx(1), PhiFunc);
         }
     }
+
+
+    public abstract class IBMelement {
+
+        abstract public double GetLevelSetFunction(double[] X);
+    }
 }

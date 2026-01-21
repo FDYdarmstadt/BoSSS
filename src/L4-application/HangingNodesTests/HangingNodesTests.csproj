@@ -13,6 +13,7 @@
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj" />
     <ProjectReference Include="..\..\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj" />
     <ProjectReference Include="..\BoSSSpad\BoSSSpad.csproj" />
+	<ProjectReference Include="..\DongBoundaryConditionTests\DongBoundaryConditionTests.csproj" />
     <ProjectReference Include="..\XNSFE_Solver\XNSFE_Solver.csproj" />
   </ItemGroup>
 

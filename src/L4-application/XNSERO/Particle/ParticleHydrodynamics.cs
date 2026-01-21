@@ -38,7 +38,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             this.SpatialDimension = SpatialDimension;
             TorqueVectorDimension = SpatialDimension switch {
                 2 => 1,
-                3 => throw new NotImplementedException("XNSERO is currently only capable of 2D."),
+                3 => 3, //throw new NotImplementedException("XNSERO is currently only capable of 2D."),
                 _ => throw new ArithmeticException("Error in spatial dimensions, only dim == 2 and dim == 3 are allowed!"),
             };
         }
@@ -83,7 +83,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 for (int p = 0; p < Particles.Length; p++) {
                     Particle currentParticle = Particles[p];
                     int offset = p * (SpatialDimension + TorqueVectorDimension);
-                    Vector gravity = currentParticle.Motion.GravityForce(Gravity/1000);//REMOVE /1000
+                    Vector gravity = currentParticle.Motion.GravityForce(Gravity/1000);
                     for(int d = 0; d < SpatialDimension; d++) {
                         hydrodynamics[offset + d] += gravity[d];
                     }

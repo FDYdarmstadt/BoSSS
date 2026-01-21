@@ -36,7 +36,7 @@ namespace BoSSS.Application.IncompressibleNSE {
                 Console.WriteLine(";");
             }
 
-            var c = BoSSS.Application.IncompressibleNSE.DNS_Hagen_Poiseulle.HagenPoiseulle();
+            var c = BoSSS.Application.IncompressibleNSE.Hard_Coded_Controls.Hagen_Poiseulle.HagenPoiseulle();
             c.ImmediatePlotPeriod = 1;
             var solver = new Helical_Turbulence_Implicit_Main();
             solver.Init(c);
@@ -85,7 +85,7 @@ namespace BoSSS.Application.IncompressibleNSE {
         /// Pressure
         /// </summary>
         [InstantiateFromControlFile(VariableNames.Pressure, null, IOListOption.ControlFileDetermined)]
-        SinglePhaseField Pressure;
+        public SinglePhaseField Pressure;
 
         /// <summary>
         /// Residual of the continuity equation

@@ -44,6 +44,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             //InitMPI();
             //BoSSS.Application.XNSERO_Solver.TestProgram.TestStickyTrap();
             ////BoSSS.Application.XNSERO_Solver.TestProgram.TestRigidLevelSetProjection();
+            ////BoSSS.Application.XNSERO_Solver.TestProgram.TestParticleInShearFlow();
             ////TestProgram.TestParticleInShearFlow_Phoretic();
             //Assert.IsFalse(true, "remove me");
 
@@ -67,15 +68,15 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// An array of all particles (rigid objects). Particles can only be added at the initialization of the simulation. 
         /// </summary>
-        public Particle[] Particles => Control.Particles;
+        public Particle[] Particles => Control.Particles.ToArray();
 
         /// <summary>
         /// Spatial dimension
         /// </summary>
         private int GetSpatialDimension() {
             int spatialDimension = GridData.SpatialDimension;
-            if (spatialDimension != 2)
-                throw new NotImplementedException("XNSERO currently only for 2D simulations");
+            //if (spatialDimension != 2)
+            //    throw new NotImplementedException("XNSERO currently only for 2D simulations");
             return spatialDimension;
         }
 
@@ -137,6 +138,38 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Prevents multiple initializations of <see cref="CollisionTree"/>
         /// </summary>
         private bool TreeInitialisedFlag = false;
+
+
+        /// <summary>
+        /// Initializing the particle level set 
+        /// </summary>
+        protected override void SetUpEnvironment() {
+            InitializeParticleLevelSet();
+            base.SetUpEnvironment();
+        }
+
+
+        /// <summary>
+        /// initialization of particles 
+        /// </summary>
+        private void InitializeParticleLevelSet() {
+            // first check if particles are alredy added via control file (not serializable)
+            if (!this.Control.InitialValues_Evaluators.ContainsKey(VariableNames.LevelSetCGidx(1)))
+            {
+                double levelSet(double[] X)
+                {
+                    double levelSetFunction = int.MinValue;
+                    foreach (Particle currentParticle in Particles)
+                    {
+                        if (levelSetFunction < currentParticle.LevelSetFunction(X, 0))
+                            levelSetFunction = currentParticle.LevelSetFunction(X, 0);
+                    }
+                    return levelSetFunction;
+                }
+                this.Control.InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(1), levelSet);
+            }
+        }
+
 
         /// <summary>
         /// Provides information about the particle (rigid object) level set function to the level-set-updater.
@@ -308,10 +341,12 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Provide information about periodic boundaries to the particles. Does nothing if no periodic boundaries are defined.
         /// </summary>
         private void SetPeriodicityToParticles() {
-            for (int d = 0; d < 2; d++) {
-                if (IsPeriodic[d]) {
-                    for (int p = 0; p < Particles.Length; p++) {
-                        Particles[p].Motion.SetPeriodicBoundary(BoundaryCoordinates[d], d);
+            if (IsPeriodic != null) {
+                for (int d = 0; d < 2; d++) {
+                    if (IsPeriodic[d]) {
+                        for (int p = 0; p < Particles.Length; p++) {
+                            Particles[p].Motion.SetPeriodicBoundary(BoundaryCoordinates[d], d);
+                        }
                     }
                 }
             }
@@ -336,10 +371,13 @@ namespace BoSSS.Application.XNSERO_Solver {
                 }
 
                 InitializeParticlesNewTimestep(dt);
-                if (TimestepNo - 1 % 10 == 0 || !TreeInitialisedFlag) {
+                if (TimestepNo - 1 % 10 == 0 || !TreeInitialisedFlag)
+                {
                     CollisionTree.InitializeTree(Particles, dt);
                     TreeInitialisedFlag = true;
-                } else {
+                }
+                else
+                {
                     CollisionTree.UpdateTree(Particles, dt);
                 }
                 ParticleStateMPICheck(Particles, GridData, MPISize, TimestepNo);
@@ -347,7 +385,8 @@ namespace BoSSS.Application.XNSERO_Solver {
                 Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
                 CalculateCollision(Particles, dt);
                 CalculateParticlePositionAndAngle(Particles, dt);
-                for (int p = 0; p < Particles.Length; p++) {
+                for (int p = 0; p < Particles.Length; p++)
+                {
                     Console.WriteLine("Position of particle " + p + ": " + Particles[p].Motion.GetPosition(0));
                     Console.WriteLine("Velocity of particle " + p + ": " + Particles[p].Motion.GetTranslationalVelocity(0));
                     Console.WriteLine("Rotational velocity of particle " + p + ": " + Particles[p].Motion.GetRotationalVelocity(0));
@@ -357,7 +396,6 @@ namespace BoSSS.Application.XNSERO_Solver {
                 return dt;
             }
         }
-
 
         /// <summary>
         /// Safes old values for the velocity of the particles and updates added damping tensors (if used).

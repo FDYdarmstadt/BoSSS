@@ -24,6 +24,7 @@ using ilPSP.Utils;
 using System;
 using System.Linq;
 using System.Runtime.Serialization;
+using Newtonsoft.Json;
 
 namespace BoSSS.Application.XNSEC {
 
@@ -51,7 +52,7 @@ namespace BoSSS.Application.XNSEC {
         [DataMember]
         public double m_zSt;
 
-        [DataMember]
+        [JsonIgnore]
         private DGField MixtureFraction {
             get {
                 return (XDGField)((XNSEC)this.SolverMain).IOFields.Where(f => f.Identification == VariableNames.MixtureFraction).Single();

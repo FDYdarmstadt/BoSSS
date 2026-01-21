@@ -1,36 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BoSSS.Application.XNSE_Solver;
-using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
-using BoSSS.Solution.NSECommon;
-using ilPSP.Utils;
 using HFSISolver.Boundary;
 using HFSISolver.SolidPhase;
 using HFSISolver.ContactLine;
 using NSEVariableNames = BoSSS.Solution.NSECommon.VariableNames;
-using NSEEquationNames = BoSSS.Solution.NSECommon.EquationNames;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Application.XNSFE_Solver;
 using ilPSP;
-using BoSSS.Solution.Utils;
-using NUnit.Framework;
 using BoSSS.Solution;
-using System.Diagnostics;
-using System.ComponentModel;
-using BoSSS.Solution.Tecplot;
-using System.Xml.Linq;
-using System.Collections;
-using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.Grid.Classic;
-using MathNet.Numerics;
 using BoSSS.Solution.XheatCommon;
 
 namespace HFSISolver {
