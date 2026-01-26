@@ -38,9 +38,59 @@ namespace BoSSS.Application.XNSFE_Solver {
         // ===========
         static void Main(string[] args) {
             //InitMPI(args);
-           // ilPSP.Environment.InitThreading(true, 8);
+            //DeleteOldPlotFiles();
+            //using (var solver = new XNSFE()) {
+            //    solver.Init(ThermalSlip_HardcodedControls.HeatedWall_3PhaseDemo(true));
+            //    solver.RunSolverMode();
+            //}
+
+            //FinalizeMPI();
+            //System.Environment.Exit(-111);
+
+            //ilPSP.Environment.InitThreading(true, 8);
             //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.InterfaceSlipTestLin(3, 0.0d, ViscosityMode.FullySymmetric, 0.0d, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Newton, 1.0d, 1.0d, 1.2d);
             //Assert.IsTrue(false, "remove me");
+
+            /*
+            InitMPI(args);
+            DeleteOldPlotFiles();
+
+            Tests.InterfaceConvergenceTests.EvaporationConvergence(5, 4);
+            Tests.InterfaceConvergenceTests.EvaporationConvergence(5, 5);
+            Tests.InterfaceConvergenceTests.EvaporationConvergence(5, 6);
+            Tests.InterfaceConvergenceTests.EvaporationConvergence(5, 7);
+
+            //Tests.InterfaceConvergenceTests.CurvatureConvergence(5, 3, 5);
+            //Tests.InterfaceConvergenceTests.CurvatureConvergence(5, 4, 5);
+            //Tests.InterfaceConvergenceTests.CurvatureConvergence(5, 5, 5);
+            //Tests.InterfaceConvergenceTests.CurvatureConvergence(5, 6, 5);
+            //Tests.InterfaceConvergenceTests.CurvatureConvergence(5, 7, 5);
+            //Tests.InterfaceConvergenceTests.CurvatureConvergence(5, 8, 5);
+
+            //Tests.InterfaceConvergenceTests.TemperatureConvergence(5, 0, 90.0);
+            //Tests.InterfaceConvergenceTests.TemperatureConvergence(5, 1, 90.0);
+            //Tests.InterfaceConvergenceTests.TemperatureConvergence(5, 0, 80.0);
+            //Tests.InterfaceConvergenceTests.TemperatureConvergence(5, 1, 80.0);
+
+            //Tests.StaticDropletTest.StaticDropletScalingTest(2);
+            //Tests.StaticDropletTest.StaticDropletConvergenceTest(4, true, 0.0, 80.0);
+
+            //{
+            //    var C = Tests.StaticDropletTest.EvaporatigDropletTestControl(4, 4, true, 0.1, true, 1.0, 80.0);
+            //    //var C = StaticWedgeTestControl(deg, res, true, 0.1, evap, ls, theta);
+            //    C.SkipSolveAndEvaluateResidual = false;
+            //    C.ImmediatePlotPeriod = 1;
+            //    C.SuperSampling = 2;
+
+            //    using (var solver = new XNSFE()) {
+            //        solver.Init(C);
+            //        solver.RunSolverMode();
+            //    }
+            //}
+
+            FinalizeMPI();
+            System.Environment.Exit(-111);
+            */
 
             //InitMPI();
             //DeleteOldPlotFiles();
@@ -74,7 +124,7 @@ namespace BoSSS.Application.XNSFE_Solver {
             // configuration for Temperature
             var confTemp = new MultigridOperator.ChangeOfBasisConfig() {
                 DegreeS = new int[] { pTemp }, //Math.Max(1, pTemp - iLevel) },
-                mode = MultigridOperator.Mode.LeftInverse_DiagBlock,//MultigridOperator.Mode.SymPart_DiagBlockEquilib,
+                mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,//MultigridOperator.Mode.LeftInverse_DiagBlock,
                 VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.Temperature) }
             };
             configsLevel.Add(confTemp);
@@ -98,6 +148,45 @@ namespace BoSSS.Application.XNSFE_Solver {
                     configsLevel.Add(confHeatFlux);
                 }
             }
+        }
+
+        /// <summary>
+        /// override of <see cref="XNSE{T}.QuadOrder"/>, takes into account the temperature degree
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        override public int QuadOrder() {
+            if (Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
+               && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
+                throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules " +
+                    $"{XQuadFactoryHelper.MomentFittingVariants.Saye} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; " +
+                    $"you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; " +
+                    $"If you do not know how to remove this exception, you should better return now!");
+            }
+
+            //QuadOrder
+            int degU = Math.Max(VelocityDegree(), TemperatureDegree());
+            int quadOrder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
+            if (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
+                //See remarks
+                quadOrder *= 2;
+                quadOrder += 1;
+            }
+
+            return quadOrder;
+        }
+
+        /// <summary>
+        ///  temperature degree.
+        /// </summary>
+        protected int TemperatureDegree() {
+            int pT;
+            if (this.Control.FieldOptions.TryGetValue("Temperature", out FieldOpts t)) {
+                pT = t.Degree;            
+            } else {
+                throw new Exception("MultigridOperator.ChangeOfBasisConfig: Degree of Velocity not found");
+            }
+            return pT;
         }
 
         protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel, int iLevel) {
@@ -256,8 +345,8 @@ namespace BoSSS.Application.XNSFE_Solver {
             }
 
             opFactory.AddEquation(new SolidHeat("C", D, thermBoundaryMap, config));
-            opFactory.AddEquation(new ImmersedBoundaryHeat("A", "C", 1, D, config));
-            opFactory.AddEquation(new ImmersedBoundaryHeat("B", "C", 1, D, config));
+            opFactory.AddEquation(new ImmersedBoundaryHeat("A", "C", 1, D, config, Control.HeatSourceIBM));
+            opFactory.AddEquation(new ImmersedBoundaryHeat("B", "C", 1, D, config, Control.HeatSourceIBM));            
 
             // we need these "dummy" equations, otherwise the matrix has zero rows/columns
             // If this is to be used frequently something more sophisticated should be implemented, e.g. strike out rows for unused variables...
@@ -303,7 +392,11 @@ namespace BoSSS.Application.XNSFE_Solver {
                 if (config.isEvaporation) {
                     opFactory.AddEquation(new HeatInterface_Evaporation_Newton("A", "B", D, thermBoundaryMap, config));
                 } else {
-                    opFactory.AddEquation(new HeatInterface_Newton("A", "B", D, thermBoundaryMap, config));
+                    if (config.FixedInterfaceTemperature) {
+                        opFactory.AddEquation(new HeatInterface_Evaporation_Newton("A", "B", D, thermBoundaryMap, config));
+                    } else {
+                        opFactory.AddEquation(new HeatInterface_Newton("A", "B", D, thermBoundaryMap, config));
+                    }
                 }
 
                 if (config.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
@@ -971,9 +1064,9 @@ namespace BoSSS.Application.XNSFE_Solver {
             //int[] varGroup_Stokes = Enumerable.Range(0, D + 1).ToArray();
             //int[] varGroup_Temperature = Enumerable.Range(D + 1, 1).ToArray();
             //int[] varGroup_all = Enumerable.Range(0, D + 2).ToArray();
-            //var res = this.Timestepping.OperatorAnalysis(new[] { varGroup_convDiff, varGroup_Stokes, varGroup_Temperature, varGroup_all });
+            //var res = this.Timestepping.OperatorAnalysis(config, new int[][] { varGroup_convDiff, varGroup_Stokes, varGroup_Temperature, varGroup_all });
 
-            int[] varGroup = new int[] { 0, 1, 2, 3};
+            int[] varGroup = Enumerable.Range(0, D + 2).ToArray();
             var res = this.Timestepping.OperatorAnalysis(config, new[] { varGroup });
 
             return res;

@@ -40,6 +40,7 @@ namespace BoSSS.Foundation.XDG {
     /// </summary>
     public class XQuadFactoryHelperAlgoim : XQuadFactoryHelperBase {
 
+        Dictionary<RefElement, AlgoimDoubleCutFactories> DoubleCutFactories = new Dictionary<RefElement, AlgoimDoubleCutFactories>();
 
         public XQuadFactoryHelperAlgoim(LevelSetTracker.LevelSetData[] lsDatas) : base(lsDatas) {
 
@@ -61,9 +62,29 @@ namespace BoSSS.Foundation.XDG {
             return r;
         }
 
-        public override IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
-            throw new NotImplementedException();
-        }
+		public override IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
+			CheckKref(levSetIndex0, KrefVol);
+			JumpTypes[] jumps = new JumpTypes[] { jmp0, jmp1 };
+
+            if (!DoubleCutFactories.ContainsKey(KrefVol))
+                DoubleCutFactories.Add(KrefVol, new AlgoimDoubleCutFactories(m_LevelSetDatas, KrefVol));
+
+			var algoimFactory = DoubleCutFactories[KrefVol];
+			var cellBoundaryFac = algoimFactory.GetCellBoundaryVolumeFactory(jumps);
+
+			var cutDom1 = m_LevelSetDatas[levSetIndex0].Region.GetCutCellMask4LevSet(levSetIndex0);
+			var cutDom2 = m_LevelSetDatas[levSetIndex1].Region.GetCutCellMask4LevSet(levSetIndex1);
+            var cutDom = cutDom1.Intersect(cutDom2).ToGeometicalMask();
+			var _cutDom = cutDom.Intersect(m_LevelSetDatas[levSetIndex0].GridDat.Cells.GetCells4Refelement(KrefVol));
+
+			var gdat = this.m_LevelSetDatas[levSetIndex0].GridDat;
+
+			var r = new EdgeRuleFromCellBoundaryFactory(gdat,
+		    cellBoundaryFac,
+		    _cutDom);
+
+			return r;
+		}
 
         public override IQuadRuleFactory<QuadRule> GetIntersectionRuleFactory(int levSetIndex0, int levSetIndex1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
             throw new NotImplementedException();
@@ -83,8 +104,29 @@ namespace BoSSS.Foundation.XDG {
         }
 
         public override IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
-            throw new NotImplementedException();
-        }
+			CheckKref(levSetIndex0, KrefVol);
+			JumpTypes[] jumps = new JumpTypes[] { jmp1, jmp1 };
+			jumps[levSetIndex0] = JumpTypes.Implicit;
+
+			if (!DoubleCutFactories.ContainsKey(KrefVol))
+				DoubleCutFactories.Add(KrefVol, new AlgoimDoubleCutFactories(m_LevelSetDatas, KrefVol));
+
+			var algoimFactory = DoubleCutFactories[KrefVol];
+			var cellBoundaryFac = algoimFactory.GetCellBoundarySurfaceFactory(jumps);
+
+			var cutDom1 = m_LevelSetDatas[levSetIndex0].Region.GetCutCellMask4LevSet(levSetIndex0);
+			var cutDom2 = m_LevelSetDatas[levSetIndex1].Region.GetCutCellMask4LevSet(levSetIndex1);
+			var cutDom = cutDom1.Intersect(cutDom2).ToGeometicalMask();
+			var _cutDom = cutDom.Intersect(m_LevelSetDatas[levSetIndex0].GridDat.Cells.GetCells4Refelement(KrefVol));
+
+			var gdat = this.m_LevelSetDatas[levSetIndex0].GridDat;
+
+			var r = new EdgeRuleFromCellBoundaryFactory(gdat,
+			cellBoundaryFac,
+			_cutDom);
+
+			return r;
+		}
 
         public override IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex, RefElement Kref) {
             CheckKref(levSetIndex, Kref);
@@ -93,7 +135,15 @@ namespace BoSSS.Foundation.XDG {
         }
 
         public override IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
-            throw new NotImplementedException();
+            CheckKref(levSetIndex0, KrefVol);
+            JumpTypes[] jumps = new JumpTypes[] { jmp1, jmp1 };
+            jumps[levSetIndex0] = JumpTypes.Implicit;
+
+			if (!DoubleCutFactories.ContainsKey(KrefVol))
+				DoubleCutFactories.Add(KrefVol, new AlgoimDoubleCutFactories(m_LevelSetDatas, KrefVol));
+
+			var algoimFactory = DoubleCutFactories[KrefVol];
+			return algoimFactory.GetSurfaceFactory(jumps);
         }
 
         public override IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex, JumpTypes jmp, RefElement Kref) {
@@ -103,8 +153,15 @@ namespace BoSSS.Foundation.XDG {
             return algoimFactory.GetVolumeFactory();
         }
 
-        public override IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
-            throw new NotImplementedException();
+        public override IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement Kref, IQuadRuleFactory<QuadRule> backupFactory) {
+			CheckKref(levSetIndex0, Kref);
+			JumpTypes[] jumps = new JumpTypes[] { jmp0, jmp1};
+
+			if (!DoubleCutFactories.ContainsKey(Kref))
+				DoubleCutFactories.Add(Kref, new AlgoimDoubleCutFactories(m_LevelSetDatas, Kref));
+
+			var algoimFactory = DoubleCutFactories[Kref];
+			return algoimFactory.GetVolumeFactory(jumps);
         }
 
         /// <summary>
@@ -114,10 +171,10 @@ namespace BoSSS.Foundation.XDG {
         /// <exception cref="NotImplementedException"></exception>
         private bool CheckJmp(JumpTypes jmp) {
             if (jmp == JumpTypes.Heaviside)
-                return false; //we are looking for positive level set values
+                return false; //we are looking for positive level set values, i.e., ls(x)>0
             else if (jmp == JumpTypes.OneMinusHeaviside)
-                return true; //we are looking for negative level set values
-            else
+                return true; //we are looking for negative level set values, i.e., ls(x)<0
+			else
                 throw new NotImplementedException();
         }
 

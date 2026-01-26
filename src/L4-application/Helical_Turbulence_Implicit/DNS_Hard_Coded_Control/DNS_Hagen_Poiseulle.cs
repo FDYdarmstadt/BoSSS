@@ -42,7 +42,7 @@ namespace BoSSS.Application.IncompressibleNSE {
             //Ctrl.DbPath = null;
             Ctrl.DbPath = _DbPath;
 
-            const double MaxAmp = 16;
+            const double MaxAmp = 1;
 
             if (rMin != 0) {
                 for (int i = 0; i < 9; i++)
@@ -50,7 +50,10 @@ namespace BoSSS.Application.IncompressibleNSE {
             }
             Ctrl.maxAmpli = MaxAmp;
 
-            bool transient = true;
+            //bool transient = true;
+            bool transient = false;
+
+
             Ctrl.savetodb = Ctrl.DbPath != null;
             Ctrl.ProjectName = "NStransient";
             Ctrl.SessionName = "degree= " + degree + " " + "noOfCellsR= " + noOfCellsR + " " + "noOfCellsXi= " + noOfCellsXi;
@@ -59,6 +62,7 @@ namespace BoSSS.Application.IncompressibleNSE {
             #endregion
 
             // Solver Options
+            Ctrl.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             if (transient) {
                 Ctrl.NoOfTimesteps = 1000;
                 Ctrl.TimesteppingMode = AppControl._TimesteppingMode.Transient;
@@ -163,12 +167,6 @@ namespace BoSSS.Application.IncompressibleNSE {
             Ctrl.AddInitialValue("Velocity_ETA", Velocity_ETA_0);
             Ctrl.AddInitialValue("Velocity_XI", Velocity_XI_0);
 
-
-
-            //Ctrl.AddInitialValue("Pressure", new Formula($"(X) =>0 "));
-            //Ctrl.AddInitialValue("Velocity_R", new Formula($"(X) => 0"));
-            //Ctrl.AddInitialValue("Velocity_ETA", new Formula($"(X) => {MaxAmp} *(X[0]/(Math.Sqrt({a * a} * X[0] * X[0] + {b * b} ))) * ({a * b} * ({Ctrl.rMax * Ctrl.rMax} - X[0]*X[0]) )/(X[0]*4* {nu})"));
-            //Ctrl.AddInitialValue("Velocity_XI", new Formula($"(X) => -{MaxAmp} *(X[0]/(Math.Sqrt({a * a} * X[0] * X[0] + {b * b} ))) * ({a * a} * ({Ctrl.rMax * Ctrl.rMax} - X[0]*X[0]) )/(4* {nu})"));
             // Boundary Conditions
             // ==============
             Ctrl.AddBoundaryValue("Dirichlet_outer_wall", "Velocity_R", new Formula("(X,t) =>  0", true));
@@ -178,8 +176,6 @@ namespace BoSSS.Application.IncompressibleNSE {
             Ctrl.AddBoundaryValue("Dirichlet_inner_wall", "Velocity_R", new Formula("(X,t) =>  0", true));
             Ctrl.AddBoundaryValue("Dirichlet_inner_wall", "Velocity_ETA", new Formula($"(X,t) => {MaxAmp} * (X[0] / (Math.Sqrt({a * a} * X[0] * X[0] + {b * b}))) * ({a * b} * ({Ctrl.rMax} * {Ctrl.rMax} - X[0] * X[0])) / (X[0] * 4 * {nu})", true));
             Ctrl.AddBoundaryValue("Dirichlet_inner_wall", "Velocity_XI", new Formula($"(X,t) =>- {MaxAmp} * (X[0] / (Math.Sqrt({a * a} * X[0] * X[0] + {b * b}))) * ({a * a} * ({Ctrl.rMax} * {Ctrl.rMax} - X[0] * X[0])) / (4 * {nu})", true));
-
-            //Ctrl.AddBoundaryValue("Dirichlet_outer_wall", "Pressure", new Formula("(X,t) =>0", true));
 
             if (rMin < 10e-6) {
                 Globals.activeMult = Globals.Multiplier.Bsq;

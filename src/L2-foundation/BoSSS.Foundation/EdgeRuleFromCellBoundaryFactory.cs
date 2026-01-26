@@ -276,7 +276,6 @@ namespace BoSSS.Foundation.Quadrature {
             NodeSet Nodes = new NodeSet(this.RefElement, iE - i0 + 1, coD, qrEdge == null);
 
             // transform from the cell coordinate system to the face
-            //NodesVol.SaveToTextFileUnsteady($"NodesVol{iFace}");
             volSplx.GetInverseFaceTrafo(iFace).Transform(NodesVol, Nodes);
             Nodes.LockForever();
             //Nodes.SaveToTextFileUnsteady($"NodesFace{iFace}");

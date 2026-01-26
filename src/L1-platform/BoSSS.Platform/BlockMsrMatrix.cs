@@ -25,6 +25,7 @@ using System.Runtime.InteropServices;
 using ilPSP.Connectors;
 using System.Threading;
 using System.Threading.Tasks;
+using ilPSP.LinSolvers.monkey.CL;
 
 namespace ilPSP.LinSolvers {
 
@@ -3787,16 +3788,58 @@ namespace ilPSP.LinSolvers {
             return sd;
         }
 
-        /// <summary>
-        /// Performs the operation: this = this + <paramref name="Ascale"/>*<paramref name="A"/>;
-        /// </summary>
-        /// <param name="A">
-        /// another matrix with same size and equal <see cref="RowPartitioning"/>;
-        /// </param>
-        /// <param name="Ascale">
-        /// scaling
-        /// </param>
-        public void Acc(double Ascale, BlockMsrMatrix A) {
+		/// <summary>
+		/// Checks if a matrix is a unit matrix.
+		/// </summary>
+		/// <param name="quick">Specifies whether to perform a quick check (look only the number of elements) or a thorough one (explicitly reaching the memory).</param>
+		/// <param name="threshold">The tolerance for comparing values to 0 or 1.</param>
+		/// <returns>True if the matrix is a unit matrix, false otherwise.</returns>
+		public bool CheckIfUnitMatrix(bool quick = true, double threshold = 1e-6) { 
+            if (!CheckIfSquareMatrix())
+                return false;
+
+			long[] ColumnIndices = null;
+            int totalNonDiagonal = 0;
+            for (long i = RowPartitioning.i0; i < RowPartitioning.iE; i++) {
+				if (Math.Abs(this[i, i] - 1) > threshold )//check diagonal element
+					return false;
+
+                if (quick) { //checks only the number of stored values                    
+					totalNonDiagonal += GetOccupiedColumnIndices(i, ref ColumnIndices); 
+                } else { //by explicitly checking the stored values
+                    double[] Values = null;
+					GetRowInternal(i, ref ColumnIndices, ref Values, false);
+					foreach (var Val in Values) {
+						totalNonDiagonal += Math.Abs(Val) > threshold ? 1 : 0; //check if it is non-zero
+					}
+				}
+			}
+
+            bool ret = totalNonDiagonal == RowPartitioning.LocalLength; //check if only diagonal elements are non-zero
+			return ret.MPIAnd();
+		}
+
+		/// <summary>
+		/// Computes the deviation of this matrix from symmetry
+		/// </summary>
+		/// <returns>
+		/// The accumulated sum of the differences between corresponding
+		/// off-diagonal entries.
+		/// </returns>
+		public bool CheckIfSquareMatrix() {
+            return (RowPartitioning.TotalLength == ColPartition.TotalLength);
+		}
+
+		/// <summary>
+		/// Performs the operation: this = this + <paramref name="Ascale"/>*<paramref name="A"/>;
+		/// </summary>
+		/// <param name="A">
+		/// another matrix with same size and equal <see cref="RowPartitioning"/>;
+		/// </param>
+		/// <param name="Ascale">
+		/// scaling
+		/// </param>
+		public void Acc(double Ascale, BlockMsrMatrix A) {
             if(m_RowPartitioning.LocalLength != A._RowPartitioning.LocalLength)
                 throw new ArgumentException("Mismatch in number of rows.");
             if(m_ColPartitioning.TotalLength != A._ColPartitioning.TotalLength)

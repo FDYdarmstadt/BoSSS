@@ -78,13 +78,6 @@ namespace StokesHelical_Ak.MomentumEquations {
             return Acc;
         }
 
-        //public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
-        //    for(int i = 0; i < 3; i++) {
-        //        Console.WriteLine($"Remember: u_r Convektive is null !!!!!!");
-        //    }
-        //    return 0;
-        //}
-
         public double InnerEdgeForm(ref CommonParams inp, double[] Uin, double[] Uout, double[,] _Grad_uIN, double[,] _Grad_uOUT, double V_IN, double V_OT, double[] _Grad_vIN, double[] _Grad_vOUT) {
 
             // Terme 2 & 3 Wurden hier abgedeckt. Herleitung siehe unten mit Vergleich zum Paper
@@ -160,9 +153,9 @@ namespace StokesHelical_Ak.MomentumEquations {
             double[] UD;
             UD = UDiri(inp.X);
 
-            double ur0_OT = UD[0];          // das ist geraten    WAS IST DAS?!?!
-            double uxi0_OT = UD[1];         // das ist geraten
-            double ueta0_OT = UD[2];        // das ist geraten
+            double ur0_OT = UD[0];          
+            double uxi0_OT = UD[1];         
+            double ueta0_OT = UD[2];        
 
 
             double Flux = 0;
@@ -171,8 +164,8 @@ namespace StokesHelical_Ak.MomentumEquations {
             double urVel_IN = Uin[0];
             double uxiVel_IN = Uin[1];
 
-            double urVel_OT = UD[0];        // das ist geraten
-            double uxiVel_OT = UD[1];       // das ist geraten
+            double urVel_OT = UD[0];       
+            double uxiVel_OT = UD[1];      
 
             double r = inp.X[0];
 
@@ -186,7 +179,6 @@ namespace StokesHelical_Ak.MomentumEquations {
                 //
                 // Bei der inneren Edge für r=0 wird die Funktion f(r) durch aktiv durch B(r)^2 ersetzt,
                 // um Singularitäten zu eleminieren. An den anderen Kanten wird dies nicht explizit geamcht. 
-                // Wieso eigentlich nicht????
 
                 // Term 1 Gleichung 3.6. Im Zweiten Abschnitt wurde f_function mit B_term gekürzt. f(r)=B(r)^2
                 // Upwind FLux

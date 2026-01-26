@@ -45,7 +45,6 @@ namespace BoSSS.Foundation.XDG {
             /// </summary>
             TwoStepStokesAndGauss,
 
-
             /// <summary>
             /// Only for debugging purpose, see <see cref="ExactCircleLevelSetIntegration"/>, <see cref="ExactCircleLevelSetIntegration.RADIUS"/>
             /// </summary>
@@ -61,6 +60,7 @@ namespace BoSSS.Foundation.XDG {
             /// R. Saye, SIAM Journal on Scientific Computing, 2015
             /// </remarks>
             Saye,
+
             /// <summary>
             /// Gaussian quadrature rules for <see cref="Square"/> and <see cref="Cube"/> elements,
             /// obtained through recursive subdivision, as described in 
@@ -106,14 +106,20 @@ namespace BoSSS.Foundation.XDG {
         /// Generates a quadrature rule factory for integrating over the zero-level-set surface.
         /// </summary>
         abstract public IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex, RefElement Kref);
-        // ref (1), on cell
+		// ref (1), on cell
 
-        /// <summary>
-        /// Generates a quadrature rule factory for integrating over a surface.
-        /// The surface is defined by two conditions: levelset0 = 0 and on side jmp1 of levelset1
-        /// <see cref="GetSurfaceFactory(int, RefElement)"/>
-        /// </summary>
-        abstract public IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory);
+		/// <summary>
+		/// Generates a quadrature rule factory for integrating over a surface.
+		/// The surface is defined by two conditions: levelset0 = 0 and on side jmp1 of levelset1
+		/// <see cref="GetSurfaceFactory(int, RefElement)"/>
+		/// </summary>
+		/// <param name="levSetIndex0">Index of the primary level set defining the surface quadrature rule.</param>
+		/// <param name="levSetIndex1">Index of the auxiliary level set for species differentiation.</param>
+		/// <param name="jmp1">Specifies the side of <paramref name="levSetIndex1"/> that defines the phase of interest.</param>
+		/// <param name="KrefVol">The reference element used for the quadrature rule.</param>
+		/// <param name="backupFactory">Factory for generating fallback quadrature rules.</param>
+		/// <returns></returns>
+		abstract public IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory);
 
         /// <summary>
         /// Generates a quadrature rule factory for the cut edge integrals.
