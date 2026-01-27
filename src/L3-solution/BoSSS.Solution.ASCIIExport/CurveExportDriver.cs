@@ -137,30 +137,30 @@ namespace BoSSS.Solution.ASCIIExport {
 
                     owner.file.WriteLine("# " + owner.m_fieldNames[ii]);
 
-                    Tuple<double, double>[] tuples;
+                    (double coord, double fieldValue)[] tuples;
 
                     if (showJumps) {
                         int noOfNodesPerCell = verticeCoordinates.GetLength(1);
-                        tuples = new Tuple<double, double>[NoOfCells * noOfNodesPerCell];
+                        tuples = new (double, double)[NoOfCells * noOfNodesPerCell];
                         for (int i = 0; i < NoOfCells; i++) {
                             for (int j = 0; j < noOfNodesPerCell; j++) {
                                 int index = i * noOfNodesPerCell + j;
-                                tuples[index] = Tuple.Create(verticeCoordinates[i, j, 0], notSmoothedResult[index]);
+                                tuples[index] = (verticeCoordinates[i, j, 0], notSmoothedResult[index]);
                             }
                         }
                     } else {
-                        tuples = new Tuple<double, double>[totalVertices];
+                        tuples = new (double, double)[totalVertices];
                         for (int i = 0; i < totalVertices; i++) {
-                            tuples[i] = Tuple.Create(vertices[i, 0], smoothedResult[i]);
+                            tuples[i] = (vertices[i, 0], smoothedResult[i]);
                         }
                     }
 
                     // Write tuples with increasing x values
                     foreach (var tuple in tuples.OrderBy(t => t.Item1)) {
                         owner.file.WriteLine(
-                            tuple.Item1.ToString("e16", NumberFormatInfo.InvariantInfo) +
+                            tuple.coord.ToString("e16", NumberFormatInfo.InvariantInfo) +
                             "\t" +
-                            tuple.Item2.ToString("e16", NumberFormatInfo.InvariantInfo));
+                            tuple.fieldValue.ToString("e16", NumberFormatInfo.InvariantInfo));
                     }
                 }
             }

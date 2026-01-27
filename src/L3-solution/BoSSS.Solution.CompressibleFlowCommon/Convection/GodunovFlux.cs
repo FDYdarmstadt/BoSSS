@@ -41,8 +41,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// solution of the Riemann problem.
         /// </summary>
         public override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref ilPSP.Vector normal, int edgeIndex) {
-            ExactRiemannSolver riemannSolver = new ExactRiemannSolver(
-                stateIn, stateOut, normal);
+            ExactRiemannSolver riemannSolver = new ExactRiemannSolver(stateIn, stateOut, normal);
 
             StateVector stateEdge = riemannSolver.GetCentralState();
             return equationComponent.Flux(stateEdge) * normal;
