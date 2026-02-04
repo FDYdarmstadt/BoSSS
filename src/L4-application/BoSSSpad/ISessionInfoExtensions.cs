@@ -2531,8 +2531,8 @@ namespace BoSSS.Foundation.IO {
 
             double[] diff = new double[numVal];
 
-            if(numRefVal < numVal)
-                throw new ArgumentException("reference data should have at least the same length as comparison data");
+            //if(numRefVal < numVal)
+            //    throw new ArgumentException("reference data should have at least the same length as comparison data");
             LinearSpline LinSpline = LinearSpline.InterpolateSorted(refAbs, refVal);
 
             double[] refSplVal = new double[numVal];
