@@ -680,9 +680,11 @@ namespace BoSSS.Application.BoSSSpad {
                         return parts.Last();
                     }
 
-                    if ( Session != null ) {
-                        var parts = Session.DeployPath.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
-                        return parts.Last();
+                    if(Session != null) {
+                        if(Session.DeployPath != null) {
+                            var parts = Session.DeployPath.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
+                            return parts.Last();
+                        } 
                     }
 
                     return null; // unable to determine
@@ -1576,8 +1578,7 @@ namespace BoSSS.Application.BoSSSpad {
             using ( var tr = new FuncTrace() ) {
                 if ( this.AssignedBatchProc == null )
                     throw new NotSupportedException("Job must be activated before.");
-
-
+                
                 // ================
                 // status
                 // ================
@@ -1611,14 +1612,14 @@ namespace BoSSS.Application.BoSSSpad {
                 string DeploymentDirectory = this.DeployExecuteables();
 
                 // submit job
-                using ( new BlockTrace("JOB_SUBMISSION", tr) ) {
+                using(new BlockTrace("JOB_SUBMISSION", tr)) {
                     var rr = AssignedBatchProc.Submit(this, DeploymentDirectory);
                     File.WriteAllText(Path.Combine(DeploymentDirectory, "IdentifierToken.txt"), rr.id);
 
                     //Deployment dep = AllDeployments.SingleOrDefault(d => d?.BatchProcessorIdentifierToken == rr.id);
                     Deployment dep = AllDeployments.LastOrDefault(d => (d?.BatchProcessorIdentifierToken == rr.id) && PathMatch(d?.DeploymentDirectory?.FullName, DeploymentDirectory));
 
-                    if ( dep == null )
+                    if(dep == null)
                         m_Deployments.Add(new Deployment(new DirectoryInfo(DeploymentDirectory), this, rr.optJobObj));
                     else
                         dep.optInfo = rr.optJobObj;

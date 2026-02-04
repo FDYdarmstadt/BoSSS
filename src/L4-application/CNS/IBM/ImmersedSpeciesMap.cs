@@ -153,6 +153,7 @@ namespace CNS.IBM {
                         oldAggThreshold = null;
                     }
 
+                    //_LevelSetQuadratureOrder
                     cellAgglomeration = Tracker.GetAgglomerator(
                         new SpeciesId[] { Tracker.GetSpeciesId(Control.FluidSpeciesName) },
                         Control.LevelSetQuadratureOrder,
@@ -201,7 +202,7 @@ namespace CNS.IBM {
                     Tracker.GetSpeciesId(Control.FluidSpeciesName)
                 };
 
-                return Tracker.GetXDGSpaceMetrics(species, Control.LevelSetQuadratureOrder, 1).XQuadSchemeHelper;
+                return Tracker.GetXDGSpaceMetrics(species, Control.LevelSetQuadratureOrder + 2, 1).XQuadSchemeHelper;
             }
         }
 

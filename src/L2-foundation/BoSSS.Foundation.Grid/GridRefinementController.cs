@@ -189,7 +189,7 @@ namespace BoSSS.Foundation.Grid {
                         }
                     }
                 }
-                tr.InfoToConsole = true;
+                //tr.InfoToConsole = true;
                 
                 // return
                 // ======
@@ -274,7 +274,7 @@ namespace BoSSS.Foundation.Grid {
 
                     }
                 }
-                tr.InfoToConsole = true;
+                //tr.InfoToConsole = true;
                 tr.Info("checked coarsening across periodic edges");
             }
         }

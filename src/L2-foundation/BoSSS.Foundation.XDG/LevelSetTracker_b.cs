@@ -31,40 +31,6 @@ namespace BoSSS.Foundation.XDG {
 
     partial class LevelSetTracker {
 
-        HistoryStack<Dictionary<(CutCellQuadratureMethod method, int QuadOrder),  XQuadFactoryHelperBase>> m_QuadFactoryHelpersHistory = null;
-
-        /// <summary>
-        /// Central 'factory' for creating Level Set - related quadrature.
-        /// </summary>
-        /// <remarks>
-        /// The centralized approach should avoid multiple creation of the same quadrature rule.
-        /// </remarks>
-        XQuadFactoryHelperBase GetXQuadFactoryHelper(CutCellQuadratureMethod variant, int QuadOrder, int HistoryIndex = 1) {
-            var dict = m_QuadFactoryHelpersHistory[HistoryIndex];
-
-            var key = (variant, QuadOrder);
-
-            if(!dict.ContainsKey(key)) {
-
-                XQuadFactoryHelperBase qfHelper;
-                if(variant == CutCellQuadratureMethod.Algoim) {
-                    qfHelper = new XQuadFactoryHelperAlgoim(
-                        this.DataHistories.Select(hist => hist[HistoryIndex]).ToArray());
-                } else {
-                    qfHelper = new XQuadFactoryHelper(
-                        this.DataHistories.Select(hist => hist[HistoryIndex]).ToArray(),
-                        variant);
-                }
-                qfHelper.CreateRulesAndMPIExchgange(QuadOrder);
-
-                dict.Add(key, qfHelper);
-            }
-                
-
-            return dict[key];
-        }
-
-
         HistoryStack<Dictionary<Tuple<SpeciesId[], CutCellQuadratureMethod, int>, XDGSpaceMetrics>> m_XDGSpaceMetricsHistory = null;
         
         Dictionary<Tuple<SpeciesId[], CutCellQuadratureMethod, int>, XDGSpaceMetrics> NewXDGSpaceMetricsCache() {
@@ -113,30 +79,51 @@ namespace BoSSS.Foundation.XDG {
             return GetXDGSpaceMetrics(this.SpeciesIdS, CutCellsQuadOrder, HistoryIndex);
         }
 
+        /// <summary>
+        /// Central object to obtain utilities for the XDG and TraceDG discretization, mainly:
+        /// - Cut Cell and Cut Edge metrics before agglomeration, c.f., <see cref="XDGSpaceMetrics.CutCellMetrics"/>
+        /// - XDG and TraceDG mass matrices: <see cref="XDGSpaceMetrics.MassMatrixFactory"/>
+        /// - cut cell quadrature, s.f. <see cref="XDGSpaceMetrics.XQuadSchemeHelper"/>, <see cref="XDGSpaceMetrics.XQuadFactoryHelper"/>
+        /// </summary>
+        public XDGSpaceMetrics GetXDGSpaceMetrics(int CutCellsQuadOrder, int HistoryIndex = 1) {
+            return GetXDGSpaceMetrics(this.SpeciesIdS, CutCellsQuadOrder, HistoryIndex);
+        }
 
         /// <summary>
-        /// Cut Cell and Cut Edge metrics before agglomeration
+        /// Central object to obtain utilities for the XDG and TraceDG discretization, mainly:
+        /// - Cut Cell and Cut Edge metrics before agglomeration, c.f., <see cref="XDGSpaceMetrics.CutCellMetrics"/>
+        /// - XDG and TraceDG mass matrices: <see cref="XDGSpaceMetrics.MassMatrixFactory"/>
+        /// - cut cell quadrature, s.f. <see cref="XDGSpaceMetrics.XQuadSchemeHelper"/>, <see cref="XDGSpaceMetrics.XQuadFactoryHelper"/>
         /// </summary>
         public XDGSpaceMetrics GetXDGSpaceMetrics(SpeciesId Spc, int CutCellsQuadOrder, int HistoryIndex = 1) {
             return GetXDGSpaceMetrics(new SpeciesId[] { Spc }, CutCellsQuadOrder, HistoryIndex);
         }
 
         /// <summary>
-        /// Cut Cell and Cut Edge metrics before agglomeration
+        /// Central object to obtain utilities for the XDG and TraceDG discretization, mainly:
+        /// - Cut Cell and Cut Edge metrics before agglomeration, c.f., <see cref="XDGSpaceMetrics.CutCellMetrics"/>
+        /// - XDG and TraceDG mass matrices: <see cref="XDGSpaceMetrics.MassMatrixFactory"/>
+        /// - cut cell quadrature, s.f. <see cref="XDGSpaceMetrics.XQuadSchemeHelper"/>, <see cref="XDGSpaceMetrics.XQuadFactoryHelper"/>
         /// </summary>
         public XDGSpaceMetrics GetXDGSpaceMetrics(string Spc, int CutCellsQuadOrder, int HistoryIndex = 1) {
             return GetXDGSpaceMetrics(new SpeciesId[] { this.GetSpeciesId(Spc) }, CutCellsQuadOrder, HistoryIndex);
         }
+        
         /// <summary>
-        /// Cut Cell and Cut Edge metrics before agglomeration
+        /// Central object to obtain utilities for the XDG and TraceDG discretization, mainly:
+        /// - Cut Cell and Cut Edge metrics before agglomeration, c.f., <see cref="XDGSpaceMetrics.CutCellMetrics"/>
+        /// - XDG and TraceDG mass matrices: <see cref="XDGSpaceMetrics.MassMatrixFactory"/>
+        /// - cut cell quadrature, s.f. <see cref="XDGSpaceMetrics.XQuadSchemeHelper"/>, <see cref="XDGSpaceMetrics.XQuadFactoryHelper"/>
         /// </summary>
         public XDGSpaceMetrics GetXDGSpaceMetrics(IEnumerable<string> Spc, int CutCellsQuadOrder, int HistoryIndex = 1) {
             return GetXDGSpaceMetrics(Spc.Select(spc => this.GetSpeciesId(spc)), CutCellsQuadOrder, HistoryIndex);
         }
 
-
         /// <summary>
-        /// Cut Cell and Cut Edge metrics before agglomeration
+        /// Central object to obtain utilities for the XDG and TraceDG discretization, mainly:
+        /// - Cut Cell and Cut Edge metrics before agglomeration, c.f., <see cref="XDGSpaceMetrics.CutCellMetrics"/>
+        /// - XDG and TraceDG mass matrices: <see cref="XDGSpaceMetrics.MassMatrixFactory"/>
+        /// - cut cell quadrature, s.f. <see cref="XDGSpaceMetrics.XQuadSchemeHelper"/>, <see cref="XDGSpaceMetrics.XQuadFactoryHelper"/>
         /// </summary>
         public XDGSpaceMetrics GetXDGSpaceMetrics(IEnumerable<SpeciesId> Spc, int CutCellsQuadOrder, int HistoryIndex = 1) {
             //if(!m_QuadFactoryHelpers.ContainsKey(variant)) {
@@ -150,15 +137,12 @@ namespace BoSSS.Foundation.XDG {
 #endif
             var CutCellsQuadType = this.CutCellQuadratureType;
 
-
-
-            //throw new NotImplementedException("todo");
             var dict = m_XDGSpaceMetricsHistory[HistoryIndex];
             var key = Tuple.Create(_Spc, this.CutCellQuadratureType, CutCellsQuadOrder);
             if (!dict.ContainsKey(key)) {
                 dict.Add(key,
                     new XDGSpaceMetrics(this,
-                        GetXQuadFactoryHelper(CutCellsQuadType, CutCellsQuadOrder, HistoryIndex),
+                        //GetXQuadFactoryHelper(CutCellsQuadType, CutCellsQuadOrder, HistoryIndex),
                         CutCellsQuadOrder,
                         _Spc,
                         HistoryIndex

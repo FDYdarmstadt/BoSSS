@@ -276,8 +276,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             var ctrl = StaticDroplet2D_ExactEvalution(1);
 
-            ctrl.ImmediatePlotPeriod = 1;
-            ctrl.SuperSampling = 5;
+            //ctrl.ImmediatePlotPeriod = 1;
+            //ctrl.SuperSampling = 5;
 
             using (var TestSolver = new XNSE()) {
 

@@ -163,26 +163,30 @@ namespace BoSSS.Foundation.Grid {
         /// - index: reference element, correlates with <see cref="IGeometricalCellsData.RefElements"/>
         /// </returns>
         public PolynomialList[] GetOrthonormalPolynomials(int Degree) {
-            PolynomialList[] R;
-            if(!this.m_PolynomialLists.TryGetValue(Degree, out R)) {
-                var Krefs = this.m_Owner.iGeomCells.RefElements;
-                R = new PolynomialList[Krefs.Length];
-                for(int iKref = 0; iKref < Krefs.Length; iKref++) {
-                    R[iKref] = Krefs[iKref].GetOrthonormalPolynomials(Degree);
+            lock(m_PolynomialLists) {
+                PolynomialList[] R;
+                if(!this.m_PolynomialLists.TryGetValue(Degree, out R)) {
+                    var Krefs = this.m_Owner.iGeomCells.RefElements;
+                    R = new PolynomialList[Krefs.Length];
+                    for(int iKref = 0; iKref < Krefs.Length; iKref++) {
+                        R[iKref] = Krefs[iKref].GetOrthonormalPolynomials(Degree);
+                    }
+                    this.m_PolynomialLists.Add(Degree, R);
                 }
-                this.m_PolynomialLists.Add(Degree, R);
+                return R;
             }
-            return R;
         }
 
         public PolynomialList[] SetCustomPolynomials(int Degree, PolynomialList[] P) {
-            PolynomialList[] R;
-            if (!this.m_PolynomialLists.TryGetValue(Degree, out R)) {
-                var Krefs = this.m_Owner.iGeomCells.RefElements;
-                R = P;                
-                this.m_PolynomialLists.Add(Degree, R);
+            lock(m_PolynomialLists) {
+                PolynomialList[] R;
+                if(!this.m_PolynomialLists.TryGetValue(Degree, out R)) {
+                    var Krefs = this.m_Owner.iGeomCells.RefElements;
+                    R = P;
+                    this.m_PolynomialLists.Add(Degree, R);
+                }
+                return R;
             }
-            return R;
         }
 
         SortedDictionary<int, PolynomialList[,]> m_Polynomial1stDerivLists = new SortedDictionary<int, PolynomialList[,]>();
@@ -196,32 +200,34 @@ namespace BoSSS.Foundation.Grid {
         /// - 2nd index: spatial direction of derivative
         /// </returns>
         public PolynomialList[,] GetOrthonormalPolynomials1stDeriv(int Degree) {
-            PolynomialList[,] R;
-            if(!this.m_Polynomial1stDerivLists.TryGetValue(Degree, out R)) {
-                var Krefs = this.m_Owner.iGeomCells.RefElements;
-                int D = this.m_Owner.SpatialDimension;
+            lock(m_PolynomialLists) { // if we lock `m_Polynomial1stDerivLists`, and in subsequence `m_PolynomialLists`, this maybe would cause a deadlock?
+                PolynomialList[,] R;
+                if(!this.m_Polynomial1stDerivLists.TryGetValue(Degree, out R)) {
+                    var Krefs = this.m_Owner.iGeomCells.RefElements;
+                    int D = this.m_Owner.SpatialDimension;
 
-                R = new PolynomialList[Krefs.Length, D];
-                PolynomialList[] Polys = this.GetOrthonormalPolynomials(Degree);
+                    R = new PolynomialList[Krefs.Length, D];
+                    PolynomialList[] Polys = this.GetOrthonormalPolynomials(Degree);
 
-                int[] DerivExp = new int[D];
+                    int[] DerivExp = new int[D];
 
-                for(int d = 0; d < D; d++) {
-                    DerivExp[d] = 1;
-                    for(int iKref = 0; iKref < Krefs.Length; iKref++) {
-                        int N = Polys[iKref].Count;
-                        Polynomial[] tmp = new Polynomial[N];
-                        for(int n = 0; n < N; n++) {
-                            tmp[n] = Polys[iKref][n].Derive(DerivExp);
+                    for(int d = 0; d < D; d++) {
+                        DerivExp[d] = 1;
+                        for(int iKref = 0; iKref < Krefs.Length; iKref++) {
+                            int N = Polys[iKref].Count;
+                            Polynomial[] tmp = new Polynomial[N];
+                            for(int n = 0; n < N; n++) {
+                                tmp[n] = Polys[iKref][n].Derive(DerivExp);
+                            }
+
+                            R[iKref, d] = new PolynomialList(tmp);
                         }
-
-                        R[iKref, d] = new PolynomialList(tmp);
+                        DerivExp[d] = 0;
                     }
-                    DerivExp[d] = 0;
+                    this.m_Polynomial1stDerivLists.Add(Degree, R);
                 }
-                this.m_Polynomial1stDerivLists.Add(Degree, R);
+                return R;
             }
-            return R;
         }
 
         SortedDictionary<int, PolynomialList[,,]> m_Polynomial2ndDerivLists = new SortedDictionary<int, PolynomialList[,,]>();
@@ -237,56 +243,58 @@ namespace BoSSS.Foundation.Grid {
         /// - 3rd index: spatial direction of second derivative
         /// </returns>
         public PolynomialList[,,] GetOrthonormalPolynomials2ndDeriv(int Degree) {
-            PolynomialList[,,] R;
-            if(!this.m_Polynomial2ndDerivLists.TryGetValue(Degree, out R)) {
-                var Krefs = this.m_Owner.iGeomCells.RefElements;
-                int D = this.m_Owner.SpatialDimension;
+            lock(m_PolynomialLists) { // if we lock `m_Polynomial2ndDerivLists`, and in subsequence `m_PolynomialLists`, this maybe would cause a deadlock?
+                PolynomialList[,,] R;
+                if(!this.m_Polynomial2ndDerivLists.TryGetValue(Degree, out R)) {
+                    var Krefs = this.m_Owner.iGeomCells.RefElements;
+                    int D = this.m_Owner.SpatialDimension;
 
-                R = new PolynomialList[Krefs.Length, D, D];
-                PolynomialList[] Polys = this.GetOrthonormalPolynomials(Degree);
+                    R = new PolynomialList[Krefs.Length, D, D];
+                    PolynomialList[] Polys = this.GetOrthonormalPolynomials(Degree);
 
-                int[] DerivExp = new int[D];
+                    int[] DerivExp = new int[D];
 
-                for(int d1 = 0; d1 < D; d1++) {
-                    DerivExp[d1]++;
-                    for(int d2 = 0; d2 < D; d2++) {
-                        DerivExp[d2]++;
+                    for(int d1 = 0; d1 < D; d1++) {
+                        DerivExp[d1]++;
+                        for(int d2 = 0; d2 < D; d2++) {
+                            DerivExp[d2]++;
 
-                        for(int iKref = 0; iKref < Krefs.Length; iKref++) {
-                            int N = Polys[iKref].Count;
-                            Polynomial[] tmp = new Polynomial[N];
-                            for(int n = 0; n < N; n++) {
-                                tmp[n] = Polys[iKref][n].Derive(DerivExp);
+                            for(int iKref = 0; iKref < Krefs.Length; iKref++) {
+                                int N = Polys[iKref].Count;
+                                Polynomial[] tmp = new Polynomial[N];
+                                for(int n = 0; n < N; n++) {
+                                    tmp[n] = Polys[iKref][n].Derive(DerivExp);
+                                }
+
+                                R[iKref, d1, d2] = new PolynomialList(tmp);
                             }
-
-                            R[iKref, d1, d2] = new PolynomialList(tmp);
+                            DerivExp[d2]--;
                         }
-                        DerivExp[d2]--;
+                        DerivExp[d1]--;
                     }
-                    DerivExp[d1]--;
-                }
 
 #if DEBUG
-                for(int d1 = 0; d1 < D; d1++) {
-                    for(int d2 = d1 + 1; d2 < D; d2++) {
-                        for(int iKref = 0; iKref < Krefs.Length; iKref++) {
-                            int N = Polys[iKref].Count;
+                    for(int d1 = 0; d1 < D; d1++) {
+                        for(int d2 = d1 + 1; d2 < D; d2++) {
+                            for(int iKref = 0; iKref < Krefs.Length; iKref++) {
+                                int N = Polys[iKref].Count;
 
-                            for(int n = 0; n < N; n++) {
-                                Polynomial P_d1d2 = R[iKref, d1, d2][n];
-                                Polynomial P_d2d1 = R[iKref, d2, d1][n];
+                                for(int n = 0; n < N; n++) {
+                                    Polynomial P_d1d2 = R[iKref, d1, d2][n];
+                                    Polynomial P_d2d1 = R[iKref, d2, d1][n];
 
-                                Debug.Assert(P_d1d2.Equals(P_d2d1), "Hessian seems unsymmetric.");
+                                    Debug.Assert(P_d1d2.Equals(P_d2d1), "Hessian seems unsymmetric.");
+                                }
                             }
                         }
                     }
-                }
 #endif
 
 
-                this.m_Polynomial2ndDerivLists.Add(Degree, R);
+                    this.m_Polynomial2ndDerivLists.Add(Degree, R);
+                }
+                return R;
             }
-            return R;
         }
 
 

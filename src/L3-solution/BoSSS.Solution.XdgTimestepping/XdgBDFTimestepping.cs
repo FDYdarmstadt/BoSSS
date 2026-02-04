@@ -225,6 +225,16 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         /// <summary>
+        /// Get the number of stages for the current number of populatedStackDepth 
+        /// </summary>
+        public int GetNumberOfCurrentStages {
+            get {
+                int Smax = m_TSCchain[0].S;
+                return m_TSCchain[Smax - m_PopulatedStackDepth].S;
+            }
+        }
+
+        /// <summary>
         /// DG coefficient mapping for the test- and trial-space.
         /// </summary>
         public override CoordinateMapping CurrentStateMapping {
@@ -1265,8 +1275,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 throw new ArgumentOutOfRangeException();
             //if (m_CurrentDt_Timestep > 0 && Math.Abs(dt / m_CurrentDt_Timestep - 1.0) > 1.0e-14)
             //    throw new ArgumentOutOfRangeException();
-            if (m_CurrentDt_Timestep > 0 && Math.Abs(m_CurrentDt_Timestep - dt) > 1e-14)
-                AdaptToNewTimestep(dt, m_CurrentDt_Timestep);
+            //if(m_CurrentDt_Timestep > 0 && Math.Abs(m_CurrentDt_Timestep - dt) > 1e-14)
+            //    AdaptToNewTimestep(dt, m_CurrentDt_Timestep);
 
             m_CurrentDt_Timestep = dt;
 

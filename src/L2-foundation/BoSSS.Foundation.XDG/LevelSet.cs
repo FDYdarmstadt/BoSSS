@@ -526,7 +526,7 @@ namespace BoSSS.Foundation.XDG {
         /// Cell Mask for the derivatives and their accumulation regarding the
         /// curvature
         /// </param>
-        public void ComputeTotalCurvature(SinglePhaseField Output, CellMask optionalCellMask) {
+        public void ComputeTotalCurvature(SinglePhaseField Output, CellMask optionalCellMask = null) {
             if (this.m_Basis.Degree <= 1)
                 throw new ArgumentException("For correct computation of these level set quantities, the level set has to be at least of degree 2!");
 

@@ -12,7 +12,6 @@ using System.Linq;
 namespace BoSSS.Foundation.XDG.Quadrature {
 
 
-
     /// <summary>
     /// Generation of quadrature rules for level-sets which coincide with cell faces,
     /// centrally triggered by

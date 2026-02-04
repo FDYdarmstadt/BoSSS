@@ -86,6 +86,11 @@ namespace BoSSS.Application.XNSE_Solver {
             set;
         }
 
+
+        [DataMember]
+        public List<IBMelement> m_IBMelements;
+
+
         /// <summary>
         /// Temporary. Suggestion: Move Rigid body benchmarks to FSI solver in future.
         /// Sets Parameter for Rigidbody.
@@ -285,21 +290,6 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
-        /// <summary>
-        /// option for clearing the velocities for restart
-        /// </summary>
-        [DataMember]
-        public bool ClearVelocitiesOnRestart = false;
-
-        [DataMember]
-        public bool ReInitOnRestart = false;
-
-
-        [DataMember]
-        public bool adaptiveReInit = false;
-
-        [DataMember]
-        public bool InitSignedDistance = false;
 
         /// <summary>
         /// Expert options regarding the spatial discretization.
@@ -336,6 +326,32 @@ namespace BoSSS.Application.XNSE_Solver {
         ///// </summary>
         [DataMember]
         public TimeStepperInit Timestepper_BDFinit = TimeStepperInit.SingleInit;
+
+        /// <summary>
+        /// switches on an adaptive timestepping according to capillary timestep restrictions
+        /// </summary>
+        [DataMember]
+        public bool UseAdaptiveTimestep = false;
+
+        /// <summary>
+        /// determines the choice of adaptive time step in <see cref="GetTimestep()"/>
+        /// </summary>
+        [DataMember]
+        public ChooseTimestepBy ChooseTimestepByMethod = ChooseTimestepBy.dtFixed;
+
+        public enum ChooseTimestepBy { 
+        
+            dtFixed = 0,
+
+            minimum = 1,
+
+            maximum = 2,
+
+            LevSetCFLcondition = 3,
+
+            capillaryRestriction = 4
+        }
+
 
         ///// <summary>
         ///// defines the number of incremental timesteps in one global timestep (for incrementInit)

@@ -239,19 +239,15 @@ namespace FreeXNSE {
             LevelSetGradient.Gradient(1.0, Phi);
             SinglePhaseField[] Normals = LevelSetGradient.ToArray();
 
-            XQuadSchemeHelper SchemeHelper = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder).XQuadSchemeHelper;
-            EdgeQuadratureScheme SurfaceElement_Edge = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(this.LsTrk.GetSpeciesId("A"), this.LsTrk.GetSpeciesId("B"), 0);
             if(this.LsTrk.NoOfLevelSets > 1)
                 throw new NotSupportedException("todo -- maybe missing level-set intersection line contributions.");
 
+            
+            XQuadSchemeHelper SchemeHelper = this.LsTrk.GetXDGSpaceMetrics(this.m_HMForder).XQuadSchemeHelper;
+            EdgeQuadratureScheme SurfaceElement_Edge = SchemeHelper
+                .Get_SurfaceElement_EdgeQuadScheme(this.LsTrk.GetSpeciesId("A"), this.LsTrk.GetSpeciesId("B"), 0)
+                .Restrict(this.LsTrk.GridDat.GetBoundaryEdgeMask());
 
-            var gridDat = this.GridData;
-            var QuadDom = SurfaceElement_Edge.Domain;
-            var boundaryEdge = gridDat.GetBoundaryEdgeMask().GetBitMask();
-            var boundaryCutEdge = QuadDom.Intersect(new EdgeMask(gridDat, boundaryEdge, MaskType.Geometrical));
-
-            var factory = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder).XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(0, LsTrk.GridDat.Grid.RefElements[0]);
-            SurfaceElement_Edge = new EdgeQuadratureScheme(factory, boundaryCutEdge);
 
             EdgeQuadrature.GetQuadrature(new int[] { D + D + 1 + 1 }, LsTrk.GridDat,
                 SurfaceElement_Edge.Compile(LsTrk.GridDat, 0),
@@ -287,11 +283,11 @@ namespace FreeXNSE {
                     for(int d = 0; d < D; d++) {
                         Normals[d].EvaluateEdge(i0, length, QR.Nodes, normal_IN.ExtractSubArrayShallow(-1, -1, d), normal_OUT.ExtractSubArrayShallow(-1, -1, d));
                     }
-                    double[] NormalSurf = normal_IN.ExtractSubArrayShallow(0,0,-1).To1DArray();
+                    Vector NormalSurf = normal_IN.GetRowPt(0, 0);
                     NormalSurf.Normalize();
 
                     // edge normal
-                    double[] NormalEdg = LsTrk.GridDat.Edges.NormalsForAffine.ExtractSubArrayShallow(i0,-1).To1DArray();
+                    Vector NormalEdg = LsTrk.GridDat.Edges.NormalsForAffine.GetRow(i0);
                     NormalEdg.Normalize();
 
                     // contactline normal

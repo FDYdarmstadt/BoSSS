@@ -183,7 +183,6 @@ namespace BoSSS.Foundation.XDG {
                     cp.jCellIn = j + inp.e0;
                     cp.jCellOut = cp.jCellIn;
 
-
                     for (int n = 0; n < N; n++) { // loop over nodes...
                         cp.Normal.SetFrom(inp.Normals, j, n);
                         cp.X.SetFrom(inp.Nodes, j, n);

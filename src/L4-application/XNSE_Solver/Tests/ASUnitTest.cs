@@ -319,8 +319,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 //C.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
                 //C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
 
-                C.InitSignedDistance = false;
-
                 LaLa.Add(C);
             }
 
@@ -366,6 +364,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(1)] int deg,
             [Values(0.1)] double AgglomerationTreshold,
             [Values(CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod CutCellQuadratureType,
+            //[Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine)] SurfaceStressTensor_IsotropicMode SurfTensionMode,
             [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine)] SurfaceStressTensor_IsotropicMode SurfTensionMode,
             [Values(false)] bool performsolve
 #else
@@ -373,6 +372,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(1)] int deg,
             [Values(0.1)] double AgglomerationTreshold,
             [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod CutCellQuadratureType,
+            //[Values(SurfaceStressTensor_IsotropicMode.Curvature_Projected, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine)] SurfaceStressTensor_IsotropicMode SurfTensionMode,
             [Values(SurfaceStressTensor_IsotropicMode.Curvature_Projected, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine)] SurfaceStressTensor_IsotropicMode SurfTensionMode,
             [Values(true, false)] bool performsolve
 

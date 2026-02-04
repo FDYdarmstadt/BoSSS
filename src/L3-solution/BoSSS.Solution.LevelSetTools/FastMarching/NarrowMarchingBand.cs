@@ -620,12 +620,13 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 marcher.GradientUpdate(NEARgrid, LevelSet, LevelSetGrad);
             };
 
-            double dt_CFL = gdat.ComputeCFLTime(ExtVel.ToArray(), 10000, NEARgrid.VolumeMask);
-            dt_CFL *= 1.0 / (((double)(LevelSet.Basis.Degree)).Pow2());
-            if (dt / dt_CFL >= 1.0) {
-                Console.WriteLine(" Warning: exceeding Level-Set CFL: dt = {0:e4}, dt_CFL = {1:e4}, frac = {2:e4}", dt, dt_CFL, dt / dt_CFL);
-                throw new ArithmeticException("Levelset CFL exceeded");
-            }
+            // will be checked within UpdateTracker
+            //double dt_CFL = gdat.ComputeCFLTime(ExtVel.ToArray(), 10000, NEARgrid.VolumeMask);
+            //dt_CFL *= 1.0 / (((double)(LevelSet.Basis.Degree)).Pow2());
+            //if (dt / dt_CFL >= 1.0) {
+            //    Console.WriteLine(" Warning: exceeding Level-Set CFL: dt = {0:e4}, dt_CFL = {1:e4}, frac = {2:e4}", dt, dt_CFL, dt / dt_CFL);
+            //    throw new ArithmeticException("Levelset CFL exceeded");
+            //}
 
             RunschCjuda.Perform(dt);
 
@@ -1161,13 +1162,13 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 // quadrature schemes
                 //var SchHelper = new XQuadSchemeHelper(Tracker, HMFversion, Tracker.SpeciesIdS.ToArray());
                 //CellQuadratureScheme surfScheme = SchHelper.GetLevelSetquadScheme(0, subMask);
-                var SchHelper = Tracker.GetXDGSpaceMetrics(Tracker.SpeciesIdS.ToArray(), HMForder, 1).XQuadSchemeHelper;
+                var SchHelper = Tracker.GetXDGSpaceMetrics(Tracker.SpeciesIdS.ToArray(), HMForder + 1, 1).XQuadSchemeHelper;
                 
                 EdgeQuadratureScheme emptyEdgeScheme = new EdgeQuadratureScheme(domain: EdgeMask.GetEmptyMask(grdDat));
 
                 EdgeQuadratureScheme posEdgesScheme, negEdgesScheme;
-                posEdgesScheme = SchHelper.GetEdgeQuadScheme(Tracker.GetSpeciesId("B"), UseDefaultFactories: false, IntegrationDomain: subGrid.InnerEdgesMask, fixedOrder: HMForder);
-                negEdgesScheme = SchHelper.GetEdgeQuadScheme(Tracker.GetSpeciesId("A"), UseDefaultFactories: false, IntegrationDomain: subGrid.InnerEdgesMask, fixedOrder: HMForder);
+                posEdgesScheme = SchHelper.GetEdgeQuadScheme(Tracker.GetSpeciesId("B"), UseDefaultFactories: false, IntegrationDomain: subGrid.InnerEdgesMask);
+                negEdgesScheme = SchHelper.GetEdgeQuadScheme(Tracker.GetSpeciesId("A"), UseDefaultFactories: false, IntegrationDomain: subGrid.InnerEdgesMask);
 
                 // integrate interface
                 // (Only the interface part contributes to the RHS; must be integrated fore EACH component.)

@@ -29,15 +29,27 @@ namespace BoSSS.Application.XNSERO_Solver {
     /// This class provides basic functionality of any motion model, e.g. saving of previous time-steps, information about periodic boundaries etc.
     /// It does not contain the calculation of the physical variables, which have to be implemented by derived classes.
     /// </summary>
+    [DataContract]
+    [Serializable]
     public abstract class MotionBase : IMotion{
+
+        /// <summary>
+        /// Empty constructor used during de-serialization
+        /// </summary>
+        protected MotionBase() : base(){
+            // noop
+        }
+
+
         /// <summary>
         /// Ensures basic functionality of any motion model.
         /// </summary>
         /// <param name="density">
         /// The density of the particle.
         /// </param>
-        public MotionBase(double density) {
+        public MotionBase(double density, int spatDim) {
             this.density = density;
+            this.SpatialDim = spatDim;
             for (int i = 0; i < NumberOfHistoryEntries; i++) {
                 Position.Add(new Vector(SpatialDim));
                 TranslationalVelocity.Add(new Vector(SpatialDim));
@@ -173,7 +185,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Dimension.
         /// </summary>
         [DataMember]
-        protected static int SpatialDim = 2;
+        protected int SpatialDim;
 
         /// <summary>
         /// The history of the position.
@@ -644,7 +656,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Calls the integration of the hydrodynamic stress at this particles level-set
         /// </summary>
         /// <param name="hydrodynamicsIntegration"></param>
-        public abstract Vector CalculateHydrodynamics(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, CellMask cutCells, string[] FluidSpecies, double dt = 0);
+        public abstract double[] CalculateHydrodynamics(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, CellMask cutCells, string[] FluidSpecies, double dt = 0);
 
         /// <summary>
         /// Calculates the gravitational forces.

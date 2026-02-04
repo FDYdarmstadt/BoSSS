@@ -58,12 +58,17 @@ namespace BoSSS.Application.XNSERO_Solver {
                 throw new ArgumentOutOfRangeException("Spatial dimension does not fit particle definition");
 
             m_Radius = radius;
-            Aux.TestArithmeticException(radius, "Particle radius");
+
+            Circumference = 2 * Math.PI * radius;
+            Volume = Math.PI * radius.Pow2();
+            Mass = Volume * motion.Density;
+            MomentOfInertia = (1.0 / 2.0) * (Mass * radius.Pow2());
+
+            //Aux.TestArithmeticException(radius, "Particle radius");
 
             Motion.CharacteristicLength = radius;
             Motion.Volume = this.Volume;
             Motion.MomentOfInertia = this.MomentOfInertia;
-
         }
 
         [DataMember]
@@ -72,17 +77,17 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Area occupied by the particle.
         /// </summary>
-        public override double Volume => Math.PI * m_Radius.Pow2();
+        //public override double Volume => Math.PI * m_Radius.Pow2();
 
         /// <summary>
         /// Circumference. 
         /// </summary>
-        public override double Circumference => 2 * Math.PI * m_Radius;
+        //public override double Circumference => 2 * Math.PI * m_Radius;
 
         /// <summary>
         /// Moment of inertia. 
         /// </summary>
-        override public double MomentOfInertia => (1 / 2.0) * (Mass * m_Radius.Pow2());
+        //override public double MomentOfInertia => (1 / 2.0) * (Mass * m_Radius.Pow2());
 
         /// <summary>
         /// Level set function of the particle.

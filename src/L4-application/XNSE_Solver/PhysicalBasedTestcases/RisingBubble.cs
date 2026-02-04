@@ -1257,7 +1257,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             {
                 C.AdaptiveMeshRefinement = true;
                 int AMRlevel = 1;
-                C.activeAMRlevelIndicators.Add(new AMRwithGaussCheck() { maxRefinementLevel = AMRlevel });
+                C.activeAMRlevelIndicators.Add(new AMRwithInterfaceCheck() { maxRefinementLevel = AMRlevel });
                 C.AMR_startUpSweeps = AMRlevel;
             }
 

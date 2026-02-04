@@ -261,9 +261,6 @@ namespace BoSSS.Application.XNSEC {
             C.RefinementLevel = 1;
             C.AMR_startUpSweeps = 2;
 
-            //C.InitSignedDistance = false;
-            C.adaptiveReInit = false;
-
             C.LinearSolver = LinearSolverCode.automatic.GetConfig();
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.verbose = true;

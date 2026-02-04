@@ -10,30 +10,70 @@ using ilPSP.Connectors.Matlab;
 using BoSSS.Solution.Statistic;
 using NUnit.Framework;
 using System.Diagnostics;
+using System.IO;
+using BoSSS.Foundation.IO;
+using ilPSP;
+using BoSSS.Foundation.Grid;
+using System.Numerics;
+using MPI.Wrappers;
 
 namespace ZwoLevelSetSolver {
     class ZLSmain {
 
         static void Main(string[] args) {
-            //BoSSS.Solution.Application.InitMPI(num_threads:1);
+            //BoSSS.Solution.Application.InitMPI(num_threads:4);
             //BoSSS.Solution.Application.DeleteOldPlotFiles();
 
-            RunSolver(args);
-            //ConditionNumberScaling();
-            //Tests.SolidOnlyTests.RotationConvergenceTest(2);
-            //Tests.ThreePhaseTests.ThreePhaseContactLine_TensionBalance(true);
+            /*OnlinePerformanceMeasurement.MaxNumOfBenchmarks = 1001;
+            for(int i = 0; i < 25; i++) {
+                OnlinePerformanceMeasurement.ExecuteBenchmarks();
+                Console.Write(".");
+            }
+            Console.WriteLine();
+            OnlinePerformanceMeasurement.Log.WriteStatistics(Console.Out);
+            */
+            //ReferenceRun();
+            //csMPI.Raw.mpiFinalize();
 
-            //BoSSS.Solution.Application.FinalizeMPI();
+            RunSolver(args);
         }
 
         static void RunSolver(string[] args) {
-            //Debugger.Launch();
             ZLS._Main(args, false, delegate () {
                 //Control file from runtime via args
                 var p = new ZLS();
                 return p;
             });
         }
+
+        static void ReferenceRun() {
+            var dbPath = "bosss_db_debug";
+            if(!Directory.Exists(dbPath))
+                BoSSS.Foundation.IO.DatabaseUtils.CreateDatabase(dbPath);
+            var db = DatabaseInfo.Open(dbPath);
+            
+            var c = ZwoLevelSetSolver.ControlFiles.Droplet.AlandSL3D(2, 2, 0);
+            c.DbPath = db.Path;
+            c.savetodb = true;
+            c.NoOfTimesteps = 5;
+
+            using(var p = new ZLS()) {
+                p.Init(c);
+                p.RunSolverMode();
+
+                foreach(var field in p.CurrentState.Fields) {
+                    double totalJumpNorm = field.JumpNorm();
+                    double inrprJumpNorm = field.JumpNorm(p.GridData.GetInterprocessEdges());
+
+                    Console.WriteLine($"Jump norm of {field.Identification}: \t{totalJumpNorm:g6} \t(interprocess: {inrprJumpNorm:g7})");
+                }
+            }
+
+           
+        }
+
+       
+
     }
 
 }

@@ -21,6 +21,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace BoSSS.Foundation.Grid {
 
@@ -374,6 +375,12 @@ namespace BoSSS.Foundation.Grid {
         /// </summary>
         abstract protected ExecutionMask CreateInstance(BitArray mask, MaskType __MaskType);
 
+        /// <summary>
+        /// similar to constructor
+        /// </summary>
+        abstract protected ExecutionMask CreateInstance(int[] _Sequence, MaskType __MaskType);
+
+
 
         /// <summary>
         /// Creates an execution mask which only contains elements that are
@@ -470,6 +477,80 @@ namespace BoSSS.Foundation.Grid {
             BitArray array = GetBitMask();
             BitArray otherArray = otherMask.GetBitMask();
             return (T)CreateInstance(((BitArray)array.Clone()).Or(otherArray), this.MaskType);
+        }
+
+        /// <summary>
+        /// splits this mask into <paramref name="NoOfParts"/> roughly equal parts
+        /// </summary>
+        public ExecutionMask[] SplitUp(int NoOfParts) {
+            if(NoOfParts <= 0)
+                throw new ArgumentException();
+            if(NoOfParts <= 1) 
+                return [ this ];
+            int noOfItemsLocally = this.NoOfItemsLocally;
+
+            ExecutionMask[] Parts = new ExecutionMask[NoOfParts];
+            void InitPart(int iPart) {
+                var mySeq = new List<int>();
+                int item0 = (iPart*NoOfItemsLocally)/NoOfParts;
+                int itemE = ((iPart + 1)*NoOfItemsLocally)/NoOfParts;
+                if(itemE - item0 == 0) {
+                    Parts[iPart] = CreateInstance(new int[0], this.MaskType);
+                    return;
+                }
+
+                int itemCnt = 0;
+                int itemAdd = 0;
+                foreach(var chunk in this) {
+                    int i0 = chunk.i0;
+                    int L = chunk.Len;
+                    if(itemCnt + L <= item0) {
+                        // noop - skip
+                    } else {
+                        int missing = itemCnt - item0;
+                        int _i0 = i0;
+                        int _L = L;
+                        if(missing < 0) {
+                            _i0 -= missing;
+                            _L += missing;
+                        }
+                        Debug.Assert(_L > 0);
+
+                        int tooMuch = (itemE - item0) - (itemAdd + _L);
+                        if(tooMuch < 0) {
+                            _L += tooMuch;
+                        }
+
+                        if(_L > 1) {
+                            mySeq.Add(-(_i0 + 1));
+                            mySeq.Add(_L);
+                        } else {
+                            mySeq.Add(_i0 + 1);
+                        }
+                        itemAdd += _L;
+                        if(itemAdd >= (itemE - item0))
+                            break;
+                    }
+
+                    itemCnt += chunk.Len;
+                }
+
+                Parts[iPart] = CreateInstance(mySeq.ToArray(), this.MaskType);
+                Debug.Assert(Parts[iPart].NoOfItemsLocally == (itemE - item0), "Internal error in splitting up ExecutionMask");
+            }
+
+            ilPSP.Environment.ParallelFor(0, NoOfParts, InitPart);
+
+#if DEBUG            
+            var recombination = Parts[0];
+            for(int iPart = 1; iPart < NoOfParts; iPart++) {
+                Debug.Assert(Parts[iPart].Intersect(recombination).NoOfItemsLocally == 0, "splitting did not produced disjoint parts");
+                recombination = recombination.Union(Parts[iPart]);
+            }
+            Debug.Assert(recombination.Equals(this), "splitting missed some parts");
+
+#endif
+            return Parts;
         }
 
         /// <summary>

@@ -75,7 +75,7 @@ namespace ilPSP {
     /// </summary>
     public static class OnlinePerformanceMeasurement {
 
-        public const int MaxNumOfBenchmarks = 10;
+        public static int MaxNumOfBenchmarks = 10;
 
         static int ExeCount; 
 

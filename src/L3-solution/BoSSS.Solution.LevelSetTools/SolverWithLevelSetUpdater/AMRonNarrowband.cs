@@ -20,6 +20,7 @@ using ilPSP;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -32,9 +33,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     /// refinement on cells which are inside the narrow band 
     /// (cut-cells and neighboring cells sharing at least one point)
     /// </summary>
+    [DataContract]
     [Serializable]
     public class AMRonNarrowband : AMRLevelIndicatorWithLevelset {
 
+        [DataMember]
         public int levelSet = -1; // level set this Indicator should be active on
         public int bandwidth = 1;
         public override int[] DesiredCellChanges() {
@@ -88,6 +91,63 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     }
 
 
+
+    /// <summary>
+    /// refinement on cells which are inside the narrow band 
+    /// (cut-cells and neighboring cells sharing at least one point)
+    /// </summary>
+    [Serializable]
+    public class AMRatNarrowbandInFlowDirection : AMRLevelIndicatorWithLevelset {
+
+        public int levelSet = -1; // level set this Indicator should be active on
+        public override int[] DesiredCellChanges() {
+
+            int J = GridData.CellPartitioning.LocalLength;
+            int[] levels = new int[J];
+
+            CellMask band;
+            if(levelSet == -1) {
+                band = this.LsTrk.Regions.GetNearFieldMask(1);
+            } else {
+                band = this.LsTrk.Regions.GetNearMask4LevSet(levelSet, 1);
+            }
+
+            int cellsToRefine = 0;
+            int cellsToCoarse = 0;
+            Cell[] cells = GridData.Grid.Cells;
+            for(int j = 0; j < J; j++) {
+                int currentLevel = cells[j].RefinementLevel;
+                if(band.Contains(j) && currentLevel < maxRefinementLevel) {
+                    levels[j] = 1;
+                    cellsToRefine++;
+                } else if(!band.Contains(j) && currentLevel > 0) {
+                    levels[j] = -1;
+                    cellsToCoarse++;
+                }
+            }
+
+            return levels;
+        }
+
+
+        public override bool Equals(object obj) {
+            if(!base.Equals(obj))
+                return false;
+            var other = obj as AMRonNarrowband;
+            if(other == null)
+                return false;
+            if(other.levelSet != this.levelSet)
+                return false;
+            return true;
+        }
+
+        public override int GetHashCode() {
+            return base.GetHashCode();
+        }
+    }
+
+
+
     /// <summary>
     /// refinement on cells which are inside the narrow band and within boundary cells
     /// (cut-cells and neighboring cells sharing at least one point)
@@ -96,6 +156,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     public class AMRonNarrowbandAtBoundary : AMRLevelIndicatorWithLevelset {
 
         public int levelSet = -1; // level set this Indicator should be active on
+
+
+        [JsonProperty]
+        public bool useUnion = false; // if true the union of narrowband and given edgeTag is refined, else only the intersection of both sets.
 
         [JsonProperty]
         private byte[] m_EdgeTags;
@@ -130,13 +194,31 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         atBoundary = true;
                 }
 
-
-                if (band.Contains(j) && atBoundary && currentLevel < maxRefinementLevel) {
-                    levels[j] = 1;
-                    cellsToRefine++;
-                } else if ((!band.Contains(j) || !atBoundary) && currentLevel > 0) {
-                    levels[j] = -1;
-                    cellsToCoarse++;
+                if (useUnion)
+                {
+                    if ((band.Contains(j) || atBoundary) && currentLevel < maxRefinementLevel)
+                    {
+                        levels[j] = 1;
+                        cellsToRefine++;
+                    }
+                    else if (!band.Contains(j) && !atBoundary && currentLevel > 0)
+                    {
+                        levels[j] = -1;
+                        cellsToCoarse++;
+                    }
+                }
+                else
+                {
+                    if (band.Contains(j) && atBoundary && currentLevel < maxRefinementLevel)
+                    {
+                        levels[j] = 1;
+                        cellsToRefine++;
+                    }
+                    else if ((!band.Contains(j) || !atBoundary) && currentLevel > 0)
+                    {
+                        levels[j] = -1;
+                        cellsToCoarse++;
+                    }
                 }
             }
 

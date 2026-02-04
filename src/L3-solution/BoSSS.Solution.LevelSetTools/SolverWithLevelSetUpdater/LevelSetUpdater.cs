@@ -5,9 +5,12 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
+using BoSSS.Platform;
 using BoSSS.Solution.AdvancedSolvers;
+using BoSSS.Solution.LevelSetTools.FastMarcher;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Tecplot;
+using BoSSS.Solution.Utils;
 using ilPSP;
 using ilPSP.LinSolvers.monkey.CUDA;
 using ilPSP.Tracing;
@@ -117,8 +120,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// <summary>
         /// internal implementation
         /// </summary>
-        class SingleLevelSetUpdater {
+        public class SingleLevelSetUpdater {
             internal ILevelSetEvolver lsMover;
+
+            public ILevelSetEvolver GetLsMover() { 
+                return lsMover;
+            }
 
             ContinuityProjection enforcer;
 
@@ -664,6 +671,35 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     }
                 }
             }
+
+
+            /// <summary>
+            /// Some LevelSetEvolver might need to know the current timestep number
+            /// This method provides the correct number after LoadRestart (also in case of mesh adaption)
+            /// so far only neede for Reinitialization and set ReInitPeriod, which will be removed in near future by adaptive ReInit
+            /// </summary>
+            public void SetInternalTimestepNumber(int currentTimestepNumber) {
+                if(lsMover is FastMarchingEvolver) {
+                    //Console.WriteLine($"set internal timestep number for FastMarchingEvolver: {currentTimestepNumber}");
+                    ((FastMarchingEvolver)lsMover).SetReInitTimestepNumber(currentTimestepNumber);
+                }
+                if(lsMover is StokesExtensionEvolver) {
+                    //Console.WriteLine($"set internal timestep number for StokesExtensionEvolver: {currentTimestepNumber}");
+                    ((StokesExtensionEvolver)lsMover).SetReInitTimestepNumber(currentTimestepNumber);
+                }
+            }
+
+            /// <summary>
+            /// in case of fast marching we want to ensure signed distance formulation -> will be relocated on next merge request
+            /// </summary>
+            public void ReInitOnStart(DualLevelSet phaseInterface) {
+                if(lsMover is FastMarchingEvolver) {
+                    //Console.WriteLine("ReInit on start for FastMarchingEvolver");
+                    ((FastMarchingEvolver)lsMover).Reinitialize(phaseInterface, 0.0, 0.0, false, null, null);
+                }
+                SetInternalTimestepNumber(0);
+            }
+
         }
 
         /// <summary>
@@ -859,6 +895,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 grid,
                 continuityMode);
             return new SingleLevelSetUpdater(levelSet, enforcer1, quadOrderFunc);
+        }
+
+
+        public IReadOnlyDictionary<string, SingleLevelSetUpdater> Updaters {
+            get { return lsUpdaters; }
         }
 
 
@@ -1073,5 +1114,26 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public void Pop() {
 
         }
+
+        /// <summary>
+        /// Some LevelSetEvolver might need to know the current timestep number
+        /// This method provides the correct number after LoadRestart (also in case of mesh adaption)
+        /// so far only neede for Reinitialization and set ReInitPeriod, which will be removed in near future by adaptive ReInit
+        /// </summary>
+        public void SetInternalTimestepNumber(int currentTimestepNumber) {
+            foreach(SingleLevelSetUpdater updater in lsUpdaters.Values) {
+                updater.SetInternalTimestepNumber(currentTimestepNumber);
+            }
+        }
+
+        /// <summary>
+        /// in case of fast marching we want to ensure signed distance formulation
+        /// </summary>
+        public void ReInitOnStart(DualLevelSet phaseInterface) {
+            foreach(SingleLevelSetUpdater updater in lsUpdaters.Values) {
+                updater.ReInitOnStart(phaseInterface);
+            }
+        }
+
     }
 }

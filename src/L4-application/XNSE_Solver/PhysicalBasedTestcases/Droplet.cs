@@ -14,26 +14,28 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Application.XNSE_Solver.Logging;
+using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.IO;
+using BoSSS.Foundation.XDG;
+using BoSSS.Solution.AdvancedSolvers;
+using BoSSS.Solution.Control;
+using BoSSS.Solution.LevelSetTools;
+using BoSSS.Solution.LevelSetTools.FourierLevelSet;
+using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
+using BoSSS.Solution.NSECommon;
+using BoSSS.Solution.Timestepping;
+using BoSSS.Solution.XdgTimestepping;
+using BoSSS.Solution.XNSECommon;
+using ilPSP;
+using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
-using ilPSP;
-using ilPSP.Utils;
-using BoSSS.Solution.Control;
-using BoSSS.Solution.AdvancedSolvers;
-using BoSSS.Solution.XNSECommon;
-using BoSSS.Foundation.IO;
-using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.Grid.Classic;
-using BoSSS.Solution.XdgTimestepping;
-using BoSSS.Solution.LevelSetTools.FourierLevelSet;
-using BoSSS.Solution.Timestepping;
-using BoSSS.Solution.LevelSetTools;
-using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
-using BoSSS.Application.XNSE_Solver.Logging;
+using static BoSSS.Solution.GridImport.NASTRAN.NastranFile;
 
 namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
@@ -41,22 +43,115 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
     /// class providing Controls for the droplet testcases
     /// </summary>
     public static class Droplet {
-        
-        
 
+
+        public static XNSE_Control OscillatingDroplet_ValidationTestCase() {
+
+            double rho = 1e4;
+            double mu = 1.0;
+            double sigma = 0.1;
+            double r = 0.25; // equilibrium drop radius
+
+            double dt = 0.5;
+            int timesteps = 20;
+            double t_end = dt * timesteps;
+            XNSE_Control C = new XNSE_Control();
+
+            int dgDeg = 3;
+            C.SetDGdegree(dgDeg);
+
+            // set grid
+            double L = 0.5;
+            int Res = 20;
+            C.GridFunc = delegate () {
+                string GridName = $"DropletOscillating_{Res}";
+                // must create new Grid
+                double[] xNodes = GenericBlas.Linspace(-L, L, Res + 1);
+                double[] yNodes = xNodes;
+                var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
+
+                grd.Name = GridName;
+
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    string ret = null;
+                    if(Math.Abs(X[0] + L) <= 1.0e-8)
+                        ret = IncompressibleBcType.Wall.ToString();
+                    if(Math.Abs(X[0] - L) <= 1.0e-8)
+                        ret = IncompressibleBcType.Wall.ToString();
+                    if(Math.Abs(X[1] + L) <= 1.0e-8)
+                        ret = IncompressibleBcType.Wall.ToString();
+                    if(Math.Abs(X[1] - L) <= 1.0e-8)
+                        ret = IncompressibleBcType.Wall.ToString();
+                    return ret;
+                });
+                return grd;
+            };
+            //C.SetGrid(grd);
+
+            // initial conditions
+            static Formula GetPhiFunc(double r) => new Formula(
+            "Phi",
+            false,
+            "using ilPSP.Utils; " +
+            $"double r = {r};" +
+            "double a = 1.25*r;" +
+            "double b = 0.8*r;" +
+            "double Phi(double[] X) { " +
+            "    return Math.Sqrt((X[0] / a).Pow2() + (X[1] / b).Pow2()) - 1.0; " +
+            "}");
+            C.AddInitialValue("Phi", GetPhiFunc(r));
+
+            int logperiod = 1;
+            C.PostprocessingModules.Add(new Dropletlike() { SolverStage = 2, LogPeriod = logperiod });
+            C.PostprocessingModules.Add(new EnergyLogging() { SolverStage = 2, LogPeriod = logperiod });
+
+            C.PhysicalParameters.rho_A = rho;
+            C.PhysicalParameters.rho_B = rho;
+            C.PhysicalParameters.mu_A = mu;
+            C.PhysicalParameters.mu_B = mu;
+            C.PhysicalParameters.Sigma = sigma;
+
+            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.Material = true;
+
+            C.CutCellQuadratureType = CutCellQuadratureMethod.Saye;
+
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
+
+            C.NonLinearSolver.MaxSolverIterations = 50;
+
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF3;
+
+            C.dtMin = dt;
+            C.dtMax = dt;
+            C.Endtime = t_end;
+            C.NoOfTimesteps = (int)(t_end / dt);
+
+            C.saveperiod = 20;
+
+            //C.TracingNamespaces = "BoSSS.Solution.LevelSetTools";
+
+            C.SessionName = $"OD2D_P{dgDeg}_TS{timesteps}";
+            return C;
+
+        }
 
 
         /// <summary>
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control StaticDroplet_Free(int p = 2, int kelem = 28, int AMRlvl = 0) {
+        public static XNSE_Control StaticDroplet_Free(int p = 3, int kelem = 14, int AMRlvl = 0) {
 
             XNSE_Control C = new XNSE_Control();
 
             int D = 2;
 
-            AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
+            AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Steady;
             bool steadyInterface = false;
 
             //string _DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
@@ -250,8 +345,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             double r = Lscl * 0.25;
 
-            Func<double[], double> PhiFunc = (X => ((X[0] - 0.0).Pow2() + (X[1] - 0.0).Pow2()).Sqrt() - r);         // signed distance
-            //Func<double[], double> PhiFunc = (X => ((X[0] - 0.0).Pow2() + (X[1] - 0.0).Pow2()) - r.Pow2());         // quadratic
+            //Func<double[], double> PhiFunc = (X => ((X[0] - 0.0).Pow2() + (X[1] - 0.0).Pow2()).Sqrt() - r);         // signed distance
+            Func<double[], double> PhiFunc = (X => ((X[0] - 0.0).Pow2() + (X[1] - 0.0).Pow2()) - r.Pow2());         // quadratic
 
             if(D == 3) {
                 double a = 1.25;
@@ -351,19 +446,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            //if (AMRlvl > 0) {
-            //    C.AdaptiveMeshRefinement = true;
-            //    //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            //    //C.BaseRefinementLevel  AMRlvl;
-            //}
-            C.AdaptiveMeshRefinement = false;
-            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            //C.BaseRefinementLevel  1;
-            //C.RefinementLevel = 1;
-            //C.AMR_startUpSweeps = 2;
-
-            //C.InitSignedDistance = false;
-            C.adaptiveReInit = false;
+            C.AdaptiveMeshRefinement = true;
+            C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
+            C.AMR_startUpSweeps = 0;
 
             //C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             //C.LinearSolver = LinearSolverCode.automatic.GetConfig();

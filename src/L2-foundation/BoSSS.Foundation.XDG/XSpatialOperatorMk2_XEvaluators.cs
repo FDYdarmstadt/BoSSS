@@ -1048,29 +1048,10 @@ namespace BoSSS.Foundation.XDG {
                                                 var cscNeg = csc; cscNeg.SetSign(iLevSet, LevelsetSign.Negative);
                                                 var cscPos = csc; cscPos.SetSign(iLevSet, LevelsetSign.Positive);
 
-
                                                 bool SpeciesA_inNeg = lsTrk.ContainesSpecies(SpeciesA, cscNeg);
                                                 bool SpeciesA_inPos = lsTrk.ContainesSpecies(SpeciesA, cscPos);
                                                 bool SpeciesB_inNeg = lsTrk.ContainesSpecies(SpeciesB, cscNeg);
                                                 bool SpeciesB_inPos = lsTrk.ContainesSpecies(SpeciesB, cscPos);
-/*
-                                                bool[] SpeciesA_inNeg_all = SpeciesA_inNeg.MPIAllGatherO();
-                                                bool[] SpeciesA_inPos_all = SpeciesA_inPos.MPIAllGatherO();
-                                                bool[] SpeciesB_inNeg_all = SpeciesB_inNeg.MPIAllGatherO();
-                                                bool[] SpeciesB_inPos_all = SpeciesB_inPos.MPIAllGatherO();
-                                                for(int rnk = 0; rnk < m_lsTrk.GridDat.MpiSize; rnk++) {
-                                                    if(SpeciesA_inNeg_all[rnk] != SpeciesA_inNeg
-                                                    || SpeciesA_inPos_all[rnk] != SpeciesA_inPos
-                                                    || SpeciesB_inNeg_all[rnk] != SpeciesB_inNeg
-                                                    || SpeciesB_inPos_all[rnk] != SpeciesB_inPos) {
-                                                        WaitForDebugger();
-                                                   }
-
-                                                
-
-
-                                                }
-*/
 
                                                 if(SpeciesA_inPos == SpeciesA_inNeg) {
                                                     throw new ApplicationException($"Species {m_lsTrk.GetSpeciesName(SpeciesA)} seems to be present in negative and positive domain of Level-Set No. {iLevSet} - internal error or illegal Level-Set and species map..");

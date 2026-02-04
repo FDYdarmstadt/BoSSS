@@ -830,6 +830,7 @@ namespace BoSSS.Application.CahnHilliard {
             } else {
                 order = 1;
             }
+            order = Math.Max(order, this.m_HMForder);
             var SchemeHelper = RealTracker.GetXDGSpaceMetrics(RealTracker.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;
 
             // area of bubble
