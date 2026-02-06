@@ -308,7 +308,7 @@ namespace ilPSP.Tracing {
                 //}
 
                 if(m_ActiveStopwatch == null) {
-                    m_ActiveTicks = null;
+                    //m_ActiveTicks = null; // if loadad from bin file, this will only yield correct time if not set to null
                 }
 
                 long ret = m_TicksSpentInMethod + (m_ActiveTicks ?? 0);
@@ -389,7 +389,7 @@ namespace ilPSP.Tracing {
         [JsonIgnore]
         public TimeSpan TimeSpentInMethod {
             get {
-                return new TimeSpan(m_TicksSpentInMethod);
+                return new TimeSpan(TicksSpentInMethod);
             }
         }
 
