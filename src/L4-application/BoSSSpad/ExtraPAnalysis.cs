@@ -306,7 +306,7 @@ namespace BoSSS.Application.BoSSSpad {
             sw.WriteLine("PARAMETER threads");
             sw.WriteLine("PARAMETER mesh");
 
-            sw.WriteLine("POINTS " + string.Join(" ", datapoints.Select(dp => $"({dp.MpiSize} {dp.ThreadSize} {dp.Cells})")));
+            sw.WriteLine("POINTS " + string.Join(" ", grouped.Select(g =>$"({g.Key.MpiSize} {g.Key.ThreadSize} {g.Key.Cells})")));
             sw.WriteLine();
 
             // METHODS
