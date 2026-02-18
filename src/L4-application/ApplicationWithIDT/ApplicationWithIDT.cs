@@ -117,7 +117,9 @@ namespace ApplicationWithIDT {
         public PlotDriver plotDriver { get; set; }
         #endregion
         #region Coordinate Vectors and Mappings
-        public CoordinateVector m_UnknownsVector { get; set; }
+        
+        
+        CoordinateVector m_UnknownsVector { get; set; }
         public CoordinateVector UnknownsVector {
             get {
                 if(m_UnknownsVector == null)
