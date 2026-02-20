@@ -423,7 +423,7 @@ namespace BoSSS.Foundation.IO {
         public static OnlineProfiling[] GetProfiling(this ISessionInfo session, params int[] Ranks) {
             // find
             string sessDir = DatabaseDriver.GetSessionDirectory(session);
-            string[] TextFiles = Directory.GetFiles(sessDir, "profiling_bin.*.txt");
+            string[] TextFiles = Directory.GetFiles(sessDir, "profiling_bin.*.bin");
             if (TextFiles.Count() <= 0)
                 throw new IOException("Unable to find profiling information.");
 
