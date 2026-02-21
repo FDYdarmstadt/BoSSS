@@ -1030,6 +1030,12 @@ namespace ApplicationWithIDT {
         /// <summary>
         /// Computes both Residuals using the fields, that are also plotted and saves them to the variables res_l2 and obj_f
         /// </summary>
+        /// <returns>
+        /// A tuple containing:
+        /// - 1st item: the $l_2$ norm (vector norm) of the residual
+        /// - 2nd item: the $l_2$ norm (vector norm) of the enriched residual/objective function
+        /// - 3rd item: $L_2$ norm (integral norm) of the residuals for each field.
+        /// </returns>
         public (double _res_l2, double _obj_f, double _res_L2) ComputeResiduals() {
             ComputeResiduals(obj_f_vec, ResidualVector);
 
