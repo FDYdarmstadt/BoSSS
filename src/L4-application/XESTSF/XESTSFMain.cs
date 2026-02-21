@@ -651,11 +651,10 @@ namespace XESTSF {
                 break;
                 default:
                 break;
-
             }
             #endregion
 
-            #region Initialiize the LevelSet
+            #region Initialize the LevelSet
             if(Control.IsTwoLevelSetRun) {
                 this.LevelSet.ProjectField(1.0, this.Control.LevelSetOneInitialValue, scheme);
                 LsTBO = LevelSetTwo;

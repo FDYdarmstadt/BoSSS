@@ -151,8 +151,10 @@ namespace ApplicationWithIDT {
         /// The configured polynomial DG degree of the second level set
         /// </summary>
         public int LevelSetTwoDegree { get; set; } = 1;
+
         /// <summary>
-        /// Position of LevelSetOne, only needed when two LevelSets are used
+        /// Height function describing the first level-set
+        /// (<see cref="ApplicationWithIDT{T}.LevelSetOpti"/>, <see cref="ApplicationWithIDT{T}.LevelSet"/>).
         /// </summary>
         public Func<double[], double> LevelSetOneInitialValue { get; set; } = null;
         public string ShockLevelSet_Db { get; set; } = null;

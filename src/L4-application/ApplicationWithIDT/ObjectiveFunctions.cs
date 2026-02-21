@@ -15,10 +15,12 @@ namespace ApplicationWithIDT {
 
     /// <summary>
     /// Interface for the Constrained Optimzation Problem 
-    /// 
-    ///  min            f(u,phi)
-    ///  subject to     r(u,phi)=0
-    /// 
+    /// \[
+    /// \begin{array}{ll}
+    ///  \text{min}         &   f(u,\phi)    \\
+    ///  \text{subject to}  &   r(u,\phi)=0  \\
+    ///  \end{array}
+    /// \]
     /// solved by the ApplicationWithIDT solver, where f:R^{N_u}xR^{N_phi}->R is the objective function and r:R^{N_u}xR^{N_phi}->R^{N_u} the constraint. 
     /// Furthermore, the objective is assumed to be f=||F^T*F || for some  F:R^{N_u}xR^{N_phi}->R^m. By lack of wording the word "objective function" is also used for F in the code.
     /// </summary>

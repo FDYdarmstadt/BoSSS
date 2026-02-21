@@ -664,9 +664,18 @@ namespace BoSSS.Solution.Control {
         /// Adds an initial value to <see cref="InitialValues"/>
         /// </summary>
         /// <param name="fieldname">Name of the field for which the boundary condition is valid</param>
-        /// <param name="value">Function of the boundary condition</param>
+        /// <param name="value">boundary condition value, optionally space- or time-dependent</param>
         public void AddInitialValue(string fieldname, IBoundaryAndInitialData value) {
             InitialValues.Add(fieldname, value);
+        }
+
+        /// <summary>
+        /// Adds an initial value to <see cref="InitialValues"/>
+        /// </summary>
+        /// <param name="fieldname">Name of the field for which the boundary condition is valid</param>
+        /// <param name="constant_value">Function of the boundary condition</param>
+        public void AddInitialValue(string fieldname, double constant_value) {
+            InitialValues.Add(fieldname, new ConstantValue(constant_value));
         }
 
         /// <summary>
