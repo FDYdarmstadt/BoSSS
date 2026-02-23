@@ -443,7 +443,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             if (gridChanged && Timestepping.m_BDF_Timestepper != null && BurstSaves > 1) {
 
                 var BDFtimestepper = Timestepping.m_BDF_Timestepper;
-                int S = BDFtimestepper.GetNumberOfStages;
+                int S = BDFtimestepper.GetNumberOfCurrentStages;
 
                 List<Tuple<int,ITimestepInfo, bool>> adaptedRestartInfo = new List<Tuple<int, ITimestepInfo, bool>>();
 
@@ -522,6 +522,11 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             if (restartFields == null || restartFields.Length == 0)
                 return null;
+
+            if(historyIndex - 1 >= restartFields.Length) {
+                Console.WriteLine($"[WARN] No restart data for historyIndex={historyIndex}, skipping save.");
+                return null;
+            }  
 
             var tsn = new TimestepNumber(new int[] { timeStepInt - historyIndex, 1 });
             double time = physTime - (historyIndex * this.Control.GetFixedTimestep());

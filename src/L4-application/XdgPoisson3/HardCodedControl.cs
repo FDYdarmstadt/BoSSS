@@ -495,16 +495,14 @@ namespace BoSSS.Application.XdgPoisson3 {
             return R;
         }
 
-        public static XdgPoisson3Control XdgPoissonWorksheet(int pDeg, int Res, SchwarzImplementation solverCode = SchwarzImplementation.TaskParallel) {
+        public static XdgPoisson3Control XdgPoissonWorksheet(int pDeg, int Res, SchwarzImplementation solverCode = SchwarzImplementation.TaskParallel, IDatabaseInfo db = null) {
             //--control "cs:BoSSS.Application.XdgPoisson3.HardCodedControl.Ball3D(2, 5)"
             XdgPoisson3Control R = new XdgPoisson3Control();
 
-            R.ProjectName = "XdgPoisson3/Ball3D";
 
             // Open the database (returns IDatabaseInfo)
-            var dbPath = @"D:\Users\toprak\Documents\db";
-            IDatabaseInfo dbInfo = DatabaseInfo.CreateOrOpen(dbPath);
-            R.DbPath = dbInfo.Path;
+            IDatabaseInfo dbInfo = db;
+            R.DbPath = dbInfo.Path ?? null;
             R.savetodb = R.DbPath != null;
 
             R.SetDGdegree(pDeg);
@@ -515,13 +513,34 @@ namespace BoSSS.Application.XdgPoisson3 {
 
             double radius = 0.7;
             // set the level-set
-            R.InitialValues_Evaluators.Add("Phi", X => (X[0].Pow2() + X[1].Pow2() + X[2].Pow2()) - radius.Pow2());
+            Formula PhiFunc = new Formula(
+                "Phi",
+                false,
+                "double Phi(double[] X) { " +
+                $"double radius = {radius};" +
+                "return (X[0].Pow2() + X[1].Pow2() + X[2].Pow2()) - radius.Pow2(); } "
+            );
+            R.AddInitialValue("Phi", PhiFunc);
             //R.InitialValues.Add("Phi", X => X[0] + 0.1);
             R.ExcactSolSupported = false;
             //R.InitialValues.Add("uEx#A", X => X[1]);
             //R.InitialValues.Add("uEx#B", X => X[1]);
-            R.InitialValues_Evaluators.Add("rhs#A", X => 1.0);
-            R.InitialValues_Evaluators.Add("rhs#B", X => 1.0);
+            Formula RhsAFunc = new Formula(
+                "rhsA",
+                false,
+                "double rhsA(double[] X) { " +
+                "return 1.0; } "
+            );
+            R.AddInitialValue("rhs#A", RhsAFunc);
+
+
+            Formula RhsBFunc = new Formula(
+                "rhsB",
+                false,
+                "double rhsB(double[] X) { " +
+                "return 1.0; } "
+            );
+            R.AddInitialValue("rhs#B", RhsBFunc);
 
             R.MU_A = -1;
             R.MU_B = -1000;
@@ -529,7 +548,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             //R.xLaplaceBCs.g_Diri = ((CommonParamsBnd inp) => 0.0);
             //R.xLaplaceBCs.IsDirichlet = (inp => true);
 
-            OrthoMGSchwarzConfig config = new OrthoMGSchwarzConfig(); 
+            /*OrthoMGSchwarzConfig config = new OrthoMGSchwarzConfig(); 
             config.CoarseKickIn = 0;
             config.TargetBlockSize = 3000;
             config.NoOfMultigridLevels = 1;
@@ -539,7 +558,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             config.SkipPreSmoother = true;
             config.SchwarzImplementation = solverCode;            
             R.LinearSolver = config;
-
+            */
             R.AgglomerationThreshold = 0.1;
             //R.PrePreCond = MultigridOperator.Mode.DiagBlockEquilib;
             //R.penalty_multiplyer = 1.1;

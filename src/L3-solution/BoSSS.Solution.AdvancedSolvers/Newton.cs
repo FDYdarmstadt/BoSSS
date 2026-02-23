@@ -808,22 +808,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         throw new ApplicationException();
 
                     int RefCellLocal = CurrentLin.ReferenceCell_local;
-
                     double[] MeanValues = new double[flds.Length];
                     for (int iFld = 0; iFld < flds.Length; iFld++) {
-
                         if (FreeMeanValue[iFld]) {
-                            //double mean = flds[iFld].GetMeanValueTotal(null);
-
-                            if (RefCellLocal >= 0) {
+                            if(RefCellLocal >= 0) {
                                 MeanValues[iFld] = flds[iFld].GetMeanValue(RefCellLocal);
-
+                            } else {
+                                MeanValues[iFld] = 0;
                             }
 
-                            //flds[iFld].AccConstant(-mean);
                         }
                     }
                     MeanValues = MeanValues.MPISum();
+
                     for (int iFld = 0; iFld < flds.Length; iFld++) {
 
                         if (FreeMeanValue[iFld]) {

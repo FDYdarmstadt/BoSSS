@@ -437,8 +437,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public bool[] FreeMeanValue {
             get {
-                
-
                 if(m__FreeMeanValue == null) {
                     if (this.AbstractOperator == null) {
                         m__FreeMeanValue = new bool[BaseGridProblemMapping.BasisS.Count];

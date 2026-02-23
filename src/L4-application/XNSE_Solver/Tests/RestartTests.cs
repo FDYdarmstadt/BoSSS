@@ -465,7 +465,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                     break;
                 case TimeSteppingScheme.BDF4:
                     if (savePeriod == 5)
-                        ExpectedTimeSteps = new int[] { 0, 2, 3, 2, 4, 5, 7, 8, 9, 10 };
+                        ExpectedTimeSteps = new int[] { 0, 2, 3, 4, 5, 7, 8, 9, 10 };
                     else
                         throw new NotImplementedException();
                     break;
@@ -524,6 +524,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
                 var si = TestDb2.Sessions.Single();
                 int[] tsiNumbers = si.Timesteps.Skip(amr ? 1 : 0).Select(tsi => tsi.TimeStepNumber.MajorNumber).ToArray();
+                if(!ExpectedTs1stRun.ListEquals(tsiNumbers)) {
+                    Console.WriteLine("Expected: " + string.Join(", ", ExpectedTs1stRun));
+                    Console.WriteLine("Actual: " + string.Join(", ", tsiNumbers));
+                }
                 Assert.IsTrue(ExpectedTs1stRun.ListEquals(tsiNumbers), "mismatch between saved time-steps in test database and expected saves.");
 
                 //var tend = si.Timesteps.Last();
