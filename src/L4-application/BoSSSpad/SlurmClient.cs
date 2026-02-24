@@ -425,10 +425,8 @@ namespace BoSSS.Application.BoSSSpad {
         ///
         /// </summary>
         public override (string id, object optJobObj) Submit(Job myJob, string DeploymentDirectory) {
-            using ( new FuncTrace() ) {
+            using (new FuncTrace()) {
                 //VerifyDatabases();
-
-
                 // load users .bashrc with all dependencies
                 buildSlurmScript(myJob, new string[] { "source " + "/home/" + Username + "/.bashrc" }, DeploymentDirectory);
 
@@ -444,9 +442,6 @@ namespace BoSSS.Application.BoSSSpad {
         /// build batch script with all necessary parameters
         /// </summary>
         void buildSlurmScript(Job myJob, string[] moduleLoad, string DeploymentDirectory) {
-
-            //string jobpath_win = "\\home\\" + Username + myJob.DeploymentDirectory.Substring(2);
-            //string jobpath_unix = jobpath_win.Replace("\\", "/");
             string jobpath_unix = DeploymentDirectoryAtRemote(DeploymentDirectory);
 
             string jobname = myJob.Name.Replace("\t", "__").Replace(" ", "_");
@@ -454,38 +449,13 @@ namespace BoSSS.Application.BoSSSpad {
             int MPIcores = myJob.NumberOfMPIProcs;
             int NumThreads = myJob.NumberOfThreads;
             int TotalThreadsPerRank = NumThreads + NumOfServiceCoresPerMPIprocess;  // Total number of threads per MPI process
-                    //string userName = Username;
-            string startupstring;
-            //string quote = "\"";
             string slurmAccount = this.SlurmAccount;
 
-            
-            using (var str = new StringWriter()) {
-
-                //str.Write($"srun --export=ALL,OMP_NUM_THREADS={NumThreads} --cpu-bind=cores --cpus-per-task={NumThreads} {base.DotnetRuntime} "); // when using SLURM, `srun` is recommended instead of `mpiexec`
-                str.Write(
-                $"srun --cpu-bind=cores " +
-                $"--mem-bind=local " +
-                //"--output=rank_%t_trace.out strace -f -e clone " + // for debugging threading
-                $"bash -c 'export OMP_NUM_THREADS={NumThreads}; " + //if not used like this, srun overwrites OMP_NUM_THREADS to TotalThreadsPerRank.
-                $"{base.DotnetRuntime} ");
-
-                str.Write(jobpath_unix + "/" + myJob.EntryAssemblyName);
-                //str.Write(" ");
-                //str.Write(myJob.EnvironmentVars["BOSSS_ARG_" + 0]);
-                //str.Write(" ");
-
-                str.Write("'");
-
-                startupstring = str.ToString();
-            }
 
             string path = Path.Combine(DeploymentDirectory, "batch.sh");
 
-            using ( StreamWriter sw = File.CreateText(path) ) {
+            using (StreamWriter sw = File.CreateText(path)) {
                 sw.NewLine = "\n"; // Unix file endings
-
-
                 sw.WriteLine("#!/bin/sh");
                 sw.WriteLine("#SBATCH -J " + jobname);
                 if ( slurmAccount != null ) {
@@ -494,8 +464,9 @@ namespace BoSSS.Application.BoSSSpad {
                 sw.WriteLine("#SBATCH -o " + jobpath_unix + "/stdout.txt");
                 sw.WriteLine("#SBATCH -e " + jobpath_unix + "/stderr.txt");
                 sw.WriteLine("#SBATCH -t " + executiontime);
-                //sw.WriteLine("#SBATCH --mem-per-cpu=" + myJob.MemPerCPU);
-                if ( myJob.UseComputeNodesExclusive ) {
+
+
+                if (myJob.UseComputeNodesExclusive) {
                     sw.WriteLine("#SBATCH --exclusive");
                 }
 
@@ -506,14 +477,13 @@ namespace BoSSS.Application.BoSSSpad {
                     sw.WriteLine("#SBATCH --mail-user=" + this.Email);
                     sw.WriteLine("#SBATCH --mail-type=ALL");
                 }
-                foreach ( var cmd in this.AdditionalBatchCommands ?? Enumerable.Empty<string>() ) {
+
+
+                foreach (var cmd in this.AdditionalBatchCommands ?? Enumerable.Empty<string>()) {
                     sw.WriteLine(cmd);
                 }
-
-                // Load modules
-                foreach ( string arg in moduleLoad ) {
-                    //sw.WriteLine("#SBATCH --ntasks-per-node 1");                          // Only start one MPI-process per node
-                    sw.WriteLine(arg); // Load modules
+                foreach (string arg in moduleLoad) {
+                    sw.WriteLine(arg);
                 }
 
                 // Set environment variables for Job
@@ -535,8 +505,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                 // ---------- .NET GC ---------- //
                 if(NumOfServiceCoresPerMPIprocess > 64)
-                    throw new InvalidOperationException(
-                        "GC affinity mask supports at most 64 service cores.");
+                    throw new InvalidOperationException("GC affinity mask supports at most 64 service cores.");
 
                 // Set GC affinity mask and heap count
                 ulong mask = 0;
@@ -546,19 +515,29 @@ namespace BoSSS.Application.BoSSSpad {
                 sw.WriteLine($"export COMPlus_GCHeapCount={NumOfServiceCoresPerMPIprocess}");
                 //sw.WriteLine($"export COMPlus_GCHeapAffinitizeMask=0x{mask:X}");
 
-                // Set startupstring
-                string RunningToken = DeploymentDirectoryAtRemote(DeploymentDirectory) + "/isrunning.txt";
+
+                string deploymentDirectoryAtRemote = DeploymentDirectoryAtRemote(DeploymentDirectory);
+
+                string tmpDir = $"{deploymentDirectoryAtRemote}/tmp";
+                sw.WriteLine($"export TMPDIR={tmpDir}");
+                sw.WriteLine($"mkdir -p '{tmpDir}'");
+                sw.WriteLine($"cd {deploymentDirectoryAtRemote}");
+                string RunningToken = $"{deploymentDirectoryAtRemote}/isrunning.txt";
                 sw.WriteLine($"touch '{RunningToken}'");
-                sw.WriteLine("cd " + DeploymentDirectoryAtRemote(DeploymentDirectory)); // this ensures that any files written out (e.g. .plt-files) are placed in the deployment directory rather than ~
-                sw.WriteLine(startupstring);
-                sw.WriteLine("echo $? > '" + DeploymentDirectoryAtRemote(DeploymentDirectory) + "/exit.txt'");
+                // this ensures that any files written out (e.g. .plt-files) are placed in the deployment directory rather than ~
+                // Set startupstring
+                // when using SLURM, `srun` is recommended instead of `mpiexec`
+                sw.WriteLine($"srun --cpu-bind=cores " +
+                    $"--mem-bind=local " +
+                    //"--output=rank_%t_trace.out strace -f -e clone " + // for debugging threading
+                    $"bash -c 'export OMP_NUM_THREADS={NumThreads}; " + //if not used like this, srun overwrites OMP_NUM_THREADS to TotalThreadsPerRank.
+                    $"{base.DotnetRuntime} " +
+                    myJob.EntryAssemblyName +
+                    "'");
+
+                sw.WriteLine($"echo $? > '{deploymentDirectoryAtRemote}/exit.txt'");
                 sw.WriteLine($"rm '{RunningToken}'");
-                if ( this.DotnetRuntime == "mono" ) {
-                    sw.WriteLine("echo delete mono-crash-dumps, if there are any...");
-                    sw.WriteLine($"rm core.*");
-                    sw.WriteLine($"rm mono_crash.*");
-                    sw.WriteLine($"rm mono_crash.mem.*");
-                }
+
             }
 
         }

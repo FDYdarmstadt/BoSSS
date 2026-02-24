@@ -545,7 +545,10 @@ namespace ValidationTestRunner {
         /// via the generalized Navier boundary condition* (https://doi.org/10.1002/fld.5016).
         /// </summary>
         [NUnitFileToCopyHack("XNSE_Solver/DropletOnWall/DropletSpreadingUnderGravity_Run.ipynb",
-            "XNSE_Solver/DropletOnWall/DropletSpreadingUnderGravity_Evaluation.ipynb")]
+            "XNSE_Solver/DropletOnWall/DropletSpreadingUnderGravity_Evaluation.ipynb",
+            "XNSE_Solver/DropletOnWall/DropUnderGravPlot_ALE.csv",
+            "XNSE_Solver/DropletOnWall/DropUnderGravPlot_Dupont.csv",
+            "XNSE_Solver/DropletOnWall/DropUnderGravPlot_exact.csv")]
         [Test]
         static public void Run__CLpaper_DropletSpreading() {
 

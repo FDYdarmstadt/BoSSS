@@ -76,7 +76,7 @@ namespace BoSSS.Application.BoSSSpad {
 
         /*
          * Fk, Anmerkung:
-         * Sowas wie die folgenden Properties (MemPerCPU) sollten keine Eigenschaften des Job sein, weil es Scheduler-spezifisch ist.
+         * Sowas wie die folgenden Properties (MemPerCPU, No Nodes) sollten keine Eigenschaften des Job sein, weil es Scheduler-spezifisch ist.
          * Der ganze Quatsch soll in die BatchProcessorConfig.json:
          * ```
          * "AdditionalBatchCommands": [
@@ -85,27 +85,7 @@ namespace BoSSS.Application.BoSSSpad {
          * ]
          * ```
          * 
-
-        ///// <summary>
-        ///// The memory (in MB) that is reserved for every core
-        ///// </summary>
-        //public string MemPerCPU {
-        //    set;
-        //    get;
-        //}
-
-        
-        private int m_NumberOfNodes = -1;
-
-        /// <summary>
-        /// overrides Memory per CPU criterion. MemoryPerCPU = memorypernode * nonode / cpupernode. Memory per node is architecture dependent.
-        /// </summary>
-        public int NumberOfNodes {
-            get { return m_NumberOfNodes;  }
-            set { m_NumberOfNodes = value;  }
-        }
-        */
-
+         */
 
         /// <summary>
         /// Class which contains the main-method of the solver (or general application to launch).
@@ -333,7 +313,6 @@ namespace BoSSS.Application.BoSSSpad {
                 throw new NotSupportedException("Project management not initialized - set project name (try e.g. 'WorkflowMgm.CurrentProject = \"BlaBla\"').");
             }
 
-
             m_EnvironmentVars.Clear();
             for ( int i = 0; i < Args.Length; i++ ) {
                 m_EnvironmentVars.Add("BOSSS_ARG_" + i, Args[i]);
@@ -558,6 +537,34 @@ namespace BoSSS.Application.BoSSSpad {
             for(int i = 0; i < args.Length; i++) {
                 m_EnvironmentVars.Add("BOSSS_ARG_" + i, args[i]);
             }
+        }
+
+        /// <summary>
+        /// Enables explicitly overriding the BoSSS Arguments (e.g,  "--control", "control.obj",)
+        /// </summary>
+        /// <param name="arg"></param>
+        /// <param name="val"></param>
+        public void ModifyBoSSSArgument(string arg, string val) {
+            TestActivation();
+            int maxIndex = -1;
+            foreach(var key in m_EnvironmentVars.Keys) {
+                if(key.StartsWith("BOSSS_ARG_")) {
+                    if(int.TryParse(key.Substring("BOSSS_ARG_".Length), out int idx)) {
+                        maxIndex = Math.Max(maxIndex, idx);
+                    }
+                }
+            }
+            for(int i = 0; i <= maxIndex; i++) {
+                string key = $"BOSSS_ARG_{i}";
+
+                if(m_EnvironmentVars.TryGetValue(key, out string existingArg) && existingArg == arg) {
+                    // Overwrite value at i+1
+                    m_EnvironmentVars[$"BOSSS_ARG_{i + 1}"] = val;
+                    return;
+                }
+            }
+            m_EnvironmentVars[$"BOSSS_ARG_{maxIndex + 1}"] = arg;
+            m_EnvironmentVars[$"BOSSS_ARG_{maxIndex + 2}"] = val;
         }
 
         /// <summary>
@@ -1216,13 +1223,10 @@ namespace BoSSS.Application.BoSSSpad {
 
 
 
-
-
-
         int m_NumberOfMPIProcs = 1;
 
         /// <summary>
-        /// %
+        /// Number of MPI processes (default 1)
         /// </summary>
         public int NumberOfMPIProcs {
             get {
@@ -1236,23 +1240,24 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
+
         int m_NumberOfThreads = 2;
 
 
         /// <summary>
-        /// Number of threads for each MPI rank
+        /// Number of threads for each MPI rank (default 2)
         /// </summary>
         public int NumberOfThreads {
             get {
-                m_EnvironmentVars["OMP_NUM_THREADS"] = this.m_NumberOfThreads.ToString();
                 return m_NumberOfThreads;
             }
             set {
                 if ( value <= 0 )
                     throw new ArgumentOutOfRangeException("number of threads must be at least 1");
-                m_EnvironmentVars["OMP_NUM_THREADS"] = this.m_NumberOfThreads.ToString();
                 TestActivation();
                 m_NumberOfThreads = value;
+                ModifyBoSSSArgument("--num_threads", m_NumberOfThreads.ToString());
+                m_EnvironmentVars["OMP_NUM_THREADS"] = m_NumberOfThreads.ToString();
             }
         }
 
