@@ -246,13 +246,13 @@ namespace BoSSS.Application.BoSSSpad {
         [DataMember]
         public int NumOfAdditionalServiceCoresMPISerial = 0;
 
-
+/*
         /// <summary>
         /// Additional number of cores which are allocated for 'service';
         /// </summary>
         [DataMember]
         public int NumOfServiceCoresPerMPIprocess = 0;
-
+*/
        
         /// <summary>
         /// Active directory computer name of head node
@@ -899,7 +899,20 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="Id">The identifier for the job</param>
         /// <param name="message">The reason the job was cancelled</param>
         public override void Cancel(string Id, string message) {
-            throw new NotImplementedException("todo");
+            using (var tr = new FuncTrace()) {
+                int id = int.Parse(Id);
+                tr.Info($"Trying to cancel job {id} on scheduler {this.ServerName}");
+
+                // Build cancel command
+                string args = $"cancel {id} {GetLoginArg()}";
+                if (!message.IsEmptyOrWhite()) {
+                    args += $" /message:\"{message}\"";
+                }
+
+                var result = ExecuteProcess("job.exe", args, 60000);
+
+                tr.Info($"Job {id} cancelled successfully");
+            }
         }
     }
 }
