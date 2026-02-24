@@ -662,7 +662,7 @@ namespace ilPSP {
 
         public static void InitThreading(bool LookAtEnvVar, int? NumThreadsOverride) {
             using(var tr = new FuncTrace()) {
-                tr.InfoToConsole = true;
+                tr.InfoToConsole = false;
                 tr.StdoutOnAllRanks();
 
 
@@ -682,7 +682,7 @@ namespace ilPSP {
                     int? omp_num_threads = null;
                     if(LookAtEnvVar) {
                         // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                        // // try to infer number of threads from envvar OMP_NUM_THREADS
+                        // try to infer number of threads from envvar OMP_NUM_THREADS
                         // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                         try {
                             string _omp_num_treads = System.Environment.GetEnvironmentVariable("OMP_NUM_THREADS");
@@ -716,7 +716,11 @@ namespace ilPSP {
                         int num_procs_per_process = Math.Max(1, num_procs / MPIranksOnNode);
                         if(num_procs_per_process > 1 && num_procs_per_process % 2 != 0)
                             num_procs_per_process--; // choose an even number
-                        tr.Info($"Failed to determine user wish for number of threads; trying to use all! System reports {num_procs_tot} CPUs, will use all but 2 for BoSSS ({num_procs} total, {num_procs_per_process} per MPI rank, MPI ranks on current node is {MPIranksOnNode}).");
+                        if(num_procs_per_process > 8) {
+                            tr.Info("limiting number of treds to 8.");
+                            num_procs_per_process = 8;
+                        }
+                        tr.Info($"Failed to determine user wish for number of threads; trying to use all! System reports {num_procs_tot} CPUs, will use all but 2, but 8 at max.,  for BoSSS ({num_procs} total, {num_procs_per_process} per MPI rank, MPI ranks on current node is {MPIranksOnNode}).");
 
                         NumThreads = num_procs_per_process;
 
