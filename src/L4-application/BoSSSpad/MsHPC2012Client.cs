@@ -249,7 +249,6 @@ namespace BoSSS.Application.BoSSSpad {
 
         /// <summary>
         /// Additional number of cores which are allocated for 'service';
-        /// <see cref="NumOfAdditionalServiceCores"/>.
         /// </summary>
         [DataMember]
         public int NumOfServiceCoresPerMPIprocess = 0;
