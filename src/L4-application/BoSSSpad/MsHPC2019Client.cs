@@ -77,7 +77,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="DeployRuntime">
         /// See <see cref="BatchProcessorClient.DeployRuntime"/>.
         /// </param>
-        public MsHPC2012Client(string DeploymentBaseDirectory, string ServerName, string Username = null, string[] ComputeNodes = null, bool DeployRuntime = true) : base() {
+        public MsHPC2019Client(string DeploymentBaseDirectory, string ServerName, string Username = null, string[] ComputeNodes = null, bool DeployRuntime = true) : base() {
             if ( System.Environment.OSVersion.Platform != PlatformID.Win32NT ) {
                 throw new NotSupportedException($"The {typeof(MsHPC2012Client).Name} is only supported on MS Windows, but your current platform seems to be {System.Environment.OSVersion.Platform}.");
             }
@@ -332,7 +332,7 @@ namespace BoSSS.Application.BoSSSpad {
                 job.MaximumNumberOfCores = NumberOfCores;
                 job.MinimumNumberOfCores = NumberOfCores;
                 job.SingleNode = this.SingleNode;
-                job.Priority = this.DefaultJobPriority;
+                job.Priority = (Microsoft.Hpc.Scheduler.Properties.JobPriority) this.DefaultJobPriority;
                 job.UserName = Username;
 
                 var task = CreateTaskFromJobDescription(description, DeploymentDirectory, job);
@@ -370,7 +370,7 @@ namespace BoSSS.Application.BoSSSpad {
             job.MaximumNumberOfCores = NumberOfCores;
             job.MinimumNumberOfCores = jobs.Select(e => e.NumberOfMPIProcs).Max();
             job.SingleNode = this.SingleNode;
-            job.Priority = this.DefaultJobPriority;
+            job.Priority =  (Microsoft.Hpc.Scheduler.Properties.JobPriority) this.DefaultJobPriority;
 
             job.UserName = Username;
 
