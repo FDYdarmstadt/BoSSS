@@ -822,6 +822,16 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         /// <summary>
+        /// publicly available wrapper, used for extension methods to <see cref="MsHPC2012Client"/>
+        /// </summary>
+        /// <param name="xmlFilePath"></param>
+        /// <returns></returns>
+        public (int exitcode, string stdOut, string stdErr) SubmitProcess(string xmlFilePath) {
+            return this.ExecuteProcess("job.exe", $"submit /jobfile:\"{xmlFilePath}\" {this.GetLoginArg()}", 60000);
+        }
+
+
+        /// <summary>
         /// Synchronous wrapper around process execution, 
         /// see https://stackoverflow.com/questions/139593/processstartinfo-hanging-on-waitforexit-why
         /// </summary>
