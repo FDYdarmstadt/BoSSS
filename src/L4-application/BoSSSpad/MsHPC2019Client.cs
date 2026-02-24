@@ -30,15 +30,15 @@ namespace BoSSS.Application.BoSSSpad {
     /// </summary>
     [DataContract]
     [Serializable]
-    public class MsHPC2012Client : BatchProcessorClient {
+    public class MsHPC2019Client : BatchProcessorClient {
         /// <summary>
         /// Empty Constructor for de-serialization
         /// </summary>
-        private MsHPC2012Client() : base() {
+        private MsHPC2019Client() : base() {
             //Console.WriteLine("MsHPC2012Client: empty ctor");
 
             if ( System.Environment.OSVersion.Platform != PlatformID.Win32NT ) {
-                throw new NotSupportedException($"The {typeof(MsHPC2012Client).Name} is only supported on MS Windows, but your current platform seems to be {System.Environment.OSVersion.Platform}.");
+                throw new NotSupportedException($"The {typeof(MsHPC2019Client).Name} is only supported on MS Windows, but your current platform seems to be {System.Environment.OSVersion.Platform}.");
             }
 
             base.RuntimeLocation = "win\\amd64";
@@ -103,8 +103,15 @@ namespace BoSSS.Application.BoSSSpad {
             if ( this._Scheduler == null ) {
                 this._Scheduler = new Scheduler();
                 try {
-                    this._Scheduler.Connect(ServerName);
-                } catch ( Exception ex ) {
+#pragma warning disable CS0618     
+                    ServerName =  "DC3.fdy.maschinenbau.tu-darmstadt.de";        
+                    Console.WriteLine("Using Server name: " + ServerName);
+                    this._Scheduler.Connect(ServerName, ConnectMethod.WCF);
+#pragma warning restore CS0618                    
+                } catch (Exception ex ) {
+                    if (ex is AggregateException ae)
+                        foreach (var e in ae.Flatten().InnerExceptions)
+                            Console.WriteLine("INNER: " + e.ToString());
                     Console.WriteLine(ex.Message);
                     System.Environment.Exit(1);
                 }
