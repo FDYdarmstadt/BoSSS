@@ -1263,6 +1263,7 @@ namespace BoSSS.Application.BoSSSpad {
                 TestActivation();
                 m_NumberOfThreads = value;
                 //AppendBoSSSArgument("--num_threads", m_NumberOfThreads.ToString()); // this messes up all tests, etc., which do not follow the standard argument scheme.
+                //                                                                       if --num_threads is not provided, BoSSS uses OMP_NUM_THREADS
                 m_EnvironmentVars["OMP_NUM_THREADS"] = m_NumberOfThreads.ToString();
             }
         }
