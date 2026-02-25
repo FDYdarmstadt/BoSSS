@@ -817,7 +817,7 @@ namespace PublicTestRunner {
                 // phase 2: submit jobs
                 // ===================================
 
-                var monitor = new JobDeadlineMonitor("");
+                var monitor = new JobDeadlineMonitor(Path.Combine("..", "..", ".."));
 
                 Console.WriteLine($"******* Starting job/test deployment/submission ({DateTime.Now}) *******");
 
@@ -838,7 +838,7 @@ namespace PublicTestRunner {
                             AllJobs.Add(j.job);
 
                             // Check if there exists timing information for this job
-                            if ( !monitor.JobExists(j.job) ) {
+                            if ( !monitor.JobExists(j.job, DateNtime) ) {
                                 Console.ForegroundColor = ConsoleColor.Yellow;
                                 Console.WriteLine($"Warning: There is no timing information for {j.job.Name}, please add the information manually to TimeRecords.json");
                                 Console.ForegroundColor = ConsoleColor.White;
@@ -882,7 +882,7 @@ namespace PublicTestRunner {
                             JobStatus s = job.Status;
 
 
-                            if ( monitor.Overdue(job) ) {
+                            if ( monitor.Overdue(job, DateNtime) ) {
                                 job.LatestDeployment.Cancel("Job is running unusually long!");
                             }
 
@@ -897,7 +897,7 @@ namespace PublicTestRunner {
                             }
 
                             if ( s is JobStatus.FinishedSuccessful ) {
-                                monitor.UpdateEntry(job);
+                                monitor.UpdateEntry(job, DateNtime);
                             }
 
                             if ( s is JobStatus.FailedOrCanceled or JobStatus.Unknown ) {

@@ -1,4 +1,5 @@
 ﻿using BoSSS.Application.BoSSSpad;
+using MathNet.Numerics.Optimization;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -13,8 +14,10 @@ namespace PublicTestRunner {
 
         public JobTimeEntry(string name, double avgSeconds) {
             this.name = name;
-            this.avgSeconds = avgSeconds;
+            this.avgSeconds = Math.Max(60, avgSeconds); 
             var margin = 1 / Math.Log10(avgSeconds + 1);
+            margin = Math.Max(60*5, margin); // minimum: 5 minutes, to avoid problems with very quick tests.
+            margin = Math.Ceiling(margin / 60.0) * 60.0; // round up to full minutes
             this.dueMargin = margin;
             this.lastupdate = DateTime.Now;
         }
@@ -25,12 +28,12 @@ namespace PublicTestRunner {
         private bool shouldUpdateTimes;
         private Dictionary<string, JobTimeEntry> overview;
 
-        public JobDeadlineMonitor(string path, bool shouldUpdateTimes = false) {
+        public JobDeadlineMonitor(string DirectoryOffset, bool shouldUpdateTimes = false) {
 
-            this.path = path;
+            this.path = Path.Combine(DirectoryOffset, "TimeRecords.json");
             this.shouldUpdateTimes = shouldUpdateTimes;
             this.overview = new Dictionary<string, JobTimeEntry>();
-            var filepath = "TimeRecords.json";
+            var filepath = path;
             if ( File.Exists(filepath) ) {
                 var content = File.ReadAllText(filepath);
                 this.overview = JsonConvert.DeserializeObject<Dictionary<string, JobTimeEntry>>(content);
@@ -42,49 +45,59 @@ namespace PublicTestRunner {
             }
         }
 
-        public bool JobExists(Job job) {
-            return this.JobExists(job.Name);
+        private string Trim(string name, string PrefixToTrim) {
+            if ( name.StartsWith(PrefixToTrim) ) {
+                name = name.Substring(PrefixToTrim.Length);
+                name = name.TrimStart('-');
+                return name;
+            } else {
+                return name;
+            }
         }
 
-        public bool JobExists(string name) {
+        public bool JobExists(Job job, string PrefixToTrim) {
+            return this.JobExists(Trim(job.Name, PrefixToTrim));
+        }
+
+        private bool JobExists(string name) {
             return this.overview.ContainsKey(name);
         }
 
-        public bool Overdue(Job job) {
+        public bool Overdue(Job job, string PrefixToTrim) {
             TimeSpan span = job.LatestDeployment.RunTime;
-            return this.Overdue(job.Name, span.TotalSeconds);
+            return this.Overdue(Trim(job.Name, PrefixToTrim), span.TotalSeconds);
         }
 
-        public bool Overdue(string name, double currentSeconds) {
+        private bool Overdue(string name, double currentSeconds) {
             if ( this.overview.TryGetValue(name, out var result) ) {
                 return (currentSeconds - result.dueMargin * result.avgSeconds) < result.avgSeconds;
             }
             return false;
         }
 
-        public void UpdateEntry(Job job) {
+        public void UpdateEntry(Job job, string PrefixToTrim) {
             TimeSpan span = job.LatestDeployment.RunTime;
-            this.UpdateEntry(job.Name, span.TotalSeconds);
+            this.UpdateEntry(Trim(job.Name, PrefixToTrim), span.TotalSeconds);
         }
 
-        public void UpdateEntry(string name, double seconds) {
+        private void UpdateEntry(string name, double seconds) {
             this.overview[name] = new JobTimeEntry(name, seconds);
         }
 
-        public double GetAvgTime(Job job) {
-            return GetAvgTime(job.Name);
+        public double GetAvgTime(Job job, string PrefixToTrim) {
+            return GetAvgTime(Trim(job.Name, PrefixToTrim));
         }
 
-        public double GetAvgTime(string name) {
+        private double GetAvgTime(string name) {
             if ( this.overview.TryGetValue(name, out var time) ) {
                 return time.avgSeconds;
             }
             return 0;
         }
 
-        public double GetPercentTime(Job job) {
-            return this.GetPercentTime(job.Name, job.LatestDeployment.RunTime.TotalSeconds);
-        }
+        //public double GetPercentTime(Job job) {
+        //    return this.GetPercentTime(job.Name, job.LatestDeployment.RunTime.TotalSeconds);
+        //}
 
         public double GetPercentTime(string name, double currentSeconds) {
             return currentSeconds / this.GetAvgTime(name);

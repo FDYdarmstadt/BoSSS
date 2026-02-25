@@ -914,7 +914,7 @@ namespace BoSSS.Application.BoSSSpad {
                 tr.Info($"Trying to cancel job {id} on scheduler {this.ServerName}");
 
                 // Build cancel command
-                string args = $"cancel {id} {GetLoginArg()}";
+                string args = $"cancel {id} /force  /scheduler:{this.ServerName} ";
                 if (!message.IsEmptyOrWhite()) {
                     args += $" /message:\"{message}\"";
                 }
