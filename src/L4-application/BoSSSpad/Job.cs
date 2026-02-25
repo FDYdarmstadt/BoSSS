@@ -540,11 +540,17 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// Enables explicitly overriding the BoSSS Arguments (e.g,  "--control", "control.obj",)
+        /// Appends command line arguments for BoSSS, e.g.,  `--control`, `control.obj`,
+        /// encapsulated as environment variables.
         /// </summary>
-        /// <param name="arg"></param>
-        /// <param name="val"></param>
-        public void ModifyBoSSSArgument(string arg, string val) {
+        /// <remarks>
+        /// Note: In HPC environments, command line arguments to BoSSS solvers are passed as environment variables
+        /// `BOSSS_ARG_0`, `BOSSS_ARG_1`, etc.
+        /// 
+        /// Reason: an environment variable does not need any escaping (e.g., to treat spaces in file names)
+        /// is thus much more robust than a command line argument.
+        /// </remarks>
+        public void AppendBoSSSArgument(string arg, string val) {
             TestActivation();
             int maxIndex = -1;
             foreach(var key in m_EnvironmentVars.Keys) {
@@ -1256,7 +1262,7 @@ namespace BoSSS.Application.BoSSSpad {
                     throw new ArgumentOutOfRangeException("number of threads must be at least 1");
                 TestActivation();
                 m_NumberOfThreads = value;
-                ModifyBoSSSArgument("--num_threads", m_NumberOfThreads.ToString());
+                //AppendBoSSSArgument("--num_threads", m_NumberOfThreads.ToString()); // this messes up all tests, etc., which do not follow the standard argument scheme.
                 m_EnvironmentVars["OMP_NUM_THREADS"] = m_NumberOfThreads.ToString();
             }
         }
