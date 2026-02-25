@@ -19,6 +19,7 @@ using BoSSS.Foundation.IO;
 using ilPSP;
 using ilPSP.Tracing;
 using ilPSP.Utils;
+using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -889,7 +890,14 @@ namespace BoSSS.Application.BoSSSpad {
             /// </summary>
             /// <param name="reason">Reason for cancelation</param>
             public void Cancel(string reason) {
-                m_owner.AssignedBatchProc.Cancel(this.BatchProcessorIdentifierToken, reason);
+                using ( var tr = new FuncTrace() ) {
+                    try {
+                        m_owner.AssignedBatchProc.Cancel(this.BatchProcessorIdentifierToken, reason);
+                    } catch ( Exception e ) {
+                        tr.Error($"{e.GetType().Name} during Job.Cancel operation: {e.Message}.");
+                        tr.Info("Exception trace: " + (e.StackTrace ?? ""));
+                    }
+                }
             }
 
             /// <summary>

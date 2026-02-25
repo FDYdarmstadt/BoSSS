@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 
 namespace PublicTestRunner {
-    internal class JobTimeEntry {
+    public class JobTimeEntry {
         public string name;
         public double avgSeconds;
         public double dueMargin;
@@ -15,15 +15,19 @@ namespace PublicTestRunner {
         public JobTimeEntry(string name, double avgSeconds) {
             this.name = name;
             this.avgSeconds = Math.Max(60, avgSeconds); 
-            var margin = 1 / Math.Log10(avgSeconds + 1);
-            margin = Math.Max(60*5, margin); // minimum: 5 minutes, to avoid problems with very quick tests.
+            UpdateMargin();
+            this.lastupdate = DateTime.Now;
+        }
+
+        internal void UpdateMargin() {
+            var margin = this.avgSeconds*0.1;
+            margin = Math.Max(60 * 5, margin); // minimum: 5 minutes, to avoid problems with very quick tests.
             margin = Math.Ceiling(margin / 60.0) * 60.0; // round up to full minutes
             this.dueMargin = margin;
-            this.lastupdate = DateTime.Now;
         }
     }
 
-    internal class JobDeadlineMonitor {
+    public class JobDeadlineMonitor {
         private string path;
         private bool shouldUpdateTimes;
         private Dictionary<string, JobTimeEntry> overview;
@@ -43,6 +47,11 @@ namespace PublicTestRunner {
                 Console.WriteLine("Continuing without it, be sure to manually update missing entries!");
                 Console.ForegroundColor = ConsoleColor.White;
             }
+
+            //this.shouldUpdateTimes = true;
+            //foreach ( var entry in this.overview.Values )
+            //    entry.UpdateMargin();
+            //this.Save();
         }
 
         private string Trim(string name, string PrefixToTrim) {
@@ -70,7 +79,7 @@ namespace PublicTestRunner {
 
         private bool Overdue(string name, double currentSeconds) {
             if ( this.overview.TryGetValue(name, out var result) ) {
-                return (currentSeconds - result.dueMargin * result.avgSeconds) < result.avgSeconds;
+                return (currentSeconds > result.avgSeconds + result.dueMargin);
             }
             return false;
         }

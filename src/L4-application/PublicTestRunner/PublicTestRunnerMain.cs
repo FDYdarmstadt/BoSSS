@@ -624,13 +624,18 @@ namespace PublicTestRunner {
         public static string RunnerPrefix = "Pub";
 
         public static void CancelAllJobsOnExit(object sender, EventArgs args) {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("Forcefully Cancelling All Jobs");
-            foreach ( Job job in AllJobs ) {
-                job.LatestDeployment.Cancel("Forcefully Cancelled");
-                Console.WriteLine($"Canceling {job.Name}");
+            var running = AllJobs.Where(j => !(j.Status == JobStatus.FinishedSuccessful || j.Status == JobStatus.FailedOrCanceled)).ToArray();
+            if(running.Length < 0) {
+                Console.WriteLine("No running jobs.");
+                return;
             }
-            Console.ForegroundColor = ConsoleColor.White;
+
+            Console.WriteLine($"Forcefully Cancelling {running.Length} Jobs");
+            foreach( Job job in running) {
+                Console.WriteLine($"Canceling {job.Name}...");
+                job.LatestDeployment.Cancel("Forcefully Cancelled");
+            }
+            
         }
 
         public static int JobManagerRun(string AssemblyFilter, int ExecutionQueueNo) {
@@ -834,22 +839,21 @@ namespace PublicTestRunner {
                             Console.WriteLine($"Submitting {cnt} of {allTests.Count} ({shortname})...");
                             (Job job, string resultFile, string name) j = SubmitJob(ass, testname, shortname, TestTypeProvider.RetryCount, bpc, depfiles, DateNtime, NoOfProcs, NumThreads, NativeOverride, RelManagedPath, cnt);
 
-                            // Cancel Jobs when program exits forcefully!
                             AllJobs.Add(j.job);
 
                             // Check if there exists timing information for this job
                             if ( !monitor.JobExists(j.job, DateNtime) ) {
                                 Console.ForegroundColor = ConsoleColor.Yellow;
                                 Console.WriteLine($"Warning: There is no timing information for {j.job.Name}, please add the information manually to TimeRecords.json");
-                                Console.ForegroundColor = ConsoleColor.White;
+                                Console.ResetColor();
                             }
 
                             if ( checkResFileName.Add(j.resultFile) == false ) {
                                 throw new IOException($"Result file name {j.resultFile} is used multiple times.");
                             }
 
-                            Console.WriteLine($"Successfully submitted {j.job.Name}. \n");
                             AllOpenJobs.Add(j);
+                            Console.WriteLine($"Successfully submitted {j.job.Name}. \n");
                         } catch ( Exception e ) {
                             Console.Error.WriteLine($"{e.GetType().Name} during job submission: {e.Message}.");
                             returnCode--;
@@ -883,7 +887,9 @@ namespace PublicTestRunner {
 
 
                             if ( monitor.Overdue(job, DateNtime) ) {
+                                Console.Error.WriteLine($" ------------------- Overdue: {job.Name}");
                                 job.LatestDeployment.Cancel("Job is running unusually long!");
+                                continue;
                             }
 
                             {
