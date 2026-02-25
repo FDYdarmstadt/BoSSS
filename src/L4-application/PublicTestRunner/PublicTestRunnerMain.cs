@@ -235,7 +235,7 @@ namespace PublicTestRunner {
         /// <summary>
         /// Timout for job-manager run
         /// </summary>
-        public static double TimeOutSec = 450 * 60; // ;
+        public const double TimeOutSec = 6*60*60; // 6 hours
 
         /// <summary>
         /// supposed to ignore tests depending on files in the source code repo;
