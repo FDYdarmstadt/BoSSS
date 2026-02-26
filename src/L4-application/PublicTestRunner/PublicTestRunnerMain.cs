@@ -662,7 +662,7 @@ namespace PublicTestRunner {
             Console.WriteLine($"Using batch queue {ExecutionQueueNo}: {bpc}");
 
             BatchProcessorClient bpc2 = BoSSSshell.ExecutionQueues[BackupExecutionQueueNo];
-            Console.WriteLine($"Using bacl batch queue {BackupExecutionQueueNo}: {bpc2} (for failed jobs)");
+            Console.WriteLine($"Using backup batch queue {BackupExecutionQueueNo}: {bpc2} (for failed jobs)");
             if(!bpc.IsSameSystem(bpc2)) {
                 throw new NotSupportedException("(primary) batch queue and backup batch queue must be the same server (`IsSameSystem` test must evaluate to true)");
             }
