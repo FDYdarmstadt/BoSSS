@@ -49,8 +49,12 @@ namespace PublicTestRunner {
             }
 
             //this.shouldUpdateTimes = true;
-            //foreach ( var entry in this.overview.Values )
+            //const double TwoHoursInSec = 2*3600;
+            //foreach ( var entry in this.overview.Values ) {
+            //    if(entry.avgSeconds > TwoHoursInSec)
+            //        entry.avgSeconds = Math.Min(entry.avgSeconds, 2 * 3600);
             //    entry.UpdateMargin();
+            //}
             //this.Save();
         }
 
