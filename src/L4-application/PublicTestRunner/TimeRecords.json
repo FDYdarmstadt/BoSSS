@@ -1,0 +1,4238 @@
+{
+  "REL-ilPSP#GEMMTest_Frame": {
+    "name": "REL-ilPSP#GEMMTest_Frame",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:34:39.7643867+01:00"
+  },
+  "REL-ilPSP#GEMMTest": {
+    "name": "REL-ilPSP#GEMMTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:34:40.8673493+01:00"
+  },
+  "REL-ilPSP#MultiplyTest0": {
+    "name": "REL-ilPSP#MultiplyTest0",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:34:41.9639162+01:00"
+  },
+  "REL-ilPSP#MultiplyTest1": {
+    "name": "REL-ilPSP#MultiplyTest1",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:34:43.0400201+01:00"
+  },
+  "REL-ilPSP#MultiplyTest2": {
+    "name": "REL-ilPSP#MultiplyTest2",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:34:44.1396392+01:00"
+  },
+  "REL-ilPSP#MultiplyTest3": {
+    "name": "REL-ilPSP#MultiplyTest3",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:34:45.2304918+01:00"
+  },
+  "REL-ilPSP#MultiplyTrafoTest0": {
+    "name": "REL-ilPSP#MultiplyTrafoTest0",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:34:46.3262448+01:00"
+  },
+  "REL-ipPoisson#TestCartesian": {
+    "name": "REL-ipPoisson#TestCartesian",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:34:47.435686+01:00"
+  },
+  "REL-ipPoisson#TestCurved": {
+    "name": "REL-ipPoisson#TestCurved",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:34:48.5254237+01:00"
+  },
+  "REL-ipPoisson#TestIterativeSolver": {
+    "name": "REL-ipPoisson#TestIterativeSolver",
+    "avgSeconds": 171.9270046,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:34:49.6056535+01:00"
+  },
+  "REL-ipPoisson#TestOperatorScaling2D_p1": {
+    "name": "REL-ipPoisson#TestOperatorScaling2D_p1",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:34:50.7319355+01:00"
+  },
+  "REL-ipPoisson#TestOperatorScaling2D_p2": {
+    "name": "REL-ipPoisson#TestOperatorScaling2D_p2",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:34:51.8347231+01:00"
+  },
+  "REL-ipPoisson#TestOperatorScaling2D_p3": {
+    "name": "REL-ipPoisson#TestOperatorScaling2D_p3",
+    "avgSeconds": 88.8186573,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:34:52.9665158+01:00"
+  },
+  "REL-ipPoisson#TestOperatorScaling3D_p1": {
+    "name": "REL-ipPoisson#TestOperatorScaling3D_p1",
+    "avgSeconds": 133.4157904,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:34:54.1042507+01:00"
+  },
+  "REL-ipPoisson#TestOperatorScaling3D_p2": {
+    "name": "REL-ipPoisson#TestOperatorScaling3D_p2",
+    "avgSeconds": 119.054172,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:34:55.2251109+01:00"
+  },
+  "REL-ipPoisson#TestOperatorScaling3D_p3": {
+    "name": "REL-ipPoisson#TestOperatorScaling3D_p3",
+    "avgSeconds": 117.2521398,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:34:56.3710858+01:00"
+  },
+  "REL-ipPoisson#TestOperatorConvergence3D": {
+    "name": "REL-ipPoisson#TestOperatorConvergence3D",
+    "avgSeconds": 142.3654275,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:34:57.4629641+01:00"
+  },
+  "REL-ipPoisson#TestOperatorConvergenceCustom": {
+    "name": "REL-ipPoisson#TestOperatorConvergenceCustom",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:34:58.5696556+01:00"
+  },
+  "REL-ipPoisson#TestOperatorConvergence2D": {
+    "name": "REL-ipPoisson#TestOperatorConvergence2D",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:34:59.6492998+01:00"
+  },
+  "REL-AdvancedSolverTests#LocalIndexTest": {
+    "name": "REL-AdvancedSolverTests#LocalIndexTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:00.7796773+01:00"
+  },
+  "REL-AdvancedSolverTests#MapConsistencyTest": {
+    "name": "REL-AdvancedSolverTests#MapConsistencyTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:01.9075504+01:00"
+  },
+  "REL-AdvancedSolverTests#SubBlockExtractionWithCoupling": {
+    "name": "REL-AdvancedSolverTests#SubBlockExtractionWithCoupling",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:02.9953573+01:00"
+  },
+  "REL-AdvancedSolverTests#SubMatrixExtractionWithCoupling": {
+    "name": "REL-AdvancedSolverTests#SubMatrixExtractionWithCoupling",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:04.1352362+01:00"
+  },
+  "REL-AdvancedSolverTests#FastSubMatrixExtraction": {
+    "name": "REL-AdvancedSolverTests#FastSubMatrixExtraction",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:05.2822239+01:00"
+  },
+  "REL-AdvancedSolverTests#CellBlockVectorOperations": {
+    "name": "REL-AdvancedSolverTests#CellBlockVectorOperations",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:06.3670998+01:00"
+  },
+  "REL-AdvancedSolverTests#CellwiseSubSelection": {
+    "name": "REL-AdvancedSolverTests#CellwiseSubSelection",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:07.4886257+01:00"
+  },
+  "REL-AdvancedSolverTests#SubSelection": {
+    "name": "REL-AdvancedSolverTests#SubSelection",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:08.6002341+01:00"
+  },
+  "REL-AdvancedSolverTests#CompareFactorization": {
+    "name": "REL-AdvancedSolverTests#CompareFactorization",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:09.7137213+01:00"
+  },
+  "REL-AdvancedSolverTests#CompareSubstitution": {
+    "name": "REL-AdvancedSolverTests#CompareSubstitution",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:10.815209+01:00"
+  },
+  "REL-AdvancedSolverTests#TestLinearSolverConfigurations": {
+    "name": "REL-AdvancedSolverTests#TestLinearSolverConfigurations",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:11.9077265+01:00"
+  },
+  "REL-AdvancedSolverTests#TestNonLinearSolverConfigurations": {
+    "name": "REL-AdvancedSolverTests#TestNonLinearSolverConfigurations",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:12.9979493+01:00"
+  },
+  "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case0": {
+    "name": "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case0",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:15.6368718+01:00"
+  },
+  "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_sameDegree_p3": {
+    "name": "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_sameDegree_p3",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:21.4011247+01:00"
+  },
+  "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_higherDegree_p3": {
+    "name": "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_higherDegree_p3",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:22.5291302+01:00"
+  },
+  "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_sameDegree_p4_grd2n4": {
+    "name": "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_sameDegree_p4_grd2n4",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:23.6668533+01:00"
+  },
+  "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_sameDegree_p4_grd8": {
+    "name": "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_sameDegree_p4_grd8",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:26.3417032+01:00"
+  },
+  "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_higherDegree_p4_grd8": {
+    "name": "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_higherDegree_p4_grd8",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:27.4593382+01:00"
+  },
+  "REL-CDG_ProjectionTest#AllUp_Cube": {
+    "name": "REL-CDG_ProjectionTest#AllUp_Cube",
+    "avgSeconds": 137.9088739,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:30.1316425+01:00"
+  },
+  "REL-Matrix_MPItest#MultiplyTest": {
+    "name": "REL-Matrix_MPItest#MultiplyTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:31.490197+01:00"
+  },
+  "REL-Matrix_MPItest#SubMatrixTest": {
+    "name": "REL-Matrix_MPItest#SubMatrixTest",
+    "avgSeconds": 136.1041624,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:32.6196572+01:00"
+  },
+  "REL-Matrix_MPItest#SpMVTest": {
+    "name": "REL-Matrix_MPItest#SpMVTest",
+    "avgSeconds": 115.7739444,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:33.8157393+01:00"
+  },
+  "REL-XdgPoisson3#IterativeSolverTest": {
+    "name": "REL-XdgPoisson3#IterativeSolverTest",
+    "avgSeconds": 71.8310616,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:35.0288097+01:00"
+  },
+  "REL-XdgPoisson3#ParabolaTest": {
+    "name": "REL-XdgPoisson3#ParabolaTest",
+    "avgSeconds": 67.0384833,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:36.154704+01:00"
+  },
+  "REL-CDG_Projection_MPI#ProjectionTest_Global": {
+    "name": "REL-CDG_Projection_MPI#ProjectionTest_Global",
+    "avgSeconds": 352.7758698,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:40.4337126+01:00"
+  },
+  "REL-CDG_Projection_MPI#Test4Idempotence": {
+    "name": "REL-CDG_Projection_MPI#Test4Idempotence",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:41.528227+01:00"
+  },
+  "REL-ElementTests#Bla": {
+    "name": "REL-ElementTests#Bla",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:42.6189149+01:00"
+  },
+  "REL-MultigridTest#PrlgAndRestTest": {
+    "name": "REL-MultigridTest#PrlgAndRestTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:43.7075268+01:00"
+  },
+  "REL-MultigridTest#PrlgAndRestMtxTest": {
+    "name": "REL-MultigridTest#PrlgAndRestMtxTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:44.8072657+01:00"
+  },
+  "REL-MultigridTest#RestictionMatrixTest": {
+    "name": "REL-MultigridTest#RestictionMatrixTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:45.9035785+01:00"
+  },
+  "REL-MultigridTest#RestrictionOfSystemOpTest": {
+    "name": "REL-MultigridTest#RestrictionOfSystemOpTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:46.9920528+01:00"
+  },
+  "REL-MultigridTest#XDG_MatrixPolynomialRestAndPrlgTest": {
+    "name": "REL-MultigridTest#XDG_MatrixPolynomialRestAndPrlgTest",
+    "avgSeconds": 72.5687224,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:48.0903635+01:00"
+  },
+  "REL-MultigridTest#XDG_MatrixPolynomialRestAndPrlgTest_2": {
+    "name": "REL-MultigridTest#XDG_MatrixPolynomialRestAndPrlgTest_2",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:49.227745+01:00"
+  },
+  "REL-MultigridTest#ProlongationTest": {
+    "name": "REL-MultigridTest#ProlongationTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:50.3103205+01:00"
+  },
+  "REL-MultigridTest#PolynomialRestAndPrlgTest": {
+    "name": "REL-MultigridTest#PolynomialRestAndPrlgTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:51.3947942+01:00"
+  },
+  "REL-MultigridTest#RestictionMatrixTest_2": {
+    "name": "REL-MultigridTest#RestictionMatrixTest_2",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:52.48141+01:00"
+  },
+  "REL-MultigridTest#RestrictionOfSystemOpTest_2": {
+    "name": "REL-MultigridTest#RestrictionOfSystemOpTest_2",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:53.5718421+01:00"
+  },
+  "REL-MultigridTest#XDG_PolynomialRestAndPrlgTest": {
+    "name": "REL-MultigridTest#XDG_PolynomialRestAndPrlgTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:54.6844873+01:00"
+  },
+  "REL-MultigridTest#XDG_MatrixPolynomialRestAndPrlgTest_3": {
+    "name": "REL-MultigridTest#XDG_MatrixPolynomialRestAndPrlgTest_3",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:55.8118512+01:00"
+  },
+  "REL-MultigridTest#XDG_MatrixPolynomialRestAndPrlgTest_2_2": {
+    "name": "REL-MultigridTest#XDG_MatrixPolynomialRestAndPrlgTest_2_2",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:56.946455+01:00"
+  },
+  "REL-MultigridTest#XDG_ProlongationTest_agg0_trw0_eye": {
+    "name": "REL-MultigridTest#XDG_ProlongationTest_agg0_trw0_eye",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:58.0791305+01:00"
+  },
+  "REL-MultigridTest#XDG_ProlongationTest_agg0_trw1_eye": {
+    "name": "REL-MultigridTest#XDG_ProlongationTest_agg0_trw1_eye",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:35:59.184478+01:00"
+  },
+  "REL-MultigridTest#XDG_ProlongationTest_agg0_trw1_idmass": {
+    "name": "REL-MultigridTest#XDG_ProlongationTest_agg0_trw1_idmass",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:00.2694657+01:00"
+  },
+  "REL-MultigridTest#XDG_ProlongationTest_agg03_trw0_eye": {
+    "name": "REL-MultigridTest#XDG_ProlongationTest_agg03_trw0_eye",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:01.3715185+01:00"
+  },
+  "REL-MultigridTest#XDG_ProlongationTest_agg03_trw0_idmass": {
+    "name": "REL-MultigridTest#XDG_ProlongationTest_agg03_trw0_idmass",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:02.480419+01:00"
+  },
+  "REL-MultigridTest#XDG_ProlongationTest_agg03_trw1_eye": {
+    "name": "REL-MultigridTest#XDG_ProlongationTest_agg03_trw1_eye",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:03.585431+01:00"
+  },
+  "REL-MultigridTest#XDG_ProlongationTest_agg03_trw1_idmass": {
+    "name": "REL-MultigridTest#XDG_ProlongationTest_agg03_trw1_idmass",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:04.6931466+01:00"
+  },
+  "REL-MultigridTest#XDG_Norm": {
+    "name": "REL-MultigridTest#XDG_Norm",
+    "avgSeconds": 169.4191044,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:05.8111024+01:00"
+  },
+  "REL-DatabaseTests#TestCopyGrid": {
+    "name": "REL-DatabaseTests#TestCopyGrid",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:06.946893+01:00"
+  },
+  "REL-DatabaseTests#TestUnsafelyDeleteGrid": {
+    "name": "REL-DatabaseTests#TestUnsafelyDeleteGrid",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:08.1039547+01:00"
+  },
+  "REL-DatabaseTests#TestCopySession": {
+    "name": "REL-DatabaseTests#TestCopySession",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:09.2594029+01:00"
+  },
+  "REL-DatabaseTests#TestMoveSession": {
+    "name": "REL-DatabaseTests#TestMoveSession",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:10.3992703+01:00"
+  },
+  "REL-DatabaseTests#TestDeleteSession": {
+    "name": "REL-DatabaseTests#TestDeleteSession",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:11.5676134+01:00"
+  },
+  "REL-DatabaseTests#TestClearDatabase": {
+    "name": "REL-DatabaseTests#TestClearDatabase",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:12.7151925+01:00"
+  },
+  "REL-DatabaseTests#TestSafelyDeleteGrid": {
+    "name": "REL-DatabaseTests#TestSafelyDeleteGrid",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:13.8726166+01:00"
+  },
+  "REL-DatabaseTests#TestCleanUpDatabase": {
+    "name": "REL-DatabaseTests#TestCleanUpDatabase",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:15.0279823+01:00"
+  },
+  "REL-DatabaseTests#TestCopyFail": {
+    "name": "REL-DatabaseTests#TestCopyFail",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:16.1975903+01:00"
+  },
+  "REL-DatabaseTests#TestRenameSession": {
+    "name": "REL-DatabaseTests#TestRenameSession",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:17.3568257+01:00"
+  },
+  "REL-DatabaseTests#TestRenameGrid": {
+    "name": "REL-DatabaseTests#TestRenameGrid",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:18.5066081+01:00"
+  },
+  "REL-DatabaseTests#SaveGridIfUnique": {
+    "name": "REL-DatabaseTests#SaveGridIfUnique",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:19.6699119+01:00"
+  },
+  "REL-DatabaseTests#LoadAndSaveGrid": {
+    "name": "REL-DatabaseTests#LoadAndSaveGrid",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:20.8377764+01:00"
+  },
+  "REL-DatabaseTests#GridEquivalenceTest": {
+    "name": "REL-DatabaseTests#GridEquivalenceTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:21.9865018+01:00"
+  },
+  "REL-XDGTest#AllUp": {
+    "name": "REL-XDGTest#AllUp",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:23.132454+01:00"
+  },
+  "REL-XDGTest#RestartTest": {
+    "name": "REL-XDGTest#RestartTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:24.226654+01:00"
+  },
+  "REL-XDGTest#MultipleTrackerUpdateCalls": {
+    "name": "REL-XDGTest#MultipleTrackerUpdateCalls",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:25.3402372+01:00"
+  },
+  "REL-DerivativeTest#DerivativeTest_BuildInGrid_Ext": {
+    "name": "REL-DerivativeTest#DerivativeTest_BuildInGrid_Ext",
+    "avgSeconds": 122.6211064,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:28.0173214+01:00"
+  },
+  "REL-DerivativeTest#DerivativeTest_GridImport": {
+    "name": "REL-DerivativeTest#DerivativeTest_GridImport",
+    "avgSeconds": 103.9371925,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:29.1839311+01:00"
+  },
+  "REL-CutCellQuadrature#Test2DSurfaceHighOrderRobustnessStructured": {
+    "name": "REL-CutCellQuadrature#Test2DSurfaceHighOrderRobustnessStructured",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:30.4201711+01:00"
+  },
+  "REL-CutCellQuadrature#Test2DSurfaceHighOrderRobustnessStructuredSaye": {
+    "name": "REL-CutCellQuadrature#Test2DSurfaceHighOrderRobustnessStructuredSaye",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:31.5042446+01:00"
+  },
+  "REL-CutCellQuadrature#Test2DSurfaceHighOrderRobustnessStructuredAlgoim": {
+    "name": "REL-CutCellQuadrature#Test2DSurfaceHighOrderRobustnessStructuredAlgoim",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:32.6002171+01:00"
+  },
+  "REL-CutCellQuadrature#Test2DSurfaceConvergenceStructured": {
+    "name": "REL-CutCellQuadrature#Test2DSurfaceConvergenceStructured",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:33.6937167+01:00"
+  },
+  "REL-CutCellQuadrature#Test2DSurfaceConvergenceStructuredSaye": {
+    "name": "REL-CutCellQuadrature#Test2DSurfaceConvergenceStructuredSaye",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:34.773229+01:00"
+  },
+  "REL-CutCellQuadrature#Test2DSurfaceConvergenceStructuredAlgoim": {
+    "name": "REL-CutCellQuadrature#Test2DSurfaceConvergenceStructuredAlgoim",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:35.8564566+01:00"
+  },
+  "REL-CutCellQuadrature#Test2DSurfacePRefinementStructuredAlgoim": {
+    "name": "REL-CutCellQuadrature#Test2DSurfacePRefinementStructuredAlgoim",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:36.9636342+01:00"
+  },
+  "REL-CutCellQuadrature#Test2DVolumeHighOrderRobustnessStructured": {
+    "name": "REL-CutCellQuadrature#Test2DVolumeHighOrderRobustnessStructured",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:38.0729306+01:00"
+  },
+  "REL-CutCellQuadrature#Test2DVolumeHighOrderRobustnessStructuredSaye": {
+    "name": "REL-CutCellQuadrature#Test2DVolumeHighOrderRobustnessStructuredSaye",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:39.1764399+01:00"
+  },
+  "REL-CutCellQuadrature#Test2DVolumeHighOrderRobustnessStructuredAlgoim": {
+    "name": "REL-CutCellQuadrature#Test2DVolumeHighOrderRobustnessStructuredAlgoim",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:40.2928774+01:00"
+  },
+  "REL-CutCellQuadrature#Test2DVolumeConvergenceStructured": {
+    "name": "REL-CutCellQuadrature#Test2DVolumeConvergenceStructured",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:41.3832395+01:00"
+  },
+  "REL-CutCellQuadrature#Test2DVolumeConvergenceStructuredSaye": {
+    "name": "REL-CutCellQuadrature#Test2DVolumeConvergenceStructuredSaye",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:42.4815096+01:00"
+  },
+  "REL-CutCellQuadrature#Test2DVolumeConvergenceStructuredAlgoim": {
+    "name": "REL-CutCellQuadrature#Test2DVolumeConvergenceStructuredAlgoim",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:43.5746765+01:00"
+  },
+  "REL-CutCellQuadrature#Test2DVolumePRefinementStructuredAlgoim": {
+    "name": "REL-CutCellQuadrature#Test2DVolumePRefinementStructuredAlgoim",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:44.6704782+01:00"
+  },
+  "REL-CutCellQuadrature#Test2DSurfaceHighOrderRobustnessUnstructured": {
+    "name": "REL-CutCellQuadrature#Test2DSurfaceHighOrderRobustnessUnstructured",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:45.7927697+01:00"
+  },
+  "REL-CutCellQuadrature#Test2DSurfaceConvergenceUnstructured": {
+    "name": "REL-CutCellQuadrature#Test2DSurfaceConvergenceUnstructured",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:46.900692+01:00"
+  },
+  "REL-CutCellQuadrature#Test2DVolumeHighOrderRobustnessUnstructured": {
+    "name": "REL-CutCellQuadrature#Test2DVolumeHighOrderRobustnessUnstructured",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:48.0126378+01:00"
+  },
+  "REL-CutCellQuadrature#Test2DVolumeConvergenceUnstructured": {
+    "name": "REL-CutCellQuadrature#Test2DVolumeConvergenceUnstructured",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:49.12175+01:00"
+  },
+  "REL-CutCellQuadrature#Test3DSphereVolume": {
+    "name": "REL-CutCellQuadrature#Test3DSphereVolume",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:50.2102189+01:00"
+  },
+  "REL-CutCellQuadrature#Test3DSphereVolumeAlgoim": {
+    "name": "REL-CutCellQuadrature#Test3DSphereVolumeAlgoim",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:51.3071439+01:00"
+  },
+  "REL-CutCellQuadrature#Test3DSphereSurface": {
+    "name": "REL-CutCellQuadrature#Test3DSphereSurface",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:52.4019816+01:00"
+  },
+  "REL-CutCellQuadrature#Test3DSphereSurfaceAlgoim": {
+    "name": "REL-CutCellQuadrature#Test3DSphereSurfaceAlgoim",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:53.4997846+01:00"
+  },
+  "REL-SpecFEM#AllUp": {
+    "name": "REL-SpecFEM#AllUp",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:54.5861455+01:00"
+  },
+  "REL-ipViscosity#ConsistencyTest": {
+    "name": "REL-ipViscosity#ConsistencyTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:55.6963962+01:00"
+  },
+  "REL-ipViscosity#solverTest": {
+    "name": "REL-ipViscosity#solverTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:56.8072183+01:00"
+  },
+  "REL-ExternalBinding.CodeGen#RunGenerator": {
+    "name": "REL-ExternalBinding.CodeGen#RunGenerator",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:57.9609467+01:00"
+  },
+  "REL-BoSSS.Application.ExternalBinding#Test1D": {
+    "name": "REL-BoSSS.Application.ExternalBinding#Test1D",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:59.1089405+01:00"
+  },
+  "REL-BoSSS.Application.ExternalBinding#DropletTest": {
+    "name": "REL-BoSSS.Application.ExternalBinding#DropletTest",
+    "avgSeconds": 158.0757592,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:37:00.3173452+01:00"
+  },
+  "REL-BoSSS.Application.ExternalBinding#ConvertFOAMGrid": {
+    "name": "REL-BoSSS.Application.ExternalBinding#ConvertFOAMGrid",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:37:03.1234714+01:00"
+  },
+  "REL-BoSSS.Application.ExternalBinding#ConvertFOAMGrid_2": {
+    "name": "REL-BoSSS.Application.ExternalBinding#ConvertFOAMGrid_2",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:37:04.2625218+01:00"
+  },
+  "REL-BoSSS.Application.ExternalBinding#ConvertFOAMGrid_3": {
+    "name": "REL-BoSSS.Application.ExternalBinding#ConvertFOAMGrid_3",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:37:05.3691968+01:00"
+  },
+  "REL-XNSE_Solver#ASTestRayleighTaylorInstability": {
+    "name": "REL-XNSE_Solver#ASTestRayleighTaylorInstability",
+    "avgSeconds": 300.7191613,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:37:06.4334145+01:00"
+  },
+  "REL-XNSE_Solver#ScalingStaticDropletTest_p2_Standard_OneStepGaussAndStokes": {
+    "name": "REL-XNSE_Solver#ScalingStaticDropletTest_p2_Standard_OneStepGaussAndStokes",
+    "avgSeconds": 232.6415767,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:37:12.1992792+01:00"
+  },
+  "REL-XNSE_Solver#ScalingStaticDropletTest_p2_FullySymmetric_OneStepGaussAndStokes": {
+    "name": "REL-XNSE_Solver#ScalingStaticDropletTest_p2_FullySymmetric_OneStepGaussAndStokes",
+    "avgSeconds": 299.3612796,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:37:14.8590087+01:00"
+  },
+  "REL-XNSE_Solver#ScalingStaticDropletTest_p2_Standard_Saye": {
+    "name": "REL-XNSE_Solver#ScalingStaticDropletTest_p2_Standard_Saye",
+    "avgSeconds": 283.4399029,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:37:17.5729268+01:00"
+  },
+  "REL-XNSE_Solver#ScalingStaticDropletTest_p2_FullySymmetric_Saye": {
+    "name": "REL-XNSE_Solver#ScalingStaticDropletTest_p2_FullySymmetric_Saye",
+    "avgSeconds": 221.8449598,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:37:20.2789168+01:00"
+  },
+  "REL-XNSE_Solver#ScalingStaticDropletTest_p2_Standard_Algoim": {
+    "name": "REL-XNSE_Solver#ScalingStaticDropletTest_p2_Standard_Algoim",
+    "avgSeconds": 172.9181462,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:37:23.0188215+01:00"
+  },
+  "REL-XNSE_Solver#ScalingStaticDropletTest_p2_FullySymmetric_Algoim": {
+    "name": "REL-XNSE_Solver#ScalingStaticDropletTest_p2_FullySymmetric_Algoim",
+    "avgSeconds": 227.4350128,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:37:25.8117413+01:00"
+  },
+  "REL-CDG_ProjectionTest#AllUp_globalOnly": {
+    "name": "REL-CDG_ProjectionTest#AllUp_globalOnly",
+    "avgSeconds": 614.540055,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:49:21.1672269+01:00"
+  },
+  "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_higherDegree_p4_grd2n4": {
+    "name": "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_higherDegree_p4_grd2n4",
+    "avgSeconds": 751.6239475,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:49:27.7029882+01:00"
+  },
+  "REL-XdgPoisson3#ScalingCircle2D": {
+    "name": "REL-XdgPoisson3#ScalingCircle2D",
+    "avgSeconds": 432.1579909,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:49:30.4060136+01:00"
+  },
+  "REL-DerivativeTest#DerivativeTest_BuildInGrid": {
+    "name": "REL-DerivativeTest#DerivativeTest_BuildInGrid",
+    "avgSeconds": 655.249034,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:49:33.2458375+01:00"
+  },
+  "REL-BoSSS.Application.ExternalBinding#ConvergenceTest": {
+    "name": "REL-BoSSS.Application.ExternalBinding#ConvergenceTest",
+    "avgSeconds": 591.654242,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:49:34.7182099+01:00"
+  },
+  "REL-XNSE_Solver#ViscosityJumpTest": {
+    "name": "REL-XNSE_Solver#ViscosityJumpTest",
+    "avgSeconds": 855.9394658,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:49:36.102558+01:00"
+  },
+  "REL-XNSE_Solver#ScalingStaticDropletTest_p3_Standard_OneStepGaussAndStokes": {
+    "name": "REL-XNSE_Solver#ScalingStaticDropletTest_p3_Standard_OneStepGaussAndStokes",
+    "avgSeconds": 460.8842804,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:49:41.0294004+01:00"
+  },
+  "REL-XNSE_Solver#ScalingStaticDropletTest_p3_FullySymmetric_OneStepGaussAndStokes": {
+    "name": "REL-XNSE_Solver#ScalingStaticDropletTest_p3_FullySymmetric_OneStepGaussAndStokes",
+    "avgSeconds": 1110.9602905,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:49:42.1605891+01:00"
+  },
+  "REL-XNSE_Solver#ScalingStaticDropletTest_p3_Standard_Saye": {
+    "name": "REL-XNSE_Solver#ScalingStaticDropletTest_p3_Standard_Saye",
+    "avgSeconds": 437.2799966,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:49:43.2973791+01:00"
+  },
+  "REL-XNSE_Solver#ScalingStaticDropletTest_p3_FullySymmetric_Saye": {
+    "name": "REL-XNSE_Solver#ScalingStaticDropletTest_p3_FullySymmetric_Saye",
+    "avgSeconds": 583.4222788,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:49:44.4447667+01:00"
+  },
+  "REL-XNSE_Solver#ScalingStaticDropletTest_p3_Standard_Algoim": {
+    "name": "REL-XNSE_Solver#ScalingStaticDropletTest_p3_Standard_Algoim",
+    "avgSeconds": 782.1488417,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:49:45.5648064+01:00"
+  },
+  "REL-XNSE_Solver#ScalingStaticDropletTest_p3_FullySymmetric_Algoim": {
+    "name": "REL-XNSE_Solver#ScalingStaticDropletTest_p3_FullySymmetric_Algoim",
+    "avgSeconds": 581.0864973,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:49:46.7233228+01:00"
+  },
+  "REL-XNSE_Solver#MovingDropletTest_rel_p2_OneStepGaussAndStokes_Standard": {
+    "name": "REL-XNSE_Solver#MovingDropletTest_rel_p2_OneStepGaussAndStokes_Standard",
+    "avgSeconds": 808.7351356,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:49:51.0498801+01:00"
+  },
+  "REL-XNSE_Solver#MovingDropletTest_rel_p3_OneStepGaussAndStokes_Standard": {
+    "name": "REL-XNSE_Solver#MovingDropletTest_rel_p3_OneStepGaussAndStokes_Standard",
+    "avgSeconds": 634.2001742,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:49:52.7048607+01:00"
+  },
+  "REL-XNSE_Solver#MovingDropletTest_rel_p2_Saye_Standard": {
+    "name": "REL-XNSE_Solver#MovingDropletTest_rel_p2_Saye_Standard",
+    "avgSeconds": 680.9500157,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:49:54.2352106+01:00"
+  },
+  "REL-XNSE_Solver#MovingDropletTest_rel_p3_Saye_Standard": {
+    "name": "REL-XNSE_Solver#MovingDropletTest_rel_p3_Saye_Standard",
+    "avgSeconds": 507.3108105,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:49:55.8436993+01:00"
+  },
+  "REL-XNSE_Solver#MovingDropletTest_rel_p2_OneStepGaussAndStokes_FullySymmetric": {
+    "name": "REL-XNSE_Solver#MovingDropletTest_rel_p2_OneStepGaussAndStokes_FullySymmetric",
+    "avgSeconds": 747.7237045,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:49:57.3352884+01:00"
+  },
+  "REL-XNSE_Solver#MovingDropletTest_rel_p3_OneStepGaussAndStokes_FullySymmetric": {
+    "name": "REL-XNSE_Solver#MovingDropletTest_rel_p3_OneStepGaussAndStokes_FullySymmetric",
+    "avgSeconds": 678.3249421,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:49:59.0232834+01:00"
+  },
+  "REL-XNSE_Solver#MovingDropletTest_rel_p2_Saye_FullySymmetric": {
+    "name": "REL-XNSE_Solver#MovingDropletTest_rel_p2_Saye_FullySymmetric",
+    "avgSeconds": 624.6994453,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:50:00.5153194+01:00"
+  },
+  "REL-XNSE_Solver#MovingDropletTest_rel_p3_Saye_FullySymmetric": {
+    "name": "REL-XNSE_Solver#MovingDropletTest_rel_p3_Saye_FullySymmetric",
+    "avgSeconds": 504.4878689,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:50:02.1180285+01:00"
+  },
+  "REL-XNSE_Solver#MovingDropletTest_rel_p2_Algoim_Standard": {
+    "name": "REL-XNSE_Solver#MovingDropletTest_rel_p2_Algoim_Standard",
+    "avgSeconds": 681.9874737,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:50:03.58655+01:00"
+  },
+  "REL-XNSE_Solver#MovingDropletTest_rel_p3_Algoim_Standard": {
+    "name": "REL-XNSE_Solver#MovingDropletTest_rel_p3_Algoim_Standard",
+    "avgSeconds": 468.2657174,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:50:05.2026847+01:00"
+  },
+  "REL-XNSE_Solver#MovingDropletTest_rel_p2_Algoim_FullySymmetric": {
+    "name": "REL-XNSE_Solver#MovingDropletTest_rel_p2_Algoim_FullySymmetric",
+    "avgSeconds": 626.9906071,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:50:06.6903143+01:00"
+  },
+  "REL-XNSE_Solver#MovingDropletTest_rel_p3_Algoim_FullySymmetric": {
+    "name": "REL-XNSE_Solver#MovingDropletTest_rel_p3_Algoim_FullySymmetric",
+    "avgSeconds": 477.4345867,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:50:08.422999+01:00"
+  },
+  "REL-XNSE_Solver#BasicThreePhaseTest": {
+    "name": "REL-XNSE_Solver#BasicThreePhaseTest",
+    "avgSeconds": 618.8853606,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:50:09.973504+01:00"
+  },
+  "REL-XNSE_Solver#TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux_Soff_p2": {
+    "name": "REL-XNSE_Solver#TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux_Soff_p2",
+    "avgSeconds": 337.9420268,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:50:14.5150918+01:00"
+  },
+  "REL-XNSE_Solver#TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux_Son_p2": {
+    "name": "REL-XNSE_Solver#TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux_Son_p2",
+    "avgSeconds": 323.7314483,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:50:15.6523955+01:00"
+  },
+  "REL-XNSE_Solver#TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Soff_p2": {
+    "name": "REL-XNSE_Solver#TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Soff_p2",
+    "avgSeconds": 335.849727,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:50:19.9654812+01:00"
+  },
+  "REL-XNSE_Solver#TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Son_p2": {
+    "name": "REL-XNSE_Solver#TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Son_p2",
+    "avgSeconds": 331.4280144,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:50:24.2509569+01:00"
+  },
+  "REL-XNSE_Solver#IBMChannelTest": {
+    "name": "REL-XNSE_Solver#IBMChannelTest",
+    "avgSeconds": 345.6428633,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:50:25.3902008+01:00"
+  },
+  "REL-XNSE_Solver#IBMChannelSolverTest": {
+    "name": "REL-XNSE_Solver#IBMChannelSolverTest",
+    "avgSeconds": 151.1229379,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:50:26.8911381+01:00"
+  },
+  "REL-XNSE_Solver#IBMChannelSolverTest_Transient": {
+    "name": "REL-XNSE_Solver#IBMChannelSolverTest_Transient",
+    "avgSeconds": 161.3529621,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:50:28.1249148+01:00"
+  },
+  "REL-XNSE_Solver#PolynomialTestForConvectionTest": {
+    "name": "REL-XNSE_Solver#PolynomialTestForConvectionTest",
+    "avgSeconds": 279.7744828,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:50:49.845881+01:00"
+  },
+  "REL-XNSE_Solver#TestStaticDroplet2D_ExactSolution": {
+    "name": "REL-XNSE_Solver#TestStaticDroplet2D_ExactSolution",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:51:05.3143149+01:00"
+  },
+  "REL-MPITest#Test": {
+    "name": "REL-MPITest#Test",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:51:06.4459931+01:00"
+  },
+  "REL-CutCellQuadratureScaling#TwoLevelSets_2D": {
+    "name": "REL-CutCellQuadratureScaling#TwoLevelSets_2D",
+    "avgSeconds": 131.1383165,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:51:20.3289464+01:00"
+  },
+  "REL-CutCellQuadratureScaling#TwoLevelSets_2D_SayeVsAlgoim": {
+    "name": "REL-CutCellQuadratureScaling#TwoLevelSets_2D_SayeVsAlgoim",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:51:23.3599324+01:00"
+  },
+  "REL-TraceDGtest#CartesianWithLevelSetAMR": {
+    "name": "REL-TraceDGtest#CartesianWithLevelSetAMR",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:51:24.7523372+01:00"
+  },
+  "REL-XNSERO_Solver#TestRigidLevelSetProjection": {
+    "name": "REL-XNSERO_Solver#TestRigidLevelSetProjection",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:51:29.0187472+01:00"
+  },
+  "REL-XNSERO_Solver#TestEllipseProperties": {
+    "name": "REL-XNSERO_Solver#TestEllipseProperties",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:51:30.1454628+01:00"
+  },
+  "REL-XNSERO_Solver#TestDiskProperties": {
+    "name": "REL-XNSERO_Solver#TestDiskProperties",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:51:31.2331017+01:00"
+  },
+  "REL-XNSERO_Solver#TestRectangleProperties": {
+    "name": "REL-XNSERO_Solver#TestRectangleProperties",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:51:32.3598135+01:00"
+  },
+  "REL-XNSERO_Solver#TestParticleContainsPoint2D": {
+    "name": "REL-XNSERO_Solver#TestParticleContainsPoint2D",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:51:33.5006358+01:00"
+  },
+  "REL-XNSERO_Solver#TestSupportPoint": {
+    "name": "REL-XNSERO_Solver#TestSupportPoint",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:51:34.6068472+01:00"
+  },
+  "REL-XNSERO_Solver#TestDistance": {
+    "name": "REL-XNSERO_Solver#TestDistance",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:51:37.2755815+01:00"
+  },
+  "REL-XNSERO_Solver#TestOverlappingParticles": {
+    "name": "REL-XNSERO_Solver#TestOverlappingParticles",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:51:38.3776147+01:00"
+  },
+  "REL-XNSERO_Solver#TestDistanceFromWall": {
+    "name": "REL-XNSERO_Solver#TestDistanceFromWall",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:51:39.4467405+01:00"
+  },
+  "REL-XNSERO_Solver#TestParticleInShearFlow": {
+    "name": "REL-XNSERO_Solver#TestParticleInShearFlow",
+    "avgSeconds": 171.2511571,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:51:40.514507+01:00"
+  },
+  "REL-XNSFE_Solver#XNSFEConvergenceTest": {
+    "name": "REL-XNSFE_Solver#XNSFEConvergenceTest",
+    "avgSeconds": 68.0312798,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:51:46.4857287+01:00"
+  },
+  "REL-XNSFE_Solver#HeatConductivityTest": {
+    "name": "REL-XNSFE_Solver#HeatConductivityTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:51:47.6131559+01:00"
+  },
+  "REL-XNSFE_Solver#InterfaceSlipTestNonLin": {
+    "name": "REL-XNSFE_Solver#InterfaceSlipTestNonLin",
+    "avgSeconds": 257.2862702,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:51:53.6817924+01:00"
+  },
+  "REL-XdgTimesteppingTest#TestConvection_MovingInterface_SingleInitLowOrder_BDF_dt02": {
+    "name": "REL-XdgTimesteppingTest#TestConvection_MovingInterface_SingleInitLowOrder_BDF_dt02",
+    "avgSeconds": 92.5680123,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:51:56.4268492+01:00"
+  },
+  "REL-XdgTimesteppingTest#TestConvection_MovingInterface_SingleInitLowOrder_BDF_dt023": {
+    "name": "REL-XdgTimesteppingTest#TestConvection_MovingInterface_SingleInitLowOrder_BDF_dt023",
+    "avgSeconds": 96.590283,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:51:59.4226768+01:00"
+  },
+  "REL-XdgTimesteppingTest#TestConvection_MovingInterface_MultiinitHighOrder": {
+    "name": "REL-XdgTimesteppingTest#TestConvection_MovingInterface_MultiinitHighOrder",
+    "avgSeconds": 143.5768729,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:02.1277798+01:00"
+  },
+  "REL-XdgTimesteppingTest#TestConvection_Splitting_LowOrder_BDF_t02": {
+    "name": "REL-XdgTimesteppingTest#TestConvection_Splitting_LowOrder_BDF_t02",
+    "avgSeconds": 97.0857957,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:03.3469439+01:00"
+  },
+  "REL-XdgTimesteppingTest#TestConvection_Splitting_LowOrder_RK_t02": {
+    "name": "REL-XdgTimesteppingTest#TestConvection_Splitting_LowOrder_RK_t02",
+    "avgSeconds": 178.9568573,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:04.4809312+01:00"
+  },
+  "REL-XdgTimesteppingTest#TestConvection_Splitting_LowOrder_BDF_t023": {
+    "name": "REL-XdgTimesteppingTest#TestConvection_Splitting_LowOrder_BDF_t023",
+    "avgSeconds": 98.2226393,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:05.6025656+01:00"
+  },
+  "REL-XdgTimesteppingTest#TestConvection_Splitting_LowOrder_RK_t023": {
+    "name": "REL-XdgTimesteppingTest#TestConvection_Splitting_LowOrder_RK_t023",
+    "avgSeconds": 188.7777116,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:06.7510324+01:00"
+  },
+  "REL-XdgTimesteppingTest#TestBurgers_HighOrder": {
+    "name": "REL-XdgTimesteppingTest#TestBurgers_HighOrder",
+    "avgSeconds": 126.3909378,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:07.8933724+01:00"
+  },
+  "REL-XdgTimesteppingTest#TestTimestepperReset": {
+    "name": "REL-XdgTimesteppingTest#TestTimestepperReset",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:09.061904+01:00"
+  },
+  "REL-CNS#RinglebIdealGasTest": {
+    "name": "REL-CNS#RinglebIdealGasTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:10.1552586+01:00"
+  },
+  "REL-CNS#RinglebStiffenedTest": {
+    "name": "REL-CNS#RinglebStiffenedTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:11.3161776+01:00"
+  },
+  "REL-CNS#SplittingIBMPiston0thOrderNoAgglomeration": {
+    "name": "REL-CNS#SplittingIBMPiston0thOrderNoAgglomeration",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:12.4144168+01:00"
+  },
+  "REL-CNS#SplittingIBMPiston1stOrderNoAgglomeration": {
+    "name": "REL-CNS#SplittingIBMPiston1stOrderNoAgglomeration",
+    "avgSeconds": 76.0938674,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:13.5589798+01:00"
+  },
+  "REL-CNS#SplittingIBMPiston0thOrderWithAgglomeration": {
+    "name": "REL-CNS#SplittingIBMPiston0thOrderWithAgglomeration",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:14.7278367+01:00"
+  },
+  "REL-CNS#SplittingIBMPiston1stOrderWithAgglomeration": {
+    "name": "REL-CNS#SplittingIBMPiston1stOrderWithAgglomeration",
+    "avgSeconds": 80.0738082,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:15.8923608+01:00"
+  },
+  "REL-CNS#MovingMeshIBMPiston0thOrderNoAgglomeration": {
+    "name": "REL-CNS#MovingMeshIBMPiston0thOrderNoAgglomeration",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:17.0354308+01:00"
+  },
+  "REL-CNS#MovingMeshIBMPiston1stOrderNoAgglomeration": {
+    "name": "REL-CNS#MovingMeshIBMPiston1stOrderNoAgglomeration",
+    "avgSeconds": 130.4797059,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:18.1352026+01:00"
+  },
+  "REL-CNS#MovingMeshIBMPiston0thOrderWithAgglomeration": {
+    "name": "REL-CNS#MovingMeshIBMPiston0thOrderWithAgglomeration",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:19.2514428+01:00"
+  },
+  "REL-CNS#MovingMeshIBMPiston1stOrderWithAgglomeration": {
+    "name": "REL-CNS#MovingMeshIBMPiston1stOrderWithAgglomeration",
+    "avgSeconds": 168.1387938,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:20.3732935+01:00"
+  },
+  "REL-CNS#IsentropicVortexIdealGasRusanovTest": {
+    "name": "REL-CNS#IsentropicVortexIdealGasRusanovTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:21.6949463+01:00"
+  },
+  "REL-CNS#IsentropicVortexIdealGasHLLCTest": {
+    "name": "REL-CNS#IsentropicVortexIdealGasHLLCTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:22.7879776+01:00"
+  },
+  "REL-CNS#IsentropicVortexIdealGasOptimizedHLLCTest": {
+    "name": "REL-CNS#IsentropicVortexIdealGasOptimizedHLLCTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:23.8974781+01:00"
+  },
+  "REL-CNS#IsentropicVortexStiffenedlGasRusanovTest": {
+    "name": "REL-CNS#IsentropicVortexStiffenedlGasRusanovTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:25.001565+01:00"
+  },
+  "REL-CNS#IsentropicVortexCovolumeGasRusanovTest": {
+    "name": "REL-CNS#IsentropicVortexCovolumeGasRusanovTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:26.0929832+01:00"
+  },
+  "REL-CNS#IBMALTSTest1_4_pos1": {
+    "name": "REL-CNS#IBMALTSTest1_4_pos1",
+    "avgSeconds": 113.9075921,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:27.2078343+01:00"
+  },
+  "REL-CNS#IBMALTSTest1_4_pos2": {
+    "name": "REL-CNS#IBMALTSTest1_4_pos2",
+    "avgSeconds": 110.4134246,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:28.3520733+01:00"
+  },
+  "REL-CNS#IBMALTSTest1_4_pos3": {
+    "name": "REL-CNS#IBMALTSTest1_4_pos3",
+    "avgSeconds": 88.470208,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:29.4751139+01:00"
+  },
+  "REL-CNS#IBMALTSTest2_4_pos1": {
+    "name": "REL-CNS#IBMALTSTest2_4_pos1",
+    "avgSeconds": 114.6583012,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:30.6185388+01:00"
+  },
+  "REL-CNS#IBMALTSTest2_4_pos2": {
+    "name": "REL-CNS#IBMALTSTest2_4_pos2",
+    "avgSeconds": 110.3311616,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:31.7586713+01:00"
+  },
+  "REL-CNS#IBMALTSTest2_4_pos3": {
+    "name": "REL-CNS#IBMALTSTest2_4_pos3",
+    "avgSeconds": 77.7656254,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:32.9129372+01:00"
+  },
+  "REL-CNS#IBMALTSTest3_4_pos1": {
+    "name": "REL-CNS#IBMALTSTest3_4_pos1",
+    "avgSeconds": 115.1475167,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:34.0209771+01:00"
+  },
+  "REL-CNS#IBMALTSTest3_4_pos2": {
+    "name": "REL-CNS#IBMALTSTest3_4_pos2",
+    "avgSeconds": 128.4067128,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:35.1434066+01:00"
+  },
+  "REL-CNS#IBMALTSTest3_4_pos3": {
+    "name": "REL-CNS#IBMALTSTest3_4_pos3",
+    "avgSeconds": 90.9307198,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:36.3748953+01:00"
+  },
+  "REL-CNS#IBM_AV_LTS_RotatedShockTubeTest": {
+    "name": "REL-CNS#IBM_AV_LTS_RotatedShockTubeTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:37.5601607+01:00"
+  },
+  "REL-CNS#IBMAVTest_Agglomeration": {
+    "name": "REL-CNS#IBMAVTest_Agglomeration",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:40.297392+01:00"
+  },
+  "REL-CNS#IBMAVTimeStepperTest_RK1": {
+    "name": "REL-CNS#IBMAVTimeStepperTest_RK1",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:41.5716764+01:00"
+  },
+  "REL-CNS#IBMAVTimeStepperTest_AB1": {
+    "name": "REL-CNS#IBMAVTimeStepperTest_AB1",
+    "avgSeconds": 81.0989612,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:42.7046837+01:00"
+  },
+  "REL-CNS#IBMAVTimeStepperTest_ALTS1": {
+    "name": "REL-CNS#IBMAVTimeStepperTest_ALTS1",
+    "avgSeconds": 81.3316098,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:43.8519443+01:00"
+  },
+  "REL-CNS#IBMAVTimeStepperTest_AB2": {
+    "name": "REL-CNS#IBMAVTimeStepperTest_AB2",
+    "avgSeconds": 70.0138184,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:44.9825365+01:00"
+  },
+  "REL-CNS#IBMAVTimeStepperTest_ALTS2": {
+    "name": "REL-CNS#IBMAVTimeStepperTest_ALTS2",
+    "avgSeconds": 70.5662215,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:46.1331651+01:00"
+  },
+  "REL-CNS#IBMAVTimeStepperTest_AB3": {
+    "name": "REL-CNS#IBMAVTimeStepperTest_AB3",
+    "avgSeconds": 72.3288569,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:47.2275431+01:00"
+  },
+  "REL-CNS#IBMAVTimeStepperTest_ALTS3": {
+    "name": "REL-CNS#IBMAVTimeStepperTest_ALTS3",
+    "avgSeconds": 67.1715245,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:48.3785856+01:00"
+  },
+  "REL-CNS#IBMCylinder0th": {
+    "name": "REL-CNS#IBMCylinder0th",
+    "avgSeconds": 75.3964403,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:49.5315725+01:00"
+  },
+  "REL-CNS#IBMCylinder1st": {
+    "name": "REL-CNS#IBMCylinder1st",
+    "avgSeconds": 81.4440743,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:50.8691721+01:00"
+  },
+  "REL-CNS#IBMCylinder2nd": {
+    "name": "REL-CNS#IBMCylinder2nd",
+    "avgSeconds": 88.0593563,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:52.1807251+01:00"
+  },
+  "REL-CNS#IBMVortexClassicAgglomerationTest": {
+    "name": "REL-CNS#IBMVortexClassicAgglomerationTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:56.5655388+01:00"
+  },
+  "REL-CNS#IBMVortexClassicHLLCAgglomerationTest": {
+    "name": "REL-CNS#IBMVortexClassicHLLCAgglomerationTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:57.6871947+01:00"
+  },
+  "REL-CNS#IBMVortexClassicOptimizedHLLCAgglomerationTest": {
+    "name": "REL-CNS#IBMVortexClassicOptimizedHLLCAgglomerationTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:58.797435+01:00"
+  },
+  "REL-CNS#IBMVortexLocalTimeSteppingTest": {
+    "name": "REL-CNS#IBMVortexLocalTimeSteppingTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:52:59.8950833+01:00"
+  },
+  "REL-CNS#IBMVortexCutNextToCutNoAgglomerationTest": {
+    "name": "REL-CNS#IBMVortexCutNextToCutNoAgglomerationTest",
+    "avgSeconds": 64.9080604,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:00.9950319+01:00"
+  },
+  "REL-CNS#IBMVortexCutNextToCutAgglomerationTest": {
+    "name": "REL-CNS#IBMVortexCutNextToCutAgglomerationTest",
+    "avgSeconds": 66.9268123,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:02.121743+01:00"
+  },
+  "REL-CNS#SIPGconsistencyTest": {
+    "name": "REL-CNS#SIPGconsistencyTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:03.2626091+01:00"
+  },
+  "REL-CNS#OptimizedSIPGconsistencyTest": {
+    "name": "REL-CNS#OptimizedSIPGconsistencyTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:04.3953902+01:00"
+  },
+  "REL-CNS#Toro1RusanovTest": {
+    "name": "REL-CNS#Toro1RusanovTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:05.5250125+01:00"
+  },
+  "REL-CNS#Toro1AllButRusanovTest": {
+    "name": "REL-CNS#Toro1AllButRusanovTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:06.7006963+01:00"
+  },
+  "REL-CNS#Toro2RusanovTest": {
+    "name": "REL-CNS#Toro2RusanovTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:07.8169759+01:00"
+  },
+  "REL-CNS#Toro2AllButRusanovTest": {
+    "name": "REL-CNS#Toro2AllButRusanovTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:08.9402656+01:00"
+  },
+  "REL-CNS#Toro3RusanovTest": {
+    "name": "REL-CNS#Toro3RusanovTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:10.0475601+01:00"
+  },
+  "REL-CNS#Toro3AllButRusanovTest": {
+    "name": "REL-CNS#Toro3AllButRusanovTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:11.2012177+01:00"
+  },
+  "REL-CNS#Toro4RusanovTest": {
+    "name": "REL-CNS#Toro4RusanovTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:12.329282+01:00"
+  },
+  "REL-CNS#Toro5RusanovTest": {
+    "name": "REL-CNS#Toro5RusanovTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:15.0177363+01:00"
+  },
+  "REL-CNS#Toro5AllButRusanovTest": {
+    "name": "REL-CNS#Toro5AllButRusanovTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:16.1536937+01:00"
+  },
+  "REL-CNS#ToroTest1_RK1": {
+    "name": "REL-CNS#ToroTest1_RK1",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:26.793708+01:00"
+  },
+  "REL-CNS#ToroTest1_ALTS1_3": {
+    "name": "REL-CNS#ToroTest1_ALTS1_3",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:27.9247402+01:00"
+  },
+  "REL-CNS#ToroTest1_ALTS2_3": {
+    "name": "REL-CNS#ToroTest1_ALTS2_3",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:29.2346985+01:00"
+  },
+  "REL-CNS#ToroTest1_ALTS3_3": {
+    "name": "REL-CNS#ToroTest1_ALTS3_3",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:30.4227633+01:00"
+  },
+  "REL-CNS#ToroTest1_ALTS3_4": {
+    "name": "REL-CNS#ToroTest1_ALTS3_4",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:31.5784775+01:00"
+  },
+  "REL-NSE_SIMPLE#IncompressibleSteadyPoiseuilleFlowTest": {
+    "name": "REL-NSE_SIMPLE#IncompressibleSteadyPoiseuilleFlowTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:32.7002372+01:00"
+  },
+  "REL-NSE_SIMPLE#IncompressibleUnsteadyTaylorVortexTest": {
+    "name": "REL-NSE_SIMPLE#IncompressibleUnsteadyTaylorVortexTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:33.8582542+01:00"
+  },
+  "REL-NSE_SIMPLE#MultiphaseUnsteadyWaveTest": {
+    "name": "REL-NSE_SIMPLE#MultiphaseUnsteadyWaveTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:34.9536647+01:00"
+  },
+  "REL-NSE_SIMPLE#LowMachSteadyCouetteWithTemperatureGradientTest": {
+    "name": "REL-NSE_SIMPLE#LowMachSteadyCouetteWithTemperatureGradientTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:36.0795894+01:00"
+  },
+  "REL-QuadratureAndProjectionTest#TestNominalOrder": {
+    "name": "REL-QuadratureAndProjectionTest#TestNominalOrder",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:40.3066287+01:00"
+  },
+  "REL-QuadratureAndProjectionTest#TestSumOfWeights": {
+    "name": "REL-QuadratureAndProjectionTest#TestSumOfWeights",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:41.4113804+01:00"
+  },
+  "REL-QuadratureAndProjectionTest#TestMassMatrix": {
+    "name": "REL-QuadratureAndProjectionTest#TestMassMatrix",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:42.4985585+01:00"
+  },
+  "REL-QuadratureAndProjectionTest#TestProjectionError": {
+    "name": "REL-QuadratureAndProjectionTest#TestProjectionError",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:43.6113271+01:00"
+  },
+  "REL-QuadratureAndProjectionTest#TestNominalOrder_2": {
+    "name": "REL-QuadratureAndProjectionTest#TestNominalOrder_2",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:44.714174+01:00"
+  },
+  "REL-QuadratureAndProjectionTest#TestSumOfWeights_2": {
+    "name": "REL-QuadratureAndProjectionTest#TestSumOfWeights_2",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:45.8322465+01:00"
+  },
+  "REL-QuadratureAndProjectionTest#TestMassMatrix_2": {
+    "name": "REL-QuadratureAndProjectionTest#TestMassMatrix_2",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:46.9483545+01:00"
+  },
+  "REL-QuadratureAndProjectionTest#TestProjectionError_2": {
+    "name": "REL-QuadratureAndProjectionTest#TestProjectionError_2",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:48.047084+01:00"
+  },
+  "REL-QuadratureAndProjectionTest#TestNominalOrder_3": {
+    "name": "REL-QuadratureAndProjectionTest#TestNominalOrder_3",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:49.1381625+01:00"
+  },
+  "REL-QuadratureAndProjectionTest#TestSumOfWeights_3": {
+    "name": "REL-QuadratureAndProjectionTest#TestSumOfWeights_3",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:50.2055269+01:00"
+  },
+  "REL-QuadratureAndProjectionTest#TestMassMatrix_3": {
+    "name": "REL-QuadratureAndProjectionTest#TestMassMatrix_3",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:51.3497632+01:00"
+  },
+  "REL-QuadratureAndProjectionTest#TestProjectionError_3": {
+    "name": "REL-QuadratureAndProjectionTest#TestProjectionError_3",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:52.4738387+01:00"
+  },
+  "REL-QuadratureAndProjectionTest#TestNominalOrder_4": {
+    "name": "REL-QuadratureAndProjectionTest#TestNominalOrder_4",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:53.5783741+01:00"
+  },
+  "REL-QuadratureAndProjectionTest#TestSumOfWeights_4": {
+    "name": "REL-QuadratureAndProjectionTest#TestSumOfWeights_4",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:54.6989575+01:00"
+  },
+  "REL-QuadratureAndProjectionTest#TestMassMatrix_4": {
+    "name": "REL-QuadratureAndProjectionTest#TestMassMatrix_4",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:55.8653795+01:00"
+  },
+  "REL-QuadratureAndProjectionTest#TestProjectionError_4": {
+    "name": "REL-QuadratureAndProjectionTest#TestProjectionError_4",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:57.0190797+01:00"
+  },
+  "REL-QuadratureAndProjectionTest#TestNominalOrder_5": {
+    "name": "REL-QuadratureAndProjectionTest#TestNominalOrder_5",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:58.1590934+01:00"
+  },
+  "REL-QuadratureAndProjectionTest#TestSumOfWeights_5": {
+    "name": "REL-QuadratureAndProjectionTest#TestSumOfWeights_5",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:59.2902953+01:00"
+  },
+  "REL-QuadratureAndProjectionTest#TestMassMatrix_5": {
+    "name": "REL-QuadratureAndProjectionTest#TestMassMatrix_5",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:54:00.3744686+01:00"
+  },
+  "REL-QuadratureAndProjectionTest#TestProjectionError_5": {
+    "name": "REL-QuadratureAndProjectionTest#TestProjectionError_5",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:54:01.4549916+01:00"
+  },
+  "REL-LTSTests#LTS2order_dtCoarse": {
+    "name": "REL-LTSTests#LTS2order_dtCoarse",
+    "avgSeconds": 86.5218014,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:54:05.7321952+01:00"
+  },
+  "REL-LTSTests#ALTS2order_dtCoarse": {
+    "name": "REL-LTSTests#ALTS2order_dtCoarse",
+    "avgSeconds": 62.9925763,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:54:11.5550379+01:00"
+  },
+  "REL-LTSTests#Comparison_ALTS_to_AB_order2_subgrid1": {
+    "name": "REL-LTSTests#Comparison_ALTS_to_AB_order2_subgrid1",
+    "avgSeconds": 61.0280956,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:54:20.634563+01:00"
+  },
+  "REL-XNSEC#IncompressibleSteadyPoiseuilleFlowTest": {
+    "name": "REL-XNSEC#IncompressibleSteadyPoiseuilleFlowTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:54:21.7595055+01:00"
+  },
+  "REL-XNSEC#IncompressibleSteadyPoiseuilleFlowTest_WithImmersedBoundary": {
+    "name": "REL-XNSEC#IncompressibleSteadyPoiseuilleFlowTest_WithImmersedBoundary",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:54:22.9012107+01:00"
+  },
+  "REL-XNSEC#ManufacturedSolutionLowMachCombustionTest": {
+    "name": "REL-XNSEC#ManufacturedSolutionLowMachCombustionTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:54:24.9381879+01:00"
+  },
+  "REL-XNSEC#LowMachSteadyCouetteWithTemperatureGradientTest": {
+    "name": "REL-XNSEC#LowMachSteadyCouetteWithTemperatureGradientTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:54:29.2004881+01:00"
+  },
+  "REL-XNSEC#CavityNaturalConvection": {
+    "name": "REL-XNSEC#CavityNaturalConvection",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:54:30.3338246+01:00"
+  },
+  "REL-XNSEC#PolynomialTestForConvectionTest": {
+    "name": "REL-XNSEC#PolynomialTestForConvectionTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:54:45.4679294+01:00"
+  },
+  "REL-XNSEC#HeatConductivityTest": {
+    "name": "REL-XNSEC#HeatConductivityTest",
+    "avgSeconds": 84.5059533,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:54:46.6087989+01:00"
+  },
+  "REL-ALTSTests#ALTSDynClust_order1_subgrids3": {
+    "name": "REL-ALTSTests#ALTSDynClust_order1_subgrids3",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:54:50.894149+01:00"
+  },
+  "REL-ALTSTests#ALTSDynClust_order2_subgrids3": {
+    "name": "REL-ALTSTests#ALTSDynClust_order2_subgrids3",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:54:52.0135679+01:00"
+  },
+  "REL-ALTSTests#ALTSDynClust_order3_subgrids3": {
+    "name": "REL-ALTSTests#ALTSDynClust_order3_subgrids3",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:54:53.1376161+01:00"
+  },
+  "REL-ZwoLevelSetSolver#ThreePhaseContactLine_TensionBalance": {
+    "name": "REL-ZwoLevelSetSolver#ThreePhaseContactLine_TensionBalance",
+    "avgSeconds": 85.1689951,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:54:54.2880695+01:00"
+  },
+  "REL-HangingNodesTests#Test1Phase": {
+    "name": "REL-HangingNodesTests#Test1Phase",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:55:12.8822586+01:00"
+  },
+  "REL-HangingNodesTests#Test2Phase": {
+    "name": "REL-HangingNodesTests#Test2Phase",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:55:14.0574143+01:00"
+  },
+  "REL-HangingNodesTests#Test3Phase": {
+    "name": "REL-HangingNodesTests#Test3Phase",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:55:15.1877804+01:00"
+  },
+  "REL-IntersectingLevelSetTest#ParabolaTestSaye": {
+    "name": "REL-IntersectingLevelSetTest#ParabolaTestSaye",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:55:19.4892501+01:00"
+  },
+  "REL-IntersectingLevelSetTest#ParabolaTestAlgoim": {
+    "name": "REL-IntersectingLevelSetTest#ParabolaTestAlgoim",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:55:20.6277854+01:00"
+  },
+  "REL-IntersectingLevelSetTest#TwoStraightTestSaye": {
+    "name": "REL-IntersectingLevelSetTest#TwoStraightTestSaye",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:55:21.7142631+01:00"
+  },
+  "REL-IntersectingLevelSetTest#TwoStraightTestAlgoim": {
+    "name": "REL-IntersectingLevelSetTest#TwoStraightTestAlgoim",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:55:22.8148253+01:00"
+  },
+  "REL-IntersectingLevelSetTest#TransformTestSaye": {
+    "name": "REL-IntersectingLevelSetTest#TransformTestSaye",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:55:23.920277+01:00"
+  },
+  "REL-IntersectingLevelSetTest#TransformTestAlgoim": {
+    "name": "REL-IntersectingLevelSetTest#TransformTestAlgoim",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:55:25.0137672+01:00"
+  },
+  "REL-IntersectingLevelSetTest#Convergence2DTestSaye": {
+    "name": "REL-IntersectingLevelSetTest#Convergence2DTestSaye",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:55:26.1127145+01:00"
+  },
+  "REL-IntersectingLevelSetTest#Rotation3DTestSaye": {
+    "name": "REL-IntersectingLevelSetTest#Rotation3DTestSaye",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:55:27.2200534+01:00"
+  },
+  "REL-IntersectingLevelSetTest#Translation3DTestAlgoim": {
+    "name": "REL-IntersectingLevelSetTest#Translation3DTestAlgoim",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:55:28.3100151+01:00"
+  },
+  "REL-IntersectingLevelSetTest#Transform3DTestSaye": {
+    "name": "REL-IntersectingLevelSetTest#Transform3DTestSaye",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:55:29.42721+01:00"
+  },
+  "REL-StokesHelical_Ak#PseudoSteady_HP_Re_10_Stokes_with_R0fix": {
+    "name": "REL-StokesHelical_Ak#PseudoSteady_HP_Re_10_Stokes_with_R0fix",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:55:47.9180511+01:00"
+  },
+  "REL-StokesHelical_Ak#PseudoSteady_HP_Re_10_Navier_Stokes_with_R0fix": {
+    "name": "REL-StokesHelical_Ak#PseudoSteady_HP_Re_10_Navier_Stokes_with_R0fix",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:55:49.003694+01:00"
+  },
+  "REL-StokesHelical_Ak#PseudoSteady_CF_Re_10_Stokes_with_R0fix": {
+    "name": "REL-StokesHelical_Ak#PseudoSteady_CF_Re_10_Stokes_with_R0fix",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:55:53.2502798+01:00"
+  },
+  "REL-StokesHelical_Ak#PseudoSteady_CF_Re_10_Navier_Stokes_with_R0fix": {
+    "name": "REL-StokesHelical_Ak#PseudoSteady_CF_Re_10_Navier_Stokes_with_R0fix",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:55:54.3666091+01:00"
+  },
+  "REL-CDG_Projection_MPI#ProjectionTest_Patchwise": {
+    "name": "REL-CDG_Projection_MPI#ProjectionTest_Patchwise",
+    "avgSeconds": 1768.6580818,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:01:00.0172396+01:00"
+  },
+  "REL-XNSE_Solver#ScalingViscosityJumpTest_p2": {
+    "name": "REL-XNSE_Solver#ScalingViscosityJumpTest_p2",
+    "avgSeconds": 1343.1982354,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:01:01.0936472+01:00"
+  },
+  "REL-XNSE_Solver#BcTest_PressureOutletTest": {
+    "name": "REL-XNSE_Solver#BcTest_PressureOutletTest",
+    "avgSeconds": 1490.3615408,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:01:05.4008338+01:00"
+  },
+  "REL-XNSE_Solver#TaylorCouetteConvergenceTest_IBM_SchurComplOn": {
+    "name": "REL-XNSE_Solver#TaylorCouetteConvergenceTest_IBM_SchurComplOn",
+    "avgSeconds": 848.0041145,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:01:07.1868224+01:00"
+  },
+  "REL-XNSE_Solver#TaylorCouetteConvergenceTest_IBM_SchurComplOff": {
+    "name": "REL-XNSE_Solver#TaylorCouetteConvergenceTest_IBM_SchurComplOff",
+    "avgSeconds": 873.7342143,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:01:08.6485632+01:00"
+  },
+  "REL-XNSE_Solver#TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux_Soff_p3": {
+    "name": "REL-XNSE_Solver#TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux_Soff_p3",
+    "avgSeconds": 665.2053083,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:01:09.7767737+01:00"
+  },
+  "REL-XNSE_Solver#TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux_Son_p3": {
+    "name": "REL-XNSE_Solver#TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux_Son_p3",
+    "avgSeconds": 700.8821679,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:01:10.9080092+01:00"
+  },
+  "REL-XNSE_Solver#TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Son_p3": {
+    "name": "REL-XNSE_Solver#TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Son_p3",
+    "avgSeconds": 666.2359292,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:01:12.0444673+01:00"
+  },
+  "REL-XNSE_Solver#TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Soff_p3": {
+    "name": "REL-XNSE_Solver#TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Soff_p3",
+    "avgSeconds": 644.2094252,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:01:13.1722574+01:00"
+  },
+  "REL-XNSE_Solver#TranspiratingChannelTest": {
+    "name": "REL-XNSE_Solver#TranspiratingChannelTest",
+    "avgSeconds": 416.3464203,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:01:32.7436935+01:00"
+  },
+  "REL-XNSE_Solver#SphericalHarmonicsPostprocessingTest": {
+    "name": "REL-XNSE_Solver#SphericalHarmonicsPostprocessingTest",
+    "avgSeconds": 952.4963152,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:01:33.9896135+01:00"
+  },
+  "REL-XNSE_Solver#ScalingRotCubeTests2D_p1": {
+    "name": "REL-XNSE_Solver#ScalingRotCubeTests2D_p1",
+    "avgSeconds": 754.6571344,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:01:36.6948523+01:00"
+  },
+  "REL-XNSE_Solver#InterfaceSlipTest": {
+    "name": "REL-XNSE_Solver#InterfaceSlipTest",
+    "avgSeconds": 534.3089279,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:01:41.0315172+01:00"
+  },
+  "REL-XNSE_Solver#RotatingCubeTest": {
+    "name": "REL-XNSE_Solver#RotatingCubeTest",
+    "avgSeconds": 742.6581473,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:01:42.4079613+01:00"
+  },
+  "REL-XNSE_Solver#RollingSaveTest": {
+    "name": "REL-XNSE_Solver#RollingSaveTest",
+    "avgSeconds": 442.7491592,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:01:45.0837738+01:00"
+  },
+  "REL-CutCellQuadratureScaling#OneLevelSet_2D": {
+    "name": "REL-CutCellQuadratureScaling#OneLevelSet_2D",
+    "avgSeconds": 311.2476182,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:01:46.2955006+01:00"
+  },
+  "REL-CutCellQuadratureScaling#OneLevelSet_3D_Saye": {
+    "name": "REL-CutCellQuadratureScaling#OneLevelSet_3D_Saye",
+    "avgSeconds": 621.156644,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:01:49.6224123+01:00"
+  },
+  "REL-CutCellQuadratureScaling#OneLevelSet_3D_Algoim": {
+    "name": "REL-CutCellQuadratureScaling#OneLevelSet_3D_Algoim",
+    "avgSeconds": 611.0299959,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:01:51.6270057+01:00"
+  },
+  "REL-CutCellQuadratureScaling#OneLevelSet_2Dvs3D_Classic": {
+    "name": "REL-CutCellQuadratureScaling#OneLevelSet_2Dvs3D_Classic",
+    "avgSeconds": 359.9020852,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:01:53.6579962+01:00"
+  },
+  "REL-CutCellQuadratureScaling#OneLevelSet_2Dvs3D_Saye": {
+    "name": "REL-CutCellQuadratureScaling#OneLevelSet_2Dvs3D_Saye",
+    "avgSeconds": 359.5639579,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:01:55.8797338+01:00"
+  },
+  "REL-CutCellQuadratureScaling#OneLevelSet_2Dvs3D_Algoim": {
+    "name": "REL-CutCellQuadratureScaling#OneLevelSet_2Dvs3D_Algoim",
+    "avgSeconds": 348.6921778,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:01:57.6123012+01:00"
+  },
+  "REL-CutCellQuadratureScaling#TwoLevelSet_2Dvs3D": {
+    "name": "REL-CutCellQuadratureScaling#TwoLevelSet_2Dvs3D",
+    "avgSeconds": 413.4728941,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:01:59.2838698+01:00"
+  },
+  "REL-CutCellQuadratureScaling#TwoLevelSets_3D": {
+    "name": "REL-CutCellQuadratureScaling#TwoLevelSets_3D",
+    "avgSeconds": 707.8153579,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:01.028865+01:00"
+  },
+  "REL-XNSERO_Solver#TestMotionIntegration": {
+    "name": "REL-XNSERO_Solver#TestMotionIntegration",
+    "avgSeconds": 598.4378041,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:06.3730586+01:00"
+  },
+  "REL-XNSERO_Solver#TestParticleInShearFlow_Phoretic": {
+    "name": "REL-XNSERO_Solver#TestParticleInShearFlow_Phoretic",
+    "avgSeconds": 315.1517489,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:07.5805856+01:00"
+  },
+  "REL-XNSERO_Solver#TestStickyTrap": {
+    "name": "REL-XNSERO_Solver#TestStickyTrap",
+    "avgSeconds": 702.2667512,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:08.6885113+01:00"
+  },
+  "REL-XNSFE_Solver#XNSFEScalingTest": {
+    "name": "REL-XNSFE_Solver#XNSFEScalingTest",
+    "avgSeconds": 355.7409645,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:09.8158339+01:00"
+  },
+  "REL-XNSFE_Solver#SteadyStateEvaporationTest": {
+    "name": "REL-XNSFE_Solver#SteadyStateEvaporationTest",
+    "avgSeconds": 597.2998892,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:12.940206+01:00"
+  },
+  "REL-XNSFE_Solver#InterfaceSlipTestLin": {
+    "name": "REL-XNSFE_Solver#InterfaceSlipTestLin",
+    "avgSeconds": 399.2684261,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:14.207593+01:00"
+  },
+  "REL-XNSFE_Solver#InterfaceSlipTestScaling": {
+    "name": "REL-XNSFE_Solver#InterfaceSlipTestScaling",
+    "avgSeconds": 667.6064983,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:15.5020783+01:00"
+  },
+  "REL-XdgTimesteppingTest#TestConvection_MovingInterface_SingleInitLowOrder_RK_dt02": {
+    "name": "REL-XdgTimesteppingTest#TestConvection_MovingInterface_SingleInitLowOrder_RK_dt02",
+    "avgSeconds": 252.4817682,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:16.7717641+01:00"
+  },
+  "REL-XdgTimesteppingTest#TestConvection_MovingInterface_SingleInitLowOrder_RK_dt023": {
+    "name": "REL-XdgTimesteppingTest#TestConvection_MovingInterface_SingleInitLowOrder_RK_dt023",
+    "avgSeconds": 252.1326451,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:17.9214003+01:00"
+  },
+  "REL-CNS#IBMAVTest_NoAgglomeration": {
+    "name": "REL-CNS#IBMAVTest_NoAgglomeration",
+    "avgSeconds": 209.3195025,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:19.0488044+01:00"
+  },
+  "REL-CNS#IBMCylinder3rd": {
+    "name": "REL-CNS#IBMCylinder3rd",
+    "avgSeconds": 132.5592099,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:20.160831+01:00"
+  },
+  "REL-CNS#IBMVortexOneStepGaussAndStokesNoAgglomerationTest": {
+    "name": "REL-CNS#IBMVortexOneStepGaussAndStokesNoAgglomerationTest",
+    "avgSeconds": 238.3212401,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:21.394884+01:00"
+  },
+  "REL-CNS#Toro4AllButRusanovTest": {
+    "name": "REL-CNS#Toro4AllButRusanovTest",
+    "avgSeconds": 81.6591095,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:22.5812182+01:00"
+  },
+  "REL-CNS#TestSupersonicInletCondition1D": {
+    "name": "REL-CNS#TestSupersonicInletCondition1D",
+    "avgSeconds": 345.4921163,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:23.6994363+01:00"
+  },
+  "REL-ZwoLsTest#AllUp": {
+    "name": "REL-ZwoLsTest#AllUp",
+    "avgSeconds": 405.9862739,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:32.5425386+01:00"
+  },
+  "REL-ZwoLsTest#SerialVersusParallelRun": {
+    "name": "REL-ZwoLsTest#SerialVersusParallelRun",
+    "avgSeconds": 121.1498863,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:33.8272861+01:00"
+  },
+  "REL-LTSTests#LTS2order_dtFine": {
+    "name": "REL-LTSTests#LTS2order_dtFine",
+    "avgSeconds": 172.9031615,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:38.3101016+01:00"
+  },
+  "REL-LTSTests#LTS3order_dtCoarse": {
+    "name": "REL-LTSTests#LTS3order_dtCoarse",
+    "avgSeconds": 121.9271108,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:39.4256299+01:00"
+  },
+  "REL-LTSTests#LTS3order_dtFine": {
+    "name": "REL-LTSTests#LTS3order_dtFine",
+    "avgSeconds": 170.5731471,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:40.5308345+01:00"
+  },
+  "REL-LTSTests#ALTS2order_dtFine": {
+    "name": "REL-LTSTests#ALTS2order_dtFine",
+    "avgSeconds": 175.1017517,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:41.6441268+01:00"
+  },
+  "REL-LTSTests#ALTS3order_dtCoarse": {
+    "name": "REL-LTSTests#ALTS3order_dtCoarse",
+    "avgSeconds": 174.6320603,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:42.7525713+01:00"
+  },
+  "REL-LTSTests#ALTS3order_dtFine": {
+    "name": "REL-LTSTests#ALTS3order_dtFine",
+    "avgSeconds": 173.0852262,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:43.848522+01:00"
+  },
+  "REL-LTSTests#Comparison_AB_to_AB_order2_subgrid1": {
+    "name": "REL-LTSTests#Comparison_AB_to_AB_order2_subgrid1",
+    "avgSeconds": 132.7738098,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:44.9708558+01:00"
+  },
+  "REL-LTSTests#Comparison_LTS_to_AB_order2_subgrid1": {
+    "name": "REL-LTSTests#Comparison_LTS_to_AB_order2_subgrid1",
+    "avgSeconds": 140.3236615,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:46.1108434+01:00"
+  },
+  "REL-XNSEC#IncompressibleUnsteadyTaylorVortexTest": {
+    "name": "REL-XNSEC#IncompressibleUnsteadyTaylorVortexTest",
+    "avgSeconds": 202.7576922,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:47.2560221+01:00"
+  },
+  "REL-XNSEC#CavityNaturalConvectionTest_Homotopy": {
+    "name": "REL-XNSEC#CavityNaturalConvectionTest_Homotopy",
+    "avgSeconds": 120.4872218,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:48.3943403+01:00"
+  },
+  "REL-XNSEC#TestOperatorScaling2D_p2": {
+    "name": "REL-XNSEC#TestOperatorScaling2D_p2",
+    "avgSeconds": 438.626702,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:51.0346842+01:00"
+  },
+  "REL-XNSEC#XDG_PSEUDO1D_EVAPORATION_TEST": {
+    "name": "REL-XNSEC#XDG_PSEUDO1D_EVAPORATION_TEST",
+    "avgSeconds": 122.5017572,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:53.7386385+01:00"
+  },
+  "REL-XNSEC#ViscosityJumpTest": {
+    "name": "REL-XNSEC#ViscosityJumpTest",
+    "avgSeconds": 135.6019728,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:56.4211124+01:00"
+  },
+  "REL-XNSEC#BcTest_PressureOutletTest": {
+    "name": "REL-XNSEC#BcTest_PressureOutletTest",
+    "avgSeconds": 553.728961,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:57.6271663+01:00"
+  },
+  "REL-XNSEC#NuNit_ChannelTest": {
+    "name": "REL-XNSEC#NuNit_ChannelTest",
+    "avgSeconds": 482.6416796,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:02:59.0505822+01:00"
+  },
+  "REL-XNSEC#SteadyStateEvaporationTestXNSEC": {
+    "name": "REL-XNSEC#SteadyStateEvaporationTestXNSEC",
+    "avgSeconds": 324.8076325,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:03:00.2206499+01:00"
+  },
+  "REL-CahnHilliard#TestEllipticDroplet": {
+    "name": "REL-CahnHilliard#TestEllipticDroplet",
+    "avgSeconds": 217.5163545,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:03:20.087752+01:00"
+  },
+  "REL-IntersectingLevelSetTest#Transform3DTestAlgoim": {
+    "name": "REL-IntersectingLevelSetTest#Transform3DTestAlgoim",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:03:22.8472731+01:00"
+  },
+  "REL-StokesHelical_Ak#Transient_TimeConv_BDF1_DDD_no_R0fix": {
+    "name": "REL-StokesHelical_Ak#Transient_TimeConv_BDF1_DDD_no_R0fix",
+    "avgSeconds": 296.8440852,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:03:33.2496851+01:00"
+  },
+  "REL-StokesHelical_Ak#Transient_TimeConv_BDF3_DDD_no_R0fix": {
+    "name": "REL-StokesHelical_Ak#Transient_TimeConv_BDF3_DDD_no_R0fix",
+    "avgSeconds": 304.6420736,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:03:34.3780485+01:00"
+  },
+  "REL-StokesHelical_Ak#Transient_TimeConv_BDF1_DDD_with_R0fix": {
+    "name": "REL-StokesHelical_Ak#Transient_TimeConv_BDF1_DDD_with_R0fix",
+    "avgSeconds": 314.8697192,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:03:35.501825+01:00"
+  },
+  "REL-StokesHelical_Ak#Transient_TimeConv_BDF3_DDD_with_R0fix": {
+    "name": "REL-StokesHelical_Ak#Transient_TimeConv_BDF3_DDD_with_R0fix",
+    "avgSeconds": 364.9046794,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:03:36.6416941+01:00"
+  },
+  "REL-StokesHelical_Ak#TestR0_Fix_AtSolution": {
+    "name": "REL-StokesHelical_Ak#TestR0_Fix_AtSolution",
+    "avgSeconds": 161.4835183,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:03:43.94141+01:00"
+  },
+  "REL-StokesHelical_Ak#Steady_SpatialConv_HP_Re_100000_Stokes_with_R0fix": {
+    "name": "REL-StokesHelical_Ak#Steady_SpatialConv_HP_Re_100000_Stokes_with_R0fix",
+    "avgSeconds": 439.5772994,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:03:45.0466948+01:00"
+  },
+  "REL-StokesHelical_Ak#Steady_SpatialConv_CF_Re_100000_Stokes_with_R0fix": {
+    "name": "REL-StokesHelical_Ak#Steady_SpatialConv_CF_Re_100000_Stokes_with_R0fix",
+    "avgSeconds": 370.7351053,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:03:53.9720931+01:00"
+  },
+  "REL-StokesHelical_Ak#Restart_HP_BDF3_with_R0fix": {
+    "name": "REL-StokesHelical_Ak#Restart_HP_BDF3_with_R0fix",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:04:05.9857568+01:00"
+  },
+  "REL-StokesHelical_Ak#Restart_HP_BDF1_with_R0fix": {
+    "name": "REL-StokesHelical_Ak#Restart_HP_BDF1_with_R0fix",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:04:07.1602437+01:00"
+  },
+  "REL-StokesHelical_Ak#Restart_CF_BDF3_with_R0fix": {
+    "name": "REL-StokesHelical_Ak#Restart_CF_BDF3_with_R0fix",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:04:08.3143305+01:00"
+  },
+  "REL-StokesHelical_Ak#Restart_CF_BDF1_with_R0fix": {
+    "name": "REL-StokesHelical_Ak#Restart_CF_BDF1_with_R0fix",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:04:09.4687526+01:00"
+  },
+  "REL-p4-CDG_Projection_MPI#Test4Idempotence": {
+    "name": "REL-p4-CDG_Projection_MPI#Test4Idempotence",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:04:13.7513264+01:00"
+  },
+  "REL-p2-CDG_Projection_MPI#Test4Idempotence": {
+    "name": "REL-p2-CDG_Projection_MPI#Test4Idempotence",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:04:18.0666608+01:00"
+  },
+  "REL-p4-AdvancedSolverTests#LocalIndexTest": {
+    "name": "REL-p4-AdvancedSolverTests#LocalIndexTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:04:19.1904696+01:00"
+  },
+  "REL-p4-AdvancedSolverTests#MapConsistencyTest": {
+    "name": "REL-p4-AdvancedSolverTests#MapConsistencyTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:04:20.3642699+01:00"
+  },
+  "REL-p4-AdvancedSolverTests#SubBlockExtractionWithCoupling": {
+    "name": "REL-p4-AdvancedSolverTests#SubBlockExtractionWithCoupling",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:04:21.517933+01:00"
+  },
+  "REL-p4-AdvancedSolverTests#FastSubMatrixExtraction": {
+    "name": "REL-p4-AdvancedSolverTests#FastSubMatrixExtraction",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:04:24.3353158+01:00"
+  },
+  "REL-p4-AdvancedSolverTests#CompareFactorization": {
+    "name": "REL-p4-AdvancedSolverTests#CompareFactorization",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:04:30.332492+01:00"
+  },
+  "REL-p4-AdvancedSolverTests#CompareSubstitution": {
+    "name": "REL-p4-AdvancedSolverTests#CompareSubstitution",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:04:31.5009025+01:00"
+  },
+  "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_sameDegree_p2": {
+    "name": "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_sameDegree_p2",
+    "avgSeconds": 2222.42717,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:08:34.6906993+01:00"
+  },
+  "REL-XNSE_Solver#AMRAndBDFTest": {
+    "name": "REL-XNSE_Solver#AMRAndBDFTest",
+    "avgSeconds": 1412.0675291,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:09:00.5415002+01:00"
+  },
+  "REL-CutCellQuadratureScaling#OneLevelSet_3D_Classic": {
+    "name": "REL-CutCellQuadratureScaling#OneLevelSet_3D_Classic",
+    "avgSeconds": 949.1487083,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:09:06.453744+01:00"
+  },
+  "REL-XNSEC#TestOperatorScaling2D_p1": {
+    "name": "REL-XNSEC#TestOperatorScaling2D_p1",
+    "avgSeconds": 867.0375758,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:09:24.0315114+01:00"
+  },
+  "REL-XNSEC#XDG_PSEUDO1D_COMBUSTION_TEST": {
+    "name": "REL-XNSEC#XDG_PSEUDO1D_COMBUSTION_TEST",
+    "avgSeconds": 790.4783031,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:09:25.2103894+01:00"
+  },
+  "REL-BUIDT#StraightShockCurvedStart_Eccomas22": {
+    "name": "REL-BUIDT#StraightShockCurvedStart_Eccomas22",
+    "avgSeconds": 789.6029391,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:09:48.3660337+01:00"
+  },
+  "REL-StokesHelical_Ak#Steady_SpatialConv_HP_Re_10_Stokes_with_R0fix": {
+    "name": "REL-StokesHelical_Ak#Steady_SpatialConv_HP_Re_10_Stokes_with_R0fix",
+    "avgSeconds": 452.2033414,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:10:03.3753369+01:00"
+  },
+  "REL-StokesHelical_Ak#Steady_SpatialConv_CF_Re_10_Stokes_with_R0fix": {
+    "name": "REL-StokesHelical_Ak#Steady_SpatialConv_CF_Re_10_Stokes_with_R0fix",
+    "avgSeconds": 372.5115005,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:10:10.7572203+01:00"
+  },
+  "REL-StokesHelical_Ak#Steady_SpatialConvergence_DDD_Paper_with_R0fix": {
+    "name": "REL-StokesHelical_Ak#Steady_SpatialConvergence_DDD_Paper_with_R0fix",
+    "avgSeconds": 386.684898,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:10:11.9153807+01:00"
+  },
+  "REL-StokesHelical_Ak#SpatialConvergence_without_R0fix_DDD_Paper": {
+    "name": "REL-StokesHelical_Ak#SpatialConvergence_without_R0fix_DDD_Paper",
+    "avgSeconds": 375.0696053,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:10:16.1667512+01:00"
+  },
+  "REL-StokesHelical_Ak#Direct_vs_Iterativ_without_R0fix_DDD_Paper": {
+    "name": "REL-StokesHelical_Ak#Direct_vs_Iterativ_without_R0fix_DDD_Paper",
+    "avgSeconds": 427.8227004,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:10:17.3384742+01:00"
+  },
+  "REL-p4-CDG_Projection_MPI#ProjectionTest_Global": {
+    "name": "REL-p4-CDG_Projection_MPI#ProjectionTest_Global",
+    "avgSeconds": 512.4946447,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:10:21.5401151+01:00"
+  },
+  "REL-p4-AdvancedSolverTests#SubMatrixExtractionWithCoupling": {
+    "name": "REL-p4-AdvancedSolverTests#SubMatrixExtractionWithCoupling",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:10:25.8247865+01:00"
+  },
+  "REL-p4-AdvancedSolverTests#CellBlockVectorOperations": {
+    "name": "REL-p4-AdvancedSolverTests#CellBlockVectorOperations",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:10:29.8851608+01:00"
+  },
+  "REL-p4-AdvancedSolverTests#CellwiseSubSelection": {
+    "name": "REL-p4-AdvancedSolverTests#CellwiseSubSelection",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:10:31.1306364+01:00"
+  },
+  "REL-p4-AdvancedSolverTests#SubSelection": {
+    "name": "REL-p4-AdvancedSolverTests#SubSelection",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:10:32.3358959+01:00"
+  },
+  "REL-p4-AdvancedSolverTests#TestLinearSolverConfigurations": {
+    "name": "REL-p4-AdvancedSolverTests#TestLinearSolverConfigurations",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:10:33.5423799+01:00"
+  },
+  "REL-p4-AdvancedSolverTests#TestNonLinearSolverConfigurations": {
+    "name": "REL-p4-AdvancedSolverTests#TestNonLinearSolverConfigurations",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:10:34.7243703+01:00"
+  },
+  "REL-p4-AdvancedSolverTestsMPI#TestInit": {
+    "name": "REL-p4-AdvancedSolverTestsMPI#TestInit",
+    "avgSeconds": 359.5764106,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:10:35.8965968+01:00"
+  },
+  "REL-p4-AdvancedSolverTestsMPI#GetExternalRowsTest": {
+    "name": "REL-p4-AdvancedSolverTestsMPI#GetExternalRowsTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:10:37.5407793+01:00"
+  },
+  "REL-p4-AdvancedSolverTestsMPI#FastSubMatrixExtraction": {
+    "name": "REL-p4-AdvancedSolverTestsMPI#FastSubMatrixExtraction",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:10:38.7244736+01:00"
+  },
+  "REL-p4-AdvancedSolverTestsMPI#SubMatrixExtraction": {
+    "name": "REL-p4-AdvancedSolverTestsMPI#SubMatrixExtraction",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:10:39.8982275+01:00"
+  },
+  "REL-p4-AdvancedSolverTestsMPI#SubBlockExtraction": {
+    "name": "REL-p4-AdvancedSolverTestsMPI#SubBlockExtraction",
+    "avgSeconds": 73.3765268,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:10:41.1576606+01:00"
+  },
+  "REL-p4-AdvancedSolverTestsMPI#VectorCellwiseOperation": {
+    "name": "REL-p4-AdvancedSolverTestsMPI#VectorCellwiseOperation",
+    "avgSeconds": 61.1352442,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:10:42.3994515+01:00"
+  },
+  "REL-p4-AdvancedSolverTestsMPI#SubSelection": {
+    "name": "REL-p4-AdvancedSolverTestsMPI#SubSelection",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:10:43.6327673+01:00"
+  },
+  "REL-p4-AdvancedSolverTestsMPI#VectorSplitOperation_Op1": {
+    "name": "REL-p4-AdvancedSolverTestsMPI#VectorSplitOperation_Op1",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:10:44.8663162+01:00"
+  },
+  "REL-p4-AdvancedSolverTestsMPI#VectorSplitOperation_Op2": {
+    "name": "REL-p4-AdvancedSolverTestsMPI#VectorSplitOperation_Op2",
+    "avgSeconds": 95.3798014,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:10:46.101777+01:00"
+  },
+  "REL-p4-AdvancedSolverTestsMPI#CompareVectorOps": {
+    "name": "REL-p4-AdvancedSolverTestsMPI#CompareVectorOps",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:10:47.3518285+01:00"
+  },
+  "REL-p4-AdvancedSolverTestsMPI#ExternalIndexTest": {
+    "name": "REL-p4-AdvancedSolverTestsMPI#ExternalIndexTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:10:48.5552427+01:00"
+  },
+  "REL-p4-AdvancedSolverTestsMPI#TestBlocksAreCorrect_NonOverlapping": {
+    "name": "REL-p4-AdvancedSolverTestsMPI#TestBlocksAreCorrect_NonOverlapping",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:10:49.7571419+01:00"
+  },
+  "REL-p4-AdvancedSolverTestsMPI#TestSolutionIsCorrect_NonOverlapping": {
+    "name": "REL-p4-AdvancedSolverTestsMPI#TestSolutionIsCorrect_NonOverlapping",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:10:50.9441005+01:00"
+  },
+  "REL-p4-AdvancedSolverTestsMPI#TestSolutionIsCorrect_Overlapping": {
+    "name": "REL-p4-AdvancedSolverTestsMPI#TestSolutionIsCorrect_Overlapping",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:10:52.1144437+01:00"
+  },
+  "REL-p4-MPITest#Test": {
+    "name": "REL-p4-MPITest#Test",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:10:53.2909047+01:00"
+  },
+  "REL-p3-MPITest#Test": {
+    "name": "REL-p3-MPITest#Test",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:10:54.47707+01:00"
+  },
+  "REL-p2-MPITest#Test": {
+    "name": "REL-p2-MPITest#Test",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:10:55.6345097+01:00"
+  },
+  "REL-p4-SpecFEM#AllUp": {
+    "name": "REL-p4-SpecFEM#AllUp",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:10:56.7634727+01:00"
+  },
+  "REL-p8-XNSE_Solver_LargeMPItest#SourceToSourceAgglomerationMETIS": {
+    "name": "REL-p8-XNSE_Solver_LargeMPItest#SourceToSourceAgglomerationMETIS",
+    "avgSeconds": 138.2280192,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:11:02.7805418+01:00"
+  },
+  "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_higherDegree_p2": {
+    "name": "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_higherDegree_p2",
+    "avgSeconds": 2543.8801119,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:14:30.7456214+01:00"
+  },
+  "REL-XNSE_Solver#ScalingViscosityJumpTest_p3": {
+    "name": "REL-XNSE_Solver#ScalingViscosityJumpTest_p3",
+    "avgSeconds": 2437.542346,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:14:33.4141223+01:00"
+  },
+  "REL-XNSE_Solver#ChannelTest_p2_Newton_Standard": {
+    "name": "REL-XNSE_Solver#ChannelTest_p2_Newton_Standard",
+    "avgSeconds": 1606.7480415,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:14:36.2141786+01:00"
+  },
+  "REL-CNS#TestSubsonicOutletBoundaryCondition1D": {
+    "name": "REL-CNS#TestSubsonicOutletBoundaryCondition1D",
+    "avgSeconds": 1354.4320051,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:15:04.3531612+01:00"
+  },
+  "REL-StokesHelical_Ak#ConditionNumberScaling_HP_Re_100000_Stokes_with_R0fix": {
+    "name": "REL-StokesHelical_Ak#ConditionNumberScaling_HP_Re_100000_Stokes_with_R0fix",
+    "avgSeconds": 1045.6878184,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:15:50.5593691+01:00"
+  },
+  "REL-StokesHelical_Ak#ConditionNumberScaling_HP_Re_10_Stokes_with_R0fix": {
+    "name": "REL-StokesHelical_Ak#ConditionNumberScaling_HP_Re_10_Stokes_with_R0fix",
+    "avgSeconds": 1066.3286586,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:15:51.7688321+01:00"
+  },
+  "REL-StokesHelical_Ak#ConditionNumberScaling_CF_Re_100000_Stokes_with_R0fix": {
+    "name": "REL-StokesHelical_Ak#ConditionNumberScaling_CF_Re_100000_Stokes_with_R0fix",
+    "avgSeconds": 1070.2195619,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:15:52.9940746+01:00"
+  },
+  "REL-StokesHelical_Ak#ConditionNumberScaling_CF_Re_10_Stokes_with_R0fix": {
+    "name": "REL-StokesHelical_Ak#ConditionNumberScaling_CF_Re_10_Stokes_with_R0fix",
+    "avgSeconds": 1074.5916639,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:15:54.2262876+01:00"
+  },
+  "REL-StokesHelical_Ak#Direct_vs_Iterativ_DDD_Paper_with_R0fix": {
+    "name": "REL-StokesHelical_Ak#Direct_vs_Iterativ_DDD_Paper_with_R0fix",
+    "avgSeconds": 768.5051186,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:15:55.4395883+01:00"
+  },
+  "REL-p2-CDG_Projection_MPI#ProjectionTest_Global": {
+    "name": "REL-p2-CDG_Projection_MPI#ProjectionTest_Global",
+    "avgSeconds": 465.1171001,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:16:02.7545562+01:00"
+  },
+  "REL-p8-XNSE_Solver_LargeMPItest#ParallelRotatingSphere": {
+    "name": "REL-p8-XNSE_Solver_LargeMPItest#ParallelRotatingSphere",
+    "avgSeconds": 349.748677,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:16:03.8517105+01:00"
+  },
+  "REL-p8-XNSE_Solver_LargeMPItest#SourceToSourceAgglomerationHILBERT": {
+    "name": "REL-p8-XNSE_Solver_LargeMPItest#SourceToSourceAgglomerationHILBERT",
+    "avgSeconds": 184.4354209,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:16:08.183572+01:00"
+  },
+  "REL-p8-XNSE_Solver_LargeMPItest#AMRtest_2D": {
+    "name": "REL-p8-XNSE_Solver_LargeMPItest#AMRtest_2D",
+    "avgSeconds": 123.4095324,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:16:10.961656+01:00"
+  },
+  "REL-p3-XNSE_Solver_MPItest#ParallelRisingDroplet": {
+    "name": "REL-p3-XNSE_Solver_MPItest#ParallelRisingDroplet",
+    "avgSeconds": 76.8470618,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:16:15.6587468+01:00"
+  },
+  "REL-p3-XNSE_Solver_MPItest#RotCube_GetSpeciesIDError": {
+    "name": "REL-p3-XNSE_Solver_MPItest#RotCube_GetSpeciesIDError",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:16:16.8527974+01:00"
+  },
+  "REL-p3-XNSE_Solver_MPItest#BadInitiallyDistributionTest": {
+    "name": "REL-p3-XNSE_Solver_MPItest#BadInitiallyDistributionTest",
+    "avgSeconds": 122.2630741,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:16:21.1049548+01:00"
+  },
+  "REL-p3-XNSE_Solver_MPItest#TestAgglomerationFailure": {
+    "name": "REL-p3-XNSE_Solver_MPItest#TestAgglomerationFailure",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:16:22.2689078+01:00"
+  },
+  "REL-p4-XNSE_Solver_MPItest#ParallelRisingDroplet": {
+    "name": "REL-p4-XNSE_Solver_MPItest#ParallelRisingDroplet",
+    "avgSeconds": 79.0868146,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:16:31.0327797+01:00"
+  },
+  "REL-XNSE_Solver#ChannelTest_p2_Picard_Standard": {
+    "name": "REL-XNSE_Solver#ChannelTest_p2_Picard_Standard",
+    "avgSeconds": 1989.724687,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:19:36.08889+01:00"
+  },
+  "REL-CNS#TestSubsonicPressureInletBoundaryCondition1D": {
+    "name": "REL-CNS#TestSubsonicPressureInletBoundaryCondition1D",
+    "avgSeconds": 1556.2255451,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:20:06.5190092+01:00"
+  },
+  "REL-StokesHelical_Ak#ConditionNumberScaling_DDD_Paper_with_R0fix": {
+    "name": "REL-StokesHelical_Ak#ConditionNumberScaling_DDD_Paper_with_R0fix",
+    "avgSeconds": 1108.7378124,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:20:47.9016012+01:00"
+  },
+  "REL-StokesHelical_Ak#ConditionNumberScaling_DDD_without_R0fix": {
+    "name": "REL-StokesHelical_Ak#ConditionNumberScaling_DDD_without_R0fix",
+    "avgSeconds": 1068.9856826,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:20:49.123981+01:00"
+  },
+  "REL-p2-CDG_Projection_MPI#ProjectionTest_Patchwise": {
+    "name": "REL-p2-CDG_Projection_MPI#ProjectionTest_Patchwise",
+    "avgSeconds": 1059.4638956,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:20:51.8547502+01:00"
+  },
+  "REL-p3-XNSE_Solver_MPItest#SayeBug": {
+    "name": "REL-p3-XNSE_Solver_MPItest#SayeBug",
+    "avgSeconds": 222.9088003,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:21:05.3359772+01:00"
+  },
+  "REL-p3-XNSE_Solver_MPItest#EmptyMaskInGMRES": {
+    "name": "REL-p3-XNSE_Solver_MPItest#EmptyMaskInGMRES",
+    "avgSeconds": 288.8987603,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:21:08.0420276+01:00"
+  },
+  "REL-p4-XNSE_Solver_MPItest#RotCube_GetSpeciesIDError": {
+    "name": "REL-p4-XNSE_Solver_MPItest#RotCube_GetSpeciesIDError",
+    "avgSeconds": 208.3124157,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:21:09.2077858+01:00"
+  },
+  "REL-p4-XNSE_Solver_MPItest#BadInitiallyDistributionTest": {
+    "name": "REL-p4-XNSE_Solver_MPItest#BadInitiallyDistributionTest",
+    "avgSeconds": 159.3303427,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:21:13.4843285+01:00"
+  },
+  "REL-p4-XNSE_Solver_MPItest#TestAgglomerationFailure": {
+    "name": "REL-p4-XNSE_Solver_MPItest#TestAgglomerationFailure",
+    "avgSeconds": 81.9063789,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:21:14.7542117+01:00"
+  },
+  "REL-p4-XNSE_Solver_MPItest#SayeBug": {
+    "name": "REL-p4-XNSE_Solver_MPItest#SayeBug",
+    "avgSeconds": 95.7371977,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:21:19.0348489+01:00"
+  },
+  "REL-p4-XdgPoisson3#ParabolaTest": {
+    "name": "REL-p4-XdgPoisson3#ParabolaTest",
+    "avgSeconds": 60.7302741,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:21:24.8466132+01:00"
+  },
+  "REL-p4-XdgPoisson3#ScalingCircle2D": {
+    "name": "REL-p4-XdgPoisson3#ScalingCircle2D",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:21:31.411644+01:00"
+  },
+  "REL-p4-Matrix_MPItest#MultiplyTest": {
+    "name": "REL-p4-Matrix_MPItest#MultiplyTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:21:32.5707662+01:00"
+  },
+  "REL-CDG_ProjectionTest#AllUp_LegendrePolynomial": {
+    "name": "REL-CDG_ProjectionTest#AllUp_LegendrePolynomial",
+    "avgSeconds": 3265.5990215,
+    "dueMargin": 360.0,
+    "lastupdate": "2026-02-25T22:24:13.5396572+01:00"
+  },
+  "REL-XNSE_Solver#ChannelTest_p2_Picard_FullySymmetric": {
+    "name": "REL-XNSE_Solver#ChannelTest_p2_Picard_FullySymmetric",
+    "avgSeconds": 2260.3911825,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:24:18.2607349+01:00"
+  },
+  "REL-XNSE_Solver#ScalingRotCubeTests2D_p2": {
+    "name": "REL-XNSE_Solver#ScalingRotCubeTests2D_p2",
+    "avgSeconds": 2130.9794609,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:24:33.0127965+01:00"
+  },
+  "REL-ZwoLevelSetSolver#AlandTest": {
+    "name": "REL-ZwoLevelSetSolver#AlandTest",
+    "avgSeconds": 1732.09663,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:24:52.8991928+01:00"
+  },
+  "REL-p8-XNSE_Solver_LargeMPItest#RotatingTilted3DTorusAgg0": {
+    "name": "REL-p8-XNSE_Solver_LargeMPItest#RotatingTilted3DTorusAgg0",
+    "avgSeconds": 944.5626537,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:25:28.541532+01:00"
+  },
+  "REL-p3-XNSE_Solver_MPItest#RotCube_DomainDecompositionError": {
+    "name": "REL-p3-XNSE_Solver_MPItest#RotCube_DomainDecompositionError",
+    "avgSeconds": 730.0649148,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:25:32.9498259+01:00"
+  },
+  "REL-p4-XdgPoisson3#IterativeSolverTest": {
+    "name": "REL-p4-XdgPoisson3#IterativeSolverTest",
+    "avgSeconds": 379.5956362,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:25:49.627875+01:00"
+  },
+  "REL-p4-Matrix_MPItest#SubMatrixTest": {
+    "name": "REL-p4-Matrix_MPItest#SubMatrixTest",
+    "avgSeconds": 164.5505697,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:25:50.8704312+01:00"
+  },
+  "REL-p4-ALTSTests#ALTSDynClust_order1_subgrids3": {
+    "name": "REL-p4-ALTSTests#ALTSDynClust_order1_subgrids3",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:25:55.4474398+01:00"
+  },
+  "REL-p4-ALTSTests#ALTSDynClust_order2_subgrids3": {
+    "name": "REL-p4-ALTSTests#ALTSDynClust_order2_subgrids3",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:25:56.6371311+01:00"
+  },
+  "REL-p4-ALTSTests#ALTSDynClust_order3_subgrids3": {
+    "name": "REL-p4-ALTSTests#ALTSDynClust_order3_subgrids3",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:25:57.7937424+01:00"
+  },
+  "REL-p4-CNS_MPITests#TestRebalancingForDG0WithRK1": {
+    "name": "REL-p4-CNS_MPITests#TestRebalancingForDG0WithRK1",
+    "avgSeconds": 100.0513118,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:25:58.94706+01:00"
+  },
+  "REL-p4-CNS_MPITests#TestRebalancingForDG0WithAB1": {
+    "name": "REL-p4-CNS_MPITests#TestRebalancingForDG0WithAB1",
+    "avgSeconds": 90.8264,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:26:00.1482987+01:00"
+  },
+  "REL-XNSE_Solver#ChannelTest_p3_Picard_Standard": {
+    "name": "REL-XNSE_Solver#ChannelTest_p3_Picard_Standard",
+    "avgSeconds": 2489.3544352,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:28:34.5191834+01:00"
+  },
+  "REL-XNSE_Solver#ChannelTest_p3_Picard_FullySymmetric": {
+    "name": "REL-XNSE_Solver#ChannelTest_p3_Picard_FullySymmetric",
+    "avgSeconds": 2546.167301,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:28:39.0845934+01:00"
+  },
+  "REL-StokesHelical_Ak#Transient_HP_Re_10_White_Noise_1_ProMil_with_R0fix": {
+    "name": "REL-StokesHelical_Ak#Transient_HP_Re_10_White_Noise_1_ProMil_with_R0fix",
+    "avgSeconds": 1841.8773647,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:29:32.3707898+01:00"
+  },
+  "REL-StokesHelical_Ak#Transient_HP_Re_10_White_Noise_1_ProMil_with_R0fix_Conv_Ak": {
+    "name": "REL-StokesHelical_Ak#Transient_HP_Re_10_White_Noise_1_ProMil_with_R0fix_Conv_Ak",
+    "avgSeconds": 1892.7224694,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:29:35.6540014+01:00"
+  },
+  "REL-StokesHelical_Ak#Transient_CF_Re_10_White_Noise_1_ProMil_with_R0fix": {
+    "name": "REL-StokesHelical_Ak#Transient_CF_Re_10_White_Noise_1_ProMil_with_R0fix",
+    "avgSeconds": 1810.9936926,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:29:38.9296624+01:00"
+  },
+  "REL-StokesHelical_Ak#Transient_CF_Re_10_White_Noise_1_ProMil_with_R0fix_AK_Conv_Terms": {
+    "name": "REL-StokesHelical_Ak#Transient_CF_Re_10_White_Noise_1_ProMil_with_R0fix_AK_Conv_Terms",
+    "avgSeconds": 1807.4092417,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:29:42.2719424+01:00"
+  },
+  "REL-p4-CDG_Projection_MPI#ProjectionTest_Patchwise": {
+    "name": "REL-p4-CDG_Projection_MPI#ProjectionTest_Patchwise",
+    "avgSeconds": 1704.5112652,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:29:45.7886018+01:00"
+  },
+  "REL-p4-XNSE_Solver_MPItest#EmptyMaskInGMRES": {
+    "name": "REL-p4-XNSE_Solver_MPItest#EmptyMaskInGMRES",
+    "avgSeconds": 539.8318341,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:30:05.7283677+01:00"
+  },
+  "REL-p4-Matrix_MPItest#SpMVTest": {
+    "name": "REL-p4-Matrix_MPItest#SpMVTest",
+    "avgSeconds": 253.6412196,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:30:06.9470514+01:00"
+  },
+  "REL-p4-LoadBalancingTest#RuntimeCostDynamicBalanceTest": {
+    "name": "REL-p4-LoadBalancingTest#RuntimeCostDynamicBalanceTest",
+    "avgSeconds": 194.2675569,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:30:08.5617277+01:00"
+  },
+  "REL-p4-CNS_MPITests#TestRebalancingForDG0WithLTS1SingleSubGrid": {
+    "name": "REL-p4-CNS_MPITests#TestRebalancingForDG0WithLTS1SingleSubGrid",
+    "avgSeconds": 124.6196874,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:30:09.774831+01:00"
+  },
+  "REL-p4-CNS_MPITests#TestRebalancingForDG0WithLTS1TwoSubGrids": {
+    "name": "REL-p4-CNS_MPITests#TestRebalancingForDG0WithLTS1TwoSubGrids",
+    "avgSeconds": 80.0030466,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:30:11.0285675+01:00"
+  },
+  "REL-p4-CNS_MPITests#TestRebalancingForDG2WithRK1AndAV": {
+    "name": "REL-p4-CNS_MPITests#TestRebalancingForDG2WithRK1AndAV",
+    "avgSeconds": 125.30409,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:30:12.268547+01:00"
+  },
+  "REL-p4-CNS_MPITests#TestRebalancingForDG2WithAB1AndAV": {
+    "name": "REL-p4-CNS_MPITests#TestRebalancingForDG2WithAB1AndAV",
+    "avgSeconds": 120.2169218,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:30:13.509547+01:00"
+  },
+  "REL-p4-CNS_MPITests#TestRebalancingForDG2WithLTS1TwoSubGridsAndAV": {
+    "name": "REL-p4-CNS_MPITests#TestRebalancingForDG2WithLTS1TwoSubGridsAndAV",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:30:14.743883+01:00"
+  },
+  "REL-p4-CNS_MPITests#TestRebalancingForDG2WithLTS1AndAV_IBM_AggOn": {
+    "name": "REL-p4-CNS_MPITests#TestRebalancingForDG2WithLTS1AndAV_IBM_AggOn",
+    "avgSeconds": 150.3742045,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:30:20.6361185+01:00"
+  },
+  "REL-p4-HilbertTest#TestingGridDistributionEven": {
+    "name": "REL-p4-HilbertTest#TestingGridDistributionEven",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:30:21.8083953+01:00"
+  },
+  "REL-p4-HilbertTest#TestingdirectHilbertEven": {
+    "name": "REL-p4-HilbertTest#TestingdirectHilbertEven",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:30:23.2485865+01:00"
+  },
+  "REL-p4-HilbertTest#TestingGridDistributionUneven": {
+    "name": "REL-p4-HilbertTest#TestingGridDistributionUneven",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:30:24.6875964+01:00"
+  },
+  "REL-p4-HilbertTest#TestingdirectHilbertUneven": {
+    "name": "REL-p4-HilbertTest#TestingdirectHilbertUneven",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:30:26.1570041+01:00"
+  },
+  "REL-p4-HilbertTest#TestingGridDistributionDynamic": {
+    "name": "REL-p4-HilbertTest#TestingGridDistributionDynamic",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:30:27.6421181+01:00"
+  },
+  "REL-p4-HilbertTest#TestingReclusteringIndependency": {
+    "name": "REL-p4-HilbertTest#TestingReclusteringIndependency",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:30:28.8173819+01:00"
+  },
+  "REL-p4-HilbertTest#TestingCoordinateSamples": {
+    "name": "REL-p4-HilbertTest#TestingCoordinateSamples",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:30:29.9977866+01:00"
+  },
+  "REL-p4-HilbertTest#ClusterHilbertTest": {
+    "name": "REL-p4-HilbertTest#ClusterHilbertTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:30:31.1558694+01:00"
+  },
+  "REL-XNSE_Solver#ChannelTest_p2_Newton_FullySymmetric": {
+    "name": "REL-XNSE_Solver#ChannelTest_p2_Newton_FullySymmetric",
+    "avgSeconds": 2800.494608,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:32:35.4028727+01:00"
+  },
+  "REL-XNSE_Solver#ChannelTest_p3_Newton_Standard": {
+    "name": "REL-XNSE_Solver#ChannelTest_p3_Newton_Standard",
+    "avgSeconds": 2749.7278154,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:32:37.9807693+01:00"
+  },
+  "REL-XNSEC#TranspiratingChannelTest": {
+    "name": "REL-XNSEC#TranspiratingChannelTest",
+    "avgSeconds": 2174.9497935,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:33:05.8393891+01:00"
+  },
+  "REL-XNSE_Solver#ChannelTest_p3_Newton_FullySymmetric": {
+    "name": "REL-XNSE_Solver#ChannelTest_p3_Newton_FullySymmetric",
+    "avgSeconds": 2982.7278116,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:35:57.7286164+01:00"
+  },
+  "REL-CNS#TestSubsonicInletBoundaryCondition1D": {
+    "name": "REL-CNS#TestSubsonicInletBoundaryCondition1D",
+    "avgSeconds": 2602.34147,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:36:14.0268475+01:00"
+  },
+  "REL-XESF#XDG_SWF_OneLs_Cart": {
+    "name": "REL-XESF#XDG_SWF_OneLs_Cart",
+    "avgSeconds": 2333.1029641,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:36:46.1573557+01:00"
+  },
+  "REL-p4-XNSE_Solver_MPItest#RotCube_DomainDecompositionError": {
+    "name": "REL-p4-XNSE_Solver_MPItest#RotCube_DomainDecompositionError",
+    "avgSeconds": 1252.2914506,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:36:58.1052748+01:00"
+  },
+  "REL-p4-XNSE_Solver_MPItest#RotCube_OrderNotSupportedInHMF": {
+    "name": "REL-p4-XNSE_Solver_MPItest#RotCube_OrderNotSupportedInHMF",
+    "avgSeconds": 1237.2113182,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:36:59.3307725+01:00"
+  },
+  "REL-p4-CNS_MPITests#TestRebalancingForDG0WithRK1_IBM_AggOn": {
+    "name": "REL-p4-CNS_MPITests#TestRebalancingForDG0WithRK1_IBM_AggOn",
+    "avgSeconds": 541.1042039,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:37:06.7359398+01:00"
+  },
+  "REL-XNSEC#XDG_DROPLET_EVAPORATION_TEST": {
+    "name": "REL-XNSEC#XDG_DROPLET_EVAPORATION_TEST",
+    "avgSeconds": 2774.9260952,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:39:32.6900971+01:00"
+  },
+  "REL-ZwoLevelSetSolver#FluidSolidTaylorCouette_Exact_P2": {
+    "name": "REL-ZwoLevelSetSolver#FluidSolidTaylorCouette_Exact_P2",
+    "avgSeconds": 2723.2592835,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:39:35.3699629+01:00"
+  },
+  "REL-SAIDT#CurvedShock_Eccomas22": {
+    "name": "REL-SAIDT#CurvedShock_Eccomas22",
+    "avgSeconds": 2585.6223624,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:39:54.0770664+01:00"
+  },
+  "REL-p8-XNSE_Solver_LargeMPItest#ParallelRotatingTilted3DTorus": {
+    "name": "REL-p8-XNSE_Solver_LargeMPItest#ParallelRotatingTilted3DTorus",
+    "avgSeconds": 1988.8182831,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:39:58.2655549+01:00"
+  },
+  "REL-p4-CNS_MPITests#TestRebalancingForDG0WithRK1_IBM_AggOff": {
+    "name": "REL-p4-CNS_MPITests#TestRebalancingForDG0WithRK1_IBM_AggOff",
+    "avgSeconds": 715.1183025,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:40:13.4723543+01:00"
+  },
+  "REL-CahnHilliard#TestEllipticDropletConvergence": {
+    "name": "REL-CahnHilliard#TestEllipticDropletConvergence",
+    "avgSeconds": 2813.1255536,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:42:54.2313798+01:00"
+  },
+  "REL-XESF#XDG_SWF_TwoLs": {
+    "name": "REL-XESF#XDG_SWF_TwoLs",
+    "avgSeconds": 2742.8559635,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:42:58.4524413+01:00"
+  },
+  "REL-XNSE_Solver#ChannelTest_p4_Picard_Standard": {
+    "name": "REL-XNSE_Solver#ChannelTest_p4_Picard_Standard",
+    "avgSeconds": 3687.5473429,
+    "dueMargin": 420.0,
+    "lastupdate": "2026-02-25T22:45:19.4950104+01:00"
+  },
+  "REL-CNS#TestSubsonicPressureInletAndOutletBoundaryCondition1D": {
+    "name": "REL-CNS#TestSubsonicPressureInletAndOutletBoundaryCondition1D",
+    "avgSeconds": 3115.2725763,
+    "dueMargin": 360.0,
+    "lastupdate": "2026-02-25T22:45:34.1609876+01:00"
+  },
+  "REL-p4-CNS_MPITests#TestRebalancingForDG2WithLTS1AndAV_IBM_AggOff": {
+    "name": "REL-p4-CNS_MPITests#TestRebalancingForDG2WithLTS1AndAV_IBM_AggOff",
+    "avgSeconds": 955.1884659,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:46:09.159445+01:00"
+  },
+  "REL-LsTest#LevelSetAdvectionTest2D_fwd": {
+    "name": "REL-LsTest#LevelSetAdvectionTest2D_fwd",
+    "avgSeconds": 3791.783442,
+    "dueMargin": 420.0,
+    "lastupdate": "2026-02-25T22:51:11.6802079+01:00"
+  },
+  "REL-LsTest#LevelSetAdvectionTest2D_reverse": {
+    "name": "REL-LsTest#LevelSetAdvectionTest2D_reverse",
+    "avgSeconds": 3788.7296562,
+    "dueMargin": 420.0,
+    "lastupdate": "2026-02-25T22:51:12.9493523+01:00"
+  },
+  "REL-HFSISolver#FluidSolidTaylorCouette_Experimental_P2": {
+    "name": "REL-HFSISolver#FluidSolidTaylorCouette_Experimental_P2",
+    "avgSeconds": 3744.8469821,
+    "dueMargin": 420.0,
+    "lastupdate": "2026-02-25T22:57:02.4924775+01:00"
+  },
+  "REL-HFSISolver#FluidSolidTaylorCouette_Exact_P2": {
+    "name": "REL-HFSISolver#FluidSolidTaylorCouette_Exact_P2",
+    "avgSeconds": 3738.7142864,
+    "dueMargin": 420.0,
+    "lastupdate": "2026-02-25T22:57:05.2021609+01:00"
+  },
+  "REL-CNS#TestSubsonicInletAndOutletBoundaryCondition1D": {
+    "name": "REL-CNS#TestSubsonicInletAndOutletBoundaryCondition1D",
+    "avgSeconds": 4044.280188,
+    "dueMargin": 420.0,
+    "lastupdate": "2026-02-25T22:59:38.6157467+01:00"
+  },
+  "REL-XNSE_Solver#ChannelTest_p4_Newton_Standard": {
+    "name": "REL-XNSE_Solver#ChannelTest_p4_Newton_Standard",
+    "avgSeconds": 4596.2656168,
+    "dueMargin": 480.0,
+    "lastupdate": "2026-02-25T23:02:13.8487714+01:00"
+  },
+  "REL-XNSE_Solver#ChannelTest_p4_Picard_FullySymmetric": {
+    "name": "REL-XNSE_Solver#ChannelTest_p4_Picard_FullySymmetric",
+    "avgSeconds": 4589.4195519,
+    "dueMargin": 480.0,
+    "lastupdate": "2026-02-25T23:02:17.6717921+01:00"
+  },
+  "REL-XNSE_Solver#ScalingRotCubeTests2D_p3": {
+    "name": "REL-XNSE_Solver#ScalingRotCubeTests2D_p3",
+    "avgSeconds": 4478.7532687,
+    "dueMargin": 480.0,
+    "lastupdate": "2026-02-25T23:02:20.1021199+01:00"
+  },
+  "REL-p8-XNSE_Solver_LargeMPItest#AMRtest_3D": {
+    "name": "REL-p8-XNSE_Solver_LargeMPItest#AMRtest_3D",
+    "avgSeconds": 3002.0915516,
+    "dueMargin": 360.0,
+    "lastupdate": "2026-02-25T23:02:41.4952577+01:00"
+  },
+  "REL-SAIDT#StraightShock_p0_SplineLevelSet": {
+    "name": "REL-SAIDT#StraightShock_p0_SplineLevelSet",
+    "avgSeconds": 4064.9680264,
+    "dueMargin": 420.0,
+    "lastupdate": "2026-02-25T23:05:19.0757619+01:00"
+  },
+  "REL-XNSE_Solver#ChannelTest_p4_Newton_FullySymmetric": {
+    "name": "REL-XNSE_Solver#ChannelTest_p4_Newton_FullySymmetric",
+    "avgSeconds": 4976.645647,
+    "dueMargin": 540.0,
+    "lastupdate": "2026-02-25T23:07:35.7556723+01:00"
+  },
+  "REL-HFSISolver#FluidSolidTaylorCouette_Exact_P1": {
+    "name": "REL-HFSISolver#FluidSolidTaylorCouette_Exact_P1",
+    "avgSeconds": 4427.6547545,
+    "dueMargin": 480.0,
+    "lastupdate": "2026-02-25T23:07:50.4950349+01:00"
+  },
+  "REL-HFSISolver#FluidSolidTaylorCouette_Experimental_P1": {
+    "name": "REL-HFSISolver#FluidSolidTaylorCouette_Experimental_P1",
+    "avgSeconds": 4481.1020953,
+    "dueMargin": 480.0,
+    "lastupdate": "2026-02-25T23:10:22.3075653+01:00"
+  },
+  "REL-p3-XNSE_Solver_MPItest#EmptyMaskInSchwarz": {
+    "name": "REL-p3-XNSE_Solver_MPItest#EmptyMaskInSchwarz",
+    "avgSeconds": 3414.0188351,
+    "dueMargin": 360.0,
+    "lastupdate": "2026-02-25T23:10:34.211088+01:00"
+  },
+  "REL-XNSE_Solver#ScalingSinglePhaseChannelTest": {
+    "name": "REL-XNSE_Solver#ScalingSinglePhaseChannelTest",
+    "avgSeconds": 5834.1608772,
+    "dueMargin": 600.0,
+    "lastupdate": "2026-02-25T23:12:42.7107157+01:00"
+  },
+  "REL-XNSFE_Solver#HeatDecayTest": {
+    "name": "REL-XNSFE_Solver#HeatDecayTest",
+    "avgSeconds": 5252.8506039,
+    "dueMargin": 540.0,
+    "lastupdate": "2026-02-25T23:15:13.2456251+01:00"
+  },
+  "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case1": {
+    "name": "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case1",
+    "avgSeconds": 6437.7145217,
+    "dueMargin": 660.0,
+    "lastupdate": "2026-02-25T23:17:38.6546096+01:00"
+  },
+  "REL-ZwoLevelSetSolver#FluidSolidTaylorCouette_Exact_P3": {
+    "name": "REL-ZwoLevelSetSolver#FluidSolidTaylorCouette_Exact_P3",
+    "avgSeconds": 5162.6008896,
+    "dueMargin": 540.0,
+    "lastupdate": "2026-02-25T23:20:10.5109628+01:00"
+  },
+  "REL-BUIDT#AcceleratingShock": {
+    "name": "REL-BUIDT#AcceleratingShock",
+    "avgSeconds": 5767.8264692,
+    "dueMargin": 600.0,
+    "lastupdate": "2026-02-25T23:32:13.7571378+01:00"
+  },
+  "REL-XNSE_Solver#Run_RestartTests": {
+    "name": "REL-XNSE_Solver#Run_RestartTests",
+    "avgSeconds": 6430.3120479,
+    "dueMargin": 660.0,
+    "lastupdate": "2026-02-25T23:34:25.7887706+01:00"
+  },
+  "REL-p3-XNSE_Solver_MPItest#TestLoadBalancingAMRfalse": {
+    "name": "REL-p3-XNSE_Solver_MPItest#TestLoadBalancingAMRfalse",
+    "avgSeconds": 5636.6522896,
+    "dueMargin": 600.0,
+    "lastupdate": "2026-02-25T23:48:39.0641488+01:00"
+  },
+  "REL-XdgNastyLevsetLocationTest#ParalleTest_2D": {
+    "name": "REL-XdgNastyLevsetLocationTest#ParalleTest_2D",
+    "avgSeconds": 7200.0,
+    "dueMargin": 720.0,
+    "lastupdate": "2026-02-25T23:53:05.1670102+01:00"
+  },
+  "REL-HFSISolver#FluidSolidTaylorCouette_Exact_P3": {
+    "name": "REL-HFSISolver#FluidSolidTaylorCouette_Exact_P3",
+    "avgSeconds": 7167.750369,
+    "dueMargin": 720.0,
+    "lastupdate": "2026-02-25T23:55:27.6983725+01:00"
+  },
+  "REL-p4-XNSE_Solver_MPItest#EmptyMaskInSchwarz": {
+    "name": "REL-p4-XNSE_Solver_MPItest#EmptyMaskInSchwarz",
+    "avgSeconds": 6001.3035447,
+    "dueMargin": 660.0,
+    "lastupdate": "2026-02-26T00:00:08.4962489+01:00"
+  },
+  "REL-ZwoLevelSetSolver#FluidSolidTaylorCouette_Exact_P1": {
+    "name": "REL-ZwoLevelSetSolver#FluidSolidTaylorCouette_Exact_P1",
+    "avgSeconds": 7200.0,
+    "dueMargin": 720.0,
+    "lastupdate": "2026-02-26T00:02:15.2365318+01:00"
+  },
+  "REL-p4-XNSE_Solver_MPItest#TestLoadBalancingAMRfalse": {
+    "name": "REL-p4-XNSE_Solver_MPItest#TestLoadBalancingAMRfalse",
+    "avgSeconds": 6229.3826599,
+    "dueMargin": 660.0,
+    "lastupdate": "2026-02-26T00:02:27.4762+01:00"
+  },
+  "REL-p3-XNSE_Solver_MPItest#RotCube_OrderNotSupportedInHMF": {
+    "name": "REL-p3-XNSE_Solver_MPItest#RotCube_OrderNotSupportedInHMF",
+    "avgSeconds": 6836.9251156,
+    "dueMargin": 720.0,
+    "lastupdate": "2026-02-26T00:06:47.3150342+01:00"
+  },
+  "REL-ZwoLevelSetSolver#FluidSolidTaylorCouette_Exact_P4": {
+    "name": "REL-ZwoLevelSetSolver#FluidSolidTaylorCouette_Exact_P4",
+    "avgSeconds": 7200.0,
+    "dueMargin": 720.0,
+    "lastupdate": "2026-02-26T00:32:34.2120642+01:00"
+  },
+  "REL-XdgNastyLevsetLocationTest#CornerTest_2D": {
+    "name": "REL-XdgNastyLevsetLocationTest#CornerTest_2D",
+    "avgSeconds": 7200.0,
+    "dueMargin": 720.0,
+    "lastupdate": "2026-02-26T00:41:05.4100124+01:00"
+  },
+  "REL-p3-XNSE_Solver_MPItest#TestLoadBalancingAMRtrue": {
+    "name": "REL-p3-XNSE_Solver_MPItest#TestLoadBalancingAMRtrue",
+    "avgSeconds": 7200.0,
+    "dueMargin": 720.0,
+    "lastupdate": "2026-02-26T00:41:09.6438255+01:00"
+  },
+  "REL-p4-XNSE_Solver_MPItest#TestLoadBalancingAMRtrue": {
+    "name": "REL-p4-XNSE_Solver_MPItest#TestLoadBalancingAMRtrue",
+    "avgSeconds": 7200.0,
+    "dueMargin": 720.0,
+    "lastupdate": "2026-02-26T00:53:38.9825564+01:00"
+  },
+  "REL-HFSISolver#FluidSolidTaylorCouette_Exact_P4": {
+    "name": "REL-HFSISolver#FluidSolidTaylorCouette_Exact_P4",
+    "avgSeconds": 7200.0,
+    "dueMargin": 720.0,
+    "lastupdate": "2026-02-26T01:05:56.2748974+01:00"
+  },
+  "REL-p8-XNSE_Solver_LargeMPItest#CurvatureBasedAMRTest_2D": {
+    "name": "REL-p8-XNSE_Solver_LargeMPItest#CurvatureBasedAMRTest_2D",
+    "avgSeconds": 7200.0,
+    "dueMargin": 720.0,
+    "lastupdate": "2026-02-26T01:22:09.738648+01:00"
+  },
+  "DBG-ilPSP#GEMMTest_Frame": {
+    "name": "DBG-ilPSP#GEMMTest_Frame",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:30:22.5695183+01:00"
+  },
+  "DBG-ilPSP#GEMMTest": {
+    "name": "DBG-ilPSP#GEMMTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:30:24.1136289+01:00"
+  },
+  "DBG-ilPSP#MultiplyTest0": {
+    "name": "DBG-ilPSP#MultiplyTest0",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:30:25.7093614+01:00"
+  },
+  "DBG-ilPSP#MultiplyTest1": {
+    "name": "DBG-ilPSP#MultiplyTest1",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:30:26.8221513+01:00"
+  },
+  "DBG-ilPSP#MultiplyTest2": {
+    "name": "DBG-ilPSP#MultiplyTest2",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:30:27.926308+01:00"
+  },
+  "DBG-ilPSP#MultiplyTest3": {
+    "name": "DBG-ilPSP#MultiplyTest3",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:30:29.0406053+01:00"
+  },
+  "DBG-ilPSP#MultiplyTrafoTest0": {
+    "name": "DBG-ilPSP#MultiplyTrafoTest0",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:30:30.1301644+01:00"
+  },
+  "DBG-ipPoisson#TestCartesian": {
+    "name": "DBG-ipPoisson#TestCartesian",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:30:31.2349871+01:00"
+  },
+  "DBG-ipPoisson#TestCurved": {
+    "name": "DBG-ipPoisson#TestCurved",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:30:32.3365857+01:00"
+  },
+  "DBG-ipPoisson#TestIterativeSolver": {
+    "name": "DBG-ipPoisson#TestIterativeSolver",
+    "avgSeconds": 117.4720657,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:30:33.4305535+01:00"
+  },
+  "DBG-ipPoisson#TestOperatorConvergenceCustom": {
+    "name": "DBG-ipPoisson#TestOperatorConvergenceCustom",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:30:34.5236123+01:00"
+  },
+  "DBG-AdvancedSolverTests#CompareFactorization": {
+    "name": "DBG-AdvancedSolverTests#CompareFactorization",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:30:49.6191852+01:00"
+  },
+  "DBG-AdvancedSolverTests#CompareSubstitution": {
+    "name": "DBG-AdvancedSolverTests#CompareSubstitution",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:30:50.6910688+01:00"
+  },
+  "DBG-AdvancedSolverTests#TestLinearSolverConfigurations": {
+    "name": "DBG-AdvancedSolverTests#TestLinearSolverConfigurations",
+    "avgSeconds": 122.1832683,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:30:51.7728227+01:00"
+  },
+  "DBG-AdvancedSolverTests#TestNonLinearSolverConfigurations": {
+    "name": "DBG-AdvancedSolverTests#TestNonLinearSolverConfigurations",
+    "avgSeconds": 114.6640986,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:30:52.8703999+01:00"
+  },
+  "DBG-CDG_ProjectionTest#AllUp_patchwiseOnly_case0": {
+    "name": "DBG-CDG_ProjectionTest#AllUp_patchwiseOnly_case0",
+    "avgSeconds": 113.2507165,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:30:55.586942+01:00"
+  },
+  "DBG-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_sameDegree_p2": {
+    "name": "DBG-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_sameDegree_p2",
+    "avgSeconds": 131.8267877,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:30:58.2346576+01:00"
+  },
+  "DBG-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_higherDegree_p2": {
+    "name": "DBG-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_higherDegree_p2",
+    "avgSeconds": 131.1596958,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:30:59.3692736+01:00"
+  },
+  "DBG-CDG_Projection_MPI#Test4Idempotence": {
+    "name": "DBG-CDG_Projection_MPI#Test4Idempotence",
+    "avgSeconds": 131.9716153,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:31:17.7523194+01:00"
+  },
+  "DBG-ElementTests#Bla": {
+    "name": "DBG-ElementTests#Bla",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:31:18.8342856+01:00"
+  },
+  "DBG-MultigridTest#PrlgAndRestTest": {
+    "name": "DBG-MultigridTest#PrlgAndRestTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:31:19.9160098+01:00"
+  },
+  "DBG-MultigridTest#PrlgAndRestMtxTest": {
+    "name": "DBG-MultigridTest#PrlgAndRestMtxTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:31:21.0096758+01:00"
+  },
+  "DBG-MultigridTest#RestictionMatrixTest": {
+    "name": "DBG-MultigridTest#RestictionMatrixTest",
+    "avgSeconds": 101.9751603,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:31:22.1224536+01:00"
+  },
+  "DBG-MultigridTest#RestrictionOfSystemOpTest": {
+    "name": "DBG-MultigridTest#RestrictionOfSystemOpTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:31:23.2158553+01:00"
+  },
+  "DBG-MultigridTest#PolynomialRestAndPrlgTest": {
+    "name": "DBG-MultigridTest#PolynomialRestAndPrlgTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:31:29.0668659+01:00"
+  },
+  "DBG-MultigridTest#RestictionMatrixTest_2": {
+    "name": "DBG-MultigridTest#RestictionMatrixTest_2",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:31:30.1778423+01:00"
+  },
+  "DBG-MultigridTest#RestrictionOfSystemOpTest_2": {
+    "name": "DBG-MultigridTest#RestrictionOfSystemOpTest_2",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:31:31.2930785+01:00"
+  },
+  "DBG-MultigridTest#XDG_MatrixPolynomialRestAndPrlgTest_2_2": {
+    "name": "DBG-MultigridTest#XDG_MatrixPolynomialRestAndPrlgTest_2_2",
+    "avgSeconds": 158.4200196,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:31:35.5076387+01:00"
+  },
+  "DBG-DatabaseTests#TestCopyGrid": {
+    "name": "DBG-DatabaseTests#TestCopyGrid",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:31:48.9707216+01:00"
+  },
+  "DBG-DatabaseTests#TestUnsafelyDeleteGrid": {
+    "name": "DBG-DatabaseTests#TestUnsafelyDeleteGrid",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:31:50.1492622+01:00"
+  },
+  "DBG-DatabaseTests#TestCopySession": {
+    "name": "DBG-DatabaseTests#TestCopySession",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:31:51.3201388+01:00"
+  },
+  "DBG-DatabaseTests#TestMoveSession": {
+    "name": "DBG-DatabaseTests#TestMoveSession",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:31:52.47851+01:00"
+  },
+  "DBG-DatabaseTests#TestDeleteSession": {
+    "name": "DBG-DatabaseTests#TestDeleteSession",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:31:53.631741+01:00"
+  },
+  "DBG-DatabaseTests#TestClearDatabase": {
+    "name": "DBG-DatabaseTests#TestClearDatabase",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:31:54.7828491+01:00"
+  },
+  "DBG-DatabaseTests#TestSafelyDeleteGrid": {
+    "name": "DBG-DatabaseTests#TestSafelyDeleteGrid",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:31:55.9372444+01:00"
+  },
+  "DBG-DatabaseTests#TestCleanUpDatabase": {
+    "name": "DBG-DatabaseTests#TestCleanUpDatabase",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:31:57.1188347+01:00"
+  },
+  "DBG-DatabaseTests#TestCopyFail": {
+    "name": "DBG-DatabaseTests#TestCopyFail",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:31:58.2708603+01:00"
+  },
+  "DBG-DatabaseTests#TestRenameSession": {
+    "name": "DBG-DatabaseTests#TestRenameSession",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:31:59.4663244+01:00"
+  },
+  "DBG-DatabaseTests#TestRenameGrid": {
+    "name": "DBG-DatabaseTests#TestRenameGrid",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:32:00.6213916+01:00"
+  },
+  "DBG-DatabaseTests#SaveGridIfUnique": {
+    "name": "DBG-DatabaseTests#SaveGridIfUnique",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:32:01.7679717+01:00"
+  },
+  "DBG-DatabaseTests#LoadAndSaveGrid": {
+    "name": "DBG-DatabaseTests#LoadAndSaveGrid",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:32:02.9123897+01:00"
+  },
+  "DBG-DatabaseTests#GridEquivalenceTest": {
+    "name": "DBG-DatabaseTests#GridEquivalenceTest",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:32:04.071849+01:00"
+  },
+  "DBG-XDGTest#AllUp": {
+    "name": "DBG-XDGTest#AllUp",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:32:05.2210247+01:00"
+  },
+  "DBG-XDGTest#MultipleTrackerUpdateCalls": {
+    "name": "DBG-XDGTest#MultipleTrackerUpdateCalls",
+    "avgSeconds": 71.8972118,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:32:07.8691333+01:00"
+  },
+  "DBG-CutCellQuadrature#Test2DSurfaceHighOrderRobustnessStructured": {
+    "name": "DBG-CutCellQuadrature#Test2DSurfaceHighOrderRobustnessStructured",
+    "avgSeconds": 156.2631262,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:32:12.0341057+01:00"
+  },
+  "DBG-CutCellQuadrature#Test2DSurfaceHighOrderRobustnessStructuredSaye": {
+    "name": "DBG-CutCellQuadrature#Test2DSurfaceHighOrderRobustnessStructuredSaye",
+    "avgSeconds": 149.6121354,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:32:13.1105856+01:00"
+  },
+  "DBG-CutCellQuadrature#Test2DSurfaceHighOrderRobustnessStructuredAlgoim": {
+    "name": "DBG-CutCellQuadrature#Test2DSurfaceHighOrderRobustnessStructuredAlgoim",
+    "avgSeconds": 147.7097941,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:32:14.2011265+01:00"
+  },
+  "DBG-CutCellQuadrature#Test2DSurfaceConvergenceStructured": {
+    "name": "DBG-CutCellQuadrature#Test2DSurfaceConvergenceStructured",
+    "avgSeconds": 70.3101614,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:32:15.2887325+01:00"
+  },
+  "DBG-CutCellQuadrature#Test2DSurfaceConvergenceStructuredSaye": {
+    "name": "DBG-CutCellQuadrature#Test2DSurfaceConvergenceStructuredSaye",
+    "avgSeconds": 67.0598059,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:32:16.3693184+01:00"
+  },
+  "DBG-CutCellQuadrature#Test2DSurfaceConvergenceStructuredAlgoim": {
+    "name": "DBG-CutCellQuadrature#Test2DSurfaceConvergenceStructuredAlgoim",
+    "avgSeconds": 110.9879852,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:32:17.4434425+01:00"
+  },
+  "DBG-CutCellQuadrature#Test2DSurfacePRefinementStructuredAlgoim": {
+    "name": "DBG-CutCellQuadrature#Test2DSurfacePRefinementStructuredAlgoim",
+    "avgSeconds": 63.9929408,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:32:18.5356906+01:00"
+  },
+  "DBG-CutCellQuadrature#Test2DVolumeConvergenceStructured": {
+    "name": "DBG-CutCellQuadrature#Test2DVolumeConvergenceStructured",
+    "avgSeconds": 69.2403734,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:32:24.3119475+01:00"
+  },
+  "DBG-CutCellQuadrature#Test2DVolumeConvergenceStructuredSaye": {
+    "name": "DBG-CutCellQuadrature#Test2DVolumeConvergenceStructuredSaye",
+    "avgSeconds": 66.2048047,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:32:25.3935245+01:00"
+  },
+  "DBG-CutCellQuadrature#Test2DVolumeConvergenceStructuredAlgoim": {
+    "name": "DBG-CutCellQuadrature#Test2DVolumeConvergenceStructuredAlgoim",
+    "avgSeconds": 112.9013078,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:32:26.4818544+01:00"
+  },
+  "DBG-CutCellQuadrature#Test2DVolumePRefinementStructuredAlgoim": {
+    "name": "DBG-CutCellQuadrature#Test2DVolumePRefinementStructuredAlgoim",
+    "avgSeconds": 77.7944917,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:32:27.5648744+01:00"
+  },
+  "DBG-CutCellQuadrature#Test2DSurfaceHighOrderRobustnessUnstructured": {
+    "name": "DBG-CutCellQuadrature#Test2DSurfaceHighOrderRobustnessUnstructured",
+    "avgSeconds": 154.5993365,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:32:28.6849383+01:00"
+  },
+  "DBG-CutCellQuadrature#Test2DSurfaceConvergenceUnstructured": {
+    "name": "DBG-CutCellQuadrature#Test2DSurfaceConvergenceUnstructured",
+    "avgSeconds": 65.3127183,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:32:29.756291+01:00"
+  },
+  "DBG-CutCellQuadrature#Test2DVolumeConvergenceUnstructured": {
+    "name": "DBG-CutCellQuadrature#Test2DVolumeConvergenceUnstructured",
+    "avgSeconds": 64.853731,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:32:32.3669552+01:00"
+  },
+  "DBG-CutCellQuadrature#Test3DSphereSurface": {
+    "name": "DBG-CutCellQuadrature#Test3DSphereSurface",
+    "avgSeconds": 186.025168,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:32:36.5696336+01:00"
+  },
+  "DBG-CutCellQuadrature#Test3DSphereSurfaceAlgoim": {
+    "name": "DBG-CutCellQuadrature#Test3DSphereSurfaceAlgoim",
+    "avgSeconds": 154.8685753,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:32:37.6740799+01:00"
+  },
+  "DBG-ipViscosity#ConsistencyTest": {
+    "name": "DBG-ipViscosity#ConsistencyTest",
+    "avgSeconds": 185.9819424,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:32:40.4056855+01:00"
+  },
+  "DBG-ExternalBinding.CodeGen#RunGenerator": {
+    "name": "DBG-ExternalBinding.CodeGen#RunGenerator",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:32:43.0572014+01:00"
+  },
+  "DBG-BoSSS.Application.ExternalBinding#ConvertFOAMGrid": {
+    "name": "DBG-BoSSS.Application.ExternalBinding#ConvertFOAMGrid",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:32:47.2547848+01:00"
+  },
+  "DBG-BoSSS.Application.ExternalBinding#ConvertFOAMGrid_2": {
+    "name": "DBG-BoSSS.Application.ExternalBinding#ConvertFOAMGrid_2",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:32:48.3847363+01:00"
+  },
+  "DBG-BoSSS.Application.ExternalBinding#ConvertFOAMGrid_3": {
+    "name": "DBG-BoSSS.Application.ExternalBinding#ConvertFOAMGrid_3",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:32:49.5226748+01:00"
+  },
+  "DBG-MPITest#Test": {
+    "name": "DBG-MPITest#Test",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:33:10.6967948+01:00"
+  },
+  "DBG-CutCellQuadratureScaling#OneLevelSet_2Dvs3D_Classic": {
+    "name": "DBG-CutCellQuadratureScaling#OneLevelSet_2Dvs3D_Classic",
+    "avgSeconds": 131.573836,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:33:17.9300399+01:00"
+  },
+  "DBG-p2-CDG_Projection_MPI#Test4Idempotence": {
+    "name": "DBG-p2-CDG_Projection_MPI#Test4Idempotence",
+    "avgSeconds": 173.5849158,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:33:37.6060457+01:00"
+  },
+  "DBG-p4-AdvancedSolverTests#CompareFactorization": {
+    "name": "DBG-p4-AdvancedSolverTests#CompareFactorization",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:33:51.1305337+01:00"
+  },
+  "DBG-p4-AdvancedSolverTests#CompareSubstitution": {
+    "name": "DBG-p4-AdvancedSolverTests#CompareSubstitution",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:33:52.3227606+01:00"
+  },
+  "DBG-ipPoisson#TestOperatorConvergence2D": {
+    "name": "DBG-ipPoisson#TestOperatorConvergence2D",
+    "avgSeconds": 312.434359,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:23.92709+01:00"
+  },
+  "DBG-AdvancedSolverTests#LocalIndexTest": {
+    "name": "DBG-AdvancedSolverTests#LocalIndexTest",
+    "avgSeconds": 177.107863,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:25.0418951+01:00"
+  },
+  "DBG-AdvancedSolverTests#MapConsistencyTest": {
+    "name": "DBG-AdvancedSolverTests#MapConsistencyTest",
+    "avgSeconds": 178.1831785,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:26.1345187+01:00"
+  },
+  "DBG-AdvancedSolverTests#SubBlockExtractionWithCoupling": {
+    "name": "DBG-AdvancedSolverTests#SubBlockExtractionWithCoupling",
+    "avgSeconds": 182.6745953,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:27.2382813+01:00"
+  },
+  "DBG-AdvancedSolverTests#FastSubMatrixExtraction": {
+    "name": "DBG-AdvancedSolverTests#FastSubMatrixExtraction",
+    "avgSeconds": 178.6519864,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:29.850271+01:00"
+  },
+  "DBG-AdvancedSolverTests#CellwiseSubSelection": {
+    "name": "DBG-AdvancedSolverTests#CellwiseSubSelection",
+    "avgSeconds": 365.2945908,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:32.528205+01:00"
+  },
+  "DBG-AdvancedSolverTests#SubSelection": {
+    "name": "DBG-AdvancedSolverTests#SubSelection",
+    "avgSeconds": 371.6563211,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:33.6319973+01:00"
+  },
+  "DBG-CDG_ProjectionTest#AllUp_patchwiseOnly_case1": {
+    "name": "DBG-CDG_ProjectionTest#AllUp_patchwiseOnly_case1",
+    "avgSeconds": 263.3137375,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:36.2935539+01:00"
+  },
+  "DBG-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_sameDegree_p3": {
+    "name": "DBG-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_sameDegree_p3",
+    "avgSeconds": 436.1417442,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:37.4645581+01:00"
+  },
+  "DBG-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_higherDegree_p3": {
+    "name": "DBG-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_higherDegree_p3",
+    "avgSeconds": 480.6758742,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:38.606923+01:00"
+  },
+  "DBG-Matrix_MPItest#MultiplyTest": {
+    "name": "DBG-Matrix_MPItest#MultiplyTest",
+    "avgSeconds": 369.6012238,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:42.8755668+01:00"
+  },
+  "DBG-Matrix_MPItest#SpMVTest": {
+    "name": "DBG-Matrix_MPItest#SpMVTest",
+    "avgSeconds": 421.3237411,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:45.5758504+01:00"
+  },
+  "DBG-XdgPoisson3#IterativeSolverTest": {
+    "name": "DBG-XdgPoisson3#IterativeSolverTest",
+    "avgSeconds": 304.2163044,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:46.695034+01:00"
+  },
+  "DBG-CDG_Projection_MPI#ProjectionTest_Patchwise": {
+    "name": "DBG-CDG_Projection_MPI#ProjectionTest_Patchwise",
+    "avgSeconds": 226.889796,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:49.4010504+01:00"
+  },
+  "DBG-CDG_Projection_MPI#ProjectionTest_Global": {
+    "name": "DBG-CDG_Projection_MPI#ProjectionTest_Global",
+    "avgSeconds": 161.7058354,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:50.4987045+01:00"
+  },
+  "DBG-MultigridTest#XDG_MatrixPolynomialRestAndPrlgTest": {
+    "name": "DBG-MultigridTest#XDG_MatrixPolynomialRestAndPrlgTest",
+    "avgSeconds": 366.1234331,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:51.602615+01:00"
+  },
+  "DBG-MultigridTest#XDG_MatrixPolynomialRestAndPrlgTest_2": {
+    "name": "DBG-MultigridTest#XDG_MatrixPolynomialRestAndPrlgTest_2",
+    "avgSeconds": 176.8269771,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:52.6962332+01:00"
+  },
+  "DBG-MultigridTest#XDG_MatrixPolynomialRestAndPrlgTest_3": {
+    "name": "DBG-MultigridTest#XDG_MatrixPolynomialRestAndPrlgTest_3",
+    "avgSeconds": 336.1236918,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:36:56.9526905+01:00"
+  },
+  "DBG-XDGTest#RestartTest": {
+    "name": "DBG-XDGTest#RestartTest",
+    "avgSeconds": 251.5560827,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:37:10.4496246+01:00"
+  },
+  "DBG-CutCellQuadrature#Test2DVolumeHighOrderRobustnessStructured": {
+    "name": "DBG-CutCellQuadrature#Test2DVolumeHighOrderRobustnessStructured",
+    "avgSeconds": 243.1942811,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:37:15.2310297+01:00"
+  },
+  "DBG-CutCellQuadrature#Test2DVolumeHighOrderRobustnessStructuredSaye": {
+    "name": "DBG-CutCellQuadrature#Test2DVolumeHighOrderRobustnessStructuredSaye",
+    "avgSeconds": 229.4460612,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:37:16.3090981+01:00"
+  },
+  "DBG-CutCellQuadrature#Test2DVolumeHighOrderRobustnessStructuredAlgoim": {
+    "name": "DBG-CutCellQuadrature#Test2DVolumeHighOrderRobustnessStructuredAlgoim",
+    "avgSeconds": 228.1254019,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:37:17.3833408+01:00"
+  },
+  "DBG-CutCellQuadrature#Test2DVolumeHighOrderRobustnessUnstructured": {
+    "name": "DBG-CutCellQuadrature#Test2DVolumeHighOrderRobustnessUnstructured",
+    "avgSeconds": 254.8899954,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:37:18.4461363+01:00"
+  },
+  "DBG-CutCellQuadrature#Test3DSphereVolume": {
+    "name": "DBG-CutCellQuadrature#Test3DSphereVolume",
+    "avgSeconds": 271.0875,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:37:19.5262794+01:00"
+  },
+  "DBG-CutCellQuadrature#Test3DSphereVolumeAlgoim": {
+    "name": "DBG-CutCellQuadrature#Test3DSphereVolumeAlgoim",
+    "avgSeconds": 240.76492,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:37:20.6070551+01:00"
+  },
+  "DBG-SpecFEM#AllUp": {
+    "name": "DBG-SpecFEM#AllUp",
+    "avgSeconds": 201.562869,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:37:21.7168571+01:00"
+  },
+  "DBG-XNSE_Solver#MovingDropletTest_debug": {
+    "name": "DBG-XNSE_Solver#MovingDropletTest_debug",
+    "avgSeconds": 314.021532,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:37:30.6532625+01:00"
+  },
+  "DBG-XNSE_Solver#TestStaticDroplet2D_ExactSolution": {
+    "name": "DBG-XNSE_Solver#TestStaticDroplet2D_ExactSolution",
+    "avgSeconds": 287.0891254,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:37:46.0066967+01:00"
+  },
+  "DBG-CutCellQuadratureScaling#OneLevelSet_2Dvs3D_Saye": {
+    "name": "DBG-CutCellQuadratureScaling#OneLevelSet_2Dvs3D_Saye",
+    "avgSeconds": 353.7256346,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:37:53.3706673+01:00"
+  },
+  "DBG-CutCellQuadratureScaling#OneLevelSet_2Dvs3D_Algoim": {
+    "name": "DBG-CutCellQuadratureScaling#OneLevelSet_2Dvs3D_Algoim",
+    "avgSeconds": 347.5551586,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:37:54.5430543+01:00"
+  },
+  "DBG-CutCellQuadratureScaling#TwoLevelSet_2Dvs3D": {
+    "name": "DBG-CutCellQuadratureScaling#TwoLevelSet_2Dvs3D",
+    "avgSeconds": 434.0486916,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:37:55.7116151+01:00"
+  },
+  "DBG-CutCellQuadratureScaling#TwoLevelSets_2D": {
+    "name": "DBG-CutCellQuadratureScaling#TwoLevelSets_2D",
+    "avgSeconds": 435.7381753,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:37:56.9071076+01:00"
+  },
+  "DBG-CutCellQuadratureScaling#TwoLevelSets_2D_SayeVsAlgoim": {
+    "name": "DBG-CutCellQuadratureScaling#TwoLevelSets_2D_SayeVsAlgoim",
+    "avgSeconds": 217.5218342,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:37:59.7034078+01:00"
+  },
+  "DBG-p4-CDG_Projection_MPI#ProjectionTest_Patchwise": {
+    "name": "DBG-p4-CDG_Projection_MPI#ProjectionTest_Patchwise",
+    "avgSeconds": 310.0025343,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:38:02.3582764+01:00"
+  },
+  "DBG-p4-CDG_Projection_MPI#ProjectionTest_Global": {
+    "name": "DBG-p4-CDG_Projection_MPI#ProjectionTest_Global",
+    "avgSeconds": 440.6749778,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:38:03.5093164+01:00"
+  },
+  "DBG-p4-CDG_Projection_MPI#Test4Idempotence": {
+    "name": "DBG-p4-CDG_Projection_MPI#Test4Idempotence",
+    "avgSeconds": 248.0177245,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:38:04.6354075+01:00"
+  },
+  "DBG-p2-CDG_Projection_MPI#ProjectionTest_Patchwise": {
+    "name": "DBG-p2-CDG_Projection_MPI#ProjectionTest_Patchwise",
+    "avgSeconds": 380.6408057,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:38:05.8082782+01:00"
+  },
+  "DBG-p2-CDG_Projection_MPI#ProjectionTest_Global": {
+    "name": "DBG-p2-CDG_Projection_MPI#ProjectionTest_Global",
+    "avgSeconds": 258.1494698,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:38:06.9214122+01:00"
+  },
+  "DBG-AdvancedSolverTests#SubMatrixExtractionWithCoupling": {
+    "name": "DBG-AdvancedSolverTests#SubMatrixExtractionWithCoupling",
+    "avgSeconds": 699.2688404,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:40:51.5285374+01:00"
+  },
+  "DBG-AdvancedSolverTests#CellBlockVectorOperations": {
+    "name": "DBG-AdvancedSolverTests#CellBlockVectorOperations",
+    "avgSeconds": 684.9382723,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:40:52.6392427+01:00"
+  },
+  "DBG-CDG_ProjectionTest#AllUp_globalOnly": {
+    "name": "DBG-CDG_ProjectionTest#AllUp_globalOnly",
+    "avgSeconds": 662.5479857,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:40:53.7763215+01:00"
+  },
+  "DBG-CDG_ProjectionTest#AllUp_Cube": {
+    "name": "DBG-CDG_ProjectionTest#AllUp_Cube",
+    "avgSeconds": 591.669965,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:40:56.4637385+01:00"
+  },
+  "DBG-MultigridTest#ProlongationTest": {
+    "name": "DBG-MultigridTest#ProlongationTest",
+    "avgSeconds": 706.6515705,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:41:00.7005753+01:00"
+  },
+  "DBG-DerivativeTest#DerivativeTest_GridImport": {
+    "name": "DBG-DerivativeTest#DerivativeTest_GridImport",
+    "avgSeconds": 625.1417954,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:41:17.2108655+01:00"
+  },
+  "DBG-XNSE_Solver#PolynomialTestForConvectionTest": {
+    "name": "DBG-XNSE_Solver#PolynomialTestForConvectionTest",
+    "avgSeconds": 671.3128694,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:41:32.4832279+01:00"
+  },
+  "DBG-CutCellQuadratureScaling#OneLevelSet_3D_Saye": {
+    "name": "DBG-CutCellQuadratureScaling#OneLevelSet_3D_Saye",
+    "avgSeconds": 499.5856293,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:41:43.0755484+01:00"
+  },
+  "DBG-CutCellQuadratureScaling#OneLevelSet_3D_Algoim": {
+    "name": "DBG-CutCellQuadratureScaling#OneLevelSet_3D_Algoim",
+    "avgSeconds": 522.1216442,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:41:44.3675135+01:00"
+  },
+  "DBG-CutCellQuadratureScaling#TwoLevelSets_3D": {
+    "name": "DBG-CutCellQuadratureScaling#TwoLevelSets_3D",
+    "avgSeconds": 647.4842455,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:41:45.6332292+01:00"
+  },
+  "DBG-p4-AdvancedSolverTests#LocalIndexTest": {
+    "name": "DBG-p4-AdvancedSolverTests#LocalIndexTest",
+    "avgSeconds": 475.9673195,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:41:48.4814198+01:00"
+  },
+  "DBG-p4-AdvancedSolverTests#MapConsistencyTest": {
+    "name": "DBG-p4-AdvancedSolverTests#MapConsistencyTest",
+    "avgSeconds": 539.3552646,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:41:49.6648481+01:00"
+  },
+  "DBG-p4-AdvancedSolverTests#SubBlockExtractionWithCoupling": {
+    "name": "DBG-p4-AdvancedSolverTests#SubBlockExtractionWithCoupling",
+    "avgSeconds": 577.7066851,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:41:51.0765953+01:00"
+  },
+  "DBG-p4-AdvancedSolverTests#FastSubMatrixExtraction": {
+    "name": "DBG-p4-AdvancedSolverTests#FastSubMatrixExtraction",
+    "avgSeconds": 456.1462902,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:41:53.8086522+01:00"
+  },
+  "DBG-p4-AdvancedSolverTests#TestLinearSolverConfigurations": {
+    "name": "DBG-p4-AdvancedSolverTests#TestLinearSolverConfigurations",
+    "avgSeconds": 305.6142651,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:41:59.6230256+01:00"
+  },
+  "DBG-p4-AdvancedSolverTests#TestNonLinearSolverConfigurations": {
+    "name": "DBG-p4-AdvancedSolverTests#TestNonLinearSolverConfigurations",
+    "avgSeconds": 359.8121905,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:42:00.7738509+01:00"
+  },
+  "DBG-p4-MPITest#Test": {
+    "name": "DBG-p4-MPITest#Test",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:42:23.5734246+01:00"
+  },
+  "DBG-p3-MPITest#Test": {
+    "name": "DBG-p3-MPITest#Test",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:42:24.7253671+01:00"
+  },
+  "DBG-p2-MPITest#Test": {
+    "name": "DBG-p2-MPITest#Test",
+    "avgSeconds": 60.0,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:42:25.8516832+01:00"
+  },
+  "DBG-CDG_ProjectionTest#AllUp_LegendrePolynomial": {
+    "name": "DBG-CDG_ProjectionTest#AllUp_LegendrePolynomial",
+    "avgSeconds": 894.3333455,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:44:28.5052223+01:00"
+  },
+  "DBG-Matrix_MPItest#SubMatrixTest": {
+    "name": "DBG-Matrix_MPItest#SubMatrixTest",
+    "avgSeconds": 814.6633194,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:44:29.6687897+01:00"
+  },
+  "DBG-MultigridTest#XDG_PolynomialRestAndPrlgTest": {
+    "name": "DBG-MultigridTest#XDG_PolynomialRestAndPrlgTest",
+    "avgSeconds": 907.3390878,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:44:32.3225543+01:00"
+  },
+  "DBG-ipViscosity#solverTest": {
+    "name": "DBG-ipViscosity#solverTest",
+    "avgSeconds": 878.2031248,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:44:47.4129237+01:00"
+  },
+  "DBG-CutCellQuadratureScaling#OneLevelSet_2D": {
+    "name": "DBG-CutCellQuadratureScaling#OneLevelSet_2D",
+    "avgSeconds": 810.2150003,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:45:07.0066443+01:00"
+  },
+  "DBG-p4-AdvancedSolverTestsMPI#TestInit": {
+    "name": "DBG-p4-AdvancedSolverTestsMPI#TestInit",
+    "avgSeconds": 465.8146306,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:45:17.5838266+01:00"
+  },
+  "DBG-p4-AdvancedSolverTestsMPI#GetExternalRowsTest": {
+    "name": "DBG-p4-AdvancedSolverTestsMPI#GetExternalRowsTest",
+    "avgSeconds": 494.8660371,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:45:18.7629195+01:00"
+  },
+  "DBG-p4-AdvancedSolverTestsMPI#FastSubMatrixExtraction": {
+    "name": "DBG-p4-AdvancedSolverTestsMPI#FastSubMatrixExtraction",
+    "avgSeconds": 532.8196014,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:45:19.9468004+01:00"
+  },
+  "DBG-XNSE_Solver#IBMChannelTest": {
+    "name": "DBG-XNSE_Solver#IBMChannelTest",
+    "avgSeconds": 933.6082259,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:48:01.6000262+01:00"
+  },
+  "DBG-XNSE_Solver#IBMChannelSolverTest": {
+    "name": "DBG-XNSE_Solver#IBMChannelSolverTest",
+    "avgSeconds": 1008.4731048,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:48:02.7150231+01:00"
+  },
+  "DBG-TraceDGtest#CartesianWithLevelSetAMR": {
+    "name": "DBG-TraceDGtest#CartesianWithLevelSetAMR",
+    "avgSeconds": 962.2030641,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:48:14.8416692+01:00"
+  },
+  "DBG-p4-AdvancedSolverTestsMPI#ExternalIndexTest": {
+    "name": "DBG-p4-AdvancedSolverTestsMPI#ExternalIndexTest",
+    "avgSeconds": 406.5820439,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:48:33.1877643+01:00"
+  },
+  "DBG-p4-AdvancedSolverTestsMPI#TestBlocksAreCorrect_NonOverlapping": {
+    "name": "DBG-p4-AdvancedSolverTestsMPI#TestBlocksAreCorrect_NonOverlapping",
+    "avgSeconds": 427.535204,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:48:34.3879402+01:00"
+  },
+  "DBG-p4-AdvancedSolverTestsMPI#TestSolutionIsCorrect_NonOverlapping": {
+    "name": "DBG-p4-AdvancedSolverTestsMPI#TestSolutionIsCorrect_NonOverlapping",
+    "avgSeconds": 340.5362501,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:48:35.5594277+01:00"
+  },
+  "DBG-p4-AdvancedSolverTestsMPI#TestSolutionIsCorrect_Overlapping": {
+    "name": "DBG-p4-AdvancedSolverTestsMPI#TestSolutionIsCorrect_Overlapping",
+    "avgSeconds": 389.7624952,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:48:36.7472885+01:00"
+  },
+  "DBG-CutCellQuadratureScaling#OneLevelSet_3D_Classic": {
+    "name": "DBG-CutCellQuadratureScaling#OneLevelSet_3D_Classic",
+    "avgSeconds": 1185.402607,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:51:11.1885053+01:00"
+  },
+  "DBG-p4-AdvancedSolverTests#CellwiseSubSelection": {
+    "name": "DBG-p4-AdvancedSolverTests#CellwiseSubSelection",
+    "avgSeconds": 980.8193156,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:51:15.6266016+01:00"
+  },
+  "DBG-p4-AdvancedSolverTests#SubSelection": {
+    "name": "DBG-p4-AdvancedSolverTests#SubSelection",
+    "avgSeconds": 1051.3445608,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:51:16.8430092+01:00"
+  },
+  "DBG-p4-SpecFEM#AllUp": {
+    "name": "DBG-p4-SpecFEM#AllUp",
+    "avgSeconds": 502.8797046,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:51:29.3446669+01:00"
+  },
+  "DBG-XNSE_Solver#SphericalHarmonicsPostprocessingTest": {
+    "name": "DBG-XNSE_Solver#SphericalHarmonicsPostprocessingTest",
+    "avgSeconds": 1437.8171428,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:53:56.0448546+01:00"
+  },
+  "DBG-BoSSS.Application.ExternalBinding#Test1D": {
+    "name": "DBG-BoSSS.Application.ExternalBinding#Test1D",
+    "avgSeconds": 1632.309997,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:59:15.6606777+01:00"
+  },
+  "DBG-XNSE_Solver#ViscosityJumpTest": {
+    "name": "DBG-XNSE_Solver#ViscosityJumpTest",
+    "avgSeconds": 1653.1851468,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T21:59:18.3782694+01:00"
+  },
+  "DBG-DerivativeTest#DerivativeTest_BuildInGrid": {
+    "name": "DBG-DerivativeTest#DerivativeTest_BuildInGrid",
+    "avgSeconds": 1916.6834495,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:01:56.7332971+01:00"
+  },
+  "DBG-MultigridTest#XDG_ProlongationTest_agg0_trw0_eye": {
+    "name": "DBG-MultigridTest#XDG_ProlongationTest_agg0_trw0_eye",
+    "avgSeconds": 2087.7916533,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:04:24.4893201+01:00"
+  },
+  "DBG-MultigridTest#XDG_ProlongationTest_agg0_trw1_eye": {
+    "name": "DBG-MultigridTest#XDG_ProlongationTest_agg0_trw1_eye",
+    "avgSeconds": 2091.3156954,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:04:25.5628131+01:00"
+  },
+  "DBG-MultigridTest#XDG_ProlongationTest_agg0_trw1_idmass": {
+    "name": "DBG-MultigridTest#XDG_ProlongationTest_agg0_trw1_idmass",
+    "avgSeconds": 2093.2595181,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:04:26.611101+01:00"
+  },
+  "DBG-MultigridTest#XDG_ProlongationTest_agg03_trw0_idmass": {
+    "name": "DBG-MultigridTest#XDG_ProlongationTest_agg03_trw0_idmass",
+    "avgSeconds": 2100.9347152,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:04:29.254275+01:00"
+  },
+  "DBG-MultigridTest#XDG_ProlongationTest_agg03_trw1_eye": {
+    "name": "DBG-MultigridTest#XDG_ProlongationTest_agg03_trw1_eye",
+    "avgSeconds": 2104.5740302,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:04:30.3770996+01:00"
+  },
+  "DBG-MultigridTest#XDG_ProlongationTest_agg03_trw1_idmass": {
+    "name": "DBG-MultigridTest#XDG_ProlongationTest_agg03_trw1_idmass",
+    "avgSeconds": 2103.36791,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:04:31.5060923+01:00"
+  },
+  "DBG-MultigridTest#XDG_Norm": {
+    "name": "DBG-MultigridTest#XDG_Norm",
+    "avgSeconds": 2063.2297238,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:04:32.6163943+01:00"
+  },
+  "DBG-XNSE_Solver#TranspiratingChannelTest": {
+    "name": "DBG-XNSE_Solver#TranspiratingChannelTest",
+    "avgSeconds": 2043.882407,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:04:38.4537439+01:00"
+  },
+  "DBG-p4-AdvancedSolverTestsMPI#VectorSplitOperation_Op1": {
+    "name": "DBG-p4-AdvancedSolverTestsMPI#VectorSplitOperation_Op1",
+    "avgSeconds": 1461.9487666,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:04:53.4751436+01:00"
+  },
+  "DBG-p4-AdvancedSolverTestsMPI#VectorSplitOperation_Op2": {
+    "name": "DBG-p4-AdvancedSolverTestsMPI#VectorSplitOperation_Op2",
+    "avgSeconds": 1466.9563349,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:04:54.7047006+01:00"
+  },
+  "DBG-p4-AdvancedSolverTestsMPI#CompareVectorOps": {
+    "name": "DBG-p4-AdvancedSolverTestsMPI#CompareVectorOps",
+    "avgSeconds": 1513.5449064,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:04:55.9824578+01:00"
+  },
+  "DBG-MultigridTest#XDG_ProlongationTest_agg03_trw0_eye": {
+    "name": "DBG-MultigridTest#XDG_ProlongationTest_agg03_trw0_eye",
+    "avgSeconds": 2199.843334,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:06:58.7801397+01:00"
+  },
+  "DBG-XdgPoisson3#ParabolaTest": {
+    "name": "DBG-XdgPoisson3#ParabolaTest",
+    "avgSeconds": 2307.8170998,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:09:18.4318807+01:00"
+  },
+  "DBG-p4-AdvancedSolverTests#SubMatrixExtractionWithCoupling": {
+    "name": "DBG-p4-AdvancedSolverTests#SubMatrixExtractionWithCoupling",
+    "avgSeconds": 2195.8696839,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:09:29.3642374+01:00"
+  },
+  "DBG-p4-AdvancedSolverTestsMPI#VectorCellwiseOperation": {
+    "name": "DBG-p4-AdvancedSolverTestsMPI#VectorCellwiseOperation",
+    "avgSeconds": 1907.310222,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:09:35.3267033+01:00"
+  },
+  "DBG-BoSSS.Application.ExternalBinding#DropletTest": {
+    "name": "DBG-BoSSS.Application.ExternalBinding#DropletTest",
+    "avgSeconds": 2384.380789,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:11:37.1962236+01:00"
+  },
+  "DBG-p4-AdvancedSolverTests#CellBlockVectorOperations": {
+    "name": "DBG-p4-AdvancedSolverTests#CellBlockVectorOperations",
+    "avgSeconds": 2354.8886197,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:11:46.1560031+01:00"
+  },
+  "DBG-p4-AdvancedSolverTestsMPI#SubMatrixExtraction": {
+    "name": "DBG-p4-AdvancedSolverTestsMPI#SubMatrixExtraction",
+    "avgSeconds": 2162.8343025,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:11:47.4516453+01:00"
+  },
+  "DBG-p4-AdvancedSolverTestsMPI#SubSelection": {
+    "name": "DBG-p4-AdvancedSolverTestsMPI#SubSelection",
+    "avgSeconds": 2155.3687868,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:14:01.1630736+01:00"
+  },
+  "DBG-p4-AdvancedSolverTestsMPI#SubBlockExtraction": {
+    "name": "DBG-p4-AdvancedSolverTestsMPI#SubBlockExtraction",
+    "avgSeconds": 2600.6782712,
+    "dueMargin": 300.0,
+    "lastupdate": "2026-02-25T22:20:28.5894986+01:00"
+  },
+  "DBG-XNSE_Solver#InterfaceSlipTest": {
+    "name": "DBG-XNSE_Solver#InterfaceSlipTest",
+    "avgSeconds": 4093.7998675,
+    "dueMargin": 420.0,
+    "lastupdate": "2026-02-25T22:39:35.3074983+01:00"
+  },
+  "DBG-XNSE_Solver#IBMChannelSolverTest_Transient": {
+    "name": "DBG-XNSE_Solver#IBMChannelSolverTest_Transient",
+    "avgSeconds": 7200.0,
+    "dueMargin": 720.0,
+    "lastupdate": "2026-02-25T23:40:33.3937793+01:00"
+  },
+  "DBG-XNSE_Solver#BcTest_PressureOutletTest": {
+    "name": "DBG-XNSE_Solver#BcTest_PressureOutletTest",
+    "avgSeconds": 7200.0,
+    "dueMargin": 720.0,
+    "lastupdate": "2026-02-26T00:15:51.1102675+01:00"
+  },
+  "DBG-XNSE_Solver#RollingSaveTest": {
+    "name": "DBG-XNSE_Solver#RollingSaveTest",
+    "avgSeconds": 7200.0,
+    "dueMargin": 720.0,
+    "lastupdate": "2026-02-26T03:16:23.8448303+01:00"
+  },
+  "DBG-XNSE_Solver#Run_RestartTests": {
+    "name": "DBG-XNSE_Solver#Run_RestartTests",
+    "avgSeconds": 6430.3120479,
+    "dueMargin": 660.0,
+    "lastupdate": "2026-02-25T23:34:25.7887706+01:00"
+  }
+}
