@@ -2467,7 +2467,7 @@
   },
   "REL-XNSE_Solver#ScalingViscosityJumpTest_p3": {
     "name": "REL-XNSE_Solver#ScalingViscosityJumpTest_p3",
-    "avgSeconds": 2437.542346,
+    "avgSeconds": 5400,
     "dueMargin": 300.0,
     "lastupdate": "2026-02-25T22:14:33.4141223+01:00"
   },
@@ -2929,7 +2929,7 @@
   },
   "REL-XNSEC#XDG_DROPLET_EVAPORATION_TEST": {
     "name": "REL-XNSEC#XDG_DROPLET_EVAPORATION_TEST",
-    "avgSeconds": 2774.9260952,
+    "avgSeconds": 3600,
     "dueMargin": 300.0,
     "lastupdate": "2026-02-25T22:39:32.6900971+01:00"
   },
@@ -3055,13 +3055,13 @@
   },
   "REL-HFSISolver#FluidSolidTaylorCouette_Exact_P1": {
     "name": "REL-HFSISolver#FluidSolidTaylorCouette_Exact_P1",
-    "avgSeconds": 4427.6547545,
+    "avgSeconds": 5400,
     "dueMargin": 480.0,
     "lastupdate": "2026-02-25T23:07:50.4950349+01:00"
   },
   "REL-HFSISolver#FluidSolidTaylorCouette_Experimental_P1": {
     "name": "REL-HFSISolver#FluidSolidTaylorCouette_Experimental_P1",
-    "avgSeconds": 4481.1020953,
+    "avgSeconds": 7200,
     "dueMargin": 480.0,
     "lastupdate": "2026-02-25T23:10:22.3075653+01:00"
   },
