@@ -1,4 +1,5 @@
 using BoSSS.Application.BoSSSpad;
+using BoSSS.Foundation.IO;
 using BoSSS.Solution;
 using ilPSP;
 using ilPSP.Tracing;
@@ -892,11 +893,14 @@ namespace PublicTestRunner {
                             (Job job, string ResFile, string testname) = AllOpenJobs[iJob];
                             JobStatus s = job.Status;
 
-
-                            if ( monitor.Overdue(job, DateNtime) ) {
-                                Console.Error.WriteLine($" ------------------- Overdue: {job.Name}");
-                                job.LatestDeployment.Cancel("Job is running unusually long!");
-                                continue;
+                            if ( s is JobStatus.InProgress ) {
+                                if ( monitor.Overdue(job, DateNtime)
+                                //|| (object.ReferenceEquals(job.AssignedBatchProc, bpc) && job.LatestDeployment.RunTime.TotalSeconds > 30) // test code to trigger cnacelling
+                                ) {
+                                    Console.Error.WriteLine($" ------------------- Overdue: {job.Name}");
+                                    job.LatestDeployment.Cancel("Job is running unusually long!");
+                                    continue;
+                                }
                             }
 
                             {

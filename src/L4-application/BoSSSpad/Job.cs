@@ -800,7 +800,11 @@ namespace BoSSS.Application.BoSSSpad {
                 }
 
                 if ( s == JobStatus.InProgress ) {
-                    return m_owner.AssignedBatchProc.GetRunTime(this.BatchProcessorIdentifierToken, this.optInfo, this.DeploymentDirectory?.FullName);
+                    var st = m_owner.AssignedBatchProc.GetStartTime(this.BatchProcessorIdentifierToken, this.optInfo, this.DeploymentDirectory?.FullName);
+                    if ( st == null )
+                        return new TimeSpan(0);
+                    else
+                        return DateTime.Now - (st ?? default(DateTime));
                 }
 
                 return new TimeSpan(0);
