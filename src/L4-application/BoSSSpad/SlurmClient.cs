@@ -512,7 +512,8 @@ namespace BoSSS.Application.BoSSSpad {
                 for(int i = 0; i < NumOfServiceCoresPerMPIprocess; i++)
                     mask |= 1UL << (NumThreads + i);                                    // builds the 64-bit mask
 
-                sw.WriteLine($"export COMPlus_GCHeapCount={NumOfServiceCoresPerMPIprocess}");
+                if( NumOfServiceCoresPerMPIprocess > 0)
+                    sw.WriteLine($"export COMPlus_GCHeapCount={NumOfServiceCoresPerMPIprocess}");
                 //sw.WriteLine($"export COMPlus_GCHeapAffinitizeMask=0x{mask:X}");
 
 

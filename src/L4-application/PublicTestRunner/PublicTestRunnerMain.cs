@@ -638,9 +638,10 @@ namespace PublicTestRunner {
             
         }
 
-        public static int JobManagerRun(string AssemblyFilter, int ExecutionQueueNo) {
+        public static int JobManagerRun(string AssemblyFilter, int ExecutionQueueNo, int BackupExecutionQueueNo = -1) {
             AppDomain.CurrentDomain.ProcessExit += CancelAllJobsOnExit;
             Console.CancelKeyPress += CancelAllJobsOnExit;
+            BackupExecutionQueueNo = BackupExecutionQueueNo >= 0 ? BackupExecutionQueueNo : ExecutionQueueNo;
 
             // ===================================
             // phase 0: setup
@@ -659,6 +660,12 @@ namespace PublicTestRunner {
 
             BatchProcessorClient bpc = BoSSSshell.ExecutionQueues[ExecutionQueueNo];
             Console.WriteLine($"Using batch queue {ExecutionQueueNo}: {bpc}");
+
+            BatchProcessorClient bpc2 = BoSSSshell.ExecutionQueues[BackupExecutionQueueNo];
+            Console.WriteLine($"Using bacl batch queue {BackupExecutionQueueNo}: {bpc2} (for failed jobs)");
+            if(!bpc.IsSameSystem(bpc2)) {
+                throw new NotSupportedException("(primary) batch queue and backup batch queue must be the same server (`IsSameSystem` test must evaluate to true)");
+            }
 
             FileStream ServerMutex;
             string DateNtime = null;
@@ -916,6 +923,7 @@ namespace PublicTestRunner {
 
                                 if ( job.SubmitCount < job.RetryCount ) {
                                     Console.WriteLine("Trying once again with failed job...");
+                                    job.AssignedBatchProc = bpc2;
                                     job.Reactivate();
                                     continue;
                                 }
@@ -1802,13 +1810,19 @@ namespace PublicTestRunner {
                         ignore_tests_w_deps = true;
                     }
 
-                    int iQueue = 1;
+                    int iQueue = 1, iBkupQueue = 1;
                     string filter = args.Length > 1 ? args[1] : "*";
                     if ( args.Length == 3 ) {
                         Console.WriteLine("arg 2 is:" + args[2]);
                         if ( args[2].StartsWith("queue#") ) {
                             try {
-                                iQueue = int.Parse(args[2].Split(new[] { '#' }, StringSplitOptions.RemoveEmptyEntries)[1]);
+                                string[] queueArgs = args[2].Split(new[] { '#' }, StringSplitOptions.RemoveEmptyEntries);
+                                iQueue = int.Parse(queueArgs[1]);
+                                if ( queueArgs.Length > 2 ) {
+                                    iBkupQueue = int.Parse(queueArgs[2]);
+                                } else {
+                                    iBkupQueue = iQueue;
+                                }
                             } catch ( Exception ) {
                                 ret = -1;
                                 Console.Error.WriteLine("Unable to parse queue number from " + args[1]);
@@ -1824,7 +1838,7 @@ namespace PublicTestRunner {
 
                     }
 
-                    ret = JobManagerRun(filter, iQueue);
+                    ret = JobManagerRun(filter, iQueue, iBkupQueue);
                     break;
 
                 case "help":
@@ -1853,6 +1867,7 @@ namespace PublicTestRunner {
             //    Console.WriteLine($"  arg#{i}  >>>>>>{args[i]}<<<<<<");
             //}
             //Debugger.Launch();
+            //var m = new JobDeadlineMonitor(Path.Combine("..", "..", ".."));
 
             try {
                 return _Main(args, new PublicTests());

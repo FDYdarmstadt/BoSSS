@@ -924,6 +924,25 @@ namespace BoSSS.Application.BoSSSpad {
                 tr.Info($"Job {id} cancelled successfully");
             }
         }
+
+        /// <summary>
+        /// <see cref="BatchProcessorClient.IsSameSystem"/>
+        /// </summary>
+        public override bool IsSameSystem(BatchProcessorClient other) {
+            if ( !base.IsSameSystem(other) )
+                return false;
+            var _other = other as MsHPC2012Client;
+            if(_other == null) 
+                return false;
+
+            if ( this.ServerName != _other.ServerName )
+                return false;
+            if ( this.Username != _other.Username )
+                return false;
+
+
+            return true;
+        }
     }
 }
 

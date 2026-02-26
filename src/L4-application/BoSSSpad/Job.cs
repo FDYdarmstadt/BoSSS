@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 
+using BoSSS.Application.XNSE_Solver;
 using BoSSS.Foundation.IO;
 using ilPSP;
 using ilPSP.Tracing;
@@ -22,6 +23,7 @@ using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -1480,21 +1482,40 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         private BatchProcessorClient _AssignedBatchProc;
+        
+        
         /// <summary>
         /// After calling <see cref="BatchProcessorClient.Submit"/>, this job
         /// is assigned to the respective batch processor, which is recorded in this member.
+        /// 
+        /// It might be possible to change the batch queue (e.g., afer a job has failed and before resubmitting via <see cref="Reactivate"/>),
+        /// but this should be used with **extreme** care.
         /// </summary>
         public BatchProcessorClient AssignedBatchProc {
             get {
                 return _AssignedBatchProc;
             }
             set {
-                if ( _AssignedBatchProc == null )
+                if ( _AssignedBatchProc == null ) {
                     _AssignedBatchProc = value;
-                else
-                    throw new NotSupportedException("Batchprocessor can be set only once!");
+                } else {
+                    if(this.Status == JobStatus.InProgress || this.Status == JobStatus.PendingInExecutionQueue)
+                        throw new NotSupportedException("Batchprocessor cant be changed while job is running or pending!");
+
+                    if (value.IsSameSystem(_AssignedBatchProc)) {
+                        _AssignedBatchProc = value;
+                    } else {
+                        throw new NotSupportedException("Batchprocessor cant be changed to a different system!");
+                    }
+
+                    
+                }
             }
         }
+
+
+        
+
 
         JobStatus? statusCache;
 

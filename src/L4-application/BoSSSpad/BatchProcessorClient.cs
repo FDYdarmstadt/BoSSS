@@ -435,6 +435,23 @@ namespace BoSSS.Application.BoSSSpad {
 
             return CreateOrOpenCompatibleDatabase(relPath);
         }
+    
+    
+        /// <summary>
+        /// returns true, if <paramref name="other"/> is basically the same cluster, but maybe wit a different queue (other nodes, other priority, etc.).
+        /// </summary>
+        public virtual bool IsSameSystem(BatchProcessorClient other) {
+            if(object.ReferenceEquals(this, other)) 
+                return true;
+
+            if(other.GetType() != this.GetType()) 
+                return false;
+            if(other.DeploymentBaseDirectory != this.DeploymentBaseDirectory) 
+                return false;
+
+
+            return true;
+        }
     }
 
     /// <summary>

@@ -283,10 +283,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         [Test]
         public static void Run_RestartTests(
 #if DEBUG
-            [Values(false, true)] bool transient,
+            [Values(true)] bool transient,
             [Values(LevelSetHandling.LieSplitting)] LevelSetHandling LevSetHandling,
             [Values(TimeSteppingScheme.ImplicitEuler)] TimeSteppingScheme timestepScheme,
-            [Values(false, true)] bool AMRon,
+            [Values(false)] bool AMRon,
             [Values(3)] int savePeriod
 #else
             [Values(false, true)] bool transient,
