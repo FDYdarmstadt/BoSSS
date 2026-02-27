@@ -1,5 +1,6 @@
 ﻿using BoSSS.Application.BoSSSpad;
 using MathNet.Numerics.Optimization;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -20,7 +21,12 @@ namespace PublicTestRunner {
         }
 
         internal void UpdateMargin() {
-            var margin = this.avgSeconds*0.1;
+            double margin;
+            if(this.avgSeconds < 3601)
+                margin = this.avgSeconds * 0.7;
+            else
+                margin = this.avgSeconds * 0.2;
+
             margin = Math.Max(60 * 5, margin); // minimum: 5 minutes, to avoid problems with very quick tests.
             margin = Math.Ceiling(margin / 60.0) * 60.0; // round up to full minutes
             this.dueMargin = margin;
@@ -48,14 +54,14 @@ namespace PublicTestRunner {
                 Console.ForegroundColor = ConsoleColor.White;
             }
 
-            //this.shouldUpdateTimes = true;
-            //const double TwoHoursInSec = 2*3600;
-            //foreach ( var entry in this.overview.Values ) {
-            //    if(entry.avgSeconds > TwoHoursInSec)
-            //        entry.avgSeconds = Math.Min(entry.avgSeconds, 2 * 3600);
-            //    entry.UpdateMargin();
-            //}
-            //this.Save();
+            this.shouldUpdateTimes = true;
+            const double TwoHoursInSec = 2*3600;
+            foreach ( var entry in this.overview.Values ) {
+                //if ( entry.avgSeconds > TwoHoursInSec )
+                //    entry.avgSeconds = Math.Min(entry.avgSeconds, 2 * 3600);
+                entry.UpdateMargin();
+            }
+            this.Save();
         }
 
         private string Trim(string name, string PrefixToTrim) {

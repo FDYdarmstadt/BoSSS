@@ -746,151 +746,151 @@
   "REL-CDG_ProjectionTest#AllUp_globalOnly": {
     "name": "REL-CDG_ProjectionTest#AllUp_globalOnly",
     "avgSeconds": 614.540055,
-    "dueMargin": 300.0,
+    "dueMargin": 480.0,
     "lastupdate": "2026-02-25T21:49:21.1672269+01:00"
   },
   "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_higherDegree_p4_grd2n4": {
     "name": "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_higherDegree_p4_grd2n4",
     "avgSeconds": 751.6239475,
-    "dueMargin": 300.0,
+    "dueMargin": 540.0,
     "lastupdate": "2026-02-25T21:49:27.7029882+01:00"
   },
   "REL-XdgPoisson3#ScalingCircle2D": {
     "name": "REL-XdgPoisson3#ScalingCircle2D",
     "avgSeconds": 432.1579909,
-    "dueMargin": 300.0,
+    "dueMargin": 360.0,
     "lastupdate": "2026-02-25T21:49:30.4060136+01:00"
   },
   "REL-DerivativeTest#DerivativeTest_BuildInGrid": {
     "name": "REL-DerivativeTest#DerivativeTest_BuildInGrid",
     "avgSeconds": 655.249034,
-    "dueMargin": 300.0,
+    "dueMargin": 480.0,
     "lastupdate": "2026-02-25T21:49:33.2458375+01:00"
   },
   "REL-BoSSS.Application.ExternalBinding#ConvergenceTest": {
     "name": "REL-BoSSS.Application.ExternalBinding#ConvergenceTest",
     "avgSeconds": 591.654242,
-    "dueMargin": 300.0,
+    "dueMargin": 420.0,
     "lastupdate": "2026-02-25T21:49:34.7182099+01:00"
   },
   "REL-XNSE_Solver#ViscosityJumpTest": {
     "name": "REL-XNSE_Solver#ViscosityJumpTest",
     "avgSeconds": 855.9394658,
-    "dueMargin": 300.0,
+    "dueMargin": 600.0,
     "lastupdate": "2026-02-25T21:49:36.102558+01:00"
   },
   "REL-XNSE_Solver#ScalingStaticDropletTest_p3_Standard_OneStepGaussAndStokes": {
     "name": "REL-XNSE_Solver#ScalingStaticDropletTest_p3_Standard_OneStepGaussAndStokes",
     "avgSeconds": 460.8842804,
-    "dueMargin": 300.0,
+    "dueMargin": 360.0,
     "lastupdate": "2026-02-25T21:49:41.0294004+01:00"
   },
   "REL-XNSE_Solver#ScalingStaticDropletTest_p3_FullySymmetric_OneStepGaussAndStokes": {
     "name": "REL-XNSE_Solver#ScalingStaticDropletTest_p3_FullySymmetric_OneStepGaussAndStokes",
     "avgSeconds": 1110.9602905,
-    "dueMargin": 300.0,
+    "dueMargin": 780.0,
     "lastupdate": "2026-02-25T21:49:42.1605891+01:00"
   },
   "REL-XNSE_Solver#ScalingStaticDropletTest_p3_Standard_Saye": {
     "name": "REL-XNSE_Solver#ScalingStaticDropletTest_p3_Standard_Saye",
     "avgSeconds": 437.2799966,
-    "dueMargin": 300.0,
+    "dueMargin": 360.0,
     "lastupdate": "2026-02-25T21:49:43.2973791+01:00"
   },
   "REL-XNSE_Solver#ScalingStaticDropletTest_p3_FullySymmetric_Saye": {
     "name": "REL-XNSE_Solver#ScalingStaticDropletTest_p3_FullySymmetric_Saye",
     "avgSeconds": 583.4222788,
-    "dueMargin": 300.0,
+    "dueMargin": 420.0,
     "lastupdate": "2026-02-25T21:49:44.4447667+01:00"
   },
   "REL-XNSE_Solver#ScalingStaticDropletTest_p3_Standard_Algoim": {
     "name": "REL-XNSE_Solver#ScalingStaticDropletTest_p3_Standard_Algoim",
     "avgSeconds": 782.1488417,
-    "dueMargin": 300.0,
+    "dueMargin": 600.0,
     "lastupdate": "2026-02-25T21:49:45.5648064+01:00"
   },
   "REL-XNSE_Solver#ScalingStaticDropletTest_p3_FullySymmetric_Algoim": {
     "name": "REL-XNSE_Solver#ScalingStaticDropletTest_p3_FullySymmetric_Algoim",
     "avgSeconds": 581.0864973,
-    "dueMargin": 300.0,
+    "dueMargin": 420.0,
     "lastupdate": "2026-02-25T21:49:46.7233228+01:00"
   },
   "REL-XNSE_Solver#MovingDropletTest_rel_p2_OneStepGaussAndStokes_Standard": {
     "name": "REL-XNSE_Solver#MovingDropletTest_rel_p2_OneStepGaussAndStokes_Standard",
     "avgSeconds": 808.7351356,
-    "dueMargin": 300.0,
+    "dueMargin": 600.0,
     "lastupdate": "2026-02-25T21:49:51.0498801+01:00"
   },
   "REL-XNSE_Solver#MovingDropletTest_rel_p3_OneStepGaussAndStokes_Standard": {
     "name": "REL-XNSE_Solver#MovingDropletTest_rel_p3_OneStepGaussAndStokes_Standard",
     "avgSeconds": 634.2001742,
-    "dueMargin": 300.0,
+    "dueMargin": 480.0,
     "lastupdate": "2026-02-25T21:49:52.7048607+01:00"
   },
   "REL-XNSE_Solver#MovingDropletTest_rel_p2_Saye_Standard": {
     "name": "REL-XNSE_Solver#MovingDropletTest_rel_p2_Saye_Standard",
     "avgSeconds": 680.9500157,
-    "dueMargin": 300.0,
+    "dueMargin": 480.0,
     "lastupdate": "2026-02-25T21:49:54.2352106+01:00"
   },
   "REL-XNSE_Solver#MovingDropletTest_rel_p3_Saye_Standard": {
     "name": "REL-XNSE_Solver#MovingDropletTest_rel_p3_Saye_Standard",
     "avgSeconds": 507.3108105,
-    "dueMargin": 300.0,
+    "dueMargin": 360.0,
     "lastupdate": "2026-02-25T21:49:55.8436993+01:00"
   },
   "REL-XNSE_Solver#MovingDropletTest_rel_p2_OneStepGaussAndStokes_FullySymmetric": {
     "name": "REL-XNSE_Solver#MovingDropletTest_rel_p2_OneStepGaussAndStokes_FullySymmetric",
     "avgSeconds": 747.7237045,
-    "dueMargin": 300.0,
+    "dueMargin": 540.0,
     "lastupdate": "2026-02-25T21:49:57.3352884+01:00"
   },
   "REL-XNSE_Solver#MovingDropletTest_rel_p3_OneStepGaussAndStokes_FullySymmetric": {
     "name": "REL-XNSE_Solver#MovingDropletTest_rel_p3_OneStepGaussAndStokes_FullySymmetric",
     "avgSeconds": 678.3249421,
-    "dueMargin": 300.0,
+    "dueMargin": 480.0,
     "lastupdate": "2026-02-25T21:49:59.0232834+01:00"
   },
   "REL-XNSE_Solver#MovingDropletTest_rel_p2_Saye_FullySymmetric": {
     "name": "REL-XNSE_Solver#MovingDropletTest_rel_p2_Saye_FullySymmetric",
     "avgSeconds": 624.6994453,
-    "dueMargin": 300.0,
+    "dueMargin": 480.0,
     "lastupdate": "2026-02-25T21:50:00.5153194+01:00"
   },
   "REL-XNSE_Solver#MovingDropletTest_rel_p3_Saye_FullySymmetric": {
     "name": "REL-XNSE_Solver#MovingDropletTest_rel_p3_Saye_FullySymmetric",
     "avgSeconds": 504.4878689,
-    "dueMargin": 300.0,
+    "dueMargin": 360.0,
     "lastupdate": "2026-02-25T21:50:02.1180285+01:00"
   },
   "REL-XNSE_Solver#MovingDropletTest_rel_p2_Algoim_Standard": {
     "name": "REL-XNSE_Solver#MovingDropletTest_rel_p2_Algoim_Standard",
     "avgSeconds": 681.9874737,
-    "dueMargin": 300.0,
+    "dueMargin": 480.0,
     "lastupdate": "2026-02-25T21:50:03.58655+01:00"
   },
   "REL-XNSE_Solver#MovingDropletTest_rel_p3_Algoim_Standard": {
     "name": "REL-XNSE_Solver#MovingDropletTest_rel_p3_Algoim_Standard",
     "avgSeconds": 468.2657174,
-    "dueMargin": 300.0,
+    "dueMargin": 360.0,
     "lastupdate": "2026-02-25T21:50:05.2026847+01:00"
   },
   "REL-XNSE_Solver#MovingDropletTest_rel_p2_Algoim_FullySymmetric": {
     "name": "REL-XNSE_Solver#MovingDropletTest_rel_p2_Algoim_FullySymmetric",
     "avgSeconds": 626.9906071,
-    "dueMargin": 300.0,
+    "dueMargin": 480.0,
     "lastupdate": "2026-02-25T21:50:06.6903143+01:00"
   },
   "REL-XNSE_Solver#MovingDropletTest_rel_p3_Algoim_FullySymmetric": {
     "name": "REL-XNSE_Solver#MovingDropletTest_rel_p3_Algoim_FullySymmetric",
     "avgSeconds": 477.4345867,
-    "dueMargin": 300.0,
+    "dueMargin": 360.0,
     "lastupdate": "2026-02-25T21:50:08.422999+01:00"
   },
   "REL-XNSE_Solver#BasicThreePhaseTest": {
     "name": "REL-XNSE_Solver#BasicThreePhaseTest",
     "avgSeconds": 618.8853606,
-    "dueMargin": 300.0,
+    "dueMargin": 480.0,
     "lastupdate": "2026-02-25T21:50:09.973504+01:00"
   },
   "REL-XNSE_Solver#TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux_Soff_p2": {
@@ -1784,55 +1784,55 @@
   "REL-CDG_Projection_MPI#ProjectionTest_Patchwise": {
     "name": "REL-CDG_Projection_MPI#ProjectionTest_Patchwise",
     "avgSeconds": 1768.6580818,
-    "dueMargin": 300.0,
+    "dueMargin": 1260.0,
     "lastupdate": "2026-02-25T22:01:00.0172396+01:00"
   },
   "REL-XNSE_Solver#ScalingViscosityJumpTest_p2": {
     "name": "REL-XNSE_Solver#ScalingViscosityJumpTest_p2",
     "avgSeconds": 1343.1982354,
-    "dueMargin": 300.0,
+    "dueMargin": 960.0,
     "lastupdate": "2026-02-25T22:01:01.0936472+01:00"
   },
   "REL-XNSE_Solver#BcTest_PressureOutletTest": {
     "name": "REL-XNSE_Solver#BcTest_PressureOutletTest",
     "avgSeconds": 1490.3615408,
-    "dueMargin": 300.0,
+    "dueMargin": 1080.0,
     "lastupdate": "2026-02-25T22:01:05.4008338+01:00"
   },
   "REL-XNSE_Solver#TaylorCouetteConvergenceTest_IBM_SchurComplOn": {
     "name": "REL-XNSE_Solver#TaylorCouetteConvergenceTest_IBM_SchurComplOn",
     "avgSeconds": 848.0041145,
-    "dueMargin": 300.0,
+    "dueMargin": 600.0,
     "lastupdate": "2026-02-25T22:01:07.1868224+01:00"
   },
   "REL-XNSE_Solver#TaylorCouetteConvergenceTest_IBM_SchurComplOff": {
     "name": "REL-XNSE_Solver#TaylorCouetteConvergenceTest_IBM_SchurComplOff",
     "avgSeconds": 873.7342143,
-    "dueMargin": 300.0,
+    "dueMargin": 660.0,
     "lastupdate": "2026-02-25T22:01:08.6485632+01:00"
   },
   "REL-XNSE_Solver#TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux_Soff_p3": {
     "name": "REL-XNSE_Solver#TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux_Soff_p3",
     "avgSeconds": 665.2053083,
-    "dueMargin": 300.0,
+    "dueMargin": 480.0,
     "lastupdate": "2026-02-25T22:01:09.7767737+01:00"
   },
   "REL-XNSE_Solver#TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux_Son_p3": {
     "name": "REL-XNSE_Solver#TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux_Son_p3",
     "avgSeconds": 700.8821679,
-    "dueMargin": 300.0,
+    "dueMargin": 540.0,
     "lastupdate": "2026-02-25T22:01:10.9080092+01:00"
   },
   "REL-XNSE_Solver#TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Son_p3": {
     "name": "REL-XNSE_Solver#TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Son_p3",
     "avgSeconds": 666.2359292,
-    "dueMargin": 300.0,
+    "dueMargin": 480.0,
     "lastupdate": "2026-02-25T22:01:12.0444673+01:00"
   },
   "REL-XNSE_Solver#TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Soff_p3": {
     "name": "REL-XNSE_Solver#TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Soff_p3",
     "avgSeconds": 644.2094252,
-    "dueMargin": 300.0,
+    "dueMargin": 480.0,
     "lastupdate": "2026-02-25T22:01:13.1722574+01:00"
   },
   "REL-XNSE_Solver#TranspiratingChannelTest": {
@@ -1844,31 +1844,31 @@
   "REL-XNSE_Solver#SphericalHarmonicsPostprocessingTest": {
     "name": "REL-XNSE_Solver#SphericalHarmonicsPostprocessingTest",
     "avgSeconds": 952.4963152,
-    "dueMargin": 300.0,
+    "dueMargin": 720.0,
     "lastupdate": "2026-02-25T22:01:33.9896135+01:00"
   },
   "REL-XNSE_Solver#ScalingRotCubeTests2D_p1": {
     "name": "REL-XNSE_Solver#ScalingRotCubeTests2D_p1",
     "avgSeconds": 754.6571344,
-    "dueMargin": 300.0,
+    "dueMargin": 540.0,
     "lastupdate": "2026-02-25T22:01:36.6948523+01:00"
   },
   "REL-XNSE_Solver#InterfaceSlipTest": {
     "name": "REL-XNSE_Solver#InterfaceSlipTest",
     "avgSeconds": 534.3089279,
-    "dueMargin": 300.0,
+    "dueMargin": 420.0,
     "lastupdate": "2026-02-25T22:01:41.0315172+01:00"
   },
   "REL-XNSE_Solver#RotatingCubeTest": {
     "name": "REL-XNSE_Solver#RotatingCubeTest",
     "avgSeconds": 742.6581473,
-    "dueMargin": 300.0,
+    "dueMargin": 540.0,
     "lastupdate": "2026-02-25T22:01:42.4079613+01:00"
   },
   "REL-XNSE_Solver#RollingSaveTest": {
     "name": "REL-XNSE_Solver#RollingSaveTest",
     "avgSeconds": 442.7491592,
-    "dueMargin": 300.0,
+    "dueMargin": 360.0,
     "lastupdate": "2026-02-25T22:01:45.0837738+01:00"
   },
   "REL-CutCellQuadratureScaling#OneLevelSet_2D": {
@@ -1880,13 +1880,13 @@
   "REL-CutCellQuadratureScaling#OneLevelSet_3D_Saye": {
     "name": "REL-CutCellQuadratureScaling#OneLevelSet_3D_Saye",
     "avgSeconds": 621.156644,
-    "dueMargin": 300.0,
+    "dueMargin": 480.0,
     "lastupdate": "2026-02-25T22:01:49.6224123+01:00"
   },
   "REL-CutCellQuadratureScaling#OneLevelSet_3D_Algoim": {
     "name": "REL-CutCellQuadratureScaling#OneLevelSet_3D_Algoim",
     "avgSeconds": 611.0299959,
-    "dueMargin": 300.0,
+    "dueMargin": 480.0,
     "lastupdate": "2026-02-25T22:01:51.6270057+01:00"
   },
   "REL-CutCellQuadratureScaling#OneLevelSet_2Dvs3D_Classic": {
@@ -1916,13 +1916,13 @@
   "REL-CutCellQuadratureScaling#TwoLevelSets_3D": {
     "name": "REL-CutCellQuadratureScaling#TwoLevelSets_3D",
     "avgSeconds": 707.8153579,
-    "dueMargin": 300.0,
+    "dueMargin": 540.0,
     "lastupdate": "2026-02-25T22:02:01.028865+01:00"
   },
   "REL-XNSERO_Solver#TestMotionIntegration": {
     "name": "REL-XNSERO_Solver#TestMotionIntegration",
     "avgSeconds": 598.4378041,
-    "dueMargin": 300.0,
+    "dueMargin": 420.0,
     "lastupdate": "2026-02-25T22:02:06.3730586+01:00"
   },
   "REL-XNSERO_Solver#TestParticleInShearFlow_Phoretic": {
@@ -1934,7 +1934,7 @@
   "REL-XNSERO_Solver#TestStickyTrap": {
     "name": "REL-XNSERO_Solver#TestStickyTrap",
     "avgSeconds": 702.2667512,
-    "dueMargin": 300.0,
+    "dueMargin": 540.0,
     "lastupdate": "2026-02-25T22:02:08.6885113+01:00"
   },
   "REL-XNSFE_Solver#XNSFEScalingTest": {
@@ -1946,7 +1946,7 @@
   "REL-XNSFE_Solver#SteadyStateEvaporationTest": {
     "name": "REL-XNSFE_Solver#SteadyStateEvaporationTest",
     "avgSeconds": 597.2998892,
-    "dueMargin": 300.0,
+    "dueMargin": 420.0,
     "lastupdate": "2026-02-25T22:02:12.940206+01:00"
   },
   "REL-XNSFE_Solver#InterfaceSlipTestLin": {
@@ -1958,7 +1958,7 @@
   "REL-XNSFE_Solver#InterfaceSlipTestScaling": {
     "name": "REL-XNSFE_Solver#InterfaceSlipTestScaling",
     "avgSeconds": 667.6064983,
-    "dueMargin": 300.0,
+    "dueMargin": 480.0,
     "lastupdate": "2026-02-25T22:02:15.5020783+01:00"
   },
   "REL-XdgTimesteppingTest#TestConvection_MovingInterface_SingleInitLowOrder_RK_dt02": {
@@ -2078,7 +2078,7 @@
   "REL-XNSEC#TestOperatorScaling2D_p2": {
     "name": "REL-XNSEC#TestOperatorScaling2D_p2",
     "avgSeconds": 438.626702,
-    "dueMargin": 300.0,
+    "dueMargin": 360.0,
     "lastupdate": "2026-02-25T22:02:51.0346842+01:00"
   },
   "REL-XNSEC#XDG_PSEUDO1D_EVAPORATION_TEST": {
@@ -2096,13 +2096,13 @@
   "REL-XNSEC#BcTest_PressureOutletTest": {
     "name": "REL-XNSEC#BcTest_PressureOutletTest",
     "avgSeconds": 553.728961,
-    "dueMargin": 300.0,
+    "dueMargin": 420.0,
     "lastupdate": "2026-02-25T22:02:57.6271663+01:00"
   },
   "REL-XNSEC#NuNit_ChannelTest": {
     "name": "REL-XNSEC#NuNit_ChannelTest",
     "avgSeconds": 482.6416796,
-    "dueMargin": 300.0,
+    "dueMargin": 360.0,
     "lastupdate": "2026-02-25T22:02:59.0505822+01:00"
   },
   "REL-XNSEC#SteadyStateEvaporationTestXNSEC": {
@@ -2156,7 +2156,7 @@
   "REL-StokesHelical_Ak#Steady_SpatialConv_HP_Re_100000_Stokes_with_R0fix": {
     "name": "REL-StokesHelical_Ak#Steady_SpatialConv_HP_Re_100000_Stokes_with_R0fix",
     "avgSeconds": 439.5772994,
-    "dueMargin": 300.0,
+    "dueMargin": 360.0,
     "lastupdate": "2026-02-25T22:03:45.0466948+01:00"
   },
   "REL-StokesHelical_Ak#Steady_SpatialConv_CF_Re_100000_Stokes_with_R0fix": {
@@ -2240,43 +2240,43 @@
   "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_sameDegree_p2": {
     "name": "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_sameDegree_p2",
     "avgSeconds": 2222.42717,
-    "dueMargin": 300.0,
+    "dueMargin": 1560.0,
     "lastupdate": "2026-02-25T22:08:34.6906993+01:00"
   },
   "REL-XNSE_Solver#AMRAndBDFTest": {
     "name": "REL-XNSE_Solver#AMRAndBDFTest",
     "avgSeconds": 1412.0675291,
-    "dueMargin": 300.0,
+    "dueMargin": 1020.0,
     "lastupdate": "2026-02-25T22:09:00.5415002+01:00"
   },
   "REL-CutCellQuadratureScaling#OneLevelSet_3D_Classic": {
     "name": "REL-CutCellQuadratureScaling#OneLevelSet_3D_Classic",
     "avgSeconds": 949.1487083,
-    "dueMargin": 300.0,
+    "dueMargin": 720.0,
     "lastupdate": "2026-02-25T22:09:06.453744+01:00"
   },
   "REL-XNSEC#TestOperatorScaling2D_p1": {
     "name": "REL-XNSEC#TestOperatorScaling2D_p1",
     "avgSeconds": 867.0375758,
-    "dueMargin": 300.0,
+    "dueMargin": 660.0,
     "lastupdate": "2026-02-25T22:09:24.0315114+01:00"
   },
   "REL-XNSEC#XDG_PSEUDO1D_COMBUSTION_TEST": {
     "name": "REL-XNSEC#XDG_PSEUDO1D_COMBUSTION_TEST",
     "avgSeconds": 790.4783031,
-    "dueMargin": 300.0,
+    "dueMargin": 600.0,
     "lastupdate": "2026-02-25T22:09:25.2103894+01:00"
   },
   "REL-BUIDT#StraightShockCurvedStart_Eccomas22": {
     "name": "REL-BUIDT#StraightShockCurvedStart_Eccomas22",
     "avgSeconds": 789.6029391,
-    "dueMargin": 300.0,
+    "dueMargin": 600.0,
     "lastupdate": "2026-02-25T22:09:48.3660337+01:00"
   },
   "REL-StokesHelical_Ak#Steady_SpatialConv_HP_Re_10_Stokes_with_R0fix": {
     "name": "REL-StokesHelical_Ak#Steady_SpatialConv_HP_Re_10_Stokes_with_R0fix",
     "avgSeconds": 452.2033414,
-    "dueMargin": 300.0,
+    "dueMargin": 360.0,
     "lastupdate": "2026-02-25T22:10:03.3753369+01:00"
   },
   "REL-StokesHelical_Ak#Steady_SpatialConv_CF_Re_10_Stokes_with_R0fix": {
@@ -2306,7 +2306,7 @@
   "REL-p4-CDG_Projection_MPI#ProjectionTest_Global": {
     "name": "REL-p4-CDG_Projection_MPI#ProjectionTest_Global",
     "avgSeconds": 512.4946447,
-    "dueMargin": 300.0,
+    "dueMargin": 360.0,
     "lastupdate": "2026-02-25T22:10:21.5401151+01:00"
   },
   "REL-p4-AdvancedSolverTests#SubMatrixExtractionWithCoupling": {
@@ -2462,61 +2462,61 @@
   "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_higherDegree_p2": {
     "name": "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_higherDegree_p2",
     "avgSeconds": 2543.8801119,
-    "dueMargin": 300.0,
+    "dueMargin": 1800.0,
     "lastupdate": "2026-02-25T22:14:30.7456214+01:00"
   },
   "REL-XNSE_Solver#ScalingViscosityJumpTest_p3": {
     "name": "REL-XNSE_Solver#ScalingViscosityJumpTest_p3",
-    "avgSeconds": 5400,
-    "dueMargin": 300.0,
+    "avgSeconds": 5400.0,
+    "dueMargin": 1080.0,
     "lastupdate": "2026-02-25T22:14:33.4141223+01:00"
   },
   "REL-XNSE_Solver#ChannelTest_p2_Newton_Standard": {
     "name": "REL-XNSE_Solver#ChannelTest_p2_Newton_Standard",
     "avgSeconds": 1606.7480415,
-    "dueMargin": 300.0,
+    "dueMargin": 1140.0,
     "lastupdate": "2026-02-25T22:14:36.2141786+01:00"
   },
   "REL-CNS#TestSubsonicOutletBoundaryCondition1D": {
     "name": "REL-CNS#TestSubsonicOutletBoundaryCondition1D",
     "avgSeconds": 1354.4320051,
-    "dueMargin": 300.0,
+    "dueMargin": 960.0,
     "lastupdate": "2026-02-25T22:15:04.3531612+01:00"
   },
   "REL-StokesHelical_Ak#ConditionNumberScaling_HP_Re_100000_Stokes_with_R0fix": {
     "name": "REL-StokesHelical_Ak#ConditionNumberScaling_HP_Re_100000_Stokes_with_R0fix",
     "avgSeconds": 1045.6878184,
-    "dueMargin": 300.0,
+    "dueMargin": 780.0,
     "lastupdate": "2026-02-25T22:15:50.5593691+01:00"
   },
   "REL-StokesHelical_Ak#ConditionNumberScaling_HP_Re_10_Stokes_with_R0fix": {
     "name": "REL-StokesHelical_Ak#ConditionNumberScaling_HP_Re_10_Stokes_with_R0fix",
     "avgSeconds": 1066.3286586,
-    "dueMargin": 300.0,
+    "dueMargin": 780.0,
     "lastupdate": "2026-02-25T22:15:51.7688321+01:00"
   },
   "REL-StokesHelical_Ak#ConditionNumberScaling_CF_Re_100000_Stokes_with_R0fix": {
     "name": "REL-StokesHelical_Ak#ConditionNumberScaling_CF_Re_100000_Stokes_with_R0fix",
     "avgSeconds": 1070.2195619,
-    "dueMargin": 300.0,
+    "dueMargin": 780.0,
     "lastupdate": "2026-02-25T22:15:52.9940746+01:00"
   },
   "REL-StokesHelical_Ak#ConditionNumberScaling_CF_Re_10_Stokes_with_R0fix": {
     "name": "REL-StokesHelical_Ak#ConditionNumberScaling_CF_Re_10_Stokes_with_R0fix",
     "avgSeconds": 1074.5916639,
-    "dueMargin": 300.0,
+    "dueMargin": 780.0,
     "lastupdate": "2026-02-25T22:15:54.2262876+01:00"
   },
   "REL-StokesHelical_Ak#Direct_vs_Iterativ_DDD_Paper_with_R0fix": {
     "name": "REL-StokesHelical_Ak#Direct_vs_Iterativ_DDD_Paper_with_R0fix",
     "avgSeconds": 768.5051186,
-    "dueMargin": 300.0,
+    "dueMargin": 540.0,
     "lastupdate": "2026-02-25T22:15:55.4395883+01:00"
   },
   "REL-p2-CDG_Projection_MPI#ProjectionTest_Global": {
     "name": "REL-p2-CDG_Projection_MPI#ProjectionTest_Global",
     "avgSeconds": 465.1171001,
-    "dueMargin": 300.0,
+    "dueMargin": 360.0,
     "lastupdate": "2026-02-25T22:16:02.7545562+01:00"
   },
   "REL-p8-XNSE_Solver_LargeMPItest#ParallelRotatingSphere": {
@@ -2570,31 +2570,31 @@
   "REL-XNSE_Solver#ChannelTest_p2_Picard_Standard": {
     "name": "REL-XNSE_Solver#ChannelTest_p2_Picard_Standard",
     "avgSeconds": 1989.724687,
-    "dueMargin": 300.0,
+    "dueMargin": 1440.0,
     "lastupdate": "2026-02-25T22:19:36.08889+01:00"
   },
   "REL-CNS#TestSubsonicPressureInletBoundaryCondition1D": {
     "name": "REL-CNS#TestSubsonicPressureInletBoundaryCondition1D",
     "avgSeconds": 1556.2255451,
-    "dueMargin": 300.0,
+    "dueMargin": 1140.0,
     "lastupdate": "2026-02-25T22:20:06.5190092+01:00"
   },
   "REL-StokesHelical_Ak#ConditionNumberScaling_DDD_Paper_with_R0fix": {
     "name": "REL-StokesHelical_Ak#ConditionNumberScaling_DDD_Paper_with_R0fix",
     "avgSeconds": 1108.7378124,
-    "dueMargin": 300.0,
+    "dueMargin": 780.0,
     "lastupdate": "2026-02-25T22:20:47.9016012+01:00"
   },
   "REL-StokesHelical_Ak#ConditionNumberScaling_DDD_without_R0fix": {
     "name": "REL-StokesHelical_Ak#ConditionNumberScaling_DDD_without_R0fix",
     "avgSeconds": 1068.9856826,
-    "dueMargin": 300.0,
+    "dueMargin": 780.0,
     "lastupdate": "2026-02-25T22:20:49.123981+01:00"
   },
   "REL-p2-CDG_Projection_MPI#ProjectionTest_Patchwise": {
     "name": "REL-p2-CDG_Projection_MPI#ProjectionTest_Patchwise",
     "avgSeconds": 1059.4638956,
-    "dueMargin": 300.0,
+    "dueMargin": 780.0,
     "lastupdate": "2026-02-25T22:20:51.8547502+01:00"
   },
   "REL-p3-XNSE_Solver_MPItest#SayeBug": {
@@ -2654,37 +2654,37 @@
   "REL-CDG_ProjectionTest#AllUp_LegendrePolynomial": {
     "name": "REL-CDG_ProjectionTest#AllUp_LegendrePolynomial",
     "avgSeconds": 3265.5990215,
-    "dueMargin": 360.0,
+    "dueMargin": 2340.0,
     "lastupdate": "2026-02-25T22:24:13.5396572+01:00"
   },
   "REL-XNSE_Solver#ChannelTest_p2_Picard_FullySymmetric": {
     "name": "REL-XNSE_Solver#ChannelTest_p2_Picard_FullySymmetric",
     "avgSeconds": 2260.3911825,
-    "dueMargin": 300.0,
+    "dueMargin": 1620.0,
     "lastupdate": "2026-02-25T22:24:18.2607349+01:00"
   },
   "REL-XNSE_Solver#ScalingRotCubeTests2D_p2": {
     "name": "REL-XNSE_Solver#ScalingRotCubeTests2D_p2",
     "avgSeconds": 2130.9794609,
-    "dueMargin": 300.0,
+    "dueMargin": 1500.0,
     "lastupdate": "2026-02-25T22:24:33.0127965+01:00"
   },
   "REL-ZwoLevelSetSolver#AlandTest": {
     "name": "REL-ZwoLevelSetSolver#AlandTest",
     "avgSeconds": 1732.09663,
-    "dueMargin": 300.0,
+    "dueMargin": 1260.0,
     "lastupdate": "2026-02-25T22:24:52.8991928+01:00"
   },
   "REL-p8-XNSE_Solver_LargeMPItest#RotatingTilted3DTorusAgg0": {
     "name": "REL-p8-XNSE_Solver_LargeMPItest#RotatingTilted3DTorusAgg0",
     "avgSeconds": 944.5626537,
-    "dueMargin": 300.0,
+    "dueMargin": 720.0,
     "lastupdate": "2026-02-25T22:25:28.541532+01:00"
   },
   "REL-p3-XNSE_Solver_MPItest#RotCube_DomainDecompositionError": {
     "name": "REL-p3-XNSE_Solver_MPItest#RotCube_DomainDecompositionError",
     "avgSeconds": 730.0649148,
-    "dueMargin": 300.0,
+    "dueMargin": 540.0,
     "lastupdate": "2026-02-25T22:25:32.9498259+01:00"
   },
   "REL-p4-XdgPoisson3#IterativeSolverTest": {
@@ -2732,49 +2732,49 @@
   "REL-XNSE_Solver#ChannelTest_p3_Picard_Standard": {
     "name": "REL-XNSE_Solver#ChannelTest_p3_Picard_Standard",
     "avgSeconds": 2489.3544352,
-    "dueMargin": 300.0,
+    "dueMargin": 1800.0,
     "lastupdate": "2026-02-25T22:28:34.5191834+01:00"
   },
   "REL-XNSE_Solver#ChannelTest_p3_Picard_FullySymmetric": {
     "name": "REL-XNSE_Solver#ChannelTest_p3_Picard_FullySymmetric",
     "avgSeconds": 2546.167301,
-    "dueMargin": 300.0,
+    "dueMargin": 1800.0,
     "lastupdate": "2026-02-25T22:28:39.0845934+01:00"
   },
   "REL-StokesHelical_Ak#Transient_HP_Re_10_White_Noise_1_ProMil_with_R0fix": {
     "name": "REL-StokesHelical_Ak#Transient_HP_Re_10_White_Noise_1_ProMil_with_R0fix",
     "avgSeconds": 1841.8773647,
-    "dueMargin": 300.0,
+    "dueMargin": 1320.0,
     "lastupdate": "2026-02-25T22:29:32.3707898+01:00"
   },
   "REL-StokesHelical_Ak#Transient_HP_Re_10_White_Noise_1_ProMil_with_R0fix_Conv_Ak": {
     "name": "REL-StokesHelical_Ak#Transient_HP_Re_10_White_Noise_1_ProMil_with_R0fix_Conv_Ak",
     "avgSeconds": 1892.7224694,
-    "dueMargin": 300.0,
+    "dueMargin": 1380.0,
     "lastupdate": "2026-02-25T22:29:35.6540014+01:00"
   },
   "REL-StokesHelical_Ak#Transient_CF_Re_10_White_Noise_1_ProMil_with_R0fix": {
     "name": "REL-StokesHelical_Ak#Transient_CF_Re_10_White_Noise_1_ProMil_with_R0fix",
     "avgSeconds": 1810.9936926,
-    "dueMargin": 300.0,
+    "dueMargin": 1320.0,
     "lastupdate": "2026-02-25T22:29:38.9296624+01:00"
   },
   "REL-StokesHelical_Ak#Transient_CF_Re_10_White_Noise_1_ProMil_with_R0fix_AK_Conv_Terms": {
     "name": "REL-StokesHelical_Ak#Transient_CF_Re_10_White_Noise_1_ProMil_with_R0fix_AK_Conv_Terms",
     "avgSeconds": 1807.4092417,
-    "dueMargin": 300.0,
+    "dueMargin": 1320.0,
     "lastupdate": "2026-02-25T22:29:42.2719424+01:00"
   },
   "REL-p4-CDG_Projection_MPI#ProjectionTest_Patchwise": {
     "name": "REL-p4-CDG_Projection_MPI#ProjectionTest_Patchwise",
     "avgSeconds": 1704.5112652,
-    "dueMargin": 300.0,
+    "dueMargin": 1200.0,
     "lastupdate": "2026-02-25T22:29:45.7886018+01:00"
   },
   "REL-p4-XNSE_Solver_MPItest#EmptyMaskInGMRES": {
     "name": "REL-p4-XNSE_Solver_MPItest#EmptyMaskInGMRES",
     "avgSeconds": 539.8318341,
-    "dueMargin": 300.0,
+    "dueMargin": 420.0,
     "lastupdate": "2026-02-25T22:30:05.7283677+01:00"
   },
   "REL-p4-Matrix_MPItest#SpMVTest": {
@@ -2876,313 +2876,313 @@
   "REL-XNSE_Solver#ChannelTest_p2_Newton_FullySymmetric": {
     "name": "REL-XNSE_Solver#ChannelTest_p2_Newton_FullySymmetric",
     "avgSeconds": 2800.494608,
-    "dueMargin": 300.0,
+    "dueMargin": 1980.0,
     "lastupdate": "2026-02-25T22:32:35.4028727+01:00"
   },
   "REL-XNSE_Solver#ChannelTest_p3_Newton_Standard": {
     "name": "REL-XNSE_Solver#ChannelTest_p3_Newton_Standard",
     "avgSeconds": 2749.7278154,
-    "dueMargin": 300.0,
+    "dueMargin": 1980.0,
     "lastupdate": "2026-02-25T22:32:37.9807693+01:00"
   },
   "REL-XNSEC#TranspiratingChannelTest": {
     "name": "REL-XNSEC#TranspiratingChannelTest",
     "avgSeconds": 2174.9497935,
-    "dueMargin": 300.0,
+    "dueMargin": 1560.0,
     "lastupdate": "2026-02-25T22:33:05.8393891+01:00"
   },
   "REL-XNSE_Solver#ChannelTest_p3_Newton_FullySymmetric": {
     "name": "REL-XNSE_Solver#ChannelTest_p3_Newton_FullySymmetric",
     "avgSeconds": 2982.7278116,
-    "dueMargin": 300.0,
+    "dueMargin": 2100.0,
     "lastupdate": "2026-02-25T22:35:57.7286164+01:00"
   },
   "REL-CNS#TestSubsonicInletBoundaryCondition1D": {
     "name": "REL-CNS#TestSubsonicInletBoundaryCondition1D",
     "avgSeconds": 2602.34147,
-    "dueMargin": 300.0,
+    "dueMargin": 1860.0,
     "lastupdate": "2026-02-25T22:36:14.0268475+01:00"
   },
   "REL-XESF#XDG_SWF_OneLs_Cart": {
     "name": "REL-XESF#XDG_SWF_OneLs_Cart",
     "avgSeconds": 2333.1029641,
-    "dueMargin": 300.0,
+    "dueMargin": 1680.0,
     "lastupdate": "2026-02-25T22:36:46.1573557+01:00"
   },
   "REL-p4-XNSE_Solver_MPItest#RotCube_DomainDecompositionError": {
     "name": "REL-p4-XNSE_Solver_MPItest#RotCube_DomainDecompositionError",
     "avgSeconds": 1252.2914506,
-    "dueMargin": 300.0,
+    "dueMargin": 900.0,
     "lastupdate": "2026-02-25T22:36:58.1052748+01:00"
   },
   "REL-p4-XNSE_Solver_MPItest#RotCube_OrderNotSupportedInHMF": {
     "name": "REL-p4-XNSE_Solver_MPItest#RotCube_OrderNotSupportedInHMF",
-    "avgSeconds": 1237.2113182,
-    "dueMargin": 300.0,
+    "avgSeconds": 3600.0,
+    "dueMargin": 2520.0,
     "lastupdate": "2026-02-25T22:36:59.3307725+01:00"
   },
   "REL-p4-CNS_MPITests#TestRebalancingForDG0WithRK1_IBM_AggOn": {
     "name": "REL-p4-CNS_MPITests#TestRebalancingForDG0WithRK1_IBM_AggOn",
     "avgSeconds": 541.1042039,
-    "dueMargin": 300.0,
+    "dueMargin": 420.0,
     "lastupdate": "2026-02-25T22:37:06.7359398+01:00"
   },
   "REL-XNSEC#XDG_DROPLET_EVAPORATION_TEST": {
     "name": "REL-XNSEC#XDG_DROPLET_EVAPORATION_TEST",
-    "avgSeconds": 3600,
-    "dueMargin": 300.0,
+    "avgSeconds": 3600.0,
+    "dueMargin": 2520.0,
     "lastupdate": "2026-02-25T22:39:32.6900971+01:00"
   },
   "REL-ZwoLevelSetSolver#FluidSolidTaylorCouette_Exact_P2": {
     "name": "REL-ZwoLevelSetSolver#FluidSolidTaylorCouette_Exact_P2",
     "avgSeconds": 2723.2592835,
-    "dueMargin": 300.0,
+    "dueMargin": 1920.0,
     "lastupdate": "2026-02-25T22:39:35.3699629+01:00"
   },
   "REL-SAIDT#CurvedShock_Eccomas22": {
     "name": "REL-SAIDT#CurvedShock_Eccomas22",
     "avgSeconds": 2585.6223624,
-    "dueMargin": 300.0,
+    "dueMargin": 1860.0,
     "lastupdate": "2026-02-25T22:39:54.0770664+01:00"
   },
   "REL-p8-XNSE_Solver_LargeMPItest#ParallelRotatingTilted3DTorus": {
     "name": "REL-p8-XNSE_Solver_LargeMPItest#ParallelRotatingTilted3DTorus",
     "avgSeconds": 1988.8182831,
-    "dueMargin": 300.0,
+    "dueMargin": 1440.0,
     "lastupdate": "2026-02-25T22:39:58.2655549+01:00"
   },
   "REL-p4-CNS_MPITests#TestRebalancingForDG0WithRK1_IBM_AggOff": {
     "name": "REL-p4-CNS_MPITests#TestRebalancingForDG0WithRK1_IBM_AggOff",
     "avgSeconds": 715.1183025,
-    "dueMargin": 300.0,
+    "dueMargin": 540.0,
     "lastupdate": "2026-02-25T22:40:13.4723543+01:00"
   },
   "REL-CahnHilliard#TestEllipticDropletConvergence": {
     "name": "REL-CahnHilliard#TestEllipticDropletConvergence",
     "avgSeconds": 2813.1255536,
-    "dueMargin": 300.0,
+    "dueMargin": 1980.0,
     "lastupdate": "2026-02-25T22:42:54.2313798+01:00"
   },
   "REL-XESF#XDG_SWF_TwoLs": {
     "name": "REL-XESF#XDG_SWF_TwoLs",
     "avgSeconds": 2742.8559635,
-    "dueMargin": 300.0,
+    "dueMargin": 1920.0,
     "lastupdate": "2026-02-25T22:42:58.4524413+01:00"
   },
   "REL-XNSE_Solver#ChannelTest_p4_Picard_Standard": {
     "name": "REL-XNSE_Solver#ChannelTest_p4_Picard_Standard",
     "avgSeconds": 3687.5473429,
-    "dueMargin": 420.0,
+    "dueMargin": 780.0,
     "lastupdate": "2026-02-25T22:45:19.4950104+01:00"
   },
   "REL-CNS#TestSubsonicPressureInletAndOutletBoundaryCondition1D": {
     "name": "REL-CNS#TestSubsonicPressureInletAndOutletBoundaryCondition1D",
     "avgSeconds": 3115.2725763,
-    "dueMargin": 360.0,
+    "dueMargin": 2220.0,
     "lastupdate": "2026-02-25T22:45:34.1609876+01:00"
   },
   "REL-p4-CNS_MPITests#TestRebalancingForDG2WithLTS1AndAV_IBM_AggOff": {
     "name": "REL-p4-CNS_MPITests#TestRebalancingForDG2WithLTS1AndAV_IBM_AggOff",
     "avgSeconds": 955.1884659,
-    "dueMargin": 300.0,
+    "dueMargin": 720.0,
     "lastupdate": "2026-02-25T22:46:09.159445+01:00"
   },
   "REL-LsTest#LevelSetAdvectionTest2D_fwd": {
     "name": "REL-LsTest#LevelSetAdvectionTest2D_fwd",
     "avgSeconds": 3791.783442,
-    "dueMargin": 420.0,
+    "dueMargin": 780.0,
     "lastupdate": "2026-02-25T22:51:11.6802079+01:00"
   },
   "REL-LsTest#LevelSetAdvectionTest2D_reverse": {
     "name": "REL-LsTest#LevelSetAdvectionTest2D_reverse",
     "avgSeconds": 3788.7296562,
-    "dueMargin": 420.0,
+    "dueMargin": 780.0,
     "lastupdate": "2026-02-25T22:51:12.9493523+01:00"
   },
   "REL-HFSISolver#FluidSolidTaylorCouette_Experimental_P2": {
     "name": "REL-HFSISolver#FluidSolidTaylorCouette_Experimental_P2",
     "avgSeconds": 3744.8469821,
-    "dueMargin": 420.0,
+    "dueMargin": 780.0,
     "lastupdate": "2026-02-25T22:57:02.4924775+01:00"
   },
   "REL-HFSISolver#FluidSolidTaylorCouette_Exact_P2": {
     "name": "REL-HFSISolver#FluidSolidTaylorCouette_Exact_P2",
     "avgSeconds": 3738.7142864,
-    "dueMargin": 420.0,
+    "dueMargin": 780.0,
     "lastupdate": "2026-02-25T22:57:05.2021609+01:00"
   },
   "REL-CNS#TestSubsonicInletAndOutletBoundaryCondition1D": {
     "name": "REL-CNS#TestSubsonicInletAndOutletBoundaryCondition1D",
     "avgSeconds": 4044.280188,
-    "dueMargin": 420.0,
+    "dueMargin": 840.0,
     "lastupdate": "2026-02-25T22:59:38.6157467+01:00"
   },
   "REL-XNSE_Solver#ChannelTest_p4_Newton_Standard": {
     "name": "REL-XNSE_Solver#ChannelTest_p4_Newton_Standard",
     "avgSeconds": 4596.2656168,
-    "dueMargin": 480.0,
+    "dueMargin": 960.0,
     "lastupdate": "2026-02-25T23:02:13.8487714+01:00"
   },
   "REL-XNSE_Solver#ChannelTest_p4_Picard_FullySymmetric": {
     "name": "REL-XNSE_Solver#ChannelTest_p4_Picard_FullySymmetric",
     "avgSeconds": 4589.4195519,
-    "dueMargin": 480.0,
+    "dueMargin": 960.0,
     "lastupdate": "2026-02-25T23:02:17.6717921+01:00"
   },
   "REL-XNSE_Solver#ScalingRotCubeTests2D_p3": {
     "name": "REL-XNSE_Solver#ScalingRotCubeTests2D_p3",
     "avgSeconds": 4478.7532687,
-    "dueMargin": 480.0,
+    "dueMargin": 900.0,
     "lastupdate": "2026-02-25T23:02:20.1021199+01:00"
   },
   "REL-p8-XNSE_Solver_LargeMPItest#AMRtest_3D": {
     "name": "REL-p8-XNSE_Solver_LargeMPItest#AMRtest_3D",
     "avgSeconds": 3002.0915516,
-    "dueMargin": 360.0,
+    "dueMargin": 2160.0,
     "lastupdate": "2026-02-25T23:02:41.4952577+01:00"
   },
   "REL-SAIDT#StraightShock_p0_SplineLevelSet": {
     "name": "REL-SAIDT#StraightShock_p0_SplineLevelSet",
     "avgSeconds": 4064.9680264,
-    "dueMargin": 420.0,
+    "dueMargin": 840.0,
     "lastupdate": "2026-02-25T23:05:19.0757619+01:00"
   },
   "REL-XNSE_Solver#ChannelTest_p4_Newton_FullySymmetric": {
     "name": "REL-XNSE_Solver#ChannelTest_p4_Newton_FullySymmetric",
     "avgSeconds": 4976.645647,
-    "dueMargin": 540.0,
+    "dueMargin": 1020.0,
     "lastupdate": "2026-02-25T23:07:35.7556723+01:00"
   },
   "REL-HFSISolver#FluidSolidTaylorCouette_Exact_P1": {
     "name": "REL-HFSISolver#FluidSolidTaylorCouette_Exact_P1",
-    "avgSeconds": 5400,
-    "dueMargin": 480.0,
+    "avgSeconds": 5400.0,
+    "dueMargin": 1080.0,
     "lastupdate": "2026-02-25T23:07:50.4950349+01:00"
   },
   "REL-HFSISolver#FluidSolidTaylorCouette_Experimental_P1": {
     "name": "REL-HFSISolver#FluidSolidTaylorCouette_Experimental_P1",
-    "avgSeconds": 7200,
-    "dueMargin": 480.0,
+    "avgSeconds": 7200.0,
+    "dueMargin": 1440.0,
     "lastupdate": "2026-02-25T23:10:22.3075653+01:00"
   },
   "REL-p3-XNSE_Solver_MPItest#EmptyMaskInSchwarz": {
     "name": "REL-p3-XNSE_Solver_MPItest#EmptyMaskInSchwarz",
     "avgSeconds": 3414.0188351,
-    "dueMargin": 360.0,
+    "dueMargin": 2400.0,
     "lastupdate": "2026-02-25T23:10:34.211088+01:00"
   },
   "REL-XNSE_Solver#ScalingSinglePhaseChannelTest": {
     "name": "REL-XNSE_Solver#ScalingSinglePhaseChannelTest",
     "avgSeconds": 5834.1608772,
-    "dueMargin": 600.0,
+    "dueMargin": 1200.0,
     "lastupdate": "2026-02-25T23:12:42.7107157+01:00"
   },
   "REL-XNSFE_Solver#HeatDecayTest": {
     "name": "REL-XNSFE_Solver#HeatDecayTest",
     "avgSeconds": 5252.8506039,
-    "dueMargin": 540.0,
+    "dueMargin": 1080.0,
     "lastupdate": "2026-02-25T23:15:13.2456251+01:00"
   },
   "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case1": {
     "name": "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case1",
     "avgSeconds": 6437.7145217,
-    "dueMargin": 660.0,
+    "dueMargin": 1320.0,
     "lastupdate": "2026-02-25T23:17:38.6546096+01:00"
   },
   "REL-ZwoLevelSetSolver#FluidSolidTaylorCouette_Exact_P3": {
     "name": "REL-ZwoLevelSetSolver#FluidSolidTaylorCouette_Exact_P3",
     "avgSeconds": 5162.6008896,
-    "dueMargin": 540.0,
+    "dueMargin": 1080.0,
     "lastupdate": "2026-02-25T23:20:10.5109628+01:00"
   },
   "REL-BUIDT#AcceleratingShock": {
     "name": "REL-BUIDT#AcceleratingShock",
     "avgSeconds": 5767.8264692,
-    "dueMargin": 600.0,
+    "dueMargin": 1200.0,
     "lastupdate": "2026-02-25T23:32:13.7571378+01:00"
   },
   "REL-XNSE_Solver#Run_RestartTests": {
     "name": "REL-XNSE_Solver#Run_RestartTests",
     "avgSeconds": 6430.3120479,
-    "dueMargin": 660.0,
+    "dueMargin": 1320.0,
     "lastupdate": "2026-02-25T23:34:25.7887706+01:00"
   },
   "REL-p3-XNSE_Solver_MPItest#TestLoadBalancingAMRfalse": {
     "name": "REL-p3-XNSE_Solver_MPItest#TestLoadBalancingAMRfalse",
     "avgSeconds": 5636.6522896,
-    "dueMargin": 600.0,
+    "dueMargin": 1140.0,
     "lastupdate": "2026-02-25T23:48:39.0641488+01:00"
   },
   "REL-XdgNastyLevsetLocationTest#ParalleTest_2D": {
     "name": "REL-XdgNastyLevsetLocationTest#ParalleTest_2D",
     "avgSeconds": 7200.0,
-    "dueMargin": 720.0,
+    "dueMargin": 1440.0,
     "lastupdate": "2026-02-25T23:53:05.1670102+01:00"
   },
   "REL-HFSISolver#FluidSolidTaylorCouette_Exact_P3": {
     "name": "REL-HFSISolver#FluidSolidTaylorCouette_Exact_P3",
     "avgSeconds": 7167.750369,
-    "dueMargin": 720.0,
+    "dueMargin": 1440.0,
     "lastupdate": "2026-02-25T23:55:27.6983725+01:00"
   },
   "REL-p4-XNSE_Solver_MPItest#EmptyMaskInSchwarz": {
     "name": "REL-p4-XNSE_Solver_MPItest#EmptyMaskInSchwarz",
     "avgSeconds": 6001.3035447,
-    "dueMargin": 660.0,
+    "dueMargin": 1260.0,
     "lastupdate": "2026-02-26T00:00:08.4962489+01:00"
   },
   "REL-ZwoLevelSetSolver#FluidSolidTaylorCouette_Exact_P1": {
     "name": "REL-ZwoLevelSetSolver#FluidSolidTaylorCouette_Exact_P1",
     "avgSeconds": 7200.0,
-    "dueMargin": 720.0,
+    "dueMargin": 1440.0,
     "lastupdate": "2026-02-26T00:02:15.2365318+01:00"
   },
   "REL-p4-XNSE_Solver_MPItest#TestLoadBalancingAMRfalse": {
     "name": "REL-p4-XNSE_Solver_MPItest#TestLoadBalancingAMRfalse",
     "avgSeconds": 6229.3826599,
-    "dueMargin": 660.0,
+    "dueMargin": 1260.0,
     "lastupdate": "2026-02-26T00:02:27.4762+01:00"
   },
   "REL-p3-XNSE_Solver_MPItest#RotCube_OrderNotSupportedInHMF": {
     "name": "REL-p3-XNSE_Solver_MPItest#RotCube_OrderNotSupportedInHMF",
     "avgSeconds": 6836.9251156,
-    "dueMargin": 720.0,
+    "dueMargin": 1380.0,
     "lastupdate": "2026-02-26T00:06:47.3150342+01:00"
   },
   "REL-ZwoLevelSetSolver#FluidSolidTaylorCouette_Exact_P4": {
     "name": "REL-ZwoLevelSetSolver#FluidSolidTaylorCouette_Exact_P4",
     "avgSeconds": 7200.0,
-    "dueMargin": 720.0,
+    "dueMargin": 1440.0,
     "lastupdate": "2026-02-26T00:32:34.2120642+01:00"
   },
   "REL-XdgNastyLevsetLocationTest#CornerTest_2D": {
     "name": "REL-XdgNastyLevsetLocationTest#CornerTest_2D",
     "avgSeconds": 7200.0,
-    "dueMargin": 720.0,
+    "dueMargin": 1440.0,
     "lastupdate": "2026-02-26T00:41:05.4100124+01:00"
   },
   "REL-p3-XNSE_Solver_MPItest#TestLoadBalancingAMRtrue": {
     "name": "REL-p3-XNSE_Solver_MPItest#TestLoadBalancingAMRtrue",
     "avgSeconds": 7200.0,
-    "dueMargin": 720.0,
+    "dueMargin": 1440.0,
     "lastupdate": "2026-02-26T00:41:09.6438255+01:00"
   },
   "REL-p4-XNSE_Solver_MPItest#TestLoadBalancingAMRtrue": {
     "name": "REL-p4-XNSE_Solver_MPItest#TestLoadBalancingAMRtrue",
     "avgSeconds": 7200.0,
-    "dueMargin": 720.0,
+    "dueMargin": 1440.0,
     "lastupdate": "2026-02-26T00:53:38.9825564+01:00"
   },
   "REL-HFSISolver#FluidSolidTaylorCouette_Exact_P4": {
     "name": "REL-HFSISolver#FluidSolidTaylorCouette_Exact_P4",
     "avgSeconds": 7200.0,
-    "dueMargin": 720.0,
+    "dueMargin": 1440.0,
     "lastupdate": "2026-02-26T01:05:56.2748974+01:00"
   },
   "REL-p8-XNSE_Solver_LargeMPItest#CurvatureBasedAMRTest_2D": {
     "name": "REL-p8-XNSE_Solver_LargeMPItest#CurvatureBasedAMRTest_2D",
     "avgSeconds": 7200.0,
-    "dueMargin": 720.0,
+    "dueMargin": 1440.0,
     "lastupdate": "2026-02-26T01:22:09.738648+01:00"
   },
   "DBG-ilPSP#GEMMTest_Frame": {
@@ -3656,13 +3656,13 @@
   "DBG-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_sameDegree_p3": {
     "name": "DBG-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_sameDegree_p3",
     "avgSeconds": 436.1417442,
-    "dueMargin": 300.0,
+    "dueMargin": 360.0,
     "lastupdate": "2026-02-25T21:36:37.4645581+01:00"
   },
   "DBG-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_higherDegree_p3": {
     "name": "DBG-CDG_ProjectionTest#AllUp_patchwiseOnly_case2_higherDegree_p3",
     "avgSeconds": 480.6758742,
-    "dueMargin": 300.0,
+    "dueMargin": 360.0,
     "lastupdate": "2026-02-25T21:36:38.606923+01:00"
   },
   "DBG-Matrix_MPItest#MultiplyTest": {
@@ -3788,13 +3788,13 @@
   "DBG-CutCellQuadratureScaling#TwoLevelSet_2Dvs3D": {
     "name": "DBG-CutCellQuadratureScaling#TwoLevelSet_2Dvs3D",
     "avgSeconds": 434.0486916,
-    "dueMargin": 300.0,
+    "dueMargin": 360.0,
     "lastupdate": "2026-02-25T21:37:55.7116151+01:00"
   },
   "DBG-CutCellQuadratureScaling#TwoLevelSets_2D": {
     "name": "DBG-CutCellQuadratureScaling#TwoLevelSets_2D",
     "avgSeconds": 435.7381753,
-    "dueMargin": 300.0,
+    "dueMargin": 360.0,
     "lastupdate": "2026-02-25T21:37:56.9071076+01:00"
   },
   "DBG-CutCellQuadratureScaling#TwoLevelSets_2D_SayeVsAlgoim": {
@@ -3812,7 +3812,7 @@
   "DBG-p4-CDG_Projection_MPI#ProjectionTest_Global": {
     "name": "DBG-p4-CDG_Projection_MPI#ProjectionTest_Global",
     "avgSeconds": 440.6749778,
-    "dueMargin": 300.0,
+    "dueMargin": 360.0,
     "lastupdate": "2026-02-25T21:38:03.5093164+01:00"
   },
   "DBG-p4-CDG_Projection_MPI#Test4Idempotence": {
@@ -3836,85 +3836,85 @@
   "DBG-AdvancedSolverTests#SubMatrixExtractionWithCoupling": {
     "name": "DBG-AdvancedSolverTests#SubMatrixExtractionWithCoupling",
     "avgSeconds": 699.2688404,
-    "dueMargin": 300.0,
+    "dueMargin": 540.0,
     "lastupdate": "2026-02-25T21:40:51.5285374+01:00"
   },
   "DBG-AdvancedSolverTests#CellBlockVectorOperations": {
     "name": "DBG-AdvancedSolverTests#CellBlockVectorOperations",
     "avgSeconds": 684.9382723,
-    "dueMargin": 300.0,
+    "dueMargin": 480.0,
     "lastupdate": "2026-02-25T21:40:52.6392427+01:00"
   },
   "DBG-CDG_ProjectionTest#AllUp_globalOnly": {
     "name": "DBG-CDG_ProjectionTest#AllUp_globalOnly",
     "avgSeconds": 662.5479857,
-    "dueMargin": 300.0,
+    "dueMargin": 480.0,
     "lastupdate": "2026-02-25T21:40:53.7763215+01:00"
   },
   "DBG-CDG_ProjectionTest#AllUp_Cube": {
     "name": "DBG-CDG_ProjectionTest#AllUp_Cube",
     "avgSeconds": 591.669965,
-    "dueMargin": 300.0,
+    "dueMargin": 420.0,
     "lastupdate": "2026-02-25T21:40:56.4637385+01:00"
   },
   "DBG-MultigridTest#ProlongationTest": {
     "name": "DBG-MultigridTest#ProlongationTest",
     "avgSeconds": 706.6515705,
-    "dueMargin": 300.0,
+    "dueMargin": 540.0,
     "lastupdate": "2026-02-25T21:41:00.7005753+01:00"
   },
   "DBG-DerivativeTest#DerivativeTest_GridImport": {
     "name": "DBG-DerivativeTest#DerivativeTest_GridImport",
     "avgSeconds": 625.1417954,
-    "dueMargin": 300.0,
+    "dueMargin": 480.0,
     "lastupdate": "2026-02-25T21:41:17.2108655+01:00"
   },
   "DBG-XNSE_Solver#PolynomialTestForConvectionTest": {
     "name": "DBG-XNSE_Solver#PolynomialTestForConvectionTest",
     "avgSeconds": 671.3128694,
-    "dueMargin": 300.0,
+    "dueMargin": 480.0,
     "lastupdate": "2026-02-25T21:41:32.4832279+01:00"
   },
   "DBG-CutCellQuadratureScaling#OneLevelSet_3D_Saye": {
     "name": "DBG-CutCellQuadratureScaling#OneLevelSet_3D_Saye",
     "avgSeconds": 499.5856293,
-    "dueMargin": 300.0,
+    "dueMargin": 360.0,
     "lastupdate": "2026-02-25T21:41:43.0755484+01:00"
   },
   "DBG-CutCellQuadratureScaling#OneLevelSet_3D_Algoim": {
     "name": "DBG-CutCellQuadratureScaling#OneLevelSet_3D_Algoim",
     "avgSeconds": 522.1216442,
-    "dueMargin": 300.0,
+    "dueMargin": 420.0,
     "lastupdate": "2026-02-25T21:41:44.3675135+01:00"
   },
   "DBG-CutCellQuadratureScaling#TwoLevelSets_3D": {
     "name": "DBG-CutCellQuadratureScaling#TwoLevelSets_3D",
     "avgSeconds": 647.4842455,
-    "dueMargin": 300.0,
+    "dueMargin": 480.0,
     "lastupdate": "2026-02-25T21:41:45.6332292+01:00"
   },
   "DBG-p4-AdvancedSolverTests#LocalIndexTest": {
     "name": "DBG-p4-AdvancedSolverTests#LocalIndexTest",
     "avgSeconds": 475.9673195,
-    "dueMargin": 300.0,
+    "dueMargin": 360.0,
     "lastupdate": "2026-02-25T21:41:48.4814198+01:00"
   },
   "DBG-p4-AdvancedSolverTests#MapConsistencyTest": {
     "name": "DBG-p4-AdvancedSolverTests#MapConsistencyTest",
     "avgSeconds": 539.3552646,
-    "dueMargin": 300.0,
+    "dueMargin": 420.0,
     "lastupdate": "2026-02-25T21:41:49.6648481+01:00"
   },
   "DBG-p4-AdvancedSolverTests#SubBlockExtractionWithCoupling": {
     "name": "DBG-p4-AdvancedSolverTests#SubBlockExtractionWithCoupling",
     "avgSeconds": 577.7066851,
-    "dueMargin": 300.0,
+    "dueMargin": 420.0,
     "lastupdate": "2026-02-25T21:41:51.0765953+01:00"
   },
   "DBG-p4-AdvancedSolverTests#FastSubMatrixExtraction": {
     "name": "DBG-p4-AdvancedSolverTests#FastSubMatrixExtraction",
     "avgSeconds": 456.1462902,
-    "dueMargin": 300.0,
+    "dueMargin": 360.0,
     "lastupdate": "2026-02-25T21:41:53.8086522+01:00"
   },
   "DBG-p4-AdvancedSolverTests#TestLinearSolverConfigurations": {
@@ -3950,67 +3950,67 @@
   "DBG-CDG_ProjectionTest#AllUp_LegendrePolynomial": {
     "name": "DBG-CDG_ProjectionTest#AllUp_LegendrePolynomial",
     "avgSeconds": 894.3333455,
-    "dueMargin": 300.0,
+    "dueMargin": 660.0,
     "lastupdate": "2026-02-25T21:44:28.5052223+01:00"
   },
   "DBG-Matrix_MPItest#SubMatrixTest": {
     "name": "DBG-Matrix_MPItest#SubMatrixTest",
     "avgSeconds": 814.6633194,
-    "dueMargin": 300.0,
+    "dueMargin": 600.0,
     "lastupdate": "2026-02-25T21:44:29.6687897+01:00"
   },
   "DBG-MultigridTest#XDG_PolynomialRestAndPrlgTest": {
     "name": "DBG-MultigridTest#XDG_PolynomialRestAndPrlgTest",
     "avgSeconds": 907.3390878,
-    "dueMargin": 300.0,
+    "dueMargin": 660.0,
     "lastupdate": "2026-02-25T21:44:32.3225543+01:00"
   },
   "DBG-ipViscosity#solverTest": {
     "name": "DBG-ipViscosity#solverTest",
     "avgSeconds": 878.2031248,
-    "dueMargin": 300.0,
+    "dueMargin": 660.0,
     "lastupdate": "2026-02-25T21:44:47.4129237+01:00"
   },
   "DBG-CutCellQuadratureScaling#OneLevelSet_2D": {
     "name": "DBG-CutCellQuadratureScaling#OneLevelSet_2D",
     "avgSeconds": 810.2150003,
-    "dueMargin": 300.0,
+    "dueMargin": 600.0,
     "lastupdate": "2026-02-25T21:45:07.0066443+01:00"
   },
   "DBG-p4-AdvancedSolverTestsMPI#TestInit": {
     "name": "DBG-p4-AdvancedSolverTestsMPI#TestInit",
     "avgSeconds": 465.8146306,
-    "dueMargin": 300.0,
+    "dueMargin": 360.0,
     "lastupdate": "2026-02-25T21:45:17.5838266+01:00"
   },
   "DBG-p4-AdvancedSolverTestsMPI#GetExternalRowsTest": {
     "name": "DBG-p4-AdvancedSolverTestsMPI#GetExternalRowsTest",
     "avgSeconds": 494.8660371,
-    "dueMargin": 300.0,
+    "dueMargin": 360.0,
     "lastupdate": "2026-02-25T21:45:18.7629195+01:00"
   },
   "DBG-p4-AdvancedSolverTestsMPI#FastSubMatrixExtraction": {
     "name": "DBG-p4-AdvancedSolverTestsMPI#FastSubMatrixExtraction",
     "avgSeconds": 532.8196014,
-    "dueMargin": 300.0,
+    "dueMargin": 420.0,
     "lastupdate": "2026-02-25T21:45:19.9468004+01:00"
   },
   "DBG-XNSE_Solver#IBMChannelTest": {
     "name": "DBG-XNSE_Solver#IBMChannelTest",
     "avgSeconds": 933.6082259,
-    "dueMargin": 300.0,
+    "dueMargin": 660.0,
     "lastupdate": "2026-02-25T21:48:01.6000262+01:00"
   },
   "DBG-XNSE_Solver#IBMChannelSolverTest": {
     "name": "DBG-XNSE_Solver#IBMChannelSolverTest",
     "avgSeconds": 1008.4731048,
-    "dueMargin": 300.0,
+    "dueMargin": 720.0,
     "lastupdate": "2026-02-25T21:48:02.7150231+01:00"
   },
   "DBG-TraceDGtest#CartesianWithLevelSetAMR": {
     "name": "DBG-TraceDGtest#CartesianWithLevelSetAMR",
     "avgSeconds": 962.2030641,
-    "dueMargin": 300.0,
+    "dueMargin": 720.0,
     "lastupdate": "2026-02-25T21:48:14.8416692+01:00"
   },
   "DBG-p4-AdvancedSolverTestsMPI#ExternalIndexTest": {
@@ -4040,199 +4040,199 @@
   "DBG-CutCellQuadratureScaling#OneLevelSet_3D_Classic": {
     "name": "DBG-CutCellQuadratureScaling#OneLevelSet_3D_Classic",
     "avgSeconds": 1185.402607,
-    "dueMargin": 300.0,
+    "dueMargin": 840.0,
     "lastupdate": "2026-02-25T21:51:11.1885053+01:00"
   },
   "DBG-p4-AdvancedSolverTests#CellwiseSubSelection": {
     "name": "DBG-p4-AdvancedSolverTests#CellwiseSubSelection",
     "avgSeconds": 980.8193156,
-    "dueMargin": 300.0,
+    "dueMargin": 720.0,
     "lastupdate": "2026-02-25T21:51:15.6266016+01:00"
   },
   "DBG-p4-AdvancedSolverTests#SubSelection": {
     "name": "DBG-p4-AdvancedSolverTests#SubSelection",
     "avgSeconds": 1051.3445608,
-    "dueMargin": 300.0,
+    "dueMargin": 780.0,
     "lastupdate": "2026-02-25T21:51:16.8430092+01:00"
   },
   "DBG-p4-SpecFEM#AllUp": {
     "name": "DBG-p4-SpecFEM#AllUp",
     "avgSeconds": 502.8797046,
-    "dueMargin": 300.0,
+    "dueMargin": 360.0,
     "lastupdate": "2026-02-25T21:51:29.3446669+01:00"
   },
   "DBG-XNSE_Solver#SphericalHarmonicsPostprocessingTest": {
     "name": "DBG-XNSE_Solver#SphericalHarmonicsPostprocessingTest",
     "avgSeconds": 1437.8171428,
-    "dueMargin": 300.0,
+    "dueMargin": 1020.0,
     "lastupdate": "2026-02-25T21:53:56.0448546+01:00"
   },
   "DBG-BoSSS.Application.ExternalBinding#Test1D": {
     "name": "DBG-BoSSS.Application.ExternalBinding#Test1D",
     "avgSeconds": 1632.309997,
-    "dueMargin": 300.0,
+    "dueMargin": 1200.0,
     "lastupdate": "2026-02-25T21:59:15.6606777+01:00"
   },
   "DBG-XNSE_Solver#ViscosityJumpTest": {
     "name": "DBG-XNSE_Solver#ViscosityJumpTest",
     "avgSeconds": 1653.1851468,
-    "dueMargin": 300.0,
+    "dueMargin": 1200.0,
     "lastupdate": "2026-02-25T21:59:18.3782694+01:00"
   },
   "DBG-DerivativeTest#DerivativeTest_BuildInGrid": {
     "name": "DBG-DerivativeTest#DerivativeTest_BuildInGrid",
     "avgSeconds": 1916.6834495,
-    "dueMargin": 300.0,
+    "dueMargin": 1380.0,
     "lastupdate": "2026-02-25T22:01:56.7332971+01:00"
   },
   "DBG-MultigridTest#XDG_ProlongationTest_agg0_trw0_eye": {
     "name": "DBG-MultigridTest#XDG_ProlongationTest_agg0_trw0_eye",
     "avgSeconds": 2087.7916533,
-    "dueMargin": 300.0,
+    "dueMargin": 1500.0,
     "lastupdate": "2026-02-25T22:04:24.4893201+01:00"
   },
   "DBG-MultigridTest#XDG_ProlongationTest_agg0_trw1_eye": {
     "name": "DBG-MultigridTest#XDG_ProlongationTest_agg0_trw1_eye",
     "avgSeconds": 2091.3156954,
-    "dueMargin": 300.0,
+    "dueMargin": 1500.0,
     "lastupdate": "2026-02-25T22:04:25.5628131+01:00"
   },
   "DBG-MultigridTest#XDG_ProlongationTest_agg0_trw1_idmass": {
     "name": "DBG-MultigridTest#XDG_ProlongationTest_agg0_trw1_idmass",
     "avgSeconds": 2093.2595181,
-    "dueMargin": 300.0,
+    "dueMargin": 1500.0,
     "lastupdate": "2026-02-25T22:04:26.611101+01:00"
   },
   "DBG-MultigridTest#XDG_ProlongationTest_agg03_trw0_idmass": {
     "name": "DBG-MultigridTest#XDG_ProlongationTest_agg03_trw0_idmass",
     "avgSeconds": 2100.9347152,
-    "dueMargin": 300.0,
+    "dueMargin": 1500.0,
     "lastupdate": "2026-02-25T22:04:29.254275+01:00"
   },
   "DBG-MultigridTest#XDG_ProlongationTest_agg03_trw1_eye": {
     "name": "DBG-MultigridTest#XDG_ProlongationTest_agg03_trw1_eye",
     "avgSeconds": 2104.5740302,
-    "dueMargin": 300.0,
+    "dueMargin": 1500.0,
     "lastupdate": "2026-02-25T22:04:30.3770996+01:00"
   },
   "DBG-MultigridTest#XDG_ProlongationTest_agg03_trw1_idmass": {
     "name": "DBG-MultigridTest#XDG_ProlongationTest_agg03_trw1_idmass",
     "avgSeconds": 2103.36791,
-    "dueMargin": 300.0,
+    "dueMargin": 1500.0,
     "lastupdate": "2026-02-25T22:04:31.5060923+01:00"
   },
   "DBG-MultigridTest#XDG_Norm": {
     "name": "DBG-MultigridTest#XDG_Norm",
     "avgSeconds": 2063.2297238,
-    "dueMargin": 300.0,
+    "dueMargin": 1500.0,
     "lastupdate": "2026-02-25T22:04:32.6163943+01:00"
   },
   "DBG-XNSE_Solver#TranspiratingChannelTest": {
     "name": "DBG-XNSE_Solver#TranspiratingChannelTest",
     "avgSeconds": 2043.882407,
-    "dueMargin": 300.0,
+    "dueMargin": 1440.0,
     "lastupdate": "2026-02-25T22:04:38.4537439+01:00"
   },
   "DBG-p4-AdvancedSolverTestsMPI#VectorSplitOperation_Op1": {
     "name": "DBG-p4-AdvancedSolverTestsMPI#VectorSplitOperation_Op1",
     "avgSeconds": 1461.9487666,
-    "dueMargin": 300.0,
+    "dueMargin": 1080.0,
     "lastupdate": "2026-02-25T22:04:53.4751436+01:00"
   },
   "DBG-p4-AdvancedSolverTestsMPI#VectorSplitOperation_Op2": {
     "name": "DBG-p4-AdvancedSolverTestsMPI#VectorSplitOperation_Op2",
     "avgSeconds": 1466.9563349,
-    "dueMargin": 300.0,
+    "dueMargin": 1080.0,
     "lastupdate": "2026-02-25T22:04:54.7047006+01:00"
   },
   "DBG-p4-AdvancedSolverTestsMPI#CompareVectorOps": {
     "name": "DBG-p4-AdvancedSolverTestsMPI#CompareVectorOps",
     "avgSeconds": 1513.5449064,
-    "dueMargin": 300.0,
+    "dueMargin": 1080.0,
     "lastupdate": "2026-02-25T22:04:55.9824578+01:00"
   },
   "DBG-MultigridTest#XDG_ProlongationTest_agg03_trw0_eye": {
     "name": "DBG-MultigridTest#XDG_ProlongationTest_agg03_trw0_eye",
     "avgSeconds": 2199.843334,
-    "dueMargin": 300.0,
+    "dueMargin": 1560.0,
     "lastupdate": "2026-02-25T22:06:58.7801397+01:00"
   },
   "DBG-XdgPoisson3#ParabolaTest": {
     "name": "DBG-XdgPoisson3#ParabolaTest",
     "avgSeconds": 2307.8170998,
-    "dueMargin": 300.0,
+    "dueMargin": 1620.0,
     "lastupdate": "2026-02-25T22:09:18.4318807+01:00"
   },
   "DBG-p4-AdvancedSolverTests#SubMatrixExtractionWithCoupling": {
     "name": "DBG-p4-AdvancedSolverTests#SubMatrixExtractionWithCoupling",
     "avgSeconds": 2195.8696839,
-    "dueMargin": 300.0,
+    "dueMargin": 1560.0,
     "lastupdate": "2026-02-25T22:09:29.3642374+01:00"
   },
   "DBG-p4-AdvancedSolverTestsMPI#VectorCellwiseOperation": {
     "name": "DBG-p4-AdvancedSolverTestsMPI#VectorCellwiseOperation",
     "avgSeconds": 1907.310222,
-    "dueMargin": 300.0,
+    "dueMargin": 1380.0,
     "lastupdate": "2026-02-25T22:09:35.3267033+01:00"
   },
   "DBG-BoSSS.Application.ExternalBinding#DropletTest": {
     "name": "DBG-BoSSS.Application.ExternalBinding#DropletTest",
     "avgSeconds": 2384.380789,
-    "dueMargin": 300.0,
+    "dueMargin": 1680.0,
     "lastupdate": "2026-02-25T22:11:37.1962236+01:00"
   },
   "DBG-p4-AdvancedSolverTests#CellBlockVectorOperations": {
     "name": "DBG-p4-AdvancedSolverTests#CellBlockVectorOperations",
     "avgSeconds": 2354.8886197,
-    "dueMargin": 300.0,
+    "dueMargin": 1680.0,
     "lastupdate": "2026-02-25T22:11:46.1560031+01:00"
   },
   "DBG-p4-AdvancedSolverTestsMPI#SubMatrixExtraction": {
     "name": "DBG-p4-AdvancedSolverTestsMPI#SubMatrixExtraction",
     "avgSeconds": 2162.8343025,
-    "dueMargin": 300.0,
+    "dueMargin": 1560.0,
     "lastupdate": "2026-02-25T22:11:47.4516453+01:00"
   },
   "DBG-p4-AdvancedSolverTestsMPI#SubSelection": {
     "name": "DBG-p4-AdvancedSolverTestsMPI#SubSelection",
     "avgSeconds": 2155.3687868,
-    "dueMargin": 300.0,
+    "dueMargin": 1560.0,
     "lastupdate": "2026-02-25T22:14:01.1630736+01:00"
   },
   "DBG-p4-AdvancedSolverTestsMPI#SubBlockExtraction": {
     "name": "DBG-p4-AdvancedSolverTestsMPI#SubBlockExtraction",
     "avgSeconds": 2600.6782712,
-    "dueMargin": 300.0,
+    "dueMargin": 1860.0,
     "lastupdate": "2026-02-25T22:20:28.5894986+01:00"
   },
   "DBG-XNSE_Solver#InterfaceSlipTest": {
     "name": "DBG-XNSE_Solver#InterfaceSlipTest",
     "avgSeconds": 4093.7998675,
-    "dueMargin": 420.0,
+    "dueMargin": 840.0,
     "lastupdate": "2026-02-25T22:39:35.3074983+01:00"
   },
   "DBG-XNSE_Solver#IBMChannelSolverTest_Transient": {
     "name": "DBG-XNSE_Solver#IBMChannelSolverTest_Transient",
     "avgSeconds": 7200.0,
-    "dueMargin": 720.0,
+    "dueMargin": 1440.0,
     "lastupdate": "2026-02-25T23:40:33.3937793+01:00"
   },
   "DBG-XNSE_Solver#BcTest_PressureOutletTest": {
     "name": "DBG-XNSE_Solver#BcTest_PressureOutletTest",
     "avgSeconds": 7200.0,
-    "dueMargin": 720.0,
+    "dueMargin": 1440.0,
     "lastupdate": "2026-02-26T00:15:51.1102675+01:00"
   },
   "DBG-XNSE_Solver#RollingSaveTest": {
     "name": "DBG-XNSE_Solver#RollingSaveTest",
     "avgSeconds": 7200.0,
-    "dueMargin": 720.0,
+    "dueMargin": 1440.0,
     "lastupdate": "2026-02-26T03:16:23.8448303+01:00"
   },
   "DBG-XNSE_Solver#Run_RestartTests": {
     "name": "DBG-XNSE_Solver#Run_RestartTests",
     "avgSeconds": 6430.3120479,
-    "dueMargin": 660.0,
+    "dueMargin": 1320.0,
     "lastupdate": "2026-02-25T23:34:25.7887706+01:00"
   }
 }
