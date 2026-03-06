@@ -87,9 +87,21 @@ namespace PublicTestRunner {
             return this.Overdue(Trim(job.Name, PrefixToTrim), span.TotalSeconds);
         }
 
+        public double GetMaxTime(Job job, string PrefixToTrim) {
+            return GetMaxTime(Trim(job.Name, PrefixToTrim));
+        }
+
+        private double GetMaxTime(string name) {
+            if ( this.overview.TryGetValue(name, out var result) ) {
+            return result.avgSeconds + result.dueMargin
+            } else {
+                return double.MaxValue;
+            }
+        }
+
         private bool Overdue(string name, double currentSeconds) {
             if ( this.overview.TryGetValue(name, out var result) ) {
-                return (currentSeconds > result.avgSeconds + result.dueMargin);
+                return (currentSeconds > GetMaxTime(name));
             }
             return false;
         }
@@ -125,9 +137,9 @@ namespace PublicTestRunner {
         public void Save() {
             var content = JsonConvert.SerializeObject(this.overview, Formatting.Indented);
             var filepath = this.shouldUpdateTimes ? "TimeRecords.json" : "TimeRecordsTmp.json";
-            Console.ForegroundColor = ConsoleColor.Red;
+            //Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"Saving Timings to: {Path.GetFullPath(filepath)}");
-            Console.ForegroundColor = ConsoleColor.White;
+            //Console.ForegroundColor = ConsoleColor.White;
             File.WriteAllText(filepath, content);
             try {
                 File.Copy(filepath, @"C:\tmp\TimeRecordings\TimeRecords-" + DateTime.Now.ToFileTimeUtc() + ".json");

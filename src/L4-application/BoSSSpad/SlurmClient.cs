@@ -340,7 +340,7 @@ namespace BoSSS.Application.BoSSSpad {
                         string jobstatus = Reader.ReadLine();
                         tr.Info("jobstatus is `" + (jobstatus ?? "Null") + "`");
                         if ( jobstatus == null ) {
-                            tr.Info("returning `Unknown` state");
+                            tr.Info("returning `FailedOrCanceled` state");
                             return (JobStatus.FailedOrCanceled, null); // `running.txt` exists, but no job known to SLURM: probably canceled.
                         }
 
@@ -368,7 +368,7 @@ namespace BoSSS.Application.BoSSSpad {
                                 return (JobStatus.FailedOrCanceled, -1);
 
                             default:
-                                tr.Info("returning `Unknown`");
+                                tr.Error($"unable to determine job status (id {idToken}) returning `Unknown`; string is >{jobstatus}<");
                                 return (JobStatus.Unknown, null);
                         }
                         //}
@@ -428,7 +428,7 @@ namespace BoSSS.Application.BoSSSpad {
             using (new FuncTrace()) {
                 //VerifyDatabases();
                 // load users .bashrc with all dependencies
-                buildSlurmScript(myJob, new string[] { "source " + "/home/" + Username + "/.bashrc" }, DeploymentDirectory);
+                BuildSlurmScript_mpirun(myJob, new string[] { "source " + "/home/" + Username + "/.bashrc" }, DeploymentDirectory);
 
                 string jobId = SSHConnection.SubmitJob(DeploymentDirectoryAtRemote(DeploymentDirectory), out var _stdout, out var _stderr);
                 if ( jobId.IsEmptyOrWhite() )
@@ -438,19 +438,149 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
+          /// <summary>
+  /// build batch script with all necessary parameters
+  /// </summary>
+  void buildSlurmScript(Job myJob, string[] moduleLoad, string DeploymentDirectory) {
+
+      //string jobpath_win = "\\home\\" + Username + myJob.DeploymentDirectory.Substring(2);
+      //string jobpath_unix = jobpath_win.Replace("\\", "/");
+      string jobpath_unix = DeploymentDirectoryAtRemote(DeploymentDirectory);
+
+      string jobname = myJob.Name.Replace("\t", "__").Replace(" ", "_");
+      string executiontime = myJob.ExecutionTime != null ? myJob.ExecutionTime : this.ExecutionTime; //if execution time is not defined. Use the default value.
+      int MPIcores = myJob.NumberOfMPIProcs;
+      int NumThreads = myJob.NumberOfThreads;
+      int TotalThreadsPerRank = NumThreads + NumOfServiceCoresPerMPIprocess;  // Total number of threads per MPI process
+              //string userName = Username;
+      string startupstring;
+      //string quote = "\"";
+      string slurmAccount = this.SlurmAccount;
+      //string memPerCPU = "5000";
+      //if (myJob.MemPerCPU != null) {
+      //    memPerCPU = myJob.MemPerCPU;
+      //} else {
+      //    memPerCPU = "5000";
+      //}
+      
+      using (var str = new StringWriter()) {
+
+          //str.Write($"srun --export=ALL,OMP_NUM_THREADS={NumThreads} --cpu-bind=cores --cpus-per-task={NumThreads} {base.DotnetRuntime} "); // when using SLURM, `srun` is recommended instead of `mpiexec`
+          str.Write(
+          $"srun --cpu-bind=cores " +
+          $"--mem-bind=local " +
+          //"--output=rank_%t_trace.out strace -f -e clone " + // for debugging threading
+          $"bash -c 'export OMP_NUM_THREADS={NumThreads}; " + //if not used like this, srun overwrites OMP_NUM_THREADS to TotalThreadsPerRank.
+          $"{base.DotnetRuntime} ");
+
+          str.Write(jobpath_unix + "/" + myJob.EntryAssemblyName);
+          //str.Write(" ");
+          //str.Write(myJob.EnvironmentVars["BOSSS_ARG_" + 0]);
+          //str.Write(" ");
+
+          str.Write("'");
+
+          startupstring = str.ToString();
+      }
+
+      string path = Path.Combine(DeploymentDirectory, "batch.sh");
+
+      using (StreamWriter sw = File.CreateText(path)) {
+          sw.NewLine = "\n";                                                      // Unix file endings
+
+          sw.WriteLine("#!/bin/sh");
+          sw.WriteLine("#SBATCH -J " + jobname);
+          if (slurmAccount != null) {
+              sw.WriteLine("#SBATCH -A " + slurmAccount);
+          }
+          sw.WriteLine("#SBATCH -o " + jobpath_unix + "/stdout.txt");
+          sw.WriteLine("#SBATCH -e " + jobpath_unix + "/stderr.txt");
+          sw.WriteLine("#SBATCH -t " + executiontime);
+          //sw.WriteLine("#SBATCH --mem-per-cpu=" + myJob.MemPerCPU);
+          if (myJob.UseComputeNodesExclusive) {
+              sw.WriteLine("#SBATCH --exclusive");
+          }
+
+          sw.WriteLine("#SBATCH -n " + MPIcores);
+          sw.WriteLine("#SBATCH -c " + TotalThreadsPerRank);
+
+          if (!this.Email.IsEmptyOrWhite()) {
+              sw.WriteLine("#SBATCH --mail-user=" + this.Email);
+              sw.WriteLine("#SBATCH --mail-type=ALL");
+          }
+          foreach (var cmd in this.AdditionalBatchCommands ?? Enumerable.Empty<string>()) {
+              sw.WriteLine(cmd);
+          }
+
+          //sw.WriteLine("#SBATCH --ntasks-per-node 1");                          // Only start one MPI-process per node
+
+                                                                                  // Load modules
+          foreach (string arg in moduleLoad) {
+              sw.WriteLine(arg);
+          }
+
+          // Set environment variables for Job
+          foreach (var envvar in myJob.EnvironmentVars) {
+              if (envvar.Key.ContainsWhite())
+                  throw new NotSupportedException("Unable to handle environment variable with whitespace: " + envvar.Key);
+
+              string envValue = envvar.Value;
+              if (envValue.ContainsWhite() || envValue.Contains("'")) {
+                  envValue = envValue.Replace("'", "'\"'\"'"); // see: https:     //stackoverflow.com/questions/1250079/how-to-escape-single-quotes-within-single-quoted-strings
+                  envValue = "'" + envValue + "'";
+              }
+              sw.WriteLine($"export {envvar.Key}={envValue}");
+          }
+
+          //// ----------  OpenMP  ---------- // it does not make sense to use these flags, as they slow down the speed and srun already handles this
+          //sw.WriteLine($"export OMP_PLACES=cores");                               // OpenMP sees those the cores as its 'places'
+          //sw.WriteLine($"export OMP_PROC_BIND=close");                           //keep OpenMP threads fixed to the cores
+
+          // ---------- .NET GC ---------- //
+          if(NumOfServiceCoresPerMPIprocess > 64)
+              throw new InvalidOperationException(
+                  "GC affinity mask supports at most 64 service cores.");
+
+          // Set GC affinity mask and heap count
+          ulong mask = 0;
+          for(int i = 0; i < NumOfServiceCoresPerMPIprocess; i++)
+              mask |= 1UL << (NumThreads + i);                                    // builds the 64-bit mask
+
+          sw.WriteLine($"export COMPlus_GCHeapCount={NumOfServiceCoresPerMPIprocess}");
+          //sw.WriteLine($"export COMPlus_GCHeapAffinitizeMask=0x{mask:X}");
+
+          // Set startupstring
+          string RunningToken = DeploymentDirectoryAtRemote(DeploymentDirectory) + "/isrunning.txt";
+          sw.WriteLine($"touch '{RunningToken}'");
+          sw.WriteLine("cd " + DeploymentDirectoryAtRemote(DeploymentDirectory)); // this ensures that any files written out (e.g. .plt-files) are placed in the deployment directory rather than ~
+          sw.WriteLine(startupstring);
+          sw.WriteLine("echo $? > '" + DeploymentDirectoryAtRemote(DeploymentDirectory) + "/exit.txt'");
+          sw.WriteLine($"rm '{RunningToken}'");
+          if (this.DotnetRuntime == "mono") {
+              sw.WriteLine("echo delete mono-crash-dumps, if there are any...");
+              sw.WriteLine($"rm core.*");
+              sw.WriteLine($"rm mono_crash.*");
+              sw.WriteLine($"rm mono_crash.mem.*");
+          }
+      }
+
+  }
+
+
         /// <summary>
         /// build batch script with all necessary parameters
         /// </summary>
-        void buildSlurmScript(Job myJob, string[] moduleLoad, string DeploymentDirectory) {
+        void BuildSlurmScript_mpirun(Job myJob, string[] moduleLoad, string DeploymentDirectory) {
             string jobpath_unix = DeploymentDirectoryAtRemote(DeploymentDirectory);
 
             string jobname = myJob.Name.Replace("\t", "__").Replace(" ", "_");
             string executiontime = myJob.ExecutionTime != null ? myJob.ExecutionTime : this.ExecutionTime; //if execution time is not defined. Use the default value.
-            int MPIcores = myJob.NumberOfMPIProcs;
+            int MPIprocs = myJob.NumberOfMPIProcs;
             int NumThreads = myJob.NumberOfThreads;
             int TotalThreadsPerRank = NumThreads + NumOfServiceCoresPerMPIprocess;  // Total number of threads per MPI process
+            if(TotalThreadsPerRank % 2 == 1)
+                TotalThreadsPerRank++;
             string slurmAccount = this.SlurmAccount;
-
 
             string path = Path.Combine(DeploymentDirectory, "batch.sh");
 
@@ -471,6 +601,7 @@ namespace BoSSS.Application.BoSSSpad {
                 }
 
 
+                sw.WriteLine("#SBATCH -n " + MPIprocs);
                 sw.WriteLine("#SBATCH -c " + TotalThreadsPerRank);
 
                 if (!this.Email.IsEmptyOrWhite()) {
@@ -525,19 +656,26 @@ namespace BoSSS.Application.BoSSSpad {
                 sw.WriteLine($"cd {deploymentDirectoryAtRemote}");
                 string RunningToken = $"{deploymentDirectoryAtRemote}/isrunning.txt";
                 sw.WriteLine($"touch '{RunningToken}'");
+                sw.WriteLine($"export OMP_NUM_THREADS={TotalThreadsPerRank}");
+                sw.WriteLine($"echo 'value of PMIX_MCA_gds var:        >'$PMIX_MCA_gds'<'");
+                sw.WriteLine($"echo 'value of SLURM_NTASKS  var:       >'$SLURM_NTASKS '<'");
+                sw.WriteLine($"echo 'value of SLURM_CPUS_PER_TASK var: >'$SLURM_CPUS_PER_TASK'<'");
+                sw.WriteLine($"echo 'value of OMP_NUM_THREADS var:     >'$OMP_NUM_THREADS'<'");
+                sw.WriteLine($"date '+%a %b %d %H:%M:%S %Y' > StartTime.txt");
+
                 // this ensures that any files written out (e.g. .plt-files) are placed in the deployment directory rather than ~
                 // Set startupstring
                 // when using SLURM, `srun` is recommended instead of `mpiexec`
-                sw.WriteLine($"srun --cpu-bind=cores " +
-                    $"--mem-bind=local " +
-                    //"--output=rank_%t_trace.out strace -f -e clone " + // for debugging threading
-                    $"bash -c 'export OMP_NUM_THREADS={NumThreads}; " + //if not used like this, srun overwrites OMP_NUM_THREADS to TotalThreadsPerRank.
+                sw.WriteLine($"mpirun " +
+                    " -n " + MPIprocs + " " +
                     $"{base.DotnetRuntime} " +
                     myJob.EntryAssemblyName +
-                    "'");
+                    "");
 
                 sw.WriteLine($"echo $? > '{deploymentDirectoryAtRemote}/exit.txt'");
+                sw.WriteLine($"date '+%a %b %d %H:%M:%S %Y' > EndTime.txt");
                 sw.WriteLine($"rm '{RunningToken}'");
+                sw.WriteLine($"sleep 60"); // grace period for the IO to catch up on our slow cluster -- otherwise , SLURM might drain the node because of "Reason=Kill task failed"
 
             }
 
@@ -585,6 +723,58 @@ namespace BoSSS.Application.BoSSSpad {
                 NameString = " " + base.Name + " ";
 
             return "SlurmClient" + NameString + ": " + Username + "@" + ServerName + ", Slurm account: " + (SlurmAccount ?? "NONE");
+        }
+
+        /// <summary>
+        /// tries to obtain  start  time from `Starttime.txt` token file
+        /// </summary>
+        public override DateTime? GetStartTime(string idToken, object optInfo, string DeployDir) {
+            var startTimeFile = Path.Combine(DeployDir, "StartTime.txt");
+            if(File.Exists(startTimeFile)) {
+                var FI = new FileInfo(startTimeFile);
+                var timeCoarse = FI.CreationTime;
+                try {
+                    var timeFine_txt = File.ReadAllText(startTimeFile).TrimEnd();
+                    var timeFine = DateTime.ParseExact(timeFine_txt, "ddd MMM dd HH:mm:ss zzz yyyy", System.Globalization.CultureInfo.InvariantCulture);
+                    return timeFine;
+                } catch (Exception) {
+                    return timeCoarse;
+                }
+            } else {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// tries to obtain end time from `exit.txt` token file
+        /// </summary>
+        public override DateTime? GetEndTime(string idToken, object optInfo, string DeployDir)  {
+            var endTimeFile = Path.Combine(DeployDir, "EndTime.txt");
+            if(File.Exists(endTimeFile)) {
+                var FI = new FileInfo(endTimeFile);
+                var timeCoarse = FI.CreationTime;
+                try {
+                    var timeFine_txt = File.ReadAllText(endTimeFile).TrimEnd();
+                    var timeFine = DateTime.ParseExact(timeFine_txt, "ddd MMM dd HH:mm:ss zzz yyyy", System.Globalization.CultureInfo.InvariantCulture);
+                    return timeFine;
+                } catch (Exception) {
+                    return timeCoarse;
+                }
+            } else {
+            
+                string exitFile = Path.Combine(DeployDir, "exit.txt");
+                if ( File.Exists(exitFile) ) {
+                    var FI = new FileInfo(exitFile);
+                    var timeCoarse = FI.CreationTime;
+                    return timeCoarse;
+                } else {
+                    
+
+
+
+                    return base.GetEndTime(idToken, optInfo, DeployDir);
+                }
+            }
         }
 
     }

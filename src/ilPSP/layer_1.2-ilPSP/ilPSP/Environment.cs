@@ -662,7 +662,7 @@ namespace ilPSP {
 
         public static void InitThreading(bool LookAtEnvVar, int? NumThreadsOverride) {
             using(var tr = new FuncTrace()) {
-                tr.InfoToConsole = false;
+                tr.InfoToConsole = true;
                 tr.StdoutOnAllRanks();
 
 
@@ -866,9 +866,9 @@ namespace ilPSP {
 
 
                 if(DedicatedCPUsForThisRank != null) {
-                    tr.Info($"R{MPIEnv.MPI_Rank}: using CPUs {DedicatedCPUsForThisRank.ToConcatString("[", ",", "]")} for OpenMP.");
+                    tr.Info($"R{MPIEnv.MPI_Rank}: using CPUs {DedicatedCPUsForThisRank.ToConcatString("[", ",", "]")} for this rank.");
                 } else {
-                    tr.Info($"R{MPIEnv.MPI_Rank}: using dynamic OpenMP tread placement.");
+                    tr.Info($"R{MPIEnv.MPI_Rank}: using dynamic tread placement.");
                 }
 
                 PerformOMPthreadPinning = MPIEnv.MPI_Size > 1 && (allequal != disjoint);
@@ -894,9 +894,9 @@ namespace ilPSP {
 
                 BLAS.ActivateOMP();
                 LAPACK.ActivateOMP();
-                PinTPLThreads();
+                PinTPLThreads(tr);
                 //tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity after TPL binding: " + CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ",", "]"));
-                PinOMPthreads();
+                PinOMPthreads(tr);
                 StdoutOnlyOnRank0 = true;
                 tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity after OpenMP binding: " + CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ",", "]"));
 
@@ -932,8 +932,13 @@ namespace ilPSP {
 
 
 
-        static void PinTPLThreads() {
+        static void PinTPLThreads(FuncTrace tr = null) {
             if(PerformTPLthreadPinning) {
+                if(tr != null) {
+                    var cpus = DedicatedCPUsForThisRank.GetSubVector(DedicatedCPUsForThisRank.Length - NumThreads, NumThreads); // use the left-over CPUs **at the beginning** for spare; I assume that background threads rather grab those.
+                    var service_cpus = DedicatedCPUsForThisRank.GetSubVector(0, DedicatedCPUsForThisRank.Length - NumThreads);
+                    tr.Info($"R{MPIEnv.MPI_Rank}: using CPUs {cpus.ToConcatString("[", ",", "]")} for TPL, ({service_cpus.ToConcatString("[", ",", "]")} for service, gc, etc.).");
+                }
                 Parallel.For(0, ilPSP.Environment.NumThreads,
                     new ParallelOptions { MaxDegreeOfParallelism = ilPSP.Environment.NumThreads },
                     PinTPLThread);
@@ -956,7 +961,7 @@ namespace ilPSP {
         static bool PerformOMPthreadPinning = false;
 
 
-        private static void PinOMPthreads() {
+        private static void PinOMPthreads(FuncTrace tr = null) {
             if(System.Environment.OSVersion.Platform == PlatformID.Unix) {
                 //MKLservice.Dynamic = true;
                 //MKLservice.SetNumThreads(NumThreads);
@@ -965,9 +970,15 @@ namespace ilPSP {
 
             if(PerformOMPthreadPinning) {
                 var cpus = DedicatedCPUsForThisRank.GetSubVector(DedicatedCPUsForThisRank.Length - NumThreads, NumThreads); // use the left-over CPUs **at the beginning** for spare; I assume that background threads rather grab those.
+                if(tr != null) {
+                    var service_cpus = DedicatedCPUsForThisRank.GetSubVector(0, DedicatedCPUsForThisRank.Length - NumThreads);
+                    tr.Info($"R{MPIEnv.MPI_Rank}: using CPUs {cpus.ToConcatString("[", ",", "]")} for OpenMP, ({service_cpus.ToConcatString("[", ",", "]")} for service, gc, etc.).");
+                }
                 MKLservice.BindOMPthreads_1To1(cpus);
             } else {
                 //MKLservice.BindOMPthreads_1To1(new int[] { 1, 5, 9, 13 }); Console.WriteLine("Pinning testcode !!!!!!!!!!!!!!!!!!!!!!11111");
+                if(tr != null)
+                    tr.Info($"R{MPIEnv.MPI_Rank}: no OpenMP thread pinning, setting number of threads to {NumThreads}.");
                 MKLservice.SetNumThreads(NumThreads);
             }
 

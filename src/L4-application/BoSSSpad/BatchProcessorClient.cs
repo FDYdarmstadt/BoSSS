@@ -332,6 +332,52 @@ namespace BoSSS.Application.BoSSSpad {
             return false;
         }
 
+        DateTime? GetFileCreationTime(string path) {
+            if ( path.IsEmptyOrWhite() )
+                return null;
+            var FI = new FileInfo(path);
+            if ( !FI.Exists )
+                return null;
+            return FI.CreationTime;
+        }
+
+        DateTime? GetLastWriteTime(string path) {
+            if ( path.IsEmptyOrWhite() )
+                return null;
+            var FI = new FileInfo(path);
+            if ( !FI.Exists )
+                return null;
+            return FI.LastWriteTime;
+        }
+
+        DateTime? SelectEarlier(DateTime? a, DateTime? b) {
+            if(a == null && b == null) 
+                return null;
+            if(a == null)
+                return b;
+            if(b == null)
+                return a;
+            if(a < b) {
+                return a;
+            } else {
+                return b;
+            }
+        }
+
+        DateTime? SelectLater(DateTime? a, DateTime? b) {
+            if(a == null && b == null) 
+                return null;
+            if(a == null)
+                return b;
+            if(b == null)
+                return a;
+            if(a < b) {
+                return a;
+            } else {
+                return b;
+            }
+        }
+
 
 
         /// <summary>
@@ -339,13 +385,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         virtual public DateTime? GetStartTime(string idToken, object optInfo, string DeployDir) {
             string stdout_path = GetStdoutFile(idToken, DeployDir);
-            if ( stdout_path.IsEmptyOrWhite() )
-                return null;
-            var FI = new FileInfo(stdout_path);
-            if ( !FI.Exists )
-                return null;
-
-            return FI.CreationTime;
+            string stderr_path = GetStderrFile(idToken, DeployDir);
+            return SelectEarlier(GetLastWriteTime(stdout_path), GetLastWriteTime(stderr_path));
         }
 
         /// <summary>
@@ -353,13 +394,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         virtual public DateTime? GetEndTime(string idToken, object optInfo, string DeployDir) {
             string stdout_path = GetStdoutFile(idToken, DeployDir);
-            if ( stdout_path.IsEmptyOrWhite() )
-                return null;
-            var FI = new FileInfo(stdout_path);
-            if ( !FI.Exists )
-                return null;
-
-            return FI.LastWriteTime;
+            string stderr_path = GetStderrFile(idToken, DeployDir);
+            return SelectLater(GetLastWriteTime(stdout_path), GetLastWriteTime(stderr_path));
         }
 
         /// <summary>
@@ -451,6 +487,28 @@ namespace BoSSS.Application.BoSSSpad {
 
 
             return true;
+        }
+
+
+        /// <summary>
+        /// creates base directories for deployment (<see cref="DeploymentBaseDirectory"/>) and databases (<see cref="AllowedDatabasesPaths"/>)
+        /// </summary>
+        public virtual void EnsurePathsExist() {
+            
+            var paths = this.AllowedDatabasesPaths.Select(pair => pair.LocalMountPath).ToArray();
+            this.DeploymentBaseDirectory.AddToArray(ref paths);
+
+            foreach(var p in paths) {
+                if( !string.IsNullOrWhiteSpace(DeploymentBaseDirectory) ) {
+                    if( !Directory.Exists(p) ) {
+                        try {
+                            Directory.CreateDirectory(p);
+                        } catch(Exception ex) {
+                            throw new IOException($"Failed to create base directory '{p}': {ex.Message}", ex);
+                        }
+                    }
+                }
+            }
         }
     }
 

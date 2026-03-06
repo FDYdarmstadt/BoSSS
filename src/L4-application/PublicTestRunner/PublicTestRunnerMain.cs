@@ -660,13 +660,15 @@ namespace PublicTestRunner {
             }
 
             BatchProcessorClient bpc = BoSSSshell.ExecutionQueues[ExecutionQueueNo];
-            Console.WriteLine($"Using batch queue {ExecutionQueueNo}: {bpc}");
+            Console.WriteLine($"Using batch queue {ExecutionQueueNo}: #{bpc}");
+            bpc.EnsurePathsExist();
 
             BatchProcessorClient bpc2 = BoSSSshell.ExecutionQueues[BackupExecutionQueueNo];
-            Console.WriteLine($"Using backup batch queue {BackupExecutionQueueNo}: {bpc2} (for failed jobs)");
+            Console.WriteLine($"Using backup (for failed jobs) batch queue {BackupExecutionQueueNo}: #{bpc2}");
             if(!bpc.IsSameSystem(bpc2)) {
                 throw new NotSupportedException("(primary) batch queue and backup batch queue must be the same server (`IsSameSystem` test must evaluate to true)");
             }
+            bpc2.EnsurePathsExist();
 
             FileStream ServerMutex;
             string DateNtime = null;
@@ -895,10 +897,10 @@ namespace PublicTestRunner {
 
                             if ( s is JobStatus.InProgress ) {
                                 if ( monitor.Overdue(job, DateNtime)
-                                //|| (object.ReferenceEquals(job.AssignedBatchProc, bpc) && job.LatestDeployment.RunTime.TotalSeconds > 30) // test code to trigger cnacelling
+                                //|| (object.ReferenceEquals(job.AssignedBatchProc, bpc) && job.LatestDeployment.RunTime.TotalSeconds > 30) // test code to trigger canceling
                                 ) {
-                                    Console.Error.WriteLine($" ------------------- Overdue: {job.Name}");
-                                    job.LatestDeployment.Cancel("Job is running unusually long!");
+                                    Console.Error.WriteLine($" ------------------- Overdue (canceling deactivated): {job.Name}, elapsed: {job.LatestDeployment.RunTime.TotalSeconds:F1}, allowed: {monitor.GetMaxTime(job, DateNtime):F1}");
+                                    //job.LatestDeployment.Cancel("Job is running unusually long!");
                                     continue;
                                 }
                             }
@@ -1423,7 +1425,7 @@ namespace PublicTestRunner {
                 if ( NumThreads != null ) {
                     j.NumberOfThreads = NumThreads.Value;
                 } else {
-                    j.NumberOfThreads = 1; // reduced no of threads to improve cluster throughput.
+                    j.NumberOfThreads = 2; // reduced no of threads to improve cluster throughput.
                 }
 
                 if ( TestRunnerRelPath != null ) {

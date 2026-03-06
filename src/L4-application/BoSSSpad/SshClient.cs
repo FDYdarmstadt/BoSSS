@@ -293,14 +293,23 @@ namespace BoSSS.Application.BoSSSpad {
         /// tests if the output of some command is finished, i.e. if we are waiting for a prompt
         /// </summary>
         bool IsAtPrompt() {
+            bool IsMaybeSomePrompt(string s) { // detects if some string s is maybe a sh/bas prompt waiting for some input
+                if (s.TrimEnd().EndsWith("]$")) // from Lichtenberg
+                    return true;
+                if (s.Contains(UserName) && s.TrimEnd().EndsWith("~$")) // fdycluster
+                    return true;
+                return false;
+            }
+
+
             lock (outCollector) {
                 if (outCollector.Count <= 0)
                     return false;
                 if (outCollector.Count > 1)
-                    if (outCollector[outCollector.Count - 1].TrimEnd().EndsWith("]$"))
+                    if (IsMaybeSomePrompt(outCollector[outCollector.Count - 1]))
                         return true;
                 if (outCollector.Count > 2)
-                    if (outCollector[outCollector.Count - 2].TrimEnd().EndsWith("]$"))
+                    if (IsMaybeSomePrompt(outCollector[outCollector.Count - 2]))
                         return true;
                 return false;
             }

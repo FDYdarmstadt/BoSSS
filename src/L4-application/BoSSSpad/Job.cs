@@ -1508,6 +1508,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                     if (value.IsSameSystem(_AssignedBatchProc)) {
                         _AssignedBatchProc = value;
+                        _AssignedBatchProc.EnsurePathsExist();
                     } else {
                         throw new NotSupportedException("Batchprocessor cant be changed to a different system!");
                     }
@@ -1611,6 +1612,7 @@ namespace BoSSS.Application.BoSSSpad {
                 if ( this.AssignedBatchProc != null )
                     throw new NotSupportedException("Job can only be activated once.");
                 AssignedBatchProc = bpc;
+                AssignedBatchProc.EnsurePathsExist();
 
                 Reactivate();
             }
