@@ -93,7 +93,7 @@ namespace PublicTestRunner {
 
         private double GetMaxTime(string name) {
             if ( this.overview.TryGetValue(name, out var result) ) {
-            return result.avgSeconds + result.dueMargin
+                return result.avgSeconds + result.dueMargin;
             } else {
                 return double.MaxValue;
             }

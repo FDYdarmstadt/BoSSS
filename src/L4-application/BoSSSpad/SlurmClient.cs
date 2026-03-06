@@ -650,22 +650,24 @@ namespace BoSSS.Application.BoSSSpad {
 
                 string deploymentDirectoryAtRemote = DeploymentDirectoryAtRemote(DeploymentDirectory);
 
+                // this ensures that any files written out (e.g. .plt-files) are placed in the deployment directory rather than ~
                 string tmpDir = $"{deploymentDirectoryAtRemote}/tmp";
                 sw.WriteLine($"export TMPDIR={tmpDir}");
                 sw.WriteLine($"mkdir -p '{tmpDir}'");
                 sw.WriteLine($"cd {deploymentDirectoryAtRemote}");
                 string RunningToken = $"{deploymentDirectoryAtRemote}/isrunning.txt";
                 sw.WriteLine($"touch '{RunningToken}'");
-                sw.WriteLine($"export OMP_NUM_THREADS={TotalThreadsPerRank}");
                 sw.WriteLine($"echo 'value of PMIX_MCA_gds var:        >'$PMIX_MCA_gds'<'");
                 sw.WriteLine($"echo 'value of SLURM_NTASKS  var:       >'$SLURM_NTASKS '<'");
                 sw.WriteLine($"echo 'value of SLURM_CPUS_PER_TASK var: >'$SLURM_CPUS_PER_TASK'<'");
                 sw.WriteLine($"echo 'value of OMP_NUM_THREADS var:     >'$OMP_NUM_THREADS'<'");
+                sw.WriteLine($"grep Cpus_allowed_list /proc/self/status");
                 sw.WriteLine($"date '+%a %b %d %H:%M:%S %Y' > StartTime.txt");
 
-                // this ensures that any files written out (e.g. .plt-files) are placed in the deployment directory rather than ~
                 // Set startupstring
+
                 // when using SLURM, `srun` is recommended instead of `mpiexec`
+                sw.WriteLine($"export OMP_NUM_THREADS={NumThreads}");
                 sw.WriteLine($"mpirun " +
                     " -n " + MPIprocs + " " +
                     $"{base.DotnetRuntime} " +
