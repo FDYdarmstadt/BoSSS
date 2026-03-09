@@ -322,6 +322,12 @@ namespace BoSSS.Application.BoSSSpad {
                 tr.Info("Trying to determine status of SLURM job in " + DeployDir);
 
                 using ( new BlockTrace("FILE_CHECK", tr) ) {
+                    
+                    int? ExitFileOverride = Job.Deployment.ReadJobStatusFile(DeployDir, out var status_from_file);
+                    if(ExitFileOverride != null && status_from_file != JobStatus.Unknown) {
+                        return (status_from_file, ExitFileOverride);
+                    }
+
                     string exitFile = Path.Combine(DeployDir, "exit.txt");
                     if ( File.Exists(exitFile) ) {
 

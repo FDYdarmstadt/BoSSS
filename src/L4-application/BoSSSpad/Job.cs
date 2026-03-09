@@ -713,6 +713,46 @@ namespace BoSSS.Application.BoSSSpad {
             int? ExitCodeCache = null;
 
 
+            /// <summary>
+            /// Tries to read the job status from a file `JobStatus_ExitCode.txt`
+            /// </summary>
+            /// <param name="directory">
+            /// deployment directory
+            /// </param>
+            /// <param name="status">
+            /// On exit, if reading was successful, the job status; if anything went wrong with IO, <see cref="JobStatus.Unknown"/>
+            /// </param>
+            /// <returns>
+            /// if not null, the file `JobStatus_ExitCode.txt` had been completely and successfully;
+            /// otherwise something went worng.
+            /// </returns>
+            public static int? ReadJobStatusFile(string directory, out JobStatus status) {
+                try {
+                    string path = Path.Combine(directory, "JobStatus_ExitCode.txt");
+                    if(!File.Exists(path)) {
+                        status = JobStatus.Unknown;
+                        return null;
+                    }
+
+                    using ( var str = new StreamReader(path) ) {
+                        string l1 = str.ReadLine();
+                        status = Enum.Parse<JobStatus>(l1);
+                        string l2 = str.ReadLine();
+                        if ( !l2.IsEmptyOrWhite() ) {
+                            int ExitCode = int.Parse(l2);
+                            return ExitCode;
+                        } else {
+                            status = JobStatus.Unknown;
+                            return null;
+                        }
+                    }
+
+                } catch ( Exception) {
+                    status = JobStatus.Unknown;
+                    return null;
+                }
+            }
+
             bool ReadExitCache(out JobStatus status, out int? ExitCode) {
                 using ( var tr = new FuncTrace() ) {
                     ExitCode = null;
@@ -748,13 +788,14 @@ namespace BoSSS.Application.BoSSSpad {
                 }
             }
 
+
             /// <summary>
             /// If job deployment is finished (<see cref="JobStatus.FinishedSuccessful"/> or <see cref="JobStatus.FailedOrCanceled"/>),
             /// the <paramref name="status"/> and <paramref name="ExitCode"/> are stored in a file within the deployment directory.
             /// 
             /// This has two advantages:
             /// - less load for the job manager
-            /// - most job managers forget jobs after a couple of days, so we better rememeber.
+            /// - most job managers forget jobs after a couple of days, so we better remember.
             /// </summary>
             void RememberCache(JobStatus status, int? ExitCode) {
 
@@ -775,6 +816,28 @@ namespace BoSSS.Application.BoSSSpad {
                     } catch ( Exception ) {
 
                     }
+                }
+            }
+
+            /// <summary>
+            /// writes the file `JobStatus_ExitCode.txt` to the current working directory.
+            /// The Job manger uses this to signal Success even before the process terminates
+            /// </summary>
+            public static void WriteJobStatusFile(JobStatus status, int ExitCode) {
+                if((status is not JobStatus.FailedOrCanceled) && (status is not JobStatus.FinishedSuccessful)) {
+                    throw new NotSupportedException("can only be written for definitive job states, (finished successful or failed, not for states which can still change).");
+                }
+                
+                string path = "JobStatus_ExitCode.txt";
+                try {
+                    using ( var str = new StreamWriter(path) ) {
+                        str.WriteLine(status.ToString());
+                        str.WriteLine(ExitCode);
+                        str.Flush();
+                    }
+
+                } catch ( Exception ) {
+
                 }
             }
 
@@ -824,7 +887,7 @@ namespace BoSSS.Application.BoSSSpad {
                         }
 
                         if ( m_owner.AssignedBatchProc == null ) {
-                            tr.Info("No batch queue asigned: " + JobStatus.PreActivation);
+                            tr.Info("No batch queue assigned: " + JobStatus.PreActivation);
                             return JobStatus.PreActivation;
                         }
 

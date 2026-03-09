@@ -8,6 +8,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace ilPSP.Utils {
     /// <summary>
@@ -15,6 +16,32 @@ namespace ilPSP.Utils {
     /// supporting systems with more than 64 processors (unlike <see cref="Process.ProcessorAffinity"/>).
     /// </summary>
     public class CPUAffinity {
+
+        /// <summary>
+        /// tries to get the affinity of the entire process, no only the current thread.
+        /// </summary>
+        public static IEnumerable<int> GetProcessAffinity() {
+            
+            const int _NumTestThreads = 1024;
+            var options = new ParallelOptions {
+                    MaxDegreeOfParallelism = _NumTestThreads,
+                };
+
+            var listsFromThreads = new IEnumerable<int>[_NumTestThreads]; 
+
+            System.Threading.Tasks.Parallel.For(0, 1024, options, delegate(int i) {
+                listsFromThreads[i] = GetCurrentThreadAffinity();
+            });
+
+            var ret = new HashSet<int>();
+            foreach(var l in listsFromThreads) {
+                ret.AddRange(l);
+            }
+
+            var ret2 = ret.ToList();
+            ret2.Sort();
+            return ret2.ToArray();
+        }
 
 
         /// <summary>

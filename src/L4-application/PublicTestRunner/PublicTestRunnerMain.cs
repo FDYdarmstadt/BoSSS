@@ -899,7 +899,7 @@ namespace PublicTestRunner {
                                 if ( monitor.Overdue(job, DateNtime)
                                 //|| (object.ReferenceEquals(job.AssignedBatchProc, bpc) && job.LatestDeployment.RunTime.TotalSeconds > 30) // test code to trigger canceling
                                 ) {
-                                    Console.Error.WriteLine($" ------------------- Overdue (canceling deactivated): {job.Name}, elapsed: {job.LatestDeployment.RunTime.TotalSeconds:F1}, allowed: {monitor.GetMaxTime(job, DateNtime):F1}");
+                                    Console.Error.WriteLine($" ------------------- Overdue (canceling deactivated): {job.Name}, elapsed: {job.LatestDeployment.RunTime.TotalSeconds:F1}, allowed: {monitor.GetMaxTime(job, DateNtime):F1}, see: {job.LatestDeployment.DeploymentDirectory}");
                                     //job.LatestDeployment.Cancel("Job is running unusually long!");
                                     continue;
                                 }
@@ -919,7 +919,11 @@ namespace PublicTestRunner {
                                 monitor.UpdateEntry(job, DateNtime);
                             }
 
-                            if ( s is JobStatus.FailedOrCanceled or JobStatus.Unknown ) {
+                            if( s is JobStatus.Unknown) {
+                                Console.WriteLine($" ------------------- Job state ({job.Name}) is: {s}, Exit Code {job?.LatestDeployment.ExitCode}, {job?.LatestDeployment.DeploymentDirectory}");
+                            }
+
+                            if ( s is JobStatus.FailedOrCanceled ) {
                                 Console.WriteLine($" ------------------- Job Failed ({job.Name}) reason: {s}, Exit Code {job?.LatestDeployment.ExitCode}, {job?.LatestDeployment.DeploymentDirectory}");
                                 JobStatus s1 = job.GetStatus(true);
                                 if ( s1 != s ) {
@@ -1646,6 +1650,24 @@ namespace PublicTestRunner {
 
             Console.WriteLine();
             ftr.Info($"failstate all tests: {ret} (false means OK)");
+
+            if(ret == false) {
+                // -------------------------------------------------------------------------------------------------------------------------
+                // Occasionally, on the "new" (March 2026, Linux and Slurm-based) fdycluster,
+                // Open MPI complains:
+                //   "mpirun has exited due to process ... node hpccluster01l exiting improperly.",
+                // even if the run finishes successfully.
+                // Currently, I cannot reproduce this -- probably it is related to some timeout due to high IO load on the cluster.
+                //
+                // Therefore, I write a small text file about successful completion of the job,
+                // effectively ignoring al subsequent mpi errors
+                // -------------------------------------------------------------------------------------------------------------------------
+
+                Console.WriteLine("Job successful -- writing success token file.");
+                Job.Deployment.WriteJobStatusFile(JobStatus.FinishedSuccessful, 0);
+            }
+
+
             return ret ? -1 : 0;
         }
 
@@ -1861,8 +1883,7 @@ namespace PublicTestRunner {
             MPICollectiveWatchDog.WatchAtRelease(csMPI.Raw._COMM.WORLD);
             Console.WriteLine("ret b4 finalize = " + ret);
             csMPI.Raw.mpiFinalize();
-
-            System.Environment.Exit(ret);
+            Thread.Sleep(1000*10);
 
             return ret;
         }

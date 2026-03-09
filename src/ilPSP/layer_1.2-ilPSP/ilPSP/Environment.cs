@@ -668,7 +668,7 @@ namespace ilPSP {
 
                 tr.Info($"MPI Rank {MPIEnv.MPI_Rank}: Value for OMP_PLACES: {System.Environment.GetEnvironmentVariable("OMP_PLACES")}");
                 tr.Info($"MPI Rank {MPIEnv.MPI_Rank}: Value for OMP_PROC_BIND: {System.Environment.GetEnvironmentVariable("OMP_PROC_BIND")}");
-                tr.Info($"Number of CPUs in system: {CPUAffinity.TotalNumberOfCPUs}");
+                tr.Info($"Number of CPUs in system: {CPUAffinity.TotalNumberOfCPUs}, System Environment number of CPUs: {System.Environment.ProcessorCount} ");
 
                 // ===========================
                 // Determine Number of Threads
@@ -742,7 +742,8 @@ namespace ilPSP {
                 // OpenMP configuration
                 // ===========================
                 if(ReservedCPUsInitially == null)
-                    ReservedCPUsInitially = CPUAffinity.GetCurrentThreadAffinity().ToList().AsReadOnly();
+                    //ReservedCPUsInitially = CPUAffinity.GetCurrentThreadAffinity().ToList().AsReadOnly();
+                    ReservedCPUsInitially = CPUAffinity.GetProcessAffinity().ToList().AsReadOnly();
                 IEnumerable<int> ReservedCPUs = ReservedCPUsInitially.ToArray();
                 //if(ReservedCPUs.Count() == 1) {
                 //Debugger.Launch();
@@ -777,7 +778,7 @@ namespace ilPSP {
                 }
                 //--- end of mpi-local --//
 
-                tr.Info($"R{MPIEnv.MPI_Rank}: reserved CPUs: {ReservedCPUs.ToConcatString("[", ",", "]")}, C# reports mask {Process.GetCurrentProcess().ProcessorAffinity:X}");
+                tr.Info($"R{MPIEnv.MPI_Rank}: reserved CPUs for process: {ReservedCPUs.ToConcatString("[", ",", "]")}, C# reports mask {Process.GetCurrentProcess().ProcessorAffinity:X}");
 
                 ReservedCPUsOnSMP = CPUAffinity.CpuListOnSMP(ReservedCPUs, out bool disjoint, out bool allequal);
                 if(disjoint == true && allequal == true) {
