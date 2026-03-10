@@ -182,18 +182,18 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         static void KillAllSSHconnections() {
-            if(m_SSHConnectionReuse.Count() > 0) {
-            Console.WriteLine($"Killing ({m_SSHConnectionReuse.Count()}) open SSH connection(s)...");
-            foreach(var con in m_SSHConnectionReuse.Values) {
-                try {
-                    con.Dispose();
-                } catch (Exception) {
-                    
-                }
-            }
-            m_SSHConnectionReuse.Clear();
-            Console.WriteLine("done.");
+            if ( m_SSHConnectionReuse.Count() > 0 ) {
+                Console.WriteLine($"Killing ({m_SSHConnectionReuse.Count()}) open SSH connection(s)...");
+                foreach ( var con in m_SSHConnectionReuse.Values ) {
+                    try {
+                        con.Dispose();
+                    } catch ( Exception ) {
 
+                    }
+                }
+                m_SSHConnectionReuse.Clear();
+                Console.WriteLine("done.");
+            }
         }
 
         static SlurmClient() {        
