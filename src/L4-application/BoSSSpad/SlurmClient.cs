@@ -182,15 +182,17 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         static void KillAllSSHconnections() {
+            if(m_SSHConnectionReuse.Count() > 0) {
+            Console.WriteLine($"Killing ({m_SSHConnectionReuse.Count()}) open SSH connection(s)...");
             foreach(var con in m_SSHConnectionReuse.Values) {
                 try {
-                    Console.WriteLine("Killing open SSH connection...");
                     con.Dispose();
                 } catch (Exception) {
                     
                 }
             }
             m_SSHConnectionReuse.Clear();
+            Console.WriteLine("done.");
 
         }
 
