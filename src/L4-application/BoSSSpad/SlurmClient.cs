@@ -181,6 +181,24 @@ namespace BoSSS.Application.BoSSSpad {
         static Dictionary<string, SshClient> m_SSHConnectionReuse = new Dictionary<string, SshClient>();
 
 
+        static void KillAllSSHconnections() {
+            foreach(var con in m_SSHConnectionReuse.Values) {
+                try {
+                    Console.WriteLine("Killing open SSH connection...");
+                    con.Dispose();
+                } catch (Exception) {
+                    
+                }
+            }
+            m_SSHConnectionReuse.Clear();
+
+        }
+
+        static SlurmClient() {        
+            AppDomain.CurrentDomain.ProcessExit += delegate(object sender, EventArgs args) {
+                KillAllSSHconnections();
+            };
+        }
         SshClient SSHConnection {
             get {
                 string keyname = (this.Name ?? "SLURM") + ":" + Username + "@" + ServerName;
