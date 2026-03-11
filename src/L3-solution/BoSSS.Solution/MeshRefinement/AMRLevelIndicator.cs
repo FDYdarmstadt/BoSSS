@@ -31,6 +31,7 @@ namespace BoSSS.Solution {
     /// Objects of this type can be added to the list  <see cref="BoSSS.Solution.Control.AppControl.activeAMRlevelIndicators"/>
     /// in order to apply the respective mesh reinement.
     /// </summary>
+    [DataContract]
     [Serializable]
     public abstract class AMRLevelIndicator {
 
@@ -81,7 +82,6 @@ namespace BoSSS.Solution {
 
 
         [JsonIgnore]
-        [NonSerialized]
         bool m_Setupdone = false;
 
         /// <summary>

@@ -86,6 +86,11 @@ namespace BoSSS.Application.XNSE_Solver {
             set;
         }
 
+
+        [DataMember]
+        public List<IBMelement> m_IBMelements;
+
+
         /// <summary>
         /// Temporary. Suggestion: Move Rigid body benchmarks to FSI solver in future.
         /// Sets Parameter for Rigidbody.

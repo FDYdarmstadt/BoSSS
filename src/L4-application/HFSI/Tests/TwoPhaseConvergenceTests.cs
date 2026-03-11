@@ -41,7 +41,7 @@ namespace HFSISolver.Tests {
         public static void FluidSolidTaylorCouette_Exact_P3() {
             Exact(3);
         }
-        [Test]
+        //[Test] // fk, deactivated, because job takes sometimes more than 3h
         public static void FluidSolidTaylorCouette_Exact_P4() {
             Exact(4);
         }
@@ -63,6 +63,9 @@ namespace HFSISolver.Tests {
             if(p < 2)
                 controlFiles.Add(HFSISolver.Tests.FSTC.SmallCircle(Tst, p, 7));
 
+            foreach(var c in controlFiles)
+                c.ImmediatePlotPeriod = -1;
+
             //foreach(var c in controlFiles) {
             //    Assert.IsTrue(c.SkipSolveAndEvaluateResidual == false);
             //    c.dtFixed = dt;
@@ -73,13 +76,13 @@ namespace HFSISolver.Tests {
             //}
 
             controlFiles.SolverConvergenceTest_Experimental("SolverConvP" + p,
-                (VariableNames.DisplacementX, NormType.L2_embedded, p - 1.5, 0, 100000),
-                (VariableNames.DisplacementY, NormType.L2_embedded, p - 1.5, 0, 100000),
-                (BoSSS.Solution.NSECommon.VariableNames.Pressure, NormType.L2noMean_embedded, p - 1.5, 0, 100000),
-                (BoSSS.Solution.NSECommon.VariableNames.Temperature, NormType.L2noMean_embedded, p - 1.5, 0, 100000),
-                (BoSSS.Solution.NSECommon.VariableNames.VelocityX, NormType.L2_embedded, p - 1.5, 0, 100000),
-                (BoSSS.Solution.NSECommon.VariableNames.VelocityY, NormType.L2_embedded, p - 1.5, 0, 100000)
-                );
+            (VariableNames.DisplacementX, NormType.L2_embedded, p - 1.5, 0, 100000),
+            (VariableNames.DisplacementY, NormType.L2_embedded, p - 1.5, 0, 100000),
+            (BoSSS.Solution.NSECommon.VariableNames.Pressure, NormType.L2noMean_embedded, p - 1.5, 0, 100000),
+            (BoSSS.Solution.NSECommon.VariableNames.Temperature, NormType.L2noMean_embedded, p - 1.5, 0, 100000),
+            (BoSSS.Solution.NSECommon.VariableNames.VelocityX, NormType.L2_embedded, p - 1.5, 0, 100000),
+            (BoSSS.Solution.NSECommon.VariableNames.VelocityY, NormType.L2_embedded, p - 1.5, 0, 100000)
+            );
 
         }
 
@@ -99,6 +102,9 @@ namespace HFSISolver.Tests {
             controlFiles.Add(HFSISolver.Tests.FSTC.SmallCircle(Tst, p, 6));
             if(p < 2)
                 controlFiles.Add(HFSISolver.Tests.FSTC.SmallCircle(Tst, p, 7));
+
+            foreach(var c in controlFiles)
+                c.ImmediatePlotPeriod = -1;
 
             var cs = controlFiles.ToArray();
 
@@ -126,6 +132,9 @@ namespace HFSISolver.Tests {
             int D = Tst.SpatialDimension;
             //var CS = __CS.ToArray();
             int NoOfMeshes = CS.Length;
+
+            foreach(var c in CS)
+                c.ImmediatePlotPeriod = -1;
 
             //if(RegResults.Length != D + 1)
             //    throw new ArgumentException("Expecting slopes for velocity and pressure.");

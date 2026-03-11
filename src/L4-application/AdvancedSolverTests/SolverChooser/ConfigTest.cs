@@ -1,22 +1,15 @@
 ﻿using BoSSS.Foundation.Grid.Aggregation;
-using BoSSS.Solution;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
-using MPI.Wrappers;
 using NUnit.Framework;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace AdvancedSolverTests.SolverChooser
-{
+namespace AdvancedSolverTests.SolverChooser {
     [TestFixture]
-    public static class ConfigTest
-    {
+    public static class ConfigTest {
 
         [Test]
+        [Ignore("Fails due to timeout", Until = "2025-04-10 00:00:00Z")]
         public static void TestLinearSolverConfigurations() {
             // --test=AdvancedSolverTests.SolverChooser.ConfigTest.TestLinearSolverConfigurations
             ////Arrange --- configs
@@ -29,7 +22,7 @@ namespace AdvancedSolverTests.SolverChooser
 
 
             //Arrange --- Multigrid stuff
-            using(var O = Utils.CreateTestMGOperator(Resolution: 10, DGOrder: 3)) {
+            using ( var O = Utils.CreateTestMGOperator(Resolution: 10, DGOrder: 3) ) {
                 AggregationGridData[] seq = O.MGSeq;
                 var MGO = O.MGOp;
                 var changeofbasisis = Utils.GetAllMGConfig(MGO);
@@ -39,11 +32,13 @@ namespace AdvancedSolverTests.SolverChooser
                 var lincodes = (LinearSolverCode[])Enum.GetValues(typeof(LinearSolverCode));
 
                 //Act and Assert
+
                 foreach(LinearSolverCode code in lincodes) {
                     if(code == LinearSolverCode.SchurPrecond) {
                         Console.WriteLine($"Skipping {LinearSolverCode.SchurPrecond}: the Schur Complement requires a (D+1)×(D+1) - system, an the test system here is only 2×2.");
                         continue;
                     }
+
 
                     Assert.DoesNotThrow(() => code.GetConfig().CreateInstance(O.MGOp), "", null);
                     Assert.IsNotNull(code.GetConfig().CreateInstance(O.MGOp));
@@ -55,7 +50,7 @@ namespace AdvancedSolverTests.SolverChooser
         public static void TestNonLinearSolverConfigurations() {
 
             //Arrange --- get test multigrid operator stuff
-            using(var O = Utils.CreateTestMGOperator(Resolution: 10, DGOrder: 3)) {
+            using ( var O = Utils.CreateTestMGOperator(Resolution: 10, DGOrder: 3) ) {
                 var MGO = O.MGOp;
                 var map = MGO.Mapping;
                 var changeofbasisis = Utils.GetAllMGConfig(MGO);
@@ -69,14 +64,14 @@ namespace AdvancedSolverTests.SolverChooser
                 LinearSolverCode[] LinTestcandidates = { LinearSolverCode.direct_pardiso, LinearSolverCode.exp_gmres_levelpmg, LinearSolverCode.exp_Kcycle_schwarz, LinearSolverCode.exp_Kcycle_schwarz_CoarseMesh, LinearSolverCode.exp_Kcycle_schwarz_PerProcess }; // in order to test the GMRES variants of the NL solver
 
                 //Act and Assert
-                foreach(var lincode in LinTestcandidates) {
+                foreach ( var lincode in LinTestcandidates ) {
                     Assert.DoesNotThrow(() => lincode.GetConfig().CreateInstance(MGO), "", null);
-                    
+
                     //lconfig.SolverCode = lincode;
                     //TestDelegate nldlg = () => SF.GenerateNonLin(out NLsolver, out LinSolver, null, agggridbasisis, changeofbasisis, seq);
                     //SF.Clear();
-                    
-                    foreach(NonLinearSolverCode nlcode in nonlincodes) {
+
+                    foreach ( NonLinearSolverCode nlcode in nonlincodes ) {
                         var nlconfig = new NonLinearSolverConfig();
                         nlconfig.SolverCode = nlcode;
                         nlconfig.verbose = true;

@@ -255,8 +255,8 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             [Values(3, 4, 5)] int caseNo,
             [Values(2)] int dimension,
             [Values(2)] int degree,
-            [Values(4)] int gridResolution,
             [Values(0, 1)] int AMRlevel,
+            [Values(4)] int gridResolution,
             [Values(true, false)] bool projectOnSameBasis,
             [Values(ProjectionStrategy.globalOnly, ProjectionStrategy.patchwiseOnly)] ProjectionStrategy projectStrategy
 #else

@@ -60,11 +60,19 @@ namespace BoSSS.Application.XNSERO_Solver {
                 throw new ArgumentOutOfRangeException("Spatial dimension does not fit particle definition");
 
             m_Length = width;
-            Aux.TestArithmeticException(width, "Particle width");
+
+            Circumference = width * 5.0;
+            Volume = (7.0 * width * width) / 8.0;
+            Mass = Volume * motion.Density;
+            MomentOfInertia = Math.Pow(width, 4) * 0.301627768;
+
+            //Aux.TestArithmeticException(width, "Particle width");
 
             Motion.CharacteristicLength = width;
             Motion.Volume = this.Volume;
             Motion.MomentOfInertia = this.MomentOfInertia;
+
+            NoOfSubParticles = 2;
 
         }
 
@@ -74,22 +82,22 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// The trap is devided into two convex sub particles. Necesarry for the GJK-algorithm in the collision model.
         /// </summary>
-        public override int NoOfSubParticles => 2;
+        //public override int NoOfSubParticles => 2;
 
         /// <summary>
         /// Area occupied by the particle. 
         /// </summary>
-        public override double Volume => (7 * m_Length * m_Length) / 8;
+        //public override double Volume => (7 * m_Length * m_Length) / 8;
 
         /// <summary>
         /// Circumference.
         /// </summary>
-        public override double Circumference => m_Length * 5;
+        //public override double Circumference => m_Length * 5;
 
         /// <summary>
         /// Moment of inertia.
         /// </summary>
-        override public double MomentOfInertia => Math.Pow(m_Length, 4) * 0.301627768;
+        //override public double MomentOfInertia => Math.Pow(m_Length, 4) * 0.301627768;
 
         /// <summary>
         /// Level set function of the particle.

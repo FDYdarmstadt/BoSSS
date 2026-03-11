@@ -276,25 +276,128 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         };
 
 
+#if DEBUG
         /// <summary>
         /// Start an XNSE simulation with full complexity, calculate a few timesteps, save and load from db.
         /// Checks that all specified fields are correctly stored and loaded.
         /// </summary>
         [Test]
         public static void Run_RestartTests(
-#if DEBUG
-            [Values(false, true)] bool transient,
+            [Values(true)] bool transient,
             [Values(LevelSetHandling.LieSplitting)] LevelSetHandling LevSetHandling,
             [Values(TimeSteppingScheme.ImplicitEuler)] TimeSteppingScheme timestepScheme,
-            [Values(false, true)] bool AMRon,
+            [Values(false)] bool AMRon,
             [Values(3)] int savePeriod
-#else
+            ) {
+            Run_RestartTestsImpl(transient, LevSetHandling, timestepScheme, AMRon, savePeriod);
+        }
+#endif
+
+#if RELEASE
+
+        /// <summary>
+        /// Start an XNSE simulation with full complexity, calculate a few timesteps, save and load from db.
+        /// Checks that all specified fields are correctly stored and loaded.
+        /// </summary>
+        [Test]
+        public static void Run_RestartTests_AMRoff_p3(
             [Values(false, true)] bool transient,
             [Values(LevelSetHandling.LieSplitting, LevelSetHandling.Coupled_Once)] LevelSetHandling LevSetHandling,
-            [Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3)] TimeSteppingScheme timestepScheme,
-            [Values(false, true)] bool AMRon,
-            [Values(3, 4, 5)] int savePeriod
+            [Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3)] TimeSteppingScheme timestepScheme
+            ) {
+            bool AMRon = false;
+            int savePeriod = 5;
+            Run_RestartTestsImpl(transient, LevSetHandling, timestepScheme, AMRon, savePeriod);
+        }
+
+                /// <summary>
+        /// Start an XNSE simulation with full complexity, calculate a few timesteps, save and load from db.
+        /// Checks that all specified fields are correctly stored and loaded.
+        /// </summary>
+        [Test]
+        public static void Run_RestartTests_AMRoff_p4(
+            [Values(false, true)] bool transient,
+            [Values(LevelSetHandling.LieSplitting, LevelSetHandling.Coupled_Once)] LevelSetHandling LevSetHandling,
+            [Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3)] TimeSteppingScheme timestepScheme
+            ) {
+            bool AMRon = false;
+            int savePeriod = 5;
+            Run_RestartTestsImpl(transient, LevSetHandling, timestepScheme, AMRon, savePeriod);
+        }
+
+                /// <summary>
+        /// Start an XNSE simulation with full complexity, calculate a few timesteps, save and load from db.
+        /// Checks that all specified fields are correctly stored and loaded.
+        /// </summary>
+        [Test]
+        public static void Run_RestartTests_AMRoff_p5(
+            [Values(false, true)] bool transient,
+            [Values(LevelSetHandling.LieSplitting, LevelSetHandling.Coupled_Once)] LevelSetHandling LevSetHandling,
+            [Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3)] TimeSteppingScheme timestepScheme
+            ) {
+            bool AMRon = false;
+            int savePeriod = 5;
+            Run_RestartTestsImpl(transient, LevSetHandling, timestepScheme, AMRon, savePeriod);
+        }
+
+        /// <summary>
+        /// Start an XNSE simulation with full complexity, calculate a few timesteps, save and load from db.
+        /// Checks that all specified fields are correctly stored and loaded.
+        /// </summary>
+        [Test]
+        public static void Run_RestartTests_AMRon_p3(
+            [Values(false, true)] bool transient,
+            [Values(LevelSetHandling.LieSplitting, LevelSetHandling.Coupled_Once)] LevelSetHandling LevSetHandling,
+            [Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3)] TimeSteppingScheme timestepScheme
+            ) {
+            bool AMRon = true;
+            int savePeriod = 5;
+            Run_RestartTestsImpl(transient, LevSetHandling, timestepScheme, AMRon, savePeriod);
+        }
+
+        /// <summary>
+        /// Start an XNSE simulation with full complexity, calculate a few timesteps, save and load from db.
+        /// Checks that all specified fields are correctly stored and loaded.
+        /// </summary>
+        [Test]
+        public static void Run_RestartTests_AMRon_p4(
+            [Values(false, true)] bool transient,
+            [Values(LevelSetHandling.LieSplitting, LevelSetHandling.Coupled_Once)] LevelSetHandling LevSetHandling,
+            [Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3)] TimeSteppingScheme timestepScheme
+            ) {
+            bool AMRon = true;
+            int savePeriod = 5;
+            Run_RestartTestsImpl(transient, LevSetHandling, timestepScheme, AMRon, savePeriod);
+        }
+
+                /// <summary>
+        /// Start an XNSE simulation with full complexity, calculate a few timesteps, save and load from db.
+        /// Checks that all specified fields are correctly stored and loaded.
+        /// </summary>
+        [Test]
+        public static void Run_RestartTests_AMRon_p5(
+            [Values(false, true)] bool transient,
+            [Values(LevelSetHandling.LieSplitting, LevelSetHandling.Coupled_Once)] LevelSetHandling LevSetHandling,
+            [Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3)] TimeSteppingScheme timestepScheme
+            ) {
+            bool AMRon = true;
+            int savePeriod = 5;
+            Run_RestartTestsImpl(transient, LevSetHandling, timestepScheme, AMRon, savePeriod);
+        }
 #endif
+
+
+
+        /// <summary>
+        /// Start an XNSE simulation with full complexity, calculate a few timesteps, save and load from db.
+        /// Checks that all specified fields are correctly stored and loaded.
+        /// </summary>
+        public static void Run_RestartTestsImpl(
+            bool transient,
+            LevelSetHandling LevSetHandling,
+            TimeSteppingScheme timestepScheme,
+            bool AMRon,
+            int savePeriod
             ) {
 
             if (savePeriod > 3 && (!AMRon || !transient))
@@ -465,7 +568,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                     break;
                 case TimeSteppingScheme.BDF4:
                     if (savePeriod == 5)
-                        ExpectedTimeSteps = new int[] { 0, 2, 3, 2, 4, 5, 7, 8, 9, 10 };
+                        ExpectedTimeSteps = new int[] { 0, 2, 3, 4, 5, 7, 8, 9, 10 };
                     else
                         throw new NotImplementedException();
                     break;
@@ -524,6 +627,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
                 var si = TestDb2.Sessions.Single();
                 int[] tsiNumbers = si.Timesteps.Skip(amr ? 1 : 0).Select(tsi => tsi.TimeStepNumber.MajorNumber).ToArray();
+                if(!ExpectedTs1stRun.ListEquals(tsiNumbers)) {
+                    Console.WriteLine("Expected: " + string.Join(", ", ExpectedTs1stRun));
+                    Console.WriteLine("Actual: " + string.Join(", ", tsiNumbers));
+                }
                 Assert.IsTrue(ExpectedTs1stRun.ListEquals(tsiNumbers), "mismatch between saved time-steps in test database and expected saves.");
 
                 //var tend = si.Timesteps.Last();

@@ -1,17 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using BoSSS.Solution.Control;
 using BoSSS.Foundation.IO;
-using BoSSS.Solution;
 using ilPSP;
-using System.Diagnostics;
-using ilPSP.Tracing;
 using System.IO;
-using System.Xml.Linq;
 using System.Reflection;
-using BoSSS.Application.XNSE_Solver;
+
 
 namespace BoSSS.Application.BoSSSpad {
     /// <summary>
@@ -66,7 +61,6 @@ namespace BoSSS.Application.BoSSSpad {
             Type solverClass = ctrl.GetSolverType();
             Job job = new Job(ctrl.SessionName, solverClass);
             job.SetControlObject(ctrl);
-
 
             return job;
         }

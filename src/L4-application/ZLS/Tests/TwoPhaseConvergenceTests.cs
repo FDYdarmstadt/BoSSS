@@ -41,7 +41,8 @@ namespace ZwoLevelSetSolver.Tests {
         public static void FluidSolidTaylorCouette_Exact_P3() {
             Exact(3);
         }
-        [Test]
+        
+        // [Test] // fk, deactivated, because job takes sometimes more than 3h
         public static void FluidSolidTaylorCouette_Exact_P4() {
             Exact(4);
         }

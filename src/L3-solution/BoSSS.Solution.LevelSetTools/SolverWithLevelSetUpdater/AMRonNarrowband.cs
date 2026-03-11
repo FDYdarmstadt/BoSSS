@@ -20,6 +20,7 @@ using ilPSP;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -32,9 +33,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     /// refinement on cells which are inside the narrow band 
     /// (cut-cells and neighboring cells sharing at least one point)
     /// </summary>
+    [DataContract]
     [Serializable]
     public class AMRonNarrowband : AMRLevelIndicatorWithLevelset {
 
+        [DataMember]
         public int levelSet = -1; // level set this Indicator should be active on
         public int bandwidth = 1;
         public override int[] DesiredCellChanges() {

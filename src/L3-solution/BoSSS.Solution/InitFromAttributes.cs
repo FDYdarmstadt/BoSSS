@@ -266,35 +266,31 @@ namespace BoSSS.Solution {
                 if(at.m_IsScalarField)
                     throw new ApplicationException("illegal use of 'InstantiateFromControlFileAttribute' (with Scalar Declaration) on a Vector class");
 
+                string[] cName = at.GetControlFileNames(f, ctx.SpatialDimension);
+                string[] iName = at.GetInCodeIdentifications(f, ctx.SpatialDimension);
 
-                int D = ctx.SpatialDimension;
-                // Console.WriteLine("Changes from Akbari! Velocity has 3 Components, but takes only 2. Since Grid has dimesnion 2");
-                // int D = ((IEnumerable<CustomAttributeTypedArgument>)f.CustomAttributes.First().ConstructorArguments.First().Value).Count();
-
-                string[] cName = at.GetControlFileNames(f, D);
-                string[] iName = at.GetInCodeIdentifications(f, D);
-
+                int NoOfFieldsInVector = cName.Length; // not neccessarily the spatial dimension, if `InstantiateFromControlFileAttribute.m_CapDimension == false`.
 
                 // determine DG polynomial degree of basis
-                int[] Deg = new int[D];
-                for(int d = 0; d < D; d++)
+                int[] Deg = new int[NoOfFieldsInVector];
+                for(int d = 0; d < NoOfFieldsInVector; d++)
                     Deg[d] = GetDegree(cName[d], iName[d], FieldOptions);
 
                 if(at.m_DegreesMustBeEqual) {
                     int deg0 = Deg[0];
-                    for(int d = 1; d < D; d++) {
+                    for(int d = 1; d < NoOfFieldsInVector; d++) {
                         if(Deg[d] != deg0) {
                             StringWriter errMsg = new StringWriter();
                             errMsg.Write("DG Polynomial degree of fields {");
-                            for(int dd = 0; dd < D; dd++) {
+                            for(int dd = 0; dd < NoOfFieldsInVector; dd++) {
                                 errMsg.Write(cName[dd]);
-                                if(dd < D - 1)
+                                if(dd < NoOfFieldsInVector - 1)
                                     errMsg.Write(", ");
                             }
                             errMsg.Write("} must be equal, but found {");
-                            for(int dd = 0; dd < D; dd++) {
+                            for(int dd = 0; dd < NoOfFieldsInVector; dd++) {
                                 errMsg.Write(Deg[dd]);
-                                if(dd < D - 1)
+                                if(dd < NoOfFieldsInVector - 1)
                                     errMsg.Write(", ");
                             }
                             errMsg.Write("} in control file.");
@@ -306,12 +302,12 @@ namespace BoSSS.Solution {
                 }
 
                 // create instance: components 
-                SinglePhaseField[] sfld = new SinglePhaseField[D];
-                XDGField[] xfld = new XDGField[D];
-                DGField[] _fld = new DGField[D];
-                TraceDGField[] tfld = new TraceDGField[D];
+                SinglePhaseField[] sfld = new SinglePhaseField[NoOfFieldsInVector];
+                XDGField[] xfld = new XDGField[NoOfFieldsInVector];
+                DGField[] _fld = new DGField[NoOfFieldsInVector];
+                TraceDGField[] tfld = new TraceDGField[NoOfFieldsInVector];
                 object vectorCtorArg = null; 
-                for(int d = 0; d < D; d++) {
+                for(int d = 0; d < NoOfFieldsInVector; d++) {
 
                     if(ComponentType == typeof(SinglePhaseField)) {
                         sfld[d] = new SinglePhaseField(new Basis(ctx, Deg[d]), iName[d]);
@@ -348,7 +344,7 @@ namespace BoSSS.Solution {
                 //}
 
                 // io
-                for(int d = 0; d < D; d++)
+                for(int d = 0; d < NoOfFieldsInVector; d++)
                     AddToIO(iName[d], _fld[d], FieldOptions, IOFields, at);
 
             } else {

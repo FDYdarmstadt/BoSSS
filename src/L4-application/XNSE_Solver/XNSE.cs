@@ -17,6 +17,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases;
+
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -87,7 +89,6 @@ namespace BoSSS.Application.XNSE_Solver {
     public class XNSE<T> : SolverWithLevelSetUpdater<T> where T : XNSE_Control, new() {
 
         public override void Init(AppControl control) {
-
 
             base.Init(control);
             var ctrl = (control as XNSE_Control);
@@ -1214,6 +1215,30 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
 
+        /// <summary>
+        /// Temporary: Initializing the IBM level set 
+        /// </summary>
+        protected override void SetUpEnvironment() {
+            if (this.Control.m_IBMelements != null)
+                InitializeIBMelements();
+            base.SetUpEnvironment();
+        }
 
+
+        protected void InitializeIBMelements() {
+
+            double levelSet(double[] X) {
+                double levelSetFunction = int.MinValue;
+                foreach (SharpCornerElement element in this.Control.m_IBMelements) {
+                    if (levelSetFunction < element.GetLevelSetFunction(X))
+                        levelSetFunction = element.GetLevelSetFunction(X);
+                }
+                return levelSetFunction;
+            }
+
+            this.Control.InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(1), levelSet);
+            this.Control.UseImmersedBoundary = true;
+            this.Control.Option_LevelSetEvolution2 = LevelSetEvolution.None;
+        }
     }
 }

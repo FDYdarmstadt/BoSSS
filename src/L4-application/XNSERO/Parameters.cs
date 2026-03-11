@@ -26,9 +26,9 @@ namespace BoSSS.Application.XNSERO_Solver {
     public class RigidObjectLevelSetVelocity : ParameterS, ILevelSetParameter {
 
         public RigidObjectLevelSetVelocity(string levelSetName, Particle[] Particles, double[] FluidViscosity, string[] FluidSpecies, Vector Gravity, double TimeStep, double GridToleranceParam) : base() {
-            ParticleHydrodynamics = new ParticleHydrodynamics(2);
-            ParticleHydrodynamics.SaveHydrodynamicOfPreviousTimestep(Particles);
             SpatialDimension = Particles[0].Motion.GetPosition().Dim;
+            ParticleHydrodynamics = new ParticleHydrodynamics(SpatialDimension);
+            ParticleHydrodynamics.SaveHydrodynamicOfPreviousTimestep(Particles);
             this.Particles = Particles;
             this.FluidSpecies = FluidSpecies;
             this.TimeStep = TimeStep;
@@ -191,7 +191,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                     CurrentDimension = d;
                     ScalarFunction Function = NonVectorizedScalarFunction.Vectorize(OrientationFunction, time);
                     Orientation[d].Clear();
-                    Orientation[d].ProjectField(1.0, Function, new CellQuadratureScheme(true, Particles[0].LsTrk.Regions.GetCutCellMask()));
+                    Orientation[d].ProjectField(1.0, Function, new CellQuadratureScheme(true, levelSet.Tracker.Regions.GetCutCellMask()));
                 }
                 OldTime = time;
             } 
