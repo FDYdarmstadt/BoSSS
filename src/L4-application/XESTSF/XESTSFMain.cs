@@ -26,6 +26,8 @@ using static BoSSS.Solution.GridImport.NASTRAN.NastranFile;
 
 namespace XESTSF {
     public class XESTSFMain : ApplicationWithIDT<XESTSFControl> {
+        private ICompressibleConfiguration CompressibleConfig => ((ICompressibleControl)Control).CompressibleConfiguration;
+
         /// <summary>
         /// Implements shock fitting for XDG Space Time Euler which is solved by the routines defined in ApplicationWithIDT 
         /// Naming: X(DG) - E(uler) - S(pace) - T(ime) - S(hock) - F(itting)
@@ -248,7 +250,7 @@ namespace XESTSF {
             //}
 
             GridData gridData = (GridData)this.GridData;
-            Material material = this.Control.GetMaterial();
+            Material material = CompressibleConfig.GetMaterial();
             IBoundaryConditionMap boundaryMap = new XDGCompressibleBoundaryCondMap(this.GridData, this.Control, material, this.Control.SpeciesToEvaluate);
             string[] variables;
             if(Grid.SpatialDimension == 2) {
@@ -553,13 +555,13 @@ namespace XESTSF {
             //untested_ComputeP0Solution();
             #region Residual logging
             // Configure residual handling
-            if(L == null && Control.ResidualInterval != 0) {
+            if(L == null && CompressibleConfig.ResidualInterval != 0) {
                 // Do not change these settings upon repartitioning
                 ResLogger.WriteResidualsToTextFile = false;
                 ResLogger.WriteResidualsToConsole = false;
             }
 
-            residualLoggers = Control.ResidualLoggerType.Instantiate(
+            residualLoggers = CompressibleConfig.ResidualLoggerType.Instantiate(
                 this,
                 Control,
                 null,
@@ -927,7 +929,7 @@ namespace XESTSF {
                     velocityVec[0] = velocityX(X);
                     //velocityVec[1] = velocityY(X);
 
-                    StateVector state = StateVector.FromPrimitiveQuantities(this.Control.GetMaterial(), density(X), velocityVec, pressure(X));
+                    StateVector state = StateVector.FromPrimitiveQuantities(CompressibleConfig.GetMaterial(), density(X), velocityVec, pressure(X));
                     return state.Energy;
                 },
                     scheme);
@@ -1026,7 +1028,7 @@ namespace XESTSF {
             this.DerivedVariableToXDGFieldMap = new Dictionary<DerivedVariable<XDGField>, XDGField>();
             this.DerivedVariableToSinglePhaseFieldMap = new Dictionary<DerivedVariable<SinglePhaseField>, SinglePhaseField>();
             this.DerivedVariableToDoubleMap = new Dictionary<DerivedVariable<double>, double>();
-            foreach(KeyValuePair<Variable, int> pair in this.Control.VariableToDegreeMap) {
+            foreach(KeyValuePair<Variable, int> pair in CompressibleConfig.VariableToDegreeMap) {
                 Variable variable = pair.Key;
                 int degree = pair.Value;
 

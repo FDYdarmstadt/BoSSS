@@ -31,7 +31,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <param name="boundaryMap"><see cref="HLLCFlux"/></param>
         /// <param name="equationComponent"><see cref="HLLCFlux"/></param>
         /// <param name="speciesMap"><see cref="HLLCFlux"/></param>
-        public HLLCEnergyFlux(CompressibleControl config, IBoundaryConditionMap boundaryMap, EulerEnergyComponent equationComponent, ISpeciesMap speciesMap)
+        public HLLCEnergyFlux(ICompressibleControl config, IBoundaryConditionMap boundaryMap, EulerEnergyComponent equationComponent, ISpeciesMap speciesMap)
             : base(config, boundaryMap, equationComponent, speciesMap) {
         }
 
@@ -56,7 +56,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <returns>See Toro2009, equation 10.73</returns>
         protected override double GetModifiedVariableValue(StateVector state, double cellWaveSpeed, double cellNormalVelocity, double intermediateWaveSpeed, ref ilPSP.Vector normal) {
             // corrected according to dimensionless equations 
-            double MachScaling = config.EquationOfState.HeatCapacityRatio * config.MachNumber * config.MachNumber;
+            double MachScaling = config.CompressibleConfiguration.EquationOfState.HeatCapacityRatio
+                * config.CompressibleConfiguration.MachNumber * config.CompressibleConfiguration.MachNumber;
             double factor = intermediateWaveSpeed * MachScaling
                 + state.Pressure / (state.Density * (cellWaveSpeed - cellNormalVelocity));
             return state.Density

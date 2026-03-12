@@ -28,25 +28,34 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
     /// Control file for compressible flow simulations
     /// </summary>
     [Serializable]
-    public class CompressibleControl : AppControl, ICloneable {
+    public class CompressibleControl : AppControl, ICompressibleControl, ICloneable {
 
         /// <summary>
         /// Material parameters to be used
         /// </summary>
-        [NotNull]
-        public IEquationOfState EquationOfState = IdealGas.Air;
+        //[NotNull]
+        public IEquationOfState EquationOfState {
+            get => CompressibleConfiguration.EquationOfState;
+            set => CompressibleConfiguration.EquationOfState = value;
+        }
 
         /// <summary>
         /// The viscosity law to be used, i.e. the variation of the viscosity
         /// due to temperature changes.
         /// </summary>
-        public IViscosityLaw ViscosityLaw = new ConstantViscosity();
+        public IViscosityLaw ViscosityLaw {
+            get => CompressibleConfiguration.ViscosityLaw;
+            set => CompressibleConfiguration.ViscosityLaw = value;
+        }
 
         /// <summary>
         /// The configured Mach Number in the far field.
         /// </summary>
-        [ExclusiveLowerBound(0.0)]
-        public double MachNumber=1;
+        //[ExclusiveLowerBound(0.0)]
+        public double MachNumber {
+            get => CompressibleConfiguration.MachNumber;
+            set => CompressibleConfiguration.MachNumber = value;
+        }
 
         /// <summary>
         /// The configured Reynolds number in the far field.
@@ -54,7 +63,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// <remarks>
         /// This option is ignored if <see cref="DomainType"/> is equal to "Euler"
         /// </remarks>
-        public double ReynoldsNumber=1.0;
+        public double ReynoldsNumber {
+            get => CompressibleConfiguration.ReynoldsNumber;
+            set => CompressibleConfiguration.ReynoldsNumber = value;
+        }
 
         /// <summary>
         /// The configured Prandtl number in the far field.
@@ -62,34 +74,51 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// <remarks>
         /// This option is ignored if <see cref="DomainType"/> is equal to "Euler"
         /// </remarks>
-        public double PrandtlNumber=0.71;
+        public double PrandtlNumber {
+            get => CompressibleConfiguration.PrandtlNumber;
+            set => CompressibleConfiguration.PrandtlNumber = value;
+        }
 
         /// <summary>
         /// The ratio of a characteristic flow velocity to the velocity of a
         /// gravitational wave.
         /// </summary>
-        [InclusiveLowerBound(0.0)]
-        public double FroudeNumber;
+        //[InclusiveLowerBound(0.0)]
+        public double FroudeNumber {
+            get => CompressibleConfiguration.FroudeNumber;
+            set => CompressibleConfiguration.FroudeNumber = value;
+        }
 
         /// <summary>
         /// The ratio of the bulk viscosity to the shear viscosity.
         /// </summary>
-        [InclusiveLowerBound(0.0)]
-        public double ViscosityRatio = 0.0;
+        //[InclusiveLowerBound(0.0)]
+        public double ViscosityRatio {
+            get => CompressibleConfiguration.ViscosityRatio;
+            set => CompressibleConfiguration.ViscosityRatio = value;
+        }
 
         /// <summary>
         /// If set to a positive value, defines the interval (in terms of the
         /// time-step number) between log messages on the console (e.g., to
         /// keep file sizes smaller for long runs)
         /// </summary>
-        [InclusiveLowerBound(0.0)]
-        public int PrintInterval = 1;
+        //[InclusiveLowerBound(0.0)]
+        public int PrintInterval {
+            get => CompressibleConfiguration.PrintInterval;
+            set => CompressibleConfiguration.PrintInterval = value;
+        }
+
+        [DataMember]
+        public CompressibleConfiguration CompressibleConfiguration { get; private set; } = new CompressibleConfiguration();
+
+        ICompressibleConfiguration ICompressibleControl.CompressibleConfiguration => CompressibleConfiguration;
 
         /// <summary>
         /// %
         /// </summary>
         virtual public Material GetMaterial() {
-            return new Material(EquationOfState, ViscosityLaw, MachNumber, ReynoldsNumber, PrandtlNumber, FroudeNumber, ViscosityRatio);
+            return CompressibleConfiguration.GetMaterial();
         }
 
         /// <summary>
@@ -97,7 +126,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// </summary>
         public int DensityDegree {
             get {
-                return base.FieldOptions[BoSSS.Solution.CompressibleFlowCommon.CompressibleVariables.Density].Degree;
+                return CompressibleConfiguration.DensityDegree;
             }
         }
 
@@ -106,7 +135,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// </summary>
         public int MomentumDegree {
             get {
-                return base.FieldOptions[BoSSS.Solution.CompressibleFlowCommon.CompressibleVariables.Momentum.xComponent].Degree;
+                return CompressibleConfiguration.MomentumDegree;
             }
         }
 
@@ -115,7 +144,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// </summary>
         public int EnergyDegree {
             get {
-                return base.FieldOptions[BoSSS.Solution.CompressibleFlowCommon.CompressibleVariables.Energy].Degree;
+                return CompressibleConfiguration.EnergyDegree;
             }
         }
 
@@ -133,7 +162,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// database in each saved time-step
         /// </param>
         public void AddVariable(Variable variable, int degree, bool saveToDB = true) {
-            variableFields.Add(variable, degree);
+            CompressibleConfiguration.SetVariableDegree(variable, degree);
 
             FieldOpts.SaveToDBOpt option;
             if (saveToDB) {
@@ -142,25 +171,25 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
                 option = FieldOpts.SaveToDBOpt.FALSE;
             }
 
-            FieldOptions.Add(variable, new FieldOpts() {
+            var fieldOpts = new FieldOpts() {
                 Degree = degree,
                 SaveToDB = option
-            });
-        }
-        [DataMember]
-        /// <summary>
-        /// Backing field for <see cref="VariableToDegreeMap"/>
-        /// </summary>
-        protected Dictionary<Variable, int> variableFields = new Dictionary<Variable, int>();
+            };
 
-        [DataMember]
+            if (FieldOptions.ContainsKey(variable)) {
+                FieldOptions[variable] = fieldOpts;
+            } else {
+                FieldOptions.Add(variable, fieldOpts);
+            }
+        }
+
         /// <summary>
         /// Dictionary linking field variables (including derived ones) to
         /// the desired polynomial degree
         /// </summary>
         public IReadOnlyDictionary<Variable, int> VariableToDegreeMap {
             get {
-                return variableFields;
+                return CompressibleConfiguration.VariableToDegreeMap;
             }
         }
 
@@ -175,19 +204,28 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// Indicates that the residual should be calculated (and saved) every
         /// n-th time-step. If zero, no residual calculation should take place
         /// </summary>
-        [InclusiveLowerBound(0)]
-        public int ResidualInterval = 0;
+        //[InclusiveLowerBound(0)]
+        public int ResidualInterval {
+            get => CompressibleConfiguration.ResidualInterval;
+            set => CompressibleConfiguration.ResidualInterval = value;
+        }
 
         /// <summary>
         /// The type of residual logger to be used, see
         /// <see cref="ResidualLoggerTypes"/>.
         /// </summary>
-        public ResidualLoggerTypes ResidualLoggerType = ResidualLoggerTypes.None;
+        public ResidualLoggerTypes ResidualLoggerType {
+            get => CompressibleConfiguration.ResidualLoggerType;
+            set => CompressibleConfiguration.ResidualLoggerType = value;
+        }
 
         /// <summary>
         /// A mapping between residual variables and the corresponding
         /// termination criteria
         /// </summary>
-        public IDictionary<string, double> ResidualBasedTerminationCriteria = new Dictionary<string, double>();
+        public IDictionary<string, double> ResidualBasedTerminationCriteria {
+            get => CompressibleConfiguration.ResidualBasedTerminationCriteria;
+            set => CompressibleConfiguration.ResidualBasedTerminationCriteria = value;
+        }
     }
 }

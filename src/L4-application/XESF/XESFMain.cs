@@ -45,6 +45,7 @@ namespace XESF
     /// </summary>
     public class XESFMain : ApplicationWithIDT<XESFControl>
     {
+        private BoSSS.Solution.CompressibleFlowCommon.ICompressibleConfiguration CompressibleConfig => ((ICompressibleControl)Control).CompressibleConfiguration;
 
         /// <summary>
         /// </summary>
@@ -183,7 +184,7 @@ namespace XESF
             #region Init operator
 
             GridData gridData = (GridData)this.GridData;
-            Material material = this.Control.GetMaterial();
+            Material material = CompressibleConfig.GetMaterial();
             IBoundaryConditionMap boundaryMap = new XDGCompressibleBoundaryCondMap(this.GridData, this.Control, material, this.Control.SpeciesToEvaluate);
 
             string[] variables = new string[] { CompressibleVariables.Density, CompressibleVariables.Momentum.xComponent, CompressibleVariables.Momentum.yComponent, CompressibleVariables.Energy };
@@ -266,8 +267,8 @@ namespace XESF
                     break;
                 case ConvectiveBulkFluxes.Godunov:
                     this.XSpatialOperator.EquationComponents[CompressibleVariables.Density].Add(new GodunovFlux(this.Control, boundaryMap, new EulerDensityComponent(), material));
-                    this.XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.xComponent].Add(new GodunovFlux(this.Control, boundaryMap, new EulerMomentumComponent(0, material.EquationOfState.HeatCapacityRatio, Control.MachNumber, gridData.SpatialDimension), material));
-                    this.XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.yComponent].Add(new GodunovFlux(this.Control, boundaryMap, new EulerMomentumComponent(1, material.EquationOfState.HeatCapacityRatio, Control.MachNumber, gridData.SpatialDimension), material));
+                    this.XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.xComponent].Add(new GodunovFlux(this.Control, boundaryMap, new EulerMomentumComponent(0, material.EquationOfState.HeatCapacityRatio, CompressibleConfig.MachNumber, gridData.SpatialDimension), material));
+                    this.XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.yComponent].Add(new GodunovFlux(this.Control, boundaryMap, new EulerMomentumComponent(1, material.EquationOfState.HeatCapacityRatio, CompressibleConfig.MachNumber, gridData.SpatialDimension), material));
                     this.XSpatialOperator.EquationComponents[CompressibleVariables.Energy].Add(new GodunovFlux(this.Control, boundaryMap, new EulerEnergyComponent(), material));
                     break;
                 case ConvectiveBulkFluxes.CentralFlux:
@@ -496,14 +497,14 @@ namespace XESF
 
             #region Residual logging
             // Configure residual handling
-            if (L == null && Control.ResidualInterval != 0)
+            if (L == null && CompressibleConfig.ResidualInterval != 0)
             {
                 // Do not change these settings upon repartitioning
                 ResLogger.WriteResidualsToTextFile = false;
                 ResLogger.WriteResidualsToConsole = false;
             }
 
-            residualLoggers = Control.ResidualLoggerType.Instantiate(
+            residualLoggers = CompressibleConfig.ResidualLoggerType.Instantiate(
                 this,
                 Control,
                 null,
@@ -987,7 +988,7 @@ namespace XESF
                     velocityVec[0] = velocityX(X);
                     velocityVec[1] = velocityY(X);
 
-                    StateVector state = StateVector.FromPrimitiveQuantities(this.Control.GetMaterial(), density(X), velocityVec, pressure(X));
+                    StateVector state = StateVector.FromPrimitiveQuantities(CompressibleConfig.GetMaterial(), density(X), velocityVec, pressure(X));
                     return state.Energy;
                 },
                     scheme);
@@ -1109,7 +1110,7 @@ namespace XESF
             this.DerivedVariableToXDGFieldMap = new Dictionary<DerivedVariable<XDGField>, XDGField>();
             this.DerivedVariableToSinglePhaseFieldMap = new Dictionary<DerivedVariable<SinglePhaseField>, SinglePhaseField>();
             this.DerivedVariableToDoubleMap = new Dictionary<DerivedVariable<double>, double>();
-            foreach (KeyValuePair<Variable, int> pair in this.Control.VariableToDegreeMap)
+            foreach (KeyValuePair<Variable, int> pair in CompressibleConfig.VariableToDegreeMap)
             {
                 Variable variable = pair.Key;
                 int degree = pair.Value;
@@ -1192,7 +1193,7 @@ namespace XESF
         public static XDifferentialOperatorMk2 BuildOperatorFrom_Control_LsTrk_Grid(XESFControl Control, LevelSetTracker LsTrk, IGrid grid)
         {
             GridData GridData = (GridData)grid.iGridData;
-            Material material = Control.GetMaterial();
+            Material material = CompressibleConfig.GetMaterial();
             IBoundaryConditionMap boundaryMap = new XDGCompressibleBoundaryCondMap(GridData, Control, material, Control.SpeciesToEvaluate);
             string[] variables = new string[] { CompressibleVariables.Density, CompressibleVariables.Momentum.xComponent, CompressibleVariables.Momentum.yComponent, CompressibleVariables.Energy };
             var XSpatialOperator = new XDifferentialOperatorMk2(variables, null, variables, Control.quadOrderFunc, Control.SpeciesToEvaluate);
@@ -1269,8 +1270,8 @@ namespace XESF
 
                         case ConvectiveBulkFluxes.Godunov:
                             XSpatialOperator.EquationComponents[CompressibleVariables.Density].Add(new GodunovFlux(Control, boundaryMap, new EulerDensityComponent(), material));
-                            XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.xComponent].Add(new GodunovFlux(Control, boundaryMap, new EulerMomentumComponent(0, material.EquationOfState.HeatCapacityRatio, Control.MachNumber, GridData.SpatialDimension), material));
-                            XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.yComponent].Add(new GodunovFlux(Control, boundaryMap, new EulerMomentumComponent(1, material.EquationOfState.HeatCapacityRatio, Control.MachNumber, GridData.SpatialDimension), material));
+                            XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.xComponent].Add(new GodunovFlux(Control, boundaryMap, new EulerMomentumComponent(0, material.EquationOfState.HeatCapacityRatio, CompressibleConfig.MachNumber, GridData.SpatialDimension), material));
+                            XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.yComponent].Add(new GodunovFlux(Control, boundaryMap, new EulerMomentumComponent(1, material.EquationOfState.HeatCapacityRatio, CompressibleConfig.MachNumber, GridData.SpatialDimension), material));
                             XSpatialOperator.EquationComponents[CompressibleVariables.Energy].Add(new GodunovFlux(Control, boundaryMap, new EulerEnergyComponent(), material));
                             break;
 

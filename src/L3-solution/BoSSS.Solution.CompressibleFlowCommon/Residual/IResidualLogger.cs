@@ -113,11 +113,12 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Residual {
             return result;
         }
 
-        public static bool ShouldTerminate(this IEnumerable<IResidualLogger> loggers, IDictionary<string, double> residuals, CompressibleControl control) {
-            if (control.ResidualBasedTerminationCriteria.Count > 0
+        public static bool ShouldTerminate(this IEnumerable<IResidualLogger> loggers, IDictionary<string, double> residuals, ICompressibleControl control) {
+            var config = control.CompressibleConfiguration;
+            if (config.ResidualBasedTerminationCriteria.Count > 0
                 && residuals.Count > 0) {
                 bool terminate = true;
-                foreach (var keyThresholdPair in control.ResidualBasedTerminationCriteria) {
+                foreach (var keyThresholdPair in config.ResidualBasedTerminationCriteria) {
                     if (!residuals.ContainsKey(keyThresholdPair.Key)) {
                         throw new Exception(String.Format(
                             "A termination criterion is based on {0} was found"

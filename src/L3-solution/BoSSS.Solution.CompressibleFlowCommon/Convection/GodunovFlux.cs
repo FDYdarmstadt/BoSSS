@@ -29,9 +29,9 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <summary>
         /// <see cref="EulerFlux.EulerFlux"/>
         /// </summary>
-        public GodunovFlux(CompressibleControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, Material material)
+        public GodunovFlux(ICompressibleControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, Material material)
             : base(config, boundaryMap, equationComponent, material) {
-            if (config.EquationOfState is IdealGas == false) {
+            if (config.CompressibleConfiguration.EquationOfState is IdealGas == false) {
                 throw new Exception("Riemann solver currently only supports ideal gases");
             }
         }

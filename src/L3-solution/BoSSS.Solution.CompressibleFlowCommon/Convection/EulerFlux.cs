@@ -34,7 +34,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <summary>
         /// Configuration options
         /// </summary>
-        protected CompressibleControl config;
+        protected ICompressibleControl config;
 
         /// <summary>
         /// Boundary value definition
@@ -64,7 +64,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <param name="material">
         /// Mapping that determines the active species in some point.
         /// </param>
-        protected EulerFlux(CompressibleControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, Material material) {
+        protected EulerFlux(ICompressibleControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, Material material) {
             this.config = config;
             this.boundaryMap = boundaryMap;
             this.equationComponent = equationComponent;
@@ -189,8 +189,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
             double meanSpeedOfSound = 0.5 * (stateIn.SpeedOfSound + stateOut.SpeedOfSound);
 
             double velocityJump = normalVelocityOut - normalVelocityIn;
-            double gamma = config.EquationOfState.HeatCapacityRatio;
-            double MachScaling = gamma * config.MachNumber * config.MachNumber;
+            double gamma = config.CompressibleConfiguration.EquationOfState.HeatCapacityRatio;
+            double MachScaling = gamma * config.CompressibleConfiguration.MachNumber * config.CompressibleConfiguration.MachNumber;
 
             // Calculate the pressure estimate at the edge and use it to
             // calculate the components of the correction factor qIn and qOut.

@@ -32,7 +32,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <summary>
         /// <see cref="EulerFlux"/>
         /// </summary>
-        public RusanovFlux(CompressibleControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, ISpeciesMap speciesMap)
+        public RusanovFlux(ICompressibleControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, ISpeciesMap speciesMap)
             : base(config, boundaryMap, equationComponent, speciesMap.GetMaterial(double.NaN)) {
         }
 
@@ -40,7 +40,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <summary>
         /// <see cref="EulerFlux.EulerFlux"/>
         /// </summary>
-        public RusanovFlux(CompressibleControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, Material material)
+        public RusanovFlux(ICompressibleControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, Material material)
             : base(config, boundaryMap, equationComponent, material) {
             
         }

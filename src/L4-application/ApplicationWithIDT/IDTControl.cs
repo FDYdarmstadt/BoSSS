@@ -3,7 +3,6 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.IO;
 using BoSSS.Solution;
-using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.XdgTimestepping;
 using System;
@@ -16,7 +15,7 @@ namespace ApplicationWithIDT {
     /// <summary>
     /// Defines the base Control object class used in the ApplicationWithIDT solvers.
     /// </summary>
-    public class IDTControl : CompressibleControl {
+    public class IDTControl : AppControl {
 
         /// <summary>
         /// Creates Default IDTControl
