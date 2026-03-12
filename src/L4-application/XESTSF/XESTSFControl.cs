@@ -26,7 +26,7 @@ namespace XESTSF {
 
         ICompressibleConfiguration ICompressibleControl.CompressibleConfiguration => CompressibleConfiguration;
 
-        [NotNull]
+        //[NotNull]
         public IEquationOfState EquationOfState {
             get => CompressibleConfiguration.EquationOfState;
             set => CompressibleConfiguration.EquationOfState = value;
@@ -37,7 +37,7 @@ namespace XESTSF {
             set => CompressibleConfiguration.ViscosityLaw = value;
         }
 
-        [ExclusiveLowerBound(0.0)]
+        //[ExclusiveLowerBound(0.0)]
         public double MachNumber {
             get => CompressibleConfiguration.MachNumber;
             set => CompressibleConfiguration.MachNumber = value;
@@ -53,25 +53,25 @@ namespace XESTSF {
             set => CompressibleConfiguration.PrandtlNumber = value;
         }
 
-        [InclusiveLowerBound(0.0)]
+        //[InclusiveLowerBound(0.0)]
         public double FroudeNumber {
             get => CompressibleConfiguration.FroudeNumber;
             set => CompressibleConfiguration.FroudeNumber = value;
         }
 
-        [InclusiveLowerBound(0.0)]
+        //[InclusiveLowerBound(0.0)]
         public double ViscosityRatio {
             get => CompressibleConfiguration.ViscosityRatio;
             set => CompressibleConfiguration.ViscosityRatio = value;
         }
 
-        [InclusiveLowerBound(0.0)]
+        //[InclusiveLowerBound(0.0)]
         public int PrintInterval {
             get => CompressibleConfiguration.PrintInterval;
             set => CompressibleConfiguration.PrintInterval = value;
         }
 
-        [InclusiveLowerBound(0)]
+        //[InclusiveLowerBound(0)]
         public int ResidualInterval {
             get => CompressibleConfiguration.ResidualInterval;
             set => CompressibleConfiguration.ResidualInterval = value;

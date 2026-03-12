@@ -1,4 +1,6 @@
-﻿using BoSSS.Foundation;
+﻿using ApplicationWithIDT;
+using ApplicationWithIDT.OptiLevelSets;
+using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
@@ -10,22 +12,21 @@ using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using BoSSS.Solution.CompressibleFlowCommon.Convection;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using BoSSS.Solution.CompressibleFlowCommon.Residual;
+using BoSSS.Solution.CompressibleFlowCommon.ShockFinding;
 using BoSSS.Solution.Statistic;
+using BoSSS.Solution.Statistic.QuadRules;
+using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.Utils;
 using ilPSP;
-using ilPSP.Utils;
 using ilPSP.Tracing;
+using ilPSP.Utils;
+using MathNet.Numerics;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using XESF.Fluxes;
 using XESF.Variables;
-using ApplicationWithIDT;
-using BoSSS.Solution.CompressibleFlowCommon.ShockFinding;
-using ApplicationWithIDT.OptiLevelSets;
-using BoSSS.Solution.Statistic.QuadRules;
-using System.IO;
-using BoSSS.Solution.Tecplot;
 
 
 namespace XESF
@@ -1193,7 +1194,7 @@ namespace XESF
         public static XDifferentialOperatorMk2 BuildOperatorFrom_Control_LsTrk_Grid(XESFControl Control, LevelSetTracker LsTrk, IGrid grid)
         {
             GridData GridData = (GridData)grid.iGridData;
-            Material material = CompressibleConfig.GetMaterial();
+            Material material = Control.CompressibleConfiguration.GetMaterial();
             IBoundaryConditionMap boundaryMap = new XDGCompressibleBoundaryCondMap(GridData, Control, material, Control.SpeciesToEvaluate);
             string[] variables = new string[] { CompressibleVariables.Density, CompressibleVariables.Momentum.xComponent, CompressibleVariables.Momentum.yComponent, CompressibleVariables.Energy };
             var XSpatialOperator = new XDifferentialOperatorMk2(variables, null, variables, Control.quadOrderFunc, Control.SpeciesToEvaluate);
@@ -1270,8 +1271,8 @@ namespace XESF
 
                         case ConvectiveBulkFluxes.Godunov:
                             XSpatialOperator.EquationComponents[CompressibleVariables.Density].Add(new GodunovFlux(Control, boundaryMap, new EulerDensityComponent(), material));
-                            XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.xComponent].Add(new GodunovFlux(Control, boundaryMap, new EulerMomentumComponent(0, material.EquationOfState.HeatCapacityRatio, CompressibleConfig.MachNumber, GridData.SpatialDimension), material));
-                            XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.yComponent].Add(new GodunovFlux(Control, boundaryMap, new EulerMomentumComponent(1, material.EquationOfState.HeatCapacityRatio, CompressibleConfig.MachNumber, GridData.SpatialDimension), material));
+                            XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.xComponent].Add(new GodunovFlux(Control, boundaryMap, new EulerMomentumComponent(0, material.EquationOfState.HeatCapacityRatio, Control.CompressibleConfiguration.MachNumber, GridData.SpatialDimension), material));
+                            XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.yComponent].Add(new GodunovFlux(Control, boundaryMap, new EulerMomentumComponent(1, material.EquationOfState.HeatCapacityRatio, Control.CompressibleConfiguration.MachNumber, GridData.SpatialDimension), material));
                             XSpatialOperator.EquationComponents[CompressibleVariables.Energy].Add(new GodunovFlux(Control, boundaryMap, new EulerEnergyComponent(), material));
                             break;
 
