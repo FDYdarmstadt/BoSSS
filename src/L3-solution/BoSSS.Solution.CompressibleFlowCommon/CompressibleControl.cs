@@ -33,7 +33,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// <summary>
         /// Material parameters to be used
         /// </summary>
-        //[NotNull]
+        [NotNull]
         public IEquationOfState EquationOfState {
             get => CompressibleConfiguration.EquationOfState;
             set => CompressibleConfiguration.EquationOfState = value;
@@ -51,7 +51,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// <summary>
         /// The configured Mach Number in the far field.
         /// </summary>
-        //[ExclusiveLowerBound(0.0)]
+        [ExclusiveLowerBound(0.0)]
         public double MachNumber {
             get => CompressibleConfiguration.MachNumber;
             set => CompressibleConfiguration.MachNumber = value;
@@ -83,7 +83,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// The ratio of a characteristic flow velocity to the velocity of a
         /// gravitational wave.
         /// </summary>
-        //[InclusiveLowerBound(0.0)]
+        [InclusiveLowerBound(0.0)]
         public double FroudeNumber {
             get => CompressibleConfiguration.FroudeNumber;
             set => CompressibleConfiguration.FroudeNumber = value;
@@ -92,7 +92,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// <summary>
         /// The ratio of the bulk viscosity to the shear viscosity.
         /// </summary>
-        //[InclusiveLowerBound(0.0)]
+        [InclusiveLowerBound(0.0)]
         public double ViscosityRatio {
             get => CompressibleConfiguration.ViscosityRatio;
             set => CompressibleConfiguration.ViscosityRatio = value;
@@ -103,7 +103,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// time-step number) between log messages on the console (e.g., to
         /// keep file sizes smaller for long runs)
         /// </summary>
-        //[InclusiveLowerBound(0.0)]
+        [InclusiveLowerBound(0.0)]
         public int PrintInterval {
             get => CompressibleConfiguration.PrintInterval;
             set => CompressibleConfiguration.PrintInterval = value;
@@ -204,7 +204,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// Indicates that the residual should be calculated (and saved) every
         /// n-th time-step. If zero, no residual calculation should take place
         /// </summary>
-        //[InclusiveLowerBound(0)]
+        [InclusiveLowerBound(0)]
         public int ResidualInterval {
             get => CompressibleConfiguration.ResidualInterval;
             set => CompressibleConfiguration.ResidualInterval = value;

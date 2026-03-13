@@ -13,14 +13,14 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
     public class CompressibleConfiguration : ICompressibleConfiguration {
 
         [DataMember]
-        //[NotNull]
+        [NotNull]
         public IEquationOfState EquationOfState { get; set; } = IdealGas.Air;
 
         [DataMember]
         public IViscosityLaw ViscosityLaw { get; set; } = new ConstantViscosity();
 
         [DataMember]
-        //[ExclusiveLowerBound(0.0)]
+        [ExclusiveLowerBound(0.0)]
         public double MachNumber { get; set; } = 1.0;
 
         [DataMember]
@@ -30,19 +30,19 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         public double PrandtlNumber { get; set; } = 0.71;
 
         [DataMember]
-        //[InclusiveLowerBound(0.0)]
+        [InclusiveLowerBound(0.0)]
         public double FroudeNumber { get; set; }
 
         [DataMember]
-        //[InclusiveLowerBound(0.0)]
+        [InclusiveLowerBound(0.0)]
         public double ViscosityRatio { get; set; } = 0.0;
 
         [DataMember]
-        //[InclusiveLowerBound(0.0)]
+        [InclusiveLowerBound(0.0)]
         public int PrintInterval { get; set; } = 1;
 
         [DataMember]
-        //[InclusiveLowerBound(0)]
+        [InclusiveLowerBound(0)]
         public int ResidualInterval { get; set; } = 0;
 
         [DataMember]

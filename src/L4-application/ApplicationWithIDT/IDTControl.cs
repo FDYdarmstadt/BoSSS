@@ -37,7 +37,7 @@ namespace ApplicationWithIDT {
             base.NoOfMultigridLevels = 1;
         }
 
-        //[ExclusiveLowerBound(0.0)]
+        [ExclusiveLowerBound(0.0)]
         /// <summary>
         /// Threshold for agglomeration
         /// </summary>
