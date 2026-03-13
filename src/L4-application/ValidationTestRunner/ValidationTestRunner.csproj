@@ -12,7 +12,7 @@
     <Optimize>true</Optimize>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
+    <!--PackageReference Include="System.Drawing.Common" Version="6.0.0" /-->
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj" />

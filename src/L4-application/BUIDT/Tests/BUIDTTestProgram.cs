@@ -60,6 +60,7 @@ namespace BUIDT.Tests
         }
 
         [Test]
+        [NUnitNumThreads(1)]
         /// <summary>
         /// Test for the AcceleratingShock
         /// </summary>

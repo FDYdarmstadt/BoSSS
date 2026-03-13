@@ -22,14 +22,16 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace BoSSS.Application.BoSSSpad {
+namespace BoSSS.Application.BoSSSpad
+{
 
     /// <summary>
     /// Extension methods for <see cref="object"/>.
     /// </summary>
-    public static class ObjectExtensions {
+    public static class ObjectExtensions
+    {
 
-       
+
 
         /// <summary>
         /// Prints a summary of the public information about an object.
@@ -39,15 +41,19 @@ namespace BoSSS.Application.BoSSSpad {
         /// A string representation of the publicly available information
         /// about an object.
         /// </returns>
-        public static string Summary(this object obj) {
+        public static string Summary(this object obj)
+        {
             StringBuilder output = new StringBuilder();
 
-            foreach (var field in obj.GetType().GetFields().Where(f => f.IsPublic)) {
+            foreach (var field in obj.GetType().GetFields().Where(f => f.IsPublic))
+            {
                 output.AppendLine(field.Name + ": " + field.GetValue(obj));
             }
 
-            foreach (var property in obj.GetType().GetProperties().Where(p => p.CanRead)) {
-                if (property.GetIndexParameters().Count() > 0) {
+            foreach (var property in obj.GetType().GetProperties().Where(p => p.CanRead))
+            {
+                if (property.GetIndexParameters().Count() > 0)
+                {
                     // Indexed property, retrieving the value without
                     // specifying an index would cause an exception
                     continue;
@@ -66,15 +72,19 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="obj">
         /// The object whose actions should be described
         /// </param>
-        public static void Actions(this object obj) {
+        public static void Actions(this object obj)
+        {
             var methods = GetCallableMethods(obj, false);
 
             Console.WriteLine("You can invoke the following methods (more actions may exist):");
-            foreach (var group in methods.GroupBy(m => m.Name).OrderBy(g => g.First().Name)) {
-                foreach (MethodInfo method in group) {
+            foreach (var group in methods.GroupBy(m => m.Name).OrderBy(g => g.First().Name))
+            {
+                foreach (MethodInfo method in group)
+                {
                     IEnumerable<ParameterInfo> parameters = method.GetParameters();
 
-                    if (method.IsDefined(typeof(ExtensionAttribute), false)) {
+                    if (method.IsDefined(typeof(ExtensionAttribute), false))
+                    {
                         // Skip the first parameter of extension methods since
                         // they are not part of the call signature
                         parameters = parameters.Skip(1);
@@ -97,47 +107,57 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="methodName">
         /// The name of the method(s) to be described in detail.
         /// </param>
-        public static string Describe(this object obj, string methodName) {
+        public static string Describe(this object obj, string methodName)
+        {
             var methods = GetCallableMethods(obj, false).Where(m => m.Name == methodName);
 
-            using (StringWriter s = new StringWriter()) {
-                if (methods.Count() == 0) {
+            using (StringWriter s = new StringWriter())
+            {
+                if (methods.Count() == 0)
+                {
                     s.WriteLine("Could not find any method with name '{0}'", methodName);
                     return s.ToString();
                 }
 
                 bool moreThanOne = methods.Count() > 1;
-                if (moreThanOne) {
+                if (moreThanOne)
+                {
                     s.WriteLine("Action '{0}' has {1} overloads: ", methodName, methods.Count());
                 }
 
                 int n = 1;
-                foreach (MethodInfo method in methods) {
+                foreach (MethodInfo method in methods)
+                {
                     IEnumerable<ParameterInfo> parameters = method.GetParameters();
 
-                    if (method.IsDefined(typeof(ExtensionAttribute), false)) {
+                    if (method.IsDefined(typeof(ExtensionAttribute), false))
+                    {
                         // Skip the first parameter of extension methods since
                         // they are not part of the call signature
                         parameters = parameters.Skip(1);
                     }
 
                     s.WriteLine();
-                    if (moreThanOne) {
+                    if (moreThanOne)
+                    {
                         s.Write(n + ") ");
                     }
 
-                    if (method.ReturnType != typeof(void)) {
+                    if (method.ReturnType != typeof(void))
+                    {
                         s.Write(method.ReturnType.GetGenericTypeName() + " ");
                     }
                     s.WriteLine(method.Name + parameters.ToParameterString() + ":");
 
                     s.WriteLine("   * Summary: " + method.GetDocumentation());
 
-                    foreach (ParameterInfo parameter in parameters) {
+                    foreach (ParameterInfo parameter in parameters)
+                    {
                         s.WriteLine("   * " + parameter.Name + ": " + parameter.GetDocumentation());
                     }
 
-                    if (method.ReturnParameter != null) {
+                    if (method.ReturnParameter != null)
+                    {
                         s.WriteLine("   * Returns: " + method.ReturnParameter.GetDocumentation());
                     }
                     n++;
@@ -158,8 +178,10 @@ namespace BoSSS.Application.BoSSSpad {
         /// A string of the form
         /// (TypeOne paramOneName, TypeTwo paramTwoname, ...)
         /// </returns>
-        private static string ToParameterString(this IEnumerable<ParameterInfo> parameters) {
-            if (parameters.Count() == 0) {
+        private static string ToParameterString(this IEnumerable<ParameterInfo> parameters)
+        {
+            if (parameters.Count() == 0)
+            {
                 return "()";
             }
 
@@ -174,12 +196,14 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="obj"></param>
         /// <param name="includeFrameworkMethods"></param>
         /// <returns></returns>
-        private static IEnumerable<MethodInfo> GetCallableMethods(object obj, bool includeFrameworkMethods) {
+        private static IEnumerable<MethodInfo> GetCallableMethods(object obj, bool includeFrameworkMethods)
+        {
             Type type = obj.GetType();
 
             IEnumerable<MethodInfo> methods = type.GetMethods().Where(m => m.IsPublic && !m.IsSpecialName);
             IEnumerable<Assembly> assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            if (!includeFrameworkMethods) {
+            if (!includeFrameworkMethods)
+            {
                 string[] includedNamespaces = new[] { "ilPSP", "BoSSS" };
 
                 methods = methods.Where(m => m.DeclaringType.Namespace.StartsWithAny(includedNamespaces));
@@ -216,7 +240,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// True, if <paramref name="s"/> starts with any of the strings in
         /// <paramref name="potentialStartStrings"/>.
         /// </returns>
-        private static bool StartsWithAny(this string s, IEnumerable<string> potentialStartStrings) {
+        private static bool StartsWithAny(this string s, IEnumerable<string> potentialStartStrings)
+        {
             return potentialStartStrings.Any(p => s.StartsWith(p));
         }
     }

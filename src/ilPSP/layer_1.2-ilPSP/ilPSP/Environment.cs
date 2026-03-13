@@ -668,7 +668,7 @@ namespace ilPSP {
 
                 tr.Info($"MPI Rank {MPIEnv.MPI_Rank}: Value for OMP_PLACES: {System.Environment.GetEnvironmentVariable("OMP_PLACES")}");
                 tr.Info($"MPI Rank {MPIEnv.MPI_Rank}: Value for OMP_PROC_BIND: {System.Environment.GetEnvironmentVariable("OMP_PROC_BIND")}");
-                tr.Info($"Number of CPUs in system: {CPUAffinity.TotalNumberOfCPUs}");
+                tr.Info($"Number of CPUs in system: {CPUAffinity.TotalNumberOfCPUs}, System Environment number of CPUs: {System.Environment.ProcessorCount} ");
 
                 // ===========================
                 // Determine Number of Threads
@@ -682,7 +682,7 @@ namespace ilPSP {
                     int? omp_num_threads = null;
                     if(LookAtEnvVar) {
                         // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                        // // try to infer number of threads from envvar OMP_NUM_THREADS
+                        // try to infer number of threads from envvar OMP_NUM_THREADS
                         // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                         try {
                             string _omp_num_treads = System.Environment.GetEnvironmentVariable("OMP_NUM_THREADS");
@@ -716,7 +716,11 @@ namespace ilPSP {
                         int num_procs_per_process = Math.Max(1, num_procs / MPIranksOnNode);
                         if(num_procs_per_process > 1 && num_procs_per_process % 2 != 0)
                             num_procs_per_process--; // choose an even number
-                        tr.Info($"Failed to determine user wish for number of threads; trying to use all! System reports {num_procs_tot} CPUs, will use all but 2 for BoSSS ({num_procs} total, {num_procs_per_process} per MPI rank, MPI ranks on current node is {MPIranksOnNode}).");
+                        if(num_procs_per_process > 8) {
+                            tr.Info("limiting number of treds to 8.");
+                            num_procs_per_process = 8;
+                        }
+                        tr.Info($"Failed to determine user wish for number of threads; trying to use all! System reports {num_procs_tot} CPUs, will use all but 2, but 8 at max.,  for BoSSS ({num_procs} total, {num_procs_per_process} per MPI rank, MPI ranks on current node is {MPIranksOnNode}).");
 
                         NumThreads = num_procs_per_process;
 
@@ -738,7 +742,8 @@ namespace ilPSP {
                 // OpenMP configuration
                 // ===========================
                 if(ReservedCPUsInitially == null)
-                    ReservedCPUsInitially = CPUAffinity.GetCurrentThreadAffinity().ToList().AsReadOnly();
+                    //ReservedCPUsInitially = CPUAffinity.GetCurrentThreadAffinity().ToList().AsReadOnly();
+                    ReservedCPUsInitially = CPUAffinity.GetProcessAffinity().ToList().AsReadOnly();
                 IEnumerable<int> ReservedCPUs = ReservedCPUsInitially.ToArray();
                 //if(ReservedCPUs.Count() == 1) {
                 //Debugger.Launch();
@@ -773,7 +778,7 @@ namespace ilPSP {
                 }
                 //--- end of mpi-local --//
 
-                tr.Info($"R{MPIEnv.MPI_Rank}: reserved CPUs: {ReservedCPUs.ToConcatString("[", ",", "]")}, C# reports mask {Process.GetCurrentProcess().ProcessorAffinity:X}");
+                tr.Info($"R{MPIEnv.MPI_Rank}: reserved CPUs for process: {ReservedCPUs.ToConcatString("[", ",", "]")}, C# reports mask {Process.GetCurrentProcess().ProcessorAffinity:X}");
 
                 ReservedCPUsOnSMP = CPUAffinity.CpuListOnSMP(ReservedCPUs, out bool disjoint, out bool allequal);
                 if(disjoint == true && allequal == true) {
@@ -862,9 +867,9 @@ namespace ilPSP {
 
 
                 if(DedicatedCPUsForThisRank != null) {
-                    tr.Info($"R{MPIEnv.MPI_Rank}: using CPUs {DedicatedCPUsForThisRank.ToConcatString("[", ",", "]")} for OpenMP.");
+                    tr.Info($"R{MPIEnv.MPI_Rank}: using CPUs {DedicatedCPUsForThisRank.ToConcatString("[", ",", "]")} for this rank.");
                 } else {
-                    tr.Info($"R{MPIEnv.MPI_Rank}: using dynamic OpenMP tread placement.");
+                    tr.Info($"R{MPIEnv.MPI_Rank}: using dynamic tread placement.");
                 }
 
                 PerformOMPthreadPinning = MPIEnv.MPI_Size > 1 && (allequal != disjoint);
@@ -890,9 +895,9 @@ namespace ilPSP {
 
                 BLAS.ActivateOMP();
                 LAPACK.ActivateOMP();
-                PinTPLThreads();
+                PinTPLThreads(tr);
                 //tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity after TPL binding: " + CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ",", "]"));
-                PinOMPthreads();
+                PinOMPthreads(tr);
                 StdoutOnlyOnRank0 = true;
                 tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity after OpenMP binding: " + CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ",", "]"));
 
@@ -928,8 +933,13 @@ namespace ilPSP {
 
 
 
-        static void PinTPLThreads() {
+        static void PinTPLThreads(FuncTrace tr = null) {
             if(PerformTPLthreadPinning) {
+                if(tr != null) {
+                    var cpus = DedicatedCPUsForThisRank.GetSubVector(DedicatedCPUsForThisRank.Length - NumThreads, NumThreads); // use the left-over CPUs **at the beginning** for spare; I assume that background threads rather grab those.
+                    var service_cpus = DedicatedCPUsForThisRank.GetSubVector(0, DedicatedCPUsForThisRank.Length - NumThreads);
+                    tr.Info($"R{MPIEnv.MPI_Rank}: using CPUs {cpus.ToConcatString("[", ",", "]")} for TPL, ({service_cpus.ToConcatString("[", ",", "]")} for service, gc, etc.).");
+                }
                 Parallel.For(0, ilPSP.Environment.NumThreads,
                     new ParallelOptions { MaxDegreeOfParallelism = ilPSP.Environment.NumThreads },
                     PinTPLThread);
@@ -952,7 +962,7 @@ namespace ilPSP {
         static bool PerformOMPthreadPinning = false;
 
 
-        private static void PinOMPthreads() {
+        private static void PinOMPthreads(FuncTrace tr = null) {
             if(System.Environment.OSVersion.Platform == PlatformID.Unix) {
                 //MKLservice.Dynamic = true;
                 //MKLservice.SetNumThreads(NumThreads);
@@ -961,9 +971,15 @@ namespace ilPSP {
 
             if(PerformOMPthreadPinning) {
                 var cpus = DedicatedCPUsForThisRank.GetSubVector(DedicatedCPUsForThisRank.Length - NumThreads, NumThreads); // use the left-over CPUs **at the beginning** for spare; I assume that background threads rather grab those.
+                if(tr != null) {
+                    var service_cpus = DedicatedCPUsForThisRank.GetSubVector(0, DedicatedCPUsForThisRank.Length - NumThreads);
+                    tr.Info($"R{MPIEnv.MPI_Rank}: using CPUs {cpus.ToConcatString("[", ",", "]")} for OpenMP, ({service_cpus.ToConcatString("[", ",", "]")} for service, gc, etc.).");
+                }
                 MKLservice.BindOMPthreads_1To1(cpus);
             } else {
                 //MKLservice.BindOMPthreads_1To1(new int[] { 1, 5, 9, 13 }); Console.WriteLine("Pinning testcode !!!!!!!!!!!!!!!!!!!!!!11111");
+                if(tr != null)
+                    tr.Info($"R{MPIEnv.MPI_Rank}: no OpenMP thread pinning, setting number of threads to {NumThreads}.");
                 MKLservice.SetNumThreads(NumThreads);
             }
 

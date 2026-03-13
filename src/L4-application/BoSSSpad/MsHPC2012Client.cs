@@ -232,7 +232,7 @@ namespace BoSSS.Application.BoSSSpad {
         [DataMember]
         public string Username;
 
-        /*
+
         /// <summary>
         /// Additional number of cores (for all jobs with more than one MPI rank) which are allocated for 'service', independent of the MPI Size.
         /// </summary>
@@ -245,8 +245,14 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         [DataMember]
         public int NumOfAdditionalServiceCoresMPISerial = 0;
-        */
 
+/*
+        /// <summary>
+        /// Additional number of cores which are allocated for 'service';
+        /// </summary>
+        [DataMember]
+        public int NumOfServiceCoresPerMPIprocess = 0;
+*/
        
         /// <summary>
         /// Active directory computer name of head node
@@ -522,7 +528,7 @@ namespace BoSSS.Application.BoSSSpad {
             return ret;
         }
 
-       
+
         /// <summary>
         /// Submits the job to the Microsoft HPC server.
         /// </summary>
@@ -554,7 +560,7 @@ namespace BoSSS.Application.BoSSSpad {
                     for (int i = 0; i < parts.Length; i++) {
                         if (parts[i].Equals("id:", StringComparison.InvariantCultureIgnoreCase))
                             id = int.Parse(parts[i + 1]);
-                            
+
                     }
                     //Console.WriteLine(ret);
                 }
@@ -635,12 +641,6 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// 
         /// </summary>
-        [DataMember]
-        public bool UseNodeExclusive = false;
-
-        /// <summary>
-        /// 
-        /// </summary>
         private (int id, JobState state)[] _ListJobs() {
 
 
@@ -708,25 +708,20 @@ namespace BoSSS.Application.BoSSSpad {
             string JobName = myJob.Name;
 
             int MPISz = myJob.NumberOfMPIProcs;
-            int NoOfThreads = myJob.NumberOfThreads;
+
 
             //job modify 190848 /numcores:1 - 1
-            int CoresPerProcess = myJob.NumberOfThreads + this.NumOfServiceCoresPerMPIprocess;
-            if(CoresPerProcess % 2  != 0) 
-                CoresPerProcess++; // avoid odd numbers
-            int NumberOfCores = MPISz * CoresPerProcess;
-
-
-
+            int NumberOfCores = MPISz*myJob.NumberOfThreads + MPISz*this.NumOfServiceCoresPerMPIprocess + (MPISz > 1 ? this.NumOfAdditionalServiceCores : this.NumOfAdditionalServiceCoresMPISerial);
+            
+            
             bool SingleNode = this.SingleNode;
             var Priority = this.DefaultJobPriority;
             string user = this.Username;
 
             string CommandLine;
             using (var str = new StringWriter()) {
-                if(MPISz > 1)
-                    str.Write($"mpiexec -al 1 -n {MPISz} ");
-                    //str.Write($"mpiexec -n {MPISz} ");
+                str.Write($"mpiexec -n {MPISz} ");
+                //str.Write($"mpiexec ");
                 if (!base.DotnetRuntime.IsEmptyOrWhite())
                     str.Write(base.DotnetRuntime + " ");
                 str.Write(myJob.EntryAssemblyName);
@@ -745,7 +740,7 @@ namespace BoSSS.Application.BoSSSpad {
 
 
 
-            bool exclusive = this.UseNodeExclusive;
+            bool exclusive = false;
 
 
             using (var stw = new StringWriter()) {
@@ -906,6 +901,47 @@ namespace BoSSS.Application.BoSSSpad {
                 }
             }
 
+        }
+
+        /// <summary>
+        /// Cancels the job with the given id
+        /// </summary>
+        /// <param name="Id">The identifier for the job</param>
+        /// <param name="message">The reason the job was cancelled</param>
+        public override void Cancel(string Id, string message) {
+            using (var tr = new FuncTrace()) {
+                int id = int.Parse(Id);
+                tr.Info($"Trying to cancel job {id} on scheduler {this.ServerName}");
+
+                // Build cancel command
+                string args = $"cancel {id} /force  /scheduler:{this.ServerName} ";
+                if (!message.IsEmptyOrWhite()) {
+                    args += $" /message:\"{message}\"";
+                }
+
+                var result = ExecuteProcess("job.exe", args, 60000);
+
+                tr.Info($"Job {id} cancelled successfully");
+            }
+        }
+
+        /// <summary>
+        /// <see cref="BatchProcessorClient.IsSameSystem"/>
+        /// </summary>
+        public override bool IsSameSystem(BatchProcessorClient other) {
+            if ( !base.IsSameSystem(other) )
+                return false;
+            var _other = other as MsHPC2012Client;
+            if(_other == null) 
+                return false;
+
+            if ( this.ServerName != _other.ServerName )
+                return false;
+            if ( this.Username != _other.Username )
+                return false;
+
+
+            return true;
         }
     }
 }

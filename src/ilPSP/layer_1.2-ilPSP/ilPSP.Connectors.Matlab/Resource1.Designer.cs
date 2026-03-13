@@ -65,7 +65,7 @@ namespace ilPSP.Connectors.Matlab {
         /// 
         ///fid = fopen(filename);
         ///
-        ///% matrix dimensions
+        ///% matrix dimensions#
         ///% -----------------
         ///NoOfRows = fscanf(fid,&apos;%d&apos;,1);
         ///NoOfCols = fscanf(fid,&apos;%d&apos;,1);
@@ -113,6 +113,17 @@ namespace ilPSP.Connectors.Matlab {
         internal static string SaveVoronoi {
             get {
                 return ResourceManager.GetString("SaveVoronoi", resourceCulture);
+            }
+        }
+
+
+        /// <summary>
+        /// condition number estimate from Octave 5.2.0;
+        /// In later versions, it much more inefficient and takes much longer, because the inverse is computed explicitly (?)
+        /// </summary>
+        internal static string condest {
+            get {
+                return ResourceManager.GetString("condest", resourceCulture);
             }
         }
     }

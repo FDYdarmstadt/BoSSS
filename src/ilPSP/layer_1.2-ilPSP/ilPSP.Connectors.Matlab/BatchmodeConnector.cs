@@ -324,10 +324,13 @@ namespace ilPSP.Connectors.Matlab {
 
                 CreatedFiles.Add(Path.Combine(WorkingDirectory.FullName, LOGFILE));
 
-
                 var ScriptsToWrite = new List<Tuple<string, string>>();
                 ScriptsToWrite.Add(new Tuple<string, string>("ReadMsr.m", Resource1.ReadMsr));
                 ScriptsToWrite.Add(new Tuple<string, string>("SaveVoronoi.m", Resource1.SaveVoronoi));
+
+                if(m_Flav == Flavor.Octave || m_Flav == Flavor.Octave_cygwin) {
+                    ScriptsToWrite.Add(new Tuple<string, string>("condest.m", Resource1.condest));                
+                }
 
                 foreach (var t in ScriptsToWrite) {
                     string name = t.Item1;
