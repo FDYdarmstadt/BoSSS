@@ -593,79 +593,81 @@ namespace BoSSS.Foundation.XDG {
                 // - - - - - - - - - - -
 
                 bool MustLock = this.m_DiffOp.FluxesAreNOTMultithreadSafe;
-                if (MustLock)
-                    Monitor.Enter(this.m_DiffOp);
+                try {
+                    if ( MustLock )
+                        Monitor.Enter(this.m_DiffOp);
 
-                {
-                    EvalComponent(ref _inParams, gamma, this.m_LsForm_UxV[gamma], this.m_LsForm_UxV_Watches[gamma],
-                        Koeff_UxV, Sum_Koeff_UxV, 4,
-                        m_ParamFieldValuesPos, m_ParamFieldValuesNeg,
-                        DELTA,
-                        base.CustomTimers[0],
-                        delegate (ILevelSetForm_UxV _comp, int _gamma, int i, ref EdgeFormParams inp) {
-                            _comp.InternalEdge_UxV(ref inp, Koeff_UxV[_gamma][i]);
-                        },
-                        m_iThread);
-                }
-                {
-                    EvalComponent(ref _inParams, gamma, this.m_LsForm_GradUxV[gamma], this.m_LsForm_GradUxV_Watches[gamma],
-                        Koeff_NablaUxV, Sum_Koeff_NablaUxV, 4,
-                        m_ParamFieldValuesPos, m_ParamFieldValuesNeg,
-                        DELTA,
-                        base.CustomTimers[0],
-                        delegate (ILevelSetForm_GradUxV _comp, int _gamma, int i, ref EdgeFormParams inp) {
-                            _comp.InternalEdge_GradUxV(ref inp, Koeff_NablaUxV[_gamma][i]);
-                        },
-                        m_iThread);
-                }
-                {
-                    EvalComponent(ref _inParams, gamma, this.m_LsForm_UxGradV[gamma], this.m_LsForm_UxGradV_Watches[gamma],
-                        Koeff_UxNablaV, Sum_Koeff_UxNablaV, 4,
-                        m_ParamFieldValuesPos, m_ParamFieldValuesNeg,
-                        DELTA,
-                        base.CustomTimers[0],
-                        delegate (ILevelSetForm_UxGradV _comp, int _gamma, int i, ref EdgeFormParams inp) {
-                            _comp.InternalEdge_UxGradV(ref inp, Koeff_UxNablaV[_gamma][i]);
-                        },
-                        m_iThread);
-                }
-                {
-                    EvalComponent(ref _inParams, gamma, this.m_LsForm_GradUxGradV[gamma], this.m_LsForm_GradUxGradV_Watches[gamma],
-                        Koeff_NablaUxNablaV, Sum_Koeff_NablaUxNablaV, 4,
-                        m_ParamFieldValuesPos, m_ParamFieldValuesNeg,
-                        DELTA,
-                        base.CustomTimers[0],
-                        delegate (ILevelSetForm_GradUxGradV _comp, int _gamma, int i, ref EdgeFormParams inp) {
-                            _comp.InternalEdge_GradUxGradV(ref inp, Koeff_NablaUxNablaV[_gamma][i]);
-                        },
-                        m_iThread);
-                }
+                    {
+                        EvalComponent(ref _inParams, gamma, this.m_LsForm_UxV[gamma], this.m_LsForm_UxV_Watches[gamma],
+                            Koeff_UxV, Sum_Koeff_UxV, 4,
+                            m_ParamFieldValuesPos, m_ParamFieldValuesNeg,
+                            DELTA,
+                            base.CustomTimers[0],
+                            delegate (ILevelSetForm_UxV _comp, int _gamma, int i, ref EdgeFormParams inp) {
+                                _comp.InternalEdge_UxV(ref inp, Koeff_UxV[_gamma][i]);
+                            },
+                            m_iThread, MustLock);
+                    }
+                    {
+                        EvalComponent(ref _inParams, gamma, this.m_LsForm_GradUxV[gamma], this.m_LsForm_GradUxV_Watches[gamma],
+                            Koeff_NablaUxV, Sum_Koeff_NablaUxV, 4,
+                            m_ParamFieldValuesPos, m_ParamFieldValuesNeg,
+                            DELTA,
+                            base.CustomTimers[0],
+                            delegate (ILevelSetForm_GradUxV _comp, int _gamma, int i, ref EdgeFormParams inp) {
+                                _comp.InternalEdge_GradUxV(ref inp, Koeff_NablaUxV[_gamma][i]);
+                            },
+                            m_iThread, MustLock);
+                    }
+                    {
+                        EvalComponent(ref _inParams, gamma, this.m_LsForm_UxGradV[gamma], this.m_LsForm_UxGradV_Watches[gamma],
+                            Koeff_UxNablaV, Sum_Koeff_UxNablaV, 4,
+                            m_ParamFieldValuesPos, m_ParamFieldValuesNeg,
+                            DELTA,
+                            base.CustomTimers[0],
+                            delegate (ILevelSetForm_UxGradV _comp, int _gamma, int i, ref EdgeFormParams inp) {
+                                _comp.InternalEdge_UxGradV(ref inp, Koeff_UxNablaV[_gamma][i]);
+                            },
+                            m_iThread, MustLock);
+                    }
+                    {
+                        EvalComponent(ref _inParams, gamma, this.m_LsForm_GradUxGradV[gamma], this.m_LsForm_GradUxGradV_Watches[gamma],
+                            Koeff_NablaUxNablaV, Sum_Koeff_NablaUxNablaV, 4,
+                            m_ParamFieldValuesPos, m_ParamFieldValuesNeg,
+                            DELTA,
+                            base.CustomTimers[0],
+                            delegate (ILevelSetForm_GradUxGradV _comp, int _gamma, int i, ref EdgeFormParams inp) {
+                                _comp.InternalEdge_GradUxGradV(ref inp, Koeff_NablaUxNablaV[_gamma][i]);
+                            },
+                            m_iThread, MustLock);
+                    }
 
-                {
-                    EvalComponent(ref _inParams, gamma, this.m_LsForm_V[gamma], this.m_LsForm_V_Watches[gamma],
-                        Koeff_V, Sum_Koeff_V, -1,
-                        m_ParamFieldValuesPos, m_ParamFieldValuesNeg,
-                        DELTA,
-                        base.CustomTimers[0],
-                        delegate (ILevelSetForm_V _comp, int _gamma, int i, ref EdgeFormParams inp) {
-                            _comp.InternalEdge_V(ref inp, Koeff_V[_gamma][i]);
-                        },
-                        m_iThread);
+                    {
+                        EvalComponent(ref _inParams, gamma, this.m_LsForm_V[gamma], this.m_LsForm_V_Watches[gamma],
+                            Koeff_V, Sum_Koeff_V, -1,
+                            m_ParamFieldValuesPos, m_ParamFieldValuesNeg,
+                            DELTA,
+                            base.CustomTimers[0],
+                            delegate (ILevelSetForm_V _comp, int _gamma, int i, ref EdgeFormParams inp) {
+                                _comp.InternalEdge_V(ref inp, Koeff_V[_gamma][i]);
+                            },
+                            m_iThread, MustLock);
+                    }
+                    {
+                        EvalComponent(ref _inParams, gamma, this.m_LsForm_GradV[gamma], this.m_LsForm_GradV_Watches[gamma],
+                            Koeff_NablaV, Sum_Koeff_NablaV, -1,
+                            m_ParamFieldValuesPos, m_ParamFieldValuesNeg,
+                            DELTA,
+                            base.CustomTimers[0],
+                            delegate (ILevelSetForm_GradV _comp, int _gamma, int i, ref EdgeFormParams inp) {
+                                _comp.InternalEdge_GradV(ref inp, Koeff_NablaV[_gamma][i]);
+                            },
+                            m_iThread, MustLock);
+                    }
+                } finally {
+                    if ( MustLock )
+                        Monitor.Exit(this.m_DiffOp);
                 }
-                {
-                    EvalComponent(ref _inParams, gamma, this.m_LsForm_GradV[gamma], this.m_LsForm_GradV_Watches[gamma],
-                        Koeff_NablaV, Sum_Koeff_NablaV, -1,
-                        m_ParamFieldValuesPos, m_ParamFieldValuesNeg,
-                        DELTA,
-                        base.CustomTimers[0],
-                        delegate (ILevelSetForm_GradV _comp, int _gamma, int i, ref EdgeFormParams inp) {
-                            _comp.InternalEdge_GradV(ref inp, Koeff_NablaV[_gamma][i]);
-                        },
-                        m_iThread);
-                }
-
-                if (MustLock)
-                    Monitor.Exit(this.m_DiffOp);
             }
 
 
@@ -847,14 +849,14 @@ namespace BoSSS.Foundation.XDG {
             int DELTA,
             Stopwatch timer,
             CallComponent<T> ComponentFunc, 
-            int iThread) where T : ILevelSetForm {
+            int iThread, bool ParrentLocked) where T : ILevelSetForm {
             timer.Start();
 
 
             for (int __i = 0; __i < bf.m_AllComponentsOfMyType.Length; __i++) {  // loop over equation components
                 int i = (__i + iThread) % bf.m_AllComponentsOfMyType.Length; // shuffling in threads to reduce locking
                 var comp = bf.m_AllComponentsOfMyType[i];
-                object blck = bf.m_LockObjects[i];
+                object blck = ParrentLocked ? null : bf.m_LockObjects[i];
 
                 //LengthScales.TryGetValue(comp.NegativeSpecies, out _inParams.NegCellLengthScale);
                 //LengthScales.TryGetValue(comp.PositiveSpecies, out _inParams.PosCellLengthScale);

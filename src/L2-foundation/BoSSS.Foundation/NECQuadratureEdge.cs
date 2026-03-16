@@ -1560,7 +1560,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
             private void EvalFlux<T>(EquationComponentArgMapping<T> components, int i0, int Length, IGridData grid, int NoOfSec,
                 bool MapAlsoMean, bool MapAlsoGradient, Stopwatch[] timers,
-                bool callerSynchronized,
+                bool ParrentSynchronized,
                 Action<T, int, int, int, int, int, MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray[]> CallInner,
                 Action<T, int, int, int, int, bool, int, int, MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray[]> CallBorder)
                 where T : IEquationComponent //
@@ -1573,7 +1573,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     for (int __iComp = 0; __iComp < L; __iComp++) {
                         int iComp = (__iComp + this.m_iThread) % L; // shuffling in threads to reduce locking
 
-                        object blck = callerSynchronized ? null : components.m_LockObjects[iComp];
+                        object blck = ParrentSynchronized ? null : components.m_LockObjects[iComp];
 
                         timers[iComp].Start();
                         T nonlinFlx = components.m_AllComponentsOfMyType[iComp];
@@ -1612,7 +1612,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     // sum up all fluxes - border edges
                     for (int __iComp = 0; __iComp < L; __iComp++) {
                         int iComp = (__iComp + this.m_iThread) % L; // shuffling in threads to reduce locking
-                        object blck = callerSynchronized ? null : components.m_LockObjects[iComp];
+                        object blck = ParrentSynchronized ? null : components.m_LockObjects[iComp];
 
                         timers[iComp].Start();
                         T nonlinFlx = components.m_AllComponentsOfMyType[iComp];
