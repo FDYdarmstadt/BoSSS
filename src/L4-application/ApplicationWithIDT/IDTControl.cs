@@ -35,6 +35,9 @@ namespace ApplicationWithIDT {
             this.SpeciesTable[1, 0] = "A";
             this.SpeciesTable[1, 1] = "B";
             base.NoOfMultigridLevels = 1;
+            
+            // Initialize enum based on boolean for backward compatibility
+            this.LevelSetOptimizationMode = this.IsTwoLevelSetRun ? LevelSetOptMode.TwoLevelSets_OptimizeSecond : LevelSetOptMode.SingleLevelSet;
         }
 
         [ExclusiveLowerBound(0.0)]
@@ -113,6 +116,27 @@ namespace ApplicationWithIDT {
 
         #region Level Set Stuff
         public bool IsTwoLevelSetRun { get; set; } = true;
+
+        /// <summary>
+        /// Level set optimization mode - controls which level sets are used and optimized
+        /// </summary>
+        public LevelSetOptMode LevelSetOptimizationMode { get; set; } = LevelSetOptMode.TwoLevelSets_OptimizeSecond;
+
+        /// <summary>
+        /// Helper property: Returns true if a second level set is used
+        /// </summary>
+        public bool UsesSecondLevelSet => LevelSetOptimizationMode != LevelSetOptMode.SingleLevelSet;
+
+        /// <summary>
+        /// Helper property: Returns true if the first level set is being optimized
+        /// </summary>
+        public bool OptimizesLevelSetOne => LevelSetOptimizationMode == LevelSetOptMode.TwoLevelSets_OptimizeBoth;
+
+        /// <summary>
+        /// Helper property: Returns true if the second level set is being optimized
+        /// </summary>
+        public bool OptimizesLevelSetTwo => LevelSetOptimizationMode == LevelSetOptMode.TwoLevelSets_OptimizeSecond || LevelSetOptimizationMode == LevelSetOptMode.TwoLevelSets_OptimizeBoth;
+
         public Func<double[], double> LevelSetTwoInitialValue { get; set; } = x => 0.5 - x[0];
         public string[] SpeciesToEvaluate { get; set; } = null;
         public string[,] SpeciesTable { get; set; } = new string[2, 2];
@@ -419,5 +443,23 @@ namespace ApplicationWithIDT {
     public enum ReInitMode {
         OneTolForAllP,
         OneTolForEachP,
+    }
+
+    /// <summary>
+    /// Level set optimization mode - controls which level sets are used and optimized
+    /// </summary>
+    public enum LevelSetOptMode {
+        /// <summary>
+        /// Use and optimize only the first level set
+        /// </summary>
+        SingleLevelSet,
+        /// <summary>
+        /// Use two level sets but optimize only the second one
+        /// </summary>
+        TwoLevelSets_OptimizeSecond,
+        /// <summary>
+        /// Use and optimize both level sets simultaneously
+        /// </summary>
+        TwoLevelSets_OptimizeBoth
     }
 }
