@@ -187,6 +187,41 @@ namespace ApplicationWithIDT {
         }
 
         /// <summary>
+        /// Get parameter name at global index
+        /// </summary>
+        public string GetParameterNameAt(int globalIndex) {
+            var mapping = MapGlobalToLocal(globalIndex);
+            if (mapping.HasValue) {
+                var (blockIndex, localIndex) = mapping.Value;
+                return optimizationStates[blockIndex].LevelSetOpti?.GetParamName(localIndex) ?? $"param_{globalIndex}";
+            }
+            return $"param_{globalIndex}";
+        }
+
+        /// <summary>
+        /// Compute norm of parameter vector
+        /// </summary>
+        public double Norm(double[] paramVector) {
+            if (paramVector == null) return 0.0;
+            
+            double norm = 0.0;
+            int offset = 0;
+            
+            foreach (var state in optimizationStates) {
+                int blockSize = state.GetOptimizationDOFCount();
+                if (offset + blockSize <= paramVector.Length && state.LevelSetOpti != null) {
+                    var subVector = new double[blockSize];
+                    Array.Copy(paramVector, offset, subVector, 0, blockSize);
+                    double blockNorm = state.LevelSetOpti.Norm(subVector);
+                    norm += blockNorm * blockNorm;
+                }
+                offset += blockSize;
+            }
+            
+            return Math.Sqrt(norm);
+        }
+
+        /// <summary>
         /// Get count of optimization states
         /// </summary>
         public int GetOptimizationStateCount() {
