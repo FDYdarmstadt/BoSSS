@@ -71,6 +71,20 @@ namespace ApplicationWithIDT {
         }
 
         /// <summary>
+        /// Project all optimizer objects onto their DG level-sets
+        /// </summary>
+        public void ProjectAllOptimizerOntoLevelSets(LevelSet[] projectionTargets) {
+            if ( projectionTargets.Length != optimizationStates.Count )
+                throw new ArgumentException();
+            int i = 0;
+            foreach ( var state in optimizationStates ) {
+                state.ProjectOptimizerOntoLevelSet(projectionTargets[i]);
+                i++;
+            }
+        }
+
+
+        /// <summary>
         /// Clone/backup all optimizer parameter blocks
         /// </summary>
         public void CreateBackupOfAllOptimizers() {

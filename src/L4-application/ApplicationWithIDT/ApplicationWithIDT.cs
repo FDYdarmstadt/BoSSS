@@ -29,6 +29,7 @@ using BoSSS.Solution.Statistic;
 using BoSSS.Solution.Gnuplot;
 using System.Diagnostics;
 using BoSSS.Solution.Control;
+using MathNet.Numerics;
 
 namespace ApplicationWithIDT {
     /// <summary>
@@ -115,8 +116,9 @@ namespace ApplicationWithIDT {
         public LevelSet LevelSetStep { get; private set; }
         public LevelSetTracker LsTrkStep { get; private set; }
         public ContinuityProjection ContinuityProjection { get; set; }
-        private SinglePhaseField ShockLevelSetField { get; set; }
+        
         private SpeciesId[] _speciesToEvaluate_Ids { get; set; }
+        
         public SpeciesId[] SpeciesToEvaluate_Ids {
             get {
                 if(_speciesToEvaluate_Ids == null) {
@@ -568,7 +570,7 @@ namespace ApplicationWithIDT {
 
             // Register fields for plotting
             this.m_IOFields.Add(LevelSet);
-            if(Control.UsesSecondLevelSet) {
+            if(Control.IsTwoLevelSetRun) {
                 this.m_IOFields.Add(LevelSetTwo);
             }
 
@@ -580,7 +582,7 @@ namespace ApplicationWithIDT {
 
             // Register fields, e.g., for applying the initial conditions
             this.m_RegisteredFields.Add(LevelSet);
-            if(Control.UsesSecondLevelSet) {
+            if(Control.IsTwoLevelSetRun) {
                 this.m_RegisteredFields.Add(LevelSetTwo);
             }
             this.m_RegisteredFields.AddRange(ConservativeFields);
@@ -791,9 +793,9 @@ namespace ApplicationWithIDT {
             LevelSetOptAggregator.AddOptimizationState(LevelSetOptState);
 
             #region Create level set objects, and the level set tracker
-            // Enusre that for a SpecFemField the LevelSet contains the SpecFemSpace
+            // Ensure that for a SpecFemField the LevelSet contains the SpecFemSpace
             if(Control.OptiLevelSetType == OptiLevelSetType.SpecFemField) {
-                if(Control.UsesSecondLevelSet) {
+                if(Control.IsTwoLevelSetRun) {
                     this.Control.LevelSetTwoDegree = this.Control.LevelSetTwoDegree < this.Control.OptiLevelSetDegree * 2 ? this.Control.OptiLevelSetDegree * 2 : this.Control.LevelSetTwoDegree;
                 } else {
                     this.Control.LevelSetDegree = this.Control.LevelSetDegree < this.Control.OptiLevelSetDegree * 2 ? this.Control.OptiLevelSetDegree * 2 : this.Control.LevelSetDegree;
@@ -802,7 +804,7 @@ namespace ApplicationWithIDT {
             // Level set one (usually the geometry)
             this.LevelSet = new LevelSet(new Basis(this.GridData, this.Control.LevelSetDegree), "levelSet");
             int lsNumber;
-            if(Control.UsesSecondLevelSet) {
+            if(Control.IsTwoLevelSetRun) {
                 this.LevelSetTwo = new LevelSet(new Basis(this.GridData, this.Control.LevelSetTwoDegree), "levelSetTwo");
                 this.LevelSetStep = new LevelSet(new Basis(this.GridData, this.Control.LevelSetTwoDegree), "levelSetTwo_Step");
                 base.LsTrk = new LevelSetTracker((GridData)this.GridData, Control.CutCellQuadratureType, 1, Control.SpeciesTable, this.LevelSet, this.LevelSetTwo);
@@ -1570,7 +1572,7 @@ namespace ApplicationWithIDT {
             SinglePhaseField continuousLevelSet = new SinglePhaseField(new Basis(gridData, targetOptiLevelSet.GetDegree()), "LevelSet_cont");
             var tmp_LsTrk = new LevelSetTracker((GridData)gridData, Control.CutCellQuadratureType, 1, LsTrk.SpeciesTable, new LevelSet[] { targetOptiLevelSet.ToLevelSet(targetOptiLevelSet.GetDegree()) });
             CellMask nearBandMask;
-            if(Control.UsesSecondLevelSet) {
+            if(Control.IsTwoLevelSetRun) {
                 nearBandMask = tmp_LsTrk.Regions.GetNearMask4LevSet(1, 1);
             } else {
                 nearBandMask = tmp_LsTrk.Regions.GetNearMask4LevSet(0, 1);
@@ -2558,12 +2560,19 @@ namespace ApplicationWithIDT {
                 success = true;
 
                 //Get a copy from the LevelSet and the Tracker
-                if(Control.UsesSecondLevelSet) {
-                    LevelSet_copy = LevelSetTwo.CloneAs();
-                    LsTrk_copy = new LevelSetTracker((GridData)this.GridData, Control.CutCellQuadratureType, Control.NearRegionWidth, Control.SpeciesTable, this.LevelSet, LevelSet_copy);
-                } else {
-                    LevelSet_copy = LevelSet.CloneAs();
-                    LsTrk_copy = new LevelSetTracker((GridData)this.GridData, Control.CutCellQuadratureType, Control.NearRegionWidth, new string[] { Control.LsOne_NegSpecies, Control.LsOne_PosSpecies }, LevelSet_copy);
+                switch ( Control.LevelSetOptimizationMode ) {
+
+                    default:
+                    case LevelSetOptMode.TwoLevelSets_OptimizeBoth:
+                        throw new NotImplementedException("todo");
+                    case LevelSetOptMode.TwoLevelSets_OptimizeSecond:
+                        LevelSet_copy = LevelSetTwo.CloneAs();
+                        LsTrk_copy = new LevelSetTracker((GridData) this.GridData, Control.CutCellQuadratureType, Control.NearRegionWidth, Control.SpeciesTable, this.LevelSet, LevelSet_copy);
+                        break;
+                    case LevelSetOptMode.SingleLevelSet:
+                        LevelSet_copy = LevelSet.CloneAs();
+                        LsTrk_copy = new LevelSetTracker((GridData) this.GridData, Control.CutCellQuadratureType, Control.NearRegionWidth, new string[] { Control.LsOne_NegSpecies, Control.LsOne_PosSpecies }, LevelSet_copy);
+                        break;
                 }
 
                 // add the step to the state DOFs - scaled by m_alpha
@@ -2577,7 +2586,10 @@ namespace ApplicationWithIDT {
                     LevelSetOptAggregator.AccumulateToParameterAt(i, m_alpha * step_t[i + length_r]);
                 }
                 //project onto LevelSet object 
-                LevelSetOptAggregator.ProjectAllOptimizerOntoLevelSets();
+                LevelSetOptAggregator.ProjectAllOptimizerOntoLevelSets(new[] { LevelSet_copy });
+
+
+
                 try {
                     LsTrk_copy.UpdateTracker(CurrentStepNo, Control.NearRegionWidth);
                 } catch { //if Exception is called no step is computed
@@ -3925,6 +3937,8 @@ namespace ApplicationWithIDT {
             var quadOrder = Control.quadOrderFunc(DomainDegrees, null, CodomainDegrees);
             return quadOrder;
         }
+
+       
         /// <summary>
         /// Gives the Residual Plot using the current operator (so the test functions are the same for all evaluations), makes a difference in staggered setting 
         /// </summary>
@@ -3939,10 +3953,17 @@ namespace ApplicationWithIDT {
                 List<DGField> flds = new List<DGField>();
                 var fields = timestep.Fields.ToList();
                 LsTBO.Clear();
-                if(Control.UsesSecondLevelSet) {
-                    LsTBO.CoordinateVector.SetV(timestep.Fields.Single(f => f.Identification.Equals("levelSetTwo")).CoordinateVector);
-                } else {
-                    LsTBO.CoordinateVector.SetV(timestep.Fields.Single(f => f.Identification.Equals("levelSet")).CoordinateVector);
+
+                switch ( Control.LevelSetOptimizationMode ) {
+                    default:
+                    case LevelSetOptMode.TwoLevelSets_OptimizeBoth:
+                        throw new NotImplementedException();
+                    case LevelSetOptMode.TwoLevelSets_OptimizeSecond:
+                        LsTBO.CoordinateVector.SetV(timestep.Fields.Single(f => f.Identification.Equals("levelSetTwo")).CoordinateVector);
+                        break;
+                    case LevelSetOptMode.SingleLevelSet:
+                        LsTBO.CoordinateVector.SetV(timestep.Fields.Single(f => f.Identification.Equals("levelSet")).CoordinateVector);
+                        break;
                 }
                 LsTrk.UpdateTracker(0.0);
 
@@ -3974,6 +3995,8 @@ namespace ApplicationWithIDT {
             }
             return GetPlot(enrichedResiduals, "||R(z)||_2", residuals, "||r(z)||_2");
         }
+        
+
         /// <summary>
         /// returns a plot against the iterations for variable lists
         /// </summary>

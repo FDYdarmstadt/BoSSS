@@ -140,6 +140,7 @@ namespace ApplicationWithIDT {
         /// </summary>
         public LevelSetOptMode LevelSetOptimizationMode { get; set; } = LevelSetOptMode.TwoLevelSets_OptimizeSecond;
 
+        /*
         /// <summary>
         /// Helper property: Returns true if a second level set is used
         /// </summary>
@@ -154,6 +155,8 @@ namespace ApplicationWithIDT {
         /// Helper property: Returns true if the second level set is being optimized
         /// </summary>
         public bool OptimizesLevelSetTwo => LevelSetOptimizationMode == LevelSetOptMode.TwoLevelSets_OptimizeSecond || LevelSetOptimizationMode == LevelSetOptMode.TwoLevelSets_OptimizeBoth;
+        */
+
 
         public Func<double[], double> LevelSetTwoInitialValue { get; set; } = x => 0.5 - x[0];
         public string[] SpeciesToEvaluate { get; set; } = null;

@@ -12,6 +12,7 @@ namespace ApplicationWithIDT {
     /// supporting multiple level-sets in future extensions.
     /// </summary>
     public class LevelSetOptimizationState {
+        
         /// <summary>
         /// The level-set(s) to be optimized - currently singular but extensible to multiple
         /// </summary>
@@ -77,6 +78,13 @@ namespace ApplicationWithIDT {
         /// </summary>
         public void ProjectOptimizerOntoLevelSet() {
             LevelSetOpti?.ProjectOntoLevelSet(LsTBO);
+        }
+
+        /// <summary>
+        /// Project the optimizer state onto the target DG level-set
+        /// </summary>
+        public void ProjectOptimizerOntoLevelSet(LevelSet target) {
+            LevelSetOpti?.ProjectOntoLevelSet(target);
         }
 
         /// <summary>
