@@ -22,8 +22,10 @@ namespace SAIDT.Tests {
         }
         #endregion
 
+        /// <summary>
+        /// This test checks if the results presented on Eccomas 2022 can still be reproduced
+        /// </summary>
         [Test]
-        //This test checks if the results presented on Eccomas 2022 can still be reproduced
         public static void CurvedShock_Eccomas22() {
             BoSSS.Solution.Application.InitMPI();
             BoSSS.Solution.Application.DeleteOldPlotFiles();
@@ -51,7 +53,9 @@ namespace SAIDT.Tests {
         }     
 
         [Test]
-        //Some straight Example with good first guess and SinglePhaseFieldLevelSet
+        /// <summary>
+        /// Some straight Example with good first guess and SinglePhaseFieldLevelSet
+        /// </summary>
         public static void StraightShock_p0_SplineLevelSet() {
             BoSSS.Solution.Application.InitMPI();
 

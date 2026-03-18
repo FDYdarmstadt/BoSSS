@@ -115,8 +115,26 @@ namespace ApplicationWithIDT {
         #endregion
 
         #region Level Set Stuff
-        public bool IsTwoLevelSetRun { get; set; } = true;
 
+        /// <summary>
+        /// Legacy compatibility option, superseded by <see cref="LevelSetOptimizationMode"/>
+        /// - false: maps to <see cref="LevelSetOptMode.SingleLevelSet"/>
+        /// - true: maps to <see cref="LevelSetOptMode.TwoLevelSets_OptimizeSecond"/>
+        /// </summary>
+        public bool IsTwoLevelSetRun { 
+            get {
+                if(LevelSetOptimizationMode == LevelSetOptMode.SingleLevelSet)
+                    return false;
+                else 
+                    return true;
+            }
+            set {
+                if ( value )
+                    LevelSetOptimizationMode = LevelSetOptMode.TwoLevelSets_OptimizeSecond;
+                else
+                    LevelSetOptimizationMode = LevelSetOptMode.SingleLevelSet;
+            }
+        }
         /// <summary>
         /// Level set optimization mode - controls which level sets are used and optimized
         /// </summary>
