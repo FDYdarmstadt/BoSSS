@@ -70,6 +70,10 @@ namespace ApplicationWithIDT {
         #endregion
         #region LevelSets
         public LevelSet LevelSet { get; set; }
+        
+        /// <summary>
+        /// Second level-set, if tow level-sets are used.
+        /// </summary>
         public LevelSet LevelSetTwo { get; set; }
         
         /// <summary>
@@ -98,9 +102,11 @@ namespace ApplicationWithIDT {
         public IOptiLevelSet LevelSetOptiBackup { get => LevelSetOptState?.LevelSetOptiBackup; set => EnsureLevelSetOptState().LevelSetOptiBackup = value; }
 
         /// <summary>
-        /// Legacy property for backward compatibility - Optimizer grid
+        /// Grid on which the optimization-level-sets (<see cref="LevelSetOptimizationState.LevelSetOpti"/>) are defined;
+        /// - might be the same as the primary grid, i.e.,  <see cref="Application{T}.Grid"/>
+        /// - can be different, e.g., to allow to reduce the degrees-of-freedom for the level-set-optimization
         /// </summary>
-        public IGrid LevelSetOptiGrid { get => LevelSetOptState?.LevelSetOptiGrid; set => EnsureLevelSetOptState().LevelSetOptiGrid = value; }
+        public IGrid LevelSetOptiGrid { get; private set; }
 
         /// <summary>
         /// Helper method to ensure LevelSetOptState is initialized

@@ -31,6 +31,11 @@ namespace ApplicationWithIDT {
         /// <summary>
         /// Grid used for level-set optimization
         /// </summary>
+        //public IGrid LevelSetOptiGrid { 
+        //    get {
+        //        return LsTBO.Basis.GridDat.Grid;
+        //    }
+        //}
         public IGrid LevelSetOptiGrid { get; set; }
 
         /// <summary>
