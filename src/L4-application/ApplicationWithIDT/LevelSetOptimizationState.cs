@@ -29,6 +29,16 @@ namespace ApplicationWithIDT {
         public IOptiLevelSet LevelSetOptiBackup { get; set; }
 
         /// <summary>
+        /// Backup of the DG level-set associated with this optimization state
+        /// </summary>
+        public LevelSet LevelSetBackup { get; set; }
+
+        /// <summary>
+        /// DG field for storing step information of this optimization state
+        /// </summary>
+        public LevelSet LevelSetStep { get; set; }
+
+        /// <summary>
         /// Grid used for level-set optimization
         /// </summary>
         //public IGrid LevelSetOptiGrid { 

@@ -1,4 +1,4 @@
-﻿using BoSSS.Solution.Control;
+using BoSSS.Solution.Control;
 using BoSSS.Solution.Queries;
 using BoSSS.Solution;
 using System;
@@ -39,7 +39,7 @@ namespace BUIDT {
                 if(!(app is BUIDTMain program)) {
                     throw new NotSupportedException("Only valid for applications of type IDTControl");
                 }
-                if(!(program.LevelSetOpti is SplineOptiLevelSet splineLS)) {
+                if(!(program.ActiveLevelSetOptimizer is SplineOptiLevelSet splineLS)) {
                     throw new NotSupportedException("Only valid for splineLevelSet");
                 }
                 var grid = Grid1D.LineGrid(splineLS.y);

@@ -1,4 +1,4 @@
-﻿using BoSSS.Foundation;
+using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
@@ -125,9 +125,9 @@ namespace SAIDT {
             #endregion 
 
             #region necessary initializations for Operator evaluation
-            LsTBO = LevelSet;
-            LevelSetOpti.AssembleTransMat(LsTBO);
-            LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+            LsToOptimize = LevelSet;
+            LevelSetOptimizer.AssembleTransMat(LsToOptimize);
+            LevelSetOptimizer.ProjectOntoLevelSet(LsToOptimize);
             LsTrk.UpdateTracker(CurrentStepNo);
             LsTrk.PushStacks();
             //note that the operator is assembled we can compute the p0 solution
@@ -195,16 +195,16 @@ namespace SAIDT {
                 case OptiLevelSetType.SinglePhaseField:
                 case OptiLevelSetType.SpecFemField:
                 case OptiLevelSetType.SplineLevelSet:
-                LevelSetOpti.ProjectFromFunction(Control.LevelSetTwoInitialValue);
+                LevelSetOptimizer.ProjectFromFunction(Control.LevelSetTwoInitialValue);
                 break;
                 case OptiLevelSetType.GlobalLevelSet:
                 break;
 
                 default: throw new ArgumentOutOfRangeException(nameof(Control.OptiLevelSetType));
             }
-            //We project the LevelSetOpti object onto the DG LsTBO
-            LevelSetOpti.AssembleTransMat(LsTBO);
-            LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+            //We project the LevelSetOptimizer object onto the DG LsToOptimize
+            LevelSetOptimizer.AssembleTransMat(LsToOptimize);
+            LevelSetOptimizer.ProjectOntoLevelSet(LsToOptimize);
             LsTrk.UpdateTracker(CurrentStepNo);
             LsTrk.PushStacks();
             switch (Control.GetInitialValue) {

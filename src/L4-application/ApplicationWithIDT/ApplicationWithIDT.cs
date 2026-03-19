@@ -1,4 +1,4 @@
-﻿using BoSSS.Foundation;
+using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
@@ -40,7 +40,7 @@ namespace ApplicationWithIDT {
     ///     - f is an objective function [Code: obj_f, obj_vec ...] 
     ///     - r is the discretized weak form of some stationary/space-time conservation law $\nabla \mathbf{f}(U)=0$  [Code: Residual,...] 
     ///     - U is the state vector [Code: ConservativeFields]
-    ///     - phi a Level Set (only one Level Set to be optimized supported) [Code:LsTBO, OptiLevelSet]
+    ///     - phi a Level Set (only one Level Set to be optimized supported) [Code:LsToOptimize, OptiLevelSet]
     /// 
     /// Different types of Level Set Parametrization are supported (may not work for all examples) and defined in IOptiLevelSet.cs
     /// - SplineOptiLevelSet
@@ -79,7 +79,7 @@ namespace ApplicationWithIDT {
         /// <summary>
         /// Container for level-set optimization state variables
         /// </summary>
-        public LevelSetOptimizationState LevelSetOptState { get; set; }
+        public LevelSetOptimizationState[] LevelSetOptStates { get; set; }
 
         /// <summary>
         /// Aggregation layer for optimizer DOFs to support multiple level set optimization
@@ -87,19 +87,34 @@ namespace ApplicationWithIDT {
         public LevelSetOptimizationAggregator LevelSetOptAggregator { get; set; }
 
         /// <summary>
-        /// Legacy property for backward compatibility - Level Set To Be Optimized
+        /// Accessor for the single optimization state used by legacy single-level-set code paths.
         /// </summary>
-        public LevelSet LsTBO { get => LevelSetOptState?.LsTBO; set => EnsureLevelSetOptState().LsTBO = value; }
+        protected LevelSetOptimizationState LegacyLevelSetOptState => GetLegacyState();
 
         /// <summary>
-        /// Legacy property for backward compatibility - Optimizer object
+        /// DG level-set associated with the legacy single-state access path.
         /// </summary>
-        public IOptiLevelSet LevelSetOpti { get => LevelSetOptState?.LevelSetOpti; set => EnsureLevelSetOptState().LevelSetOpti = value; }
+        protected LevelSet LsToOptimize { get => LegacyLevelSetOptState.LsTBO; set => LegacyLevelSetOptState.LsTBO = value; }
 
         /// <summary>
-        /// Legacy property for backward compatibility - Optimizer backup
+        /// Optimizer object associated with the legacy single-state access path.
         /// </summary>
-        public IOptiLevelSet LevelSetOptiBackup { get => LevelSetOptState?.LevelSetOptiBackup; set => EnsureLevelSetOptState().LevelSetOptiBackup = value; }
+        protected IOptiLevelSet LevelSetOptimizer { get => LegacyLevelSetOptState.LevelSetOpti; set => LegacyLevelSetOptState.LevelSetOpti = value; }
+
+        /// <summary>
+        /// Optimizer backup associated with the legacy single-state access path.
+        /// </summary>
+        protected IOptiLevelSet LevelSetOptimizerBackup { get => LegacyLevelSetOptState.LevelSetOptiBackup; set => LegacyLevelSetOptState.LevelSetOptiBackup = value; }
+
+        /// <summary>
+        /// Public read-only access to the currently active optimization-level-set object.
+        /// </summary>
+        public IOptiLevelSet ActiveLevelSetOptimizer => LegacyLevelSetOptState.LevelSetOpti;
+
+        /// <summary>
+        /// Public read-only access to the currently active DG level-set used by the optimization object.
+        /// </summary>
+        public LevelSet ActiveOptimizationLevelSet => LegacyLevelSetOptState.LsTBO;
 
         /// <summary>
         /// Grid on which the optimization-level-sets (<see cref="LevelSetOptimizationState.LevelSetOpti"/>) are defined;
@@ -109,17 +124,68 @@ namespace ApplicationWithIDT {
         public IGrid LevelSetOptiGrid { get; private set; }
 
         /// <summary>
-        /// Helper method to ensure LevelSetOptState is initialized
+        /// Number of optimization state blocks required for the configured optimization mode.
         /// </summary>
-        private LevelSetOptimizationState EnsureLevelSetOptState() {
-            if (LevelSetOptState == null) {
-                LevelSetOptState = new LevelSetOptimizationState();
+        private int RequiredLevelSetOptStateCount() {
+            switch(Control.LevelSetOptimizationMode) {
+                default:
+                case LevelSetOptMode.TwoLevelSets_OptimizeBoth:
+                return 2;
+                case LevelSetOptMode.TwoLevelSets_OptimizeSecond:
+                case LevelSetOptMode.SingleLevelSet:
+                return 1;
             }
-            return LevelSetOptState;
         }
 
-        public LevelSet levelSetBackup { get; set; }
-        public LevelSet LevelSetStep { get; private set; }
+        /// <summary>
+        /// Index used by legacy single-state properties.
+        /// </summary>
+        private int LegacyStateIndex {
+            get {
+                switch(Control.LevelSetOptimizationMode) {
+                    default:
+                    case LevelSetOptMode.TwoLevelSets_OptimizeBoth:
+                    return 1;
+                    case LevelSetOptMode.TwoLevelSets_OptimizeSecond:
+                    case LevelSetOptMode.SingleLevelSet:
+                    return 0;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Ensures the optimization state array exists and has the expected length.
+        /// </summary>
+        private LevelSetOptimizationState[] EnsureLevelSetOptStates() {
+            int required = RequiredLevelSetOptStateCount();
+            if(LevelSetOptStates == null || LevelSetOptStates.Length != required) {
+                LevelSetOptStates = Enumerable.Range(0, required).Select(i => new LevelSetOptimizationState()).ToArray();
+            } else {
+                for(int i = 0; i < LevelSetOptStates.Length; i++) {
+                    if(LevelSetOptStates[i] == null) {
+                        LevelSetOptStates[i] = new LevelSetOptimizationState();
+                    }
+                }
+            }
+            return LevelSetOptStates;
+        }
+
+        /// <summary>
+        /// Accessor for legacy single-state members.
+        /// </summary>
+        private LevelSetOptimizationState GetLegacyState() {
+            return EnsureLevelSetOptStates()[LegacyStateIndex];
+        }
+
+        /// <summary>
+        /// Access one optimization state block by index.
+        /// </summary>
+        private LevelSetOptimizationState GetLevelSetOptState(int stateIndex) {
+            return EnsureLevelSetOptStates()[stateIndex];
+        }
+
+        public LevelSet levelSetBackup { get => GetLegacyState().LevelSetBackup; set => GetLegacyState().LevelSetBackup = value; }
+        public LevelSet LevelSetStep { get => GetLegacyState().LevelSetStep; private set => GetLegacyState().LevelSetStep = value; }
         public LevelSetTracker LsTrkStep { get; private set; }
         public ContinuityProjection ContinuityProjection { get; set; }
         
@@ -198,7 +264,7 @@ namespace ApplicationWithIDT {
         /// <summary>
         /// Legacy property for backward compatibility - Level-set optimization parameter history
         /// </summary>
-        public List<double[]> LevelSetOptiParams { get => LevelSetOptState?.LevelSetOptiParams; set => EnsureLevelSetOptState().LevelSetOptiParams = value ?? new List<double[]>(); }
+        public List<double[]> LevelSetOptiParams { get => GetLegacyState().LevelSetOptiParams; set => GetLegacyState().LevelSetOptiParams = value ?? new List<double[]>(); }
         
         public List<double> Mus { get; set; }
         public List<double> ResNorms { get; set; }
@@ -308,16 +374,16 @@ namespace ApplicationWithIDT {
         /// <param name="t"></param>
         /// <returns></returns>
         protected override TimestepInfo GetCurrentTimestepInfo(TimestepNumber timestepno, double t) {
-            if(this.LevelSetOpti is SplineOptiLevelSet spliny) {
+            if(this.LevelSetOptimizer is SplineOptiLevelSet spliny) {
                 return new IDTTimeStepInfo(t, this.CurrentSessionInfo, timestepno, this.IOFields,
                         this.gamma, this.kappa, this.m_alpha, this.mu, this.res_l2, this.obj_f, this.Alphas,
                         this.Gammas, this.Kappas, this.Mus, this.ResNorms, this.obj_f_vals, this.StepCount,
-                        this.LevelSetOpti.GetParamsAsArray(), spliny.y);
+                        this.LevelSetOptimizer.GetParamsAsArray(), spliny.y);
             } else {
                 return new IDTTimeStepInfo(t, this.CurrentSessionInfo, timestepno, this.IOFields,
                         this.gamma, this.kappa, this.m_alpha, this.mu, this.res_l2, this.obj_f, this.Alphas,
                         this.Gammas, this.Kappas, this.Mus, this.ResNorms, this.obj_f_vals, this.StepCount,
-                        this.LevelSetOpti.GetParamsAsArray(), null);
+                        this.LevelSetOptimizer.GetParamsAsArray(), null);
             }
 
         }
@@ -420,7 +486,7 @@ namespace ApplicationWithIDT {
             StepCount = new List<double>();
             StepCount.Add(0);
             LevelSetOptiParams = new List<double[]>();
-            LevelSetOptiParams.Add(LevelSetOpti.GetParamsAsArray());
+            LevelSetOptiParams.Add(LevelSetOptimizer.GetParamsAsArray());
             Steps = new List<double[]>();
             Steps.Add(stepIN);
             gamma = Control.Gamma_Start;
@@ -576,8 +642,14 @@ namespace ApplicationWithIDT {
 
             // Register fields for plotting
             this.m_IOFields.Add(LevelSet);
-            if(Control.IsTwoLevelSetRun) {
+            switch(Control.LevelSetOptimizationMode) {
+                default:
+                case LevelSetOptMode.TwoLevelSets_OptimizeBoth:
+                case LevelSetOptMode.TwoLevelSets_OptimizeSecond:
                 this.m_IOFields.Add(LevelSetTwo);
+                break;
+                case LevelSetOptMode.SingleLevelSet:
+                break;
             }
 
             this.m_IOFields.AddRange(ConservativeFields);
@@ -588,8 +660,14 @@ namespace ApplicationWithIDT {
 
             // Register fields, e.g., for applying the initial conditions
             this.m_RegisteredFields.Add(LevelSet);
-            if(Control.IsTwoLevelSetRun) {
+            switch(Control.LevelSetOptimizationMode) {
+                default:
+                case LevelSetOptMode.TwoLevelSets_OptimizeBoth:
+                case LevelSetOptMode.TwoLevelSets_OptimizeSecond:
                 this.m_RegisteredFields.Add(LevelSetTwo);
+                break;
+                case LevelSetOptMode.SingleLevelSet:
+                break;
             }
             this.m_RegisteredFields.AddRange(ConservativeFields);
             this.m_RegisteredFields.AddRange(Residuals);
@@ -646,10 +724,10 @@ namespace ApplicationWithIDT {
                 //backup of non-agglomerated state and Level Set
                 createBackUp();
 
-                //just to be safe, project spline Level Set on LsTBO
-                if(LevelSetOpti is SplineOptiLevelSet spliny) {
-                    LsTBO.Clear();
-                    LsTBO.ProjectFromForeignGrid(1.0, spliny);
+                //just to be safe, project spline Level Set on LsToOptimize
+                if(LevelSetOptimizer is SplineOptiLevelSet spliny) {
+                    LsToOptimize.Clear();
+                    LsToOptimize.ProjectFromForeignGrid(1.0, spliny);
                 }
                 //Compute/Assemble linear System LHS*(stepIN;lambda)=RHS
                 ComputeSystem();
@@ -666,7 +744,7 @@ namespace ApplicationWithIDT {
                 SaveStepToField(stepIN, StepOptiLevelSet);
 
                 // makes the step continues if SinglePhaseField as OptiLevelSet is used
-                //if(Control.OptiLevelSetType == OptiLevelSetType.SinglePhaseField && LevelSetOpti.GetGrid().iGeomCells.Count > 1) {
+                //if(Control.OptiLevelSetType == OptiLevelSetType.SinglePhaseField && LevelSetOptimizer.GetGrid().iGeomCells.Count > 1) {
                 //    // Does a continuity projection (hopefully) of the step
                 //    MakeLevelSetContinous(StepOptiLevelSet);
                 //    SaveStepFieldToStep(stepIN, StepOptiLevelSet);
@@ -791,39 +869,65 @@ namespace ApplicationWithIDT {
         /// <exception cref="NotImplementedException"></exception>
         public void InitializeLevelSets() {
 
-            // Initialize the level-set optimization state container
-            LevelSetOptState = new LevelSetOptimizationState();
+            EnsureLevelSetOptStates();
 
             // Initialize the aggregation layer for optimizer DOFs
             LevelSetOptAggregator = new LevelSetOptimizationAggregator();
-            LevelSetOptAggregator.AddOptimizationState(LevelSetOptState);
+            foreach(var state in LevelSetOptStates) {
+                LevelSetOptAggregator.AddOptimizationState(state);
+            }
 
             #region Create level set objects, and the level set tracker
             // Ensure that for a SpecFemField the LevelSet contains the SpecFemSpace
             if(Control.OptiLevelSetType == OptiLevelSetType.SpecFemField) {
-                if(Control.IsTwoLevelSetRun) {
+                switch(Control.LevelSetOptimizationMode) {
+                    default:
+                    case LevelSetOptMode.TwoLevelSets_OptimizeBoth:
+                    case LevelSetOptMode.TwoLevelSets_OptimizeSecond:
                     this.Control.LevelSetTwoDegree = this.Control.LevelSetTwoDegree < this.Control.OptiLevelSetDegree * 2 ? this.Control.OptiLevelSetDegree * 2 : this.Control.LevelSetTwoDegree;
-                } else {
+                    break;
+                    case LevelSetOptMode.SingleLevelSet:
                     this.Control.LevelSetDegree = this.Control.LevelSetDegree < this.Control.OptiLevelSetDegree * 2 ? this.Control.OptiLevelSetDegree * 2 : this.Control.LevelSetDegree;
+                    break;
                 }
             }
+
             // Level set one (usually the geometry)
             this.LevelSet = new LevelSet(new Basis(this.GridData, this.Control.LevelSetDegree), "levelSet");
-            int lsNumber;
-            if(Control.IsTwoLevelSetRun) {
+
+            switch(Control.LevelSetOptimizationMode) {
+                default:
+                case LevelSetOptMode.TwoLevelSets_OptimizeBoth:
+                case LevelSetOptMode.TwoLevelSets_OptimizeSecond:
                 this.LevelSetTwo = new LevelSet(new Basis(this.GridData, this.Control.LevelSetTwoDegree), "levelSetTwo");
-                this.LevelSetStep = new LevelSet(new Basis(this.GridData, this.Control.LevelSetTwoDegree), "levelSetTwo_Step");
                 base.LsTrk = new LevelSetTracker((GridData)this.GridData, Control.CutCellQuadratureType, 1, Control.SpeciesTable, this.LevelSet, this.LevelSetTwo);
-                this.LsTrkStep = new LevelSetTracker((GridData)this.GridData, Control.CutCellQuadratureType, 6, Control.SpeciesTable, this.LevelSet, this.LevelSetStep);
-                LsTBO = LevelSetTwo;
-                lsNumber = 1;
-            } else {
-                this.LevelSetStep = new LevelSet(new Basis(this.GridData, this.Control.LevelSetDegree), "levelSet_Step");
+                break;
+                case LevelSetOptMode.SingleLevelSet:
                 base.LsTrk = new LevelSetTracker((GridData)this.GridData, Control.CutCellQuadratureType, 1, new string[] { Control.LsOne_NegSpecies, Control.LsOne_PosSpecies }, this.LevelSet);
-                this.LsTrkStep = new LevelSetTracker((GridData)this.GridData, Control.CutCellQuadratureType, 6, new string[] { Control.LsOne_NegSpecies, Control.LsOne_PosSpecies }, this.LevelSetStep);
-                LsTBO = LevelSet;
-                lsNumber = 0;
+                break;
             }
+
+            switch(Control.LevelSetOptimizationMode) {
+                default:
+                case LevelSetOptMode.TwoLevelSets_OptimizeBoth:
+                GetLevelSetOptState(0).LsTBO = LevelSet;
+                GetLevelSetOptState(0).LevelSetStep = new LevelSet(new Basis(this.GridData, this.Control.LevelSetDegree), "levelSet_Step");
+                GetLevelSetOptState(1).LsTBO = LevelSetTwo;
+                GetLevelSetOptState(1).LevelSetStep = new LevelSet(new Basis(this.GridData, this.Control.LevelSetTwoDegree), "levelSetTwo_Step");
+                this.LsTrkStep = new LevelSetTracker((GridData)this.GridData, Control.CutCellQuadratureType, 6, Control.SpeciesTable, this.LevelSet, this.LevelSetStep);
+                break;
+                case LevelSetOptMode.TwoLevelSets_OptimizeSecond:
+                GetLevelSetOptState(0).LsTBO = LevelSetTwo;
+                GetLevelSetOptState(0).LevelSetStep = new LevelSet(new Basis(this.GridData, this.Control.LevelSetTwoDegree), "levelSetTwo_Step");
+                this.LsTrkStep = new LevelSetTracker((GridData)this.GridData, Control.CutCellQuadratureType, 6, Control.SpeciesTable, this.LevelSet, this.LevelSetStep);
+                break;
+                case LevelSetOptMode.SingleLevelSet:
+                GetLevelSetOptState(0).LsTBO = LevelSet;
+                GetLevelSetOptState(0).LevelSetStep = new LevelSet(new Basis(this.GridData, this.Control.LevelSetDegree), "levelSet_Step");
+                this.LsTrkStep = new LevelSetTracker((GridData)this.GridData, Control.CutCellQuadratureType, 6, new string[] { Control.LsOne_NegSpecies, Control.LsOne_PosSpecies }, this.LevelSetStep);
+                break;
+            }
+
             if(Control.LevelSetGridFunc == null) {
                 Control.LevelSetGridFunc = Control.GridFunc;
                 LevelSetOptiGrid = Grid;
@@ -832,39 +936,58 @@ namespace ApplicationWithIDT {
             }
 
             Basis LevelSetOptiBasis = new Basis(LevelSetOptiGrid, Control.OptiLevelSetDegree);
-            //Debugger.Launch();
+
+            switch(Control.LevelSetOptimizationMode) {
+                default:
+                case LevelSetOptMode.TwoLevelSets_OptimizeBoth:
+                CreateOptimizerForState(GetLevelSetOptState(0), LevelSetOptiBasis, 0);
+                CreateOptimizerForState(GetLevelSetOptState(1), LevelSetOptiBasis, 1);
+                break;
+                case LevelSetOptMode.TwoLevelSets_OptimizeSecond:
+                CreateOptimizerForState(GetLevelSetOptState(0), LevelSetOptiBasis, 1);
+                break;
+                case LevelSetOptMode.SingleLevelSet:
+                CreateOptimizerForState(GetLevelSetOptState(0), LevelSetOptiBasis, 0);
+                break;
+            }
+
+            NormalizingConstant = LevelSetOptStates[0].LevelSetOpti.GetParam(0);
+            #endregion
+        }
+
+        private void CreateOptimizerForState(LevelSetOptimizationState targetState, Basis levelSetOptiBasis, int lsNumber) {
             switch(Control.OptiLevelSetType) {
                 case OptiLevelSetType.GlobalLevelSet:
-                this.LevelSetOpti = new GlobalOptiLevelSet(this.Grid, Control.OptiLevelSet_ParamNames, Control.OptiLevelSet_ParamValues, Control.OptiLevelSet_Param_Functions, Control.OptiLevelSetDegree, isOrthormal: Control.OptiLSIsOrthonormal);
+                targetState.LevelSetOpti = new GlobalOptiLevelSet(this.Grid, Control.OptiLevelSet_ParamNames, Control.OptiLevelSet_ParamValues, Control.OptiLevelSet_Param_Functions, Control.OptiLevelSetDegree, isOrthormal: Control.OptiLSIsOrthonormal);
                 break;
                 case OptiLevelSetType.SinglePhaseField:
-                this.LevelSetOpti = new SinglePhaseFieldOptiLevelSet(LevelSetOptiBasis, "LevelSetOpti", LsTBO, LsTrk, lsNumber);
-                LevelSetOpti.AssembleTracker();
+                targetState.LevelSetOpti = new SinglePhaseFieldOptiLevelSet(levelSetOptiBasis, "LevelSetOptimizer", targetState.LsTBO, LsTrk, lsNumber);
+                targetState.LevelSetOpti.AssembleTracker();
                 break;
 
                 case OptiLevelSetType.SpecFemField:
-                SpecFemBasis LevelSetOptiSpecBasis;
+                SpecFemBasis levelSetOptiSpecBasis;
                 switch(Control.getGridFrom) {
                     case GetGridFrom.GridFunc:
-                    LevelSetOptiSpecBasis = new SpecFemBasis((GridData)LevelSetOptiGrid.iGridData, Control.OptiLevelSetDegree);
+                    levelSetOptiSpecBasis = new SpecFemBasis((GridData)LevelSetOptiGrid.iGridData, Control.OptiLevelSetDegree);
                     break;
                     case GetGridFrom.DB:
-                    LevelSetOptiSpecBasis = new SpecFemBasis((GridData)this.Grid.iGridData, Control.OptiLevelSetDegree);
+                    levelSetOptiSpecBasis = new SpecFemBasis((GridData)this.Grid.iGridData, Control.OptiLevelSetDegree);
                     break;
                     default:
                     throw new NotImplementedException("not supported");
                 }
-                if(LsTBO.Basis.Degree < LevelSetOptiSpecBasis.ContainingDGBasis.Degree) {
-                    Console.WriteLine("WARNING: The Basis of the DG LevelSet is " + LsTBO.Basis.Degree + " and therefore is lower than the SpecFem OptiLevelSet Degree " + LevelSetOptiSpecBasis.ContainingDGBasis.Degree + " --> DGLevelSet will eventually become discontinuous");
+                if(targetState.LsTBO.Basis.Degree < levelSetOptiSpecBasis.ContainingDGBasis.Degree) {
+                    Console.WriteLine("WARNING: The Basis of the DG LevelSet is " + targetState.LsTBO.Basis.Degree + " and therefore is lower than the SpecFem OptiLevelSet Degree " + levelSetOptiSpecBasis.ContainingDGBasis.Degree + " --> DGLevelSet will eventually become discontinuous");
                 }
-                this.LevelSetOpti = new SpecFemOptiLevelSet(LevelSetOptiSpecBasis, LsTBO, true, LsTrk, lsNumber);
+                targetState.LevelSetOpti = new SpecFemOptiLevelSet(levelSetOptiSpecBasis, targetState.LsTBO, true, LsTrk, lsNumber);
                 break;
                 case OptiLevelSetType.SplineLevelSet:
-                this.LevelSetOpti = new SplineOptiLevelSet(LevelSetOptiBasis, LsTBO, LsTrk, lsNumber);
+                targetState.LevelSetOpti = new SplineOptiLevelSet(levelSetOptiBasis, targetState.LsTBO, LsTrk, lsNumber);
                 break;
+                default:
+                throw new NotImplementedException();
             }
-            NormalizingConstant = LevelSetOpti.GetParam(0);
-            #endregion
         }
         /// <summary>
         /// This method needs to be implemented by deriving classes and initialize the multi grid-operator config
@@ -903,21 +1026,21 @@ namespace ApplicationWithIDT {
         #region Level-Set Optimization Aggregator Helpers
 
         /// <summary>
-        /// Get total level-set DOF count - replaces direct LevelSetOpti.GetLength() calls
+        /// Get total level-set DOF count - replaces direct LevelSetOptimizer.GetLength() calls
         /// </summary>
         public int GetTotalLevelSetDOFCount() {
             return LevelSetOptAggregator?.GetTotalDOFCount() ?? 0;
         }
 
         /// <summary>
-        /// Project all optimizer objects onto their DG level-sets - replaces LevelSetOpti.ProjectOntoLevelSet calls
+        /// Project all optimizer objects onto their DG level-sets - replaces LevelSetOptimizer.ProjectOntoLevelSet calls
         /// </summary>
         public void ProjectAllOptimizerOntoLevelSets() {
             LevelSetOptAggregator?.ProjectAllOptimizerOntoLevelSets();
         }
 
         /// <summary>
-        /// Create backup of all optimizer parameter blocks - replaces LevelSetOptiBackup = LevelSetOpti.CloneAs()
+        /// Create backup of all optimizer parameter blocks - replaces LevelSetOptimizerBackup = LevelSetOptimizer.CloneAs()
         /// </summary>
         public void CreateBackupOfAllOptimizers() {
             LevelSetOptAggregator?.CreateBackupOfAllOptimizers();
@@ -931,21 +1054,21 @@ namespace ApplicationWithIDT {
         }
 
         /// <summary>
-        /// Set parameter at global index - replaces LevelSetOpti.SetParam calls
+        /// Set parameter at global index - replaces LevelSetOptimizer.SetParam calls
         /// </summary>
         public void SetLevelSetParam(int globalIndex, double value) {
             LevelSetOptAggregator?.SetParameterAt(globalIndex, value);
         }
 
         /// <summary>
-        /// Get parameter at global index - replaces LevelSetOpti.GetParam calls
+        /// Get parameter at global index - replaces LevelSetOptimizer.GetParam calls
         /// </summary>
         public double GetLevelSetParam(int globalIndex) {
             return LevelSetOptAggregator?.GetParameterAt(globalIndex) ?? 0.0;
         }
 
         /// <summary>
-        /// Accumulate to parameter at global index - replaces LevelSetOpti.AccToParam calls
+        /// Accumulate to parameter at global index - replaces LevelSetOptimizer.AccToParam calls
         /// </summary>
         public void AccumulateToLevelSetParam(int globalIndex, double value) {
             LevelSetOptAggregator?.AccumulateToParameterAt(globalIndex, value);
@@ -1082,7 +1205,7 @@ namespace ApplicationWithIDT {
                 break;
                 case MeritFunctionType.L2Merit:
                 predictedMerit = delegate (double alpha, double[] step, double beta) {
-                    stepUphi.SetSubVector(step, 0, (int)UnknownsMap.TotalLength + LevelSetOpti.GetLength());
+                    stepUphi.SetSubVector(step, 0, (int)UnknownsMap.TotalLength + LevelSetOptimizer.GetLength());
                     double gradfTimesStep = gradf.InnerProd(stepUphi);
                     //Jr.Transpose().SpMV(mu * beta, ResidualVector, 0, merit_del);
                     //merit_del.AccV(beta, gradf);
@@ -1156,7 +1279,7 @@ namespace ApplicationWithIDT {
             Mus.Add(mu);
             ResNorms.Add(ResidualVector.MPI_L2Norm());
             obj_f_vals.Add(obj_f_vec.MPI_L2Norm());
-            LevelSetOptiParams.Add(LevelSetOpti.GetParamsAsArray());
+            LevelSetOptiParams.Add(LevelSetOptimizer.GetParamsAsArray());
             StepCount.Add(TimestepNo);
         }
         /// <summary>
@@ -1334,9 +1457,9 @@ namespace ApplicationWithIDT {
         public void CmpLineSearchResidualWeight() {
 
             //version 1
-            //stepUphi = new double[(int)UnknownsMap.TotalLength + LevelSetOpti.GetLength()];
-            //var BtimesS = new double[(int)UnknownsMap.TotalLength + LevelSetOpti.GetLength()];
-            //stepUphi.SetSubVector(stepIN, 0, (int)UnknownsMap.TotalLength + LevelSetOpti.GetLength());
+            //stepUphi = new double[(int)UnknownsMap.TotalLength + LevelSetOptimizer.GetLength()];
+            //var BtimesS = new double[(int)UnknownsMap.TotalLength + LevelSetOptimizer.GetLength()];
+            //stepUphi.SetSubVector(stepIN, 0, (int)UnknownsMap.TotalLength + LevelSetOptimizer.GetLength());
             //var B = Jobj.Transpose() * Jobj;
             //B.SpMV(0.5, stepUphi, 0.0, BtimesS);
 
@@ -1356,7 +1479,7 @@ namespace ApplicationWithIDT {
             double max = 0;
             var LamCoord = new CoordinateVector(LagMult);
             for(int i = 0; i < (int)UnknownsMap.TotalLength; i++) {
-                LamCoord[i] = stepIN[i + (int)UnknownsMap.TotalLength + LevelSetOpti.GetLength()];
+                LamCoord[i] = stepIN[i + (int)UnknownsMap.TotalLength + LevelSetOptimizer.GetLength()];
                 if(LamCoord[i].Abs() > max) {
                     max = LamCoord[i].Abs();
                 }
@@ -1484,8 +1607,8 @@ namespace ApplicationWithIDT {
                 //project OptiLevelSet onto XDGLevelSet
                 LevelSetOptAggregator.ProjectAllOptimizerOntoLevelSets();
                 LsTrk.UpdateTracker(CurrentStepNo);
-                LevelSet phi0backup = new LevelSet(new Basis(LsTBO.GridDat.Grid, LsTBO.Basis.Degree), "LevelSetbackup");
-                phi0backup.CopyFrom(LsTBO);
+                LevelSet phi0backup = new LevelSet(new Basis(LsToOptimize.GridDat.Grid, LsToOptimize.Basis.Degree), "LevelSetbackup");
+                phi0backup.CopyFrom(LsToOptimize);
 
                 //Evaluation of unperturbed
                 Oproblem.EvalConsAndObj(obj_vec, r_vec, ConservativeFields);
@@ -1494,7 +1617,7 @@ namespace ApplicationWithIDT {
                 for(int n_param = 0; n_param < nRow; n_param++) {
 
                     //skip loop if param is non changeable
-                    if(Control.PartiallyFixLevelSetForSpaceTime && LevelSetOpti is SplineOptiLevelSet splineLS) {
+                    if(Control.PartiallyFixLevelSetForSpaceTime && LevelSetOptimizer is SplineOptiLevelSet splineLS) {
                         double yMin = splineLS.y.Min(); //lower boundary of space time domain
                         if(n_param < splineLS.y.Length && Math.Abs(yMin - splineLS.y[n_param]) < 1e-14) //only accumalte if DOF if it is not on lower time boundary (here yMin=tMin)
                         {
@@ -1525,13 +1648,13 @@ namespace ApplicationWithIDT {
                         Oproblem.EvalConsAndObj(obj_vec_eps2, r_vec_eps2, ConservativeFields);
                         //reset
                         LevelSetOptAggregator.SetParameterAt(n_param, x);
-                        LsTBO.CopyFrom(phi0backup);
+                        LsToOptimize.CopyFrom(phi0backup);
                         LsTrk.UpdateTracker(CurrentStepNo);
 
                     } catch {
                         //reset
                         LevelSetOptAggregator.SetParameterAt(n_param, x);
-                        LsTBO.CopyFrom(phi0backup);
+                        LsToOptimize.CopyFrom(phi0backup);
                         LsTrk.UpdateTracker(CurrentStepNo);
                         //throw new Exception("Error in FD Computation");
                     }
@@ -1562,7 +1685,7 @@ namespace ApplicationWithIDT {
         /// <param name="step"></param>
         /// <returns></returns>
         public IOptiLevelSet GetStepOptiLevelSet(double[] step) {
-            var ret_OLS = LevelSetOpti.CloneAs();
+            var ret_OLS = LevelSetOptimizer.CloneAs();
             for(int iCord = 0; iCord < +ret_OLS.GetLength(); iCord++) {
                 ret_OLS.SetParam(iCord, step[(int)ResidualMap.TotalLength + iCord]);
             }
@@ -1578,10 +1701,15 @@ namespace ApplicationWithIDT {
             SinglePhaseField continuousLevelSet = new SinglePhaseField(new Basis(gridData, targetOptiLevelSet.GetDegree()), "LevelSet_cont");
             var tmp_LsTrk = new LevelSetTracker((GridData)gridData, Control.CutCellQuadratureType, 1, LsTrk.SpeciesTable, new LevelSet[] { targetOptiLevelSet.ToLevelSet(targetOptiLevelSet.GetDegree()) });
             CellMask nearBandMask;
-            if(Control.IsTwoLevelSetRun) {
+            switch(Control.LevelSetOptimizationMode) {
+                default:
+                case LevelSetOptMode.TwoLevelSets_OptimizeBoth:
+                case LevelSetOptMode.TwoLevelSets_OptimizeSecond:
                 nearBandMask = tmp_LsTrk.Regions.GetNearMask4LevSet(1, 1);
-            } else {
+                break;
+                case LevelSetOptMode.SingleLevelSet:
                 nearBandMask = tmp_LsTrk.Regions.GetNearMask4LevSet(0, 1);
+                break;
             }
 
             var bitMask = nearBandMask.GetBitMask();
@@ -1596,7 +1724,7 @@ namespace ApplicationWithIDT {
             ContinuityProjection = new ContinuityProjection(continuousLevelSet.Basis, new Basis(targetOptiLevelSet.GetGrid(), targetOptiLevelSet.GetDegree()), gridData, ContinuityProjectionOption.ConstrainedDG);
             ContinuityProjection.MakeContinuous(targetOptiLevelSet.ToSinglePhaseField(targetOptiLevelSet.GetDegree()), continuousLevelSet, nearMask, posMask);
             targetOptiLevelSet.ProjectFromLevelSet(continuousLevelSet);
-            //targetOptiLevelSet.ProjectOntoLevelSet(LsTBO);
+            //targetOptiLevelSet.ProjectOntoLevelSet(LsToOptimize);
         }
 
         ///// <summary>
@@ -1620,7 +1748,7 @@ namespace ApplicationWithIDT {
 
         //    int length_r = (int)UnknownsMap.TotalLength;
         //    int length_R = (int)obj_f_map.TotalLength;
-        //    int length_l = LevelSetOpti.GetLength();
+        //    int length_l = LevelSetOptimizer.GetLength();
 
         //    int noOfRowsB = length_r + length_l;
 
@@ -1634,7 +1762,7 @@ namespace ApplicationWithIDT {
         //    //// Compute Jobj_phi & Jr_phi
         //    //***************************** */
         //    //obj_f_vec.SaveToTextFile("obj_f_vec_beforeFD.txt");
-        //    //LsTBO.CoordinateVector.SaveToTextFile(@"C:\Users\sebastian\Documents\Forschung" + $"\\LSCoord_p{Control.SolDegree}_TS{CurrentStepNo}.txt");
+        //    //LsToOptimize.CoordinateVector.SaveToTextFile(@"C:\Users\sebastian\Documents\Forschung" + $"\\LSCoord_p{Control.SolDegree}_TS{CurrentStepNo}.txt");
         //    (Jr_phi, Jobj_phi) = FD_LevelSet();
 
         //    //Compute some B parts
@@ -1943,7 +2071,7 @@ namespace ApplicationWithIDT {
                     //upper left block
                     assembler.AccBlock(Jobj.Transpose() * Jobj, LHS, 0, 0);
                     //Regularization
-                    MsrMatrix reg = this.LevelSetOpti.GetRegMatrix();
+                    MsrMatrix reg = this.LevelSetOptimizer.GetRegMatrix();
                     reg.Scale(gamma);
                     assembler.AccBlock(reg, LHS, length_r, length_r);
                     //Fphi contribution
@@ -2032,7 +2160,7 @@ namespace ApplicationWithIDT {
             using(new FuncTrace()) {
 
                 int length_r = (int)UnknownsMap.TotalLength;
-                int length_l = LevelSetOpti.GetLength();
+                int length_l = LevelSetOptimizer.GetLength();
                 // compute unperturbed fphi
                 var f_phi_vec = ComputeFphi();
 
@@ -2050,29 +2178,29 @@ namespace ApplicationWithIDT {
                     Epsilons[i] = 1.0e-8;
                 }
                 // create Backup of OptiLevelSet an project OptiLevelSet onto LevelSet
-                LevelSetOpti.ProjectOntoLevelSet(LsTBO);
-                LevelSet phi0backup = new LevelSet(new Basis(LsTBO.GridDat.Grid, LsTBO.Basis.Degree), "LevelSetbackup");
-                phi0backup.CopyFrom(LsTBO);
+                LevelSetOptimizer.ProjectOntoLevelSet(LsToOptimize);
+                LevelSet phi0backup = new LevelSet(new Basis(LsToOptimize.GridDat.Grid, LsToOptimize.Basis.Degree), "LevelSetbackup");
+                phi0backup.CopyFrom(LsToOptimize);
 
 
                 for(int n_param = 0; n_param < length_l; n_param++) {
 
                     //compute distortions
-                    x = LevelSetOpti.GetParam(n_param);
+                    x = LevelSetOptimizer.GetParam(n_param);
                     dx_right = x + Epsilons[n_param] / 2;
                     dx_left = x - Epsilons[n_param] / 2;
 
 
                     // apply right distortion
-                    LevelSetOpti.SetParam(n_param, dx_right);
+                    LevelSetOptimizer.SetParam(n_param, dx_right);
                     //project
-                    LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+                    LevelSetOptimizer.ProjectOntoLevelSet(LsToOptimize);
                     //compute fphi
                     f_phi_vec_eps = ComputeFphi();
 
                     // do the same on the left
-                    LevelSetOpti.SetParam(n_param, dx_left);
-                    LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+                    LevelSetOptimizer.SetParam(n_param, dx_left);
+                    LevelSetOptimizer.ProjectOntoLevelSet(LsToOptimize);
                     f_phi_vec_eps2 = ComputeFphi();
 
                     //Compute FD and write value into the matrix
@@ -2085,8 +2213,8 @@ namespace ApplicationWithIDT {
                     }
 
                     //reset
-                    LevelSetOpti.SetParam(n_param, x);
-                    LsTBO.CopyFrom(phi0backup);
+                    LevelSetOptimizer.SetParam(n_param, x);
+                    LsToOptimize.CopyFrom(phi0backup);
                 }
                 return (f_phi_vec, Jf_phi_vec);
             }
@@ -2129,18 +2257,18 @@ namespace ApplicationWithIDT {
         }
         public double[] PerssonSensorFphi(CellMask mask) {
             double[] fphi = new double[mask.ItemEnum.Count()];
-            var deg = LsTBO.Basis.Degree;
-            if(LsTBO.Basis.Degree > 0) {
+            var deg = LsToOptimize.Basis.Degree;
+            if(LsToOptimize.Basis.Degree > 0) {
                 var ba = new BitArray(Grid.NumberOfCells); //empty array
                 int count = 0;
                 foreach(int iCell in mask.ItemEnum) { // loop over all cells we consider
                     ba[iCell] = true; //set corresponding entry
                     var tmpmsk = new CellMask(GridData, ba);
                     // Copy only the coordinates that belong to the highest modes 
-                    foreach(int coordinate in LsTBO.Basis.GetPolynomialIndicesForDegree(iCell, deg)) {
-                        fphi[count] = fphi[count] + Math.Pow(LsTBO.Coordinates[iCell, coordinate], 2);
+                    foreach(int coordinate in LsToOptimize.Basis.GetPolynomialIndicesForDegree(iCell, deg)) {
+                        fphi[count] = fphi[count] + Math.Pow(LsToOptimize.Coordinates[iCell, coordinate], 2);
                     }
-                    fphi[count] = fphi[count] / Math.Pow(LsTBO.L2Norm(tmpmsk), 2);
+                    fphi[count] = fphi[count] / Math.Pow(LsToOptimize.L2Norm(tmpmsk), 2);
                     ba[iCell] = false; // reset
                     count++;
                 }
@@ -2149,10 +2277,10 @@ namespace ApplicationWithIDT {
         }
         public double[] GradFphi(CellMask mask) {
             double[] fphi = new double[mask.ItemEnum.Count()];
-            if(LsTBO.Basis.Degree > 0) {
-                Basis basisForGrad = new Basis(Grid, LsTBO.Basis.Degree - 1);
+            if(LsToOptimize.Basis.Degree > 0) {
+                Basis basisForGrad = new Basis(Grid, LsToOptimize.Basis.Degree - 1);
                 SinglePhaseField grad;
-                LsTBO.GradientNorm(out grad, mask);
+                LsToOptimize.GradientNorm(out grad, mask);
 
                 var ba = new BitArray(Grid.NumberOfCells); //empty array
                 int count = 0;
@@ -2170,12 +2298,12 @@ namespace ApplicationWithIDT {
 
         public double[] CurvFphi(CellMask mask) {
             double[] fphi = new double[mask.ItemEnum.Count()];
-            if(LsTBO.Basis.Degree > 1) {
-                Basis basisForCurvature = new Basis(Grid, LsTBO.Basis.Degree - 2);
+            if(LsToOptimize.Basis.Degree > 1) {
+                Basis basisForCurvature = new Basis(Grid, LsToOptimize.Basis.Degree - 2);
                 SinglePhaseField totCurv = new SinglePhaseField(basisForCurvature);
 
 
-                LsTBO.ComputeTotalCurvature(totCurv, mask);
+                LsToOptimize.ComputeTotalCurvature(totCurv, mask);
                 totCurv.Scale(0.5); // we want the mean curvature, we don't care about the sign
 
                 var ba = new BitArray(Grid.NumberOfCells); //empty array
@@ -2196,26 +2324,26 @@ namespace ApplicationWithIDT {
         /// This method creates a backup of all the state variables
         /// </summary>
         public void createBackUp() {
-            levelSetBackup = LsTBO.CloneAs();
+            levelSetBackup = LsToOptimize.CloneAs();
             UBackup = new XDGField[ConservativeFields.Length];
             for(int i = 0; i < ConservativeFields.Length; i++) {
                 UBackup[i] = new XDGField(ConservativeFields[i].Basis, ConservativeFields[i].Identification + "_copy");
                 UBackup[i].CoordinateVector.SetV(ConservativeFields[i].CoordinateVector);
             }
-            LevelSetOptiBackup = LevelSetOpti.CloneAs();
+            LevelSetOptimizerBackup = LevelSetOptimizer.CloneAs();
         }
 
         /// <summary>
         /// This method creates a backup of all the agglomerated state variables and the levelset
         /// </summary>
         public void createAgglomeratedBackUp() {
-            levelSetBackup = LsTBO.CloneAs();
+            levelSetBackup = LsToOptimize.CloneAs();
             AgglomeratedUBackup = new XDGField[ConservativeFields.Length];
             for(int i = 0; i < ConservativeFields.Length; i++) {
                 AgglomeratedUBackup[i] = new XDGField(ConservativeFields[i].Basis, ConservativeFields[i].Identification + "_copy");
                 AgglomeratedUBackup[i].CoordinateVector.SetV(ConservativeFields[i].CoordinateVector);
             }
-            LevelSetOptiBackup = LevelSetOpti.CloneAs();
+            LevelSetOptimizerBackup = LevelSetOptimizer.CloneAs();
         }
         /// <summary>
         /// this method resets the actual state to the backup
@@ -2224,13 +2352,13 @@ namespace ApplicationWithIDT {
             if(levelSetBackup == null || UBackup == null) {
                 throw new NotSupportedException("cannot reset with not backup available");
             }
-            LsTBO.CopyFrom(levelSetBackup);
+            LsToOptimize.CopyFrom(levelSetBackup);
             LsTrk.UpdateTracker(CurrentStepNo);
             UpdateAgglomerator();
             for(int i = 0; i < ConservativeFields.Length; i++) {
                 ConservativeFields[i].CopyFrom(UBackup[i]);
             }
-            LevelSetOpti.CopyParamsFrom(LevelSetOptiBackup);
+            LevelSetOptimizer.CopyParamsFrom(LevelSetOptimizerBackup);
         }
         /// <summary>
         /// this method resets the actual state to the agglomerated backup and the levelset
@@ -2239,13 +2367,13 @@ namespace ApplicationWithIDT {
             if(levelSetBackup == null || AgglomeratedUBackup == null) {
                 throw new NotSupportedException("cannot reset with not backup available");
             }
-            LsTBO.CopyFrom(levelSetBackup);
+            LsToOptimize.CopyFrom(levelSetBackup);
             LsTrk.UpdateTracker(CurrentStepNo);
             UpdateAgglomerator();
             for(int i = 0; i < ConservativeFields.Length; i++) {
                 ConservativeFields[i].CopyFrom(AgglomeratedUBackup[i]);
             }
-            LevelSetOpti.CopyParamsFrom(LevelSetOptiBackup);
+            LevelSetOptimizer.CopyParamsFrom(LevelSetOptimizerBackup);
         }
         /// <summary>
         /// this method computes a custom norm (basically the L2-Norm of the  coordinates ) where one can choose which entries in the double[] x are committed. 
@@ -2434,7 +2562,7 @@ namespace ApplicationWithIDT {
                     //
                     // See:
                     // Kikker, Kummer, Oberlack:
-                    // A fully coupled high‐order discontinuous {Galerkin} solver for viscoelastic fluid flow,
+                    // A fully coupled high-order discontinuous {Galerkin} solver for viscoelastic fluid flow,
                     // IJNMF, No. 6, Vol. 93, 2021, 1736--1758,
                     // section 3.3.1
                     //
@@ -2554,7 +2682,7 @@ namespace ApplicationWithIDT {
             #region LevelSetCFL
             // we will check the LevelSetCFL not with the original LevelSetTrecker but with a nonShallow Copy
             // Reason: causing the LevelSetCFL with the original LevelSetTracker breaks everything 
-            LevelSet LevelSet_copy;
+            LevelSet[] levelSetCopies;
             LevelSetTracker LsTrk_copy;
 
             int iField = 0;
@@ -2570,14 +2698,16 @@ namespace ApplicationWithIDT {
 
                     default:
                     case LevelSetOptMode.TwoLevelSets_OptimizeBoth:
-                        throw new NotImplementedException("todo");
+                        levelSetCopies = new[] { LevelSet.CloneAs(), LevelSetTwo.CloneAs() };
+                        LsTrk_copy = new LevelSetTracker((GridData)this.GridData, Control.CutCellQuadratureType, Control.NearRegionWidth, Control.SpeciesTable, levelSetCopies[0], levelSetCopies[1]);
+                        break;
                     case LevelSetOptMode.TwoLevelSets_OptimizeSecond:
-                        LevelSet_copy = LevelSetTwo.CloneAs();
-                        LsTrk_copy = new LevelSetTracker((GridData) this.GridData, Control.CutCellQuadratureType, Control.NearRegionWidth, Control.SpeciesTable, this.LevelSet, LevelSet_copy);
+                        levelSetCopies = new[] { LevelSetTwo.CloneAs() };
+                        LsTrk_copy = new LevelSetTracker((GridData) this.GridData, Control.CutCellQuadratureType, Control.NearRegionWidth, Control.SpeciesTable, this.LevelSet, levelSetCopies[0]);
                         break;
                     case LevelSetOptMode.SingleLevelSet:
-                        LevelSet_copy = LevelSet.CloneAs();
-                        LsTrk_copy = new LevelSetTracker((GridData) this.GridData, Control.CutCellQuadratureType, Control.NearRegionWidth, new string[] { Control.LsOne_NegSpecies, Control.LsOne_PosSpecies }, LevelSet_copy);
+                        levelSetCopies = new[] { LevelSet.CloneAs() };
+                        LsTrk_copy = new LevelSetTracker((GridData) this.GridData, Control.CutCellQuadratureType, Control.NearRegionWidth, new string[] { Control.LsOne_NegSpecies, Control.LsOne_PosSpecies }, levelSetCopies[0]);
                         break;
                 }
 
@@ -2592,7 +2722,7 @@ namespace ApplicationWithIDT {
                     LevelSetOptAggregator.AccumulateToParameterAt(i, m_alpha * step_t[i + length_r]);
                 }
                 //project onto LevelSet object 
-                LevelSetOptAggregator.ProjectAllOptimizerOntoLevelSets(new[] { LevelSet_copy });
+                LevelSetOptAggregator.ProjectAllOptimizerOntoLevelSets(levelSetCopies);
 
 
 
@@ -2659,14 +2789,14 @@ namespace ApplicationWithIDT {
         public void AllthePossibleStepsPlot(double eps = 1e-8) {
             var length_r = (int)ResidualMap.TotalLength;
             //Plot the current state
-            LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+            LevelSetOptimizer.ProjectOntoLevelSet(LsToOptimize);
             Plot(0.0, 1000);
             //Plot the possible steps
             int i = 0;
 
             int nCol_obj = Oproblem.GetObjLength(ConservativeFields);
             int nCol_con = new CoordinateVector(ConservativeFields).Count;
-            int nRow = LevelSetOpti.GetLength();
+            int nRow = LevelSetOptimizer.GetLength();
 
             MsrMatrix Jobj = new MsrMatrix(nCol_obj, nRow, 1, 1);
             MsrMatrix Jr = new MsrMatrix(nCol_con, nRow, 1, 1);
@@ -2687,10 +2817,10 @@ namespace ApplicationWithIDT {
 
             // epsilon
             //project OptiLevelSet onto internal DGLevelSet
-            LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+            LevelSetOptimizer.ProjectOntoLevelSet(LsToOptimize);
             LsTrk.UpdateTracker(CurrentStepNo);
-            LevelSet phi0backup = new LevelSet(new Basis(LsTBO.GridDat.Grid, LsTBO.Basis.Degree), "LevelSetbackup");
-            phi0backup.CopyFrom(LsTBO);
+            LevelSet phi0backup = new LevelSet(new Basis(LsToOptimize.GridDat.Grid, LsToOptimize.Basis.Degree), "LevelSetbackup");
+            phi0backup.CopyFrom(LsToOptimize);
 
             //Evaluation of unperturbed
             Oproblem.EvalConsAndObj(obj_vec, r_vec, ConservativeFields);
@@ -2699,7 +2829,7 @@ namespace ApplicationWithIDT {
             for(int n_param = 0; n_param < nRow; n_param++) {
 
                 //skip loop if param is non changeable
-                if(Control.PartiallyFixLevelSetForSpaceTime && LevelSetOpti is SplineOptiLevelSet splineLS) {
+                if(Control.PartiallyFixLevelSetForSpaceTime && LevelSetOptimizer is SplineOptiLevelSet splineLS) {
                     double yMin = splineLS.y.Min(); //lower boundary of space time domain
                     if(n_param < splineLS.y.Length && Math.Abs(yMin - splineLS.y[n_param]) < 1e-14) //only accumalte if DOF if it is not on lower time boundary (here yMin=tMin)
                     {
@@ -2709,14 +2839,14 @@ namespace ApplicationWithIDT {
                 }
 
                 //compute distortions
-                x = LevelSetOpti.GetParam(n_param);
+                x = LevelSetOptimizer.GetParam(n_param);
                 dx_right = x + eps / 2;
                 dx_left = x - eps / 2;
 
                 // apply right distortion
-                LevelSetOpti.SetParam(n_param, dx_right);
+                LevelSetOptimizer.SetParam(n_param, dx_right);
                 //project
-                LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+                LevelSetOptimizer.ProjectOntoLevelSet(LsToOptimize);
 
                 //compute Objective
 
@@ -2735,8 +2865,8 @@ namespace ApplicationWithIDT {
                 Plot(0.0, 1000 + (n_param + 1));
 
                 // do the same on the left
-                LevelSetOpti.SetParam(n_param, dx_left);
-                LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+                LevelSetOptimizer.SetParam(n_param, dx_left);
+                LevelSetOptimizer.ProjectOntoLevelSet(LsToOptimize);
                 LsTrk.UpdateTracker(CurrentStepNo);
 
                 try {
@@ -2754,15 +2884,15 @@ namespace ApplicationWithIDT {
                 Plot(0.0, 1000 - (n_param + 1));
 
                 //reset
-                LevelSetOpti.SetParam(n_param, x);
-                LsTBO.CopyFrom(phi0backup);
+                LevelSetOptimizer.SetParam(n_param, x);
+                LsToOptimize.CopyFrom(phi0backup);
                 LsTrk.UpdateTracker(CurrentStepNo);
             }
         }
         public void AllthePossibleStepsPlot<Tin>(Tin step_t, double tau) where Tin : IList<double> {
             var length_r = (int)ResidualMap.TotalLength;
             //Plot the current state
-            LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+            LevelSetOptimizer.ProjectOntoLevelSet(LsToOptimize);
             Plot(0.0, 1000);
             //Plot the possible steps
             int i = 0;
@@ -2819,7 +2949,7 @@ namespace ApplicationWithIDT {
 
             /// Level Set Update
             //special treatment for space time level sets
-            if(Control.PartiallyFixLevelSetForSpaceTime && LevelSetOpti is SplineOptiLevelSet splineLS) {
+            if(Control.PartiallyFixLevelSetForSpaceTime && LevelSetOptimizer is SplineOptiLevelSet splineLS) {
                 double yMin = splineLS.y.Min(); //lower boundary of space time domain
                 for(int i = 0; i < LevelSetOptAggregator.GetTotalDOFCount(); i++) {
                     if(i < splineLS.y.Length && Math.Abs(yMin - splineLS.y[i]) > 1e-14) //only accumalte if DOF if it is not on lower time boundary (here yMin=tMin)
@@ -2924,9 +3054,9 @@ namespace ApplicationWithIDT {
                 //transform everything back to non-agglomerated
                 int length_R = (int)obj_f_map.TotalLength;
                 int length_r = (int)UnknownsMap.TotalLength; // needs to be modified if more than one field is simulated
-                int length_l = LevelSetOpti.GetLength();
+                int length_l = LevelSetOptimizer.GetLength();
 
-                stepUphi.SetSubVector(stepIN, 0, (int)UnknownsMap.TotalLength + LevelSetOpti.GetLength());
+                stepUphi.SetSubVector(stepIN, 0, (int)UnknownsMap.TotalLength + LevelSetOptimizer.GetLength());
 
                 JacR0TimesStep = new double[length_r];
                 Jr.SpMV(1.0, stepUphi, 0.0, JacR0TimesStep);
@@ -3958,17 +4088,17 @@ namespace ApplicationWithIDT {
             foreach(var timestep in si.Timesteps) {
                 List<DGField> flds = new List<DGField>();
                 var fields = timestep.Fields.ToList();
-                LsTBO.Clear();
+                LsToOptimize.Clear();
 
                 switch ( Control.LevelSetOptimizationMode ) {
                     default:
                     case LevelSetOptMode.TwoLevelSets_OptimizeBoth:
                         throw new NotImplementedException();
                     case LevelSetOptMode.TwoLevelSets_OptimizeSecond:
-                        LsTBO.CoordinateVector.SetV(timestep.Fields.Single(f => f.Identification.Equals("levelSetTwo")).CoordinateVector);
+                        LsToOptimize.CoordinateVector.SetV(timestep.Fields.Single(f => f.Identification.Equals("levelSetTwo")).CoordinateVector);
                         break;
                     case LevelSetOptMode.SingleLevelSet:
-                        LsTBO.CoordinateVector.SetV(timestep.Fields.Single(f => f.Identification.Equals("levelSet")).CoordinateVector);
+                        LsToOptimize.CoordinateVector.SetV(timestep.Fields.Single(f => f.Identification.Equals("levelSet")).CoordinateVector);
                         break;
                 }
                 LsTrk.UpdateTracker(0.0);
