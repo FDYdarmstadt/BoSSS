@@ -96,7 +96,7 @@ namespace BUIDT.Tests
         /// <param name="p"></param>
         /// <param name="filename"></param>
         public static void SaveIsoContourToTextFile(BUIDTMain p, string filename) {
-            if(p.ActiveLevelSetOptimizer is SplineOptiLevelSet spliny) {
+            if(p.PrimaryLevelSetOptimizerView is SplineOptiLevelSet spliny) {
                 spliny.GetSpline();
                 if(spliny.Spline is CubicSpline cSpliny) {
 
@@ -123,3 +123,4 @@ namespace BUIDT.Tests
     }
 
 }
+

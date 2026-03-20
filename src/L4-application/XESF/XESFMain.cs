@@ -596,7 +596,7 @@ namespace XESF
                     this.Gammas = IDTtsInfo.GammaHistory;
                     this.Alphas = IDTtsInfo.AlphaHistory.ToList();
                     this.ResNorms = IDTtsInfo.ResHistory.ToList();
-                    if (LevelSetOptimizer is SplineOptiLevelSet splineLs)
+                    if (PrimaryLevelSetOptimizer is SplineOptiLevelSet splineLs)
                     {                       
                         var LSParams = IDTtsInfo.LevelSetParams;
                         if (LSParams.Length == splineLs.m_AllParams.Length)
@@ -606,7 +606,7 @@ namespace XESF
                                 splineLs.m_AllParams[i] = LSParams[i];
                             }
                             splineLs.Interpolate();
-                            splineLs.ProjectOntoLevelSet(LsToOptimize);
+                            splineLs.ProjectOntoLevelSet(PrimaryOptimizationLevelSet);
 
                         }
                         else
@@ -621,14 +621,14 @@ namespace XESF
                         throw new NotImplementedException();
                     case LevelSetOptMode.TwoLevelSets_OptimizeSecond:
                     this.LevelSet.ProjectField(1.0, this.Control.LevelSetOneInitialValue);
-                    LsToOptimize = LevelSetTwo;
+                    PrimaryOptimizationLevelSet = LevelSetTwo;
                     break;
                     case LevelSetOptMode.SingleLevelSet:
                     // Level set one
-                    LsToOptimize = LevelSet;
+                    PrimaryOptimizationLevelSet = LevelSet;
                     break;
                 }
-                LevelSetOptimizer.ProjectOntoLevelSet(LsToOptimize);
+                PrimaryLevelSetOptimizer.ProjectOntoLevelSet(PrimaryOptimizationLevelSet);
                 LsTrk.UpdateTracker(CurrentStepNo);
 
                 time = CurrentStepNo;
@@ -724,11 +724,11 @@ namespace XESF
                     throw new NotImplementedException();
                 case LevelSetOptMode.TwoLevelSets_OptimizeSecond:
                 this.LevelSet.ProjectField(1.0, this.Control.LevelSetOneInitialValue, scheme);
-                LsToOptimize = LevelSetTwo;
+                PrimaryOptimizationLevelSet = LevelSetTwo;
                 break;
                 case LevelSetOptMode.SingleLevelSet:
                 // Level set one
-                LsToOptimize = LevelSet;
+                PrimaryOptimizationLevelSet = LevelSet;
                 break;
             }
 
@@ -736,23 +736,23 @@ namespace XESF
             {
 
                 case GetLevelSet.FromParams:
-                    LevelSetOptimizer.AssembleTransMat(LsToOptimize);
-                    LevelSetOptimizer.ProjectOntoLevelSet(LsToOptimize);
+                    PrimaryLevelSetOptimizer.AssembleTransMat(PrimaryOptimizationLevelSet);
+                    PrimaryLevelSetOptimizer.ProjectOntoLevelSet(PrimaryOptimizationLevelSet);
                     break;
 
                 case GetLevelSet.FromFunction:
-                    LevelSetOptimizer.AssembleTransMat(LsToOptimize);
-                    LevelSetOptimizer.ProjectFromFunction(Control.LevelSetTwoInitialValue);
-                    LevelSetOptimizer.ProjectOntoLevelSet(LsToOptimize);
+                    PrimaryLevelSetOptimizer.AssembleTransMat(PrimaryOptimizationLevelSet);
+                    PrimaryLevelSetOptimizer.ProjectFromFunction(Control.LevelSetTwoInitialValue);
+                    PrimaryLevelSetOptimizer.ProjectOntoLevelSet(PrimaryOptimizationLevelSet);
                     break;
 
                 case GetLevelSet.FromOldSimulation: //Assuming that we already Loaded the ShockLevelSet
                 case GetLevelSet.FromReconstruction:
-                    LevelSetOptimizer.AssembleTransMat(LsToOptimize);
-                    LsToOptimize.Clear();
-                    this.LsToOptimize.Acc(1.0, this.ShockLevelSetField);
-                    LevelSetOptimizer.ProjectFromLevelSet(LsToOptimize);
-                    LevelSetOptimizer.ProjectOntoLevelSet(LsToOptimize);
+                    PrimaryLevelSetOptimizer.AssembleTransMat(PrimaryOptimizationLevelSet);
+                    PrimaryOptimizationLevelSet.Clear();
+                    this.PrimaryOptimizationLevelSet.Acc(1.0, this.ShockLevelSetField);
+                    PrimaryLevelSetOptimizer.ProjectFromLevelSet(PrimaryOptimizationLevelSet);
+                    PrimaryLevelSetOptimizer.ProjectOntoLevelSet(PrimaryOptimizationLevelSet);
                     break;
 
                 case GetLevelSet.FromReconstructionFromPoints: //here we need to have a density field and points to work with
@@ -771,29 +771,29 @@ namespace XESF
                         // in case of a spline we can directly get the spline from the points
                         case OptiLevelSetType.SplineLevelSet:
                             //get Points
-                            if (LevelSetOptimizer is SplineOptiLevelSet splineLS)
+                            if (PrimaryLevelSetOptimizer is SplineOptiLevelSet splineLS)
                             {
                                 var points2 = IMatrixExtensions.LoadFromTextFile(Control.PointPath);
                                 var points3 = points2.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { points2.GetLength(0) - 1, 1 });
                                 splineLS.GetSplineOverDetermined(points3);
                                 splineLS.Interpolate();
-                                splineLS.ProjectOntoLevelSet(LsToOptimize);
+                                splineLS.ProjectOntoLevelSet(PrimaryOptimizationLevelSet);
                             }
                             break;
                         default:
-                            LevelSetOptimizer.AssembleTransMat(LsToOptimize);
+                            PrimaryLevelSetOptimizer.AssembleTransMat(PrimaryOptimizationLevelSet);
 
                             //load the density of last time step
                             var densityField = tsiFromDb.Fields.Where(f => f.Identification == "rho").SingleOrDefault() as SinglePhaseField;
                             var points = IMatrixExtensions.LoadFromTextFile(Control.PointPath);
                             var tmpLS = ShockFindingExtensions.ReconstructLevelSetField(densityField, points);
-                            LevelSetOptimizer.ProjectFromForeignLevelSet(tmpLS);
-                            LevelSetOptimizer.ProjectOntoLevelSet(LsToOptimize);
+                            PrimaryLevelSetOptimizer.ProjectFromForeignLevelSet(tmpLS);
+                            PrimaryLevelSetOptimizer.ProjectOntoLevelSet(PrimaryOptimizationLevelSet);
                             break;
                     }
                     break;
                 case GetLevelSet.DirectyFromTimestep:
-                    if (LevelSetOptimizer is SplineOptiLevelSet splineLs)
+                    if (PrimaryLevelSetOptimizer is SplineOptiLevelSet splineLs)
                     {
                         if (((TimestepProxy)tsiFromDb).GetInternal() is IDTTimeStepInfo IDTtsInfo)
                         {
@@ -805,7 +805,7 @@ namespace XESF
                                     splineLs.m_AllParams[i] = LSParams[i];
                                 }
                                 splineLs.Interpolate();
-                                splineLs.ProjectOntoLevelSet(LsToOptimize);
+                                splineLs.ProjectOntoLevelSet(PrimaryOptimizationLevelSet);
                                 this.gamma = IDTtsInfo.Gamma;
                             }
                             else
@@ -1426,6 +1426,7 @@ namespace XESF
         }
     }
 }
+
 
 
 

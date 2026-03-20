@@ -125,9 +125,9 @@ namespace SAIDT {
             #endregion 
 
             #region necessary initializations for Operator evaluation
-            LsToOptimize = LevelSet;
-            LevelSetOptimizer.AssembleTransMat(LsToOptimize);
-            LevelSetOptimizer.ProjectOntoLevelSet(LsToOptimize);
+            PrimaryOptimizationLevelSet = LevelSet;
+            PrimaryLevelSetOptimizer.AssembleTransMat(PrimaryOptimizationLevelSet);
+            PrimaryLevelSetOptimizer.ProjectOntoLevelSet(PrimaryOptimizationLevelSet);
             LsTrk.UpdateTracker(CurrentStepNo);
             LsTrk.PushStacks();
             //note that the operator is assembled we can compute the p0 solution
@@ -195,16 +195,16 @@ namespace SAIDT {
                 case OptiLevelSetType.SinglePhaseField:
                 case OptiLevelSetType.SpecFemField:
                 case OptiLevelSetType.SplineLevelSet:
-                LevelSetOptimizer.ProjectFromFunction(Control.LevelSetTwoInitialValue);
+                PrimaryLevelSetOptimizer.ProjectFromFunction(Control.LevelSetTwoInitialValue);
                 break;
                 case OptiLevelSetType.GlobalLevelSet:
                 break;
 
                 default: throw new ArgumentOutOfRangeException(nameof(Control.OptiLevelSetType));
             }
-            //We project the LevelSetOptimizer object onto the DG LsToOptimize
-            LevelSetOptimizer.AssembleTransMat(LsToOptimize);
-            LevelSetOptimizer.ProjectOntoLevelSet(LsToOptimize);
+            //We project the PrimaryLevelSetOptimizer object onto the DG PrimaryOptimizationLevelSet
+            PrimaryLevelSetOptimizer.AssembleTransMat(PrimaryOptimizationLevelSet);
+            PrimaryLevelSetOptimizer.ProjectOntoLevelSet(PrimaryOptimizationLevelSet);
             LsTrk.UpdateTracker(CurrentStepNo);
             LsTrk.PushStacks();
             switch (Control.GetInitialValue) {
@@ -238,4 +238,5 @@ namespace SAIDT {
         }
     }
 }
+
 

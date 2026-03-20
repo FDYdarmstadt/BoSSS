@@ -94,11 +94,29 @@ namespace ApplicationWithIDT {
         }
 
         /// <summary>
+        /// Backup DG level-set fields for all optimization states.
+        /// </summary>
+        public void CreateBackupOfAllLevelSets() {
+            foreach(var state in optimizationStates) {
+                state.CreateLevelSetBackup();
+            }
+        }
+
+        /// <summary>
         /// Restore all optimizer parameter blocks from backup
         /// </summary>
         public void RestoreAllOptimizersFromBackup() {
             foreach (var state in optimizationStates) {
                 state.RestoreFromBackup();
+            }
+        }
+
+        /// <summary>
+        /// Restore DG level-set fields for all optimization states from backup.
+        /// </summary>
+        public void RestoreAllLevelSetsFromBackup() {
+            foreach(var state in optimizationStates) {
+                state.RestoreLevelSetFromBackup();
             }
         }
 

@@ -136,7 +136,7 @@ namespace XESF.Tests {
         /// <param name="p"></param>
         /// <param name="filename"></param>
         public static void SaveIsoContourToTextFile(XESFMain p, string filename) {
-            if(p.ActiveLevelSetOptimizer is SplineOptiLevelSet spliny) {
+            if(p.PrimaryLevelSetOptimizerView is SplineOptiLevelSet spliny) {
                 spliny.GetSpline();
                 if(spliny.Spline is CubicSpline cSpliny) {
                     var yMax = ((GridData)p.Grid.iGridData).Vertices.Coordinates.ExtractSubArrayShallow(-1, 1).To1DArray().Max();
@@ -164,3 +164,4 @@ namespace XESF.Tests {
 
     }
 }
+

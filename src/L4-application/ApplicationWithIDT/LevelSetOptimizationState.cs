@@ -113,8 +113,17 @@ namespace ApplicationWithIDT {
         /// Create backup of current state
         /// </summary>
         public void CreateBackup() {
-            if (LevelSetOpti != null) {
+            if(LevelSetOpti != null) {
                 LevelSetOptiBackup = (IOptiLevelSet)LevelSetOpti.Clone();
+            }
+        }
+
+        /// <summary>
+        /// Create backup of DG level-set state.
+        /// </summary>
+        public void CreateLevelSetBackup() {
+            if(LsTBO != null) {
+                LevelSetBackup = LsTBO.CloneAs();
             }
         }
 
@@ -122,8 +131,17 @@ namespace ApplicationWithIDT {
         /// Restore from backup
         /// </summary>
         public void RestoreFromBackup() {
-            if (LevelSetOptiBackup != null) {
-                LevelSetOpti = (IOptiLevelSet)LevelSetOptiBackup.Clone();
+            if(LevelSetOpti != null && LevelSetOptiBackup != null) {
+                LevelSetOpti.CopyParamsFrom(LevelSetOptiBackup);
+            }
+        }
+
+        /// <summary>
+        /// Restore DG level-set from backup.
+        /// </summary>
+        public void RestoreLevelSetFromBackup() {
+            if(LsTBO != null && LevelSetBackup != null) {
+                LsTBO.CopyFrom(LevelSetBackup);
             }
         }
     }
