@@ -38,6 +38,7 @@ namespace ApplicationWithIDT {
         /// </summary>
         public LevelSet LevelSetStep { get; set; }
 
+        /*
         /// <summary>
         /// Grid used for level-set optimization
         /// </summary>
@@ -47,6 +48,7 @@ namespace ApplicationWithIDT {
         //    }
         //}
         public IGrid LevelSetOptiGrid { get; set; }
+        */
 
         /// <summary>
         /// History of level-set optimization parameters

@@ -221,8 +221,12 @@ namespace BUIDT {
                 break;
             }
             //We project the PrimaryLevelSetOptimizer object onto the DG PrimaryOptimizationLevelSet
-            PrimaryLevelSetOptimizer.AssembleTransMat(PrimaryOptimizationLevelSet);
-            PrimaryLevelSetOptimizer.ProjectOntoLevelSet(PrimaryOptimizationLevelSet);
+            foreach ( LevelSetOptimizationState s in base.LevelSetOptStates ) {
+                IOptiLevelSet LevelSetOpti = s.LevelSetOpti;
+                var LsTBO = s.LsTBO;
+                LevelSetOpti.AssembleTransMat(LsTBO);
+                LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+            }
             LsTrk.UpdateTracker(CurrentStepNo);
             LsTrk.PushStacks();
 

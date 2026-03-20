@@ -596,22 +596,21 @@ namespace XESF
                     this.Gammas = IDTtsInfo.GammaHistory;
                     this.Alphas = IDTtsInfo.AlphaHistory.ToList();
                     this.ResNorms = IDTtsInfo.ResHistory.ToList();
-                    if (PrimaryLevelSetOptimizer is SplineOptiLevelSet splineLs)
-                    {                       
-                        var LSParams = IDTtsInfo.LevelSetParams;
-                        if (LSParams.Length == splineLs.m_AllParams.Length)
-                        {
-                            for (int i = 0; i < LSParams.Length; i++)
-                            {
-                                splineLs.m_AllParams[i] = LSParams[i];
-                            }
-                            splineLs.Interpolate();
-                            splineLs.ProjectOntoLevelSet(PrimaryOptimizationLevelSet);
+                    foreach(LevelSetOptimizationState s in base.LevelSetOptStates) {
+                        IOptiLevelSet LevelSetOpti = s.LevelSetOpti;
+                        var LsTBO = s.LsTBO;
+                        if ( LevelSetOpti is SplineOptiLevelSet splineLs ) {
+                            var LSParams = IDTtsInfo.LevelSetParams;
+                            if ( LSParams.Length == splineLs.m_AllParams.Length ) {
+                                for ( int i = 0; i < LSParams.Length; i++ ) {
+                                    splineLs.m_AllParams[i] = LSParams[i];
+                                }
+                                splineLs.Interpolate();
+                                splineLs.ProjectOntoLevelSet(LsTBO);
 
-                        }
-                        else
-                        {
-                            throw new NotSupportedException($"{GetLevelSet.DirectyFromTimestep} not supported if Grid has not equal y - Cells");
+                            } else {
+                                throw new NotSupportedException($"{GetLevelSet.DirectyFromTimestep} not supported if Grid has not equal y - Cells");
+                            }
                         }
                     }
                 }
@@ -621,14 +620,16 @@ namespace XESF
                         throw new NotImplementedException();
                     case LevelSetOptMode.TwoLevelSets_OptimizeSecond:
                     this.LevelSet.ProjectField(1.0, this.Control.LevelSetOneInitialValue);
-                    PrimaryOptimizationLevelSet = LevelSetTwo;
                     break;
                     case LevelSetOptMode.SingleLevelSet:
                     // Level set one
-                    PrimaryOptimizationLevelSet = LevelSet;
                     break;
                 }
-                PrimaryLevelSetOptimizer.ProjectOntoLevelSet(PrimaryOptimizationLevelSet);
+                foreach ( LevelSetOptimizationState s in base.LevelSetOptStates ) {
+                    IOptiLevelSet LevelSetOpti = s.LevelSetOpti;
+                    var LsTBO = s.LsTBO;
+                    LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+                }
                 LsTrk.UpdateTracker(CurrentStepNo);
 
                 time = CurrentStepNo;
@@ -724,11 +725,8 @@ namespace XESF
                     throw new NotImplementedException();
                 case LevelSetOptMode.TwoLevelSets_OptimizeSecond:
                 this.LevelSet.ProjectField(1.0, this.Control.LevelSetOneInitialValue, scheme);
-                PrimaryOptimizationLevelSet = LevelSetTwo;
                 break;
                 case LevelSetOptMode.SingleLevelSet:
-                // Level set one
-                PrimaryOptimizationLevelSet = LevelSet;
                 break;
             }
 
@@ -736,23 +734,37 @@ namespace XESF
             {
 
                 case GetLevelSet.FromParams:
-                    PrimaryLevelSetOptimizer.AssembleTransMat(PrimaryOptimizationLevelSet);
-                    PrimaryLevelSetOptimizer.ProjectOntoLevelSet(PrimaryOptimizationLevelSet);
+                    foreach ( LevelSetOptimizationState s in base.LevelSetOptStates ) {
+                        IOptiLevelSet LevelSetOpti = s.LevelSetOpti;
+                        var LsTBO = s.LsTBO;
+
+                        LevelSetOpti.AssembleTransMat(LsTBO);
+                        LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+                    }
                     break;
 
                 case GetLevelSet.FromFunction:
-                    PrimaryLevelSetOptimizer.AssembleTransMat(PrimaryOptimizationLevelSet);
-                    PrimaryLevelSetOptimizer.ProjectFromFunction(Control.LevelSetTwoInitialValue);
-                    PrimaryLevelSetOptimizer.ProjectOntoLevelSet(PrimaryOptimizationLevelSet);
+                    foreach ( LevelSetOptimizationState s in base.LevelSetOptStates ) {
+                        IOptiLevelSet LevelSetOpti = s.LevelSetOpti;
+                        var LsTBO = s.LsTBO;
+                        LevelSetOpti.AssembleTransMat(LsTBO);
+                        LevelSetOpti.ProjectFromFunction(Control.LevelSetTwoInitialValue);
+                        LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+                    }
                     break;
 
                 case GetLevelSet.FromOldSimulation: //Assuming that we already Loaded the ShockLevelSet
                 case GetLevelSet.FromReconstruction:
-                    PrimaryLevelSetOptimizer.AssembleTransMat(PrimaryOptimizationLevelSet);
-                    PrimaryOptimizationLevelSet.Clear();
-                    this.PrimaryOptimizationLevelSet.Acc(1.0, this.ShockLevelSetField);
-                    PrimaryLevelSetOptimizer.ProjectFromLevelSet(PrimaryOptimizationLevelSet);
-                    PrimaryLevelSetOptimizer.ProjectOntoLevelSet(PrimaryOptimizationLevelSet);
+                    foreach ( LevelSetOptimizationState s in base.LevelSetOptStates ) {
+                        IOptiLevelSet LevelSetOpti = s.LevelSetOpti;
+                        var LsTBO = s.LsTBO;
+
+                        LevelSetOpti.AssembleTransMat(LsTBO);
+                        LsTBO.Clear();
+                        LsTBO.Acc(1.0, this.ShockLevelSetField);
+                        LevelSetOpti.ProjectFromLevelSet(LsTBO);
+                        LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+                    }
                     break;
 
                 case GetLevelSet.FromReconstructionFromPoints: //here we need to have a density field and points to work with
@@ -770,59 +782,64 @@ namespace XESF
                     {
                         // in case of a spline we can directly get the spline from the points
                         case OptiLevelSetType.SplineLevelSet:
-                            //get Points
-                            if (PrimaryLevelSetOptimizer is SplineOptiLevelSet splineLS)
-                            {
-                                var points2 = IMatrixExtensions.LoadFromTextFile(Control.PointPath);
-                                var points3 = points2.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { points2.GetLength(0) - 1, 1 });
-                                splineLS.GetSplineOverDetermined(points3);
-                                splineLS.Interpolate();
-                                splineLS.ProjectOntoLevelSet(PrimaryOptimizationLevelSet);
+                            foreach ( LevelSetOptimizationState s in base.LevelSetOptStates ) {
+                                IOptiLevelSet LevelSetOpti = s.LevelSetOpti;
+                                var LsTBO = s.LsTBO;
+                                LevelSetOpti.AssembleTransMat(LsTBO);//get Points
+                                if ( LevelSetOpti is SplineOptiLevelSet splineLS ) {
+                                    var points2 = IMatrixExtensions.LoadFromTextFile(Control.PointPath);
+                                    var points3 = points2.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { points2.GetLength(0) - 1, 1 });
+                                    splineLS.GetSplineOverDetermined(points3);
+                                    splineLS.Interpolate();
+                                    splineLS.ProjectOntoLevelSet(LsTBO);
+                                }
                             }
                             break;
                         default:
-                            PrimaryLevelSetOptimizer.AssembleTransMat(PrimaryOptimizationLevelSet);
+                            foreach ( LevelSetOptimizationState s in base.LevelSetOptStates ) {
+                                IOptiLevelSet LevelSetOpti = s.LevelSetOpti;
+                                var LsTBO = s.LsTBO;
+                                LevelSetOpti.AssembleTransMat(LsTBO);
 
-                            //load the density of last time step
-                            var densityField = tsiFromDb.Fields.Where(f => f.Identification == "rho").SingleOrDefault() as SinglePhaseField;
-                            var points = IMatrixExtensions.LoadFromTextFile(Control.PointPath);
-                            var tmpLS = ShockFindingExtensions.ReconstructLevelSetField(densityField, points);
-                            PrimaryLevelSetOptimizer.ProjectFromForeignLevelSet(tmpLS);
-                            PrimaryLevelSetOptimizer.ProjectOntoLevelSet(PrimaryOptimizationLevelSet);
+                                //load the density of last time step
+                                var densityField = tsiFromDb.Fields.Where(f => f.Identification == "rho").SingleOrDefault() as SinglePhaseField;
+                                var points = IMatrixExtensions.LoadFromTextFile(Control.PointPath);
+                                var tmpLS = ShockFindingExtensions.ReconstructLevelSetField(densityField, points);
+                                LevelSetOpti.ProjectFromForeignLevelSet(tmpLS);
+                                LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+                            }
                             break;
                     }
                     break;
                 case GetLevelSet.DirectyFromTimestep:
-                    if (PrimaryLevelSetOptimizer is SplineOptiLevelSet splineLs)
-                    {
-                        if (((TimestepProxy)tsiFromDb).GetInternal() is IDTTimeStepInfo IDTtsInfo)
-                        {
-                            var LSParams = IDTtsInfo.LevelSetParams;
-                            if (LSParams.Length == splineLs.m_AllParams.Length)
-                            {
-                                for (int i = 0; i < LSParams.Length; i++)
-                                {
-                                    splineLs.m_AllParams[i] = LSParams[i];
+                    foreach ( LevelSetOptimizationState s in base.LevelSetOptStates ) {
+                        IOptiLevelSet LevelSetOpti = s.LevelSetOpti;
+                        var LsTBO = s.LsTBO;
+
+                        if ( LevelSetOpti is SplineOptiLevelSet splineLs ) {
+                            if ( ((TimestepProxy) tsiFromDb).GetInternal() is IDTTimeStepInfo IDTtsInfo ) {
+                                var LSParams = IDTtsInfo.LevelSetParams;
+                                if ( LSParams.Length == splineLs.m_AllParams.Length ) {
+                                    for ( int i = 0; i < LSParams.Length; i++ ) {
+                                        splineLs.m_AllParams[i] = LSParams[i];
+                                    }
+                                    splineLs.Interpolate();
+                                    splineLs.ProjectOntoLevelSet(LsTBO);
+                                    this.gamma = IDTtsInfo.Gamma;
+                                } else {
+                                    throw new NotSupportedException($"{GetLevelSet.DirectyFromTimestep} not supported if Grid has not equal y - Cells");
                                 }
-                                splineLs.Interpolate();
-                                splineLs.ProjectOntoLevelSet(PrimaryOptimizationLevelSet);
-                                this.gamma = IDTtsInfo.Gamma;
-                            }
-                            else
-                            {
-                                throw new NotSupportedException($"{GetLevelSet.DirectyFromTimestep} not supported if Grid has not equal y - Cells");
+
                             }
 
+                            //splineLs.x = points3.To1DArray();
+
+                        } else {
+                            throw new NotSupportedException($"{Control.GetLevelSet} only supported for SplineOptiLevelSet");
                         }
-
-                        //splineLs.x = points3.To1DArray();
-
-                    }
-                    else
-                    {
-                        throw new NotSupportedException($"{Control.GetLevelSet} only supported for SplineOptiLevelSet");
                     }
                     break;
+
             }
 
             LsTrk.UpdateTracker(CurrentStepNo);

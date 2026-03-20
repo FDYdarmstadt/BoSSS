@@ -1,15 +1,16 @@
+using ApplicationWithIDT;
+using ApplicationWithIDT.OptiLevelSets;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
+using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.Utils;
 using ilPSP.LinSolvers;
 using ilPSP.Utils;
-using System;
-using BoSSS.Solution.Utils;
 using SAIDT.Fluxes;
-using ApplicationWithIDT;
-using BoSSS.Solution.AdvancedSolvers;
+using System;
 
 namespace SAIDT {
     /// <summary>
@@ -125,9 +126,12 @@ namespace SAIDT {
             #endregion 
 
             #region necessary initializations for Operator evaluation
-            PrimaryOptimizationLevelSet = LevelSet;
-            PrimaryLevelSetOptimizer.AssembleTransMat(PrimaryOptimizationLevelSet);
-            PrimaryLevelSetOptimizer.ProjectOntoLevelSet(PrimaryOptimizationLevelSet);
+            foreach ( LevelSetOptimizationState s in base.LevelSetOptStates ) {
+                IOptiLevelSet LevelSetOpti = s.LevelSetOpti;
+                var LsTBO = s.LsTBO;
+                LevelSetOpti.AssembleTransMat(LsTBO);
+                LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+            }
             LsTrk.UpdateTracker(CurrentStepNo);
             LsTrk.PushStacks();
             //note that the operator is assembled we can compute the p0 solution
@@ -203,8 +207,12 @@ namespace SAIDT {
                 default: throw new ArgumentOutOfRangeException(nameof(Control.OptiLevelSetType));
             }
             //We project the PrimaryLevelSetOptimizer object onto the DG PrimaryOptimizationLevelSet
-            PrimaryLevelSetOptimizer.AssembleTransMat(PrimaryOptimizationLevelSet);
-            PrimaryLevelSetOptimizer.ProjectOntoLevelSet(PrimaryOptimizationLevelSet);
+            foreach ( LevelSetOptimizationState s in base.LevelSetOptStates ) {
+                IOptiLevelSet LevelSetOpti = s.LevelSetOpti;
+                var LsTBO = s.LsTBO;
+                LevelSetOpti.AssembleTransMat(LsTBO);
+                LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+            }
             LsTrk.UpdateTracker(CurrentStepNo);
             LsTrk.PushStacks();
             switch (Control.GetInitialValue) {

@@ -24,7 +24,7 @@ namespace ApplicationWithIDT {
         /// <summary>
         /// Add an optimization state to be managed by this aggregator
         /// </summary>
-        public void AddOptimizationState(LevelSetOptimizationState state) {
+        internal void AddOptimizationState(LevelSetOptimizationState state) {
             if (state != null) {
                 optimizationStates.Add(state);
             }
@@ -34,7 +34,9 @@ namespace ApplicationWithIDT {
         /// Remove all optimization states
         /// </summary>
         public void ClearOptimizationStates() {
-            optimizationStates.Clear();
+            foreach ( var state in optimizationStates ) {
+                state.LsTBO.Clear();
+            }
         }
 
         /// <summary>
