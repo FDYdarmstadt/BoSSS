@@ -2445,8 +2445,8 @@ namespace ApplicationWithIDT {
                 throw new NotSupportedException("cannot reset with not backup available");
             }
 
-            LevelSetOptAggregator.CreateBackupOfAllOptimizers();
             LevelSetOptAggregator.RestoreAllLevelSetsFromBackup();
+            LevelSetOptAggregator.RestoreAllOptimizersFromBackup();
 
             LsTrk.UpdateTracker(CurrentStepNo);
             UpdateAgglomerator();
