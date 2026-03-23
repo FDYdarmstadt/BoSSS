@@ -2186,7 +2186,7 @@ namespace ApplicationWithIDT {
             using(new FuncTrace()) {
 
                 int length_r = (int)UnknownsMap.TotalLength;
-                int length_l = PrimaryLevelSetOptimizer.GetLength();
+                int length_l = this.LevelSetOptAggregator.GetTotalDOFCount();
                 // compute unperturbed fphi
                 var f_phi_vec = ComputeFphi();
 
@@ -2216,13 +2216,13 @@ namespace ApplicationWithIDT {
                 for(int n_param = 0; n_param < length_l; n_param++) {
 
                     //compute distortions
-                    x = PrimaryLevelSetOptimizer.GetParam(n_param);
+                    x = LevelSetOptAggregator.GetParameterAt(n_param);
                     dx_right = x + Epsilons[n_param] / 2;
                     dx_left = x - Epsilons[n_param] / 2;
 
 
                     // apply right distortion
-                    PrimaryLevelSetOptimizer.SetParam(n_param, dx_right);
+                    LevelSetOptAggregator.SetParameterAt(n_param, dx_right);
                     //project
                     //PrimaryLevelSetOptimizer.ProjectOntoLevelSet(PrimaryOptimizationLevelSet);
                     LevelSetOptAggregator.ProjectAllOptimizerOntoLevelSets();
@@ -2230,7 +2230,7 @@ namespace ApplicationWithIDT {
                     f_phi_vec_eps = ComputeFphi();
 
                     // do the same on the left
-                    PrimaryLevelSetOptimizer.SetParam(n_param, dx_left);
+                    LevelSetOptAggregator.SetParameterAt(n_param, dx_left);
                     //PrimaryLevelSetOptimizer.ProjectOntoLevelSet(PrimaryOptimizationLevelSet);
                     LevelSetOptAggregator.ProjectAllOptimizerOntoLevelSets();
                     f_phi_vec_eps2 = ComputeFphi();
@@ -2245,7 +2245,7 @@ namespace ApplicationWithIDT {
                     }
 
                     //reset
-                    PrimaryLevelSetOptimizer.SetParam(n_param, x);
+                    LevelSetOptAggregator.SetParameterAt(n_param, x);
                     //PrimaryOptimizationLevelSet.CopyFrom(phi0backup);
                     LevelSetOptAggregator.RestoreAllOptimizersFromBackup();
                     LevelSetOptAggregator.RestoreAllLevelSetsFromBackup();
@@ -3031,9 +3031,9 @@ namespace ApplicationWithIDT {
             //TransformFromAggToSourceSpace();
 
 
-            /// Level Set Update
-            //special treatment for space time level sets
+            // Level Set Update
             if(Control.PartiallyFixLevelSetForSpaceTime && PrimaryLevelSetOptimizer is SplineOptiLevelSet splineLS) {
+                //special treatment for space time level sets
                 double yMin = splineLS.y.Min(); //lower boundary of space time domain
                 for(int i = 0; i < LevelSetOptAggregator.GetTotalDOFCount(); i++) {
                     if(i < splineLS.y.Length && Math.Abs(yMin - splineLS.y[i]) > 1e-14) //only accumalte if DOF if it is not on lower time boundary (here yMin=tMin)
