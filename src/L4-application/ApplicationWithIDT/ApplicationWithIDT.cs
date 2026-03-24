@@ -1,35 +1,36 @@
+using ApplicationWithIDT.OptiLevelSets;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
+using BoSSS.Foundation.Quadrature;
+using BoSSS.Foundation.SpecFEM;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution;
+using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.Control;
+using BoSSS.Solution.Gnuplot;
+using BoSSS.Solution.GridImport;
+using BoSSS.Solution.LevelSetTools;
+using BoSSS.Solution.Statistic;
 using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.XdgTimestepping;
 using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.Tracing;
 using ilPSP.Utils;
+using MathNet.Numerics;
+using Newtonsoft.Json.Linq;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using BoSSS.Solution.AdvancedSolvers;
-using BoSSS.Foundation.Grid.Aggregation;
-using BoSSS.Solution.LevelSetTools;
-using System.Collections;
-using BoSSS.Foundation.SpecFEM;
-using BoSSS.Foundation.Quadrature;
-using ApplicationWithIDT.OptiLevelSets;
-using BoSSS.Solution.GridImport;
-using BoSSS.Solution.Statistic;
-using BoSSS.Solution.Gnuplot;
-using System.Diagnostics;
-using BoSSS.Solution.Control;
-using MathNet.Numerics;
 
 namespace ApplicationWithIDT {
     /// <summary>
@@ -734,7 +735,7 @@ namespace ApplicationWithIDT {
                 createBackUp();
 
                 //just to be safe, project spline Level Set on PrimaryOptimizationLevelSet
-                foreach(LevelSetOptimizationState s in this.LevelSetOptStates) {
+                foreach ( LevelSetOptimizationState s in this.LevelSetOptStates ) {
                     if ( s.LevelSetOpti is SplineOptiLevelSet spliny ) {
                         s.LsTBO.Clear();
                         s.LsTBO.ProjectFromForeignGrid(1.0, spliny);
@@ -755,7 +756,7 @@ namespace ApplicationWithIDT {
                 SolveSystem();
                 //save step to XDGField
                 var StepOptiLevelSet = GetStepOptiLevelSet(stepIN);
-                SaveStepToField(stepIN, StepOptiLevelSet);
+                SaveStepToField(this.stepIN, StepOptiLevelSet);
 
                 // makes the step continues if SinglePhaseField as OptiLevelSet is used
                 //if(Control.OptiLevelSetType == OptiLevelSetType.SinglePhaseField && PrimaryLevelSetOptimizer.GetGrid().iGeomCells.Count > 1) {
@@ -788,7 +789,7 @@ namespace ApplicationWithIDT {
                 CurrentStepNo++;
                 LsTrk.PushStacks();
                 //this is called only due to plotting reasons
-                if(ConservativeFields[0].Basis.Degree > 0) {
+                if ( ConservativeFields[0].Basis.Degree > 0 ) {
                     GetPerssonSensor(true);
                 }
                 //Check for termination or Increase of P degree
@@ -1224,7 +1225,7 @@ namespace ApplicationWithIDT {
                 break;
                 case MeritFunctionType.L2Merit:
                 predictedMerit = delegate (double alpha, double[] step, double beta) {
-                    stepUphi.SetSubVector(step, 0, (int)UnknownsMap.TotalLength + PrimaryLevelSetOptimizer.GetLength());
+                    stepUphi.SetSubVector(step, 0, (int)UnknownsMap.TotalLength + LevelSetOptAggregator.GetTotalDOFCount());
                     double gradfTimesStep = gradf.InnerProd(stepUphi);
                     //Jr.Transpose().SpMV(mu * beta, ResidualVector, 0, merit_del);
                     //merit_del.AccV(beta, gradf);
@@ -1272,12 +1273,20 @@ namespace ApplicationWithIDT {
         /// </summary>
         /// <param name="step">the step</param>
         /// <param name="stepOptiLevelSet">the OptiLevelSet </param>
-        public void SaveStepFieldToStep(double[] step, IOptiLevelSet stepOptiLevelSet) {
-            for(int iCord = 0; iCord < +stepOptiLevelSet.GetLength(); iCord++) {
-                if(Math.Abs(step[(int)ResidualMap.TotalLength + iCord]) > 1e-14)
-                    step[(int)ResidualMap.TotalLength + iCord] = stepOptiLevelSet.GetParam(iCord);
+        public void SaveStepFieldToStep(double[] step, IOptiLevelSet[] stepOptiLevelSet) {
+            long offset = ResidualMap.TotalLength;
+
+            for ( int iLS = 0; iLS < stepOptiLevelSet.Length; iLS++ ) {
+                int Lls = stepOptiLevelSet[iLS].GetLength();
+
+                for ( int iCord = 0; iCord < Lls; iCord++ ) {
+                    if ( Math.Abs(step[offset + iCord]) > 1e-14 )
+                        step[offset + iCord] = stepOptiLevelSet[iLS].GetParam(iCord);
+                }
+                offset += Lls;
             }
         }
+
         /// <summary>
         /// Helper method to Write stuff to lists and Console
         /// </summary>
@@ -1339,22 +1348,26 @@ namespace ApplicationWithIDT {
             return l2norms;
         }
 
-        private void SaveStepToField(double[] step_t, IOptiLevelSet OptiLevelSetStep) {
+        private void SaveStepToField(double[] step_t, IOptiLevelSet[] OptiLevelSetStep) {
             int iField = 0;
             int jCell = 0;
             int nMode = 0;
             int length_r = (int)UnknownsMap.TotalLength; // needs to be modified if more than one field is simulated
 
-            for(int stepIndex = 0; stepIndex < length_r; stepIndex++) {
+            for ( int stepIndex = 0; stepIndex < length_r; stepIndex++ ) {
                 UnknownsMap.LocalFieldCoordinateIndex(stepIndex, out iField, out jCell, out nMode);
                 originalStep[iField].CoordinateVector[jCell * originalStep[iField].Basis.DOFperSpeciesPerCell * LsTrk.TotalNoOfSpecies + nMode] = step_t[stepIndex];
             }
-            if(CurrentAgglo > 0) {
-                if(MultiphaseAgglomerator.TotalNumberOfAgglomerations > 0) {
+            if ( CurrentAgglo > 0 ) {
+                if ( MultiphaseAgglomerator.TotalNumberOfAgglomerations > 0 ) {
                     MultiphaseAgglomerator.Extrapolate(new CoordinateMapping(originalStep));
                 }
             }
-            OptiLevelSetStep.ProjectOntoLevelSet(PrimaryOptimizationState.LevelSetStep);
+
+            if ( OptiLevelSetStep.Length != this.LevelSetOptStates.Length ) 
+                throw new ArgumentException();
+            for ( int iLS = 0; iLS < OptiLevelSetStep.Length; iLS++ )
+                OptiLevelSetStep[iLS].ProjectOntoLevelSet(this.LevelSetOptStates[iLS].LevelSetStep);
         }
 
         public void Normalize() {
@@ -1497,8 +1510,9 @@ namespace ApplicationWithIDT {
             //Version 3
             double max = 0;
             var LamCoord = new CoordinateVector(LagMult);
+            int lengthPhi = LevelSetOptAggregator.GetTotalDOFCount();
             for(int i = 0; i < (int)UnknownsMap.TotalLength; i++) {
-                LamCoord[i] = stepIN[i + (int)UnknownsMap.TotalLength + PrimaryLevelSetOptimizer.GetLength()];
+                LamCoord[i] = stepIN[i + (int)UnknownsMap.TotalLength + lengthPhi];
                 if(LamCoord[i].Abs() > max) {
                     max = LamCoord[i].Abs();
                 }
@@ -1710,10 +1724,17 @@ namespace ApplicationWithIDT {
         /// </summary>
         /// <param name="step"></param>
         /// <returns></returns>
-        public IOptiLevelSet GetStepOptiLevelSet(double[] step) {
-            var ret_OLS = PrimaryLevelSetOptimizer.CloneAs();
-            for(int iCord = 0; iCord < +ret_OLS.GetLength(); iCord++) {
-                ret_OLS.SetParam(iCord, step[(int)ResidualMap.TotalLength + iCord]);
+        public IOptiLevelSet[] GetStepOptiLevelSet(double[] step) {
+            var ret_OLS = this.LevelSetOptStates.Select(s => s.LevelSetOpti.CloneAs()).ToArray();
+            long offset = ResidualMap.TotalLength;
+
+            for ( int iLS = 0; iLS < ret_OLS.Length; iLS++ ) {
+                int lls = ret_OLS[iLS].GetLength();
+                
+                for ( int iCord = 0; iCord < lls; iCord++ ) {
+                    ret_OLS[iLS].SetParam(iCord, step[offset + iCord]);
+                }
+                offset += lls;
             }
             return ret_OLS;
         }
@@ -1727,15 +1748,17 @@ namespace ApplicationWithIDT {
             SinglePhaseField continuousLevelSet = new SinglePhaseField(new Basis(gridData, targetOptiLevelSet.GetDegree()), "LevelSet_cont");
             var tmp_LsTrk = new LevelSetTracker((GridData)gridData, Control.CutCellQuadratureType, 1, LsTrk.SpeciesTable, new LevelSet[] { targetOptiLevelSet.ToLevelSet(targetOptiLevelSet.GetDegree()) });
             CellMask nearBandMask;
-            switch(Control.LevelSetOptimizationMode) {
+            switch ( Control.LevelSetOptimizationMode ) {
                 default:
                 case LevelSetOptMode.TwoLevelSets_OptimizeBoth:
+                    nearBandMask = tmp_LsTrk.Regions.GetNearFieldMask(1);
+                    break;
                 case LevelSetOptMode.TwoLevelSets_OptimizeSecond:
-                nearBandMask = tmp_LsTrk.Regions.GetNearMask4LevSet(1, 1);
-                break;
+                    nearBandMask = tmp_LsTrk.Regions.GetNearMask4LevSet(1, 1);
+                    break;
                 case LevelSetOptMode.SingleLevelSet:
-                nearBandMask = tmp_LsTrk.Regions.GetNearMask4LevSet(0, 1);
-                break;
+                    nearBandMask = tmp_LsTrk.Regions.GetNearMask4LevSet(0, 1);
+                    break;
             }
 
             var bitMask = nearBandMask.GetBitMask();
@@ -2794,7 +2817,8 @@ namespace ApplicationWithIDT {
                 // add the step to the state DOFs - scaled by m_alpha
                 for(int stepIndex = 0; stepIndex < length_r; stepIndex++) {
                     UnknownsMap.LocalFieldCoordinateIndex(stepIndex, out iField, out jCell, out nMode);
-                    ConservativeFields[iField].CoordinateVector[jCell * ConservativeFields[iField].Basis.DOFperSpeciesPerCell * LsTrk.TotalNoOfSpecies + nMode] += m_alpha * step_t[stepIndex];
+                    //ConservativeFields[iField].CoordinateVector[jCell * ConservativeFields[iField].Basis.DOFperSpeciesPerCell * LsTrk.TotalNoOfSpecies + nMode] += m_alpha * step_t[stepIndex];
+                    ConservativeFields[iField].Coordinates[jCell, nMode] += m_alpha * step_t[stepIndex];
                 }
 
                 // add the step to the LevelSet DOFs - scaled by m_alpha
@@ -3025,27 +3049,39 @@ namespace ApplicationWithIDT {
 
             for(int stepIndex = 0; stepIndex < length_r; stepIndex++) {
                 UnknownsMap.LocalFieldCoordinateIndex(stepIndex, out iField, out jCell, out nMode);
-                ConservativeFields[iField].CoordinateVector[jCell * ConservativeFields[iField].Basis.DOFperSpeciesPerCell * LsTrk.TotalNoOfSpecies + nMode] += m_alpha * step_t[stepIndex];
+                ConservativeFields[iField].Coordinates[jCell, nMode] += m_alpha * step_t[stepIndex];
             }
 
             //TransformFromAggToSourceSpace();
 
 
             // Level Set Update
-            if(Control.PartiallyFixLevelSetForSpaceTime && PrimaryLevelSetOptimizer is SplineOptiLevelSet splineLS) {
-                //special treatment for space time level sets
-                double yMin = splineLS.y.Min(); //lower boundary of space time domain
-                for(int i = 0; i < LevelSetOptAggregator.GetTotalDOFCount(); i++) {
-                    if(i < splineLS.y.Length && Math.Abs(yMin - splineLS.y[i]) > 1e-14) //only accumalte if DOF if it is not on lower time boundary (here yMin=tMin)
-                    {
-                        LevelSetOptAggregator.AccumulateToParameterAt(i, m_alpha * step_t[i + length_r]);
+            for ( int iLS = 0; iLS < this.LevelSetOptStates.Length; iLS++ ) {
+                var state = this.LevelSetOptStates[iLS];
+                int Lstate = state.GetOptimizationDOFCount();
+                if ( Control.PartiallyFixLevelSetForSpaceTime && state.LevelSetOpti is SplineOptiLevelSet splineLS ) {
+                    double yMin = splineLS.y.Min(); //lower boundary of space time domain
+
+                    for ( int localIndex = 0; localIndex < Lstate; localIndex++ ) {
+                        if ( Math.Abs(yMin - splineLS.y[localIndex]) > 1e-14 ) {
+                            // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            // greater than initial time: allowed to move the node, 
+                            // only accumulate if DOF if it is not on lower time boundary (here yMin=tMin)
+                            // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                            int i = LevelSetOptAggregator.MapLocalToGlobal(iLS, localIndex);
+                            state.LevelSetOpti.AccToParam(localIndex, m_alpha * step_t[i + length_r]);
+                        }
+                    }
+
+                } else {
+                    for(int localIndex = 0; localIndex < Lstate; localIndex++ ) {
+                        int i = LevelSetOptAggregator.MapLocalToGlobal(iLS, localIndex);
+                        state.LevelSetOpti.AccToParam(localIndex, m_alpha * step_t[i + length_r]);
                     }
                 }
-            } else {
-                for(int i = 0; i < LevelSetOptAggregator.GetTotalDOFCount(); i++) {
-                    LevelSetOptAggregator.AccumulateToParameterAt(i, m_alpha * step_t[i + length_r]);
-                }
             }
+
 
             LevelSetOptAggregator.ProjectAllOptimizerOntoLevelSets();
 
@@ -3138,9 +3174,9 @@ namespace ApplicationWithIDT {
                 //transform everything back to non-agglomerated
                 int length_R = (int)obj_f_map.TotalLength;
                 int length_r = (int)UnknownsMap.TotalLength; // needs to be modified if more than one field is simulated
-                int length_l = PrimaryLevelSetOptimizer.GetLength();
+                int length_l = LevelSetOptAggregator.GetTotalDOFCount();
 
-                stepUphi.SetSubVector(stepIN, 0, (int)UnknownsMap.TotalLength + PrimaryLevelSetOptimizer.GetLength());
+                stepUphi.SetSubVector(stepIN, 0, (int)UnknownsMap.TotalLength + length_l);
 
                 JacR0TimesStep = new double[length_r];
                 Jr.SpMV(1.0, stepUphi, 0.0, JacR0TimesStep);

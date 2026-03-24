@@ -51,16 +51,32 @@ namespace ApplicationWithIDT {
         /// </summary>
         /// <param name="globalIndex">Global parameter index</param>
         /// <returns>Tuple of (block index, local index) or null if not found</returns>
-        public (int blockIndex, int localIndex)? MapGlobalToLocal(int globalIndex) {
+        public (int blockIndex, int localIndex) MapGlobalToLocal(int globalIndex) {
             int currentOffset = 0;
-            for (int blockIndex = 0; blockIndex < optimizationStates.Count; blockIndex++) {
+            for ( int blockIndex = 0; blockIndex < optimizationStates.Count; blockIndex++ ) {
                 int blockSize = optimizationStates[blockIndex].GetOptimizationDOFCount();
-                if (globalIndex >= currentOffset && globalIndex < currentOffset + blockSize) {
+                if ( globalIndex >= currentOffset && globalIndex < currentOffset + blockSize ) {
                     return (blockIndex, globalIndex - currentOffset);
                 }
                 currentOffset += blockSize;
             }
-            return null; // Invalid global index
+            throw new IndexOutOfRangeException(); // Invalid global index
+        }
+
+        /// <summary>
+        /// Map local phi-index to (optimized level-set block, local param index) global one
+        /// </summary>
+        /// <param name="globalIndex">Global parameter index</param>
+        /// <returns>Tuple of (block index, local index) or null if not found</returns>
+        public int MapLocalToGlobal(int blockIndex, int localIndex) {
+            int globalIndex = 0;
+
+            for ( int bi = 0; bi < blockIndex; bi++ )
+                globalIndex += optimizationStates[bi].GetOptimizationDOFCount();
+
+            globalIndex += localIndex;
+            
+            return globalIndex;
         }
 
         /// <summary>
@@ -181,34 +197,24 @@ namespace ApplicationWithIDT {
         /// Get parameter at global index
         /// </summary>
         public double GetParameterAt(int globalIndex) {
-            var mapping = MapGlobalToLocal(globalIndex);
-            if (mapping.HasValue) {
-                var (blockIndex, localIndex) = mapping.Value;
-                return optimizationStates[blockIndex].LevelSetOpti?.GetParam(localIndex) ?? 0.0;
-            }
-            return 0.0;
+            var (blockIndex, localIndex) = MapGlobalToLocal(globalIndex);
+            return optimizationStates[blockIndex].LevelSetOpti.GetParam(localIndex);
         }
 
         /// <summary>
         /// Set parameter at global index
         /// </summary>
         public void SetParameterAt(int globalIndex, double value) {
-            var mapping = MapGlobalToLocal(globalIndex);
-            if (mapping.HasValue) {
-                var (blockIndex, localIndex) = mapping.Value;
-                optimizationStates[blockIndex].LevelSetOpti?.SetParam(localIndex, value);
-            }
+            var (blockIndex, localIndex) = MapGlobalToLocal(globalIndex);
+            optimizationStates[blockIndex].LevelSetOpti.SetParam(localIndex, value);
         }
 
         /// <summary>
         /// Accumulate to parameter at global index
         /// </summary>
         public void AccumulateToParameterAt(int globalIndex, double value) {
-            var mapping = MapGlobalToLocal(globalIndex);
-            if (mapping.HasValue) {
-                var (blockIndex, localIndex) = mapping.Value;
-                optimizationStates[blockIndex].LevelSetOpti?.AccToParam(localIndex, value);
-            }
+            var (blockIndex, localIndex) = MapGlobalToLocal(globalIndex);
+            optimizationStates[blockIndex].LevelSetOpti.AccToParam(localIndex, value);
         }
 
         /// <summary>
@@ -224,12 +230,8 @@ namespace ApplicationWithIDT {
         /// Get parameter name at global index
         /// </summary>
         public string GetParameterNameAt(int globalIndex) {
-            var mapping = MapGlobalToLocal(globalIndex);
-            if (mapping.HasValue) {
-                var (blockIndex, localIndex) = mapping.Value;
-                return optimizationStates[blockIndex].LevelSetOpti?.GetParamName(localIndex) ?? $"param_{globalIndex}";
-            }
-            return $"param_{globalIndex}";
+            var (blockIndex, localIndex) = MapGlobalToLocal(globalIndex);
+            return optimizationStates[blockIndex].LevelSetOpti.GetParamName(localIndex);
         }
 
         /// <summary>
