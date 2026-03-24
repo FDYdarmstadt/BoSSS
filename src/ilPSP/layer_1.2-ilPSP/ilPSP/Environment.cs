@@ -662,7 +662,7 @@ namespace ilPSP {
 
         public static void InitThreading(bool LookAtEnvVar, int? NumThreadsOverride) {
             using(var tr = new FuncTrace()) {
-                tr.InfoToConsole = true;
+                tr.InfoToConsole = false;
                 tr.StdoutOnAllRanks();
 
 
