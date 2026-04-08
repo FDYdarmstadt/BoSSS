@@ -52,8 +52,11 @@ namespace ApplicationWithIDT {
         /// Map global phi-index to (optimized level-set block, local param index)
         /// </summary>
         /// <param name="globalIndex">Global parameter index</param>
-        /// <returns>Tuple of (block index, local index) or null if not found</returns>
-        public (int blockIndex, int localIndex) MapGlobalToLocal(int globalIndex) {
+        /// <returns>Tuple of (state index, local index)
+        /// - 1st entry (state index): index into <see cref="optimizationStates"/>
+        /// - 2nd entry (parameter index into level set) : local parameter index, c.f. <see cref="IOptiLevelSet.GetParam(int)"/>, <see cref="IOptiLevelSet.SetParam(int, double)"/>
+        /// </returns>
+        public (int stateIndex, int localIndex) MapGlobalToLocal(int globalIndex) {
             int currentOffset = 0;
             for ( int blockIndex = 0; blockIndex < optimizationStates.Count; blockIndex++ ) {
                 int blockSize = optimizationStates[blockIndex].GetOptimizationDOFCount();
@@ -266,15 +269,6 @@ namespace ApplicationWithIDT {
             return optimizationStates.Count;
         }
 
-        /// <summary>
-        /// Get optimization state at index (for compatibility)
-        /// </summary>
-        public LevelSetOptimizationState GetOptimizationState(int index) {
-            if (index >= 0 && index < optimizationStates.Count) {
-                return optimizationStates[index];
-            }
-            return null;
-        }
 
         public MsrMatrix GetRegMatrix() {
             MsrMatrix RegMatrix_0 = optimizationStates[0].LevelSetOpti.GetRegMatrix();
@@ -291,8 +285,9 @@ namespace ApplicationWithIDT {
                 
 
                 MsrMatrix RegMatrixCat = new MsrMatrix(I0 + I1, J0 + J1);
-                RegMatrix_0.AccSubMatrixTo(1.0, RegMatrixCat, default(long[]), default(long[]), I0.ForLoop(i => i + i0), J0.ForLoop(j => j + j0));
-                RegMatrix_i.AccSubMatrixTo(1.0, RegMatrixCat, default(long[]), default(long[]), I1.ForLoop(i => i + I0 + i0), J1.ForLoop(j => j + J0 + j0));
+                RegMatrix_0.AccSubMatrixTo(1.0, RegMatrixCat, default(long[]), I0.ForLoop(i => i + i0), default(long[]), J0.ForLoop(j => j + j0));
+                RegMatrix_i.AccSubMatrixTo(1.0, RegMatrixCat, default(long[]), I1.ForLoop(i => i + I0 + i0), default(long[]), J1.ForLoop(j => j + J0 + j0));
+                RegMatrix_0 = RegMatrixCat;
             }
 
             return RegMatrix_0;

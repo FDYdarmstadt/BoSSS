@@ -109,8 +109,12 @@ namespace ApplicationWithIDT {
         /// Optimizer object associated with <see cref="PrimaryOptimizationState"/>.
         /// </summary>
         protected IOptiLevelSet PrimaryLevelSetOptimizer {
-            get => PrimaryOptimizationState.LevelSetOpti;
-            set => PrimaryOptimizationState.LevelSetOpti = value;
+            get {
+                if ( LevelSetOptStates.Length > 1 )
+                    throw new NotSupportedException();
+                else
+                    return LevelSetOptStates[0].LevelSetOpti;
+            }
         }
 
         /// <summary>
@@ -1652,10 +1656,13 @@ namespace ApplicationWithIDT {
                 for(int n_param = 0; n_param < nRow; n_param++) {
 
                     //skip loop if param is non changeable
-                    if(Control.PartiallyFixLevelSetForSpaceTime && PrimaryLevelSetOptimizer is SplineOptiLevelSet splineLS) {
+                    var localIdx = this.LevelSetOptAggregator.MapGlobalToLocal(n_param);
+                    //localIdx.stateIndex = 0;
+                    if ( Control.PartiallyFixLevelSetForSpaceTime && this.LevelSetOptStates[localIdx.stateIndex].LevelSetOpti is SplineOptiLevelSet splineLS ) {
                         double yMin = splineLS.y.Min(); //lower boundary of space time domain
-                        if(n_param < splineLS.y.Length && Math.Abs(yMin - splineLS.y[n_param]) < 1e-14) //only accumalte if DOF if it is not on lower time boundary (here yMin=tMin)
-                        {
+                                                       
+                        if ( localIdx.localIndex < splineLS.y.Length && Math.Abs(yMin - splineLS.y[localIdx.localIndex]) < 1e-14 ) {
+                            //only accumulate if DOF if it is not on lower time boundary (here yMin=tMin)
                             continue;
                         }
 
@@ -2120,7 +2127,8 @@ namespace ApplicationWithIDT {
                     //upper left block
                     assembler.AccBlock(Jobj.Transpose() * Jobj, LHS, 0, 0);
                     //Regularization
-                    MsrMatrix reg = this.PrimaryLevelSetOptimizer.GetRegMatrix();
+                    MsrMatrix reg = this.LevelSetOptAggregator.GetRegMatrix();
+                    //MsrMatrix reg = this.LevelSetOptStates[0].LevelSetOpti.GetRegMatrix();
                     reg.Scale(gamma);
                     assembler.AccBlock(reg, LHS, length_r, length_r);
                     //Fphi contribution
