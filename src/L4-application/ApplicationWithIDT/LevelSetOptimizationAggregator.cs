@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ilPSP.Utils;
+using ilPSP.LinSolvers;
+using ilPSP;
 
 namespace ApplicationWithIDT {
     /// <summary>
@@ -272,6 +274,28 @@ namespace ApplicationWithIDT {
                 return optimizationStates[index];
             }
             return null;
+        }
+
+        public MsrMatrix GetRegMatrix() {
+            MsrMatrix RegMatrix_0 = optimizationStates[0].LevelSetOpti.GetRegMatrix();
+
+            for(int i = 1; i < optimizationStates.Count; i++) {
+                int I0 = RegMatrix_0.RowPartitioning.LocalLength;
+                int J0 = RegMatrix_0.ColPartition.LocalLength;
+                long i0 = RegMatrix_0.RowPartitioning.i0;
+                long j0 = RegMatrix_0.ColPartition.i0;
+
+                MsrMatrix RegMatrix_i = optimizationStates[i].LevelSetOpti.GetRegMatrix();
+                int I1 = RegMatrix_i.RowPartitioning.LocalLength;
+                int J1 = RegMatrix_i.ColPartition.LocalLength;
+                
+
+                MsrMatrix RegMatrixCat = new MsrMatrix(I0 + I1, J0 + J1);
+                RegMatrix_0.AccSubMatrixTo(1.0, RegMatrixCat, default(long[]), default(long[]), I0.ForLoop(i => i + i0), J0.ForLoop(j => j + j0));
+                RegMatrix_i.AccSubMatrixTo(1.0, RegMatrixCat, default(long[]), default(long[]), I1.ForLoop(i => i + I0 + i0), J1.ForLoop(j => j + J0 + j0));
+            }
+
+            return RegMatrix_0;
         }
     }
 }
