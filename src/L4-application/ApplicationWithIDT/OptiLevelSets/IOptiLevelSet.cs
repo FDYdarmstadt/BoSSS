@@ -87,6 +87,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
         /// </summary>
         /// <param name="targetLS"></param>
         void AssembleTransMat(LevelSet targetLS);
+
         /// <summary>
         /// Method used to project this object onto the DG-LevelSet which is used in the rest of the code
         /// </summary>
@@ -109,6 +110,8 @@ namespace ApplicationWithIDT.OptiLevelSets {
         /// <exception cref="ArgumentException"> TransMat was not assembled or assembled with a different LevelSet</exception>
         /// <exception cref="NotImplementedException">only works if optiLevelSet has an orthonormal Basis</exception>
         void ProjectFromLevelSet(ConventionalDGField sourceLS);
+
+
         /// <summary>
         /// helper Function to obtain the value of a Function described by the polynomial object 
         /// </summary>

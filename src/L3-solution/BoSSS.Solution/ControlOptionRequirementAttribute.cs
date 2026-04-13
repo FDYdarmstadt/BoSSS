@@ -21,7 +21,7 @@ namespace BoSSS.Solution.Control {
     /// <summary>
     /// Base class for checks on control files attributes
     /// </summary>
-    [AttributeUsage(AttributeTargets.Field, AllowMultiple = false, Inherited = false)]
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
     public abstract class ControlOptionRequirementAttribute : Attribute {
 
         /// <summary>

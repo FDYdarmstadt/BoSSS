@@ -76,7 +76,7 @@ namespace XESF.Fluxes {
 
         private readonly Material material;
 
-        public GodunovFlux_Wall(int SpatialDim, CompressibleControl control, IBoundaryConditionMap boundaryMap, Material material, FluxVariables flux, int component = int.MinValue) {
+        public GodunovFlux_Wall(int SpatialDim, ICompressibleControl control, IBoundaryConditionMap boundaryMap, Material material, FluxVariables flux, int component = int.MinValue) {
             //this.levelSetTracker = levelSetTracker;
             this.material = material;
 
@@ -85,7 +85,7 @@ namespace XESF.Fluxes {
                     this.bulkFlux = new GodunovFlux(control, boundaryMap, new EulerDensityComponent(), material);
                     break;
                 case FluxVariables.Momentum:
-                    this.bulkFlux = new GodunovFlux(control, boundaryMap, new EulerMomentumComponent(component, material.EquationOfState.HeatCapacityRatio, control.MachNumber, SpatialDim), material);
+                    this.bulkFlux = new GodunovFlux(control, boundaryMap, new EulerMomentumComponent(component, material.EquationOfState.HeatCapacityRatio, control.CompressibleConfiguration.MachNumber, SpatialDim), material);
                     break;
                 case FluxVariables.Energy:
                     this.bulkFlux = new GodunovFlux(control, boundaryMap, new EulerEnergyComponent(), material);

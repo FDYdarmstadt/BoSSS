@@ -15,10 +15,12 @@ namespace ApplicationWithIDT {
 
     /// <summary>
     /// Interface for the Constrained Optimzation Problem 
-    /// 
-    ///  min            f(u,phi)
-    ///  subject to     r(u,phi)=0
-    /// 
+    /// \[
+    /// \begin{array}{ll}
+    ///  \text{min}         &   f(u,\phi)    \\
+    ///  \text{subject to}  &   r(u,\phi)=0  \\
+    ///  \end{array}
+    /// \]
     /// solved by the ApplicationWithIDT solver, where f:R^{N_u}xR^{N_phi}->R is the objective function and r:R^{N_u}xR^{N_phi}->R^{N_u} the constraint. 
     /// Furthermore, the objective is assumed to be f=||F^T*F || for some  F:R^{N_u}xR^{N_phi}->R^m. By lack of wording the word "objective function" is also used for F in the code.
     /// </summary>
@@ -30,7 +32,7 @@ namespace ApplicationWithIDT {
         public MsrMatrix GetObjJacobian(XDGField[] ConservativeFields, LinearizationHint lHint); //gets the Jacobian dFdU (only w.r.t. u)
         public MsrMatrix GetConsJacobian(XDGField[] ConservativeFields, LinearizationHint lHint); //gets the Jacobain drdU (only w.r.t. u)
         public XDGField[] CreateObjField(XDGField[] ConservativeFields); // creats a XDGField that storing the vector F(u,phi)
-        public (MsrMatrix,MsrMatrix) GetJacobians(XDGField[] ConservativeFields, LinearizationHint lHint); //computes both Jacobian (sometims drdU is asubset of F)
+        public (MsrMatrix,MsrMatrix) GetJacobians(XDGField[] ConservativeFields, LinearizationHint lHint); //computes both Jacobian (sometimes drdU is a subset of F)
         public XDifferentialOperatorMk2 GetConsOperator(); //get spatial operator for constraint r
     }
 
@@ -156,16 +158,12 @@ namespace ApplicationWithIDT {
             return Jobj;
         }
         public (MsrMatrix, MsrMatrix) GetJacobians(XDGField[] ConservativeFields, LinearizationHint lHint) {
-            using (new FuncTrace())
-            {
+            using ( new FuncTrace() ) {
                 MsrMatrix Jobj = GetObjJacobian(ConservativeFields, lHint);
                 MsrMatrix Jcons;
-                if (is_GetConsFromObj)
-                {
+                if ( is_GetConsFromObj ) {
                     Jcons = GetConsFromObj(Jobj, ConservativeFields);
-                }
-                else
-                {
+                } else {
                     Jcons = GetConsJacobian(ConservativeFields, lHint);
                 }
                 return (Jobj, Jcons);

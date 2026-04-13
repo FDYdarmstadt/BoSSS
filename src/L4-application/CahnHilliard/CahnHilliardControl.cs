@@ -201,7 +201,7 @@ namespace BoSSS.Application.CahnHilliard {
         /// diff = (kappa*lambda)/epsilon
         /// </summary>
         [DataMember]
-        //[BoSSS.Solution.Control.ExclusiveLowerBound(0.0)]
+        [BoSSS.Solution.Control.ExclusiveLowerBound(0.0)]
         public double diff = 1;
 
         ///// <summary>

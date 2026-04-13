@@ -128,6 +128,22 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
+        /// minimum, implemented through <see cref="GetExtremalValues(out double, out double)"/>
+        /// </summary>
+        public double GetMinimum() {
+            GetExtremalValues(out double minimum, out _);
+            return minimum;
+        }
+
+        /// <summary>
+        /// maximum, implemented through <see cref="GetExtremalValues(out double, out double)"/>
+        /// </summary>
+        public double GetMaximum() {
+            GetExtremalValues(out _, out double maximum);
+            return maximum;
+        }
+
+        /// <summary>
         /// used by <see cref="GetExtremalValues(out double,out double,out long,out long,CellMask)"/> and <see cref="GetExtremalValuesInCell"/>
         /// to find the extremal values in 
         /// </summary>
@@ -213,7 +229,7 @@ namespace BoSSS.Foundation {
         /// <param name="jMinGlob">
         /// global cell index in which the maximum value <paramref name="min"/> was found
         /// </param>
-        public void GetExtremalValues(out double min, out double max, out long jMinGlob, out long jMaxGlob, CellMask cm = null) {
+        virtual public void GetExtremalValues(out double min, out double max, out long jMinGlob, out long jMaxGlob, CellMask cm = null) {
             MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
             using (new FuncTrace()) {
                 int J = Basis.GridDat.iLogicalCells.NoOfLocalUpdatedCells;

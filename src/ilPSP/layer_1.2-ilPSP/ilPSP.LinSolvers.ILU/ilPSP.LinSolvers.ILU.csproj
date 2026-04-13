@@ -22,4 +22,7 @@
     <ProjectReference Include="..\ilPSP.LinSolvers.PARDISO\ilPSP.LinSolvers.PARDISO.csproj" />
     <ProjectReference Include="..\ilPSP\ilPSP.csproj" />
   </ItemGroup>
+  <PropertyGroup>
+    <EnablePackageVulnerabilityChecks>false</EnablePackageVulnerabilityChecks>
+  </PropertyGroup>
 </Project>

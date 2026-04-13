@@ -479,77 +479,78 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 #region FLUX_EVAL
                 
                 bool MustLock = this.m_owner.Operator.FluxesAreNOTMultithreadSafe;
-
-                this.Flux_Eval.Start();
-                if (MustLock)
-                    Monitor.Enter(this.m_owner);
-
                 bool bLinearRequired, bAffineRequired;
-                {
-                    List<MyChunk> Edges = new List<MyChunk>();
-                    // sweep over edges and determine which are interior and which are boundary
+
+                try {
+                    this.Flux_Eval.Start();
+                    if ( MustLock )
+                        Monitor.Enter(this.m_owner);
+
                     {
-                        var CellIdx = gDat.iGeomEdges.CellIndices;
-                        int l = 0;
-                        while (l < Length) {
+                        List<MyChunk> Edges = new List<MyChunk>();
+                        // sweep over edges and determine which are interior and which are boundary
+                        {
+                            var CellIdx = gDat.iGeomEdges.CellIndices;
+                            int l = 0;
+                            while ( l < Length ) {
 
-                            // true for an interior edge, false for a boundary edge
-                            MyChunk CurChunk = default(MyChunk);
-                            CurChunk.Type = CellIdx[l + i0, 1] >= 0;
-                            CurChunk.i0 = l + i0;
-                            l++;
-                            CurChunk.Len++;
-
-                            while (l < Length) {
-                                bool NextType = CellIdx[l + i0, 1] >= 0;
-
-                                if (NextType != CurChunk.Type)
-                                    break;
-
+                                // true for an interior edge, false for a boundary edge
+                                MyChunk CurChunk = default(MyChunk);
+                                CurChunk.Type = CellIdx[l + i0, 1] >= 0;
+                                CurChunk.i0 = l + i0;
                                 l++;
                                 CurChunk.Len++;
+
+                                while ( l < Length ) {
+                                    bool NextType = CellIdx[l + i0, 1] >= 0;
+
+                                    if ( NextType != CurChunk.Type )
+                                        break;
+
+                                    l++;
+                                    CurChunk.Len++;
+                                }
+
+                                Edges.Add(CurChunk);
                             }
+                        }
 
-                            Edges.Add(CurChunk);
+                        EdgeFormParams efp = default(EdgeFormParams);
+                        efp.GridDat = gDat;
+                        efp.time = m_owner.m_time;
+
+                        bLinearRequired = LinearRequired;
+                        bAffineRequired = AffineRequired;
+                        {
+                            if ( bLinearRequired ) {
+                                EvalNSumForm(ref efp, i0, m_Edgeform_UxV, Edges, m_UxVComponentBuffer, m_UxVSumBuffer, false, NS.NoOfNodes, D, m_Edgeform_UxV_Watches, MustLock,
+                                    (E, mda) => E.InternalEdge_UxV(ref efp, mda),
+                                    (E, mda) => E.BoundaryEdge_UxV(ref efp, mda));
+                                EvalNSumForm(ref efp, i0, m_Edgeform_GradUxV, Edges, m_GradUxVComponentBuffer, m_GradUxVSumBuffer, false, NS.NoOfNodes, D, m_Edgeform_GradUxV_Watches, MustLock,
+                                    (E, mda) => E.InternalEdge_GradUxV(ref efp, mda),
+                                    (E, mda) => E.BoundaryEdge_GradUxV(ref efp, mda));
+                                EvalNSumForm(ref efp, i0, m_Edgeform_UxGradV, Edges, m_UxGradVComponentBuffer, m_UxGradVSumBuffer, false, NS.NoOfNodes, D, m_Edgeform_UxGradV_Watches, MustLock,
+                                    (E, mda) => E.InternalEdge_UxGradV(ref efp, mda),
+                                    (E, mda) => E.BoundaryEdge_UxGradV(ref efp, mda));
+                                EvalNSumForm(ref efp, i0, m_Edgeform_GradUxGradV, Edges, m_GradUxGradVComponentBuffer, m_GradUxGradVSumBuffer, false, NS.NoOfNodes, D, m_Edgeform_GradUxGradV_Watches, MustLock,
+                                    (E, mda) => E.InternalEdge_GradUxGradV(ref efp, mda),
+                                    (E, mda) => E.BoundaryEdge_GradUxGradV(ref efp, mda));
+                            }
+                            if ( bAffineRequired ) {
+                                EvalNSumForm(ref efp, i0, m_EdgeSourceV, Edges, m_VComponentBuffer, m_VSumBuffer, true, NS.NoOfNodes, D, m_EdgeSourceV_Watches, MustLock,
+                                    (E, mda) => E.InternalEdge_V(ref efp, mda),
+                                    (E, mda) => E.BoundaryEdge_V(ref efp, mda));
+                                EvalNSumForm(ref efp, i0, m_EdgeSourceGradV, Edges, m_GradVComponentBuffer, m_GradVSumBuffer, true, NS.NoOfNodes, D, m_EdgeSourceGradV_Watches, MustLock,
+                                    (E, mda) => E.InternalEdge_GradV(ref efp, mda),
+                                    (E, mda) => E.BoundaryEdge_GradV(ref efp, mda));
+                            }
                         }
                     }
-
-                    EdgeFormParams efp = default(EdgeFormParams);
-                    efp.GridDat = gDat;
-                    efp.time = m_owner.m_time;
-
-                    bLinearRequired = LinearRequired;
-                    bAffineRequired = AffineRequired;
-                    { 
-                        if (bLinearRequired) {
-                            EvalNSumForm(ref efp, i0, m_Edgeform_UxV, Edges, m_UxVComponentBuffer, m_UxVSumBuffer, false, NS.NoOfNodes, D, m_Edgeform_UxV_Watches,
-                                (E, mda) => E.InternalEdge_UxV(ref efp, mda),
-                                (E, mda) => E.BoundaryEdge_UxV(ref efp, mda));
-                            EvalNSumForm(ref efp, i0, m_Edgeform_GradUxV, Edges, m_GradUxVComponentBuffer, m_GradUxVSumBuffer, false, NS.NoOfNodes, D, m_Edgeform_GradUxV_Watches,
-                                (E, mda) => E.InternalEdge_GradUxV(ref efp, mda),
-                                (E, mda) => E.BoundaryEdge_GradUxV(ref efp, mda));
-                            EvalNSumForm(ref efp, i0, m_Edgeform_UxGradV, Edges, m_UxGradVComponentBuffer, m_UxGradVSumBuffer, false, NS.NoOfNodes, D, m_Edgeform_UxGradV_Watches,
-                                (E, mda) => E.InternalEdge_UxGradV(ref efp, mda),
-                                (E, mda) => E.BoundaryEdge_UxGradV(ref efp, mda));
-                            EvalNSumForm(ref efp, i0, m_Edgeform_GradUxGradV, Edges, m_GradUxGradVComponentBuffer, m_GradUxGradVSumBuffer, false, NS.NoOfNodes, D, m_Edgeform_GradUxGradV_Watches,
-                                (E, mda) => E.InternalEdge_GradUxGradV(ref efp, mda),
-                                (E, mda) => E.BoundaryEdge_GradUxGradV(ref efp, mda));
-                        }
-                        if (bAffineRequired) {
-                            EvalNSumForm(ref efp, i0, m_EdgeSourceV, Edges, m_VComponentBuffer, m_VSumBuffer, true, NS.NoOfNodes, D, m_EdgeSourceV_Watches,
-                                (E, mda) => E.InternalEdge_V(ref efp, mda),
-                                (E, mda) => E.BoundaryEdge_V(ref efp, mda));
-                            EvalNSumForm(ref efp, i0, m_EdgeSourceGradV, Edges, m_GradVComponentBuffer, m_GradVSumBuffer, true, NS.NoOfNodes, D, m_EdgeSourceGradV_Watches,
-                                (E, mda) => E.InternalEdge_GradV(ref efp, mda),
-                                (E, mda) => E.BoundaryEdge_GradV(ref efp, mda));
-                        }
-                    }
+                } finally {
+                    this.Flux_Eval.Stop();
+                    if ( MustLock )
+                        Monitor.Exit(this.m_owner);
                 }
-
-                if (MustLock)
-                    Monitor.Exit(this.m_owner);
-
-                this.Flux_Eval.Stop();
                 #endregion
 
                 // evaluate test and trial basis functions
@@ -1096,7 +1097,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 EquationComponentArgMapping<EE>[] Comps, List<MyChunk> subChunkx,
                 MultidimensionalArray[][] CompBuffer, MultidimensionalArray[,,,] SumBuffer,
                 bool Source, int NoOfNodes, int D,
-                Stopwatch[][] watches,
+                Stopwatch[][] watches, bool ParrentLocked,
                 Action<EE, MultidimensionalArray> InnerEdgeForm,
                 Action<EE, MultidimensionalArray> BoundarydgeForm)
                 where EE : IEquationComponent {
@@ -1127,7 +1128,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
 
                         EE comp = ecq.m_AllComponentsOfMyType[i];
-                        var bLck = ecq.m_LockObjects[i];
+                        var bLck = ParrentLocked ? null : ecq.m_LockObjects[i];
                         int NoOfArgs = ecq.NoOfArguments[i];
                         var CompBuf_gamma_i = CompBuffer[gamma][i];
                         CompBuf_gamma_i.Clear();

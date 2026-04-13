@@ -557,7 +557,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 }
             }
 
-            private void EvalNSumForm<EE>(ref VolumFormParams vfp, EquationComponentArgMapping<EE>[] Comps, MultidimensionalArray[][] CompBuffer, MultidimensionalArray[,] SumBuffer, Action<EE, MultidimensionalArray> evalForm, bool affine, Stopwatch[][] watches)
+            private void EvalNSumForm<EE>(ref VolumFormParams vfp, EquationComponentArgMapping<EE>[] Comps, MultidimensionalArray[][] CompBuffer, MultidimensionalArray[,] SumBuffer, Action<EE, MultidimensionalArray> evalForm, bool affine, Stopwatch[][] watches, bool ParrentLocked)
                     where EE : IEquationComponent //
             {
                 int DELTA = affine ? 1 : m_owner.DELTA;
@@ -576,7 +576,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                         int i = (_i + this.m_iThread) % ecq.m_AllComponentsOfMyType.Length; // run through loop differently in each thread to reduce locking
 
                         EE comp = ecq.m_AllComponentsOfMyType[i];
-                        var bLck = ecq.m_LockObjects[i];
+                        var bLck = ParrentLocked ? null : ecq.m_LockObjects[i];
                         int NoOfArgs = ecq.NoOfArguments[i];
                         Debug.Assert(NoOfArgs == comp.ArgumentOrdering.Count);
                         int NoOfParams = ecq.NoOfParameters[i];
@@ -797,30 +797,35 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 #region FLUXEVAL
                 bool MustLock = this.m_owner.Operator.FluxesAreNOTMultithreadSafe;
 
-                this.Flux_Eval.Start();
-                if (MustLock)
-                    Monitor.Enter(this.m_owner);
+                try {
+                    this.Flux_Eval.Start();
+                    if ( MustLock )
+                        Monitor.Enter(this.m_owner);
 
-                { 
-                    VolumFormParams vfp = default;
-                    vfp.j0 = i0;
-                    vfp.Len = Length;
-                    vfp.GridDat = _GridDat;
-                    vfp.Xglobal = globalNodes;
-                    vfp.time = m_owner.m_time;
+                    {
+                        VolumFormParams vfp = default;
+                        vfp.j0 = i0;
+                        vfp.Len = Length;
+                        vfp.GridDat = _GridDat;
+                        vfp.Xglobal = globalNodes;
+                        vfp.time = m_owner.m_time;
 
-                    if (bLinearRequired) {
-                        EvalNSumForm(ref vfp, m_VolumeForm_UxV, m_UxVComponentBuffer, m_UxVSumBuffer, (C, M) => C.Form(ref vfp, M), false, this.m_VolumeForm_UxV_Watches);
-                        EvalNSumForm(ref vfp, m_VolumeForm_UxGradV, m_UxGradVComponentBuffer, m_UxGradVSumBuffer, (C, M) => C.Form(ref vfp, M), false, this.m_VolumeForm_UxGradV_Watches);
-                        EvalNSumForm(ref vfp, m_VolumeForm_GradUxV, m_GradUxVComponentBuffer, m_GradUxVSumBuffer, (C, M) => C.Form(ref vfp, M), false, this.m_VolumeForm_GradUxV_Watches);
-                        EvalNSumForm(ref vfp, m_VolumeForm_GradUxGradV, m_GradUxGradVComponentBuffer, m_GradUxGradVSumBuffer, (C, M) => C.Form(ref vfp, M), false, this.m_VolumeForm_GradUxGradV_Watches);
+                        if ( bLinearRequired ) {
+                            EvalNSumForm(ref vfp, m_VolumeForm_UxV, m_UxVComponentBuffer, m_UxVSumBuffer, (C, M) => C.Form(ref vfp, M), false, this.m_VolumeForm_UxV_Watches, MustLock);
+                            EvalNSumForm(ref vfp, m_VolumeForm_UxGradV, m_UxGradVComponentBuffer, m_UxGradVSumBuffer, (C, M) => C.Form(ref vfp, M), false, this.m_VolumeForm_UxGradV_Watches, MustLock);
+                            EvalNSumForm(ref vfp, m_VolumeForm_GradUxV, m_GradUxVComponentBuffer, m_GradUxVSumBuffer, (C, M) => C.Form(ref vfp, M), false, this.m_VolumeForm_GradUxV_Watches, MustLock);
+                            EvalNSumForm(ref vfp, m_VolumeForm_GradUxGradV, m_GradUxGradVComponentBuffer, m_GradUxGradVSumBuffer, (C, M) => C.Form(ref vfp, M), false, this.m_VolumeForm_GradUxGradV_Watches, MustLock);
+                        }
+                        if ( bAffineRequired ) {
+                            EvalNSumForm(ref vfp, m_VolumeSource_V, null, m_VSumBuffer, (C, M) => C.Form(ref vfp, M), true, this.m_VolumeSource_V_Watches, MustLock);
+                            EvalNSumForm(ref vfp, m_VolumeSource_GradV, null, m_GradVSumBuffer, (C, M) => C.Form(ref vfp, M), true, this.m_VolumeSource_GradV_Watches, MustLock);
+                        }
                     }
-                    if (bAffineRequired) {
-                        EvalNSumForm(ref vfp, m_VolumeSource_V, null, m_VSumBuffer, (C, M) => C.Form(ref vfp, M), true, this.m_VolumeSource_V_Watches);
-                        EvalNSumForm(ref vfp, m_VolumeSource_GradV, null, m_GradVSumBuffer, (C, M) => C.Form(ref vfp, M), true, this.m_VolumeSource_GradV_Watches);
-                    }
+                } finally {
+                    this.Flux_Eval.Stop();
+                    if ( MustLock )
+                        Monitor.Exit(this.m_owner);
                 }
-                this.Flux_Eval.Stop();
                 #endregion
 
                 // transform forms/fluxes
@@ -958,8 +963,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                 }
 
-                if (MustLock)
-                    Monitor.Exit(this.m_owner);
 
                 this.FluxTrafo.Stop();
                 #endregion
