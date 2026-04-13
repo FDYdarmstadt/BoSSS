@@ -32,7 +32,7 @@ namespace ApplicationWithIDT {
         public MsrMatrix GetObjJacobian(XDGField[] ConservativeFields, LinearizationHint lHint); //gets the Jacobian dFdU (only w.r.t. u)
         public MsrMatrix GetConsJacobian(XDGField[] ConservativeFields, LinearizationHint lHint); //gets the Jacobain drdU (only w.r.t. u)
         public XDGField[] CreateObjField(XDGField[] ConservativeFields); // creats a XDGField that storing the vector F(u,phi)
-        public (MsrMatrix,MsrMatrix) GetJacobians(XDGField[] ConservativeFields, LinearizationHint lHint); //computes both Jacobian (sometims drdU is asubset of F)
+        public (MsrMatrix,MsrMatrix) GetJacobians(XDGField[] ConservativeFields, LinearizationHint lHint); //computes both Jacobian (sometimes drdU is a subset of F)
         public XDifferentialOperatorMk2 GetConsOperator(); //get spatial operator for constraint r
     }
 
@@ -158,16 +158,12 @@ namespace ApplicationWithIDT {
             return Jobj;
         }
         public (MsrMatrix, MsrMatrix) GetJacobians(XDGField[] ConservativeFields, LinearizationHint lHint) {
-            using (new FuncTrace())
-            {
+            using ( new FuncTrace() ) {
                 MsrMatrix Jobj = GetObjJacobian(ConservativeFields, lHint);
                 MsrMatrix Jcons;
-                if (is_GetConsFromObj)
-                {
+                if ( is_GetConsFromObj ) {
                     Jcons = GetConsFromObj(Jobj, ConservativeFields);
-                }
-                else
-                {
+                } else {
                     Jcons = GetConsJacobian(ConservativeFields, lHint);
                 }
                 return (Jobj, Jcons);

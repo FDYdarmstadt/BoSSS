@@ -23,6 +23,7 @@ using ilPSP.Tracing;
 using ilPSP.Utils;
 using MathNet.Numerics;
 using Newtonsoft.Json.Linq;
+using NUnit.Framework;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -53,7 +54,7 @@ namespace ApplicationWithIDT {
     /// - Rankine Hugoniot (AllFaces or only Faces in CutCells)
     /// - Enriched Residual (AllFaces or only Faces in CutCells)
     /// 
-    /// Main Method is RunSolverOneStep
+    /// Main Method is <see cref="RunSolverOneStep"/>
     /// 
     /// </summary>
     public abstract class ApplicationWithIDT<T> : Application<T>
@@ -1442,17 +1443,20 @@ namespace ApplicationWithIDT {
                 }
             }
         }
+
+        
+
         /// <summary>
         /// Solves the Linear System
         /// </summary>
         public void SolveSystem() {
+            using ( new FuncTrace() ) {
 
-            using(new FuncTrace()) {
                 //Adds ones on the diagonal to ghost rows (rows coincing with empty or agglomerated phase-cells) of the left hand side
-                for(int rows = 0; rows < LHS.NoOfRows; rows++) {
-                    if(LHS.GetNoOfNonZerosPerRow(rows) == 0) {
+                for ( int rows = 0; rows < LHS.NoOfRows; rows++ ) {
+                    if ( LHS.GetNoOfNonZerosPerRow(rows) == 0 ) {
                         LHS[rows, rows] = 1;
-                        if(Math.Abs(RHS[rows]) > 1e-32) {
+                        if ( Math.Abs(RHS[rows]) > 1e-32 ) {
                             Console.WriteLine("Nonzero Entry in ghost RHS row " + rows + "!!!!!! FIX Please");
                             RHS[rows] = 0;
                             Jobj_U.CheckForNanOrInfM();
@@ -1464,12 +1468,11 @@ namespace ApplicationWithIDT {
                     //save mat files 
 
                     SimpleSolversInterface.Solve_Direct(LHS, stepIN, RHS);
-                } catch(Exception e) {
+                } catch ( Exception e ) {
                     Console.WriteLine("Exception: " + e.ToString() + " From DirectSOlver Thrown, but we continue...");
                 }
                 CmpLineSearchResidualWeight();
                 CmpFphiWeight();
-
 
 
             }
@@ -1704,7 +1707,7 @@ namespace ApplicationWithIDT {
                     //Write value into the matrix
                     for(int iRow = 0; iRow < nCol_obj; iRow++) {
                         val = (obj_vec_eps[iRow] - obj_vec_eps2[iRow]) / eps;
-                        if(val != 0 && !val.IsNaNorInf()) {
+                        if( val.Abs() >= 50 * eps && !val.IsNaNorInf()) { // suppress spurious non-zero derivatives due to round-off errors
                             Jobj[iRow, n_param] = val;
                         }
 
@@ -1712,7 +1715,7 @@ namespace ApplicationWithIDT {
                     //IMutuableMatrixEx_Extensions.SaveToTextFile(Jobj,"Jobj.txt");
                     for(int iRow = 0; iRow < nCol_con; iRow++) {
                         val = (r_vec_eps[iRow] - r_vec_eps2[iRow]) / eps;
-                        if(val != 0 && !val.IsNaNorInf()) {
+                        if(val.Abs() >= 50*eps && !val.IsNaNorInf()) { // suppress spurious non-zero derivatives due to round-off errors
                             Jr[iRow, n_param] = val;
                         }
                     }
@@ -2051,6 +2054,8 @@ namespace ApplicationWithIDT {
                 }
             }
         }
+
+
         /// <summary>
         /// Assembles Left- and Right Hand side 
         /// To do so 
@@ -2074,7 +2079,6 @@ namespace ApplicationWithIDT {
                 gradf_U.Clear();
                 lambda.Clear();
 
-
                 int length_r = (int)UnknownsMap.TotalLength;
                 int length_R = (int)obj_f_map.TotalLength;
 
@@ -2097,7 +2101,6 @@ namespace ApplicationWithIDT {
                     //AllthePossibleStepsPlot();
                 }
 
-
                 //***************************** */
                 //// Agglomerate Jobj,Jr and obj_vec,r before multiplication
                 //***************************** */
@@ -2117,6 +2120,7 @@ namespace ApplicationWithIDT {
                     //Assemble J_r
                     assembler.AccBlock(Jr_U, Jr, 0, 0);
                     assembler.AccBlock(Jr_phi, Jr, 0, length_r);
+
                     //upper right block
                     assembler.AccBlock(Jr.Transpose(), LHS, 0, noOfRowsB);
                     //down left block
@@ -2133,7 +2137,6 @@ namespace ApplicationWithIDT {
                     assembler.AccBlock(reg, LHS, length_r, length_r);
                     //Fphi contribution
                     assembler.AccBlock(Jf_phi.Transpose() * Jf_phi, LHS, length_r, length_r);
-
                 }
 
 

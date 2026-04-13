@@ -2772,8 +2772,9 @@ namespace BoSSS.Foundation {
                                         double h = Epsilons[iCol];
 
                                         double diff = (u1 - u0) / h;
-                                        Buffer[iRow, iRelCol] = diff;
-
+                                        if ( diff.Abs() > 50 * h ) { // prevent "spurious" differences from round-off-errors; 
+                                            Buffer[iRow, iRelCol] = diff;
+                                        }
                                     }
                                 }
                             }
