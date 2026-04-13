@@ -226,16 +226,16 @@ namespace BoSSS.Application.XNSE_Solver {
                 };
 
                 C.Option_LevelSetEvolution = LevelSetEvolution.Fourier;
-                C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Fourier;
+                C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Fourier;
             } else {
 
                 C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
                 C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
-                C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+                C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
                 C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 2;
             }
 
-            C.ComputeEnergyProperties = true;
+            ////C.ComputeEnergyProperties = true;
 
             // Timestepping
             // ============
@@ -465,13 +465,13 @@ namespace BoSSS.Application.XNSE_Solver {
             Func<double[], double, double> PsiB = (X, t) => psiB(X.L2Norm());
 
 
-            C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
-            C.ExactSolutionVelocity.Add("A", new Func<double[], double, double>[] { UA1, UA2 });
-            C.ExactSolutionVelocity.Add("B", new Func<double[], double, double>[] { UB1, UB2 });
+            C.AddExactSolution("VelocityX#A", UA1);
+            C.AddExactSolution("VelocityY#A", UA2);
+            C.AddExactSolution("VelocityX#B", UB1);
+            C.AddExactSolution("VelocityY#B", UB2);
 
-            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionPressure.Add("A", PsiA);
-            C.ExactSolutionPressure.Add("B", PsiB);
+            C.AddExactSolution("Pressure#A", PsiA);
+            C.AddExactSolution("Pressure#B", PsiA);
 
 
             // Boundary condition
@@ -650,7 +650,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AddBoundaryValue("Velocity_inlet", "VelocityX", new Formula($"(X,t) => {VelocityIn}", false));
             C.AddInitialValue("VelocityX", new Formula($"(X) => {VelocityIn}"));
 
-            C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = BoSSS.Foundation.XDG.CutCellQuadratureMethod.Saye;
             C.UseSchurBlockPrec = true;
             C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
@@ -811,7 +811,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.AddBoundaryValue("Velocity_inlet", "VelocityX", new Formula($"(X,t) => {VelocityIn}*(double)(t<={inletdelay}?(t/{inletdelay}):1)", true));
             C.AddBoundaryValue("Velocity_inlet", "VelocityX", new Formula($"(X,t) => {VelocityIn}", true));
 
-            C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = BoSSS.Foundation.XDG.CutCellQuadratureMethod.Saye;
             C.UseSchurBlockPrec = true;
             C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
@@ -963,7 +963,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AddBoundaryValue("Velocity_inlet", "VelocityX", new Formula($"(X,t) => 1-X[1]*X[1]", true));
             //C.AddBoundaryValue("Velocity_inlet", "VelocityY", new Formula($"(X,t) => 1-x*x", true));
 
-            C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = BoSSS.Foundation.XDG.CutCellQuadratureMethod.Saye;
             //C.UseSchurBlockPrec = true;
             C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
@@ -1083,7 +1083,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.AddBoundaryValue("Velocity_inlet", "VelocityX", new Formula($"(X,t) => {VelocityIn}*(double)(t<={inletdelay}?(t/{inletdelay}):1)", true));
             C.AddBoundaryValue("Velocity_inlet", "VelocityX", new Formula($"(X) => {VelocityIn}"));
 
-            C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = BoSSS.Foundation.XDG.CutCellQuadratureMethod.Saye;
             C.UseSchurBlockPrec = true;
             C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
@@ -1336,7 +1336,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //C.EqualOrder = false;
             //C.PressureStabilizationFactor = 1;
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
             //C.UseSchurBlockPrec = true;
             //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             //C.PressureBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
@@ -1568,7 +1568,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             // ====================
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
             C.UseSchurBlockPrec = true;
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AgglomerationThreshold = 0.1;
@@ -1622,7 +1622,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             bool useIB = true;
 
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
 
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
 
@@ -1794,10 +1794,10 @@ namespace BoSSS.Application.XNSE_Solver {
             #region solver
 
             C.solveKineticEnergyEquation = false;
-            //C.ComputeEnergyProperties = true;
+            //////C.ComputeEnergyProperties = true;
 
-            C.CheckJumpConditions = false;
-            C.CheckInterfaceProps = false;
+            //C.CheckJumpConditions = false;
+            //C.CheckInterfaceProps = false;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
@@ -1979,7 +1979,7 @@ namespace BoSSS.Application.XNSE_Solver {
             #region solver
 
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             C.NonLinearSolver.MaxSolverIterations = 100;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
@@ -2059,26 +2059,31 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.LinearSolver = new PmgConfig() {
             //    ConvergenceCriterion = 1e-9
             //};
-            //C.LinearSolver = new OrthoMGSchwarzConfig() {
-            //    ConvergenceCriterion = 1e-9
-            //};
+            C.LinearSolver = new OrthoMGSchwarzConfig() {
+                ConvergenceCriterion = 1e-9,
+                CoarseKickIn = 4000,
+                TargetBlockSize = 4000,
+                SchwarzImplementation = SchwarzImplementation.CoarseMesh
+            };
 
 
             C.LevelSet_ConvergenceCriterion = 1e-6;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.TransposeTermMissing;
 
-            var config = new FGMRESConfig();
-			config.Preconditioners.Add(new OrthoMGSchwarzConfig() {
-                ConvergenceCriterion = 1e-3,
-                CoarseKickIn = 5000,
-                TargetBlockSize = 1000
-            });
+   //         var config = new FGMRESConfig();
+			//config.Preconditioners.Add(new OrthoMGSchwarzConfig() {
+   //             ConvergenceCriterion = 1e-3,
+   //             CoarseKickIn = 5000,
+   //             TargetBlockSize = 1000
+   //         });
 
             //config.Preconditioners.Add(new DirectSolver.Config() {
             //    WhichSolver = Solution.AdvancedSolvers.DirectSolver._whichSolver.PARDISO
             //    });
 
-            C.LinearSolver = config;
+            //C.LinearSolver = new SchurPrecondConfig() { 
+            //    Option = SchurPrecond.SchurOptions.exact
+            //};
             //	new DirectSolver.Config() {
             //	WhichSolver = Solution.AdvancedSolvers.DirectSolver._whichSolver.PARDISO
             //}; //new SchurPrecondConfig();
@@ -2150,11 +2155,24 @@ namespace BoSSS.Application.XNSE_Solver {
 		/// <param name="Res"></param>
 		/// <param name="p"></param>
 		/// <returns></returns>
-		public static XNSE_Control BottiDiPietro3D(int Res = 20, int p = 2) {
-			// --control cs: BoSSS.Application.XNSE_Solver.HardcodedControl.BottiDiPietro2D()
-			var C = new XNSE_Control();
+		public static XNSE_Control BottiDiPietro3D(int Res = 16, int p = 2) {
+            // --control cs: BoSSS.Application.XNSE_Solver.HardcodedControl.BottiDiPietro2D()
+            var dbPath = @"D:\Users\toprak\Documents\db";
 
-			C.GridFunc = delegate () {
+            // Only create if not already a valid BoSSS database
+            IDatabaseInfo dbInfo = DatabaseInfo.CreateOrOpen(dbPath);
+
+            // Open the database (returns IDatabaseInfo)
+
+            var C = new XNSE_Control();
+
+            C.DbPath = dbInfo.Path;
+            C.savetodb = true;
+            C.ProjectName = "BottiDiPietro3Dt";
+            C.ProjectDescription = "Overhead test";
+
+
+            C.GridFunc = delegate () {
 				GridCommons g;
 				double[] xNodes = GenericBlas.Linspace(-1, +1, Res + 1);
 				double[] yNodes = xNodes;
@@ -2237,10 +2255,15 @@ namespace BoSSS.Application.XNSE_Solver {
 
 			C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.TransposeTermMissing;
 
-			C.LinearSolver = new SchurPrecondConfig();
+            C.LinearSolver = new OrthoMGSchwarzConfig() {
+                ConvergenceCriterion = 1e-9,
+                CoarseKickIn = 10000,
+                TargetBlockSize = 10000,
+                SchwarzImplementation = SchwarzImplementation.TaskParallel,
+            };
 
-			C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
-
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+            Console.WriteLine($" p={p}, Res={Res}");
 			return C;
 		}
 
@@ -2302,7 +2325,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 			C.LSContiProjectionMethod = BoSSS.Solution.LevelSetTools.ContinuityProjectionOption.None;
 			//C.CutCellQuadratureType   = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
-			C.ComputeEnergyProperties = false;
+			//C.ComputeEnergyProperties = false;
 
 
 			// Solver Stuff
@@ -2333,7 +2356,97 @@ namespace BoSSS.Application.XNSE_Solver {
 			return C;
 		}
 
-		public static XNSE_Control TranspiratingChannel(string _DbPath = null, int p = 2) {
+
+        public static XNSE_Control XDGStokes3D(int Res = 20, int p = 2) {
+            // --control cs: BoSSS.Application.XNSE_Solver.HardcodedControl.BottiDiPietro3D()
+            var C = new XNSE_Control();
+
+            C.GridFunc = delegate () {
+                GridCommons g;
+                double[] xNodes = GenericBlas.Linspace(-1, +1, Res + 1);
+                double[] yNodes = xNodes;
+                double[] zNodes = xNodes;
+                g = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
+
+                g.DefineEdgeTags(delegate (double[] X) {
+                    double x = X[0];
+                    if(Math.Abs(x - (-1)) < 1e-8)
+                        return "pressure_outlet";
+                    return "wall";
+                });
+
+                return g;
+            };
+
+
+            C.SetDGdegree(p);
+
+
+            // Phys. Parameters
+            // ================
+
+            // Species A: Water; Species B: Air
+            C.PhysicalParameters.rho_A = 1.0; //1e-3; //     kg / cm³
+            C.PhysicalParameters.rho_B = 1.0; //1.2e-6; //   kg / cm³
+            C.PhysicalParameters.mu_A = 1.0; //1e-5; //      kg / cm / sec
+            C.PhysicalParameters.mu_B = 1.0; //17.1e-8; //   kg / cm / sec
+            C.PhysicalParameters.Sigma = 72.75e-3; // kg / sec²   
+            C.PhysicalParameters.IncludeConvection = false;
+            C.PhysicalParameters.Material = true;
+
+            // Dont know
+            // ============
+
+            double r = 0.5;
+            double nonsp = 0.5;
+
+            //double PhiFormula(double[] X) {
+            //	return (X[0] / r* nonsp).Pow2() + (X[1] / r).Pow2() + (X[2] / r).Pow2() - 1;
+            //}
+            var PhiFormula = new Formula($"X => (X[0]/{r * nonsp}).Pow2() + (X[1]/{r}).Pow2()+ (X[2]/{r}).Pow2()  - 1", false); // +(X[2] /{ r}).Pow2()
+
+            C.AddInitialValue("Phi", PhiFormula);
+
+            C.LSContiProjectionMethod = BoSSS.Solution.LevelSetTools.ContinuityProjectionOption.None;
+            //C.CutCellQuadratureType   = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            //C.ComputeEnergyProperties = false;
+
+
+            // Solver Stuff
+            // ============
+            //C.LinearSolver = new SchurPrecondConfig();
+            C.LinearSolver = new OrthoMGSchwarzConfig() {
+                ConvergenceCriterion = 1e-9,
+                CoarseKickIn = 10000,
+                TargetBlockSize = 10000,
+                SchwarzImplementation = SchwarzImplementation.PerProcessWithIdles,
+            };
+
+            //if(C.LinearSolver is IterativeSolverConfig isc) {
+            //    isc.ConvergenceCriterion = 1e-8;
+            //    isc.MaxSolverIterations = 10000;
+            //}
+
+
+            C.NoOfMultigridLevels = 100;
+            C.TracingNamespaces = "BoSSS.Solution";
+            C.LevelSet_ConvergenceCriterion = 1e-6;
+
+            //C.Option_LevelSetEvolution                          = LevelSetEvolution.FastMarching;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+            //C.AdvancedDiscretizationOptions.ViscosityMode       = ViscosityMode.Standard;
+            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
+
+            // Timestepping / Instationary
+            // ===========================
+
+            C.ImmediatePlotPeriod = 1;
+            C.GridPartType = GridPartType.clusterHilbert;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+            return C;
+        }
+
+        public static XNSE_Control TranspiratingChannel(string _DbPath = null, int p = 2) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -2461,21 +2574,13 @@ namespace BoSSS.Application.XNSE_Solver {
 
             Func<double[], double, double> psi_0 = (X, t) => psi0 * X[0] + (xSize * psi0 + 1);
 
-            //Func<double, double> phi = t => t * v0;
+            C.AddExactSolution("VelocityX#A", u_A);
+            C.AddExactSolution("VelocityY#A", v_0);
+            C.AddExactSolution("VelocityX#B", u_B);
+            C.AddExactSolution("VelocityY#B", v_0);
+            C.AddExactSolution("Pressure#A", psi_0);
+            C.AddExactSolution("Pressure#B", psi_0);
 
-            C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
-            C.ExactSolutionVelocity.Add("A", new Func<double[], double, double>[] { u_A, v_0 });
-            C.ExactSolutionVelocity.Add("B", new Func<double[], double, double>[] { u_B, v_0 });
-
-            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionPressure.Add("A", psi_0);
-            C.ExactSolutionPressure.Add("B", psi_0);
-
-            //double[] X_test = new double[] {0,1};
-            //double u_B_test = u_B(X_test,0);
-            //Console.WriteLine("u_B = {0}", u_B_test);
-            //u_B_test = u_B(X_test, 1);
-            //Console.WriteLine("u_B = {0}", u_B_test);
 
             #endregion
 
@@ -2955,10 +3060,10 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
             C.NonLinearSolver.MaxSolverIterations = 100;
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
             C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 0;
 
             #endregion
@@ -3391,7 +3496,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.3;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
@@ -3405,7 +3510,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.AdvancedDiscretizationOptions.surfTensionMode = SurfaceTensionMode.Curvature_Fourier;
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
             C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
 
             #endregion
@@ -3621,15 +3726,11 @@ namespace BoSSS.Application.XNSE_Solver {
             // ==============
 
 
-            C.Phi = ((X, t) => ((X[0] - (center[0] + Xvel * t)).Pow2() + (X[1] - (center[1])).Pow2()).Sqrt() - radius);
+            C.AddExactSolution("Phi", (X, t) => ((X[0] - (center[0] + Xvel * t)).Pow2() + (X[1] - (center[1])).Pow2()).Sqrt() - radius);
 
-            C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
-            C.ExactSolutionVelocity.Add("A", new Func<double[], double, double>[] { (X, t) => Xvel, (X, t) => 0.0 });
-            C.ExactSolutionVelocity.Add("B", new Func<double[], double, double>[] { (X, t) => Xvel, (X, t) => 0.0 });
 
-            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionPressure.Add("A", (X, t) => 0.0);
-            C.ExactSolutionPressure.Add("B", (X, t) => 0.0);
+            C.AddExactSolution(VariableNames.VelocityX, X => Xvel);
+            C.AddExactSolution(VariableNames.Pressure, X => 0.0);
 
 
             // Fourier Level-Set
@@ -3670,7 +3771,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.FourierLevSetControl.Timestepper = FourierLevelSet_Timestepper.ExplicitEuler;
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
             C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
 
             #endregion
@@ -3913,7 +4014,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
             C.NonLinearSolver.MaxSolverIterations = 100;
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             #endregion
 
@@ -4075,7 +4176,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
             C.NonLinearSolver.MaxSolverIterations = 100;
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             #endregion
 
@@ -4303,7 +4404,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
             C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
 
             #endregion
@@ -4585,7 +4686,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = true;
+            ////C.ComputeEnergyProperties = true;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
@@ -4805,8 +4906,8 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
-            C.ComputeEnergyProperties = false;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
+            //C.ComputeEnergyProperties = false;
             C.AgglomerationThreshold = 0.1;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
@@ -5223,7 +5324,7 @@ namespace BoSSS.Application.XNSE_Solver {
             #region solver
 
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
@@ -5458,7 +5559,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
             C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 0;
 
             #endregion
@@ -5661,7 +5762,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.NonLinearSolver.MaxSolverIterations = 100;
 
             C.Option_LevelSetEvolution = LevelSetEvolution.Fourier;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Fourier;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Fourier;
 
             #endregion
 
@@ -5924,7 +6025,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.InitialValues_Evaluators.Add("Phi", (X => X[1] - X[0] + 0.2));
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
@@ -5943,7 +6044,7 @@ namespace BoSSS.Application.XNSE_Solver {
             int D = 3;
 
             if (D == 3)
-                C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+                C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Classic;
 
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Steady;
 
@@ -6152,7 +6253,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.None;
             C.NonLinearSolver.MaxSolverIterations = 50;
@@ -6164,7 +6265,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Option_LevelSetEvolution = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             #endregion
 
@@ -6343,7 +6444,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
 
@@ -6393,7 +6494,7 @@ namespace BoSSS.Application.XNSE_Solver {
             var C = Rotating_Something_Unsteady(4, 20, 2, false);
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
             C.NonLinearSolver.ConvergenceCriterion = 0.000001; //it can also happen with 0.001 depending on parameters
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.OneStepGaussAndStokes;
             C.PhysicalParameters.IncludeConvection = true;
             C.NoOfTimesteps = 300;
             return C;
@@ -6425,8 +6526,8 @@ namespace BoSSS.Application.XNSE_Solver {
             
             //C.UseSchurBlockPrec = true;
             
-            C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
-            //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
+            //C.CutCellQuadratureType = CutCellQuadratureMethod.Saye;
                         
             C.TracingNamespaces = "BoSSS";
 
@@ -6491,7 +6592,7 @@ namespace BoSSS.Application.XNSE_Solver {
             bool Steady = false;
             double bigR = 0.26;
             double smallR = 0.22;
-            C.ImmediatePlotPeriod = 1;
+            C.ImmediatePlotPeriod = -1;
             C.SuperSampling = 0;
             C.DynamicLoadBalancing_On = true;
             C.DynamicLoadBalancing_Period = 1; //Make it challenging by changing the decomposition every timestep
@@ -6539,7 +6640,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AddInitialValue("Pressure", new Formula(@"X => 0"));
             C.AddBoundaryValue("Pressure_Outlet");
 
-            C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = BoSSS.Foundation.XDG.CutCellQuadratureMethod.Saye;
             C.UseSchurBlockPrec = true;
             C.AgglomerationThreshold = 0.95;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
@@ -6745,7 +6846,7 @@ namespace BoSSS.Application.XNSE_Solver {
             }
 
 
-            C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye; //default
+            C.CutCellQuadratureType = BoSSS.Foundation.XDG.CutCellQuadratureMethod.Saye; //default
 
             return C;
         }
@@ -6774,12 +6875,18 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         public static XNSE_Control RotatingPopcorn() {
-            var C = RotatingTiltedXRigid(1, 32, 2, false, shape: Shape.Popcorn, RotAxis: "z", SolverOn: true, rateOfRadius: 0.0, TiltAngle: 0.0, partRad: 0.6);
+            var C = RotatingTiltedXRigid(2, 32, 2, false, shape: Shape.Popcorn, RotAxis: "z", SolverOn: true, rateOfRadius: 0.0, TiltAngle: 0.0, partRad: 0.6);
             C.PlotAgglomeration = true;
             C.NoOfTimesteps = 10;
             var config = new OperatorAnalysisConfig();
-            config.CalculateMassMatrix = true;
-            C.PostprocessingModules.Add(new Logging.CondLogger(config));
+			C.LinearSolver = new OrthoMGSchwarzConfig() {
+				ConvergenceCriterion = 1e-9,
+				CoarseKickIn = 5000,
+				TargetBlockSize = 500,
+				SchwarzImplementation = SchwarzImplementation.TaskParallel
+			};
+			config.CalculateMassMatrix = true;
+            //C.PostprocessingModules.Add(new Logging.CondLogger(config));
             return C;
         }
 
@@ -6844,7 +6951,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // Solver options
             // ===================
-            C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = BoSSS.Foundation.XDG.CutCellQuadratureMethod.Saye;
             C.UseSchurBlockPrec = true;
             C.AgglomerationThreshold = aggThreshold;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
@@ -7004,7 +7111,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             // discretization settings
-            C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = BoSSS.Foundation.XDG.CutCellQuadratureMethod.Saye;
             C.UseSchurBlockPrec = true;
             C.AgglomerationThreshold = 0.2;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
@@ -7160,7 +7267,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // misc. solver options
             // ====================
 
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
             C.UseSchurBlockPrec = true;
             C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;

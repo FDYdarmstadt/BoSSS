@@ -3,7 +3,6 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.IO;
 using BoSSS.Solution;
-using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.XdgTimestepping;
 using System;
@@ -16,7 +15,7 @@ namespace ApplicationWithIDT {
     /// <summary>
     /// Defines the base Control object class used in the ApplicationWithIDT solvers.
     /// </summary>
-    public class IDTControl : CompressibleControl {
+    public class IDTControl : AppControl {
 
         /// <summary>
         /// Creates Default IDTControl
@@ -36,9 +35,12 @@ namespace ApplicationWithIDT {
             this.SpeciesTable[1, 0] = "A";
             this.SpeciesTable[1, 1] = "B";
             base.NoOfMultigridLevels = 1;
+            
+            // Initialize enum based on boolean for backward compatibility
+            this.LevelSetOptimizationMode = this.IsTwoLevelSetRun ? LevelSetOptMode.TwoLevelSets_OptimizeSecond : LevelSetOptMode.SingleLevelSet;
         }
 
-        //[ExclusiveLowerBound(0.0)]
+        [ExclusiveLowerBound(0.0)]
         /// <summary>
         /// Threshold for agglomeration
         /// </summary>
@@ -113,7 +115,49 @@ namespace ApplicationWithIDT {
         #endregion
 
         #region Level Set Stuff
-        public bool IsTwoLevelSetRun { get; set; } = true;
+
+        /// <summary>
+        /// Legacy compatibility option, superseded by <see cref="LevelSetOptimizationMode"/>
+        /// - false: maps to <see cref="LevelSetOptMode.SingleLevelSet"/>
+        /// - true: maps to <see cref="LevelSetOptMode.TwoLevelSets_OptimizeSecond"/>
+        /// </summary>
+        public bool IsTwoLevelSetRun { 
+            get {
+                if(LevelSetOptimizationMode == LevelSetOptMode.SingleLevelSet)
+                    return false;
+                else 
+                    return true;
+            }
+            set {
+                if ( value )
+                    LevelSetOptimizationMode = LevelSetOptMode.TwoLevelSets_OptimizeSecond;
+                else
+                    LevelSetOptimizationMode = LevelSetOptMode.SingleLevelSet;
+            }
+        }
+        /// <summary>
+        /// Level set optimization mode - controls which level sets are used and optimized
+        /// </summary>
+        public LevelSetOptMode LevelSetOptimizationMode { get; set; } = LevelSetOptMode.TwoLevelSets_OptimizeSecond;
+
+        /*
+        /// <summary>
+        /// Helper property: Returns true if a second level set is used
+        /// </summary>
+        public bool UsesSecondLevelSet => LevelSetOptimizationMode != LevelSetOptMode.SingleLevelSet;
+
+        /// <summary>
+        /// Helper property: Returns true if the first level set is being optimized
+        /// </summary>
+        public bool OptimizesLevelSetOne => LevelSetOptimizationMode == LevelSetOptMode.TwoLevelSets_OptimizeBoth;
+
+        /// <summary>
+        /// Helper property: Returns true if the second level set is being optimized
+        /// </summary>
+        public bool OptimizesLevelSetTwo => LevelSetOptimizationMode == LevelSetOptMode.TwoLevelSets_OptimizeSecond || LevelSetOptimizationMode == LevelSetOptMode.TwoLevelSets_OptimizeBoth;
+        */
+
+
         public Func<double[], double> LevelSetTwoInitialValue { get; set; } = x => 0.5 - x[0];
         public string[] SpeciesToEvaluate { get; set; } = null;
         public string[,] SpeciesTable { get; set; } = new string[2, 2];
@@ -151,8 +195,10 @@ namespace ApplicationWithIDT {
         /// The configured polynomial DG degree of the second level set
         /// </summary>
         public int LevelSetTwoDegree { get; set; } = 1;
+
         /// <summary>
-        /// Position of LevelSetOne, only needed when two LevelSets are used
+        /// Height function describing the first level-set
+        /// (<see cref="ApplicationWithIDT{T}.LevelSetOpti"/>, <see cref="ApplicationWithIDT{T}.LevelSet"/>).
         /// </summary>
         public Func<double[], double> LevelSetOneInitialValue { get; set; } = null;
         public string ShockLevelSet_Db { get; set; } = null;
@@ -418,5 +464,23 @@ namespace ApplicationWithIDT {
     public enum ReInitMode {
         OneTolForAllP,
         OneTolForEachP,
+    }
+
+    /// <summary>
+    /// Level set optimization mode - controls which level sets are used and optimized
+    /// </summary>
+    public enum LevelSetOptMode {
+        /// <summary>
+        /// Use and optimize only the first level set
+        /// </summary>
+        SingleLevelSet,
+        /// <summary>
+        /// Use two level sets but optimize only the second one
+        /// </summary>
+        TwoLevelSets_OptimizeSecond,
+        /// <summary>
+        /// Use and optimize both level sets simultaneously
+        /// </summary>
+        TwoLevelSets_OptimizeBoth
     }
 }

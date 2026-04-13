@@ -134,6 +134,9 @@ namespace BoSSS.Platform.Utils.Geom {
             for (int d = 0; d < D; d++) {
                 double diam_d = this.Max[d] - this.Min[d];
 
+                if (diam_d == 0.0) // in case of point on a line (2D, 3D) or in a plane (3D)
+                    diam_d = 1e-8;
+
                 diam_d *= extFactor;
                 this.Min[d] -= diam_d;
                 this.Max[d] += diam_d;

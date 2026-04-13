@@ -61,13 +61,15 @@ namespace BoSSS.Foundation.Comm {
         }
 
 
-        /// <summary>
-        /// ctor.
-        /// </summary>
-        /// <param name="master"></param>
-        /// <param name="vector">a vector of length J*<paramref name="ItemsPerCell"/>, where J is the number of local cells (including ghost)</param>
-        /// <param name="ItemsPerCell">the number of items that should be transmitted/received per cell</param>
-        public VectorTransceiver(IGridData master, T vector, int ItemsPerCell) {
+		/// <summary>
+		/// ctor.
+		/// </summary>
+		/// <param name="master"></param>
+		/// <param name="vector">a vector of length J*<paramref name="ItemsPerCell"/>, where J is the number of local cells (including ghost)</param>
+		/// <param name="ItemsPerCell">the number of items that should be transmitted/received per cell</param>
+		/// <param name="comm"></param>
+		/// <exception cref="ArgumentException"></exception>
+		public VectorTransceiver(IGridData master, T vector, int ItemsPerCell, MPI_Comm comm) {
             CheckItemTypeRecursive(typeof(V));
 
             int J = master.iLogicalCells.Count;
@@ -77,13 +79,13 @@ namespace BoSSS.Foundation.Comm {
             m_ItemsPerCell = ItemsPerCell;
             m_vector = vector;
             m_master = master;
+            m_comm =  comm == null ? csMPI.Raw._COMM.WORLD : comm;
+			//sms = new SerialisationMessenger(csMPI.Raw._COMM.WORLD);
 
-            //sms = new SerialisationMessenger(csMPI.Raw._COMM.WORLD);
+			//// set comm. paths
+			//sms.SetCommPathsAndCommit(master.Parallel.ProcessesToSendTo);
 
-            //// set comm. paths
-            //sms.SetCommPathsAndCommit(master.Parallel.ProcessesToSendTo);
-
-            var Para = m_master.iParallel;
+			var Para = m_master.iParallel;
             var sndProc = Para.ProcessesToSendTo;
             var rvcProc = Para.ProcessesToReceiveFrom;
             SendBuffers = new V[sndProc.Length][];
@@ -112,14 +114,14 @@ namespace BoSSS.Foundation.Comm {
 
         MPI_Status[] staTussies;
 
-
+        MPI_Comm m_comm;
 
         /// <summary>
         /// initiates the send/receive - processes and returns immediately;
         /// Every call of this method must be matched by a later call to <see cref="TransceiveFinish"/>;
         /// </summary>
         public void TransceiveStartImReturn() {
-            ilPSP.MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
+            ilPSP.MPICollectiveWatchDog.Watch(m_comm);
 
 
             var Para = m_master.iParallel;
@@ -144,7 +146,7 @@ namespace BoSSS.Foundation.Comm {
 
 
             int MyRank;
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out MyRank);
+            csMPI.Raw.Comm_Rank(m_comm, out MyRank);
 
             Array.Clear(this.rqst, 0, this.rqst.Length);
 
@@ -182,7 +184,7 @@ namespace BoSSS.Foundation.Comm {
                     csMPI.Raw.Issend(Marshal.UnsafeAddrOfPinnedArrayElement(SendBuffers[i], 0),
                         Len * sz * N, csMPI.Raw._DATATYPE.BYTE, pDest,
                         4442 + MyRank,
-                        csMPI.Raw._COMM.WORLD,
+						m_comm,
                         out rqst[i]);
                 }
 
@@ -237,7 +239,7 @@ namespace BoSSS.Foundation.Comm {
                  */
 
                 int MyRank;
-                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out MyRank);
+                csMPI.Raw.Comm_Rank(m_comm, out MyRank);
 
                 var rvcProc = Para.ProcessesToReceiveFrom;
                 var sndProc = Para.ProcessesToSendTo;
@@ -284,7 +286,7 @@ namespace BoSSS.Foundation.Comm {
                             csMPI.Raw.Irecv(insertAddr,
                                 Len * N * sz, csMPI.Raw._DATATYPE.BYTE, pOrigin,
                                 4442 + pOrigin,
-                                csMPI.Raw._COMM.WORLD,
+                                m_comm,
                                 out rqst[i + sndProc.Length]);
                         }
 
@@ -339,75 +341,122 @@ namespace BoSSS.Foundation.Comm {
         /// first dimension must match local number of cells (including external).
         /// </param>
         static public void MPIExchange(this MultidimensionalArray vector, IGridData master) {
-
-            int[] i0 = new int[vector.Dimension];
-            int offset = vector.Index(i0);
-
-            if (!vector.IsContinuous || !(offset == 0) || !(vector.Storage.Length == vector.Length))
-                throw new NotSupportedException();
-
-            if (vector.GetLength(0) != master.iLogicalCells.Count)
-                throw new ArgumentException("fist dimension must match number of local cells (including external)");
-
-            double[] Stor = vector.Storage;
-            int J = master.iLogicalCells.Count;
-            int L = Stor.Length;
-            Debug.Assert(L % J == 0);
-
-            var Trx = new VectorTransceiver<double[], double>(master, Stor, L / J);
-            Trx.TransceiveStartImReturn();
-            Trx.TransceiveFinish();
+            vector.MPIExchange(master, csMPI.Raw._COMM.WORLD);
         }
 
-        /// <summary>
-        /// most elegant way of MPI vector exchange....
-        /// </summary>
-        static public void MPIExchange(this double[] vector, IGridData master) {
-            MPIExchange<double[], double>(vector, master);
+		static public void MPIExchange(this MultidimensionalArray vector, IGridData master, MPI_Comm comm) {
+
+			int[] i0 = new int[vector.Dimension];
+			int offset = vector.Index(i0);
+
+			if (!vector.IsContinuous || !(offset == 0) || !(vector.Storage.Length == vector.Length))
+				throw new NotSupportedException();
+
+			if (vector.GetLength(0) != master.iLogicalCells.Count)
+				throw new ArgumentException("fist dimension must match number of local cells (including external)");
+
+			double[] Stor = vector.Storage;
+			int J = master.iLogicalCells.Count;
+			int L = Stor.Length;
+			Debug.Assert(L % J == 0);
+
+			var Trx = new VectorTransceiver<double[], double>(master, Stor, L / J, comm);
+			Trx.TransceiveStartImReturn();
+			Trx.TransceiveFinish();
+		}
+
+		/// <summary>
+		/// most elegant way of MPI vector exchange....
+		/// </summary>
+		static public void MPIExchange(this double[] vector, IGridData master) {
+			vector.MPIExchange(master, csMPI.Raw._COMM.WORLD);
         }
 
-        /// <summary>
-        /// most elegant way of MPI vector exchange....
-        /// </summary>
-        static public void MPIExchange(this int[] vector, IGridData master) {
-            MPIExchange<int[], int>(vector, master);
-        }
-
-        /// <summary>
-        /// most elegant way of MPI vector exchange....
-        /// </summary>
-        static public void MPIExchange(this long[] vector, IGridData master) {
-            MPIExchange<long[], long>(vector, master);
-        }
-
-        /// <summary>
-        /// most elegant way of MPI vector exchange....
-        /// </summary>
-        /// <typeparam name="Tlst"></typeparam>
-        /// <typeparam name="Titm"></typeparam>
-        /// <param name="vector"></param>
-        /// <param name="master"></param>
-        static public void MPIExchange<Tlst, Titm>(this Tlst vector, IGridData master)
-            where Tlst : IList<Titm>
-            where Titm : struct {
-            int J = master.iLogicalCells.Count;
-            int L = vector.Count;
-            if(L % J != 0) {
-                throw new ArgumentException("Length of vector must be equal or a multiple of number of cells (including external).");
-            }
-
-            var Trx = new VectorTransceiver<Tlst, Titm>(master, vector, L / J);
-            Trx.TransceiveStartImReturn();
-            Trx.TransceiveFinish();
-        }
+		/// <summary>
+		/// most elegant way of MPI vector exchange....
+		/// </summary>
+		static public void MPIExchange(this double[] vector, IGridData master, MPI_Comm comm) {
+			MPIExchangeWithComm<double[], double>(vector, master, comm);
+		}
 
 
-        /// <summary>
-        /// MPI update of a bit-array
-        /// </summary>
-        /// <param name="b"></param>
-        /// <param name="GridData"></param>
-        static public void MPIExchange(this BitArray b, IGridData GridData) {
+		/// <summary>
+		/// most elegant way of MPI vector exchange....
+		/// </summary>
+		static public void MPIExchange(this int[] vector, IGridData master) {
+			vector.MPIExchange(master, csMPI.Raw._COMM.WORLD);
+		}
+
+		/// <summary>
+		/// most elegant way of MPI vector exchange....
+		/// </summary>
+		static public void MPIExchange(this int[] vector, IGridData master, MPI_Comm comm) {
+			MPIExchangeWithComm<int[], int>(vector, master, comm);
+		}
+
+		/// <summary>
+		/// most elegant way of MPI vector exchange....
+		/// </summary>
+		static public void MPIExchange(this long[] vector, IGridData master) {
+			vector.MPIExchange(master, csMPI.Raw._COMM.WORLD);
+		}
+
+		/// <summary>
+		/// most elegant way of MPI vector exchange....
+		/// </summary>
+		static public void MPIExchange(this long[] vector, IGridData master, MPI_Comm comm) {
+			MPIExchangeWithComm<long[], long>(vector, master, comm);
+		}
+
+		/// <summary>
+		/// most elegant way of MPI vector exchange....
+		/// </summary>
+		/// <typeparam name="Tlst"></typeparam>
+		/// <typeparam name="Titm"></typeparam>
+		/// <param name="vector"></param>
+		/// <param name="master"></param>
+		static public void MPIExchange<Tlst, Titm>(this Tlst vector, IGridData master)
+			where Tlst : IList<Titm>
+			where Titm : struct {
+			vector.MPIExchangeWithComm<Tlst, Titm>(master, csMPI.Raw._COMM.WORLD);
+		}
+
+		/// <summary>
+		/// most elegant way of MPI vector exchange....
+		/// </summary>
+		/// <typeparam name="Tlst"></typeparam>
+		/// <typeparam name="Titm"></typeparam>
+		/// <param name="vector"></param>
+		/// <param name="master"></param>
+		/// <param name="comm"></param>
+		static public void MPIExchangeWithComm<Tlst, Titm>(this Tlst vector, IGridData master, MPI_Comm comm)
+			where Tlst : IList<Titm>
+			where Titm : struct {
+			int J = master.iLogicalCells.Count;
+			int L = vector.Count;
+			if (L % J != 0) {
+				throw new ArgumentException("Length of vector must be equal or a multiple of number of cells (including external).");
+			}
+
+			var Trx = new VectorTransceiver<Tlst, Titm>(master, vector, L / J, comm);
+			Trx.TransceiveStartImReturn();
+			Trx.TransceiveFinish();
+		}
+
+		static public void MPIExchange(this BitArray b, IGridData GridData) {
+			b.MPIExchange(GridData, csMPI.Raw._COMM.WORLD);
+		}
+
+
+		/// <summary>
+		/// MPI update of a bit-array
+		/// </summary>
+		/// <param name="b"></param>
+		/// <param name="GridData"></param>
+		/// <param name="comm"></param>
+		/// <exception cref="ArgumentException"></exception>
+		static public void MPIExchange(this BitArray b, IGridData GridData, MPI_Comm comm) {
+
             if (b.Length != GridData.iLogicalCells.Count) {
                 throw new ArgumentException("length must be equal to number of cells.", "b");
             }
@@ -421,7 +470,7 @@ namespace BoSSS.Foundation.Comm {
                 bb[j] = b[j] ? byte.MaxValue : (byte)0;
             }
 
-            MPIExchange<byte[], byte>(bb, GridData);
+			MPIExchangeWithComm<byte[], byte>(bb, GridData, comm);
 
             for(int j = J; j < Je; j++) {
                 b[j] = bb[j] > 128;

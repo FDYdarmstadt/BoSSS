@@ -9,8 +9,7 @@ using System.Diagnostics;
 using ilPSP;
 using BoSSS.Foundation.Quadrature;
 
-namespace BoSSS.Foundation.XDG.Quadrature
-{
+namespace BoSSS.Foundation.XDG.Quadrature.Saye {
     class LinearPSI<S>
         where S : RefElement
 
@@ -501,7 +500,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 rowPointer += rule.NoOfNodes;
             }
 
-            QuadRule RuleToRuleThemAll = QuadRule.CreateEmpty(refElement, count, spatialDim);
+            QuadRule RuleToRuleThemAll = QuadRule.CreateBlank(refElement, count, spatialDim);
             RuleToRuleThemAll.Nodes = new NodeSet(refElement, nodes, true);
             RuleToRuleThemAll.Weights = weights;
             return RuleToRuleThemAll;

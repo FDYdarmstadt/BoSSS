@@ -365,7 +365,20 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         protected double penalty(IGridData g, int jCellIn, int jCellOut, int iEdge) {
             double penaltySizeFactor_A = 1.0 / cj[jCellIn];
-            double penaltySizeFactor_B = jCellOut >= 0 ? 1.0 / cj[jCellOut] : 0;
+            double penaltySizeFactor_B;// = jCellOut >= 0 ? 1.0 / cj[jCellOut] : 0;
+            if(jCellOut < 0 || cj[jCellOut].IsNaNorInf())
+                // there is no OUT-cell, i.e., current edge is at the boundary of the domain
+                // -- or -- 
+                // in 3D, with certain cut-cell quad rules (e.g. Algoim),
+                // when the Level Set passes exactly through the corner of the cell,
+                // it might happen that the species-volume of the OUT-cell is empty,
+                // but the edge integral is only almost zero (slightly positive, e.g., weights around 10e-14 or so).
+                // In such cases, the edge integral is evaluated (since it is a non-empty rule),
+                // but the OUT-cell already has a NAN-length scale assigned.
+                penaltySizeFactor_B = 0.0;
+            else 
+                penaltySizeFactor_B = 1.0 / cj[jCellOut];
+
 
             double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
 
@@ -499,9 +512,9 @@ namespace BoSSS.Solution.NSECommon {
     }
 
     /// <summary>
-    /// \f[ 
-    ///   -\mathrm{div} \left( \mu \nabla \vec{u} \right)
-    /// \f]
+    /// \[ 
+    ///   -\mathrm{div} \left( \mu \nabla \underline{u} \right)
+    /// \]
     /// </summary>
     public class SipViscosity_GradU : SipViscosityBase,
         INonlinVolumeForm_GradV,
@@ -688,7 +701,7 @@ namespace BoSSS.Solution.NSECommon {
                     //        goto case IncompressibleBcType.Velocity_Inlet;
                     //    }
                     //}
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet: {
                     // Atmospheric outlet/pressure outflow: hom. Neumann
                     // +++++++++++++++++++++++++++++++++++++++++++++++++
@@ -716,6 +729,14 @@ namespace BoSSS.Solution.NSECommon {
 
                     break;
                 }
+                case IncompressibleBcType.Dong_OutFlow: {
+                        //for (int d = 0; d < inp.D; d++) {
+                        //    Acc += (muA * _Grad_uA[m_iComp, d]) * (_vA) * inp.Normal[d];
+                        //}
+                        //Acc *= base.m_alpha;
+
+                        break;
+                    }
                 default:
                     throw new NotImplementedException();
             }
@@ -981,9 +1002,9 @@ namespace BoSSS.Solution.NSECommon {
 
 
     /// <summary>
-    /// \f[ 
-    ///   - \mathrm{div} \left( \mu (\partial_d \vec{u})^T \right)
-    /// \f]
+    /// \[ 
+    ///   - \mathrm{div} \left( \mu (\partial_d \underline{u})^T \right)
+    /// \]
     /// </summary>
     public class SipViscosity_GradUtransp : SipViscosityBase, INonlinVolumeForm_GradV,
         INonlinEdgeForm_GradV,
@@ -1156,7 +1177,7 @@ namespace BoSSS.Solution.NSECommon {
 
                 //        break;
                 //    }
-                case IncompressibleBcType.Pressure_Dirichlet:                    
+                case IncompressibleBcType.Pressure_Dirichlet:
                     // Inner values of velocity gradient are taken, i.e.
                     // no boundary condition for the velocity (resp. velocity gradient) is imposed.                        
                     for (int i = 0; i < inp.D; i++) {
@@ -1164,26 +1185,34 @@ namespace BoSSS.Solution.NSECommon {
                     }                    
                     Acc *= base.m_alpha;
                     break;
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet: {
-                    //if (!base.g_Neu_GradU.IsNullOrEmpty()) {
-                    //    double g_N = g_Neu(inp.X, inp.Normal, inp.EdgeTag);
-                    //    Acc += muA * g_N * _vA;
-                    //} else
-                    if (base.g_Neu_Override == null) {
-                        // !!!!! for now B.C. is only imposed via the GradU Term explicitly !!!!!
-                        // Inner values of velocity gradient are taken, i.e.
-                        // no boundary condition for the velocity (resp. velocity gradient) is imposed.
+                        //if (!base.g_Neu_GradU.IsNullOrEmpty()) {
+                        //    double g_N = g_Neu(inp.X, inp.Normal, inp.EdgeTag);
+                        //    Acc += muA * g_N * _vA;
+                        //} else
+                        if (base.g_Neu_Override == null) {
+                            // !!!!! for now B.C. is only imposed via the GradU Term explicitly !!!!!
+                            // Inner values of velocity gradient are taken, i.e.
+                            // no boundary condition for the velocity (resp. velocity gradient) is imposed.
+                            for (int i = 0; i < inp.D; i++) {
+                                Acc += (muA * _Grad_uA[i, m_iComp]) * (_vA) * inp.Normal[i];
+                            }
+                        } else {
+                            double g_N = g_Neu(inp.X, inp.Normal, inp.EdgeTag);
+                            Acc += muA * g_N * _vA;
+                        }
+                        Acc *= base.m_alpha;
+                        break;
+                    }
+                case IncompressibleBcType.Dong_OutFlow: {
                         for (int i = 0; i < inp.D; i++) {
                             Acc += (muA * _Grad_uA[i, m_iComp]) * (_vA) * inp.Normal[i];
                         }
-                    } else {
-                        double g_N = g_Neu(inp.X, inp.Normal, inp.EdgeTag);
-                        Acc += muA * g_N * _vA;
+                        Acc *= base.m_alpha;
+
+                        break;
                     }
-                    Acc *= base.m_alpha;
-                    break;
-                }
                 default:
                     throw new NotSupportedException();
             }
@@ -1435,9 +1464,9 @@ namespace BoSSS.Solution.NSECommon {
 
 
     /// <summary>
-    /// \f[ 
-    ///   \frac{2}{3} \mathrm{div} \left( \mu \myMatrix{I} \mathrm{div} ( \vec{u} )  \right)
-    /// \f]
+    /// \[ 
+    ///   \frac{2}{3} \mathrm{div} \left( \mu \boldsymbol{I} \mathrm{div} ( \underline{u} )  \right)
+    /// \]
     /// </summary>
     public class SipViscosity_divU : SipViscosityBase, INonlinVolumeForm_GradV,
         INonlinEdgeForm_GradV,
@@ -1536,7 +1565,7 @@ namespace BoSSS.Solution.NSECommon {
                     break;
                 }
                 case IncompressibleBcType.Pressure_Dirichlet:
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet: {
 
                     if(base.g_Neu_Override == null) {

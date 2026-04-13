@@ -174,32 +174,32 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
         bool IsInflow(ref CommonParamsBnd inp) {
             BoundaryType edgeType = m_boundaryCondMap.EdgeTag2Type[inp.EdgeTag];
-            switch (edgeType) {
+            switch(edgeType) {
                 case BoundaryType.Wall:
                 case BoundaryType.Slip:
                 case BoundaryType.SlipSymmetry:
-                    // a Dicirchlet b.c. for 'c' mean a Neumann b.c. for 'phi'
-                    return false;
+                // a Dicirchlet b.c. for 'c' mean a Neumann b.c. for 'phi'
+                return false;
 
                 case BoundaryType.Inlet:
                 case BoundaryType.Outlet:
                 case BoundaryType.Outflow:
                 case BoundaryType.Pressure_Dirichlet:
                 default:
-                    return true;
+                return true;
             }
         }
 
         public virtual double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN) {
             // expand for treatment of input functions, for now hardcode to -1.0
             double UxN = 0;
-            for (int d = 0; d < m_D; d++) {
+            for(int d = 0; d < m_D; d++) {
                 UxN += (inp.Parameters_IN[d]) * inp.Normal[d];
             }
 
             double phi;
-            if (IsInflow(ref inp)) {
-                if (UxN >= 0) {
+            if(IsInflow(ref inp)) {
+                if(UxN >= 0) {
                     phi = _uIN[0];
                 } else {
                     phi = -1.0;//m_bndFunc[inp.EdgeTag](inp.X, inp.time);
@@ -213,12 +213,12 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
         public virtual double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
             double UxN = 0;
-            for (int d = 0; d < m_D; d++) {
+            for(int d = 0; d < m_D; d++) {
                 UxN += 0.5 * (inp.Parameters_IN[d] + inp.Parameters_OUT[d]) * inp.Normal[d];
             }
 
             double phi;
-            if (UxN >= 0) {
+            if(UxN >= 0) {
                 phi = _uIN[0];
             } else {
                 phi = _uOUT[0];
@@ -230,7 +230,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double acc = 0;
             double phi = U[0];
-            for (int d = 0; d < m_D; d++) {
+            for(int d = 0; d < m_D; d++) {
                 acc += phi * cpv.Parameters[d] * GradV[d];
             }
 
@@ -241,11 +241,9 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             return new[] { this };
         }
 
-        public void MyParameterUpdate(DGField[] Arguments, DGField[] Parameters)
-        {}
+        public void MyParameterUpdate(DGField[] Arguments, DGField[] Parameters) { }
 
-        public DGField[] MyParameterAlloc(DGField[] Arguments)
-        {
+        public DGField[] MyParameterAlloc(DGField[] Arguments) {
             return m_velocityGetter();
         }
     }

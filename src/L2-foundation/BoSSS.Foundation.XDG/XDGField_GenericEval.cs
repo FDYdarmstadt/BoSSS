@@ -34,11 +34,12 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="R">output</param>
         /// <param name="offset"></param>
         /// <param name="m"></param>
-        /// <param name="SpcInd">
-        /// species index
-        /// </param>
+        /// <param name="levset_bytecode"></param>
+        /// <param name="regionCode"></param>
         /// <param name="SR">input</param>
-        delegate void Picker(MultidimensionalArray R, int offset, int m, int SpcInd, MultidimensionalArray[] SR);
+        delegate void Picker(MultidimensionalArray R, int offset, int m, 
+            LevelSetSignCode levset_bytecode, 
+            ReducedRegionCode regionCode, MultidimensionalArray[] SR);
 
         private void GenericEval(int j0, int Len, NodeSet NodeSet, MultidimensionalArray result, int ResultCellindexOffset, double ResultPreScale,
             EvaluateInternalSignature EvalFunc,
@@ -163,9 +164,8 @@ namespace BoSSS.Foundation.XDG {
                         }
 
                         LevelSetSignCode levset_bytecode = LevelSetSignCode.ComputeLevelSetBytecode(_levSetSign);
-                        int SpecInd = trk.GetSpeciesIndex(ReducedRegionCode, levset_bytecode);
 
-                        p(result, ResultCellindexOffset, m, SpecInd, Buffer);
+                        p(result, ResultCellindexOffset, m, levset_bytecode, ReducedRegionCode, Buffer);
                     }
                 }
             }

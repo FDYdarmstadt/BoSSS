@@ -53,6 +53,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         List<double[]> contactPointsRef;
 
         /// <summary>
+        /// print logging values to console (development, debugging)
+        /// </summary>
+        public bool printToConsole = false;
+
+        /// <summary>
         /// 
         /// </summary>
         protected override void PerformTimestepPostProcessing(int TimestepNo, double phystime) {
@@ -120,6 +125,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                         contactPointsSorted.ElementAt(p)[0], contactPointsSorted.ElementAt(p)[1],
                         contactVelocitiesSorted.ElementAt(p)[0], contactVelocitiesSorted.ElementAt(p)[1], contactAnglesSorted.ElementAt(p));
                     Log.WriteLine(line);
+
+                    if (printToConsole) {
+                        Console.WriteLine(line);
+                    }
                 }
                 Log.Flush();
 
@@ -158,34 +167,32 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             LevelSetGradient.Gradient(1.0, (SinglePhaseField)LsTrk.LevelSets[0]);
             SinglePhaseField[] Normals = LevelSetGradient.ToArray();
 
-            XQuadSchemeHelper SchemeHelper = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder).XQuadSchemeHelper;
-            EdgeQuadratureScheme SurfaceElement_Edge = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(this.LsTrk.GetSpeciesId("A"), 0);
+            XQuadSchemeHelper SchemeHelper = this.LsTrk.GetXDGSpaceMetrics(this.m_HMForder).XQuadSchemeHelper;
+            EdgeQuadratureScheme SurfaceElement_Edge = SchemeHelper
+                .Get_SurfaceElement_EdgeQuadScheme(this.LsTrk.GetSpeciesId("A"), this.LsTrk.GetSpeciesId("B"), 0)
+                .Restrict(this.LsTrk.GridDat.GetBoundaryEdgeMask());
 
-            var gridDat = (GridData)this.SolverMainOverride.GridData;
-            var QuadDom = SurfaceElement_Edge.Domain;
-            var boundaryEdge = gridDat.GetBoundaryEdgeMask().GetBitMask();
-            var boundaryCutEdge = QuadDom.Intersect(new EdgeMask(gridDat, boundaryEdge, MaskType.Geometrical));
-
-            var factory = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder).XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(0, LsTrk.GridDat.Grid.RefElements[0]);
-            SurfaceElement_Edge = new EdgeQuadratureScheme(factory, boundaryCutEdge);
-            
             EdgeQuadrature.GetQuadrature(new int[] { 5 }, LsTrk.GridDat,
-                SurfaceElement_Edge.Compile(LsTrk.GridDat, 0),
+                SurfaceElement_Edge.Compile(LsTrk.GridDat, this.m_HMForder),
                 delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
 
                     // contact point
                     NodeSet Enode_l = QR.Nodes;
                     int trf = LsTrk.GridDat.Edges.Edge2CellTrafoIndex[i0, 0];
                     NodeSet Vnode_l = Enode_l.GetVolumeNodeSet(LsTrk.GridDat, trf, false);
-                    NodeSet Vnode_g = Vnode_l.CloneAs();
+                    //NodeSet Vnode_g = Vnode_l.CloneAs();
+                    int D = base.SolverMainOverride.Grid.SpatialDimension;
+                    MultidimensionalArray Vnode_g = MultidimensionalArray.Create(QR.NoOfNodes, D);
                     int cell = LsTrk.GridDat.Edges.CellIndices[i0, 0];
                     LsTrk.GridDat.TransformLocal2Global(Vnode_l, Vnode_g, cell);
                     //Console.WriteLine("contact point: ({0},{1})", Vnode_g[0, 0], Vnode_g[0, 1]);
 
-                    int D = base.SolverMainOverride.Grid.SpatialDimension;
+                    double[] cp = new double[D];
                     for (int d = 0; d < D; d++) {
-                        EvalResult[0, 0, d] = Vnode_g[0, d];
+                        //EvalResult[0, 0, d] = Vnode_g[0, d];
+                        cp[d] = Vnode_g[0, d];
                     }
+                    contactPoints.Add(cp);
 
                     // contact line velocity
                     MultidimensionalArray U_IN = MultidimensionalArray.Create(new int[] { 1, 1, D });
@@ -194,9 +201,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                         (meanVelocity[d] as SinglePhaseField).EvaluateEdge(i0, length, QR.Nodes, U_IN.ExtractSubArrayShallow(-1, -1, d), U_OUT.ExtractSubArrayShallow(-1, -1, d));
                     }
 
+                    double[] cpV = new double[D];
                     for (int d = 0; d < D; d++) {
-                        EvalResult[0, 0, 2 + d] = U_IN[0, 0, d];
+                        //EvalResult[0, 0, 2 + d] = U_IN[0, 0, d];
+                        cpV[d] = U_IN[0, 0, d];
                     }
+                    contactVelocities.Add(cpV);
 
                     // contact angle
                     MultidimensionalArray normal_IN = MultidimensionalArray.Create(new int[] { 1, 1, D });
@@ -205,35 +215,49 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                         Normals[d].EvaluateEdge(i0, length, QR.Nodes, normal_IN.ExtractSubArrayShallow(-1, -1, d), normal_OUT.ExtractSubArrayShallow(-1, -1, d));
                     }
 
-                    double theta_surf = Math.Atan2(normal_IN[0, 0, 1], normal_IN[0, 0, 0]);
-                    double theta_edge = Math.Atan2(LsTrk.GridDat.Edges.NormalsForAffine[i0, 1], LsTrk.GridDat.Edges.NormalsForAffine[i0, 0]);
-                    double theta = (theta_surf - theta_edge) * (180 / Math.PI);
+                    //double theta_surf = Math.Atan2(normal_IN[0, 0, 1], normal_IN[0, 0, 0]);
+                    //double theta_edge = Math.Atan2(LsTrk.GridDat.Edges.NormalsForAffine[i0, 1], LsTrk.GridDat.Edges.NormalsForAffine[i0, 0]);
+                    //double theta = (theta_surf - theta_edge) * (180 / Math.PI);
 
-                    EvalResult[0, 0, 2 * D] = (theta > 180) ? theta - 180 : theta;
+                    //EvalResult[0, 0, 2 * D] = (theta > 180) ? theta - 180 : theta;
+                    //Console.WriteLine("contact angle = {0}", EvalResult[0, 0, 2 * D]);
+
+                    var surfNormal = normal_IN.GetRowPt(0, 0);
+                    var edgeNormal =  LsTrk.GridDat.Edges.NormalsForAffine.GetRowPt(i0);
+                    //Console.WriteLine("surf normal = ({0}, {1})", surfNormal[0], surfNormal[1]);
+                    //Console.WriteLine("edge normal = ({0}, {1})", edgeNormal[0], edgeNormal[1]);
+                    double contactAngle = surfNormal.AngleTo(edgeNormal);
+                    //double contactAngle = GetAngleBetweenNormals(surfNormal, edgeNormal);
+
+
+                    //EvalResult[0, 0, 2 * D] = (Math.PI - contactAngle) * (180.0 / Math.PI);
+                    contactAngles.Add(Math.Abs((Math.PI - contactAngle) * (180.0 / Math.PI)));
                     //Console.WriteLine("contact angle = {0}", EvalResult[0, 0, 2 * D]);
 
                 },
                 delegate (int i0, int length, MultidimensionalArray ResultsOfIntegration) {
-                    int D = SolverMainOverride.Grid.SpatialDimension;
-                    for (int i = 0; i < length; i++) {
-                        if (ResultsOfIntegration[i, 2 * D] != 0.0) {
-                            contactAngles.Add(Math.Abs(ResultsOfIntegration[i, 2 * D]));
-                            double[] cp = new double[D];
-                            double[] cpV = new double[D];
-                            for (int d = 0; d < D; d++) {
-                                cp[d] = ResultsOfIntegration[i, d];
-                                cpV[d] = ResultsOfIntegration[i, 2 + d];
-                            }
-                            contactPoints.Add(cp);
-                            contactVelocities.Add(cpV);
-                        }
-                    }
+                    //int D = SolverMainOverride.Grid.SpatialDimension;
+                    //for (int i = 0; i < length; i++) {
+                    //    if (ResultsOfIntegration[i, 2 * D] != 0.0) {
+                    //        contactAngles.Add(Math.Abs(ResultsOfIntegration[i, 2 * D]));
+                    //        double[] cp = new double[D];
+                    //        double[] cpV = new double[D];
+                    //        for (int d = 0; d < D; d++) {
+                    //            cp[d] = ResultsOfIntegration[i, d];
+                    //            cpV[d] = ResultsOfIntegration[i, 2 + d];
+                    //        }
+                    //        contactPoints.Add(cp);
+                    //        contactVelocities.Add(cpV);
+                    //    }
+                    //}
                 }
             ).Execute();
 
             return new Tuple<List<double[]>, List<double[]>, List<double>>(contactPoints, contactVelocities, contactAngles);
 
         }
+
+
 
 
     }
@@ -390,7 +414,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             XQuadSchemeHelper SchemeHelper = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder).XQuadSchemeHelper;
 
             var gridDat = (GridData)this.SolverMainOverride.GridData;
-            var ContactLineVolumeScheme = SchemeHelper.GetContactLineQuadScheme(this.LsTrk.GetSpeciesId("A"), 0);
+            var ContactLineVolumeScheme = SchemeHelper.GetContactLineQuadScheme(this.LsTrk.GetSpeciesId("A"), 0, 1);
 
             CellQuadrature.GetQuadrature(new int[] { 5 }, LsTrk.GridDat,
                 ContactLineVolumeScheme.Compile(LsTrk.GridDat, 0),

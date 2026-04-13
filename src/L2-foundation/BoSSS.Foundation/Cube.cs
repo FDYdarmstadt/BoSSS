@@ -30,7 +30,7 @@ using ilPSP.Tracing;
 namespace BoSSS.Foundation.Grid.RefElements {
 
     /// <summary>
-    /// The cubic reference element, i.e. $` K^{\textrm{cube} } = ( -1,1 )^3 $`.
+    /// The cubic reference element, i.e. $K^{\textrm{cube} } = ( -1,1 )^3$.
     /// </summary>
     public partial class Cube : RefElement {
         
@@ -40,33 +40,33 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// </summary>
         public enum Faces {
             /// <summary>
-            /// edge between this cell the neighbour cell with \f$ x \f$--coordinates closer to negative infinity.
+            /// edge between this cell the neighbour cell with $x$--coordinates closer to negative infinity.
             /// </summary>
             Left = 0,
 
             /// <summary>
-            /// edge between this cell the neighbour cell with \f$ x \f$--coordinates closer to positive infinity.
+            /// edge between this cell the neighbour cell with $x$--coordinates closer to positive infinity.
             /// </summary>
             Right = 1,
 
             /// <summary>
-            /// edge between this cell the neighbour cell with \f$ y \f$--coordinates closer to positive infinity.
+            /// edge between this cell the neighbour cell with $y$--coordinates closer to positive infinity.
             /// </summary>
             Top = 2,
 
             /// <summary>
-            /// edge between this cell the neighbour cell with \f$ y \f$--coordinates closer to negative infinity.
+            /// edge between this cell the neighbour cell with $y$--coordinates closer to negative infinity.
             /// </summary>
             Bottom = 3,
 
 
             /// <summary>
-            /// edge between this cell the neighbour cell with \f$ z \f$--coordinates closer to positive infinity
+            /// edge between this cell the neighbour cell with $z$--coordinates closer to positive infinity
             /// </summary>
             Front = 4,
 
             /// <summary>
-            /// edge between this cell the neighbour cell with \f$ z \f$--coordinates closer to negative infinity
+            /// edge between this cell the neighbour cell with $z$--coordinates closer to negative infinity
             /// </summary>
             Back = 5
 
@@ -174,7 +174,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
 
                         int NN = _1Drule.Weights.GetLength(0);
                         int D = this.SpatialDimension;
-                        realQr = QuadRule.CreateEmpty(this, NN * NN * NN, D, true);
+                        realQr = QuadRule.CreateBlank(this, NN * NN * NN, D, true);
 
                         for (int i = 0; i < NN; i++) {
                             for (int j = 0; j < NN; j++) {

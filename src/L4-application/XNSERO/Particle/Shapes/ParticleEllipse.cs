@@ -64,8 +64,14 @@ namespace BoSSS.Application.XNSERO_Solver {
             
             m_Length = length;
             m_Thickness = thickness;
-            Aux.TestArithmeticException(length, "Particle length");
-            Aux.TestArithmeticException(thickness, "Particle thickness");
+
+            Circumference = Math.PI * ((m_Length + m_Thickness) + (3.0 * (m_Length - m_Thickness).Pow2()) / (10.0 * (m_Length + m_Thickness) + Math.Sqrt(m_Length.Pow2() + 14.0 * m_Length * m_Thickness + m_Thickness.Pow2())));
+            Volume = m_Length * m_Thickness * Math.PI;
+            Mass = Volume * motion.Density;
+            MomentOfInertia = (1.0 / 4.0) * (Mass * (m_Length * m_Length + m_Thickness * m_Thickness));
+
+            //Aux.TestArithmeticException(length, "Particle length");
+            //Aux.TestArithmeticException(thickness, "Particle thickness");
 
             Motion.CharacteristicLength = GetLengthScales().Max();
             Motion.Volume = this.Volume;
@@ -80,17 +86,17 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Circumference of an elliptic particle. Approximated with Ramanujan.
         /// </summary>
-        public override double Circumference => Math.PI * ((m_Length + m_Thickness) + (3 * (m_Length - m_Thickness).Pow2()) / (10 * (m_Length + m_Thickness) + Math.Sqrt(m_Length.Pow2() + 14 * m_Length * m_Thickness + m_Thickness.Pow2())));
+        //public override double Circumference => Math.PI * ((m_Length + m_Thickness) + (3 * (m_Length - m_Thickness).Pow2()) / (10 * (m_Length + m_Thickness) + Math.Sqrt(m_Length.Pow2() + 14 * m_Length * m_Thickness + m_Thickness.Pow2())));
 
         /// <summary>
         /// Moment of inertia of an elliptic particle.
         /// </summary>
-        override public double MomentOfInertia => (1 / 4.0) * (Mass * (m_Length * m_Length + m_Thickness * m_Thickness));
+        //override public double MomentOfInertia => (1 / 4.0) * (Mass * (m_Length * m_Length + m_Thickness * m_Thickness));
 
         /// <summary>
         /// Area occupied by the particle.
         /// </summary>
-        public override double Volume => m_Length * m_Thickness * Math.PI;
+        //public override double Volume => m_Length * m_Thickness * Math.PI;
 
         /// <summary>
         /// Level set function of the particle.
@@ -134,8 +140,8 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// A vector. 
         /// </param>
         override public Vector GetSupportPoint(Vector supportVector, Vector Position, Vector Angle, int SubParticleID, double tolerance = 0) {
-            Aux = new Auxillary();
-            Aux.TestArithmeticException(supportVector, "vector in calculation of support point");
+            //Aux = new Auxillary();
+            //Aux.TestArithmeticException(supportVector, "vector in calculation of support point");
             if (supportVector.L2Norm() == 0)
                 throw new ArithmeticException("The given vector has no length");
 

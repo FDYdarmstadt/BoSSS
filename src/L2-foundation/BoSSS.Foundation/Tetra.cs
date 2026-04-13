@@ -26,18 +26,18 @@ using BoSSS.Foundation.Grid.Classic;
 namespace BoSSS.Foundation.Grid.RefElements {
 
     /// <summary>
-    /// The tetrahedral reference element \f$ K^{\textrm{tetra}}  \f$.
+    /// The tetrahedral reference element $K^{\textrm{tetra}}$.
     /// </summary>
     /// <remarks>
     /// The vertices of the tetrahedron are:
-    ///     \f[ 
+    ///     \[ 
     ///     \left[
     ///        \left( 0, 0, \sqrt{2}  \right),
     ///        \left( 0, \frac{4}{3}, -\frac{\sqrt{2}}{3}  \right),
     ///        \left( -\frac{2}{3} \sqrt(3), -\frac{2}{3}, -\frac{\sqrt{2}}{3}  \right),
     ///        \left(  \frac{2}{3} \sqrt(3), -\frac{2}{3}, -\frac{\sqrt{2}}{3}  \right)
     ///     \right]
-    ///     \f]
+    ///     \]
     /// </remarks>
     public class Tetra : RefElement {
 
@@ -130,7 +130,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
             {
                 var qrTemp = QuadRuleResource.DecodeFromBase64(Resource.TetraQuadRules_bin);
                 foreach(var q in qrTemp) {
-                    var realQr = QuadRule.CreateEmpty(this, q.Item2.GetLength(0), this.SpatialDimension, true);
+                    var realQr = QuadRule.CreateBlank(this, q.Item2.GetLength(0), this.SpatialDimension, true);
                     realQr.Nodes.Set2DArray(q.Item2);
                     realQr.Weights.SetVector(q.Item3);
                     realQr.OrderOfPrecision = q.Item1;

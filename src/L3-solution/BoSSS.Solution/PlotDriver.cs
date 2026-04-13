@@ -265,7 +265,7 @@ namespace BoSSS.Solution {
 
             /// <summary>
             /// Global vertices coordinates. See
-            /// <see cref="GridData.TransformLocal2Global(MultidimensionalArray, MultidimensionalArray, int)"/>
+            /// <see cref="IGridData_Extensions.TransformLocal2Global(IGridData, MultidimensionalArray, int)"/>
             /// for the definition of the indices (parameter
             /// "GlobalVerticesOut").
             /// </summary>
@@ -409,7 +409,7 @@ namespace BoSSS.Solution {
                     dimension = context.SpatialDimension;
 
                     // vertices per cell, local coordinates (from the leaves of the subdivision)
-                    localVerticeCoordinates = new NodeSet(this.Zone_Element, subdiv.GlobalVertice, false);
+                    localVerticeCoordinates = new NodeSet(this.Zone_Element, subdiv.GlobalVertice, true);
 
                     // create vertices of the grid
                     // ===========================
@@ -1126,6 +1126,10 @@ namespace BoSSS.Solution {
         /// A list of fields which should be plotted
         /// </param>
         virtual public void PlotFields(string fileNameBase, double time, IEnumerable<Tuple<string, ScalarFunctionEx>> fieldsToPlot) {
+
+            ScalarFunctionEx TimeFunc = (j0, Len, NodeSet, result) => result.SetAll(time); // add time as constant value field, workaround for paraview...
+            fieldsToPlot = fieldsToPlot.Concat(new List<Tuple<string, ScalarFunctionEx>> { Tuple.Create("Time", TimeFunc) });
+
             this.OpenFile(this.GenerateFileName(fileNameBase), fieldsToPlot.Select(x => x.Item1));
 
             for (int i = 0; i < this.ZoneDrivers.Length; i++) {

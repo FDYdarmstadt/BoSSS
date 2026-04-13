@@ -135,8 +135,7 @@ namespace BUIDT.Tests {
         /// </summary>
         //[Test] stopped working for some reason (openmp?)
         public static void PerssonSensorTest() {
-
-            BoSSS.Solution.Application.InitMPI(num_threads: 1);
+            //BoSSS.Solution.Application.InitMPI(num_threads: 1);
             var p = new BUIDTMain();
             var C = BUIDTHardCodedControl.AccShock(
                     dbPath: null,

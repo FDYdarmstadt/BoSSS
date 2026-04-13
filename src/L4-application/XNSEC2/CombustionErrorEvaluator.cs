@@ -19,6 +19,7 @@ using BoSSS.Application.XNSE_Solver.Tests;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution;
+using BoSSS.Solution.Control;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Utils;
 using ilPSP;
@@ -118,7 +119,7 @@ namespace BoSSS.Application.XNSEC {
                 return L2Error;
             }
 
-            public override double[] ComputeL2Error(double time, XNSE_Control control) {
+            public override double[] ComputeL2Error(double time, AppControl control) {
                 return ComputeL2Error(time, (XNSEC_Control)control); ;
             }
 
@@ -126,14 +127,16 @@ namespace BoSSS.Application.XNSEC {
                 int NoOfSpcs = control.NumberOfChemicalSpecies;
                 double[] Ret = new double[1 + NoOfSpcs]; // temperature and all mass fractions
 
-                if(control.ExactSolutionTemperature != null) {
-                    double error = ComputeTemperatureError(control.ExactSolutionTemperature, time);
+                var ExactSolutionTemperature = base.GetExactSolution(control, VariableNames.Temperature);
+                if(ExactSolutionTemperature != null) {
+                    double error = ComputeTemperatureError(ExactSolutionTemperature, time);
                     Ret[0] = error;
                 }
 
-                if(control.ExactSolutionMassFractions != null) {
+                var ExactSolutionMassFractions = base.GetExactSolution(control, VariableNames.MassFractions(NoOfSpcs));
+                if(ExactSolutionMassFractions != null) {
                     for(int y = 0; y < NoOfSpcs; y++) {
-                        double error = ComputeMassFractionError(control.ExactSolutionMassFractions, time, y);
+                        double error = ComputeMassFractionError(ExactSolutionMassFractions, time, y);
                         Ret[y + 1] = error;
                     }
                 }
@@ -192,15 +195,16 @@ namespace BoSSS.Application.XNSEC {
             }
 
          
-            public override double[] ComputeL2Error(double time, XNSE_Control control) {
+            public override double[] ComputeL2Error(double time, AppControl control) {
                 return ComputeL2Error(time, (XNSEC_Control)control); ;
             }
 
             public double[] ComputeL2Error(double time, XNSEC_Control control) {
                 
                 double[] Ret = new double[1]; // MixtureFraction field
-                if (control.ExactSolutionMixtureFraction!= null) {
-                    double error = ComputeMixtureFractionError(control.ExactSolutionMixtureFraction, time);
+                var ExactSolutionMixtureFraction = base.GetExactSolution(control, VariableNames.MixtureFraction);
+                if (ExactSolutionMixtureFraction!= null) {
+                    double error = ComputeMixtureFractionError(ExactSolutionMixtureFraction, time);
                     Ret[0] = error;
                 }
 

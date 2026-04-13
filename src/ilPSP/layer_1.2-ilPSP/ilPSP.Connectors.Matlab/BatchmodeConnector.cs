@@ -116,6 +116,11 @@ namespace ilPSP.Connectors.Matlab {
         }
 
         /// <summary>
+        /// Optional: directory, where temporary Matlab files are placed; if empty, a default location is selected.
+        /// </summary>
+        static public string AltTempDir { get; set; }
+
+        /// <summary>
         /// Static ctor.
         /// </summary>
         static BatchmodeConnector() {
@@ -167,7 +172,7 @@ namespace ilPSP.Connectors.Matlab {
 
                         bool Exists = false;
                         do {
-                            var tempPath = Path.GetTempPath();
+                            var tempPath = AltTempDir.IsEmptyOrWhite() ? Path.GetTempPath() : AltTempDir;
                             var tempDir = Guid.NewGuid().ToString(); // GUIDs should be unlikely to create collisions
                             WorkingDirectory = new DirectoryInfo(Path.Combine(tempPath, tempDir));
                             try {
@@ -319,10 +324,13 @@ namespace ilPSP.Connectors.Matlab {
 
                 CreatedFiles.Add(Path.Combine(WorkingDirectory.FullName, LOGFILE));
 
-
                 var ScriptsToWrite = new List<Tuple<string, string>>();
                 ScriptsToWrite.Add(new Tuple<string, string>("ReadMsr.m", Resource1.ReadMsr));
                 ScriptsToWrite.Add(new Tuple<string, string>("SaveVoronoi.m", Resource1.SaveVoronoi));
+
+                if(m_Flav == Flavor.Octave || m_Flav == Flavor.Octave_cygwin) {
+                    ScriptsToWrite.Add(new Tuple<string, string>("condest.m", Resource1.condest));                
+                }
 
                 foreach (var t in ScriptsToWrite) {
                     string name = t.Item1;

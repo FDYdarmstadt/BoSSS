@@ -425,7 +425,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 edge_coords.LockForever();
 
                 // evaluate the polynomials on the edge for both cells
-                Tuple<MultidimensionalArray, MultidimensionalArray> edge_values = _maxDgBasis.EdgeEval(edge_coords, edge, 1);
+                var edge_values = _maxDgBasis.EdgeEval(edge_coords, edge, 1);
 
                 // apply the rotation
                 edge_values.Item1.Multiply(1.0, edge_values.Item1.CloneAs(), _rot[index_i], 0.0, "cij", "cik", "kj");
@@ -488,7 +488,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //Debug.Assert(Length == 1);
 
                         MultidimensionalArray edge_normals = Context.iGeomEdges.NormalsCache.GetNormals_Edge(nodes_ref_edge, edge, 1);
-                        Tuple<MultidimensionalArray, MultidimensionalArray> edge_gradient = _maxDgBasis.EdgeEvalGradient(nodes_ref_edge, edge, 1);
+                        var edge_gradient = _maxDgBasis.EdgeEvalGradient(nodes_ref_edge, edge, 1);
 
                         // apply the rotation
                         edge_gradient.Item1.Multiply(1.0, edge_gradient.Item1.CloneAs(), _rot[index_i], 0.0, "cijn", "cikn", "kj");
@@ -800,7 +800,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         NodeSet nodes_ref_edge = QR.Nodes;
                         //Debug.Assert(Length == 1);
 
-                        Tuple<MultidimensionalArray, MultidimensionalArray> edge_jump = _maxDgBasis.EdgeEval(nodes_ref_edge, edge, 1);
+                        var edge_jump = _maxDgBasis.EdgeEval(nodes_ref_edge, edge, 1);
 
                         // apply the rotation
                         edge_jump.Item1.Multiply(1.0, edge_jump.Item1.CloneAs(), _rot[index_i], 0.0, "cij", "cik", "kj");
@@ -890,7 +890,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //Debug.Assert(Length == 1);
 
                         MultidimensionalArray edge_normals = Context.iGeomEdges.NormalsCache.GetNormals_Edge(nodes_ref_edge, edge, 1);
-                        Tuple<MultidimensionalArray, MultidimensionalArray> edge_gradient = _maxDgBasis.EdgeEvalGradient(nodes_ref_edge, edge, 1);
+                        var edge_gradient = _maxDgBasis.EdgeEvalGradient(nodes_ref_edge, edge, 1);
 
                         // apply the rotation
                         edge_gradient.Item1.Multiply(1.0, edge_gradient.Item1.CloneAs(), _rot[index_i], 0.0, "cijn", "cikn", "kj");
@@ -1211,7 +1211,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         NodeSet nodes_ref_edge = QR.Nodes;
                         //Debug.Assert(Length == 1);
 
-                        Tuple<MultidimensionalArray, MultidimensionalArray> edge_jump = _maxDgBasis.EdgeEval(nodes_ref_edge, edge, 1);
+                        var edge_jump = _maxDgBasis.EdgeEval(nodes_ref_edge, edge, 1);
 
                         // apply the rotation
                         edge_jump.Item1.Multiply(1.0, edge_jump.Item1.CloneAs(), _rot[index_i], 0.0, "cij", "cik", "kj");
@@ -1301,7 +1301,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //Debug.Assert(Length == 1);
 
                         MultidimensionalArray edge_normals = Context.iGeomEdges.NormalsCache.GetNormals_Edge(nodes_ref_edge, edge, 1);
-                        Tuple<MultidimensionalArray, MultidimensionalArray> edge_gradient = _maxDgBasis.EdgeEvalGradient(nodes_ref_edge, edge, 1);
+                        var edge_gradient = _maxDgBasis.EdgeEvalGradient(nodes_ref_edge, edge, 1);
 
                         // apply the rotation
                         edge_gradient.Item1.Multiply(1.0, edge_gradient.Item1.CloneAs(), _rot[index_i], 0.0, "cijn", "cikn", "kj");
@@ -1665,7 +1665,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 edge_coords.LockForever();
 
                 // evaluate the polynomials on the edge for both cells
-                Tuple<MultidimensionalArray, MultidimensionalArray> edge_values = _maxDgBasis.EdgeEval(edge_coords, edge, 1);
+                var edge_values = _maxDgBasis.EdgeEval(edge_coords, edge, 1);
 
                 // apply the rotation
                 edge_values.Item1.Multiply(1.0, edge_values.Item1.CloneAs(), _rot[index_i], 0.0, "cij", "cik", "kj");
@@ -1718,7 +1718,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //Debug.Assert(Length == 1);
 
                         MultidimensionalArray edge_normals = Context.iGeomEdges.NormalsCache.GetNormals_Edge(nodes_ref_edge, edge, 1);
-                        Tuple<MultidimensionalArray, MultidimensionalArray> edge_gradient = _maxDgBasis.EdgeEvalGradient(nodes_ref_edge, edge, 1);
+                        var edge_gradient = _maxDgBasis.EdgeEvalGradient(nodes_ref_edge, edge, 1);
 
                         // apply the rotation
                         edge_gradient.Item1.Multiply(1.0, edge_gradient.Item1.CloneAs(), _rot[index_i], 0.0, "cijn", "cikn", "kj");
@@ -1914,7 +1914,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 edge_coords.LockForever();
 
                 // evaluate the polynomials on the edge for both cells
-                Tuple<MultidimensionalArray, MultidimensionalArray> edge_values = _maxDgBasis.EdgeEval(edge_coords, edge, 1);
+                var edge_values = _maxDgBasis.EdgeEval(edge_coords, edge, 1);
 
                 // apply the rotation
                 edge_values.Item1.Multiply(1.0, edge_values.Item1.CloneAs(), _rot[index_i], 0.0, "cij", "cik", "kj");
@@ -1967,7 +1967,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //Debug.Assert(Length == 1);
 
                         MultidimensionalArray edge_normals = Context.iGeomEdges.NormalsCache.GetNormals_Edge(nodes_ref_edge, edge, 1);
-                        Tuple<MultidimensionalArray, MultidimensionalArray> edge_gradient = _maxDgBasis.EdgeEvalGradient(nodes_ref_edge, edge, 1);
+                        var edge_gradient = _maxDgBasis.EdgeEvalGradient(nodes_ref_edge, edge, 1);
 
                         // apply the rotation
                         edge_gradient.Item1.Multiply(1.0, edge_gradient.Item1.CloneAs(), _rot[index_i], 0.0, "cijn", "cikn", "kj");

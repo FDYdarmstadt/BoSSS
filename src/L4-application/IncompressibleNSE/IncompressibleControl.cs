@@ -7,7 +7,8 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace BoSSS.Application.IncompressibleNSE {
-    
+
+
     /// <summary>
     /// PDE-solver-control object which defines configuration options for nonlinear and linear equation solvers
     /// </summary>

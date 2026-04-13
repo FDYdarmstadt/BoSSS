@@ -99,7 +99,7 @@ namespace BoSSS.Application.GridGen {
             /// instantiation of the mesh block
             /// </summary>
             public override GridCommons CreateGrid() {
-                return Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes, _CellType, periodicX, periodicY, periodicZ, CutOuts);
+                return Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes, _CellType, periodicX, periodicY, periodicZ, CutOuts: CutOuts);
             }
         }
 

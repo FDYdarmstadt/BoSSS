@@ -21,6 +21,7 @@ using System.Linq;
 using BoSSS.Foundation;
 using BoSSS.Foundation.IO;
 using BoSSS.Solution;
+using BoSSS.Solution.Control;
 using BoSSS.Solution.Queries;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.Residual {
@@ -56,7 +57,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Residual {
         /// </summary>
         private Dictionary<string, double> lastResult;
 
-        private IApplication<CompressibleControl> application;
+        private IApplication<AppControl> application;
 
         /// <summary>
         /// Creates a new logger for the configured queries.
@@ -65,11 +66,11 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Residual {
         /// The real logger
         /// </param>
         /// <param name="application"></param>
-        public QueryLogger(BoSSS.Solution.ResidualLogger baseLogger, IApplication<CompressibleControl> application) {
+        public QueryLogger(BoSSS.Solution.ResidualLogger baseLogger, IApplication<AppControl> application, int residualInterval) {
             this.baseLogger = baseLogger;
             this.CurrentSession = application.CurrentSessionInfo;
             this.queries = application.QueryHandler.QueryMap;
-            this.interval = application.Control.ResidualInterval;
+            this.interval = residualInterval;
             this.application = application;
         }
 

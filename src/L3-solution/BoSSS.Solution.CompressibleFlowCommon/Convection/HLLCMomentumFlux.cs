@@ -38,7 +38,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <param name="boundaryMap"><see cref="HLLCFlux"/></param>
         /// <param name="equationComponent"><see cref="HLLCFlux"/></param>
         /// <param name="speciesMap"><see cref="HLLCFlux"/></param>
-        public HLLCMomentumFlux(CompressibleControl config, IBoundaryConditionMap boundaryMap, EulerMomentumComponent equationComponent, ISpeciesMap speciesMap)
+        public HLLCMomentumFlux(ICompressibleControl config, IBoundaryConditionMap boundaryMap, EulerMomentumComponent equationComponent, ISpeciesMap speciesMap)
             : base(config, boundaryMap, equationComponent, speciesMap) {
             this.momentumComponent = equationComponent.MomentumComponent;
         }

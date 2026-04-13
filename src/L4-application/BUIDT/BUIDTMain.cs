@@ -1,4 +1,4 @@
-﻿using ApplicationWithIDT;
+using ApplicationWithIDT;
 using ApplicationWithIDT.OptiLevelSets;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
@@ -190,7 +190,7 @@ namespace BUIDT {
                 switch(Control.GetLevelSet) {
                     case GetLevelSet.FromReconstructionFromPoints:
                     var Points = IMatrixExtensions.LoadFromTextFile(Control.SLSPointPath);
-                    if(LevelSetOpti is SplineOptiLevelSet splineLS) {
+                    if(PrimaryLevelSetOptimizer is SplineOptiLevelSet splineLS) {
                         splineLS.GetSplineOverDetermined(Points);
                         SplineOptiLevelSet.EmbeddInLevelSet(splineLS.Spline, splineLS);
                     } else {
@@ -199,7 +199,7 @@ namespace BUIDT {
 
                     break;
                     default:
-                    LevelSetOpti.ProjectFromFunction(Control.LevelSetTwoInitialValue);
+                    PrimaryLevelSetOptimizer.ProjectFromFunction(Control.LevelSetTwoInitialValue);
                     break;
                 }
 
@@ -220,9 +220,13 @@ namespace BUIDT {
                 Concentration.AccLaidBack(1.0, ConcentrationP0);
                 break;
             }
-            //We project the LevelSetOpti object onto the DG LsTBO
-            LevelSetOpti.AssembleTransMat(LsTBO);
-            LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+            //We project the PrimaryLevelSetOptimizer object onto the DG PrimaryOptimizationLevelSet
+            foreach ( LevelSetOptimizationState s in base.LevelSetOptStates ) {
+                IOptiLevelSet LevelSetOpti = s.LevelSetOpti;
+                var LsTBO = s.LsTBO;
+                LevelSetOpti.AssembleTransMat(LsTBO);
+                LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+            }
             LsTrk.UpdateTracker(CurrentStepNo);
             LsTrk.PushStacks();
 
@@ -247,5 +251,6 @@ namespace BUIDT {
     }
 
 }
+
 
 

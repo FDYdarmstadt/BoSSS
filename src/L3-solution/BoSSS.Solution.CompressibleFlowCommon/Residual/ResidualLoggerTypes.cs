@@ -17,6 +17,7 @@ limitations under the License.
 using BoSSS.Foundation;
 using System;
 using System.Collections.Generic;
+using BoSSS.Solution.Control;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.Residual {
 
@@ -77,11 +78,11 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Residual {
         public static IEnumerable<IResidualLogger> Instantiate<T>(
             this ResidualLoggerTypes loggerType,
             Application<T> program,
-            CompressibleControl config,
+            ICompressibleControl config,
             DifferentialOperator differentialOperator,
             DGField[] consVars,
             CoordinateMapping paramMap)
-            where T : CompressibleControl, new() {
+            where T : AppControl, ICompressibleControl, new() {
 
             if (loggerType.HasFlag(ResidualLoggerTypes.ChangeRate)
                 && loggerType.HasFlag(ResidualLoggerTypes.Rigorous)) {
@@ -91,12 +92,12 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Residual {
 
             if (loggerType == ResidualLoggerTypes.None) {
                 yield return new NullResidualLogger(
-                    program.ResLogger, program.CurrentSessionInfo, consVars);
+                        program.ResLogger, program.CurrentSessionInfo, consVars);
             } else {
                 if (loggerType.HasFlag(ResidualLoggerTypes.ChangeRate)) {
                     loggerType ^= ResidualLoggerTypes.ChangeRate;
                     yield return new ChangeRateResidualLogger(
-                        program.ResLogger, program.CurrentSessionInfo, consVars, config.ResidualInterval);
+                        program.ResLogger, program.CurrentSessionInfo, consVars, config.CompressibleConfiguration.ResidualInterval);
                 }
 
                 if (loggerType.HasFlag(ResidualLoggerTypes.Rigorous)) {
@@ -105,14 +106,14 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Residual {
                         program,
                         consVars,
                         paramMap,
-                        config.ResidualInterval,
+                        config.CompressibleConfiguration.ResidualInterval,
                         differentialOperator);
                 }
 
                 if (loggerType.HasFlag(ResidualLoggerTypes.Query)) {
                     loggerType ^= ResidualLoggerTypes.Query;
                     yield return new QueryLogger(
-                        program.ResLogger, program);
+                        program.ResLogger, program, config.CompressibleConfiguration.ResidualInterval);
                 }
 
                 if (loggerType != ResidualLoggerTypes.None) {

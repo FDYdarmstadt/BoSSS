@@ -49,7 +49,7 @@ namespace BoSSS.Application.XNSEC {
             [Values(3)] int deg,
             [Values(0)] double AgglomerationTreshold,
             [Values(true)] bool SolverMode_performsolve,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm
             ) {
             ViscosityMode vmode = ViscosityMode.FullySymmetric; // viscosity is 0.0 => this selection does not matter
@@ -66,7 +66,7 @@ namespace BoSSS.Application.XNSEC {
         }
 
         private static XNSEC_Control TstObj2CtrlObj(IXNSECTest_MixtureFraction tst, int FlowSolverDegree, double AgglomerationTreshold, ViscosityMode vmode,
-                 XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+                 CutCellQuadratureMethod CutCellQuadratureType,
                  SurfaceStressTensor_IsotropicMode SurfTensionMode,
                  bool constantDensity,
                  int GridResolution = 1, LinearSolverCode solvercode = LinearSolverCode.direct_pardiso) {
@@ -114,23 +114,21 @@ namespace BoSSS.Application.XNSEC {
             // initial values and exact solution
             // =================================
 
-            C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
-            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionMixtureFraction = new Dictionary<string, Func<double[], double, double>>();
-
             foreach (var spc in new[] { "A", "B" }) {
-                C.ExactSolutionPressure.Add(spc, tst.GetPress(spc));
-                C.ExactSolutionVelocity.Add(spc, D.ForLoop(d => tst.GetU(spc, d)));
 
-                C.ExactSolutionMixtureFraction.Add(spc, tst.GetMixtureFraction(spc));
                 for (int d = 0; d < D; d++) {
-                    C.InitialValues_Evaluators.Add(VariableNames.Velocity_d(d) + "#" + spc, tst.GetU(spc, d).Convert_Xt2X(0.0));
+                    C.AddInitialValue(VariableNames.Velocity_d(d), spc, tst.GetU(spc, d));
                     var Gravity_d = tst.GetF(spc, d).Convert_X2Xt();
                     C.SetGravity(spc, d, Gravity_d);
                 }
+                C.AddInitialValue(VariableNames.Pressure, spc, tst.GetPress(spc).Convert_Xt2X(0.0));
+                C.AddInitialValue(VariableNames.MixtureFraction, spc, tst.GetMixtureFraction(spc).Convert_Xt2X(0.0));
 
-                C.InitialValues_Evaluators.Add(VariableNames.Pressure + "#" + spc, tst.GetPress(spc).Convert_Xt2X(0.0));
-                C.InitialValues_Evaluators.Add(VariableNames.MixtureFraction + "#" + spc, tst.GetMixtureFraction(spc).Convert_Xt2X(0.0));
+                C.AddExactSolution(VariableNames.Pressure, spc, tst.GetPress(spc));
+                for(int d = 0; d < D; d++)
+                    C.AddExactSolution(VariableNames.Velocity_d(d), spc, tst.GetU(spc, d));
+                C.AddExactSolution(VariableNames.MixtureFraction, spc, tst.GetMixtureFraction(spc));
+
             }
             if (tst.TestImmersedBoundary) {
                 for (int d = 0; d < D; d++) {
@@ -138,7 +136,7 @@ namespace BoSSS.Application.XNSEC {
                 }
             }
 
-            C.Phi = tst.GetPhi();
+            C.AddExactSolution("Phi", tst.GetPhi());
             C.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCG, tst.GetPhi());
 
             // advanced spatial discretization settings

@@ -32,6 +32,7 @@ using ilPSP;
 using BoSSS.Platform;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Solution.LevelSetTools;
 
 namespace BoSSS.Solution.XNSECommon {
     
@@ -185,7 +186,7 @@ namespace BoSSS.Solution.XNSECommon {
 
             //XQuadSchemeHelper H = new XQuadSchemeHelper(LsTrk, MomentFittingVariant);
             var H = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, order, 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs = H.GetLevelSetquadScheme(0, CC);
+            CellQuadratureScheme cqs = H.GetLevelSetQuadScheme(0, CC);
             ICompositeQuadRule<QuadRule> surfRule = cqs.Compile(gDat, order);
             ICompositeQuadRule<CellBoundaryQuadRule> bndyRule = (new CellBoundaryQuadratureScheme(true, CC.ToGeometicalMask())).Compile(gDat, order);
 

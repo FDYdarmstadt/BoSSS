@@ -28,6 +28,7 @@ using ilPSP.Utils;
 using System.Diagnostics;
 using System.CodeDom;
 using BoSSS.Solution.Tecplot;
+using ilPSP.Tracing;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -252,60 +253,73 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// apply additional modification due to free-mean-value fixing (aka. pressure reference point), <see cref="MultigridOperator.FreeMeanValue"/>
         /// </param>        
         protected void EvaluateOperator(double alpha, IEnumerable<DGField> CurrentState, double[] Output, double HomotopyValue, bool ApplyRef = false) {
-            if (alpha != 1.0)
-                throw new NotSupportedException("some moron has removed this");
+            using (var tr = new FuncTrace()) {
+                if (alpha != 1.0)
+                    throw new NotSupportedException("some moron has removed this");
 
-            SetHomotopyValue(HomotopyValue);
+                SetHomotopyValue(HomotopyValue);
 
-            // the real call:
-            this.m_AssembleMatrix(out BlockMsrMatrix DummyMtx, out double[] OpEvalRaw, out BlockMsrMatrix MassMtxRaw, CurrentState.ToArray(), false, out var abstractOp);
-            if (DummyMtx != null)
-                // only evaluation ==> OpMatrix must be null
-                throw new ApplicationException($"The provided {typeof(OperatorEvalOrLin).Name} is not correctly implemented.");
-            this.AbstractOperator = abstractOp;
+                // the real call:
+                this.m_AssembleMatrix(out BlockMsrMatrix DummyMtx, out double[] OpEvalRaw, out BlockMsrMatrix MassMtxRaw, CurrentState.ToArray(), false, out var abstractOp);
+                if (DummyMtx != null)
+                    // only evaluation ==> OpMatrix must be null
+                    throw new ApplicationException($"The provided {typeof(OperatorEvalOrLin).Name} is not correctly implemented.");
+                this.AbstractOperator = abstractOp;
 
+               
 #if DEBUG
-            const int TEST_INTERVALL = 10;
+                const int TEST_INTERVALL = 10;
 #else
-            const int TEST_INTERVALL = 1000;
+                const int TEST_INTERVALL = 1000;
 #endif
-            if (EvaluationCounter % TEST_INTERVALL == 0) { // do the following, expensive check only for every TEST_INTERVALL-th evaluation.
+                if (EvaluationCounter % TEST_INTERVALL == 0) { // do the following, expensive check only for every TEST_INTERVALL-th evaluation.
 
-                // Comparison of linearization and evaluation:
-                // -------------------------------------------
-                //
-                // Note that, in BoSSS, currently the Linearization of f(u) around u0 is defines as
-                //     f(u) ≈ M(u0)*u + b(u0),
-                // instead of the typical Taylor series representation f(u) ≈ f(u0) + ∂f(u0)*(u-u0).
-                // The relation between the BoSSS-representation and the Taylor series is
-                //     M(u0) = ∂f(u0),
-                //     b(u0) = f(u0) - ∂f(u0)*u0.
-                // Therefore, we check that
-                //     M(u0)*u0 + b(u0) = f(u0).
-                //
-
-
-                this.m_AssembleMatrix(out BlockMsrMatrix LinMtx, out double[] OpAffine, out _, CurrentState.ToArray(), true, out _);
-                var Check = OpAffine.CloneAs();
-                LinMtx.SpMV(1.0, new CoordinateVector(CurrentState), 1.0, Check);
-
-                var err = Check.CloneAs();
-                err.AccV(-1.0, OpEvalRaw);
-                double l2_err = err.MPI_L2Norm();
-                double comp = Math.Sqrt(Math.Max(OpEvalRaw.MPI_L2Norm(), Check.MPI_L2Norm()) * BLAS.MachineEps + BLAS.MachineEps);
+                    // Comparison of linearization and evaluation:
+                    // -------------------------------------------
+                    //
+                    // Note that, in BoSSS, currently the Linearization of f(u) around u0 is defines as
+                    //     f(u) ≈ M(u0)*u + b(u0),
+                    // instead of the typical Taylor series representation f(u) ≈ f(u0) + ∂f(u0)*(u-u0).
+                    // The relation between the BoSSS-representation and the Taylor series is
+                    //     M(u0) = ∂f(u0),
+                    //     b(u0) = f(u0) - ∂f(u0)*u0.
+                    // Therefore, we check that
+                    //     M(u0)*u0 + b(u0) = f(u0).
+                    //
                 
-                if (l2_err > comp) {
-                    Console.Error.WriteLine($"Mismatch between operator linearization and evaluation: Operator matrix-Jacobian distance: {l2_err}, relative: {l2_err/comp} (comparison value {comp})");
-                    //throw new ArithmeticException($"Mismatch between operator linearization and evaluation: Operator matrix-Jacobian distance: { l2_err }, relative: { l2_err/comp} (comparison value { comp})");
-				}
-            }
-            EvaluationCounter++;
+                    this.m_AssembleMatrix(out BlockMsrMatrix LinMtx, out double[] OpAffine, out _, CurrentState.ToArray(), true, out _);
+                    var Check = OpAffine.CloneAs();
+                    LinMtx.SpMV(1.0, new CoordinateVector(CurrentState), 1.0, Check);
 
-            CurrentLin.TransformRhsInto(OpEvalRaw, Output, ApplyRef);
+                    var err = Check.CloneAs();
+                    err.AccV(-1.0, OpEvalRaw);
+                    double l2_err = err.MPI_L2Norm();
+                    double comp = Math.Sqrt(Math.Max(OpEvalRaw.MPI_L2Norm(), Check.MPI_L2Norm()) * BLAS.MachineEps + BLAS.MachineEps);
+                
+                    if (l2_err > comp) {
+                        //tr.Error($"EvaluateOperator: Mismatch between operator linearization and evaluation: Operator matrix-Jacobian distance: {l2_err}, relative: {l2_err / comp} (comparison value {comp})");
+                        Console.Error.WriteLine($"Mismatch between operator linearization and evaluation: absolute dist.: {l2_err}, relative: {l2_err/comp} (comparison denominator {comp})");
+                        //throw new ArithmeticException($"Mismatch between operator linearization and evaluation: Operator matrix-Jacobian distance: { l2_err }, relative: { l2_err/comp} (comparison value { comp})");
+				    } else {
+                        //Console.WriteLine($"MATCH between operator linearization and evaluation: absolute dist.:  {l2_err}, relative: {l2_err / comp} (comparison value {comp})");
+                    }
+                    //*/
+                }
+                EvaluationCounter++;
+
+                CurrentLin.TransformRhsInto(OpEvalRaw, Output, ApplyRef);
+            }
         }
 
         int EvaluationCounter = 0;
 
+
+        /// <summary>
+        /// Update of the homotopy value 
+        /// </summary>
+        /// <param name="HomotopyValue">
+        /// must be between 0 and 1 (both including), <see cref="IDifferentialOperator.CurrentHomotopyValue"/>
+        /// </param>
         protected void SetHomotopyValue(double HomotopyValue) {
             if (HomotopyValue < 0)
                 throw new ArgumentOutOfRangeException();
@@ -371,18 +385,80 @@ namespace BoSSS.Solution.AdvancedSolvers {
             SetHomotopyValue(HomotopyValue);
 
             // the real call:
-            this.m_AssembleMatrix(out BlockMsrMatrix OpMtxRaw, out double[] OpAffineRaw, out BlockMsrMatrix MassMtxRaw, CurrentState.ToArray(), true, out IDifferentialOperator abstractOperator);
+            this.m_AssembleMatrix(out BlockMsrMatrix OpMtxRaw, out double[] OpAffineRaw, out BlockMsrMatrix MassMtxRaw, CurrentState.ToArray(), 
+                true, // `true` signals that we want a linearization
+                out IDifferentialOperator abstractOperator);
             AbstractOperator = abstractOperator;
+            
+            
+#if DEBUG
+            const int TEST_INTERVALL = 10;
+#else
+            const int TEST_INTERVALL = 1000;
+#endif
+            if (LinearizationCounter % TEST_INTERVALL == 0) {
+                // do the following, expensive check only for every TEST_INTERVALL-th evaluation.
+                // Comparison of linearization and evaluation:
+                // -------------------------------------------
+                //
+                // Note that, in BoSSS, currently the Linearization of f(u) around u0 is defines as
+                //     f(u) ≈ M(u0)*u + b(u0),
+                // instead of the typical Taylor series representation f(u) ≈ f(u0) + ∂f(u0)*(u-u0).
+                // The relation between the BoSSS-representation and the Taylor series is
+                //     M(u0) = ∂f(u0),
+                //     b(u0) = f(u0) - ∂f(u0)*u0.
+                // Therefore, we check that
+                //     M(u0)*u0 + b(u0) = f(u0).
+                //
 
-            // blabla:
+                /*
+                // the evaluation
+                this.m_AssembleMatrix(out BlockMsrMatrix DummyMtx, out double[] OpEvalRaw, out _, CurrentState.ToArray(), 
+                    false, // `false` signals tat we want an evaluation
+                    out _);
+                if (DummyMtx != null)
+                    // only evaluation ==> OpMatrix must be null
+                    throw new ApplicationException($"The provided {typeof(OperatorEvalOrLin).Name} is not correctly implemented.");
+                
+                var Check = OpAffineRaw.CloneAs();
+                OpMtxRaw.SpMV(1.0, new CoordinateVector(CurrentState), 1.0, Check);
+
+                var err = Check.CloneAs();
+                err.AccV(-1.0, OpEvalRaw);
+                double l2_err = err.MPI_L2Norm();
+                double comp = Math.Sqrt(Math.Max(OpEvalRaw.MPI_L2Norm(), Check.MPI_L2Norm()) * BLAS.MachineEps + BLAS.MachineEps);
+
+                if (l2_err > comp) {
+                    Console.Error.WriteLine($"UpdateLinearization: Mismatch between operator linearization and evaluation: Operator matrix-Jacobian distance: {l2_err}, relative: {l2_err/comp} (comparison value {comp})");
+                    //throw new ArithmeticException($"Mismatch between operator linearization and evaluation: Operator matrix-Jacobian distance: { l2_err }, relative: { l2_err/comp} (comparison value { comp})");
+                }
+                
+
+                LinearizationCounter++;
+                
+                {
+                    this.m_AssembleMatrix(out BlockMsrMatrix OpMtxRaw2, out double[] OpAffineRaw2, out BlockMsrMatrix _, CurrentState.ToArray(),
+                        true, // `true` signals that we want a linearization
+                        out _);
+
+                    OpMtxRaw2.Acc(-1.0, OpMtxRaw);
+                    OpAffineRaw2.AccV(-1.0, OpAffineRaw);
+
+                    Console.WriteLine($"Linearization change: {OpMtxRaw2.InfNorm()}, {OpAffineRaw2.MPI_L2Norm()}");
+                }
+                */
+
+            }
+
+
+            // setup of the multigrid operator
             CurrentLin = new MultigridOperator(this.m_AggBasisSeq, this.ProblemMapping,
                 OpMtxRaw.CloneAs(), MassMtxRaw,
                 this.m_MultigridOperatorConfig,
                 AbstractOperator);
-
-
-
             OpAffineRaw = OpAffineRaw.CloneAs();
+
+            // RHS of the linearization
             if (this.RHSRaw != null)
                 OpAffineRaw.AccV(-1.0, this.RHSRaw);
             if (LinearizationRHS == null || LinearizationRHS.Length != this.CurrentLin.Mapping.LocalLength)
@@ -391,7 +467,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 LinearizationRHS.ClearEntries();
             CurrentLin.TransformRhsInto(OpAffineRaw, this.LinearizationRHS, true);
             this.LinearizationRHS.ScaleV(-1.0);
+
+            //writing to text files
+            //{
+            //    Console.WriteLine("Writing to text file");
+            //    OpMtxRaw.SaveToTextFileSparse("OpMtxRaw-" + LinearizationCounter);
+            //    MassMtxRaw.SaveToTextFileSparse("MassMtxRaw-" + LinearizationCounter);
+            //    CurrentLin.LeftChangeOfBasis.SaveToTextFileSparse("LeftChangeOfBasis-" + LinearizationCounter);
+            //    CurrentLin.RightChangeOfBasis.SaveToTextFileSparse("RightChangeOfBasis-" + LinearizationCounter);
+            //    CurrentLin.OperatorMatrix.SaveToTextFileSparse("OperatorMatrix-" + LinearizationCounter);
+            //    this.LinearizationRHS.SaveToTextFile("RHS-" + LinearizationCounter);
+            //    LinearizationCounter++;
+            //}
+
         }
+
+        int LinearizationCounter = 0;
 
 
         /// <summary>
@@ -400,59 +491,61 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// a change in the mean/average value of the respective variable must **not** have any effect on the residual.
         /// </summary>
         public void TestFreeMeanValue(CoordinateVector SolutionVec, double HomotopyValue) {
+            using (var ft = new FuncTrace()) {
+                ft.InfoToConsole = true;
 
-            int L = this.CurrentLin.Mapping.LocalLength;
+                int L = this.CurrentLin.Mapping.LocalLength;
 
-            if (CurrentLin.FreeMeanValue.Any()) {
+                if (CurrentLin.FreeMeanValue.Any()) {
 
-                double[] ResidualBeforMeanCor = new double[L];
-                double[] ResidualAfterMeanCor = new double[L];
+                    double[] ResidualBeforMeanCor = new double[L];
+                    double[] ResidualAfterMeanCor = new double[L];
 
-                EvaluateOperator(1, SolutionVec.Mapping.Fields, ResidualBeforMeanCor, HomotopyValue);
-                double SolNormA = SolutionVec.MPI_L2Norm();
+                    EvaluateOperator(1, SolutionVec.Mapping.Fields, ResidualBeforMeanCor, HomotopyValue);
+                    double SolNormA = SolutionVec.MPI_L2Norm();
 
 
-                DGField[] flds = SolutionVec.Mapping.Fields.ToArray();
-                bool[] FreeMeanValue = CurrentLin.FreeMeanValue;
-                if (flds.Length != FreeMeanValue.Length)
-                    throw new ApplicationException();
+                    DGField[] flds = SolutionVec.Mapping.Fields.ToArray();
+                    bool[] FreeMeanValue = CurrentLin.FreeMeanValue;
+                    if (flds.Length != FreeMeanValue.Length)
+                        throw new ApplicationException();
 
-                const double arbitrary_distortion_value = 2000.1234;
+                    const double arbitrary_distortion_value = 2000.1234;
 
-                for (int iFld = 0; iFld < flds.Length; iFld++) {
-                    if (FreeMeanValue[iFld]) {
-                        flds[iFld].AccConstant(arbitrary_distortion_value);
+                    for (int iFld = 0; iFld < flds.Length; iFld++) {
+                        if (FreeMeanValue[iFld]) {
+                            flds[iFld].AccConstant(arbitrary_distortion_value);
+                        }
                     }
-                }
 
-                EvaluateOperator(1, SolutionVec.Mapping.Fields, ResidualAfterMeanCor, HomotopyValue);
-                double SolNormB = SolutionVec.L2Norm();
+                    EvaluateOperator(1, SolutionVec.Mapping.Fields, ResidualAfterMeanCor, HomotopyValue);
+                    double SolNormB = SolutionVec.L2Norm();
 
-                for (int iFld = 0; iFld < flds.Length; iFld++) {
-                    if (FreeMeanValue[iFld]) {
-                        flds[iFld].AccConstant(-arbitrary_distortion_value);
+                    for (int iFld = 0; iFld < flds.Length; iFld++) {
+                        if (FreeMeanValue[iFld]) {
+                            flds[iFld].AccConstant(-arbitrary_distortion_value);
+                        }
                     }
-                }
-                
 
-                //double[] ResidualDifference = ResidualAfterMeanCor.CloneAs();
-                //ResidualDifference.AccV(-1.0, ResidualBeforMeanCor);
-                //DGField[] ResidualDifferenceDg = this.CurrentLin.ProlongateRhsToDg(ResidualDifference, "residualDifference");
-                //Tecplot.Tecplot.PlotFields(ResidualDifferenceDg, "ResidualDifference", 0, 2);
-
-                double Dist = ResidualBeforMeanCor.MPI_L2Dist(ResidualAfterMeanCor);
-                double ResNormA = ResidualBeforMeanCor.MPI_L2Norm();
-                double ResNormB = ResidualAfterMeanCor.MPI_L2Norm();
+                    double Dist = ResidualBeforMeanCor.MPI_L2Dist(ResidualAfterMeanCor);
+                    double ResNormA = ResidualBeforMeanCor.MPI_L2Norm();
+                    double ResNormB = ResidualAfterMeanCor.MPI_L2Norm();
 
 
 
-                double RefVal = Math.Max(Math.Max(BLAS.MachineEps.Sqrt(), Math.Max(ResNormA, ResNormB) * 1e-7), Math.Abs(SolNormA - SolNormB) * 1e-7);
-                if (Dist > RefVal) {
-                    Console.Error.WriteLine($"Something seems wrong with `FreeMeanValue`: drastic change of operator residual; Original residual: {ResNormA}; residual after distortion {ResNormB}; distance is {Dist}, reference value {RefVal}");
-                    //throw new ArithmeticException($"Something seems wrong with `FreeMeanValue`: drastic change of operator residual; Original residual: {ResNormA}; residual after distortion {ResNormB}; distance is {Dist}, reference value {RefVal}");
+                    double RefVal = Math.Max(Math.Max(BLAS.MachineEps.Sqrt(), Math.Max(ResNormA, ResNormB) * 1e-7), Math.Abs(SolNormA - SolNormB) * 1e-7);
+                    if (Dist > RefVal) {
+                        ft.Error($"Something seems wrong with `FreeMeanValue`: drastic change of operator residual; Original residual: {ResNormA}; residual after distortion {ResNormB}; distance is {Dist}, reference value {RefVal}");
+                        Console.Error.WriteLine($"Something seems wrong with `FreeMeanValue`: drastic change of operator residual; Original residual: {ResNormA}; residual after distortion {ResNormB}; distance is {Dist}, reference value {RefVal}");
+                        //throw new ArithmeticException($"Something seems wrong with `FreeMeanValue`: drastic change of operator residual; Original residual: {ResNormA}; residual after distortion {ResNormB}; distance is {Dist}, reference value {RefVal}");
+
+                        double[] ResidualDifference = ResidualAfterMeanCor.CloneAs();
+                        ResidualDifference.AccV(-1.0, ResidualBeforMeanCor);
+                        DGField[] ResidualDifferenceDg = this.CurrentLin.ProlongateRhsToDg(ResidualDifference, "residualDifference");
+                        Tecplot.Tecplot.PlotFields(ResidualDifferenceDg, "ResidualDifference", 0, 2);
+                    }
                 }
             }
-
         }
 
 
@@ -473,16 +566,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 throw new ApplicationException("internal error");
             if (out_Resi.Length != in_U.Length)
                 out_Resi = new double[in_U.Length];
+
+            double L2_in_U = in_U.L2Norm();
+            double L2_RHS = this.LinearizationRHS.L2Norm();
+
             out_Resi.SetV(this.LinearizationRHS, 1.0);
             CurrentLin.OperatorMatrix.SpMV(-1.0, in_U, 1.0, out_Resi);
+
+            double L2_out_Resi = out_Resi.L2Norm();
         }
 
         /// <summary>
         /// Inner product with respect to the current mass matrix.
         /// 
         /// Note: this is the canonical inner product of the underlying DG-space, since 
-        /// for a DG/XDG field represented in an arbitrary basis $` \phi_{j} $` one verifies that
-        /// ```math
+        /// for a DG/XDG field represented in an arbitrary basis $\phi_{j}$ one verifies that
+        /// \[
         ///         (u, v) = 
         ///     \int_\Omega 
         ///         \left( \sum_{j} \phi_{j} \tilde{u}_{j} \right) 
@@ -491,8 +590,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         ///     \sum_{j l} \tilde{u}_{j} \tilde{v}_{l} ( \phi_{j}, \phi_{l} )
         ///     =
         ///       \tilde{u}^T M \tilde{v},
-        /// ```
-        /// where $`M `$ denotes the mass matrix ($` M_{j l} = ( \phi_ { j}, \phi_ { l} )  `$).
+        /// \]
+        /// where $M$ denotes the mass matrix ($M_{j l} = ( \phi_ { j}, \phi_ { l} )$).
         /// </summary>
         protected double InnerProduct<T1, T2>(T1 vecA, T1 vecB)
             where T1 : IList<double>

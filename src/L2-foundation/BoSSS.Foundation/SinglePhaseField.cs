@@ -70,29 +70,33 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// see <see cref="DGField.Evaluate(int,int,NodeSet,MultidimensionalArray,int,double)"/>
         /// </summary>
-        override public void Evaluate(int j0, int Len, NodeSet NS, MultidimensionalArray result, int ResultIndexOffset, double ResultPreScale) {
-            int D = GridDat.SpatialDimension; // spatial dimension
-            int N = m_Basis.Length;      // number of coordinates per cell
-            int M = NS.NoOfNodes;        // number of nodes
-
-            if(result.Dimension != 2)
-                throw new ArgumentOutOfRangeException("result", "dimension of result array must be 2");
-            if(Len > result.GetLength(0) + ResultIndexOffset)
-                throw new ArgumentOutOfRangeException("mismatch between Len and 0-th length of result");
-            if(result.GetLength(1) != M)
-                throw new ArgumentOutOfRangeException();
-
-            var coöSys = NS.GetNodeCoordinateSystem(this.GridDat);
-            var resultAcc = result.ExtractSubArrayShallow(new int[] { ResultIndexOffset, 0 }, new int[] { ResultIndexOffset + Len - 1, M - 1 });
-
-            if(coöSys != NodeCoordinateSystem.CellCoord)
-                throw new ArgumentOutOfRangeException();
-
-            //var coord = m_Mda_Coordinates.ExtractSubArrayShallow(new int[] { j0, 0 }, new int[] { j0 + Len - 1, N - 1 });
-            //DGField.EvaluateInternal(j0, Len, NS, this.m_Basis, coord, 0, resultAcc, ResultPreScale);
-            DGField.EvaluateInternal(j0, Len, NS, this.m_Basis, m_Mda_Coordinates, j0, resultAcc, ResultPreScale);
+        override public void Evaluate(int j0, int _Len, NodeSet NS, MultidimensionalArray result, int ResultIndexOffset, double ResultPreScale) {
+            int Len = _Len;
+            int jE = j0 + Len;
+            while(j0 < jE) {
+                Len = m_Basis.GetNoOfConsecutiveGeometricalCellsWithSameLength(j0, jE - j0);
+                int M = NS.NoOfNodes;          // number of nodes
 
 
+                if(result.Dimension != 2)
+                    throw new ArgumentOutOfRangeException("result", "dimension of result array must be 2");
+                if(Len > result.GetLength(0) + ResultIndexOffset)
+                    throw new ArgumentOutOfRangeException("mismatch between Len and 0-th length of result");
+                if(result.GetLength(1) != M)
+                    throw new ArgumentOutOfRangeException();
+
+                var coöSys = NS.GetNodeCoordinateSystem(this.GridDat);
+                var resultAcc = result.ExtractSubArrayShallow(new int[] { ResultIndexOffset, 0 }, new int[] { ResultIndexOffset + Len - 1, M - 1 });
+
+                if(coöSys != NodeCoordinateSystem.CellCoord)
+                    throw new ArgumentOutOfRangeException();
+
+                //var coord = m_Mda_Coordinates.ExtractSubArrayShallow(new int[] { j0, 0 }, new int[] { j0 + Len - 1, N - 1 });
+                //DGField.EvaluateInternal(j0, Len, NS, this.m_Basis, coord, 0, resultAcc, ResultPreScale);
+                DGField.EvaluateInternal(j0, Len, NS, this.m_Basis, m_Mda_Coordinates, j0, resultAcc, ResultPreScale);
+                j0 += Len;
+                ResultIndexOffset += Len;
+            }
         }
 
         /// <summary>
@@ -133,15 +137,9 @@ namespace BoSSS.Foundation {
         /// <em>accumulated</em> (!) there. Before the values are added, 
         /// the original content is scaled by <paramref name="ResultPreScale"/>.<br/>
         /// The array is 2-dimensional:
-        /// <list type="bullet">
-        ///   <item>
-        ///   1st index: edge index <i>j</i> - <paramref name="e0"/>;
-        ///   </item>
-        ///   <item>
-        ///   2nd index: node index <i>k</i>, corresponds with 1st index of
+        /// - 1st index: edge index <i>j</i> - <paramref name="e0"/>;
+        /// - 2nd index: node index <i>k</i>, corresponds with 1st index of
         ///   the node set <paramref name="NS"/>;
-        ///   </item>
-        /// </list>
         /// </param>
         /// <param name="MeanValueOT">
         /// Same as <paramref name="MeanValueIN"/>.
@@ -152,18 +150,10 @@ namespace BoSSS.Foundation {
         /// are <em>accumulated</em> (!) there. Before the values are added, 
         /// the original content is scaled by <paramref name="ResultPreScale"/>.<br/>
         /// The array is 3-dimensional:
-        /// <list type="bullet">
-        ///   <item>
-        ///   1st index: edge index <i>j</i> - <paramref name="e0"/>;
-        ///   </item>
-        ///   <item>
-        ///   2nd index: node index <i>k</i>, corresponds with 1st index of
+        /// - 1st index: edge index <i>j</i> - <paramref name="e0"/>;
+        /// - 2nd index: node index <i>k</i>, corresponds with 1st index of
         ///   the node set <paramref name="NS"/>;
-        ///   </item>
-        ///   <item>
-        ///   2rd index: spatial dimension;
-        ///   </item>
-        /// </list>
+        /// - 3rd index: spatial dimension;
         /// </param>
         /// <param name="GradientOT">
         /// Same as <paramref name="GradientIN"/>.
@@ -318,8 +308,8 @@ namespace BoSSS.Foundation {
         ///   <item>3rd index: spatial direction of 1st derivation, <em>k</em></item>
         ///   <item>4th index: spatial direction of 2nd derivation, <em>l</em></item>
         /// </list>
-        /// So, the entry [j,m,k,l] = \f$ \frac{\partial}{\partial x_k} \frac{\partial}{\partial x_l} \varphi (\vec{\xi}_m)\f$ 
-        /// where \f$ \vec{xi}_m\f$  is the <em>m</em>-th
+        /// So, the entry [j,m,k,l] = $\frac{\partial}{\partial x_k} \frac{\partial}{\partial x_l} \varphi (\underline{\xi}_m)$ 
+        /// where $\underline{xi}_m$  is the <em>m</em>-th
         /// vector in the node set <paramref name="NS"/>, in the
         /// <em>j</em>-th cell.
         /// </param>
@@ -343,102 +333,6 @@ namespace BoSSS.Foundation {
             MultidimensionalArray BasisHessian = this.Basis.CellEval2ndDeriv(NS,j0,Len);
 
             result.Multiply(1.0, this.m_Mda_Coordinates.ExtractSubArrayShallow(new int[] { j0, 0 }, new int[] { j0 + Len - 1, N - 1 }), BasisHessian, 0.0, "jkde", "jn", "jknde");
-
-
-            /*
-            var scales = this.GridDat.ChefBasis.Scaling;
-            var Tinv = this.GridDat.Cells.InverseTransformation;
-
-            MultidimensionalArray gbv = Basis.Evaluate2ndDeriv(NS);
-            int M = gbv.GetLength(0); // number of nodes per cell
-            if (result.GetLength(1) != M)
-                throw new ArgumentException("length of dimension 1 must be " + M, "result");
-
-            var Coordinates = (MultidimensionalArray)this.Coordinates;
-
-            double[,] acc = new double[D, D];
-            double[,] Tinv_j = new double[D, D];
-
-            // loop over cells...
-            for (int j = 0; j < Len; j++) {
-                double sc = scales[j0 + j];
-
-                if (this.GridDat.Cells.IsCellAffineLinear(j0 + j)) {
-
-                    // load transformation matrix for easier access
-                    for (int d1 = 0; d1 < D; d1++)
-                        for (int d2 = 0; d2 < D; d2++)
-                            Tinv_j[d1, d2] = Tinv[j + j0, d1, d2];
-
-                    // loop over nodes ...
-                    for (int m = 0; m < M; m++) {
-
-                        Array.Clear(acc, 0, D * D);
-
-                        // sum up...
-                        for (int n = 0; n < N; n++) { // loop over basis functions
-
-                            double coord = Coordinates[j + j0, n];
-                            for (int d1 = 0; d1 < D; d1++) { // 1st loop over spatial dimension
-                                for (int d2 = 0; d2 < D; d2++) { // 1st loop over spatial dimension
-                                    acc[d1, d2] += gbv[m, n, d1, d2] * coord;
-                                }
-                            }
-                        }
-
-                        // transform...
-                        for (int d1 = 0; d1 < D; d1++) {
-                            for (int d2 = 0; d2 < D; d2++) {
-                                double r = 0.0;
-                                for (int k1 = 0; k1 < D; k1++) {
-                                    double rr = 0;
-                                    for (int k2 = 0; k2 < D; k2++) {
-                                        rr += acc[k1, k2] * Tinv_j[k2, d1];
-                                    }
-                                    r += rr * Tinv_j[k1, d2];
-                                }
-                                result[j, m, d1, d2] = r * sc;
-                            }
-                        }
-                    }
-                } else {
-                    throw new NotImplementedException("nonlinear cell: todo");
-                }
-             */
-            
-
-            /*
-            
-            //Test code;
-             
-            var HessBasis = this.Basis.CellEval2ndDeriv(NodeSetIndex, j0, Len);
-            var CheckResult = result.CloneAs();
-            
-
-            for (int j = 0; j < Len; j++) {
-                
-                // loop over nodes ...
-                for (int m = 0; m < M; m++) {
-
-                    for (int d1 = 0; d1 < D; d1++) {
-                        for (int d2 = 0; d2 < D; d2++) {
-                            double accu = 0;
-
-                            for (int n = 0; n < N; n++) {
-                                accu += HessBasis[j, m, n, d1, d2]*Coordinates[j + j0, n];
-                            }
-
-                            CheckResult[j, m, d1, d2] = accu;
-                        }
-                    }
-
-                }
-            }
-
-            CheckResult.Acc(-1.0, result);
-            if (CheckResult.L2Norm() > 1.0e-8)
-                throw new Exception();
-             */
         }
 
         /// <summary>
@@ -453,6 +347,12 @@ namespace BoSSS.Foundation {
         /// </param>
         public SinglePhaseField(Basis __Basis, String __Identification)
             : base(__Basis, __Identification) {
+
+            if(this.GetType() == typeof(SinglePhaseField)) {
+                if(__Basis.GetType() != typeof(Basis)) {
+                    throw new ArgumentException($"you must derive from `SinglePhaseField` to use it with a different basis (got some {__Basis.GetType()})");
+                }
+            }
 
             // allocate mem
             // ------------

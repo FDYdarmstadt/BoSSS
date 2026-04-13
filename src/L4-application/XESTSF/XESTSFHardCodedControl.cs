@@ -409,7 +409,7 @@ namespace XESTSF {
 
             // ### Agglomeration and quadrature ###
             c.AgglomerationThreshold = agg;
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.Saye;
 
             c.IsTwoLevelSetRun = false;
 
@@ -709,7 +709,7 @@ namespace XESTSF {
 
             // ### Agglomeration and quadrature ###
             c.AgglomerationThreshold = agg;
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.Saye;
 
             c.IsTwoLevelSetRun = true;
 
@@ -1150,7 +1150,7 @@ namespace XESTSF {
 
             // ### Agglomeration and quadrature ###
             c.AgglomerationThreshold = agg;
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.Saye;
 
             c.IsTwoLevelSetRun = true;
 
@@ -1486,7 +1486,7 @@ namespace XESTSF {
 
             // ### Agglomeration and quadrature ###
             c.AgglomerationThreshold = agg;
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.Saye;
 
             c.IsTwoLevelSetRun = false;
 

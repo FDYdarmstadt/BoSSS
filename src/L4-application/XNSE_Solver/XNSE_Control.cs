@@ -14,38 +14,40 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using System.Collections.Generic;
-using System.Runtime.Serialization;
-using System.Linq;
-using System.Text;
-using BoSSS.Solution.Control;
-using BoSSS.Solution.LevelSetTools.FourierLevelSet;
-using BoSSS.Solution.LevelSetTools.Advection;
-using BoSSS.Solution.XheatCommon;
-using BoSSS.Solution.XNSECommon;
-using BoSSS.Solution.AdvancedSolvers;
-using BoSSS.Solution.XdgTimestepping;
-using BoSSS.Solution.NSECommon;
-
+using BoSSS.Application.XNSE_Solver.LoadBalancing;
+using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
+using BoSSS.Foundation.XDG.OperatorFactory;
+using BoSSS.Solution.AdvancedSolvers;
+using BoSSS.Solution.Control;
+using BoSSS.Solution.EnergyCommon;
 using BoSSS.Solution.LevelSetTools;
+using BoSSS.Solution.LevelSetTools.Advection;
 using BoSSS.Solution.LevelSetTools.EllipticExtension;
 using BoSSS.Solution.LevelSetTools.EllipticReInit;
-using BoSSS.Solution.Timestepping;
-using Newtonsoft.Json;
-using BoSSS.Solution.EnergyCommon;
+using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 using BoSSS.Solution.LevelSetTools.PhasefieldLevelSet;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
-using BoSSS.Foundation;
-using BoSSS.Application.XNSE_Solver.LoadBalancing;
+using BoSSS.Solution.NSECommon;
+using BoSSS.Solution.Timestepping;
+using BoSSS.Solution.XdgTimestepping;
+using BoSSS.Solution.XheatCommon;
+using BoSSS.Solution.XNSECommon;
 using ilPSP;
+using MathNet.Numerics;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.Serialization;
+using System.Text;
 
 namespace BoSSS.Application.XNSE_Solver {
 
 
     /// <summary>
-    /// 
+    /// Solver control object for incompressible multi-phase solver.
     /// </summary>
     [DataContract]
     [Serializable]
@@ -56,7 +58,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public XNSE_Control() {
 
-            //base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            //base.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
             //shift of Solver Information
             base.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig(); //LinearSolver
             base.NonLinearSolver.MaxSolverIterations = 2000; //Solver_MaxIterations
@@ -71,7 +73,7 @@ namespace BoSSS.Application.XNSE_Solver {
             base.DynamicLoadBalancing_CellCostEstimators.Add(new Loadbalancing.XNSECellCostEstimator());
             base.DynamicLoadBalancing_On = true;
             base.DynamicLoadBalancing_RedistributeAtStartup = true;
-
+            
         }
 
 
@@ -83,6 +85,11 @@ namespace BoSSS.Application.XNSE_Solver {
             get;
             set;
         }
+
+
+        [DataMember]
+        public List<IBMelement> m_IBMelements;
+
 
         /// <summary>
         /// Temporary. Suggestion: Move Rigid body benchmarks to FSI solver in future.
@@ -145,7 +152,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// Set Field Options, i.e. the DG degrees
         /// </summary>
-        public void SetFieldOptions(int VelDegree, int LevSetDegree, FieldOpts.SaveToDBOpt SaveCurvature = FieldOpts.SaveToDBOpt.TRUE) {
+        public void SetFieldOptions(int VelDegree, int DGLevSetDegree) {
             if(VelDegree < 1)
                 throw new ArgumentOutOfRangeException("Velocity degree must be 1 at minimum.");
             
@@ -157,61 +164,38 @@ namespace BoSSS.Application.XNSE_Solver {
                 Degree = VelDegree - 1,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            FieldOptions.Add(VariableNames.LevelSetDG, new FieldOpts() {
+            FieldOptions.Add(VariableNames.LevelSetDG, new FieldOpts() {  
+                Degree = DGLevSetDegree,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             FieldOptions.Add(VariableNames.LevelSetCG, new FieldOpts() {
-                Degree = LevSetDegree,
+                //Degree = LevSetDegree,    // will be set to DGLevSetDegree + 1
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             FieldOptions.Add(VariableNames.LevelSetDGidx(1), new FieldOpts() {
+                Degree = DGLevSetDegree,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             FieldOptions.Add(VariableNames.LevelSetCGidx(1), new FieldOpts() {
-                Degree = LevSetDegree,
+                //Degree = LevSetDegree,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             FieldOptions.Add(VariableNames.Curvature, new FieldOpts() {
-                Degree = LevSetDegree*2,
-                SaveToDB = SaveCurvature
-            });
-        }
-
-        /*
-        public void SetDGdegree2(int p) {
-            FieldOptions.Add(VariableNames.VelocityX, new FieldOpts() {
-                Degree = p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            FieldOptions.Add(VariableNames.VelocityY, new FieldOpts() {
-                Degree = p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            FieldOptions.Add(VariableNames.Pressure, new FieldOpts() {
-                Degree = p - 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            FieldOptions.Add("PhiDG", new FieldOpts() {
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = p,
+                Degree = DGLevSetDegree * 2,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
         }
-        
 
-        /// <summary>
-        /// Allows to set DG degree of level set and flow solver 
-        /// </summary>
-        /// <param name="VelDegree"></param>
-        /// <param name="LevSetDegree"></param>
-        public void SetFieldOptions2(int VelDegree, int LevSetDegree) {
-            FieldOptions.Add(VariableNames.VelocityX, new FieldOpts() {
-                Degree = VelDegree,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            FieldOptions.Add(VariableNames.VelocityY, new FieldOpts() {
+
+        public void SetFieldOptions(int VelDegree, int DGLevSetDegree, int CGLevSetDegree, int CurvatureDegree = -1) {
+            if(VelDegree < 1)
+                throw new ArgumentOutOfRangeException("Velocity degree must be 1 at minimum.");
+            if(DGLevSetDegree < 0)
+                throw new ArgumentOutOfRangeException("DG LevelSet degree must be 0 at minimum.");
+            if(CGLevSetDegree < DGLevSetDegree)
+                throw new ArgumentOutOfRangeException("CG LevelSet degree must be at least the DG LevelSet degree.");
+
+            FieldOptions.Add("Velocity*", new FieldOpts() {
                 Degree = VelDegree,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
@@ -219,19 +203,29 @@ namespace BoSSS.Application.XNSE_Solver {
                 Degree = VelDegree - 1,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            FieldOptions.Add("PhiDG", new FieldOpts() {
+            FieldOptions.Add(VariableNames.LevelSetDG, new FieldOpts() {
+                Degree = DGLevSetDegree,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = LevSetDegree,
+            FieldOptions.Add(VariableNames.LevelSetCG, new FieldOpts() {
+                Degree = CGLevSetDegree,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            FieldOptions.Add("Curvature", new FieldOpts() {
-                Degree = LevSetDegree,
+            FieldOptions.Add(VariableNames.LevelSetDGidx(1), new FieldOpts() {
+                Degree = DGLevSetDegree,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add(VariableNames.LevelSetCGidx(1), new FieldOpts() {
+                Degree = CGLevSetDegree,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add(VariableNames.Curvature, new FieldOpts() {
+                Degree = (CurvatureDegree > 0) ? CurvatureDegree : CGLevSetDegree * 2,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE             
             });
         }
-        */
+
+
 
         [DataMember]
         public string methodTagLS;
@@ -253,7 +247,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         methodTagLS = "FastMarchCurv";
                         Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
                         FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
-                        AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
+                        AdvancedDiscretizationOptions.FilterConfiguration = Solution.LevelSetTools.CurvatureAlgorithms.FilterConfiguration.Default;
                         AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
                         break;
                     }
@@ -265,7 +259,6 @@ namespace BoSSS.Application.XNSE_Solver {
                         //AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
                         AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
                         EllipticExtVelAlgoControl.IsotropicViscosity = 1e-3;
-                        //fullReInit = true;
                         break;
                     }
                 case 3: {
@@ -273,10 +266,9 @@ namespace BoSSS.Application.XNSE_Solver {
                         methodTagLS = "ExtVelCurv";
                         Option_LevelSetEvolution = LevelSetEvolution.ExtensionVelocity;
                         EllipticExtVelAlgoControl.solverFactory = () => new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
-                        AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
+                        AdvancedDiscretizationOptions.FilterConfiguration = Solution.LevelSetTools.CurvatureAlgorithms.FilterConfiguration.Default;
                         AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
                         EllipticExtVelAlgoControl.IsotropicViscosity = 1e-3;
-                        fullReInit = true;
                         break;
                     }
                 case 4: {
@@ -298,97 +290,6 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
-        /* killed by fk:
-         * the following adds a configuration redundancy, which is always a recipe for confusion
-        /// <summary>
-        /// switches off all plotCurrentState calls
-        /// </summary>
-        [DataMember]
-        public bool switchOffPlotting = false;
-        */
-
-
-        /// <summary>
-        /// different implementations for the level indicator 
-        /// </summary>
-        public enum RefinementStrategy {
-
-            /// <summary>
-            /// same refinement level on near band
-            /// </summary>
-            constantInterface,
-
-            /// <summary>
-            /// additional refinement on cells in phase A
-            /// </summary>
-            PhaseARefined,
-
-            /// <summary>
-            /// additional refinement on cells with high curvature
-            /// </summary>
-            CurvatureRefined,
-
-            /// <summary>
-            /// additional refinement at contact line
-            /// </summary>
-            ContactLineRefined,
-
-            /// <summary>
-            /// additional refinement at navier slip boundary
-            /// </summary>
-            NavierSlipRefined,
-
-            /// <summary>
-            /// additional refinement on near band cells for high velocity gradients
-            /// </summary>
-            VelocityGradient
-        }
-
-        /// <summary>
-        /// For legacy solver <see cref="Legacy.XNSE_SolverMain"/>
-        /// See <see cref="LoggingValues"/>
-        /// </summary>
-        [DataMember]
-        public RefinementStrategy RefineStrategy = RefinementStrategy.constantInterface;
-
-        /// <summary>
-        /// For legacy solver <see cref="Legacy.XNSE_SolverMain"/>
-        /// desired minimum refinement level at interface
-        /// </summary>
-        [DataMember]
-        public int BaseRefinementLevel = 0;
-
-        /// <summary>
-        /// For legacy solver <see cref="Legacy.XNSE_SolverMain"/>
-        /// maximum refinement level including additional refinement (contact line, curvature, etc.)
-        /// </summary>
-        [DataMember]
-        public int RefinementLevel = 0;
-
-
-        /// <summary>
-        /// For legacy solver <see cref="Legacy.XNSE_SolverMain"/>
-        /// additional refinement of the navier slip boundary 
-        /// </summary>
-        [DataMember]
-        public bool RefineNavierSlipBoundary = false;
-
-
-        /// <summary>
-        /// option for clearing the velocities for restart
-        /// </summary>
-        [DataMember]
-        public bool ClearVelocitiesOnRestart = false;
-
-        [DataMember]
-        public bool ReInitOnRestart = false;
-
-
-        [DataMember]
-        public bool adaptiveReInit = false;
-
-        [DataMember]
-        public bool InitSignedDistance = false;
 
         /// <summary>
         /// Expert options regarding the spatial discretization.
@@ -402,7 +303,7 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public PhysicalParameters PhysicalParameters = new PhysicalParameters() {
             Material = true,
-            IncludeConvection = false,
+            IncludeConvection = true,
             IncludeDiffusion = true,
             mu_A = 1.0,
             mu_B = 1.0,
@@ -411,13 +312,7 @@ namespace BoSSS.Application.XNSE_Solver {
             Sigma = 0.0
         };       
 
-        /// <summary>
-        /// Only for debugging purpose:
-        /// solver is turned of and residual of initial value/exact solution is evaluated, used to 
-        /// test the consistency of the implementation.
-        /// </summary>
-        [DataMember]
-        public bool SkipSolveAndEvaluateResidual = false;
+   
 
         /// <summary>
         /// Terminates the simulation if the linear or nonlinear solver fails to converge
@@ -431,6 +326,32 @@ namespace BoSSS.Application.XNSE_Solver {
         ///// </summary>
         [DataMember]
         public TimeStepperInit Timestepper_BDFinit = TimeStepperInit.SingleInit;
+
+        /// <summary>
+        /// switches on an adaptive timestepping according to capillary timestep restrictions
+        /// </summary>
+        [DataMember]
+        public bool UseAdaptiveTimestep = false;
+
+        /// <summary>
+        /// determines the choice of adaptive time step in <see cref="GetTimestep()"/>
+        /// </summary>
+        [DataMember]
+        public ChooseTimestepBy ChooseTimestepByMethod = ChooseTimestepBy.dtFixed;
+
+        public enum ChooseTimestepBy { 
+        
+            dtFixed = 0,
+
+            minimum = 1,
+
+            maximum = 2,
+
+            LevSetCFLcondition = 3,
+
+            capillaryRestriction = 4
+        }
+
 
         ///// <summary>
         ///// defines the number of incremental timesteps in one global timestep (for incrementInit)
@@ -487,34 +408,35 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public bool withDissipativePressure;
 
-        /// <summary>
-        /// Block-Precondition for the kinetic-Energy-block
-        /// </summary>
-        public MultigridOperator.Mode KineticEnergyeBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
 
-        /// <summary>
-        /// If true, various energy properties will be evaluated in every cycle.
-        /// </summary>
-        [DataMember]
-        public bool ComputeEnergyProperties = false;
+        ///// <summary>
+        ///// Block-Precondition for the kinetic-Energy-block
+        ///// </summary>
+        //public MultigridOperator.Mode KineticEnergyeBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
 
-        /// <summary>
-        /// if true, the jump condition for mass, momentum and energy will be checked
-        /// </summary>
-        [DataMember]
-        public bool CheckJumpConditions = false;
+        ///// <summary>
+        ///// If true, various energy properties will be evaluated in every cycle.
+        ///// </summary>
+        //[DataMember]
+        //public bool ComputeEnergyProperties = false;
 
-        /// <summary>
-        /// if true, the mass conservation and the surface changerate is checked
-        /// </summary>
-        [DataMember]
-        public bool CheckInterfaceProps = false;
+        ///// <summary>
+        ///// if true, the jump condition for mass, momentum and energy will be checked
+        ///// </summary>
+        //[DataMember]
+        //public bool CheckJumpConditions = false;
 
-        /// <summary>
-        /// Registers all utility (also energy) fields to IOFields
-        /// </summary>
-        [DataMember]
-        public bool RegisterUtilitiesToIOFields = false;
+        ///// <summary>
+        ///// if true, the mass conservation and the surface changerate is checked
+        ///// </summary>
+        //[DataMember]
+        //public bool CheckInterfaceProps = false;
+
+        ///// <summary>
+        ///// Registers all utility (also energy) fields to IOFields
+        ///// </summary>
+        //[DataMember]
+        //public bool RegisterUtilitiesToIOFields = false;
         
         /// <summary>
         /// average method for constructing the interface velocity
@@ -549,18 +471,20 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
 
-        /// <summary>
-        /// An explicit expression of the Level-set over time: \phi = f(x,y;t).
-        /// </summary>
-        [NonSerialized]
-        [JsonIgnore]
-        public Func<double[], double, double> Phi;
+        ///// <summary>
+        ///// An explicit expression of the Level-set over time: \phi = f(x,y;t).
+        ///// </summary>
+        //[NonSerialized]
+        //[JsonIgnore]
+        //public Func<double[], double, double> Phi;
 
         /// <summary>
         /// See <see cref="InterfaceAveraging"/>
         /// </summary>
+        [DataMember]
         public InterfaceVelocityAveraging InterVelocAverage = InterfaceVelocityAveraging.density;
 
+        /*
         /// <summary>
         /// Exact solution for velocity, for each species (either A or B).
         /// </summary>
@@ -576,17 +500,13 @@ namespace BoSSS.Application.XNSE_Solver {
         public IDictionary<string, Func<double[], double, double>> ExactSolutionPressure;
 
         /// <summary>
-        /// Exact solution, temperature, for each species (either A or B).
+        /// Exact solution, electric potential, for each species (either A or B).
         /// </summary>
         [NonSerialized]
         [JsonIgnore]
-        public IDictionary<string, Func<double[], double, double>> ExactSolutionTemperature;
-        /// <summary>
-        /// Exact solution, Mixture fraction, for each species (either A or B).
-        /// </summary>
-        [NonSerialized]
-        [JsonIgnore]
-        public IDictionary<string, Func<double[], double, double>> ExactSolutionMixtureFraction;
+        public IDictionary<string, Func<double[], double, double>> ExactSolutionElectricPotential;
+        */
+
 
         /// <summary>
         /// Time dependent (component-wise) gravitational acceleration (either A or B).
@@ -661,22 +581,135 @@ namespace BoSSS.Application.XNSE_Solver {
             this.InitialValues_Evaluators_TimeDep[VariableNames.VolumeForce_d(d) + "#" + species] = g;
         }
 
-        /// <summary>
-        /// Control Options for ReInit
-        /// </summary>
-        [DataMember]
-        public EllipticReInitAlgoControl ReInitControl = new EllipticReInitAlgoControl();
 
         /// <summary>
-        /// Control Options for ExtVel
+        /// Adds an initial value to <see cref="InitialValues"/>
         /// </summary>
-        public EllipticExtVelAlgoControl EllipticExtVelAlgoControl = new EllipticExtVelAlgoControl();
+        /// <param name="fieldname">Name of the field for which the boundary condition is valid</param>
+        /// <param name="value">Function of the boundary condition</param>
+        /// <param name="species">species name, e.g., 'A' or 'B'</param>
+        public void AddInitialValue(string fieldname, string species, IBoundaryAndInitialData value) {
+            base.AddInitialValue(fieldname + "#" + species, value);
+        }
 
         /// <summary>
-        /// three-step reinitialization with preconditioning fast-marching
+        /// Adds a time-dependent value to <see cref="InitialValues_Evaluators_TimeDep"/>
+        /// (e.g., for time-stepping schemes with require multiple initial value, time-dependent source fields, ...)
         /// </summary>
+        public void AddInitialValue(string fieldname, string species, Func<double[], double, double> value) {
+            base.AddInitialValue(fieldname + "#" + species, value);
+        }
+
+        /// <summary>
+        /// Adds an initial value to <see cref="InitialValues_Evaluators"/>
+        /// </summary>
+        public void AddInitialValue(string fieldname, string species, Func<double[], double> value) {
+            base.AddInitialValue(fieldname + "#" + species, value);
+        }
+
+        /// <summary>
+        /// Adds an initial value to <see cref="InitialValues"/>
+        /// </summary>
+        /// <param name="fieldname"></param>
+        /// <param name="FormulaText">
+        /// Text representation of a delegate, see <see cref="Formula"/>.
+        /// </param>
+        /// <param name="TimeDependent">
+        /// Whether the formula in <paramref name="FormulaText"/> is time-dependent or not, see <see cref="Formula"/>.
+        /// </param>
+        /// <param name="species">species name</param>
+        public void AddInitialValue(string fieldname, string species, string FormulaText, bool TimeDependent) {
+            base.AddInitialValue(fieldname + "#" + species, FormulaText, TimeDependent);
+        }
+
+        /// <summary>
+        /// Adds an item to <see cref="ExactSolutions"/>, e.g., for computing errors in benchmark cases
+        /// </summary>
+        /// <param name="fieldname">Name of the field for which the exact solution is valid</param>
+        /// <param name="value">Function of the exact solution</param>
+        /// <param name="species"></param>
+        public void AddExactSolution(string fieldname, string species, IBoundaryAndInitialData value) {
+            ExactSolutions.Add(fieldname + "#" + species, value);
+        }
+
+        /// <summary>
+        /// Adds a transient exact solution, e.g., for computing errors in benchmark cases
+        /// </summary>
+        /// <param name="fieldname">Name of the field for which the exact solution is valid</param>
+        /// <param name="value">Function of the exact solution</param>
+        /// <param name="species"></param>
+        public void AddExactSolution(string fieldname, string species, Func<double[], double, double> value) {
+            base.AddExactSolution(fieldname + "#" + species, value);
+        }
+
+        /// <summary>
+        /// Adds a time-independent exact solution, e.g., for computing errors in benchmark cases
+        /// </summary>
+        /// <param name="fieldname">Name of the field for which the exact solution is valid</param>
+        /// <param name="value">Function of the exact solution</param>
+        /// <param name="species"></param>
+        public void AddExactSolution(string fieldname, string species, Func<double[], double> value) {
+            base.AddExactSolution(fieldname + "#" + species, value);
+        }
+
+        /// <summary>
+        /// Adds an item to <see cref="ExactSolutions"/>
+        /// </summary>
+        /// <param name="fieldname"></param>
+        /// <param name="FormulaText">
+        /// Text representation of a delegate, see <see cref="Formula"/>.
+        /// </param>
+        /// <param name="TimeDependent">
+        /// Whether the formula in <paramref name="FormulaText"/> is time-dependent or not, see <see cref="Formula"/>.
+        /// </param>
+        /// <param name="species"></param>
+        public void AddExactSolution(string fieldname, string species, string FormulaText, bool TimeDependent) {
+            base.AddExactSolution(fieldname + "#" + species, FormulaText, TimeDependent);
+        }
+
+
+        // <summary>
+        // activates inertia force terms occuring in rotational systems
+        // </summary>
+        //[DataMember]
+        //public bool UseRotInertForceTerms = false;
+
+        // <summary>
+        // Angular velocity for rotating systems
+        // </summary>
+        //[DataMember]
+        //public double[] AngularVelocity;
+
+        // <summary>
+        // activates cylindircal terms
+        // </summary>
+        //[DataMember]
+        //public bool UseCylindricalCoords = false;
+
+
         [DataMember]
-        public bool fullReInit = false;
+        Dictionary<string, List<IBoundaryAndInitialData>> m_InitialRampUpValues;
+
+
+        [JsonIgnore]
+        public IDictionary<string, List<IBoundaryAndInitialData>> InitialRampUpValues {
+            get {
+                return m_InitialRampUpValues;
+            }
+        }
+
+        public void AddInitialRampUpValue(string fieldname, IBoundaryAndInitialData value) {
+            if (m_InitialRampUpValues == null)
+                m_InitialRampUpValues = new Dictionary<string, List<IBoundaryAndInitialData>>();
+
+            if (m_InitialRampUpValues.TryGetValue(fieldname, out List<IBoundaryAndInitialData> values)) {
+                values.Add(value);
+            } else {
+                m_InitialRampUpValues.Add(fieldname, new List<IBoundaryAndInitialData>());
+                m_InitialRampUpValues[fieldname].Add(value);  
+            }
+        }
+
 
         /// <summary>
         /// switch for the computation of the coupled heat solver

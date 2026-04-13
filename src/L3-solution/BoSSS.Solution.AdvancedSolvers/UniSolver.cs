@@ -460,7 +460,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// General-Purpose driver Routine for performing a steady-state solution of a PDE defined through some operator
         /// </summary>
         /// <param name="op">
-        /// The spatial operator for the PDE to be solved (we solve `$ \mathrm(op)(U) = 0 `$, where `$ U `$ stands for <paramref name="Solution"/>).
+        /// The spatial operator for the PDE to be solved (we solve $\mathrm(op)(U) = 0$, where $U$ stands for <paramref name="Solution"/>).
         /// In order to obtain a non-zero solution, this must typically contain some source terms or inhomogeneous boundary conditions.
         /// </param>
         /// <param name="Solution">
@@ -654,10 +654,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     tr.Info("  Pardiso phase 11: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_11.Elapsed.TotalSeconds);
                     tr.Info("  Pardiso phase 22: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_22.Elapsed.TotalSeconds);
                     tr.Info("  Pardiso phase 33: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_33.Elapsed.TotalSeconds);
-                    tr.Info("  spmm total " + BlockMsrMatrix.multiply.Elapsed.TotalSeconds);
-                    tr.Info("  spmm core " + BlockMsrMatrix.multiply_core.Elapsed.TotalSeconds);
-                    tr.Info("  spmv total " + BlockMsrMatrix.SPMV_tot.Elapsed.TotalSeconds);
-                    tr.Info("  spmv outer " + BlockMsrMatrix.SpMV_local.Elapsed.TotalSeconds);
+                    tr.Info(BlockMsrMatrix.PerfStatToString());
                 }
 
                 // store solution

@@ -86,18 +86,18 @@ namespace BoSSS.Solution.XNSECommon {
                             break;
                         }
                         case NavierSlip_SlipLength.Prescribed_Beta: {
-                            double oneOverBeta = -1.0;
+                            //double oneOverBeta = -1.0;
                             switch (lstrk.GetSpeciesName(spc)) {
                                 case "A":
-                                    oneOverBeta = 1.0 / physParams.betaS_A;
+                                    SlipLengths[i] = physParams.mu_A / physParams.betaS_A;
                                     break;
                                 case "B":
-                                    oneOverBeta = 1.0 / physParams.betaS_B;
+                                    SlipLengths[i] = physParams.mu_B / physParams.betaS_B;
                                     break;
                                 default:
                                     break;
                             }
-                            SlipLengths[i] = oneOverBeta;//-1.0;
+                            //SlipLengths[i] = oneOverBeta;//-1.0;
                             break;
                         }
                     }

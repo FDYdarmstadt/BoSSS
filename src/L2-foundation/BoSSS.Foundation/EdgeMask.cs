@@ -50,7 +50,7 @@ namespace BoSSS.Foundation.Grid {
                 throw new ArgumentException("Mismatch in number of edges/length of input bitmask.");
         }
 
-        static BitArray MaskFromSelector(IGridData grddat, Func<double[], bool> GeomSelector) {
+        static BitArray MaskFromSelector(IGridData grddat, Func<Vector, bool> GeomSelector) {
             int NoOfEdges = grddat.iLogicalEdges.Count;
             BitArray mask = new BitArray(NoOfEdges);
             int D = grddat.SpatialDimension;
@@ -61,7 +61,7 @@ namespace BoSSS.Foundation.Grid {
                 NodeSet Center = Eref.Center;
 
                 MultidimensionalArray GlobalCoord = grddat.GlobalNodes.GetValue_EdgeSV(Center, i, 1);
-                double[] X = new double[D];
+                Vector X = new Vector(D);
                 Debug.Assert(GlobalCoord.Dimension == 3);
                 Debug.Assert(GlobalCoord.GetLength(0) == 1);
                 Debug.Assert(GlobalCoord.GetLength(1) == 1);
@@ -88,7 +88,7 @@ namespace BoSSS.Foundation.Grid {
         /// <param name="mt">
         /// <see cref="ExecutionMask.MaskType"/>
         /// </param>
-        public EdgeMask(IGridData grddat, Func<double[], bool> GeomSelector, MaskType mt = MaskType.Logical) :
+        public EdgeMask(IGridData grddat, Func<Vector, bool> GeomSelector, MaskType mt = MaskType.Logical) :
             base(grddat, MaskFromSelector(grddat, GeomSelector), mt) {
         }
 
@@ -208,6 +208,22 @@ namespace BoSSS.Foundation.Grid {
         protected override ExecutionMask CreateInstance(BitArray mask, MaskType mt) {
             return new EdgeMask(base.GridData, mask, mt);
         }
+
+        /// <summary>
+        /// like the ctor.
+        /// </summary>
+        protected override ExecutionMask CreateInstance(int[] _Sequence, MaskType __MaskType) {
+            return new EdgeMask(base.GridData, _Sequence, __MaskType);
+        }
+
+        /// <summary>
+        /// splits this mask into <paramref name="NoOfParts"/> roughly equal parts
+        /// </summary>
+        public new EdgeMask[] SplitUp(int NoOfParts) {
+            return base.SplitUp(NoOfParts).Select(part => (EdgeMask)part).ToArray();
+        }
+
+
 
         /// <summary>
         /// see <see cref="ExecutionMask.GetUpperIndexBound"/>

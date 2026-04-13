@@ -1,8 +1,10 @@
 ﻿using ilPSP.Utils;
+using MPI.Wrappers;
 using MPI.Wrappers.Utils;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -31,11 +33,11 @@ namespace ilPSP {
     public class MKLservice : DynLibLoader {
 
         public MKLservice() :
-            base(BLAS_LAPACK_Libstuff.GetLibname(Parallelism.OMP),
-                 BLAS_LAPACK_Libstuff.GetPrequesiteLibraries(Parallelism.OMP),
-                 BLAS_LAPACK_Libstuff.GetLibname(Parallelism.OMP).Length.ForLoop<GetNameMangling>( i => DynLibLoader.Identity),
-                 BLAS_LAPACK_Libstuff.GetPlatformID(Parallelism.OMP),
-                 BLAS_LAPACK_Libstuff.GetPointerSizeFilter(Parallelism.OMP)) //
+            base(BLAS_LAPACK_IntelMKL_Libstuff.GetLibname(Parallelism.OMP),
+                 BLAS_LAPACK_IntelMKL_Libstuff.GetPrequesiteLibraries(Parallelism.OMP),
+                 BLAS_LAPACK_IntelMKL_Libstuff.GetLibname(Parallelism.OMP).Length.ForLoop<GetNameMangling>( i => DynLibLoader.Identity),
+                 BLAS_LAPACK_IntelMKL_Libstuff.GetPlatformID(Parallelism.OMP),
+                 BLAS_LAPACK_IntelMKL_Libstuff.GetPointerSizeFilter(Parallelism.OMP)) //
         { }
 
 
@@ -89,7 +91,7 @@ namespace ilPSP {
 
         /// <summary>
         /// Setting/Getting the state of OpenMP dynamic thread allocation 
-        /// (internal control variable `omp_get_dynamic`, overrifed the bahavor of OMP_DYNAMIC environment variable)
+        /// (internal control variable `omp_get_dynamic`, overrides the behavior of OMP_DYNAMIC environment variable)
         /// </summary>
         public static bool Dynamic {
             get {
@@ -116,6 +118,10 @@ namespace ilPSP {
 
 
         public static void BindOMPthreads_1To1(int[] CPUindices) {
+            int rank = -1;
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
+            CPUindices = CPUAffinity.ToOpenMpCPUindices(CPUindices).ToArray();
+
             int ret;
             int NumCpus = CPUindices.Length;
             unsafe {

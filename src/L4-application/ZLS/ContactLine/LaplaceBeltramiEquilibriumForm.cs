@@ -1,4 +1,5 @@
 ﻿using BoSSS.Foundation;
+using BoSSS.Foundation.XDG;
 using ilPSP;
 using System;
 using System.Collections.Generic;
@@ -7,14 +8,20 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace ZwoLevelSetSolver.ContactLine {
-    class LaplaceBeltramiEquilibriumForm : ContactLineForm {
+    class LaplaceBeltramiEquilibriumForm : ContactLineForm, ISpeciesFilter {
         int d;
         int D;
+        double scale;
+        string species;
 
-        public LaplaceBeltramiEquilibriumForm(int d, int D) : base(D) {
+        public LaplaceBeltramiEquilibriumForm(int d, int D, double scale, string species) : base(D) {
             this.d = d;
             this.D = D;
+            this.scale = scale;
+            this.species = species;
         }
+
+        public string ValidSpecies => species;
 
         public override double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             Vector EdgeNormal = SolidSurfaceNormal(ref cpv);
@@ -22,36 +29,12 @@ namespace ZwoLevelSetSolver.ContactLine {
 
             Vector Tangente_IN = SurfaceUtilities.Tangent(SurfaceNormal_IN, EdgeNormal);
 
-            double Flx_InCell = 0;
             double m_sigma = Sigma(ref cpv);
 
             // isotropic surface tension terms
-            Flx_InCell -= m_sigma * EdgeNormal[d] * Tangente_IN[d];
-            return Flx_InCell * V;
-        }
-    }
+            double force = scale * m_sigma * Tangente_IN[d];
 
-    class LaplaceBeltramiSlipForm : ContactLineForm {
-        int d;
-        int D;
-
-        public LaplaceBeltramiSlipForm(int d, int D) : base(D) {
-            this.d = d;
-            this.D = D;
-        }
-
-        public override double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
-            Vector EdgeNormal = SolidSurfaceNormal(ref cpv);
-            Vector SurfaceNormal_IN = FluidSurfaceNormal(ref cpv);
-
-            Vector Tangente_IN = SurfaceUtilities.Tangent(SurfaceNormal_IN, EdgeNormal);
-
-            double Flx_InCell = 0;
-            double m_sigma = Sigma(ref cpv);
-
-            // isotropic surface tension terms
-            Flx_InCell -= m_sigma * EdgeNormal[d] * (Tangente_IN * EdgeNormal) * (-1);
-            return Flx_InCell * V;
+            return force * V;
         }
     }
 }

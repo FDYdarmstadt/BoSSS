@@ -11,6 +11,7 @@ using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.Tracing;
 using ilPSP.Utils;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -578,7 +579,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             var gDat = (GridData) _gDat;
             var DummyLevSet = new LevelSet(new Basis(gDat, 1), "DummyPhi");
             DummyLevSet.AccConstant(-1.0);
-            LsTrk = new LevelSetTracker(gDat, XQuadFactoryHelper.MomentFittingVariants.OneStepGauss, 1, new[] { "A", "B" }, DummyLevSet);
+            LsTrk = new LevelSetTracker(gDat, CutCellQuadratureMethod.Saye, 1, new[] { "A", "B" }, DummyLevSet);
             LsTrk.UpdateTracker(0.0, __NearRegionWith: 0);
 
             var spcA = LsTrk.GetSpeciesId("A");
@@ -604,7 +605,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 throw new NotImplementedException();
             }
 
-            public double Update(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental) {
+            public double Update(IList<string> variableNames, DGField[] CurrentVariableState, IList<string> parameterNames, DGField[] CurrentParameterState, double time, double dt, double UnderRelax, bool incremental) {
                 m_owner.LsTrk.UpdateTracker(time + dt, incremental: true);
                 return 0.0;
             }
@@ -633,6 +634,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         public void ComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] __CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time, int LsTrkHistoryIndex) {
             using(var ft = new FuncTrace()) {
+                MPICollectiveWatchDog.Watch(635278);
                 // compute operator
                 Debug.Assert(OpAffine.L2Norm() == 0.0);
 
@@ -646,15 +648,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                         throw new ArgumentException("Domain/Matrix column mapping mismatch.");
                 }
 
+               
                 if(XdgOperator != null) {
-                    // +++++++++++++++++++++++++++++++++++++++++++++++
-                    // XDG Branch: still requires length-scale-hack
-                    // (should be cleaned some-when in the future)
-                    // +++++++++++++++++++++++++++++++++++++++++++++++
-
-                    //if(XdgOperator.AgglomerationThreshold <= 0)
-                    //    throw new ArgumentException("Mismatch between agglomeration threshold provided ");
-
                     if(OpMtx != null) {
                         // +++++++++++++++++++++++++++++
                         // Solver requires linearization
@@ -698,12 +693,13 @@ namespace BoSSS.Solution.XdgTimestepping {
                                 if(JacobiParameterVars == null)
                                     JacobiParameterVars = op.InvokeParameterFactory(this.CurrentState);
 
-                                // set JacobiParameterVars to corresponding this.Parameters
-                                foreach (var paramName in op.ParameterVar) {
-                                    int idxJacOp = op.ParameterVar.IndexOf(paramName);
-                                    int idxOp = this.XdgOperator.ParameterVar.IndexOf(paramName);
-                                    if (!(idxOp == -1)) {
-                                        JacobiParameterVars[idxJacOp] = this.Parameters[idxOp];
+                                // update parameters in JacobiParameterVars - some equation components (e.g. surface tension force) needs parameters not updated by given jacobi ParameterFactories (e.g. Normals). 
+                                // In order to have (non-zero) values we take the fields given for the timestepper. 
+                                foreach (DGField param in Parameters) {
+                                    int ind = this.JacobiParameterVars.FirstIndexWhere(jpv => jpv.Identification.Equals(param.Identification));
+                                    //int ind = this.JacobiParameterVars.FirstIndexWhere(jpv => ReferenceEquals(jpv, param));
+                                    if (ind > -1) {
+                                        this.JacobiParameterVars[ind] = param.CloneAs();
                                     }
                                 }
 
@@ -764,7 +760,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                                 return;
                             }
 
-                            case LinearizationHint.FDJacobi: using(new BlockTrace("DG-LinearizationHint.FDJacobi", ft)){
+                            case LinearizationHint.FDJacobi: using(new BlockTrace("DG-LinearizationHint.FDJacobi", ft)) {
                                 var mtxBuilder = DgOperator.GetFDJacobianBuilder(__CurrentState, this.Parameters, Mapping);
                                 mtxBuilder.time = time;
                                 mtxBuilder.MPITtransceive = true;
@@ -803,7 +799,10 @@ namespace BoSSS.Solution.XdgTimestepping {
                 } else {
                     throw new NotImplementedException();
                 }
+
+                //*/
             }
+
         }
 
 
@@ -961,6 +960,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         public void DataRestoreAfterBalancing(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L,
             IEnumerable<DGField> Fields,
             IEnumerable<DGField> IterationResiduals,
+            IList<DGField> Parameters,
             LevelSetTracker LsTrk,
             AggregationGridData[] _MultigridSequence,
             IDifferentialOperator abstractOperator) //
@@ -975,7 +975,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             if (this.m_JacobiXdgOperator != null)
                 this.m_JacobiXdgOperator = null;
 
-            Parameters = this.Operator.InvokeParameterFactory(Fields);
+            this.Parameters = this.Operator.InvokeParameterFactory(Fields);
             
             if(m_BDF_Timestepper != null) {
                 m_BDF_Timestepper.DataRestoreAfterBalancing(L, Fields, this.Parameters, IterationResiduals, LsTrk, _MultigridSequence, abstractOperator);

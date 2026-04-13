@@ -84,7 +84,7 @@ namespace BoSSS.Foundation {
         }
 
         static int ComputeLength(IEnumerable<Basis> _basis) {
-            if (_basis == null || _basis.Count() <= 0)
+            if (_basis == null || _basis.Count() <= 0 || _basis.ElementAt(0).GridDat.iLogicalCells == null)
                 return 0;
             else 
                 return _basis.Sum(b => b.MaximalLength) * _basis.ElementAt(0).GridDat.iLogicalCells.NoOfLocalUpdatedCells;
@@ -103,7 +103,7 @@ namespace BoSSS.Foundation {
         /// <param name="_basis">the list of DG basis'es that define this mapping</param>
         /// <param name="g"></param>
         /// <param name="_Comm"></param>
-        private UnsetteledCoordinateMapping(IGridData g, IEnumerable<Basis> _basis, MPI_Comm _Comm) :
+        public UnsetteledCoordinateMapping(IGridData g, IEnumerable<Basis> _basis, MPI_Comm _Comm) :
             base(ComputeLength(_basis), _Comm) //
         {
 
@@ -729,6 +729,58 @@ namespace BoSSS.Foundation {
             return Local2GlobalIndex(iloc);
         }
 
+        /// <summary>
+        /// Globel index for the first degree-of-freedom (DOF) for cell <paramref name="j"/>;
+        /// Note: in contrast to <see cref="GetBlockI0(long)"/>, this function supports also external/ghost cells (in local coordinates).
+        /// </summary>
+        /// <param name="j">local cell index, might be an external/ghost cell</param>
+        /// <returns>
+        /// The global coordinate index for the first DOF for cell <paramref name="j"/>
+        /// </returns>
+        public long GlobalUnique1stCoordinate(int j) {
+            Debug.Assert(!(j < 0 || j >= m_Context.iLogicalCells.Count),
+                "j must be greater or equal 0 and less than number of locally updated cells");
+            //Debug.Assert(m_Context.iLogicalCells.NoOfLocalUpdatedCells == LocalNoOfBlocks)
+            if(j < LocalNoOfBlocks) {
+                return GetBlockI0(j + FirstBlock);
+            } else {
+                j -= m_Context.iLogicalCells.NoOfLocalUpdatedCells;
+                int jGlobal = (int)(m_Context.iParallel.GlobalIndicesExternalCells[j]);
+
+                return jGlobal * m_MaxTotalNoOfCoordinatesPerCell;
+            }
+        }
+
+        /// <summary>
+        /// Globel index for the first degree-of-freedom (DOF) for cell <paramref name="j"/>;
+        /// Note: in contrast to <see cref="GetBlockI0(long)"/>, this function supports also external/ghost cells (in local coordinates).
+        /// </summary>
+        /// <param name="j">local cell index, might be an external/ghost cell</param>
+        /// <returns>
+        /// The global coordinate index for the first DOF for cell <paramref name="j"/>
+        /// </returns>
+        public int LocalUnique1stCoordinate(int j) {
+            Debug.Assert(!(j < 0 || j >= m_Context.iLogicalCells.Count),
+                "j must be greater or equal 0 and less than number of locally updated cells");
+            return j * m_MaxTotalNoOfCoordinatesPerCell;
+        }
+
+        /// <summary>
+        /// Globel index for the first degree-of-freedom (DOF) of the <paramref name="find"/>-th variable for cell <paramref name="j"/>;
+        /// </summary>
+        /// <param name="j">local cell index, might be an external/ghost cell</param>
+        /// <param name="find">field/variable index</param>
+        /// <returns>
+        /// The global coordinate index for the first DOF for cell <paramref name="j"/>
+        /// </returns>
+        public int LocalUnique1stCoordinate(int find, int j) {
+            Debug.Assert(!(find < 0 || find >= this.m_BasisS.Length),
+                "Field is not in this mapping");
+            Debug.Assert(!(j < 0 || j >= m_Context.iLogicalCells.Count),
+                "j must be greater or equal 0 and less than number of locally updated cells");
+            return j * m_MaxTotalNoOfCoordinatesPerCell + m_j0CoordinateIndex[find];
+        }
+
 
         /// <summary>
         /// computes a global unique coordinate index ("global" means over all MPI processors)
@@ -751,15 +803,15 @@ namespace BoSSS.Foundation {
         /// communicator.
         /// </remarks>
         public long GlobalUniqueCoordinateIndex_FromGlobal(int find, long jGlobal, int n) {
-            if (find < 0 || find > m_BasisS.Length)
+            if(find < 0 || find > m_BasisS.Length)
                 throw new ArgumentOutOfRangeException("find", "field index");
-            if (jGlobal < 0 || jGlobal >= GridDat.CellPartitioning.TotalLength)
+            if(jGlobal < 0 || jGlobal >= GridDat.CellPartitioning.TotalLength)
                 throw new ArgumentOutOfRangeException("j must be greater or equal 0 and less than the total number of cells over all processors");
-            if (n < 0 || n >= m_BasisS[find].MaximalLength)
+            if(n < 0 || n >= m_BasisS[find].MaximalLength)
                 throw new ArgumentOutOfRangeException("n must be greater or equal 0 and less than the basis index determined by the specified interpolation order");
 
             return jGlobal * m_MaxTotalNoOfCoordinatesPerCell + m_j0CoordinateIndex[find] + n;
-         }
+        }
 
         
         /// <summary>

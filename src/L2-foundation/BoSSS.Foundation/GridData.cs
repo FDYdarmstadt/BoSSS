@@ -14,24 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using BoSSS.Foundation.Comm;
+using BoSSS.Foundation.Grid.Aggregation;
+using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.IO;
 using BoSSS.Platform;
 using BoSSS.Platform.Utils.Geom;
 using ilPSP;
+using ilPSP.Connectors;
 using ilPSP.LinSolvers;
 using ilPSP.Tracing;
 using ilPSP.Utils;
 using log4net;
 using MPI.Wrappers;
-using BoSSS.Foundation.Grid.RefElements;
-using ilPSP.Connectors;
-using BoSSS.Foundation.Grid.Aggregation;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading;
 
 namespace BoSSS.Foundation.Grid.Classic {
 
@@ -412,47 +413,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             Ext = m_NoOCellsPerRefElement_External[iKref];
         }
 
-        /// <summary>
-        /// transforms vertices from the local coordinate system of cells <paramref name="jCell"/>
-        /// to global coordinates;
-        /// </summary>
-        /// <param name="LocalVerticesIn">
-        /// Input; vertices in the local coordinate system of a cell;
-        /// <list type="bullet">
-        ///   <item>1st index: vertex index;</item>
-        ///   <item>2nd index: spatial coordinate index 0 for 1D and 0,1 for 2D and 0,1,2 for 3D;</item>
-        /// </list>
-        /// </param>
-        /// <param name="GlobalVerticesOut">
-        /// Output; the vertices form <paramref name="LocalVerticesIn"/>, transformed to global
-        /// coordinates;
-        /// <list type="bullet">
-        ///   <item>
-        ///     1st index: vertex index, corresponds with the 1st index of <paramref name="LocalVerticesIn"/>;
-        ///   </item>
-        ///   <item>
-        ///     2nd index: spatial coordinate index 0 for 1D and 0,1 for 2D and 0,1,2 for 3D;
-        ///   </item>
-        /// </list>
-        /// </param>
-        /// <param name="jCell">local cell index of the cell to transform</param>
-        public void TransformLocal2Global(MultidimensionalArray LocalVerticesIn, MultidimensionalArray GlobalVerticesOut, int jCell) {
-            int N = LocalVerticesIn.GetLength(0);
-            int D = SpatialDimension;
-            if (GlobalVerticesOut.GetLength(1) != D)
-                throw new ArgumentException("wrong spatial dimension of GlobalVerticesOut");
-            if (LocalVerticesIn.GetLength(1) != D)
-                throw new ArgumentException("wrong spatial dimension of LocalVerticesIn");
-            if (LocalVerticesIn.GetLength(0) != GlobalVerticesOut.GetLength(0))
-                throw new ArgumentException("mismatch in number of vertices per cell.");
-
-
-            var Cl = m_Cells.GetCell(jCell);
-
-            var _GlobalVerticesOut = MultidimensionalArray.Create(1, N, D);
-            this.TransformLocal2Global(LocalVerticesIn, jCell, 1, _GlobalVerticesOut, 0);
-            GlobalVerticesOut.Set(_GlobalVerticesOut.ExtractSubArrayShallow(0, -1, -1));
-        }
+        
 
         /// <summary>
         /// transforms vertices from the local coordinate system of cells
@@ -572,17 +533,18 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </summary>
         public Caching.CacheLogic_CNs GlobalNodes {
             get {
-                if(m_GlobalNodes == null) {
-                    m_GlobalNodes = new Caching.CacheLogicImplBy_CNs(this,
-                        this.TransformLocal2Global,
-                        (Len, NoNodes) => new int[] { Len, NoNodes, this.SpatialDimension });
-                }
+                LazyInitializer.EnsureInitialized(ref m_GlobalNodes,
+                    delegate () {
+                        return new Caching.CacheLogicImplBy_CNs(this,
+                            this.TransformLocal2Global,
+                            (Len, NoNodes) => new int[] { Len, NoNodes, this.SpatialDimension });
+                    });
                 return m_GlobalNodes;
             }
         }
 
         /// <summary>
-        /// Jacobian of transformation from reference to physical space, \f$ (\nabla T_j) \f$.
+        /// Jacobian of transformation from reference to physical space, $(\nabla T_j)$.
         /// </summary>
         public Caching.CacheLogicImplBy_CNs Jacobian {
             get;
@@ -669,7 +631,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
         /// <summary>
         /// Adjungate of the Jacobian of the reference-to-physical coordinate transformation, 
-        /// \f$ \mathrm{Adj}( \nabla T_j ) =  \determinant{ \nabla T_j } ( \nabla T_j )^{-1} \f$.
+        /// $\mathrm{Adj}( \nabla T_j ) =  \mathrm{Adj}( { \nabla T_j } ) ( \nabla T_j )^{-1}$.
         /// </summary>
         public Caching.CacheLogicImplBy_CNs AdjungateJacobian {
             get;
@@ -751,7 +713,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         }
 
         /// <summary>
-        /// Inverse of the Jacobian of the reference-to-physical coordinate transformation, \f$ ( \nabla T_j )^{-1} \f$.
+        /// Inverse of the Jacobian of the reference-to-physical coordinate transformation, $( \nabla T_j )^{-1}$.
         /// </summary>
         public Caching.CacheLogicImplBy_CNs InverseJacobian {
             get;
@@ -788,7 +750,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         }
 
         /// <summary>
-        /// Determinant of the Jacobian of the reference-to-physical coordinate transformation, \f$ \determinant{ \nabla T_j } \f$.
+        /// Determinant of the Jacobian of the reference-to-physical coordinate transformation, $\mathrm{Adj}( \nabla T_j )$.
         /// </summary>
         public Caching.CacheLogicImplBy_CNs JacobianDeterminat {
             get;

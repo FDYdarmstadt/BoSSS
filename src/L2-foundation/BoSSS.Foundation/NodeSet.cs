@@ -41,13 +41,14 @@ namespace BoSSS.Foundation {
         static object syncRoot = new Object();
         static int RefCounter = 123;
 
+       
         /// <summary>
         /// Constructor: initializes this node set as a (non-shallow) clone of the array <paramref name="nds"/>.
         /// </summary>
         public NodeSet(RefElement r, MultidimensionalArray nds, bool useCaching)
             : base(2) //
         {
-        
+
             if(nds.Dimension != 2)
                 throw new ArgumentException("Expecting 2D-array. 1st dim.: node index, 2nd dim.: spatial direction.");
             if(nds.GetLength(1) > 3)
@@ -55,17 +56,7 @@ namespace BoSSS.Foundation {
             base.Allocate(nds.Lengths);
             base.Set(nds);
             base.LockForever();
-            this.RefElement = r;
-            lock(syncRoot) {
-                if(useCaching) {
-                    this.Reference = RefCounter;
-                    if(RefCounter >= int.MaxValue)
-                        throw new ApplicationException("NodeSet ref-counter overflow.");
-                    RefCounter++;
-                } else {
-                    this.Reference = 0;
-                }
-            }
+            ConstructorCommon(r, useCaching);
         }
 
         /// <summary>
@@ -75,13 +66,17 @@ namespace BoSSS.Foundation {
             : base(2) //
         {
 
-            if (nds.GetLength(1) > 3)
+            if(nds.GetLength(1) > 3)
                 throw new ArgumentException("Spatial dimension is expected to be lower or equal to 3.");
             base.Allocate(nds.GetLength(0), nds.GetLength(1));
             base.Set2DArray(nds);
             base.LockForever();
+            ConstructorCommon(r, useCaching);
+        }
+
+        private void ConstructorCommon(RefElement r, bool useCaching) {
             this.RefElement = r;
-            lock (syncRoot) {
+            lock(syncRoot) {
                 if(useCaching) {
                     this.Reference = RefCounter;
                     if(RefCounter >= int.MaxValue)
@@ -105,17 +100,7 @@ namespace BoSSS.Foundation {
             base.Allocate(1, point.Length);
             base.ExtractSubArrayShallow(0, -1).SetVector(point);
             base.LockForever();
-            this.RefElement = r;
-            lock(syncRoot) {
-                if(useCaching) {
-                    this.Reference = RefCounter;
-                    if(RefCounter >= int.MaxValue)
-                        throw new ApplicationException("NodeSet ref-counter overflow.");
-                    RefCounter++;
-                } else {
-                    this.Reference = 0;
-                }
-            }
+            ConstructorCommon(r, useCaching);
         }
 
         /// <summary>
@@ -130,17 +115,7 @@ namespace BoSSS.Foundation {
             base.Allocate(1, point.Dim);
             base.ExtractSubArrayShallow(0, -1).SetVector(point);
             base.LockForever();
-            this.RefElement = r;
-            lock(syncRoot) {
-                if(useCaching) {
-                    this.Reference = RefCounter;
-                    if(RefCounter >= int.MaxValue)
-                        throw new ApplicationException("NodeSet ref-counter overflow.");
-                    RefCounter++;
-                } else {
-                    this.Reference = 0;
-                }
-            }
+            ConstructorCommon(r, useCaching);
         }
 
 
@@ -153,17 +128,7 @@ namespace BoSSS.Foundation {
             : base(2) //
         {
             base.Allocate(NoOfNodes, D);
-            this.RefElement = r;
-            lock(syncRoot) {
-                if(useCaching) {
-                    this.Reference = RefCounter;
-                    if(RefCounter >= int.MaxValue)
-                        throw new ApplicationException("NodeSet ref-counter overflow.");
-                    RefCounter++;
-                } else {
-                    this.Reference = 0;
-                }
-            }
+            ConstructorCommon(r, useCaching);
         }
 
 
@@ -276,45 +241,47 @@ namespace BoSSS.Foundation {
         /// <param name="useCaching"></param>
         /// <returns></returns>
         public NodeSet GetVolumeNodeSet(IGridData g, int Edge2CellTrafoIndex, bool useCaching) {
-            if(!base.IsLocked)
-                throw new NotSupportedException("NodeSet must be locked before first usage.");
-            Debug.Assert((base.GetLength(1) == this.RefElement.SpatialDimension) || (base.GetLength(1) == 1 && this.RefElement.SpatialDimension == 0), "Mismatch between number of spatial directions in node set and reference element.");
-                
+            lock(this) {
+                if(!base.IsLocked)
+                    throw new NotSupportedException("NodeSet must be locked before first usage.");
+                Debug.Assert((base.GetLength(1) == this.RefElement.SpatialDimension) || (base.GetLength(1) == 1 && this.RefElement.SpatialDimension == 0), "Mismatch between number of spatial directions in node set and reference element.");
+
 #if DEBUG
-            if(this.GetNodeCoordinateSystem(g) != NodeCoordinateSystem.EdgeCoord) {
-                throw new NotSupportedException("Operation only supported for edge node sets.");
-            }
-#endif            
-            int D = g.SpatialDimension;
-            int NN = this.NoOfNodes;
-            int idx = Edge2CellTrafoIndex + g.iGeomEdges.e2C_offet;
+                if(this.GetNodeCoordinateSystem(g) != NodeCoordinateSystem.EdgeCoord) {
+                    throw new NotSupportedException("Operation only supported for edge node sets.");
+                }
+#endif
+                int D = g.SpatialDimension;
+                int NN = this.NoOfNodes;
+                int idx = Edge2CellTrafoIndex + g.iGeomEdges.e2C_offet;
 
-            if(VolumeNodeSets == null) {
-                // alloc mem, if necessary
-                // ++++++++++++++++++++++++
-                VolumeNodeSets = new NodeSet[g.iGeomEdges.Edge2CellTrafos.Count + g.iGeomEdges.e2C_offet];
-            }
-            if(VolumeNodeSets.Length < (g.iGeomEdges.Edge2CellTrafos.Count + g.iGeomEdges.e2C_offet)) {
-                // re-alloc mem, if necessary
-                // ++++++++++++++++++++++++++
-                var newVNS = new NodeSet[g.iGeomEdges.Edge2CellTrafos.Count + g.iGeomEdges.e2C_offet];
-                Array.Copy(VolumeNodeSets, 0, newVNS, 0, VolumeNodeSets.Length);
-                VolumeNodeSets = newVNS;
-            }
-            if(VolumeNodeSets[idx] == null) {
-                // transform edge-nodes to cell-nodes, if necessary
-                // ++++++++++++++++++++++++++++++++++++++++++++++++
-                AffineTrafo Trafo = g.iGeomEdges.Edge2CellTrafos[Edge2CellTrafoIndex];
-                int iKref = g.iGeomEdges.Edge2CellTrafosRefElementIndices[Edge2CellTrafoIndex];
+                if(VolumeNodeSets == null) {
+                    // alloc mem, if necessary
+                    // ++++++++++++++++++++++++
+                    VolumeNodeSets = new NodeSet[g.iGeomEdges.Edge2CellTrafos.Count + g.iGeomEdges.e2C_offet];
+                }
+                if(VolumeNodeSets.Length < (g.iGeomEdges.Edge2CellTrafos.Count + g.iGeomEdges.e2C_offet)) {
+                    // re-alloc mem, if necessary
+                    // ++++++++++++++++++++++++++
+                    var newVNS = new NodeSet[g.iGeomEdges.Edge2CellTrafos.Count + g.iGeomEdges.e2C_offet];
+                    Array.Copy(VolumeNodeSets, 0, newVNS, 0, VolumeNodeSets.Length);
+                    VolumeNodeSets = newVNS;
+                }
+                if(VolumeNodeSets[idx] == null) {
+                    // transform edge-nodes to cell-nodes, if necessary
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++
+                    AffineTrafo Trafo = g.iGeomEdges.Edge2CellTrafos[Edge2CellTrafoIndex];
+                    int iKref = g.iGeomEdges.Edge2CellTrafosRefElementIndices[Edge2CellTrafoIndex];
 
-                NodeSet volNS = new NodeSet(g.iGeomCells.RefElements[iKref], NN, D, useCaching);
-                Trafo.Transform(this, volNS);
-                volNS.LockForever();
+                    NodeSet volNS = new NodeSet(g.iGeomCells.RefElements[iKref], NN, D, useCaching);
+                    Trafo.Transform(this, volNS);
+                    volNS.LockForever();
 
-                VolumeNodeSets[idx] = volNS;
+                    VolumeNodeSets[idx] = volNS;
+                }
+
+                return VolumeNodeSets[idx];
             }
-
-            return VolumeNodeSets[idx];
         }
     }
 }

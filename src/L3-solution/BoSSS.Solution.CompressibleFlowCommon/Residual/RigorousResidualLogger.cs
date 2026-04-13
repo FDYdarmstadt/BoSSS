@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Linq;
 using BoSSS.Foundation;
 using BoSSS.Foundation.IO;
+using BoSSS.Solution.Control;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.Residual {
 
@@ -29,7 +30,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Residual {
     /// difference. This makes it applicable to unsteady problems. 
     /// </summary>
     public class RigorousResidualLogger<T> : ResidualLogger
-            where T : CompressibleControl, new() {
+            where T : AppControl, ICompressibleControl, new() {
 
         /// <summary>
         /// The spatial differential operator defining (the spatial part of)

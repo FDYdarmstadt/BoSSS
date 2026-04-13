@@ -7,7 +7,7 @@ using BoSSS.Foundation.Quadrature;
 using System.Diagnostics;
 using ilPSP;
 
-namespace BoSSS.Foundation.XDG.Quadrature
+namespace BoSSS.Foundation.XDG.Quadrature.Saye
 {
     abstract class SayeComboIntegrand<S, T>
         : SayeIntegrand<S, T>

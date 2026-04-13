@@ -34,7 +34,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 TimeSteppingScheme = TimeSteppingScheme.BDF2;
                 NonlinearCouplingSolidFluid = true;
                 UseImmersedBoundary = true;
-                CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+                CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
 
                 base.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
                 base.NonLinearSolver.ConvergenceCriterion = 1.0e-8;
@@ -156,7 +156,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         public void SetAddaptiveMeshRefinement(int MaxRefinementLevel) {
             if (MaxRefinementLevel != 0) {
                 AdaptiveMeshRefinement = true;
-                RefinementLevel = MaxRefinementLevel;
+                //RefinementLevel = MaxRefinementLevel;
                 AMR_startUpSweeps = MaxRefinementLevel;
                 activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = MaxRefinementLevel });
             }
@@ -166,7 +166,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// All particles
         /// </summary>
         [DataMember]
-        public Particle[] Particles { get; private set; }
+        public List<Particle> Particles; //{ get; set; }
 
         /// <summary>
         /// switch to turn the Phoretic Field on/off
@@ -351,6 +351,30 @@ namespace BoSSS.Application.XNSERO_Solver {
             };
         }
 
+
+        /// <summary>
+        /// Default: no perdiodicity
+        /// </summary>
+        public void SetPeriodicity2D(bool periodicX = false, bool periodicY = false) {
+
+            BoundaryIsPeriodic = new bool[2];
+            BoundaryIsPeriodic[0] = periodicX;
+            BoundaryIsPeriodic[1] = periodicY;
+        }
+
+
+        public void SetBoundaryPosition(double[][] bndPos) {
+
+            BoundaryPositionPerDimension = bndPos;
+        }
+
+
+        public void SetWallPosition(double[][] wallPos) {
+
+            WallPositionPerDimension = wallPos;
+        }
+
+
         /// <summary>
         /// Set time-steps and length of the simulation.
         /// </summary>
@@ -370,19 +394,19 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="ParticleList"></param>
         public void InitialiseParticles(List<Particle> ParticleList) {
 
-            Particles = ParticleList.ToArray();
+            Particles = ParticleList;
             if (IsRestart) {
                 ParticleList = LoadParticlesOnRestart(PathToOldSessionDir, ParticleList, TimestepNoForRestart);
             } else {
-                Particles = ParticleList.ToArray();
+                Particles = ParticleList;
                 //Console.WriteLine("Init");
                 //Console.WriteLine(Particles[0].Motion.GetPosition(0));
                 //Console.WriteLine(Particles[1].Motion.GetPosition(0));
                 // Initialize particle level-set
                 double levelSet(double[] X) {
                     double levelSetFunction = int.MinValue;
-                    for (int p = 0; p < Particles.Length; p++) {
-                        Particle currentParticle = Particles[p];
+                    foreach (Particle currentParticle in Particles) {
+                        //Particle currentParticle = Particles[p];
                         if (levelSetFunction < currentParticle.LevelSetFunction(X, 0))
                             levelSetFunction = currentParticle.LevelSetFunction(X, 0);
                     }
@@ -392,7 +416,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(1), levelSet);
                 Option_LevelSetEvolution2 = Solution.LevelSetTools.LevelSetEvolution.RigidObject;
 
-                Console.WriteLine("Simulation with " + Particles.Length + " particles");
+                Console.WriteLine("Simulation with " + Particles.Count + " particles");
             }
         }
 

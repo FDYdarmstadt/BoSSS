@@ -102,6 +102,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
                 bool CellOut = SubGrdMask[inp.jCellOut];
                 Debug.Assert(CellIn || CellOut, "at least one cell must be in the subgrid!");
 
+                if (!(CellIn && CellOut))
+                    throw new ArgumentException("current subgrid handling should not occur");
+
                 if (CellOut == true && CellIn == false) {
                     // IN-cell is outside of subgrid: extrapolate from OUT-cell!
                     Uin[0] = Uout[0];
@@ -158,7 +161,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
     /// </summary>
     public class ConvectionInBulk_LLF_Newton : LinearizedConvectionJacobi, IEquationComponentSpeciesNotification, IEquationComponentCoefficient {
 
-        public ConvectionInBulk_LLF_Newton(int SpatDim, IncompressibleBoundaryCondMap _bcmap, int _component, double _rhoA, double _rhoB, double _LFFA, double _LFFB, MaterialLaw EoS, int NoOfChemicalSpecies) :  base(SpatDim, _bcmap, _component, EoS, NoOfChemicalSpecies) {
+        public ConvectionInBulk_LLF_Newton(int SpatDim, IncompressibleBoundaryCondMap _bcmap, int _component, double _rhoA, double _rhoB, double _LFFA, double _LFFB, MaterialLaw EoS, int NoOfChemicalSpecies) :  
+            base(SpatDim, _bcmap, _component, EoS, NoOfChemicalSpecies) {
 
             this.LFFA = _LFFA;
             this.LFFB = _LFFB;
@@ -230,10 +234,13 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             // -------------------------
 
             if (inp.iEdge >= 0 && inp.jCellOut >= 0) {
-
+   
                 bool CellIn = SubGrdMask[inp.jCellIn];
                 bool CellOut = SubGrdMask[inp.jCellOut];
                 Debug.Assert(CellIn || CellOut, "at least one cell must be in the subgrid!");
+
+                if (!(CellIn && CellOut))
+                    throw new ArgumentException("current subgrid handling should not occur");
 
                 if (CellOut == true && CellIn == false) {
                     // IN-cell is outside of subgrid: extrapolate from OUT-cell!

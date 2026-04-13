@@ -31,10 +31,7 @@ using System.Threading;
 
 namespace BoSSS.Foundation.Quadrature.NonLin {
 
-    //public static class Arsch {
-    //    static public bool ShutTheFuckUp = false;
-    //}
-
+   
     /// <summary>
     /// edge quadrature of nonlinear equation components
     /// </summary>
@@ -163,15 +160,15 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                 m_NonlinSources = EquationComponentArgMapping<INonlinearSource>.GetArgMapping(m_owner.Operator, true);
                 m_NonlinFormV = EquationComponentArgMapping<INonlinVolumeForm_V>.GetArgMapping(m_owner.Operator, true,
-                    eq => ((eq.VolTerms & (TermActivationFlags.V |TermActivationFlags.UxV | TermActivationFlags.GradUxV)) != 0),
-                    eq => (eq is IVolumeForm ? new NonlinVolumeFormVectorizer((IVolumeForm)eq) : null));
+                    eq => ((eq.VolTerms & (TermActivationFlags.V | TermActivationFlags.UxV | TermActivationFlags.GradUxV)) != 0),
+                    eq => (eq is IVolumeForm ? new NonlinVolumeFormVectorizer((IVolumeForm) eq) : null));
                 m_NonlinFormGradV = EquationComponentArgMapping<INonlinVolumeForm_GradV>.GetArgMapping(m_owner.Operator, true,
                     eq => ((eq.VolTerms & (TermActivationFlags.UxGradV | TermActivationFlags.GradV | TermActivationFlags.GradUxGradV)) != 0),
-                    eq => (eq is IVolumeForm ? new NonlinVolumeFormVectorizer((IVolumeForm)eq) : null));
+                    eq => (eq is IVolumeForm ? new NonlinVolumeFormVectorizer((IVolumeForm) eq) : null));
 
 
 
-                if (q == null)
+                if ( q == null )
                     return;
 
                 int Gamma = m_owner.m_DomainFields.Length;
@@ -205,9 +202,9 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                 m_FluxValues = new MultidimensionalArray[m_owner.m_CodomainBasisS.Length];
                 m_FluxValuesTrf = new MultidimensionalArray[m_owner.m_CodomainBasisS.Length];
-                for (int i = 0; i < m_FluxValues.Length; i++) {
+                for ( int i = 0; i < m_FluxValues.Length; i++ ) {
 
-                    if (m_NonlinFluxes[i].m_AllComponentsOfMyType.Length > 0 || m_NonlinFluxesEx[i].m_AllComponentsOfMyType.Length > 0 || m_NonlinFormGradV[i].m_AllComponentsOfMyType.Length > 0) {
+                    if ( m_NonlinFluxes[i].m_AllComponentsOfMyType.Length > 0 || m_NonlinFluxesEx[i].m_AllComponentsOfMyType.Length > 0 || m_NonlinFormGradV[i].m_AllComponentsOfMyType.Length > 0 ) {
                         m_FluxValues[i] = new MultidimensionalArray(3);
                         m_FluxValuesTrf[i] = new MultidimensionalArray(3);
 
@@ -216,8 +213,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 }
 
                 m_SourceValues = new MultidimensionalArray[m_owner.m_CodomainBasisS.Length];
-                for (int i = 0; i < m_SourceValues.Length; i++) {
-                    if (m_NonlinSources[i].m_AllComponentsOfMyType.Length > 0 || m_NonlinFormV[i].m_AllComponentsOfMyType.Length > 0) {
+                for ( int i = 0; i < m_SourceValues.Length; i++ ) {
+                    if ( m_NonlinSources[i].m_AllComponentsOfMyType.Length > 0 || m_NonlinFormV[i].m_AllComponentsOfMyType.Length > 0 ) {
                         m_SourceValues[i] = new MultidimensionalArray(2);
 
 
@@ -227,10 +224,10 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                 m_FieldValues = new MultidimensionalArray[m_owner.m_DomainAndParamFields.Length];
                 m_FieldGradients = new MultidimensionalArray[Gamma];
-                for (int i = 0; i < m_owner.m_DomainAndParamFields.Length; i++) {
-                    if (m_owner.m_ValueRequired[i])
+                for ( int i = 0; i < m_owner.m_DomainAndParamFields.Length; i++ ) {
+                    if ( m_owner.m_ValueRequired[i] )
                         m_FieldValues[i] = new MultidimensionalArray(2);
-                    if (i < Gamma && m_owner.m_GradientRequired[i])
+                    if ( i < Gamma && m_owner.m_GradientRequired[i] )
                         m_FieldGradients[i] = new MultidimensionalArray(3);
                 }
 
@@ -345,19 +342,19 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 // ----------------------
                 Debug.Assert(m_owner.m_DomainAndParamFields.Length == m_FieldValues.Length);
                 Debug.Assert(m_owner.m_DomainAndParamFields.Length >= m_FieldGradients.Length);
-                for (int f = 0; f < m_owner.m_DomainAndParamFields.Length; f++) {
-                    if (m_FieldValues[f] != null)
+                for ( int f = 0; f < m_owner.m_DomainAndParamFields.Length; f++ ) {
+                    if ( m_FieldValues[f] != null )
                         m_FieldValues[f].Allocate(NoOfItems, NoOfNodes);
-                    if (f < m_FieldGradients.Length && m_FieldGradients[f] != null)
+                    if ( f < m_FieldGradients.Length && m_FieldGradients[f] != null )
                         m_FieldGradients[f].Allocate(NoOfItems, NoOfNodes, D);
                 }
 
                 // ---------------------
                 // array for flux values
                 // ---------------------
-                for (int i = 0; i < m_FluxValues.Length; i++) {
+                for ( int i = 0; i < m_FluxValues.Length; i++ ) {
                     Debug.Assert((m_FluxValues[i] != null) == (m_FluxValuesTrf[i] != null));
-                    if (m_FluxValues[i] != null) {
+                    if ( m_FluxValues[i] != null ) {
                         m_FluxValues[i].Allocate(NoOfItems, NoOfNodes, D);
                         m_FluxValuesTrf[i].Allocate(NoOfItems, NoOfNodes, D);
                     }
@@ -366,29 +363,28 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 // -----------------------
                 // array for source values
                 // -----------------------
-                for (int i = 0; i < m_SourceValues.Length; i++) {
-                    if (m_SourceValues[i] != null)
+                for ( int i = 0; i < m_SourceValues.Length; i++ ) {
+                    if ( m_SourceValues[i] != null )
                         m_SourceValues[i].Allocate(NoOfItems, NoOfNodes);
                 }
             }
 
 
 
-
             /// <summary>
             /// 
             /// </summary>
-            public void EvaluateEx(int i0, int Length, QuadRule QR, MultidimensionalArray QuadResult, int iFred, int NoOfFreds) {
+            public void EvaluateEx(int i0, int Length, QuadRule QR, IIntegrationMetric metric, MultidimensionalArray QuadResult, int iFred, int NoOfFreds) {
                 NodeSet NodesUntransformed = QR.Nodes;
                 IGridData grid = m_owner.GridDat;
                 int D = grid.SpatialDimension;
                 int NoOfEquations = m_owner.m_CodomainBasisS.Length;
                 int NoOfNodes = NodesUntransformed.NoOfNodes;
-                bool isAffine = grid.iGeomCells.IsCellAffineLinear(i0);
+                bool isAffineCell = grid.iGeomCells.IsCellAffineLinear(i0);
                 int[] geom2log = grid.iGeomCells.GeomCell2LogicalCell;
 #if DEBUG
                 for (int i = 1; i < Length; i++) {
-                    Debug.Assert(grid.iGeomCells.IsCellAffineLinear(i + i0) == isAffine);
+                    Debug.Assert(grid.iGeomCells.IsCellAffineLinear(i + i0) == isAffineCell);
 
                     if (geom2log == null) {
                         for (int e = 0; e < m_owner.m_CodomainBasisS.Length; e++) {
@@ -415,10 +411,10 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                 this.Field_Eval.Start();
                 {
-                    for (int f = 0; f < m_owner.m_DomainAndParamFields.Length; f++) {
-                        if (m_owner.m_ValueRequired[f]) {
+                    for ( int f = 0; f < m_owner.m_DomainAndParamFields.Length; f++ ) {
+                        if ( m_owner.m_ValueRequired[f] ) {
                             Debug.Assert(m_FieldValues[f] != null);
-                            if (m_owner.m_DomainAndParamFields[f] != null) {
+                            if ( m_owner.m_DomainAndParamFields[f] != null ) {
                                 m_owner.m_DomainAndParamFields[f].Evaluate(i0, Length, NodesUntransformed, m_FieldValues[f]);
                             } else {
                                 // field is null => set to 0.0
@@ -427,10 +423,10 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         }
                     }
 
-                    for (int f = 0; f < m_owner.m_GradientRequired.Length; f++) {
-                        if (m_owner.m_GradientRequired[f]) {
+                    for ( int f = 0; f < m_owner.m_GradientRequired.Length; f++ ) {
+                        if ( m_owner.m_GradientRequired[f] ) {
                             Debug.Assert(m_FieldGradients[f] != null);
-                            if (m_owner.m_DomainAndParamFields[f] != null) {
+                            if ( m_owner.m_DomainAndParamFields[f] != null ) {
                                 m_owner.m_DomainAndParamFields[f].EvaluateGradient(i0, Length, NodesUntransformed, m_FieldGradients[f]);
                             } else {
                                 // field is null => set to 0.0
@@ -461,232 +457,237 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                 bool[] RequireTestFunctionGradient = new bool[NoOfEquations];
                 bool[] Cleared_m_FluxValues = new bool[NoOfEquations];
+                bool[] RequireTestfunction = new bool[NoOfEquations];
+                bool[] Cleared_m_SourceValues = new bool[NoOfEquations];
 
                 bool MustLock = this.m_owner.Operator.FluxesAreNOTMultithreadSafe;
 
-                this.Flux_Eval.Start();
-                if(MustLock)
-                    Monitor.Enter(this.m_owner);
-                {
-                    // loop over all equations ...
-                    for (int _e = 0; _e < NoOfEquations; _e++) {
-                        int e = (_e + this.m_iThread) % NoOfEquations; // shuffling in threads to reduce locking
-                        //                Field fld = m_CodomainFields[e];
+                try {
+                    this.Flux_Eval.Start();
 
-                        if (m_NonlinFluxes[e].m_AllComponentsOfMyType.Length + m_NonlinFluxesEx[e].m_AllComponentsOfMyType.Length > 0) {
-                            m_FluxValues[e].Clear();
-                            Cleared_m_FluxValues[e] = true;
+                    if ( MustLock )
+                        Monitor.Enter(this.m_owner);
+                    {
+                        // loop over all equations ...
+                        for ( int _e = 0; _e < NoOfEquations; _e++ ) {
+                            int e = (_e + this.m_iThread) % NoOfEquations; // shuffling in threads to reduce locking
+                                                                           //                Field fld = m_CodomainFields[e];
 
-                            RequireTestFunctionGradient[e] = true;
+                            if ( m_NonlinFluxes[e].m_AllComponentsOfMyType.Length + m_NonlinFluxesEx[e].m_AllComponentsOfMyType.Length > 0 ) {
+                                m_FluxValues[e].Clear();
+                                Cleared_m_FluxValues[e] = true;
 
-                            // sum up all INonlinearFlux - objects 
-                            int jjj = 0;
-                            int L = m_NonlinFluxes[e].m_AllComponentsOfMyType.Length;
-                            for (int _i = 0; _i < L; _i++) {
-                                int i = (_i + m_iThread)%L;  // shuffling in threads to reduce locking
-                                INonlinearFlux nonlinFlx = m_NonlinFluxes[e].m_AllComponentsOfMyType[i];
+                                RequireTestFunctionGradient[e] = true;
 
-                                bool mustLock = m_NonlinFluxes[e].m_LockObjects[i] != null;
-                                if (mustLock)
-                                    Monitor.Enter(m_NonlinFluxes[e].m_LockObjects[i]);
+                                // sum up all INonlinearFlux - objects 
+                                int jjj = 0;
+                                int L = m_NonlinFluxes[e].m_AllComponentsOfMyType.Length;
+                                for ( int _i = 0; _i < L; _i++ ) {
+                                    int i = (_i + m_iThread)%L;  // shuffling in threads to reduce locking
+                                    INonlinearFlux nonlinFlx = m_NonlinFluxes[e].m_AllComponentsOfMyType[i];
 
-                                m_NonlinFluxesWatches[e][jjj].Start();
-                                nonlinFlx.Flux(m_owner.m_Time,
-                                               NodesGlobalCoords,
-                                               m_NonlinFluxes[e].MapArguments(m_FieldValues, nonlinFlx),
-                                               0, Length,
-                                               m_FluxValues[e]);
-                                m_NonlinFluxesWatches[e][jjj].Stop();
-                                jjj++;
+                                    bool mustLock = !MustLock && m_NonlinFluxes[e].m_LockObjects[i] != null;
+                                    if ( mustLock )
+                                        Monitor.Enter(m_NonlinFluxes[e].m_LockObjects[i]);
 
-                                if (mustLock)
-                                    Monitor.Exit(m_NonlinFluxes[e].m_LockObjects[i]);
-                            }
+                                    m_NonlinFluxesWatches[e][jjj].Start();
+                                    nonlinFlx.Flux(m_owner.m_Time,
+                                                   NodesGlobalCoords,
+                                                   m_NonlinFluxes[e].MapArguments(m_FieldValues, nonlinFlx),
+                                                   0, Length,
+                                                   m_FluxValues[e]);
+                                    m_NonlinFluxesWatches[e][jjj].Stop();
+                                    jjj++;
 
-                            // sum up all INonlinearFluxEx - objects
-                            jjj = 0;
-                            int L2 = m_NonlinFluxesEx[e].m_AllComponentsOfMyType.Length;
-                            for (int _i = 0; _i < L2; _i++) {
-                                int i = (_i + m_iThread)%L2;  // shuffling in threads to reduce locking
-                                INonlinearFluxEx nonlinFlxEx = m_NonlinFluxesEx[e].m_AllComponentsOfMyType[i];
-                                
-                                bool mustLock = m_NonlinFluxesEx[e].m_LockObjects[i] != null;
-                                if (mustLock)
-                                    Monitor.Enter(m_NonlinFluxesEx[e].m_LockObjects[i]);
+                                    if ( mustLock )
+                                        Monitor.Exit(m_NonlinFluxes[e].m_LockObjects[i]);
+                                }
 
-                                m_NonlinFluxesExWatches[e][jjj].Start();
-                                nonlinFlxEx.Flux(m_owner.m_Time,
-                                                 NodesGlobalCoords,
-                                                 m_NonlinFluxesEx[e].MapArguments(m_FieldValues, nonlinFlxEx),
-                                                 0, Length,
-                                                 m_FluxValues[e],
-                                                 i0);
-                                m_NonlinFluxesExWatches[e][jjj].Stop();
-                                jjj++;
+                                // sum up all INonlinearFluxEx - objects
+                                jjj = 0;
+                                int L2 = m_NonlinFluxesEx[e].m_AllComponentsOfMyType.Length;
+                                for ( int _i = 0; _i < L2; _i++ ) {
+                                    int i = (_i + m_iThread)%L2;  // shuffling in threads to reduce locking
+                                    INonlinearFluxEx nonlinFlxEx = m_NonlinFluxesEx[e].m_AllComponentsOfMyType[i];
 
-                                if (mustLock)
-                                    Monitor.Exit(m_NonlinFluxesEx[e].m_LockObjects[i]);
-                            }
+                                    bool mustLock = !MustLock && m_NonlinFluxesEx[e].m_LockObjects[i] != null;
+                                    if ( mustLock )
+                                        Monitor.Enter(m_NonlinFluxesEx[e].m_LockObjects[i]);
 
-                            m_FluxValues[e].Scale(-1.0);
-                        }
-                    }
-                }
+                                    m_NonlinFluxesExWatches[e][jjj].Start();
+                                    nonlinFlxEx.Flux(m_owner.m_Time,
+                                                     NodesGlobalCoords,
+                                                     m_NonlinFluxesEx[e].MapArguments(m_FieldValues, nonlinFlxEx),
+                                                     0, Length,
+                                                     m_FluxValues[e],
+                                                     i0);
+                                    m_NonlinFluxesExWatches[e][jjj].Stop();
+                                    jjj++;
 
+                                    if ( mustLock )
+                                        Monitor.Exit(m_NonlinFluxesEx[e].m_LockObjects[i]);
+                                }
 
-                // =========================
-                // Evaluate Source functions
-                // =========================
-
-                bool[] RequireTestfunction = new bool[NoOfEquations];
-                bool[] Cleared_m_SourceValues = new bool[NoOfEquations];
-                {
-                    for (int _e = 0; _e < NoOfEquations; _e++) {
-                        int e = (_e + this.m_iThread) % NoOfEquations; // shuffling in threads to reduce locking
-                        //                Equation eq = m_Equations[e];
-                        //                Field fld = eq.MyField;
-
-
-                        if (m_NonlinSources[e].m_AllComponentsOfMyType.Length > 0) {
-                            m_SourceValues[e].Clear();
-                            Cleared_m_SourceValues[e] = true;
-
-                            RequireTestfunction[e] = true;
-
-                            // sum up all sources
-                            int jjj = 0;
-                            int L = m_NonlinSources[e].m_AllComponentsOfMyType.Length;
-                            for (int _i = 0; _i < L; _i++) {
-                                int i = (_i + m_iThread)%L;  // shuffling in threads to reduce locking
-                                INonlinearSource nonlinSrc = m_NonlinSources[e].m_AllComponentsOfMyType[i];
-                                
-                                
-                                bool mustLock = m_NonlinSources[e].m_LockObjects[i] != null;
-                                if (mustLock)
-                                    Monitor.Enter(m_NonlinSources[e].m_LockObjects[i]);
-
-                                m_NonlinSources_watch[e][jjj].Start();
-                                nonlinSrc.Source(m_owner.m_Time,
-                                                 NodesGlobalCoords,
-                                                 m_NonlinSources[e].MapArguments(m_FieldValues, nonlinSrc),
-                                                 0, i0, Length,
-                                                 m_SourceValues[e]);
-                                m_NonlinSources_watch[e][jjj].Stop();
-                                jjj++;
-
-                                if (mustLock)
-                                    Monitor.Exit(m_NonlinSources[e].m_LockObjects[i]);
+                                m_FluxValues[e].Scale(-1.0);
                             }
                         }
                     }
-                }
-                // ==============
-                // Evaluate Forms
-                // ==============
-                {
-                    for (int _e = 0; _e < NoOfEquations; _e++) {
-                        int e = (_e + this.m_iThread) % NoOfEquations; // shuffling in threads to reduce locking
 
-                        if (m_NonlinFormV[e].m_AllComponentsOfMyType.Length > 0) {
 
-                            int L = m_NonlinFormV[e].m_AllComponentsOfMyType.Length;
-                            for (int __icomp = 0; __icomp < L; __icomp++) {
-                                int icomp = (__icomp + m_iThread) % L; // shuffling in threads to reduce locking
-                                INonlinVolumeForm_V nonlinform = m_NonlinFormV[e].m_AllComponentsOfMyType[icomp];
+                    // =========================
+                    // Evaluate Source functions
+                    // =========================
 
-                                if ((nonlinform.VolTerms & (TermActivationFlags.UxV | TermActivationFlags.V | TermActivationFlags.GradUxV)) == 0) {
-                                    continue;
-                                } else {
-                                    m_NonlinFormV_watch[e][icomp].Start();
-                                    RequireTestfunction[e] = true;
+                    {
+                        for ( int _e = 0; _e < NoOfEquations; _e++ ) {
+                            int e = (_e + this.m_iThread) % NoOfEquations; // shuffling in threads to reduce locking
+                                                                           //                Equation eq = m_Equations[e];
+                                                                           //                Field fld = eq.MyField;
 
-                                    if (!Cleared_m_SourceValues[e]) {
-                                        m_SourceValues[e].Clear();
-                                        Cleared_m_SourceValues[e] = true;
+
+                            if ( m_NonlinSources[e].m_AllComponentsOfMyType.Length > 0 ) {
+                                m_SourceValues[e].Clear();
+                                Cleared_m_SourceValues[e] = true;
+
+                                RequireTestfunction[e] = true;
+
+                                // sum up all sources
+                                int jjj = 0;
+                                int L = m_NonlinSources[e].m_AllComponentsOfMyType.Length;
+                                for ( int _i = 0; _i < L; _i++ ) {
+                                    int i = (_i + m_iThread)%L;  // shuffling in threads to reduce locking
+                                    INonlinearSource nonlinSrc = m_NonlinSources[e].m_AllComponentsOfMyType[i];
+
+
+                                    bool mustLock = !MustLock && m_NonlinSources[e].m_LockObjects[i] != null;
+                                    if ( mustLock )
+                                        Monitor.Enter(m_NonlinSources[e].m_LockObjects[i]);
+
+                                    m_NonlinSources_watch[e][jjj].Start();
+                                    nonlinSrc.Source(m_owner.m_Time,
+                                                     NodesGlobalCoords,
+                                                     m_NonlinSources[e].MapArguments(m_FieldValues, nonlinSrc),
+                                                     0, i0, Length,
+                                                     m_SourceValues[e]);
+                                    m_NonlinSources_watch[e][jjj].Stop();
+                                    jjj++;
+
+                                    if ( mustLock )
+                                        Monitor.Exit(m_NonlinSources[e].m_LockObjects[i]);
+                                }
+                            }
+                        }
+                    }
+                    // ==============
+                    // Evaluate Forms
+                    // ==============
+                    {
+                        for ( int _e = 0; _e < NoOfEquations; _e++ ) {
+                            int e = (_e + this.m_iThread) % NoOfEquations; // shuffling in threads to reduce locking
+
+                            if ( m_NonlinFormV[e].m_AllComponentsOfMyType.Length > 0 ) {
+
+                                int L = m_NonlinFormV[e].m_AllComponentsOfMyType.Length;
+                                for ( int __icomp = 0; __icomp < L; __icomp++ ) {
+                                    int icomp = (__icomp + m_iThread) % L; // shuffling in threads to reduce locking
+                                    INonlinVolumeForm_V nonlinform = m_NonlinFormV[e].m_AllComponentsOfMyType[icomp];
+
+                                    if ( (nonlinform.VolTerms & (TermActivationFlags.UxV | TermActivationFlags.V | TermActivationFlags.GradUxV)) == 0 ) {
+                                        continue;
+                                    } else {
+                                        m_NonlinFormV_watch[e][icomp].Start();
+                                        RequireTestfunction[e] = true;
+
+                                        if ( !Cleared_m_SourceValues[e] ) {
+                                            m_SourceValues[e].Clear();
+                                            Cleared_m_SourceValues[e] = true;
+                                        }
+
+                                        VolumFormParams vfp;
+                                        vfp.GridDat = m_owner.GridDat;
+                                        vfp.j0 = i0;
+                                        vfp.Len = Length;
+                                        vfp.Xglobal = NodesGlobalCoords;
+                                        vfp.time = m_owner.m_Time;
+                                        int NoArgs = m_NonlinFormV[e].NoOfArguments[icomp];
+                                        int NoParams = m_NonlinFormV[e].NoOfParameters[icomp];
+                                        var MappedArgsAndParams = m_NonlinFormV[e].MapArguments(this.m_FieldValues, nonlinform);
+                                        vfp.ParameterVars = MappedArgsAndParams.GetSubVector(NoArgs, NoParams);
+                                        var MappedArgs = MappedArgsAndParams.GetSubVector(0, NoArgs);
+
+                                        var MappedGradients = m_NonlinFormV[e].MapArguments(this.m_FieldGradients, nonlinform, true);
+
+                                        bool mustLock = !MustLock && m_NonlinFormV[e].m_LockObjects[icomp] != null;
+                                        if ( mustLock )
+                                            Monitor.Enter(m_NonlinFormV[e].m_LockObjects[icomp]);
+
+                                        nonlinform.Form(ref vfp, MappedArgs, MappedGradients, this.m_SourceValues[e]);
+
+                                        if ( mustLock )
+                                            Monitor.Exit(m_NonlinFormV[e].m_LockObjects[icomp]);
+
+                                        m_NonlinFormV_watch[e][icomp].Stop();
                                     }
+                                }
+                            }
+                        }
 
-                                    VolumFormParams vfp;
-                                    vfp.GridDat = m_owner.GridDat;
-                                    vfp.j0 = i0;
-                                    vfp.Len = Length;
-                                    vfp.Xglobal = NodesGlobalCoords;
-                                    vfp.time = m_owner.m_Time;
-                                    int NoArgs = m_NonlinFormV[e].NoOfArguments[icomp];
-                                    int NoParams = m_NonlinFormV[e].NoOfParameters[icomp];
-                                    var MappedArgsAndParams = m_NonlinFormV[e].MapArguments(this.m_FieldValues, nonlinform);
-                                    vfp.ParameterVars = MappedArgsAndParams.GetSubVector(NoArgs, NoParams);
-                                    var MappedArgs = MappedArgsAndParams.GetSubVector(0, NoArgs);
+                        for ( int _e = 0; _e < NoOfEquations; _e++ ) {
+                            int e = (_e + this.m_iThread) % NoOfEquations; // shuffling in threads to reduce locking
+                            if ( m_NonlinFormGradV[e].m_AllComponentsOfMyType.Length > 0 ) {
 
-                                    var MappedGradients = m_NonlinFormV[e].MapArguments(this.m_FieldGradients, nonlinform, true);
+                                int L = m_NonlinFormGradV[e].m_AllComponentsOfMyType.Length;
+                                for ( int __icomp = 0; __icomp < L; __icomp++ ) {
+                                    int icomp = (__icomp + m_iThread) % L; // shuffling in threads to reduce locking
+                                    INonlinVolumeForm_GradV nonlinform = m_NonlinFormGradV[e].m_AllComponentsOfMyType[icomp];
 
-                                    if (m_NonlinFormV[e].m_LockObjects[icomp] != null)
-                                        Monitor.Enter(m_NonlinFormV[e].m_LockObjects[icomp]);
+                                    if ( (nonlinform.VolTerms & (TermActivationFlags.GradUxGradV | TermActivationFlags.UxGradV | TermActivationFlags.GradV)) == 0 ) {
+                                        continue;
+                                    } else {
+                                        m_NonlinFormGradV_watch[e][icomp].Start();
+                                        RequireTestFunctionGradient[e] = true;
 
-                                    nonlinform.Form(ref vfp, MappedArgs, MappedGradients, this.m_SourceValues[e]);
+                                        if ( !Cleared_m_FluxValues[e] ) {
+                                            this.m_FluxValues[e].Clear();
+                                            Cleared_m_FluxValues[e] = true;
+                                        }
 
-                                    if (m_NonlinFormV[e].m_LockObjects[icomp] != null)
-                                        Monitor.Exit(m_NonlinFormV[e].m_LockObjects[icomp]);
+                                        VolumFormParams vfp;
+                                        vfp.GridDat = m_owner.GridDat;
+                                        vfp.j0 = i0;
+                                        vfp.Len = Length;
+                                        vfp.Xglobal = NodesGlobalCoords;
+                                        vfp.time = m_owner.m_Time;
+                                        int NoArgs = m_NonlinFormGradV[e].NoOfArguments[icomp];
+                                        int NoParams = m_NonlinFormGradV[e].NoOfParameters[icomp];
+                                        var MappedArgsAndParams = m_NonlinFormGradV[e].MapArguments(this.m_FieldValues, nonlinform);
+                                        vfp.ParameterVars = MappedArgsAndParams.GetSubVector(NoArgs, NoParams);
+                                        var MappedArgs = MappedArgsAndParams.GetSubVector(0, NoArgs);
 
-                                    m_NonlinFormV_watch[e][icomp].Stop();
+                                        var MappedGradients = m_NonlinFormGradV[e].MapArguments(this.m_FieldGradients, nonlinform, true);
+
+                                        bool mustLock = !MustLock &&  m_NonlinFormGradV[e].m_LockObjects[icomp] != null;
+                                        if ( mustLock )
+                                            Monitor.Enter(m_NonlinFormGradV[e].m_LockObjects[icomp]);
+
+                                        nonlinform.Form(ref vfp, MappedArgs, MappedGradients, this.m_FluxValues[e]);
+
+                                        if ( mustLock )
+                                            Monitor.Exit(m_NonlinFormGradV[e].m_LockObjects[icomp]);
+
+                                        m_NonlinFormGradV_watch[e][icomp].Stop();
+                                    }
                                 }
                             }
                         }
                     }
 
-                    for (int _e = 0; _e < NoOfEquations; _e++) {
-                        int e = (_e + this.m_iThread) % NoOfEquations; // shuffling in threads to reduce locking
-                        if (m_NonlinFormGradV[e].m_AllComponentsOfMyType.Length > 0) {
+                } finally {
+                    if ( MustLock )
+                        Monitor.Exit(this.m_owner);
 
-                            int L = m_NonlinFormGradV[e].m_AllComponentsOfMyType.Length;
-                            for (int __icomp = 0; __icomp < L; __icomp++) {
-                                int icomp = (__icomp + m_iThread) % L; // shuffling in threads to reduce locking
-                                INonlinVolumeForm_GradV nonlinform = m_NonlinFormGradV[e].m_AllComponentsOfMyType[icomp];
-
-                                if ((nonlinform.VolTerms & (TermActivationFlags.GradUxGradV | TermActivationFlags.UxGradV | TermActivationFlags.GradV)) == 0) {
-                                    continue;
-                                } else {
-                                    m_NonlinFormGradV_watch[e][icomp].Start();
-                                    RequireTestFunctionGradient[e] = true;
-
-                                    if (!Cleared_m_FluxValues[e]) {
-                                        this.m_FluxValues[e].Clear();
-                                        Cleared_m_FluxValues[e] = true;
-                                    }
-
-                                    VolumFormParams vfp;
-                                    vfp.GridDat = m_owner.GridDat;
-                                    vfp.j0 = i0;
-                                    vfp.Len = Length;
-                                    vfp.Xglobal = NodesGlobalCoords;
-                                    vfp.time = m_owner.m_Time;
-                                    int NoArgs = m_NonlinFormGradV[e].NoOfArguments[icomp];
-                                    int NoParams = m_NonlinFormGradV[e].NoOfParameters[icomp];
-                                    var MappedArgsAndParams = m_NonlinFormGradV[e].MapArguments(this.m_FieldValues, nonlinform);
-                                    vfp.ParameterVars = MappedArgsAndParams.GetSubVector(NoArgs, NoParams);
-                                    var MappedArgs = MappedArgsAndParams.GetSubVector(0, NoArgs);
-
-                                    var MappedGradients = m_NonlinFormGradV[e].MapArguments(this.m_FieldGradients, nonlinform, true);
-
-                                    if (m_NonlinFormGradV[e].m_LockObjects[icomp] != null)
-                                        Monitor.Enter(m_NonlinFormGradV[e].m_LockObjects[icomp]);
-
-                                    nonlinform.Form(ref vfp, MappedArgs, MappedGradients, this.m_FluxValues[e]);
-
-                                    if (m_NonlinFormGradV[e].m_LockObjects[icomp] != null)
-                                        Monitor.Exit(m_NonlinFormGradV[e].m_LockObjects[icomp]);
-
-                                    m_NonlinFormGradV_watch[e][icomp].Stop();
-                                }
-                            }
-                        }
-                    }
+                    this.Flux_Eval.Stop();
                 }
-
-
-                if (MustLock)
-                    Monitor.Exit(this.m_owner);
-
-                this.Flux_Eval.Stop();
 
                 // ================
                 // Transform fluxes
@@ -698,43 +699,47 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                 this.Flux_Trafo.Start();
 
-                MultidimensionalArray InverseJacobi = null, JacobiDet = null;
+                MultidimensionalArray InverseJacobi = null, IntegralMetricVals = null;
                 for (int e = 0; e < NoOfEquations; e++) {
                     Debug.Assert((m_FluxValues[e] != null) == (m_FluxValuesTrf[e] != null));
 
                     if (m_FluxValues[e] != null) {
                         if (InverseJacobi == null) {
-                            if (isAffine) {
+                            if (isAffineCell) {
                                 InverseJacobi = grid.iGeomCells.InverseTransformation.ExtractSubArrayShallow(new int[] { i0, 0, 0 }, new int[] { i0 + Length - 1, D - 1, D - 1 });
                             } else {
                                 InverseJacobi = grid.InverseJacobian.GetValue_Cell(QR.Nodes, i0, Length);
-                                //InverseJacobi = MultidimensionalArray.Create(Length, NoOfNodes, D, D);
                             }
                         }
 
-                        if (JacobiDet == null && !isAffine)
-                            JacobiDet = grid.JacobianDeterminat.GetValue_Cell(QR.Nodes, i0, Length);
+                        if (IntegralMetricVals == null && (!isAffineCell || metric.AlwaysUsePerNodeScaling))
+                            IntegralMetricVals = metric.GetScalingsForNonlinElements(grid, QR, i0, Length);
 
-                        if (isAffine) {
+                        if (isAffineCell) {
                             m_FluxValuesTrf[e].Multiply(1.0, m_FluxValues[e], InverseJacobi, 0.0, "jke", "jkd", "jed");
                             // for affine-linear cells the multiplication with Jacobi determinant is done AFTER quadrature, since it is constant per cell.
+                            // except if:
+                            if(metric.AlwaysUsePerNodeScaling)
+                                m_FluxValuesTrf[e].Multiply(1.0, m_FluxValuesTrf[e], IntegralMetricVals, 0.0, "jke", "jke", "jk");
                         } else {
                             m_FluxValuesTrf[e].Multiply(1.0, m_FluxValues[e], InverseJacobi, 0.0, "jke", "jkd", "jked");
-                            m_FluxValuesTrf[e].Multiply(1.0, m_FluxValuesTrf[e], JacobiDet, 0.0, "jke", "jke", "jk"); // apply scaling with Jacobi determinant, for integral transformation
+                            m_FluxValuesTrf[e].Multiply(1.0, m_FluxValuesTrf[e], IntegralMetricVals, 0.0, "jke", "jke", "jk"); // apply scaling with Jacobi determinant, for integral transformation
                         }
                     }
 
                     if (m_SourceValues[e] != null) {
 
-                        if (JacobiDet == null && !isAffine)
-                            JacobiDet = grid.JacobianDeterminat.GetValue_Cell(QR.Nodes, i0, Length);
-                        //JacobiDet = MultidimensionalArray.Create(Length, NoOfNodes);
-
+                        if(IntegralMetricVals == null && (!isAffineCell || metric.AlwaysUsePerNodeScaling))
+                            IntegralMetricVals = metric.GetScalingsForNonlinElements(grid, QR, i0, Length);
+                        
                         // apply scaling with Jacobi determinant, for integral transformation
-                        if (isAffine) {
+                        if (isAffineCell) {
                             // nop: for affine-linear cells the multiplication with Jacobi determinant is done AFTER quadrature, since it is constant per cell.
+                            // except if:
+                            if(metric.AlwaysUsePerNodeScaling)
+                                m_SourceValues[e].Multiply(1.0, m_SourceValues[e], IntegralMetricVals, 0.0, "jk", "jk", "jk");
                         } else {
-                            m_SourceValues[e].Multiply(1.0, m_SourceValues[e], JacobiDet, 0.0, "jk", "jk", "jk");
+                            m_SourceValues[e].Multiply(1.0, m_SourceValues[e], IntegralMetricVals, 0.0, "jk", "jk", "jk");
                         }
                     }
                 }
@@ -774,13 +779,20 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                 MultidimensionalArray OrthoTrf = null; // to transform back to ONB on physical space...
                 int iBufOrthoTrf;
-                if (isAffine) {
-                    OrthoTrf = TempBuffer.GetTempMultidimensionalarray(out iBufOrthoTrf, Length);
-                    OrthoTrf.Multiply(1.0,
-                        grid.iGeomCells.JacobiDet.ExtractSubArrayShallow(new int[] { i0 }, new int[] { i0 + Length - 1 }),
-                        grid.ChefBasis.Scaling.ExtractSubArrayShallow(new int[] { i0 }, new int[] { i0 + Length - 1 }),
-                        0.0,
-                        "j", "j", "j");
+                if(isAffineCell) {
+                    if(!metric.AlwaysUsePerNodeScaling) {
+
+                        OrthoTrf = TempBuffer.GetTempMultidimensionalarray(out iBufOrthoTrf, Length);
+                        OrthoTrf.Multiply(1.0,
+                            //grid.iGeomCells.JacobiDet.ExtractSubArrayShallow(new int[] { i0 }, new int[] { i0 + Length - 1 }),
+                            metric.GetScalingsForLinearElements(grid, QR, i0, Length),
+                            grid.ChefBasis.Scaling.ExtractSubArrayShallow(new int[] { i0 }, new int[] { i0 + Length - 1 }),
+                            0.0,
+                            "j", "j", "j");
+                    } else {
+                        OrthoTrf = grid.ChefBasis.Scaling.ExtractSubArrayShallow(new int[] { i0 }, new int[] { i0 + Length - 1 });
+                        iBufOrthoTrf = int.MinValue;
+                    }
                 } else {
                     int MaxDegree = Math.Max(m_owner.m_MaxCodBasis != null ? m_owner.m_MaxCodBasis.Degree : 0, m_owner.m_MaxCodBasis_Gradient != null ? m_owner.m_MaxCodBasis_Gradient.Degree : 0);
                     OrthoTrf = grid.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(i0, Length, MaxDegree);
@@ -812,6 +824,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                             testFuncGrad_e = m_TestFuncGradWeighted.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { NoOfNodes - 1, N - 1, D - 1 });
 
                         QuadResult_e.Multiply(1.0, Fluxes_e, testFuncGrad_e, 0.0, "jn", "jke", "kne");
+                    } else {
+                        QuadResult_e.Clear();
                     }
 
                     // sources
@@ -835,13 +849,13 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     // ---------------------
                     MultidimensionalArray trfQuadResult_e = QuadResult.ExtractSubArrayShallow(new int[] { 0, N0 }, new int[] { Length - 1, N0 + N - 1 });
 
-                    if (isAffine) {
+                    if (isAffineCell) {
                         trfQuadResult_e.Multiply(1.0, OrthoTrf, QuadResult_e, 0.0, "jn", "j", "jn");
 
                     } else {
                         MultidimensionalArray _OrthoTrf;
                         if (OrthoTrf.GetLength(1) == N)
-                            _OrthoTrf = OrthoTrf;
+                            _OrthoTrf = OrthoTrf; // test function degree for equation e is already the maximum -> no need to extract
                         else
                             _OrthoTrf = OrthoTrf.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { Length - 1, N - 1, N - 1 });
 
@@ -855,7 +869,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     N0 += N;
                 }
 
-                if (isAffine)
+                if (isAffineCell && iBufOrthoTrf > 0)
                     TempBuffer.FreeTempBuffer(iBufOrthoTrf);
 
                 this.Loops.Stop();
@@ -897,8 +911,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         ThreadLocalsVol[] m_ThreadLocals;
 
 
-        void EvaluateEx(int i0, int Length, QuadRule qr, MultidimensionalArray QuadResult, int iThread, int NumThreads) {
-            m_ThreadLocals[iThread].EvaluateEx(i0, Length, qr, QuadResult, iThread, NumThreads);
+        void EvaluateEx(int i0, int Length, QuadRule qr, IIntegrationMetric metric, MultidimensionalArray QuadResult, int iThread, int NumThreads) {
+            m_ThreadLocals[iThread].EvaluateEx(i0, Length, qr, metric, QuadResult, iThread, NumThreads);
         }
 
 
@@ -927,7 +941,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 for (int f = 0; f < NoOfFields; f++) {
                     int mE = m_NoOfTestFunctions[f];
                     int f_offset = m_MyMap[f];
-                    int idx0 = m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell, 0);
+                    int idx0 = m_CodomainMapping.LocalUnique1stCoordinate(f, jCell);
 
                     for (int m = 0; m < mE; m++) {
                         int idx = f_offset + m;

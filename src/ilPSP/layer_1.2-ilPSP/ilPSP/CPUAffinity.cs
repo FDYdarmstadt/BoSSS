@@ -8,6 +8,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace ilPSP.Utils {
     /// <summary>
@@ -16,17 +17,43 @@ namespace ilPSP.Utils {
     /// </summary>
     public class CPUAffinity {
 
+        /// <summary>
+        /// tries to get the affinity of the entire process, no only the current thread.
+        /// </summary>
+        public static IEnumerable<int> GetProcessAffinity() {
+            
+            const int _NumTestThreads = 1024;
+            var options = new ParallelOptions {
+                    MaxDegreeOfParallelism = _NumTestThreads,
+                };
+
+            var listsFromThreads = new IEnumerable<int>[_NumTestThreads]; 
+
+            System.Threading.Tasks.Parallel.For(0, 1024, options, delegate(int i) {
+                listsFromThreads[i] = GetCurrentThreadAffinity();
+            });
+
+            var ret = new HashSet<int>();
+            foreach(var l in listsFromThreads) {
+                ret.AddRange(l);
+            }
+
+            var ret2 = ret.ToList();
+            ret2.Sort();
+            return ret2.ToArray();
+        }
+
 
         /// <summary>
         /// Returns the list of CPU's to which the current process is assigned to;
         /// Driver which calls either the respective Linux or Windows API functions.
         /// </summary>
-        public static IEnumerable<int> GetAffinity() {
+        public static IEnumerable<int> GetCurrentThreadAffinity() {
             IEnumerable<int> ret;
             if (System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
-                ret = CPUAffinityWindows.GetAffinity();
+                ret = CPUAffinityWindows.GetCurrentThreadAffinity();
             } else if (System.Environment.OSVersion.Platform == PlatformID.Unix) {
-                ret = CPUAffinityLinux.GetAffinity();
+                ret = CPUAffinityLinux.GetProcessAffinity();
             } else {
                 throw new NotSupportedException("Not implemented for system: " + System.Environment.OSVersion.Platform);
             }
@@ -40,22 +67,38 @@ namespace ilPSP.Utils {
             return ret;
         }
 
+        public static bool LinuxCpuAffinityError = false;
+
         /// <summary>
-        /// Returns the list of CPU's to which the current process is assigned to;
+        /// Sets the list of CPU's to which the current process is assigned to;
         /// Driver which calls either the respective Linux or Windows API functions.
         /// </summary>
-        public static void SetAffinity(IEnumerable<int> CPUlist) {
-            
-            if (System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
-                CPUAffinityWindows.SetAffinity(CPUlist);
-                
-            } else if (System.Environment.OSVersion.Platform == PlatformID.Unix) {
-                Console.WriteLine("not implementd");
+        public static void SetCurrentThreadAffinity(params int[] __CPUlist) {
+            SetCurrentThreadAffinity((IEnumerable<int>) __CPUlist);
+        }
+
+        /// <summary>
+        /// Sets the list of CPU's to which the current process is assigned to;
+        /// Driver which calls either the respective Linux or Windows API functions.
+        /// </summary>
+        public static void SetCurrentThreadAffinity(IEnumerable<int> CPUlist) {
+
+            if(System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
+                CPUAffinityWindows.SetCurrentThreadAffinity(CPUlist);
+
+            } else if(System.Environment.OSVersion.Platform == PlatformID.Unix) {
+                if(LinuxCpuAffinityError)
+                    return;
+
+                //CPUAffinityLinux.SetCurrentThreadAffinity(CPUlist);
+                Console.Error.WriteLine("TPL CPU affinity control on Linux is disabled by default when running under SLURM. " +
+                                        "If you are not using SLURM or another scheduler, you can manually set core affinity using 'taskset -c'.");
+                LinuxCpuAffinityError = true;
             } else {
                 throw new NotSupportedException("Not implemented for system: " + System.Environment.OSVersion.Platform);
             }
 
-         
+
         }
 
 
@@ -77,7 +120,7 @@ namespace ilPSP.Utils {
         /// Deals with a special kink of handing CPU indices to Intel OpenMP on Windows:
         /// - On Windows, E.g. a system with 96 CPUs is organized into two groups of 48 CPUs.
         /// - Normally, the CPUs in the first group are 0 to 47, second group is 48 to 95, etc.
-        /// - OpenMP, however, starts each group at a multiple of 64: fist group is 0 to 47, second is 64 to 111, ...
+        /// - OpenMP, however, starts each group at a multiple of 64: first group is 0 to 47, second is 64 to 111, ...
         /// On other systems, there is nothing to do.
         /// </summary>
         public static IEnumerable<int> ToOpenMpCPUindices(IEnumerable<int> cpuList) {
@@ -109,7 +152,7 @@ namespace ilPSP.Utils {
         /// <summary>
         /// Configuration of OpenMP Environment variable `OMP_PLACES` to a given CPU affinity.
         /// </summary>
-        /// <param name="CPUlist">e.g., return value from <see cref="GetAffinity"/></param>
+        /// <param name="CPUlist">e.g., return value from <see cref="GetCurrentThreadAffinity"/></param>
         /// <returns></returns>
         public static int SetOMP_PLACESFromCPUList(IEnumerable<int> CPUlist) {
             using (var tr = new FuncTrace()) {
@@ -206,7 +249,7 @@ namespace ilPSP.Utils {
         /// Configuration of OpenMP Environment variable `KMP_AFFINITY` (Intel-OpenMP specific) to a given CPU affinity.
         /// </summary>
         /// <param name="iThreads">number of threads on MPI rank</param>
-        /// <param name="CPUlist">e.g., return value from <see cref="GetAffinity"/></param>
+        /// <param name="CPUlist">e.g., return value from <see cref="GetCurrentThreadAffinity"/></param>
         /// <returns></returns>
         public static int SetKMP_AFFINITYFromCPUList(int iThreads, IEnumerable<int> CPUlist) {
             using (var tr = new FuncTrace()) {
@@ -253,8 +296,8 @@ namespace ilPSP.Utils {
             int[] SMPRank = new int[CPUList.Length]; 
             SMPRank.SetAll(mySMPRank);
 
-            var GlobalCPUList = CPUList.MPIAllGather();
-            var GlobalSMPRank = SMPRank.MPIAllGather();
+            var GlobalCPUList = CPUList.MPIAllGatherv();
+            var GlobalSMPRank = SMPRank.MPIAllGatherv();
 
             var r = new HashSet<int>();
             disjoint = true;

@@ -14,12 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace BoSSS.Foundation.Grid {
 
@@ -161,18 +163,10 @@ namespace BoSSS.Foundation.Grid {
 
         /// <summary>
         /// Main storage entity of this class. Encoding: 
-        /// <list type="bullet">
-        ///  <item>
-        ///   entry <em>i</em> is positive number <em>v</em>:
-        ///   A <see cref="Chunk"/> with <see cref="Chunk.i0"/>==<em>v</em>-1 and
-        ///   <see cref="Chunk.Len"/>==1;
-        ///  </item>
-        ///  <item>
-        ///   entry <em>i</em> is negative number <em>v</em>:
-        ///   A <see cref="Chunk"/> with <see cref="Chunk.i0"/>== -<em>v</em>-1 and
-        ///   <see cref="Chunk.Len"/>==<see cref="Sequence"/>[<em>i</em>+1];
-        ///  </item>
-        /// </list>
+        /// - entry <em>i</em> is positive number <em>v</em>:
+        ///   A <see cref="Chunk"/> with <see cref="Chunk.i0"/>==<em>v</em>-1 and <see cref="Chunk.Len"/>==1;
+        /// - entry <em>i</em> is negative number <em>v</em>:
+        ///   A <see cref="Chunk"/> with <see cref="Chunk.i0"/>== -<em>v</em>-1 and <see cref="Chunk.Len"/>==<see cref="Sequence"/>[<em>i</em>+1];
         /// </summary>
         protected int[] Sequence;
 
@@ -348,6 +342,9 @@ namespace BoSSS.Foundation.Grid {
             return m_BitMask;
         }
 
+       
+
+
         /// <summary>
         /// Creates an execution mask which only contains elements that are
         /// included in this mask and in the given mask
@@ -358,7 +355,7 @@ namespace BoSSS.Foundation.Grid {
         /// </param>
         /// <returns>
         /// A new execution mask representing
-        /// \f$ \mathrm{this} \cap \mathrm{otherMask}\f$ 
+        /// $\mathrm{this} \cap \mathrm{otherMask}$ 
         /// </returns>
         public T Intersect<T>(T otherMask) where T : ExecutionMask {
             if (this.GetType() != otherMask.GetType())
@@ -378,6 +375,12 @@ namespace BoSSS.Foundation.Grid {
         /// </summary>
         abstract protected ExecutionMask CreateInstance(BitArray mask, MaskType __MaskType);
 
+        /// <summary>
+        /// similar to constructor
+        /// </summary>
+        abstract protected ExecutionMask CreateInstance(int[] _Sequence, MaskType __MaskType);
+
+
 
         /// <summary>
         /// Creates an execution mask which only contains elements that are
@@ -388,7 +391,7 @@ namespace BoSSS.Foundation.Grid {
         /// </param>
         /// <returns>
         /// A new execution mask representing
-        /// \f$ \mathrm{this} \setminus \mathrm{otherMask}\f$ 
+        /// $\mathrm{this} \setminus \mathrm{otherMask}$ 
         /// </returns>
         public T Except<T>(T otherMask) where T : ExecutionMask {
             if (this.GetType() != otherMask.GetType()) 
@@ -460,7 +463,7 @@ namespace BoSSS.Foundation.Grid {
         /// </param>
         /// <returns>
         /// A new execution mask representing
-        /// \f$ \mathrm{this} \cup \mathrm{otherMask}\f$ 
+        /// $\mathrm{this} \cup \mathrm{otherMask}$ 
         /// </returns>
         public T Union<T>(T otherMask) where T : ExecutionMask {
             if (this.GetType() != otherMask.GetType()) 
@@ -474,6 +477,80 @@ namespace BoSSS.Foundation.Grid {
             BitArray array = GetBitMask();
             BitArray otherArray = otherMask.GetBitMask();
             return (T)CreateInstance(((BitArray)array.Clone()).Or(otherArray), this.MaskType);
+        }
+
+        /// <summary>
+        /// splits this mask into <paramref name="NoOfParts"/> roughly equal parts
+        /// </summary>
+        public ExecutionMask[] SplitUp(int NoOfParts) {
+            if(NoOfParts <= 0)
+                throw new ArgumentException();
+            if(NoOfParts <= 1) 
+                return [ this ];
+            int noOfItemsLocally = this.NoOfItemsLocally;
+
+            ExecutionMask[] Parts = new ExecutionMask[NoOfParts];
+            void InitPart(int iPart) {
+                var mySeq = new List<int>();
+                int item0 = (iPart*NoOfItemsLocally)/NoOfParts;
+                int itemE = ((iPart + 1)*NoOfItemsLocally)/NoOfParts;
+                if(itemE - item0 == 0) {
+                    Parts[iPart] = CreateInstance(new int[0], this.MaskType);
+                    return;
+                }
+
+                int itemCnt = 0;
+                int itemAdd = 0;
+                foreach(var chunk in this) {
+                    int i0 = chunk.i0;
+                    int L = chunk.Len;
+                    if(itemCnt + L <= item0) {
+                        // noop - skip
+                    } else {
+                        int missing = itemCnt - item0;
+                        int _i0 = i0;
+                        int _L = L;
+                        if(missing < 0) {
+                            _i0 -= missing;
+                            _L += missing;
+                        }
+                        Debug.Assert(_L > 0);
+
+                        int tooMuch = (itemE - item0) - (itemAdd + _L);
+                        if(tooMuch < 0) {
+                            _L += tooMuch;
+                        }
+
+                        if(_L > 1) {
+                            mySeq.Add(-(_i0 + 1));
+                            mySeq.Add(_L);
+                        } else {
+                            mySeq.Add(_i0 + 1);
+                        }
+                        itemAdd += _L;
+                        if(itemAdd >= (itemE - item0))
+                            break;
+                    }
+
+                    itemCnt += chunk.Len;
+                }
+
+                Parts[iPart] = CreateInstance(mySeq.ToArray(), this.MaskType);
+                Debug.Assert(Parts[iPart].NoOfItemsLocally == (itemE - item0), "Internal error in splitting up ExecutionMask");
+            }
+
+            ilPSP.Environment.ParallelFor(0, NoOfParts, InitPart);
+
+#if DEBUG            
+            var recombination = Parts[0];
+            for(int iPart = 1; iPart < NoOfParts; iPart++) {
+                Debug.Assert(Parts[iPart].Intersect(recombination).NoOfItemsLocally == 0, "splitting did not produced disjoint parts");
+                recombination = recombination.Union(Parts[iPart]);
+            }
+            Debug.Assert(recombination.Equals(this), "splitting missed some parts");
+
+#endif
+            return Parts;
         }
 
         /// <summary>
@@ -525,7 +602,7 @@ namespace BoSSS.Foundation.Grid {
                 return false;
             }
 
-            return Enumerable.SequenceEqual(o.Sequence, this.Sequence);
+            return this.ItemEnum.SetEquals(o.ItemEnum);
         }
 
         /// <summary>

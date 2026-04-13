@@ -134,13 +134,13 @@ namespace ilPSP {
 
                 int N = _BlockLen[iBlock];
 
-                if (!base.IsInLocalRange(i0Block))
+                if (i0Block < base.i0 && i0Block >= base.i0 + base.LocalLength) // use `>=`, because, if we have blocks of length 0 towards the end, their respective i0 will be at (i0 + LoclLength)
                     throw new ArgumentException("Block i0 out of local range");
-                if (!base.IsInLocalRange(Math.Max(i0Block, i0Block + N - 1)))
+                if (!base.IsInLocalRange(Math.Max(base.i0, Math.Min(i0Block, i0Block + N - 1)))) // `Max` and `Min` are to treas special cases with 0-length blocs at the beginning or the end
                     throw new ArgumentException("Block end out of local range");
 
                 long iEBlock;
-                if( iBlock < NoOfBlocks - 1) {
+                if( iBlock < NoOfBlocks - 1 && _BlockLen[iBlock + 1] > 0) {
                     iEBlock = _BlockI0[iBlock + 1];
                     if (i0isLocal)
                         iEBlock += base.i0;
@@ -148,7 +148,7 @@ namespace ilPSP {
                     iEBlock = LocalLength + base.i0;
                 }
 
-                if (i0Block + N > iEBlock)
+                if (i0Block + N > iEBlock) 
                     throw new ArgumentException("Block Length exceeds i0 of next block.");
 
                 int NE = checked((int)(iEBlock - i0Block));
@@ -283,12 +283,13 @@ namespace ilPSP {
                 }
 
                 if (LocalLength % FrameBlockSize != 0) {
-                    throw new ArgumentException("'FrameBlockSize', if specified, must be a divider of 'LocalLength'.");
+                    throw new ArgumentException($"'{nameof(FrameBlockSize)}' ({FrameBlockSize}), if specified, must be a divider of '{nameof(LocalLength)}' ({LocalLength}).");
                 }
 
                 if (_BlockType != null) {
-                    if (_BlockType.Length != LocalLength / FrameBlockSize)
-                        throw new ArgumentException("Mismatch between number of blocks specified by '_BlockType' and 'LocalLength/FrameBlockSize'.");
+                    if(_BlockType.Length != LocalLength / FrameBlockSize) {
+                        throw new ArgumentException($"Mismatch between number of blocks specified by '{nameof(_BlockType)}' ({_BlockType.Length}) and '{nameof(LocalLength)}/{nameof(FrameBlockSize)}' ({LocalLength}/{FrameBlockSize}).");
+                    }
                 }
             }
 

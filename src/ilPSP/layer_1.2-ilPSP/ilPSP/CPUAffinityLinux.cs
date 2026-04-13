@@ -14,17 +14,23 @@ namespace ilPSP.Utils {
         [DllImport("libc.so.6", SetLastError = true)]
         unsafe private static extern int sched_getaffinity(int pid, IntPtr cpusetsize, void* mask);
 
+        [DllImport("libc.so.6", SetLastError = true)]
+        unsafe private static extern int sched_setaffinity(int pid, IntPtr cpusetsize, void* mask);
 
+        // Define the sysconf call
+        [DllImport("libc.so.6", SetLastError = true)]
+        private static extern long sysconf(int name);
+
+        // Constant for _SC_NPROCESSORS_ONLN from sysconf.h
+        private const int _SC_NPROCESSORS_ONLN = 84;
+        const int CPU_SETSIZE = 1024;
+        const int ULONG_SIZE = 8; // Size of ulong in bytes
+        const int arraySize = CPU_SETSIZE / (8 * ULONG_SIZE); // 1024 bits total
 
         /// <summary>
         /// (Linux version) Returns the list of CPU's to which the current process is assigned to.
         /// </summary>
-        public static IEnumerable<int> GetAffinity() {
-
-            const int CPU_SETSIZE = 1024;
-            const int ULONG_SIZE = 8; // Size of ulong in bytes
-            int arraySize = CPU_SETSIZE / (8 * ULONG_SIZE); // Calculate array size for 1024 bits
-
+        public static IEnumerable<int> GetProcessAffinity() {
             //cpu_set_t mask = new cpu_set_t(arraySize);
             var bits = new ulong[arraySize];
             unsafe {
@@ -51,12 +57,29 @@ namespace ilPSP.Utils {
         }
 
 
-        // Define the sysconf call
-        [DllImport("libc.so.6", SetLastError = true)]
-        private static extern long sysconf(int name);
+        /// <summary>
+        /// (Linux version) Sets the CPU affinity of the current thread to the specified list of CPUs.
+        /// </summary>
+        public static void SetCurrentThreadAffinity(IEnumerable<int> CPUindices) {
+            var bits = new ulong[arraySize];
+            foreach(int cpu in CPUindices) {
+                if(cpu < 0 || cpu >= CPU_SETSIZE)
+                    throw new ArgumentOutOfRangeException(nameof(CPUindices), $"CPU index {cpu} out of range.");
+                int idx = cpu / (8 * ULONG_SIZE);
+                int bit = cpu % (8 * ULONG_SIZE);
+                bits[idx] |= (1UL << bit);
+            }
 
-        // Constant for _SC_NPROCESSORS_ONLN from sysconf.h
-        private const int _SC_NPROCESSORS_ONLN = 84;
+            unsafe {
+                fixed(ulong* pbits = bits) {
+                    int result = sched_setaffinity(0, new IntPtr(arraySize * ULONG_SIZE), pbits);
+                    if(result == -1) {
+                        int err = Marshal.GetLastWin32Error();
+                        throw new ApplicationException($"Error setting CPU affinity (errno={err}).");
+                    }
+                }
+            }
+        }
 
         /// <summary>
         /// The total number of CPUs in a system; 

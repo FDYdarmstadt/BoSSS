@@ -29,12 +29,12 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
     /// <summary>
     /// This factory produces quadrature rules which are,
-    /// for each cell \f$ K\f$  in a volume mask,
+    /// for each cell $K$  in a volume mask,
     /// capable of computing (an approximation of)
-    /// \f[ 
-    ///    \int\limits_{\{ \vec{x}; \varphi(\vec{x}) {\leq \atop \geq} 0 \} \cap K}  f \ d \vec{x},
-    /// \f]
-    /// where \f$ \varphi\f$  denotes the level set function.
+    /// \[ 
+    ///    \int\limits_{\{ \underline{x}; \varphi(\underline{x}) {\leq \atop \geq} 0 \} \cap K}  f \ d \underline{x},
+    /// \]
+    /// where $\varphi$  denotes the level set function.
     /// </summary>
     abstract public class LevelSetVolumeQuadRuleFactory2 : IQuadRuleFactory<QuadRule> {
 
@@ -63,22 +63,22 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <param name="edgeRuleFactory">
         /// Some factory that provides quadrature rulz for the integration 
         /// over 
-        /// \f[ 
-        ///  \partial K \cap \{ \vec{x}; \varphi(\vec{x}) {\leq \atop \geq} 0 \}.
-        /// \f]
-        /// (Here, \f$ \partial K\f$   the boundary of some cell 
-        /// \f$ K\f$  and 
-        /// \f$ \varphi\f$  denotes the level set function.)
+        /// \[ 
+        ///  \partial K \cap \{ \underline{x}; \varphi(\underline{x}) {\leq \atop \geq} 0 \}.
+        /// \]
+        /// (Here, $\partial K$   the boundary of some cell 
+        /// $K$  and 
+        /// $\varphi$  denotes the level set function.)
         /// </param>
         /// <param name="surfaceRuleFactory">
         /// Some factory that provides quadrature rulz for the integration 
         /// over the zero level set, i.e.
-        /// \f[ 
-        ///   \{ \vec{x}; \varphi(\vec{x}) = 0 \} \cap K.
-        ///\f]
-        /// (Here, \f$ \partial K\f$   the boundary of some cell 
-        /// \f$ K\f$  and 
-        /// \f$ \varphi\f$  denotes the level set function.)
+        /// \[ 
+        ///   \{ \underline{x}; \varphi(\underline{x}) = 0 \} \cap K.
+        /// \]
+        /// (Here, $\partial K$   the boundary of some cell 
+        /// $K$  and 
+        /// $\varphi$  denotes the level set function.)
         /// </param>
         /// <param name="simplex"></param>
         /// <param name="jumpType"></param>
@@ -139,11 +139,11 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             // subgrid on which the volume rule should be constructed
             // ======================================================
             SubGrid sgrd = new SubGrid(_mask);
-            CellQuadratureScheme surfaceScheme = new CellQuadratureScheme(surfaceRuleFactory, sgrd.VolumeMask);
+            CellQuadratureScheme surfaceScheme = new CellQuadratureScheme(null, surfaceRuleFactory, sgrd.VolumeMask);
             EdgeQuadratureScheme edgeScheme = null;
             CellBoundaryQuadratureScheme cellBndSchme = null;
             if (edgeRuleFactory != null)
-                edgeScheme = new EdgeQuadratureScheme(edgeRuleFactory, sgrd.AllEdgesMask);
+                edgeScheme = new EdgeQuadratureScheme(null, edgeRuleFactory, sgrd.AllEdgesMask);
             if (cellBoundaryFactory != null)
                 cellBndSchme = new CellBoundaryQuadratureScheme(cellBoundaryFactory, sgrd.VolumeMask);
             if ((edgeScheme == null) == (cellBndSchme == null))
@@ -563,18 +563,18 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                             // EvalResult[i,k,n,m,d] = BasisValues[i,k,n]*BasisValues[i,k,m]*Normals[i,k,d]
                             EvalResult.Multiply(NormalSign, BasisValues, BasisValues, Normals, 0.0, "iknmd", "kn", "km", "ikd");
 
-                            var metrics = LsData.GetLevelSetNormalReferenceToPhysicalMetrics(QR.Nodes, i0, Length);
-                            for (int i = 0; i < Length; i++) {
-                                for (int k = 0; k < NoOfNodes; k++) {
+                            //var metrics = LsData.GetLevelSetNormalReferenceToPhysicalMetrics(QR.Nodes, i0, Length);
+                            //for (int i = 0; i < Length; i++) {
+                            //    for (int k = 0; k < NoOfNodes; k++) {
 
-                                    double magic_number = metrics[i, k];
+                            //        double magic_number = metrics[i, k];
 
 
-                                    var EV_ik = EvalResult.ExtractSubArrayShallow(i, k, -1, -1, -1);
-                                    EV_ik.Scale(magic_number);
-                                }
+                            //        var EV_ik = EvalResult.ExtractSubArrayShallow(i, k, -1, -1, -1);
+                            //        EV_ik.Scale(magic_number);
+                            //    }
 
-                            }
+                            //}
                         } else
                             throw new NotImplementedException();
 
@@ -901,18 +901,18 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
 
 
-                            var metrics = LsData.GetLevelSetNormalReferenceToPhysicalMetrics(NS, i0, Length);
-                            for (int i = 0; i < Length; i++) {
-                                for (int k = 0; k < NoOfNodes; k++) {
+                            //var metrics = LsData.GetLevelSetNormalReferenceToPhysicalMetrics(NS, i0, Length);
+                            //for (int i = 0; i < Length; i++) {
+                            //    for (int k = 0; k < NoOfNodes; k++) {
 
-                                    double magic_number = metrics[i, k];
+                            //        double magic_number = metrics[i, k];
 
 
-                                    var EV_ik = EvalResult.ExtractSubArrayShallow(i, k, -1, -1);
-                                    EV_ik.Scale(magic_number);
-                                }
+                            //        var EV_ik = EvalResult.ExtractSubArrayShallow(i, k, -1, -1);
+                            //        EV_ik.Scale(magic_number);
+                            //    }
 
-                            }
+                            //}
 
                         } else
                             throw new NotImplementedException();

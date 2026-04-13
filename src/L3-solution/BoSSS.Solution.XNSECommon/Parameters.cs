@@ -4,6 +4,7 @@ using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.Utils;
 using ilPSP;
@@ -12,6 +13,7 @@ using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -43,7 +45,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// </summary>
         (string, DGField)[] Velocity0Factory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
             var velocity0 = new (string, DGField)[D];
-            for (int d = 0; d < D; ++d) {
+            for(int d = 0; d < D; ++d) {
                 string velocityname = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d];
                 DGField velocity = DomainVarFields[velocityname];
                 string paramName = BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D)[d];
@@ -53,16 +55,16 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
 
-        void InternalParameterUpdate(double t, IReadOnlyDictionary<string,DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
-            for (int d = 0; d < D; ++d) {
+        void InternalParameterUpdate(double t, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            for(int d = 0; d < D; ++d) {
                 string velocityname = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d];
                 DGField velocity = DomainVarFields[velocityname];
-                
+
                 string paramName = BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D)[d];
                 DGField velocity0 = ParameterVarFields[paramName];
 
                 if(!object.ReferenceEquals(velocity, velocity0))
-                    throw new ApplicationException("Messed up parameter system; Velocit0 is supposed to be a shallow copy of domain var Velocity"); 
+                    throw new ApplicationException("Messed up parameter system; Velocit0 is supposed to be a shallow copy of domain var Velocity");
             }
         }
 
@@ -102,23 +104,23 @@ namespace BoSSS.Solution.XNSECommon {
             string velocity = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d];
 
             IDictionary<string, Func<double[], double, double>> initial = new Dictionary<string, Func<double[], double, double>>();
-            foreach (string species in LsTrk.SpeciesNames) {
+            foreach(string species in LsTrk.SpeciesNames) {
                 string velocityOfSpecies = velocity + "#" + species;
                 Func<double[], double, double> initialVelocity;
-                if (control.InitialValues_Evaluators_TimeDep.TryGetValue(velocityOfSpecies, out Func<double[], double, double> initialValue_TimeDep)) {
+                if(control.InitialValues_Evaluators_TimeDep.TryGetValue(velocityOfSpecies, out Func<double[], double, double> initialValue_TimeDep)) {
                     initialVelocity = initialValue_TimeDep;
-                } else if (control.InitialValues_Evaluators.TryGetValue(velocityOfSpecies, out Func<double[], double> initialValue)) {
-                    initialVelocity = (X,t) => initialValue(X);
+                } else if(control.InitialValues_Evaluators.TryGetValue(velocityOfSpecies, out Func<double[], double> initialValue)) {
+                    initialVelocity = (X, t) => initialValue(X);
                 } else {
-                    initialVelocity = (X,t) => 0.0;
+                    initialVelocity = (X, t) => 0.0;
                 }
                 initial.Add(species, initialVelocity);
             }
 
             int velocityDegree;
-            if (control.FieldOptions.TryGetValue(velocity, out FieldOpts opts)) {
+            if(control.FieldOptions.TryGetValue(velocity, out FieldOpts opts)) {
                 velocityDegree = opts.Degree;
-            } else if (control.FieldOptions.TryGetValue("Velocity*", out FieldOpts velOpts)) {
+            } else if(control.FieldOptions.TryGetValue("Velocity*", out FieldOpts velOpts)) {
                 velocityDegree = velOpts.Degree;
             } else {
                 velocityDegree = -1;
@@ -132,7 +134,7 @@ namespace BoSSS.Solution.XNSECommon {
             XDGBasis basis = new XDGBasis(LsTrk, degree != -1 ? degree : DomainVarFields.First().Value.Basis.Degree);
             XDGField velocity = new XDGField(basis, names[0]);
 
-            foreach (var species in LsTrk.SpeciesNames)
+            foreach(var species in LsTrk.SpeciesNames)
                 velocity.GetSpeciesShadowField(species).ProjectField(initial[species].Convert_Xt2X(0.0));
 
             return new (string, DGField)[] { (names[0], velocity) };
@@ -140,8 +142,8 @@ namespace BoSSS.Solution.XNSECommon {
 
         double timeOfLastUpdate = 0.0;
         public void ParameterUpdate(double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
-            if (timeOfLastUpdate != time) {
-                foreach (var species in LsTrk.SpeciesNames) {
+            if(timeOfLastUpdate != time) {
+                foreach(var species in LsTrk.SpeciesNames) {
                     timeOfLastUpdate = time;
                     ((XDGField)ParameterVarFields[names[0]]).GetSpeciesShadowField(species).Clear();
                     ((XDGField)ParameterVarFields[names[0]]).GetSpeciesShadowField(species).ProjectField(X => initial[species](X, time));
@@ -157,8 +159,8 @@ namespace BoSSS.Solution.XNSECommon {
             base(D, LsTrk, cutCellQuadOrder) { }
 
         protected override void Velocity0MeanUpdate(double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
-            for (int d = 0; d < D; ++d) {
-                foreach (string speciesName in SpeciesNames) {
+            for(int d = 0; d < D; ++d) {
+                foreach(string speciesName in SpeciesNames) {
                     XDGField paramMeanVelocity = (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]];
                     DGField speciesParam = paramMeanVelocity.GetSpeciesShadowField(speciesName);
 
@@ -204,7 +206,7 @@ namespace BoSSS.Solution.XNSECommon {
         public (string, DGField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
             this.LsTrk = ((XDGBasis)DomainVarFields.First().Value.Basis).Tracker;
             var velocity0Mean = new (string, DGField)[D];
-            for (int d = 0; d < D; ++d) {
+            for(int d = 0; d < D; ++d) {
                 XDGBasis U0meanBasis = new XDGBasis(LsTrk, 0);
                 string paramName = BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d];
                 XDGField U0mean = new XDGField(U0meanBasis, paramName);
@@ -234,7 +236,7 @@ namespace BoSSS.Solution.XNSECommon {
             minvol = Math.Pow(lsTrkr.GridDat.Cells.h_minGlobal, D);
 
             speciesMap = new Dictionary<string, SpeciesId>(SpeciesNames.Count);
-            foreach (string name in SpeciesNames) {
+            foreach(string name in SpeciesNames) {
                 speciesMap.Add(name, lsTrkr.GetSpeciesId(name));
             }
         }
@@ -282,11 +284,11 @@ namespace BoSSS.Solution.XNSECommon {
                     Vol.SetAll(1.0);
                 },
                 delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                    for (int i = 0; i < Length; i++) {
+                    for(int i = 0; i < Length; i++) {
                         int jCell = i + i0;
 
                         double Volume = ResultsOfIntegration[i, 1];
-                        if (Math.Abs(Volume) < minvol * 1.0e-12) {
+                        if(Math.Abs(Volume) < minvol * 1.0e-12) {
                             // keep current value
                             // since the volume of species 'Spc' in cell 'jCell' is 0.0, the value in this cell should have no effect
                         } else {
@@ -341,9 +343,9 @@ namespace BoSSS.Solution.XNSECommon {
             //}
 
             int gravityDegree;
-            if (control.FieldOptions.TryGetValue(gravity, out FieldOpts opts)) {
-                gravityDegree = Math.Max(0, opts.Degree);                
-            } else if (control.FieldOptions.TryGetValue("Velocity*", out FieldOpts velOpts)) {
+            if(control.FieldOptions.TryGetValue(gravity, out FieldOpts opts)) {
+                gravityDegree = Math.Max(0, opts.Degree);
+            } else if(control.FieldOptions.TryGetValue("Velocity*", out FieldOpts velOpts)) {
                 gravityDegree = velOpts.Degree;
             } else {
                 gravityDegree = 0;
@@ -361,12 +363,12 @@ namespace BoSSS.Solution.XNSECommon {
             if(initial != null)
                 gravity.ProjectField(-rho, initial.SetTime(0.0));
             //gravity.ProjectField(X => initial(X, 0.0));
-            
+
             return new (string, DGField)[] { (names[0], gravity) };
         }
 
         public void ParameterUpdate(double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
-            if (initial != null) {
+            if(initial != null) {
                 DGField gravity = ParameterVarFields[names[0]];
                 gravity.Clear();
                 gravity.ProjectField(-rho, initial.SetTime(time));
@@ -400,9 +402,9 @@ namespace BoSSS.Solution.XNSECommon {
 
 
             int volForceDegree;
-            if (control.FieldOptions.TryGetValue(gravityOfSpecies, out FieldOpts opts)) {
+            if(control.FieldOptions.TryGetValue(gravityOfSpecies, out FieldOpts opts)) {
                 volForceDegree = Math.Max(0, opts.Degree);
-            } else if (control.FieldOptions.TryGetValue("Velocity*", out FieldOpts velOpts)) {
+            } else if(control.FieldOptions.TryGetValue("Velocity*", out FieldOpts velOpts)) {
                 volForceDegree = velOpts.Degree;
             } else {
                 volForceDegree = 0;
@@ -415,13 +417,13 @@ namespace BoSSS.Solution.XNSECommon {
         public (string, DGField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
             Basis basis = new Basis(DomainVarFields.First().Value.GridDat, degree);
             DGField volforce = new SinglePhaseField(basis, names[0]);
-            if (initial != null)
+            if(initial != null)
                 volforce.ProjectField(-1, initial.SetTime(0.0));
             return new (string, DGField)[] { (names[0], volforce) };
         }
 
         public void ParameterUpdate(double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
-            if (initial != null) {
+            if(initial != null) {
                 DGField volforce = ParameterVarFields[names[0]];
                 volforce.Clear();
                 volforce.ProjectField(-1, initial.SetTime(time));
@@ -430,6 +432,7 @@ namespace BoSSS.Solution.XNSECommon {
     }
 
 
+    /*
     /// <summary>
     /// Computation of normals from the level-set;
     /// - computed normals are typically **not of unit length**, i.e. the vectors must be normalized before use!
@@ -459,7 +462,7 @@ namespace BoSSS.Solution.XNSECommon {
         public void LevelSetParameterUpdate(DualLevelSet levelSet, double time,
             IReadOnlyDictionary<string, DGField> DomainVarFields,
             IReadOnlyDictionary<string, DGField> ParameterVarFields) {
-            LevelSet Phi = levelSet.CGLevelSet;
+            LevelSet Phi = levelSet.C0LevelSet;
             DGField[] Normals = new SinglePhaseField[D];
             for (int i = 0; i < D; ++i) {
                 Normals[i] = ParameterVarFields[parameterNames[i]];
@@ -482,6 +485,7 @@ namespace BoSSS.Solution.XNSECommon {
             return normals;
         }
     }
+    */
 
     public class BeltramiGradient : ILevelSetParameter {
         DoNotTouchParameters AdvancedDiscretizationOptions;
@@ -601,6 +605,7 @@ namespace BoSSS.Solution.XNSECommon {
         }
     }
 
+
     public class MaxSigma : ParameterS, ILevelSetParameter {
         PhysicalParameters physParams;
 
@@ -639,14 +644,14 @@ namespace BoSSS.Solution.XNSECommon {
             IDictionary<SpeciesId, MultidimensionalArray> InterfaceLengths =
                 lsTrkr.GetXDGSpaceMetrics(lsTrkr.SpeciesIdS.ToArray(), cutCellQuadOrder).CutCellMetrics.InterfaceArea;
 
-            foreach (Chunk cnk in lsTrkr.Regions.GetCutCellMask()) {
-                for (int i = cnk.i0; i < cnk.JE; i++) {
+            foreach(Chunk cnk in lsTrkr.Regions.GetCutCellMask()) {
+                for(int i = cnk.i0; i < cnk.JE; i++) {
                     double ILen = InterfaceLengths.ElementAt(0).Value[i];
                     //ILen /= LevSet_Deg;
                     double sigmaILen_Max = (this.physParams.rho_A + this.physParams.rho_B)
                            * Math.Pow(ILen, 3) / (2 * Math.PI * dt.Pow2());
 
-                    if (dntParams.SetSurfaceTensionMaxValue && (physParams.Sigma > sigmaILen_Max)) {
+                    if(dntParams.SetSurfaceTensionMaxValue && (physParams.Sigma > sigmaILen_Max)) {
                         sigmaMax.SetMeanValue(i, sigmaILen_Max * 0.5);
                         //Console.WriteLine("set new sigma value: {0}; {1}", sigmaILen_Max, sigmaILen_Max/physParams.Sigma);
                     } else {
@@ -656,5 +661,51 @@ namespace BoSSS.Solution.XNSECommon {
             }
         }
 
+    }
+
+    /// <summary>
+    /// used for only curvature computations. For postprocessing
+    /// </summary>
+    public class Curvaturexye : ParameterS, ILevelSetParameter {
+
+        int curvatureDegree;
+        int m_HMForder;
+
+        DoNotTouchParameters AdvancedDiscretizationOptions;
+
+
+        public Curvaturexye(int curvatureDegree, int m_HMForder, DoNotTouchParameters AdvancedDiscretizationOptions) {
+            this.curvatureDegree = curvatureDegree;
+            this.m_HMForder = m_HMForder;
+            this.AdvancedDiscretizationOptions = AdvancedDiscretizationOptions;
+        }
+
+        public override IList<string> ParameterNames => new string[] { BoSSS.Solution.NSECommon.VariableNames.Curvature };
+
+        public override DelParameterFactory Factory => ParameterFactory;
+
+        public void LevelSetParameterUpdate(DualLevelSet levelSet, double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            SinglePhaseField Curvature = (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Curvature];
+            VectorField<SinglePhaseField> filtLevSetGradient;
+            CurvatureAlgorithms.CurvatureDriver(
+                SurfaceStressTensor_IsotropicMode.Curvature_Projected,// changed by xye. need to change it back 
+                AdvancedDiscretizationOptions.FilterConfiguration,
+                Curvature,
+                out filtLevSetGradient,
+                levelSet.Tracker,
+                m_HMForder,
+                levelSet.DGLevelSet);
+
+        }
+
+        public (string ParameterName, DGField ParamField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
+            //Curvature
+            (string ParameterName, DGField ParamField)[] fields = new (string, DGField)[1];
+            IGridData gridData = DomainVarFields.First().Value.GridDat;
+            Basis curvatureBasis = new Basis(gridData, curvatureDegree);
+            string curvatureName = BoSSS.Solution.NSECommon.VariableNames.Curvature;
+            fields[0] = (curvatureName, new SinglePhaseField(curvatureBasis, curvatureName));
+            return fields;
+        }
     }
 }

@@ -34,7 +34,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <summary>
         /// Configuration options
         /// </summary>
-        protected CompressibleControl config;
+        protected ICompressibleControl config;
 
         /// <summary>
         /// Boundary value definition
@@ -64,7 +64,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <param name="material">
         /// Mapping that determines the active species in some point.
         /// </param>
-        protected EulerFlux(CompressibleControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, Material material) {
+        protected EulerFlux(ICompressibleControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, Material material) {
             this.config = config;
             this.boundaryMap = boundaryMap;
             this.equationComponent = equationComponent;
@@ -89,27 +89,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// instances of <see cref="StateVector"/> and calls
         /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
         /// </summary>
-        /// <param name="time">
-        /// <see cref="NonlinearFlux.InnerEdgeFlux(double, double[], double[],double[], double[], int)"/>
-        /// </param>
-        /// <param name="x">
-        /// <see cref="NonlinearFlux.InnerEdgeFlux(double, double[], double[],double[], double[], int)"/>
-        /// </param>
-        /// <param name="normal">
-        /// <see cref="NonlinearFlux.InnerEdgeFlux(double, double[], double[],double[], double[], int)"/>
-        /// </param>
-        /// <param name="Uin">
-        /// <see cref="NonlinearFlux.InnerEdgeFlux(double, double[], double[],double[], double[], int)"/>
-        /// </param>
-        /// <param name="Uout">
-        /// <see cref="NonlinearFlux.InnerEdgeFlux(double, double[], double[],double[], double[], int)"/>
-        /// </param>
-        /// <param name="jEdge">
-        /// <see cref="NonlinearFlux.InnerEdgeFlux(double, double[], double[],double[], double[], int)"/>
-        /// </param>
-        /// <returns>
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </returns>
         protected override double InnerEdgeFlux(double time, double[] x, double[] normal, double[] Uin, double[] Uout, int jEdge) {
             StateVector stateIn = new StateVector(Uin, material);
             StateVector stateOut = new StateVector(Uout, material);
@@ -178,21 +157,9 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// calculate the flux which will be stored in
         /// <paramref name="output"/>.
         /// </summary>
-        /// <param name="time">
-        /// <see cref="NonlinearFlux.Flux(double, double[], double[], double[])"/>
-        /// </param>
-        /// <param name="x">
-        /// <see cref="NonlinearFlux.Flux(double, double[], double[], double[])"/>
-        /// </param>
-        /// <param name="U">
-        /// <see cref="NonlinearFlux.Flux(double, double[], double[], double[])"/>
-        /// </param>
-        /// <param name="output">
-        /// <see cref="NonlinearFlux.Flux(double, double[], double[], double[])"/>
-        /// </param>
         protected override void Flux(double time, double[] x, double[] U, double[] output) {
             StateVector state = new StateVector(U, material);
-            equationComponent.Flux(state).CopyTo(output, output.Length);
+            equationComponent.Flux(state).CopyTo(output, 0);
         }
 
         /// <summary>
@@ -222,8 +189,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
             double meanSpeedOfSound = 0.5 * (stateIn.SpeedOfSound + stateOut.SpeedOfSound);
 
             double velocityJump = normalVelocityOut - normalVelocityIn;
-            double gamma = config.EquationOfState.HeatCapacityRatio;
-            double MachScaling = gamma * config.MachNumber * config.MachNumber;
+            double gamma = config.CompressibleConfiguration.EquationOfState.HeatCapacityRatio;
+            double MachScaling = gamma * config.CompressibleConfiguration.MachNumber * config.CompressibleConfiguration.MachNumber;
 
             // Calculate the pressure estimate at the edge and use it to
             // calculate the components of the correction factor qIn and qOut.

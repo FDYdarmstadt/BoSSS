@@ -1,4 +1,6 @@
 ﻿using BoSSS.Solution.Control;
+using BoSSS.Solution.LevelSetTools.EllipticExtension;
+using BoSSS.Solution.LevelSetTools.EllipticReInit;
 using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 using BoSSS.Solution.LevelSetTools.PhasefieldLevelSet;
 using BoSSS.Solution.XdgTimestepping;
@@ -34,11 +36,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         virtual public LevelSetHandling Timestepper_LevelSetHandling {
             get;
             set;
-        } 
+        }
 
         /// <summary>
         /// underrelaxation of the level set movement in case of coupled iterative
         /// </summary>
+        [DataMember]
         public double LSunderrelax = 1.0;
 
 
@@ -91,13 +94,14 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 if(value == _TimesteppingMode.Steady) {
                     Timestepper_LevelSetHandling = LevelSetHandling.None;
                     Option_LevelSetEvolution = LevelSetEvolution.None;
-                    Option_LevelSetEvolution2 = LevelSetEvolution.None;
+                    //Option_LevelSetEvolution2 = LevelSetEvolution.None;
                     Timestepper_LevelSetHandling = LevelSetHandling.None;
                 }
                 base.TimesteppingMode = value;
             }
         }
 
+#region HIGKLY_SPECIFIC_CONFIGURATIONS
 
         /// <summary>
         /// options for additional penalization terms for fast marching
@@ -123,6 +127,16 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         [DataMember]
         public PhasefieldSettings PhasefieldControl;
 
+        /// <summary>
+        /// Control Options for ExtVel
+        /// </summary>
+        public EllipticExtVelAlgoControl EllipticExtVelAlgoControl = new EllipticExtVelAlgoControl();
+        
+        /// <summary>
+        /// Reinitilization period for Fastmarching
+        /// </summary>
+        [DataMember]
+        public int FastMarchingReInitPeriod = 0;
 
         /// <summary>
         /// An explicit expression (y = f(x)) of the initial 0 Level-set. Used for <see cref="SplineLevelSet"/>
@@ -131,17 +145,30 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         [JsonIgnore]
         public Func<double, double> Phi0Initial;
 
+
+
+        /// <summary>
+        /// Control Options for ReInit
+        /// </summary>
+        [DataMember]
+        public EllipticReInitAlgoControl ReInitControl = new EllipticReInitAlgoControl();
+
+        /// <summary>
+        /// if false, Neumann boundary conditions are applied everywhere. If true, the boundary conditions from the BoundaryConditionMap are applied.
+        /// </summary>
+        [DataMember]
+        public StokesExtentionBoundaryOption StokesExtentionUseBCmap = StokesExtentionBoundaryOption.FreeSlipAtWall;
+
+
+        #endregion
+
         /// <summary>
         /// Width of the narrow band.
         /// </summary>
         [DataMember]
         public int LS_TrackerWidth = 1;
 
-        /// <summary>
-        /// Reinitilization period for Fastmarching
-        /// </summary>
-        [DataMember]
-        public int FastMarchingReInitPeriod = 0;
+
 
         /// <summary>
         /// Reinitilization period for the LevelSetUpdater
@@ -150,14 +177,48 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public int ReInitPeriod = 0;
 
         /// <summary>
+        /// in case of a restart set for internal timestep number within the ls evolver
+        /// </summary>
+        [DataMember]
+        public int ReInitTimestepIndex = 0;
+
+
+        /// <summary>
         /// Controls the behavior of the <see cref="ContinuityProjection"/>, i.e. the algorithm which enforces continuity of the level-set
         /// </summary>
         [DataMember]
         public ContinuityProjectionOption LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
 
-
+        /// <summary>
+        /// Controls the behavior of the <see cref="ContinuityProjection"/>, i.e. the algorithm which enforces continuity of the second level-set 
+        /// </summary>
+        [DataMember]
+        public ContinuityProjectionOption LSContiProjectionMethod2 = ContinuityProjectionOption.ConstrainedDG;
     }
 
 
+    /// <summary>
+    /// Configuration options for the Stokes extension;
+    /// This is (also) intended to be a transitional development setting which will be removed from the code when a final conclusion on boundary conditions for the Stokes extension is reached.
+    /// </summary>
+    public enum StokesExtentionBoundaryOption {
+        
+        /// <summary>
+        /// Zero flux, old option, used mainly by the FSI-Codes (chen Miao, Lauritz Beck)
+        /// </summary>
+        ZeroFlux,
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        FreeSlipAtWall,
+
+
+        /// <summary>
+        /// apply the normal boundary conditions from the physical code
+        /// </summary>
+        useBcMap
+    }
 }
 

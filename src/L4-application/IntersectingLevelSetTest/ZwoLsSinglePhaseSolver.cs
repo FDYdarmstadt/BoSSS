@@ -36,7 +36,7 @@ namespace IntersectingLevelSetTest {
     /// if more than one level-set is involved.
     /// </summary>
     internal class ZwoLsSinglePhaseSolver<T> : BoSSS.Solution.Application<T> where T : BoSSS.Solution.Control.AppControl, new() {
-        internal XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+        internal CutCellQuadratureMethod MomentFittingVariant = CutCellQuadratureMethod.OneStepGaussAndStokes;
 
         protected override IGrid CreateOrLoadGrid() {
             var t = Triangle.Instance;
@@ -222,13 +222,6 @@ namespace IntersectingLevelSetTest {
             OperatorMatrix.SpMVpara(1.0, u.CoordinateVector, 1.0, x);
             MassInv.SpMV(1.0, x, 0.0, du_dx.CoordinateVector);
 
-            
-
-            // compute integrals 
-            Integrals integrals = new Integrals();
-            //integrals.Evaluate(LsTrk, 2, LsTrk.GetSpeciesId("B"), LsTrk.GetSpeciesId("A"));
-
-
             // compute error
             ERR.Clear();
             ERR.Acc(1.0, du_dx_Exact);
@@ -239,7 +232,7 @@ namespace IntersectingLevelSetTest {
 
             // check error
             double ErrorThreshold = 1.0e-1;
-            if (this.MomentFittingVariant == XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes)
+            if (this.MomentFittingVariant == CutCellQuadratureMethod.OneStepGaussAndStokes)
                 ErrorThreshold = 1.0e-6; // HMF is designed for such integrands and should perform close to machine accuracy; on general integrands, the precision is different.
 
             bool IsPassed = (L2Err <= ErrorThreshold);

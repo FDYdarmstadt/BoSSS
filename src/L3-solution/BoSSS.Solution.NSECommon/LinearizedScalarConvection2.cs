@@ -355,7 +355,7 @@ namespace BoSSS.Solution.NSECommon {
                         return r;
                     }
                 case IncompressibleBcType.Pressure_Dirichlet:
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet:
                 case IncompressibleBcType.NoSlipNeumann: {
                         double r = 0.0;
@@ -394,10 +394,10 @@ namespace BoSSS.Solution.NSECommon {
 
         /// <summary>
         /// returns
-        /// \f[
-        ///   \vec{v} \cdot \phi,
-        /// \f]
-        /// where \f$ \vec{v}\f$  is the linearization point.
+        /// \[
+        ///   \underline{v} \cdot \phi,
+        /// \]
+        /// where $\underline{v}$  is the linearization point.
         /// </summary>
         protected override void Flux(ref Foundation.CommonParamsVol inp, double[] U, double[] output) {
             double u = inp.Parameters[0];
@@ -772,7 +772,7 @@ namespace BoSSS.Solution.NSECommon {
                         return r;
                     }
                 case IncompressibleBcType.Pressure_Dirichlet:
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet:
                 case IncompressibleBcType.ScalarDirichlet_PressureOutlet:
                 case IncompressibleBcType.NoSlipNeumann: {
@@ -824,10 +824,10 @@ namespace BoSSS.Solution.NSECommon {
 
         /// <summary>
         /// returns
-        /// \f[
-        ///   \vec{v} \cdot \phi,
-        /// \f]
-        /// where \f$ \vec{v}\f$  is the linearization point.
+        /// \[
+        ///   \underline{v} \cdot \phi,
+        /// \]
+        /// where $\underline{v}$  is the linearization point.
         /// </summary>
         private void Flux(ref Foundation.CommonParamsVol inp, double[] U, double[] output) {
             double u = U[0];

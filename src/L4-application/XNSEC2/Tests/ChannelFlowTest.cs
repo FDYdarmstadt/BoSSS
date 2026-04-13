@@ -402,7 +402,7 @@ namespace BoSSS.Application.XNSEC {
             string _DbPath = null;
 
             int D = 2;
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
             //C.ImmediatePlotPeriod = 1;
             // basic database options
             // ======================
@@ -589,7 +589,7 @@ namespace BoSSS.Application.XNSEC {
 
             #region solver
 
-            //C.ComputeEnergyProperties = true;
+            //////C.ComputeEnergyProperties = true;
             //C.solveKineticEnergyEquation = true;
             ////C.CheckJumpConditions = true;
             //C.kinEViscousDiscretization = Solution.EnergyCommon.KineticEnergyViscousSourceTerms.laplaceKinE;
@@ -622,18 +622,15 @@ namespace BoSSS.Application.XNSEC {
             //C.EllipticExtVelAlgoControl.IsotropicViscosity = 1e-3;
             //C.fullReInit;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             //C.SkipSolveAndEvaluateResidual = true;
 
             C.AdaptiveMeshRefinement = false;
             C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
             C.AMR_startUpSweeps = 1;
-            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            //C.BaseRefinementLevel = 2;
+            ////C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            ////C.BaseRefinementLevel  2;
             //C.RefinementLevel = 2;
-
-            C.InitSignedDistance = false;
-            C.adaptiveReInit = false;
 
             #endregion solver
 

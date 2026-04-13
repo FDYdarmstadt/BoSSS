@@ -175,7 +175,7 @@ namespace BoSSS.Solution.XheatCommon {
         protected double Penalty(int jCellIn, int jCellOut) {
 
             double penaltySizeFactor_A = 1.0 / NegLengthScaleS[jCellIn];
-            double penaltySizeFactor_B = 1.0 / PosLengthScaleS[jCellOut];
+            double penaltySizeFactor_B = jCellOut >= 0 ?  1.0 / PosLengthScaleS[jCellOut] :0.0;
 
             double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
 
@@ -186,7 +186,13 @@ namespace BoSSS.Solution.XheatCommon {
             Debug.Assert(!double.IsInfinity(m_penalty));
             Debug.Assert(!double.IsInfinity(m_penalty));
 
-            return penaltySizeFactor * m_penalty * m_penalty_base;
+            double µ = penaltySizeFactor * m_penalty * m_penalty_base;
+            if(µ <= 0 || µ.IsNaNorInf()) {
+                string errStr = ($"Inf/NaN/Non-Positive in penalty comp: {µ}; (m_penalty = {m_penalty}, m_penalty_base = {m_penalty_base}, jCellIn = {jCellIn}, jCellOut = {jCellOut}, cj_in = {NegLengthScaleS[jCellOut]}, cj_out = {(jCellOut >= 0 ? 1.0 / PosLengthScaleS[jCellOut] : 0.0)}, penaltySizeFactor_A = {penaltySizeFactor_A}, penaltySizeFactor_B = {penaltySizeFactor_B})");
+                throw new ArithmeticException(errStr);
+            }
+
+            return µ;
         }
 
 

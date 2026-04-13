@@ -65,18 +65,19 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="CutCells">
         /// Cut cells of a single particle.
         /// </param>
-        internal double[] Main(double[] Position, CellMask CutCells, string FluidSpecies) {
+        internal MultidimensionalArray Main(double[] Position, CellMask CutCells, string FluidSpecies) {
             int fluidSpeciesID = GetSpeciesID(FluidSpecies);
-            double[] tempForces = new double[SpatialDim];
-            double[] IntegrationForces = tempForces.CloneAs();
-            double[] forcesAndTorque = new double[SpatialDim + 1];
+            //double[] tempForces = new double[SpatialDim];
+            //double[] IntegrationForces = tempForces.CloneAs();
+            //double[] forcesAndTorque = new double[SpatialDim + 1];
+            MultidimensionalArray forcesAndTorque = MultidimensionalArray.Create(SpatialDim + 1);
             if (!CutCells.IsSubMaskOf(CellMask.GetFullMask(LevelSetTracker.GridDat))){
                 throw new Exception("Cut cell mask not a sub mask of full mask.");
             }
 
             {
                 XQuadSchemeHelper SchemeHelper = LevelSetTracker.GetXDGSpaceMetrics(new[] { LevelSetTracker.GetSpeciesId(FluidSpecies) }, RequiredOrder, 1).XQuadSchemeHelper;
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(1, CutCells);
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(1, CutCells);
                 CellQuadrature.GetQuadrature(new int[] { SpatialDim + 1 }, LevelSetTracker.GridDat,
                     cqs.Compile(LevelSetTracker.GridDat, RequiredOrder),
                     delegate (int i0, int Length, QuadRule QR, MultidimensionalArray result) {
@@ -89,7 +90,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                             U[d].EvaluateGradient(i0, Length, Ns, GradU.ExtractSubArrayShallow(-1, -1, d, -1), 0, 1);
                         }
                         P.Evaluate(i0, Length, Ns, pressure);
-                        MultidimensionalArray Ns_Global = Ns.CloneAs();
+                        MultidimensionalArray Ns_Global = MultidimensionalArray.Create(Ns.Lengths);
                         for(int j = 0; j < Length; j++) {
                             LevelSetTracker.GridDat.TransformLocal2Global(Ns, Ns_Global, j + i0);
                             for(int k = 0; k < K; k++) {
@@ -108,7 +109,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                     }
                 ).Execute();
             }
-            return tempForces = forcesAndTorque.CloneAs();
+            return forcesAndTorque;
 
         }
 

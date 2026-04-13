@@ -30,11 +30,17 @@ using Newtonsoft.Json;
 namespace ilPSP {
 
     /// <summary>
-    /// A spatial coordinate or vector, in 1D, 2D, 3D
+    /// A spatial coordinate or vector, in 1D, 2D, 3D.
     /// </summary>
+    /// <remarks>
+    /// To make this structure computational efficient, two measures are taken:
+    /// - it is implement as a value-type, so it can be stores on the stack and in an array
+    /// - it is always, independent of the actual spatial dimension, 256 byte large, so its start address in an array have all the same memory alignment, cf. <see cref="Dummy_256bitAlign"/>
+    /// </remarks>
     [Serializable] 
     [StructLayout(LayoutKind.Sequential)]
     [DataContract]
+    [JsonConverter(typeof(Vector.VectorConverter))]
     public struct Vector : IList<double> {
 
         /// <summary>
@@ -161,6 +167,8 @@ namespace ilPSP {
         /// <summary>
         /// Dummy entry/reserved; enforces the entire structure to be 256 bit in size.
         /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
         public int Dummy_256bitAlign;
 
         /// <summary>
@@ -187,6 +195,8 @@ namespace ilPSP {
         /// </summary>
         /// <param name="i">either 0 (x-component) or 1 (y-component)</param>
         /// <returns></returns>
+        [IgnoreDataMember]
+        [JsonIgnore]
         public double this[int i] {
             //[MethodImpl(MethodImplOptions.AggressiveInlining)]
             set {
@@ -273,7 +283,7 @@ namespace ilPSP {
         /// </summary>
         /// <param name="v">A vector</param>
         /// <returns>
-        /// \f$ \vec{u} \times \vec{v}\f$ 
+        /// \f$ \underline{u} \times \underline{v}\f$ 
         /// Note
         /// - return value will always be a 3D vector (<see cref="Dim"/>==3)
         /// - for 2D arguments, only the <see cref="z"/> component will be unequal 0.
@@ -610,7 +620,7 @@ namespace ilPSP {
         public override string ToString() {
             switch(this.Dim) {
                 case 0:
-                return "nüll";
+                return "Zero";
                 case 1:
                 return ("(" + x + ")");
                 case 2:
@@ -671,6 +681,38 @@ namespace ilPSP {
             return StdBasis(d, 3);
         }
 
+
+        /// <summary>
+        /// the x standard basis in 2D
+        /// </summary>
+        public static Vector StdBasis2Dx() {
+            return StdBasis(0, 2);
+        }
+        /// <summary>
+        /// the y standard basis in 2D
+        /// </summary>
+        public static Vector StdBasis2Dy() {
+            return StdBasis(1, 2);
+        }
+        /// <summary>
+        /// the x standard basis in 3D
+        /// </summary>
+        public static Vector StdBasis3Dx() {
+            return StdBasis(0, 3);
+        }
+        /// <summary>
+        /// the y standard basis in 3D
+        /// </summary>
+        public static Vector StdBasis3Dy() {
+            return StdBasis(1, 3);
+        }
+        /// <summary>
+        /// the z standard basis in 3D
+        /// </summary>
+        public static Vector StdBasis3Dz() {
+            return StdBasis(2, 3);
+        }
+
         /// <summary>
         /// Euclidean distance between the points <paramref name="a"/> and <paramref name="b"/>
         /// </summary>
@@ -688,50 +730,43 @@ namespace ilPSP {
             distPow2 += d * d;
             return Math.Sqrt(distPow2);
         }
- 
+
         /// <summary>
-        /// Copies the components 0 to <paramref name="length"/> - 1 of this
-        /// object into <paramref name="destination"/>
+        /// Copies the components of this vector into <paramref name="destination"/> starting at <paramref name="arrayIndex"/>.
+        /// This is the ICollection&lt;double&gt;.CopyTo implementation expected by LINQ/ToArray().
         /// </summary>
-        /// <param name="destination">An array of length three</param>
-        /// <param name="length">The number of elements to be copied</param>
-        public void CopyTo(double[] destination, int length) {
-            if (destination.Length < length) {
-                throw new ArgumentException("The destination array is too small", "destination");
-            }
+        public void CopyTo(double[] destination, int arrayIndex) {
+            if(destination == null)
+                throw new ArgumentNullException(nameof(destination));
+            if(arrayIndex < 0 || arrayIndex > destination.Length)
+                throw new ArgumentOutOfRangeException(nameof(arrayIndex));
+            if(destination.Length - arrayIndex < this.Count)
+                throw new ArgumentException("The destination array is too small", nameof(destination));
 
-            if (length > 3 || length < 1) {
-                throw new ArgumentException("Length can only be 1, 2 or 3, not " + length, "length");
-            }
-
-            for (int i = 0; i < length; i++) {
-                destination[i] = this[i];
+            for(int i = 0; i < this.Count; i++) {
+                destination[arrayIndex + i] = this[i];
             }
         }
 
         /// <summary>
-        /// Copies the components 0 to <paramref name="length"/> - 1 of this
-        /// object into <paramref name="destination"/> starting with <paramref name="destinationIndex" />
+        /// Copies the first <paramref name="length"/> components of this vector into <paramref name="destination"/>,
+        /// starting at <paramref name="destinationIndex"/>.
+        /// Kept as a helper for partial copies.
         /// </summary>
-        /// <param name="destination">The target array</param>
-        /// <param name="length">The number of elements to be copied</param>
-        /// <param name="destinationIndex">The index of the target array at which copying should be started</param>
         public void CopyTo(double[] destination, int destinationIndex, int length) {
-            if (destination.Length < destinationIndex + length) {
-                throw new ArgumentException("The destination array is too small", "destination");
-            }
+            if(destination == null)
+                throw new ArgumentNullException(nameof(destination));
+            if(length < 0)
+                throw new ArgumentOutOfRangeException(nameof(length));
+            if(destinationIndex < 0 || destinationIndex > destination.Length)
+                throw new ArgumentOutOfRangeException(nameof(destinationIndex));
+            if(length > this.Count)
+                throw new ArgumentException("Length cannot be larger than the vector dimension.", nameof(length));
+            if(destination.Length - destinationIndex < length)
+                throw new ArgumentException("The destination array is too small", nameof(destination));
 
-            if (length > 3 || length < 1) {
-                // throw new ArgumentException("Length can only be 0, 1 or 2", "length");
-                throw new ArgumentException("Length can only be 1, 2 or 3, not " + length, "length");
-            }
-
-            if (destinationIndex < 0) {
-                throw new ArgumentException("The destination index must be >= 0", "destinationIndex");
-            }
-
-            for (int i = 0; i < length; i++) {
-                destination[i + destinationIndex] = this[i];
+            for(int i = 0; i < length; i++) {
+                destination[destinationIndex + i] = this[i];
             }
         }
 
@@ -1039,8 +1074,11 @@ namespace ilPSP {
             public override void WriteJson(JsonWriter writer, Vector value, JsonSerializer serializer) {
                 // Create a JObject and write the x and y properties
                 var jObject = new JObject();
+                //if(value.Dim == 0)
+                //    throw new NotSupportedException("un-initialized vector");
                 jObject["Dim"] = value.Dim;
-                jObject["x"] = value.x;
+                if(value.Dim > 0)
+                    jObject["x"] = value.x;
                 if (value.Dim > 1)
                     jObject["y"] = value.y;
                 if (value.Dim > 2)
@@ -1057,15 +1095,21 @@ namespace ilPSP {
 
                 // Deserialize x and y from JObject
                 var Dim = jObject["Dim"].Value<int>();
+                if(Dim == 0) {
+                    //throw new NotSupportedException("vector of dimension 0?");
+                    var ret0 = new Vector(0.0);
+                    ret0.Dim = 0;
+                    return ret0;
+                } else {
+                    var ret = new Vector(Dim);
+                    ret.x = jObject["x"].Value<double>();
+                    if(Dim > 1)
+                        ret.y = jObject["y"].Value<double>();
+                    if(Dim > 2)
+                        ret.z = jObject["z"].Value<double>();
 
-                var ret = new Vector(Dim);
-                ret.x = jObject["x"].Value<double>();
-                if (Dim > 1)
-                    ret.y = jObject["y"].Value<double>();
-                if (Dim > 2)
-                    ret.z = jObject["z"].Value<double>();
-
-                return ret;
+                    return ret;
+                }
             }
         }
     }
@@ -1077,199 +1121,199 @@ namespace ilPSP {
 /// </summary>
 public static class VectorExtensions {
 
-        /// <summary>
-        /// extracts the <paramref name="RowNo"/>-th row from
-        /// <paramref name="inp"/>.
-        /// </summary>
-        /// <param name="inp">
-        /// input matrix
-        /// </param>
-        /// <param name="RowNo">
-        /// row which should be extracted
-        /// </param>
-        /// <returns>
-        /// A vector with dimension (<see cref="Vector.Dim"/>) equal to 2nd length of <paramref name="inp"/>, containing the
-        /// <paramref name="RowNo"/>-th row of <paramref name="inp"/>
-        /// </returns>
-        public static Vector GetRowPt(this IMatrix inp, int RowNo) {
-            switch(inp.NoOfCols) {
-                case 1:
-                return new Vector(inp[RowNo, 0]);
-                case 2:
-                return new Vector(inp[RowNo, 0], inp[RowNo, 1]);
-                case 3:
-                return new Vector(inp[RowNo, 0], inp[RowNo, 1], inp[RowNo, 2]);
-                default:
-                throw new ArgumentException("Matrix has " + inp.NoOfCols + " columns, this cannot be a spatial dimension.");
-            }
+    /// <summary>
+    /// extracts the <paramref name="RowNo"/>-th row from
+    /// <paramref name="inp"/>.
+    /// </summary>
+    /// <param name="inp">
+    /// input matrix
+    /// </param>
+    /// <param name="RowNo">
+    /// row which should be extracted
+    /// </param>
+    /// <returns>
+    /// A vector with dimension (<see cref="Vector.Dim"/>) equal to 2nd length of <paramref name="inp"/>, containing the
+    /// <paramref name="RowNo"/>-th row of <paramref name="inp"/>
+    /// </returns>
+    public static Vector GetRowPt(this IMatrix inp, int RowNo) {
+        switch(inp.NoOfCols) {
+            case 1:
+            return new Vector(inp[RowNo, 0]);
+            case 2:
+            return new Vector(inp[RowNo, 0], inp[RowNo, 1]);
+            case 3:
+            return new Vector(inp[RowNo, 0], inp[RowNo, 1], inp[RowNo, 2]);
+            default:
+            throw new ArgumentException("Matrix has " + inp.NoOfCols + " columns, this cannot be a spatial dimension.");
         }
+    }
 
-        /// <summary>
-        /// extracts a vector from a <see cref="MultidimensionalArray"/> <paramref name="inp"/>;
-        /// </summary>
-        /// <param name="inp">
-        /// input array
-        /// </param>
-        /// <param name="i0">
-        /// first index into <paramref name="inp"/>
-        /// </param>
-        /// <param name="i1">
-        /// second index into <paramref name="inp"/>
-        /// </param>
-        /// <returns>
-        /// A vector with dimension (<see cref="Vector.Dim"/>) equal to 3rd length of <paramref name="inp"/>
-        /// </returns>
-        public static Vector GetRowPt(this MultidimensionalArray inp, int i0, int i1) {
-            switch(inp.GetLength(2)) {
-                case 1:
-                return new Vector(inp[i0, i1, 0]);
-                case 2:
-                return new Vector(inp[i0, i1, 0], inp[i0, i1, 1]);
-                case 3:
-                return new Vector(inp[i0, i1, 0], inp[i0, i1, 1], inp[i0, i1, 2]);
-                default:
-                throw new ArgumentException("2nd length of input is " + inp.GetLength(2) + ", this cannot be a spatial dimension.");
-            }
+    /// <summary>
+    /// extracts a vector from a <see cref="MultidimensionalArray"/> <paramref name="inp"/>;
+    /// </summary>
+    /// <param name="inp">
+    /// input array
+    /// </param>
+    /// <param name="i0">
+    /// first index into <paramref name="inp"/>
+    /// </param>
+    /// <param name="i1">
+    /// second index into <paramref name="inp"/>
+    /// </param>
+    /// <returns>
+    /// A vector with dimension (<see cref="Vector.Dim"/>) equal to 3rd length of <paramref name="inp"/>
+    /// </returns>
+    public static Vector GetRowPt(this MultidimensionalArray inp, int i0, int i1) {
+        switch(inp.GetLength(2)) {
+            case 1:
+            return new Vector(inp[i0, i1, 0]);
+            case 2:
+            return new Vector(inp[i0, i1, 0], inp[i0, i1, 1]);
+            case 3:
+            return new Vector(inp[i0, i1, 0], inp[i0, i1, 1], inp[i0, i1, 2]);
+            default:
+            throw new ArgumentException("2nd length of input is " + inp.GetLength(2) + ", this cannot be a spatial dimension.");
         }
+    }
 
 
-        /// <summary>
-        /// Matrix-Vector product
-        /// </summary>
-        public static Vector MtxVecMul(this IMatrix M, Vector v) {
-            if(M.NoOfCols != v.Dim)
-                throw new ArgumentException();
+    /// <summary>
+    /// Matrix-Vector product
+    /// </summary>
+    public static Vector MtxVecMul(this IMatrix M, Vector v) {
+        if(M.NoOfCols != v.Dim)
+            throw new ArgumentException();
 
-            var R = new Vector(M.NoOfRows);
-            for(int i = M.NoOfRows - 1; i >= 0; i--) {
-                double acc = 0;
-                for(int j = 0; j < v.Dim; j++) {
-                    acc += M[i, j] * v[j];
-                }
-
-                R[i] = acc;
+        var R = new Vector(M.NoOfRows);
+        for(int i = M.NoOfRows - 1; i >= 0; i--) {
+            double acc = 0;
+            for(int j = 0; j < v.Dim; j++) {
+                acc += M[i, j] * v[j];
             }
 
-            return R;
+            R[i] = acc;
         }
 
+        return R;
+    }
 
-        /// <summary>
-        /// sets the (<paramref name="i0"/>,<paramref name="i1"/>)-th row from <paramref name="inp"/> to values provided by <paramref name="row"/>.
-        /// </summary>
-        /// <param name="inp">
-        /// matrix that should be altered
-        /// </param>
-        /// <param name="i0">
-        /// first index into <paramref name="inp"/>
-        /// </param>
-        /// <param name="i1">
-        /// second index into <paramref name="inp"/>
-        /// </param>
-        /// <param name="row">
-        /// a vector 
-        /// </param>
-        public static void SetRowPt(this MultidimensionalArray inp, int i0, int i1, Vector row) {
-            if (row.Dim != inp.NoOfCols)
-                throw new ArgumentException("Dimension mismatch.");
 
-            switch(row.Dim) {
-                case 1:
-                inp[i0, i1, 0] = row.x; return;
-                case 2:
-                inp[i0, i1, 0] = row.x; inp[i0, i1, 1] = row.y; return;
-                case 3:
-                inp[i0, i1, 0] = row.x; inp[i0, i1, 1] = row.y; inp[i0, i1, 2] = row.z; return;
-                default:
-                throw new NotImplementedException();
-            }
+    /// <summary>
+    /// sets the (<paramref name="i0"/>,<paramref name="i1"/>)-th row from <paramref name="inp"/> to values provided by <paramref name="row"/>.
+    /// </summary>
+    /// <param name="inp">
+    /// matrix that should be altered
+    /// </param>
+    /// <param name="i0">
+    /// first index into <paramref name="inp"/>
+    /// </param>
+    /// <param name="i1">
+    /// second index into <paramref name="inp"/>
+    /// </param>
+    /// <param name="row">
+    /// a vector 
+    /// </param>
+    public static void SetRowPt(this MultidimensionalArray inp, int i0, int i1, Vector row) {
+        if(row.Dim != inp.NoOfCols)
+            throw new ArgumentException("Dimension mismatch.");
+
+        switch(row.Dim) {
+            case 1:
+            inp[i0, i1, 0] = row.x; return;
+            case 2:
+            inp[i0, i1, 0] = row.x; inp[i0, i1, 1] = row.y; return;
+            case 3:
+            inp[i0, i1, 0] = row.x; inp[i0, i1, 1] = row.y; inp[i0, i1, 2] = row.z; return;
+            default:
+            throw new NotImplementedException();
         }
+    }
 
-        /// <summary>
-        /// sets the <paramref name="RowNo"/>-th row from <paramref name="inp"/> to values provided by <paramref name="row"/>.
-        /// </summary>
-        /// <param name="inp">
-        /// matrix that should be altered
-        /// </param>
-        /// <param name="RowNo">
-        /// row index of the row to set
-        /// </param>
-        /// <param name="row">
-        /// a vector 
-        /// </param>
-        public static void SetRowPt(this IMatrix inp, int RowNo, Vector row) {
-            if (row.Dim != inp.NoOfCols)
-                throw new ArgumentException("Dimension mismatch.");
+    /// <summary>
+    /// sets the <paramref name="RowNo"/>-th row from <paramref name="inp"/> to values provided by <paramref name="row"/>.
+    /// </summary>
+    /// <param name="inp">
+    /// matrix that should be altered
+    /// </param>
+    /// <param name="RowNo">
+    /// row index of the row to set
+    /// </param>
+    /// <param name="row">
+    /// a vector 
+    /// </param>
+    public static void SetRowPt(this IMatrix inp, int RowNo, Vector row) {
+        if(row.Dim != inp.NoOfCols)
+            throw new ArgumentException("Dimension mismatch.");
 
-            switch(row.Dim) {
-                case 1:
-                inp[RowNo, 0] = row.x; return;
-                case 2:
-                inp[RowNo, 0] = row.x; inp[RowNo, 1] = row.y; return;
-                case 3:
-                inp[RowNo, 0] = row.x; inp[RowNo, 1] = row.y; inp[RowNo, 2] = row.z; return;
-                default:
-                throw new NotImplementedException();
-            }
+        switch(row.Dim) {
+            case 1:
+            inp[RowNo, 0] = row.x; return;
+            case 2:
+            inp[RowNo, 0] = row.x; inp[RowNo, 1] = row.y; return;
+            case 3:
+            inp[RowNo, 0] = row.x; inp[RowNo, 1] = row.y; inp[RowNo, 2] = row.z; return;
+            default:
+            throw new NotImplementedException();
         }
+    }
 
 
 
-        /// <summary>
-        /// extracts the <paramref name="RowNo"/>-th row from
-        /// <paramref name="inp"/>.
-        /// </summary>
-        /// <param name="inp">
-        /// input matrix
-        /// </param>
-        /// <param name="RowNo">
-        /// row which should be extracted
-        /// </param>
-        /// <returns>
-        /// A vector with dimension (<see cref="Vector.Dim"/>) equal to 2nd length of <paramref name="inp"/>, containing the
-        /// <paramref name="RowNo"/>-th row of <paramref name="inp"/>
-        /// </returns>
-        public static Vector GetRowPt(this double[,] inp, int RowNo) {
-            switch(inp.GetLength(1)) {
-                case 1:
-                return new Vector(inp[RowNo, 0]);
-                case 2:
-                return new Vector(inp[RowNo, 0], inp[RowNo, 1]);
-                case 3:
-                return new Vector(inp[RowNo, 0], inp[RowNo, 1], inp[RowNo, 2]);
-                default:
-                throw new ArgumentException("Matrix has " + inp.GetLength(1) + " columns, this cannot be a spatial dimension.");
-            }
+    /// <summary>
+    /// extracts the <paramref name="RowNo"/>-th row from
+    /// <paramref name="inp"/>.
+    /// </summary>
+    /// <param name="inp">
+    /// input matrix
+    /// </param>
+    /// <param name="RowNo">
+    /// row which should be extracted
+    /// </param>
+    /// <returns>
+    /// A vector with dimension (<see cref="Vector.Dim"/>) equal to 2nd length of <paramref name="inp"/>, containing the
+    /// <paramref name="RowNo"/>-th row of <paramref name="inp"/>
+    /// </returns>
+    public static Vector GetRowPt(this double[,] inp, int RowNo) {
+        switch(inp.GetLength(1)) {
+            case 1:
+            return new Vector(inp[RowNo, 0]);
+            case 2:
+            return new Vector(inp[RowNo, 0], inp[RowNo, 1]);
+            case 3:
+            return new Vector(inp[RowNo, 0], inp[RowNo, 1], inp[RowNo, 2]);
+            default:
+            throw new ArgumentException("Matrix has " + inp.GetLength(1) + " columns, this cannot be a spatial dimension.");
         }
+    }
 
 
-        /// <summary>
-        /// sets the <paramref name="RowNo"/>-th row from <paramref name="inp"/> to values provided by <paramref name="row"/>.
-        /// </summary>
-        /// <param name="inp">
-        /// matrix that should be altered
-        /// </param>
-        /// <param name="RowNo">
-        /// row index of the row to set
-        /// </param>
-        /// <param name="row">
-        /// a vector 
-        /// </param>
-        public static void SetRowPt(this double[,] inp, int RowNo, Vector row) {
-            if (row.Dim != inp.GetLength(1))
-                throw new ArgumentException("Dimension mismatch.");
+    /// <summary>
+    /// sets the <paramref name="RowNo"/>-th row from <paramref name="inp"/> to values provided by <paramref name="row"/>.
+    /// </summary>
+    /// <param name="inp">
+    /// matrix that should be altered
+    /// </param>
+    /// <param name="RowNo">
+    /// row index of the row to set
+    /// </param>
+    /// <param name="row">
+    /// a vector 
+    /// </param>
+    public static void SetRowPt(this double[,] inp, int RowNo, Vector row) {
+        if(row.Dim != inp.GetLength(1))
+            throw new ArgumentException("Dimension mismatch.");
 
-            switch(row.Dim) {
-                case 1:
-                inp[RowNo, 0] = row.x; return;
-                case 2:
-                inp[RowNo, 0] = row.x; inp[RowNo, 1] = row.y; return;
-                case 3:
-                inp[RowNo, 0] = row.x; inp[RowNo, 1] = row.y; inp[RowNo, 2] = row.z; return;
-                default:
-                throw new NotImplementedException();
-            }
+        switch(row.Dim) {
+            case 1:
+            inp[RowNo, 0] = row.x; return;
+            case 2:
+            inp[RowNo, 0] = row.x; inp[RowNo, 1] = row.y; return;
+            case 3:
+            inp[RowNo, 0] = row.x; inp[RowNo, 1] = row.y; inp[RowNo, 2] = row.z; return;
+            default:
+            throw new NotImplementedException();
         }
+    }
 
-        
+
 }
