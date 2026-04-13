@@ -38,7 +38,7 @@ namespace BUIDT.Tests
         /// </summary>
         public static void StraightShockCurvedStart_Eccomas22()
         {
-            BoSSS.Solution.Application.InitMPI(num_threads: 1);
+            //BoSSS.Solution.Application.InitMPI(num_threads: 1);
             BoSSS.Solution.Application.DeleteOldPlotFiles();
             using (var p = new BUIDTMain())
             {
@@ -60,7 +60,6 @@ namespace BUIDT.Tests
         }
 
         [Test]
-        [NUnitNumThreads(1)]
         /// <summary>
         /// Test for the AcceleratingShock
         /// </summary>

@@ -39,7 +39,7 @@ namespace XESF.Tests {
         #region SupersonicWedgeFlow using two LS on a Cartesian mesh
         [Test]
         public static void XDG_SWF_TwoLs() {
-            BoSSS.Solution.Application.InitMPI(num_threads: 1); //fails if more than 1 thread is chosen problem with OpenMP
+            //BoSSS.Solution.Application.InitMPI(num_threads: 1); //fails if more than 1 thread is chosen problem with OpenMP
 
        
 
@@ -80,7 +80,7 @@ namespace XESF.Tests {
         #region SupersonicWedgeFlow using one LS on a Cartesian rotated mesh
         [Test]
         public static void XDG_SWF_OneLs_Cart() {
-            BoSSS.Solution.Application.InitMPI(num_threads: 1);
+            //BoSSS.Solution.Application.InitMPI(num_threads: 1);
             BoSSS.Solution.Application.DeleteOldPlotFiles();
             using(var p = new XESFMain()) {
                 var C = XESFHardCodedControl.XDGWedgeFlow_OneLs_Rotation(
@@ -100,7 +100,7 @@ namespace XESF.Tests {
         }
         #endregion
         public static void XDGBowShockFromDB() {
-            BoSSS.Solution.Application.InitMPI(num_threads: 1);
+            //BoSSS.Solution.Application.InitMPI(num_threads: 1);
             BoSSS.Solution.Application.DeleteOldPlotFiles();
             using(var p = new XESFMain()) {
                 var C = XESFHardCodedControl.XDGBS_Local(
@@ -112,7 +112,7 @@ namespace XESF.Tests {
             }
         }
         public static void XDG_SWF_TwoLs_HighOrder() {
-            BoSSS.Solution.Application.InitMPI(num_threads: 1);
+            //BoSSS.Solution.Application.InitMPI(num_threads: 1);
             BoSSS.Solution.Application.DeleteOldPlotFiles();
             using(var p = new XESFMain()) {
                 var C = XESFHardCodedControl.XDGWS_Cluster(
