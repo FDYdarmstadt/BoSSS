@@ -29,14 +29,14 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     /// (cut-cells and neighboring cells sharing at least one point)
     /// </summary>
     [Serializable]
-    public class ContactPointRefiner : AMRLevelIndicatorWithLevelset {
+    public class ContactPointRefinerZLS : AMRLevelIndicatorWithLevelset {
 
         public override int[] DesiredCellChanges() {
 
             int J = GridData.CellPartitioning.LocalLength;
             int[] levels = new int[J];
 
-            CellMask band = LsTrk.Regions.GetNearMask4LevSet(0,1).Intersect(LsTrk.Regions.GetNearMask4LevSet(1,1));
+            CellMask band = LsTrk.Regions.GetNearMask4LevSet(0,0).Intersect(LsTrk.Regions.GetNearMask4LevSet(1,0));
             var bitmask = band.GetBitMask();
 
             int cellsToRefine = 0;

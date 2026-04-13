@@ -214,7 +214,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             C.AdaptiveMeshRefinement = true;
-            C.activeAMRlevelIndicators.Add(new ContactPointRefiner { maxRefinementLevel = AMRlvl });
+            C.activeAMRlevelIndicators.Add(new ContactPointRefinerZLS { maxRefinementLevel = AMRlvl });
             C.AMR_startUpSweeps = AMRlvl;
             //C.activeAMRlevelIndicators.Add(new ContactPointRefiner { maxRefinementLevel = 6 });
             //C.AMR_startUpSweeps = 5;
@@ -449,7 +449,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             C.AdaptiveMeshRefinement = true;
-            C.activeAMRlevelIndicators.Add(new ContactPointRefiner { maxRefinementLevel = AMRlvl });
+            C.activeAMRlevelIndicators.Add(new ContactPointRefinerZLS { maxRefinementLevel = AMRlvl });
             C.AMR_startUpSweeps = AMRlvl;
             //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { levelSet = 0, maxRefinementLevel = AMRlvl - 2});
             //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { levelSet = 1, maxRefinementLevel = AMRlvl });
@@ -574,9 +574,9 @@ namespace ZwoLevelSetSolver.ControlFiles {
             int kelem = 8;
 
             C.GridFunc = delegate () {
-                double[] Xnodes = GenericBlas.Linspace(-xSize, 0, kelem / 2 + 1);
+                double[] Xnodes = GenericBlas.Linspace(-xSize, xSize, kelem + 1);
                 double[] Ynodes = GenericBlas.Linspace(yBottom, yTop, kelem / 8 * 3 + 1);
-                double[] Znodes = GenericBlas.Linspace(-xSize, 0, kelem / 2 + 1);
+                double[] Znodes = GenericBlas.Linspace(-xSize, xSize, kelem + 1);
                 var grd = Grid3D.Cartesian3DGrid(Xnodes, Ynodes, Znodes);
 
                 grd.EdgeTagNames.Add(1, "wall_lower");
@@ -594,11 +594,11 @@ namespace ZwoLevelSetSolver.ControlFiles {
                         et = 2;
                     if(Math.Abs(X[0] + xSize) <= 1.0e-8)
                         et = 3;
-                    if(Math.Abs(X[0] - 0) <= 1.0e-8)
+                    if(Math.Abs(X[0] - xSize) <= 1.0e-8)
                         et = 4;
                     if(Math.Abs(X[2] + xSize) <= 1.0e-8)
                         et = 5;
-                    if(Math.Abs(X[2] - 0) <= 1.0e-8)
+                    if(Math.Abs(X[2] - xSize) <= 1.0e-8)
                         et = 6;
 
                     return et;
@@ -697,7 +697,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             C.AdaptiveMeshRefinement = true;
-            C.activeAMRlevelIndicators.Add(new ContactPointRefiner { maxRefinementLevel = AMRlvl });
+            //C.activeAMRlevelIndicators.Add(new ContactPointRefinerZLS { maxRefinementLevel = AMRlvl });
+            C.activeAMRlevelIndicators.Add(new AMRatInnerContactLine { maxRefinementLevel = AMRlvl, levelSets = new[] { 0, 1 }, FieldWidth = 0 });
             C.AMR_startUpSweeps = AMRlvl;
             //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { levelSet = 0, maxRefinementLevel = AMRlvl - 2});
             //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { levelSet = 1, maxRefinementLevel = AMRlvl });
@@ -740,8 +741,9 @@ namespace ZwoLevelSetSolver.ControlFiles {
         }
         
         
-        public static ZLS_Control Wiki(int p = 4, int AMRlvl = 2, double SlipLength = 0, bool useGravity = true) {
+        public static ZLS_Control Wiki(int p = 3, int AMRlvl = 5, double SlipLength = 0, bool useGravity = true) {
             // --control "cs:ZwoLevelSetSolver.ControlFiles.Droplet.Wiki()"
+            BoSSS.Solution.Application.DeleteOldPlotFiles();
             ZLS_Control C = new ZLS_Control(p);
             C.ImmediatePlotPeriod = 1;
             C.SuperSampling = 3;
@@ -965,7 +967,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             C.AdaptiveMeshRefinement = true;
-            C.activeAMRlevelIndicators.Add(new ContactPointRefiner { maxRefinementLevel = AMRlvl });
+            C.activeAMRlevelIndicators.Add(new ContactPointRefinerZLS { maxRefinementLevel = AMRlvl });
             C.AMR_startUpSweeps = AMRlvl;
             //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { levelSet = 0, maxRefinementLevel = AMRlvl - 2});
             //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { levelSet = 1, maxRefinementLevel = AMRlvl });

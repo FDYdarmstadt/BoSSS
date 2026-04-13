@@ -428,7 +428,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             C.AdaptiveMeshRefinement = true;
-            C.activeAMRlevelIndicators.Add(new ContactPointRefiner { maxRefinementLevel = 5 });
+            C.activeAMRlevelIndicators.Add(new ContactPointRefinerZLS { maxRefinementLevel = 5 });
             C.AMR_startUpSweeps = 4;
 
             #endregion

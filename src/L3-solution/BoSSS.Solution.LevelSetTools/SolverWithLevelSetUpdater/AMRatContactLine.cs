@@ -20,6 +20,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -97,12 +98,16 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     /// <summary>
     /// AMR at levelset/levelset intersections (inner contactlines)
     /// </summary>
+    [Serializable]
+    [DataContract]
     public class AMRatInnerContactLine : AMRLevelIndicatorWithLevelset {
 
+        [DataMember]
         public int[] levelSets; // null all level set intersections, otherwise only between those specified.
                                 // If only one is selected, intersection between this one and other levelsets are taken into account,
                                 // but intersections not involving this are not
 
+        [DataMember]
         public int FieldWidth = 0; // also refine cells arround level set intersection
 
         public override int[] DesiredCellChanges() {
