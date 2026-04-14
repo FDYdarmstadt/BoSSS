@@ -267,7 +267,8 @@ namespace BoSSS.Application.BoSSSpad {
                 Console.WriteLine("   Bkup Database dirs: " + bkupDbs.ToConcatString("", ", ", ";"));
 
                 if (bkupDbs.Length <= 0) {
-                    Console.Error.WriteLine("No Backups found; unable to run worksheet from backup database.");
+                    throw new IOException("No Backups found; unable to run worksheet from backup database.");
+                    /*
                     Console.WriteLine("Trying to create/open default database.");
 
                     try {
@@ -275,7 +276,7 @@ namespace BoSSS.Application.BoSSSpad {
                     } catch (Exception e) {
                         Console.Error.WriteLine($"{e.GetType().Name} caught during creation/opening of default database: {e.Message}.");
                     }
-
+                    */
                 } else {
 
                     var dbDir = bkupDbs.OrderBy(dir => dir.CreationTime).Last(); // select newest available backup
