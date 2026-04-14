@@ -55,13 +55,16 @@ namespace ilPSP {
     public static class Environment {
 
         /// <summary>
-        /// Alternative to `Dbugger.Launch()`
+        /// Only for debugging: block until a debugger is attached;
+        /// This is an alternative to `Dbugger.Launch()`, 
+        /// mainly inteded for Linux, where `Dbugger.Launch()` does not work (it does nothing).
         /// </summary>
         public static void WaitForDebugger() {
             if(System.Diagnostics.Debugger.IsAttached)
                 return;
 
             Console.WriteLine("Waiting for debugger to attach...");
+            Console.Out.Flush();
             while(!System.Diagnostics.Debugger.IsAttached) {
                 System.Threading.Thread.Sleep(1000);
             }
@@ -1077,5 +1080,6 @@ namespace ilPSP {
                 return m_MpiEnv;
             }
         }
+
     }
 }

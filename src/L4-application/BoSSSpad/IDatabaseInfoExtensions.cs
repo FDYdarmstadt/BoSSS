@@ -109,7 +109,7 @@ namespace BoSSS.Foundation.IO {
             IGrid grid = grd;
             Guid GridGuid;
             if (!force) {
-                if (BoSSSshell.WorkflowMgm.RunWorkflowFromBackup) {
+                if (WorkflowMgm.RunWorkflowFromBackup) {
                     var eg = database.Controller.DBDriver.SearchForEquivalentGrid(grid, database);
                     if (eg != null) {
                         grid = eg;
@@ -128,7 +128,7 @@ namespace BoSSS.Foundation.IO {
                     grd = ((TG)grid);
                 }
             } else {
-                if (BoSSSshell.WorkflowMgm.RunWorkflowFromBackup) {
+                if (WorkflowMgm.RunWorkflowFromBackup) {
                     Console.WriteLine("BoSSSpad is in backup mode, not saving anything.");
                     return grd.ID;
                 }
@@ -165,7 +165,7 @@ namespace BoSSS.Foundation.IO {
                 Guid GridGuid;// = database.Controller.DBDriver.SaveGridIfUnique(ref grid, out found, database);
 
 
-                if (BoSSSshell.WorkflowMgm.RunWorkflowFromBackup) {
+                if (WorkflowMgm.RunWorkflowFromBackup) {
                     var eg = database.Controller.DBDriver.SearchForEquivalentGrid(grid, database);
                     if (eg != null) {
                         grid = eg;
@@ -186,7 +186,7 @@ namespace BoSSS.Foundation.IO {
                     
                 }
             } else {
-                if (BoSSSshell.WorkflowMgm.RunWorkflowFromBackup) {
+                if (WorkflowMgm.RunWorkflowFromBackup) {
                     Console.WriteLine("BoSSSpad is in backup mode, not saving anything.");
                 } else {
                     database.Controller.DBDriver.SaveGrid(grid, database);
@@ -292,7 +292,7 @@ namespace BoSSS.Foundation.IO {
         /// <param name="sessionName"></param>
         /// <param name="fields"></param>
         public static void SaveGridAndTimestep(this IDatabaseInfo targetDb, DGField[] fields, string projectName, string sessionName) {
-            if(BoSSSshell.WorkflowMgm.RunWorkflowFromBackup) {
+            if(WorkflowMgm.RunWorkflowFromBackup) {
                 Console.WriteLine("BoSSSpad is in backup mode, not saving anything.");
                 return;
             }

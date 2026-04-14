@@ -452,10 +452,8 @@ namespace PublicTestRunner {
                 List<string> FileNamesOnly = new();
                 foreach ( string filePath in s ) {
                     string fileName = Path.GetFileName(filePath);
-                    if ( FileNamesOnly.Contains(fileName, (string a, string b) => a.Equals(b, StringComparison.InvariantCultureIgnoreCase)) ) {
-                        throw new IOException($"Dependent Filename {fileName} is not unique for test assembly {a}. (full Path {filePath}).");
-                    }
-
+                    if (FileNamesOnly.Contains(fileName, (string a, string b) => a.Equals(b, StringComparison.InvariantCultureIgnoreCase)))
+                        throw new IOException($"Dependent Filename {fileName} is not unique for test {testname} in assembly {a}. (full Path {filePath}).");
                     FileNamesOnly.Add(fileName);
                 }
 
