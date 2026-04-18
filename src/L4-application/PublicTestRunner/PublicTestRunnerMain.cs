@@ -718,7 +718,7 @@ namespace PublicTestRunner {
                 // phase 1: discover tests
                 // ===================================
                 //Debugger.Launch();
-                BoSSSshell.WorkflowMgm.Init("BoSSStst" + DateNtime, bpc);
+                BoSSSshell.WorkflowMgm.Init("BoSSStst" + DateNtime, ExecutionQueue: bpc, NoDatabaseAtAll: true);
 
                 // deployment of assemblies
                 string NativeOverride;
