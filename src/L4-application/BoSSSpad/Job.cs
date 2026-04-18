@@ -858,7 +858,17 @@ namespace BoSSS.Application.BoSSSpad {
                     return m_RunTime.Value;
 
                 if(s == JobStatus.FailedOrCanceled || s == JobStatus.FinishedSuccessful) {
-                    m_RunTime = m_owner.AssignedBatchProc.GetRunTime(this.BatchProcessorIdentifierToken, this.optInfo, this.DeploymentDirectory?.FullName);
+                    if(this.BatchProcessorIdentifierToken.IsNonEmpty() && this.DeploymentDirectory != null && this.DeploymentDirectory.Exists) {
+                        m_RunTime = m_owner.AssignedBatchProc.GetRunTime(this.BatchProcessorIdentifierToken, this.optInfo, this.DeploymentDirectory?.FullName);
+                    } else {
+                        if(Session != null) {
+                            m_RunTime = Session.GetRunTime();
+                        } else {
+                            Console.Error.WriteLine("unable to determine runtime of deployment");
+                            m_RunTime = new TimeSpan(0);
+                        }
+
+                    }
                     return m_RunTime.Value;
                 }
 

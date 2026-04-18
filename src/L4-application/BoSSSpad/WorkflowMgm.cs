@@ -231,17 +231,16 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-
         /// <summary>
         /// Defines the name of the current project; also creates a default database
         /// </summary>
-        public void Init(string ProjectName, BatchProcessorClient ExecutionQueue = null) {
+        public void Init(string ProjectName, BatchProcessorClient ExecutionQueue = null, bool NoDatabaseAtAll = false) {
             if((m_CurrentProject == null) || (!m_CurrentProject.Equals(ProjectName)))
                 InvalidateCaches();
             m_CurrentProject = ProjectName;
             Console.WriteLine("Project name is set to '{0}'.", ProjectName);
 
-            if (ExecutionQueue == null) {
+            if(ExecutionQueue == null) {
                 ExecutionQueue = BoSSSshell.GetDefaultQueue();
                 Console.WriteLine("Default Execution queue is chosen for the database.");
             }
@@ -249,53 +248,46 @@ namespace BoSSS.Application.BoSSSpad {
             //if(InteractiveShell.ExecutionQueues.Any(Q => Q is MiniBatchProcessorClient))
             //    MiniBatchProcessor.Server.StartIfNotRunning();
 
-            if (RunWorkflowFromBackup == false) {
-                try {
-                    DefaultDatabase = ExecutionQueue.CreateOrOpenCompatibleDatabase(ProjectName);
-                } catch (Exception e) {
-                    Console.Error.WriteLine($"{e.GetType().Name} caught during creation/opening of default database: {e.Message}.");
-                }
-            } else {
-                Console.WriteLine("trying to run from backup database...");
-                var pp = ExecutionQueue.AllowedDatabasesPaths[0];
-                var baseDir = new DirectoryInfo(pp.LocalMountPath);
-
-                if (!Path.IsPathRooted(pp.LocalMountPath))
-                    throw new IOException($"Illegal entry for `AllowedDatabasesPaths` for {this.ToString()}: only absolute/rooted paths are allowed, but {pp.LocalMountPath} is not.");
-
-                var bkupDbs = baseDir.GetDirectories("bkup*." + ProjectName);
-                Console.WriteLine("   Bkup Database dirs: " + bkupDbs.ToConcatString("", ", ", ";"));
-
-                if (bkupDbs.Length <= 0) {
-                    throw new IOException("No Backups found; unable to run worksheet from backup database.");
-                    /*
-                    Console.WriteLine("Trying to create/open default database.");
-
+            if(NoDatabaseAtAll == false) {
+                if(RunWorkflowFromBackup == false) {
                     try {
                         DefaultDatabase = ExecutionQueue.CreateOrOpenCompatibleDatabase(ProjectName);
-                    } catch (Exception e) {
+                    } catch(Exception e) {
                         Console.Error.WriteLine($"{e.GetType().Name} caught during creation/opening of default database: {e.Message}.");
                     }
-                    */
                 } else {
+                    Console.WriteLine("trying to run from backup database...");
+                    var pp = ExecutionQueue.AllowedDatabasesPaths[0];
+                    var baseDir = new DirectoryInfo(pp.LocalMountPath);
 
-                    var dbDir = bkupDbs.OrderBy(dir => dir.CreationTime).Last(); // select newest available backup
-                    Console.WriteLine("Selecting newest available backup: " + dbDir);
+                    if(!Path.IsPathRooted(pp.LocalMountPath))
+                        throw new IOException($"Illegal entry for `AllowedDatabasesPaths` for {this.ToString()}: only absolute/rooted paths are allowed, but {pp.LocalMountPath} is not.");
+
+                    var bkupDbs = baseDir.GetDirectories("bkup*." + ProjectName);
+                    Console.WriteLine("   Bkup Database dirs: " + bkupDbs.ToConcatString("", ", ", ";"));
+
+                    if(bkupDbs.Length <= 0) {
+                        throw new IOException("No Backups found; unable to run worksheet from backup database.");
+
+                    } else {
+
+                        var dbDir = bkupDbs.OrderBy(dir => dir.CreationTime).Last(); // select newest available backup
+                        Console.WriteLine("Selecting newest available backup: " + dbDir);
 
 
-                    IDatabaseInfo dbi = BoSSSshell.OpenDatabase(dbDir.FullName);
+                        IDatabaseInfo dbi = BoSSSshell.OpenDatabase(dbDir.FullName);
 
-                    if (!pp.PathAtRemote.IsEmptyOrWhite()) {
-                        string fullPathAtRemote = pp.PathAtRemote.TrimEnd('/', '\\');
-                        string remoteDirSep = pp.PathAtRemote.Contains('/') ? "/" : "\\";
-                        fullPathAtRemote = fullPathAtRemote + remoteDirSep + dbDir;
-                        DatabaseInfo.AddAlternateDbPaths(dbDir.FullName, fullPathAtRemote, null);
+                        if(!pp.PathAtRemote.IsEmptyOrWhite()) {
+                            string fullPathAtRemote = pp.PathAtRemote.TrimEnd('/', '\\');
+                            string remoteDirSep = pp.PathAtRemote.Contains('/') ? "/" : "\\";
+                            fullPathAtRemote = fullPathAtRemote + remoteDirSep + dbDir;
+                            DatabaseInfo.AddAlternateDbPaths(dbDir.FullName, fullPathAtRemote, null);
+                        }
+
+                        DefaultDatabase = dbi;
                     }
-
-                    DefaultDatabase = dbi;
                 }
             }
-
         }
 
         /// <summary>
