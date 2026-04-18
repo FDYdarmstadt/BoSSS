@@ -818,23 +818,15 @@ namespace ValidationTestRunner {
 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "PrintingNip_Part1",
-                "PrintingNip_Part1*",
-                "delete_PRINTINGNIP",
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "PrintingNip_Part2",
-                "PrintingNip_Part2*",
-                "delete_PRINTINGNIP",
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "PrintingNip_Part3",
-                "PrintingNip_Part3*",
-                "delete_PRINTINGNIP",
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "PrintingNip_Part4",
-                "PrintingNip_Part4*",
-                "delete_PRINTINGNIP",
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
 
             ValidationTestRunnerMain.RunWorksheet("PrintingNip/Part1_PrintingNip_Correlation_Run.ipynb");
@@ -888,7 +880,6 @@ namespace ValidationTestRunner {
         [NUnitFileToCopyHack("XNSE_Solver/CapillaryWave/*.ipynb")]
         [Test]
         static public void Run__CapillaryWave() {
-
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__CapillaryWave
 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
@@ -1867,19 +1858,7 @@ namespace ValidationTestRunner {
         [NUnitFileToCopyHack("memprofile/memprofile.ipynb")]
         [Test]
         static public void Run__memprofile() {
-
-            const string PROJECT_NAME = "memprofile";
-
-            // delete the database if it is more than XX days old;
-            // this will cause a re-execution of all computations
-            // otherwise, i.e. if the database is not deleted, sessions from the database 
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
-                PROJECT_NAME,
-                new TimeSpan(days: 10, hours: 0, minutes: 0, seconds: 1));
-
-            ValidationTestRunnerMain.RunWorksheet("memprofile/memprofile.ipynb");
-            // if we reach this point, its a success - backup the datebase
-            ValidationTestRunnerMain.BackupDatabase(PROJECT_NAME);
+            Run__LongTest("memprofile", [ "memprofile/memprofile.ipynb" ], new TimeSpan(days: 10, hours: 0, minutes: 0, seconds: 1));
         }
 
         /// <summary> 
@@ -1889,19 +1868,24 @@ namespace ValidationTestRunner {
         [Test]
         static public void Run__DropletInShearFlow() {
             //--test=ValidationTestRunner.WorksheetTests_Local_long.Run__DropletInShearFlow
+            Run__LongTest( "DropletInShearFlow", [ "DropletInShearFlow/DropletInShearFlow.ipynb" ], new TimeSpan(days: 10, hours: 0, minutes: 0, seconds: 1));
+        }
 
-            const string PROJECT_NAME = "DropletInShearFlow";
-
+        static void Run__LongTest(string PROJECT_NAME, IEnumerable<string> WorkSheetNameS, TimeSpan resultsShelfLife) {
             // delete the database if it is more than XX days old;
             // this will cause a re-execution of all computations
             // otherwise, i.e. if the database is not deleted, sessions from the database 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 PROJECT_NAME,
-                new TimeSpan(days: 10, hours: 0, minutes: 0, seconds: 1));
+                resultsShelfLife);
 
-            ValidationTestRunnerMain.RunWorksheet("DropletInShearFlow/DropletInShearFlow.ipynb");
+            foreach(string WorkSheetName in WorkSheetNameS)
+                ValidationTestRunnerMain.RunWorksheet(WorkSheetName);
+            
+            // if we reach this point, its a success - backup the datebase
+            ValidationTestRunnerMain.BackupDatabase(PROJECT_NAME);
+
         }
-
     }
 
 
