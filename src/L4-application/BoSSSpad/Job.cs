@@ -389,7 +389,7 @@ namespace BoSSS.Application.BoSSSpad {
                             var grd = m_ctrl.m_Grid;
                             if(grd != null) {
 
-                                Foundation.Grid.IGrid newInfo = db.SaveGrid(grd, true);
+                                Foundation.Grid.IGrid newInfo = db.SaveGrid(grd);
                                 m_ctrl.SetGrid(newInfo);
                                 Console.WriteLine("Grid successfully saved: " + newInfo.ID);
                             } else {
@@ -1229,7 +1229,7 @@ namespace BoSSS.Application.BoSSSpad {
                 for(int i = 0; i < AllNewSessions.Length; i++) {
                     var sinf = AllNewSessions[i];
 
-                    if(sinf.DeployPath != null) {
+                    if(sinf.DeployPath.IsNonEmpty()) {
                         string RelDeployPath = sinf.DeployPath.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries).Last();
 
                         foreach(var dep in m_Deployments) {
@@ -1702,9 +1702,14 @@ namespace BoSSS.Application.BoSSSpad {
                 if(this.AssignedBatchProc == null)
                     throw new NotSupportedException("Job must be activated before.");
 
+                
                 // ================
                 // status
                 // ================
+
+                // some database syncing might be necessary 
+                FiddleControlFile(AssignedBatchProc);
+
                 var stat = GetStatus(true);
                 if(stat != JobStatus.Unknown) {
                     int sc = this.SubmitCount;
@@ -1727,8 +1732,7 @@ namespace BoSSS.Application.BoSSSpad {
                 // ========================================================================
 
                 Console.WriteLine($"Deploying job {this.Name} ... ");
-                // some database syncing might be necessary 
-                FiddleControlFile(AssignedBatchProc);
+                
 
 
                 // deploy additional files

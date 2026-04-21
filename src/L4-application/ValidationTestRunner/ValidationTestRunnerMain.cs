@@ -1,6 +1,10 @@
 ﻿using BoSSS.Application.BoSSSpad;
+using BoSSS.Application.LsTest;
 using BoSSS.Application.TutorialTests;
 using BoSSS.Application.XNSE_Solver;
+using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Solution.Control;
 using FreeXNSE;
 using ilPSP;
 using ilPSP.Utils;
@@ -22,7 +26,7 @@ namespace ValidationTestRunner {
     /// <summary>
     /// Extends the public tests to some which are only available in the internal part of BoSSS
     /// </summary>
-    class ValidationTests : ITestTypeProvider {
+    class ValidationTests :ITestTypeProvider {
 
         public Type[] FullTest {
             get {
@@ -143,7 +147,7 @@ namespace ValidationTestRunner {
             // if we reach this point, its a success - backup the datebase
             ValidationTestRunnerMain.BackupDatabase("CollidingSpheres2D_condStudy");
             */
-		}
+        }
 
 
         /// <summary>
@@ -166,7 +170,7 @@ namespace ValidationTestRunner {
 
             // if we reach this point, its a success - backup the datebase
             ValidationTestRunnerMain.BackupDatabase("CollidingSpheres3D_condStudy");
-		}
+        }
 
         /// <summary>
         /// XNSE Solver, 
@@ -188,42 +192,41 @@ namespace ValidationTestRunner {
 
             // if we reach this point, its a success - backup the datebase
             ValidationTestRunnerMain.BackupDatabase("Popcorn2D_condStudy");
-		}
+        }
 
-		/// <summary>
-		/// XNSE Solver, 
-		/// publication results for: Toprak, Kummer: Cell agglomeration strategy for cut cells in eXtended discontinuous Galerkin methods
-		/// </summary>
-		[NUnitFileToCopyHack("AgglomerationTestcases/rotatingPopcorn3D.ipynb", "AgglomerationTestcases/rotatingPopcorn3Dpost.ipynb")]
-		[Test]
-		static public void Run__RotatingPopcorn3D() {
-			// delete the database if it is more than 75 days old;
-			// this will cause a re-execution of all computations
-			// otherwise, i.e. if the database is not deleted, sessions from the database 
-			ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
-				"Popcorn3D_condStudy",
-				"Popcorn3D_condStudy",
-				"delete_Popcorn3D_condStudy",
-				new TimeSpan(days: 150, hours: 1, minutes: 0, seconds: 0));
+        /// <summary>
+        /// XNSE Solver, 
+        /// publication results for: Toprak, Kummer: Cell agglomeration strategy for cut cells in eXtended discontinuous Galerkin methods
+        /// </summary>
+        [NUnitFileToCopyHack("AgglomerationTestcases/rotatingPopcorn3D.ipynb", "AgglomerationTestcases/rotatingPopcorn3Dpost.ipynb")]
+        [Test]
+        static public void Run__RotatingPopcorn3D() {
+            // delete the database if it is more than 75 days old;
+            // this will cause a re-execution of all computations
+            // otherwise, i.e. if the database is not deleted, sessions from the database 
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "Popcorn3D_condStudy",
+                "Popcorn3D_condStudy",
+                "delete_Popcorn3D_condStudy",
+                new TimeSpan(days: 150, hours: 1, minutes: 0, seconds: 0));
 
-			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/rotatingPopcorn3D.ipynb");
-			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/rotatingPopcorn3Dpost.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/rotatingPopcorn3D.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/rotatingPopcorn3Dpost.ipynb");
 
-			Console.WriteLine("RotatingPopcorn3D @ FDYcluster");
+            Console.WriteLine("RotatingPopcorn3D @ FDYcluster");
 
             // if we reach this point, its a success - backup the datebase
             ValidationTestRunnerMain.BackupDatabase("Popcorn3D_condStudy");
-		}
+        }
 
 
-		/// <summary>
-		/// XDG-IST Solver, 
-		/// publication results for: Vandergrift, Kummer: An extended discontinuous Galerkin shock tracking method, https://onlinelibrary.wiley.com/doi/full/10.1002/fld.5293
-		/// </summary>
-		[NUnitFileToCopyHack("ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_HPC.ipynb", "ShockFitting/Studies/ConvergenceStudy/bosss_db_levelSets.zip", "ShockFitting/Studies/ConvergenceStudy/BowShockPoints.txt", "ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_PostProcessing.ipynb")]
-		[Test]
-		static public void Run__XDGIST_BowShock()
-        {
+        /// <summary>
+        /// XDG-IST Solver, 
+        /// publication results for: Vandergrift, Kummer: An extended discontinuous Galerkin shock tracking method, https://onlinelibrary.wiley.com/doi/full/10.1002/fld.5293
+        /// </summary>
+        [NUnitFileToCopyHack("ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_HPC.ipynb", "ShockFitting/Studies/ConvergenceStudy/bosss_db_levelSets.zip", "ShockFitting/Studies/ConvergenceStudy/BowShockPoints.txt", "ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_PostProcessing.ipynb")]
+        [Test]
+        static public void Run__XDGIST_BowShock() {
             // delete the database if it is more than 75 days old;
             // this will cause a re-execution of all computations
             // otherwise, i.e. if the database is not deleted, sessions from the database 
@@ -274,8 +277,7 @@ namespace ValidationTestRunner {
         /// </summary>
         [NUnitFileToCopyHack("ShockFitting/Studies/ConvergenceStudy/CNSAcousticWave1DHPC_ConvStudy.ipynb", "ShockFitting/Studies/ConvergenceStudy/CNSAcousticWave1DHPC_ConvStudy_PostProcessing.ipynb")]
         [Test]
-        static public void Run__CNS_1DShockAcoustic()
-        {
+        static public void Run__CNS_1DShockAcoustic() {
             // delete the database if it is more than 25 days old;
             // this will cause a re-execution of all computations
             // otherwise, i.e. if the database is not deleted, sessions from the database 
@@ -386,7 +388,7 @@ namespace ValidationTestRunner {
         /// Application to two-dimensional settings* (https://doi.org/10.1002%2Fnme.6853). 
         /// </summary>
         [NUnitFileToCopyHack("XNSE_Solver/CapillaryWave/CapillaryWave_Run.ipynb", "XNSE_Solver/CapillaryWave/CapillaryWave_Evaluation.ipynb",
-            "XNSE_Solver/CapillaryWave/CWrefDatConv_La3.txt", "XNSE_Solver/CapillaryWave/CWrefDatConv_La3e5.txt", 
+            "XNSE_Solver/CapillaryWave/CWrefDatConv_La3.txt", "XNSE_Solver/CapillaryWave/CWrefDatConv_La3e5.txt",
             "XNSE_Solver/CapillaryWave/CWrefDatConv_La120.txt", "XNSE_Solver/CapillaryWave/CWrefDatConv_La3000.txt")]
         [Test]
         static public void Run__XNSEpaper_CapillaryWave() {
@@ -461,7 +463,7 @@ namespace ValidationTestRunner {
         /// </summary>
         [NUnitFileToCopyHack("XNSE_Solver/RisingBubble/RisingBubble_Testcase1_Run.ipynb", "XNSE_Solver/RisingBubble/RisingBubble_Testcase1_Evaluation.ipynb",
             "XNSE_Solver/RisingBubble/Featflow_referenceData/c1g1l7.txt", "XNSE_Solver/RisingBubble/Featflow_referenceData/c1g1l7s.txt",
-            "XNSE_Solver/RisingBubble/Featflow_referenceData/c1g2l3.txt", "XNSE_Solver/RisingBubble/Featflow_referenceData/c1g2l3s.txt", 
+            "XNSE_Solver/RisingBubble/Featflow_referenceData/c1g2l3.txt", "XNSE_Solver/RisingBubble/Featflow_referenceData/c1g2l3s.txt",
             "XNSE_Solver/RisingBubble/Featflow_referenceData/c1g3l4.txt", "XNSE_Solver/RisingBubble/Featflow_referenceData/c1g3l4s.txt",
             "XNSE_Solver/RisingBubble/Featflow_referenceData/c2g1l8.txt", "XNSE_Solver/RisingBubble/Featflow_referenceData/c2g1l8s.txt",
             "XNSE_Solver/RisingBubble/Featflow_referenceData/c2g2l3.txt", "XNSE_Solver/RisingBubble/Featflow_referenceData/c2g2l3s.txt",
@@ -524,7 +526,7 @@ namespace ValidationTestRunner {
         /// *The extended discontinuous Galerkin method adapted for moving contact line problems 
         /// via the generalized Navier boundary condition* (https://doi.org/10.1002/fld.5016).
         /// </summary>
-        [NUnitFileToCopyHack( "XNSE_Solver/DropletOnWall/StaticDropletOnSlipWall_convergence_Evaluation.ipynb")]
+        [NUnitFileToCopyHack("XNSE_Solver/DropletOnWall/StaticDropletOnSlipWall_convergence_Evaluation.ipynb")]
         [Test]
         static public void Run__CLpaper_DropletOnWall_convergence() {
 
@@ -601,9 +603,9 @@ namespace ValidationTestRunner {
         /// *The extended discontinuous Galerkin method adapted for moving contact line problems 
         /// via the generalized Navier boundary condition* (https://doi.org/10.1002/fld.5016).
         /// </summary>
-        [NUnitFileToCopyHack("XNSE_Solver/CL_TwoPhaseCouetteFlow/TwoPhaseCouetteFlow_Run.ipynb", 
+        [NUnitFileToCopyHack("XNSE_Solver/CL_TwoPhaseCouetteFlow/TwoPhaseCouetteFlow_Run.ipynb",
             "XNSE_Solver/CL_TwoPhaseCouetteFlow/TwoPhaseCouetteFlow_Evaluation.ipynb",
-            "XNSE_Solver/CL_TwoPhaseCouetteFlow/refData/gerbeau_2009_fig11_velocity.csv", 
+            "XNSE_Solver/CL_TwoPhaseCouetteFlow/refData/gerbeau_2009_fig11_velocity.csv",
             "XNSE_Solver/CL_TwoPhaseCouetteFlow/refData/gerbeau_2009_fig11_velocityWall.csv",
             "XNSE_Solver/CL_TwoPhaseCouetteFlow/refData/Qian_2006_fig20_symmetric.csv",
             "XNSE_Solver/CL_TwoPhaseCouetteFlow/refData/gerbeau_2009_fig12_symmetric.csv",
@@ -640,8 +642,7 @@ namespace ValidationTestRunner {
             "CapillaryRise/CapillaryRise_SFB1194_meshStudy_Run.ipynb",
             "CapillaryRise/CapillaryRise_SFB1194_meshStudy_Evaluation.ipynb")]
         [Test]
-        static public void Run__CapillaryRisePaper_meshStudy()
-        {
+        static public void Run__CapillaryRisePaper_meshStudy() {
 
             // delete the database if it is more than XX days old;
             // this will cause a re-execution of all computations
@@ -667,8 +668,7 @@ namespace ValidationTestRunner {
             "CapillaryRise/CapillaryRise_SFB1194_OmegaStudy_Run.ipynb",
             "CapillaryRise/CapillaryRise_SFB1194_OmegaStudy_Evaluation.ipynb")]
         [Test]
-        static public void Run__CapillaryRisePaper_OmegaStudy()
-        {
+        static public void Run__CapillaryRisePaper_OmegaStudy() {
 
             // delete the database if it is more than XX days old;
             // this will cause a re-execution of all computations
@@ -1150,7 +1150,7 @@ namespace ValidationTestRunner {
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__HeatedWallConvergence
 
             string really = System.Environment.GetEnvironmentVariable("RUN_HEATEDWALLCONVERGENCE");
-            if (really.IsEmptyOrWhite()) {
+            if(really.IsEmptyOrWhite()) {
                 Console.WriteLine("skipping Run__HeatedWallConvergence ");
                 return;
             } else {
@@ -1387,7 +1387,7 @@ namespace ValidationTestRunner {
         static public void Run__DropletReboundGauthier() {
 
             string really = System.Environment.GetEnvironmentVariable("RUN_DROPLET_REBOUND_GAUTHIER");
-            if (really.IsEmptyOrWhite()) {
+            if(really.IsEmptyOrWhite()) {
                 Console.WriteLine("skipping Run__DropletReboundGauthier ");
                 return;
             } else {
@@ -1429,7 +1429,7 @@ namespace ValidationTestRunner {
             //ValidationTestRunnerMain.RunWorksheet("DongBC_SteadyStateConvStudy_KovasznayFlow.ipynb");
 
             ValidationTestRunnerMain.RunWorksheet("DongBC_SteadyStateConvStudy_KovasznayFlow_PostProcessing.ipynb");
-            
+
             // if we reach this point, its a success - backup the datebase
             ValidationTestRunnerMain.BackupDatabase("KovasznayFlow_ConvStudy");
         }
@@ -1443,7 +1443,7 @@ namespace ValidationTestRunner {
         static public void Run__ParLinSlvPerfPar_GridGen() {
 
             string really = System.Environment.GetEnvironmentVariable("RUN_PARLINSLVPERF_GRIDGEN");
-            if (really.IsEmptyOrWhite()) {
+            if(really.IsEmptyOrWhite()) {
                 Console.WriteLine("skipping Run__ParLinSlvPerf_GridGen");
                 return;
             } else {
@@ -1668,7 +1668,7 @@ namespace ValidationTestRunner {
         [NUnitFileToCopyHack("memprofile/memprofile.ipynb")]
         [Test]
         static public void Run__memprofile() {
-            Run__LongTest("memprofile", [ "memprofile/memprofile.ipynb" ], new TimeSpan(days: 10, hours: 0, minutes: 0, seconds: 1));
+            Run__LongTest("memprofile", ["memprofile/memprofile.ipynb"], new TimeSpan(days: 10, hours: 0, minutes: 0, seconds: 1));
         }
 
         /// <summary> 
@@ -1678,7 +1678,7 @@ namespace ValidationTestRunner {
         [Test]
         static public void Run__DropletInShearFlow() {
             //--test=ValidationTestRunner.WorksheetTests_Local_long.Run__DropletInShearFlow
-            Run__LongTest( "DropletInShearFlow", [ "DropletInShearFlow/DropletInShearFlow.ipynb" ], new TimeSpan(days: 10, hours: 0, minutes: 0, seconds: 1));
+            Run__LongTest("DropletInShearFlow", ["DropletInShearFlow/DropletInShearFlow.ipynb"], new TimeSpan(days: 10, hours: 0, minutes: 0, seconds: 1));
         }
 
         static void Run__LongTest(string PROJECT_NAME, IEnumerable<string> WorkSheetNameS, TimeSpan resultsShelfLife, string completionMessage = null, bool backupDatabase = true) {
@@ -1731,6 +1731,124 @@ namespace ValidationTestRunner {
     [NUnitNumThreads(1)]
     static public class WorksheetTests_Local_short {
 
+        [Test]
+        static public void Run__WorkFlowManagerFunctionalityCheck_1() {
+            BoSSS.Solution.Application.InitMPI(num_threads: 1);
+
+            const string basename = "WorkFlowManagerFunctionalityCheck_1";
+
+            
+            GridCommons GridFunction() {
+                var xNodes = GenericBlas.Linspace(0, 10, 41);
+                var yNodes = GenericBlas.Linspace(-1, 1, 9);
+                GridCommons grid = Grid2D.Cartesian2DGrid(xNodes, yNodes);
+                IGrid_Extensions.DefineEdgeTags(grid, delegate (double[] X) {
+                    double x = X[0];
+                    double y = X[1];
+                    if(Math.Abs(y - (-1)) <= 1.0e-8)
+                        return "wall"; // lower wall
+                    if(Math.Abs(y - (+1)) <= 1.0e-8)
+                        return "wall"; // upper wall
+                    if(Math.Abs(x - (0.0)) <= 1.0e-8)
+                        return "Velocity_Inlet"; // inlet
+                    if(Math.Abs(x - (+10.0)) <= 1.0e-8)
+                        return "Pressure_Outlet"; // outlet
+                    throw new ArgumentOutOfRangeException("unknown domain");
+                });
+                return grid;
+            }
+
+            XNSE_Control ControlFunc() {
+                var c = new XNSE_Control();
+                
+                // general description:
+                int k = 1;
+                string desc = "Steady state, channel, k" + k;
+                c.SessionName = "SteadyStateChannel";
+                c.ProjectDescription = desc;
+                c.savetodb = true;
+                c.Tags.Add("k" + k);
+                // setting the grid:
+                c.SetGrid(GridFunction());
+                // DG polynomial degree
+                c.SetDGdegree(k);
+                // Physical parameters:
+                double reynolds = 20;
+                c.PhysicalParameters.rho_A = 1;
+                c.PhysicalParameters.mu_A = 1.0 / reynolds;
+                // Timestepping properties:
+                c.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+
+                c.AddBoundaryValue("Velocity_Inlet", "VelocityX", new Formula("X => 1 - X[0]*X[0]", false));  
+
+                return c;
+            }
+
+
+            Mutex JupyterMutex = new Mutex(false, basename);
+            try {
+                // 0.) Clean leftover of previous runs
+                // -----------------------------------
+                JupyterMutex.WaitOne();
+                NotebookRunner.DeleteDatabase(basename);
+                NotebookRunner.DeleteDeployments(basename + "*");
+                BoSSSshell.WorkflowMgm.Init(basename);
+
+                var allDepl = NotebookRunner.GetAllDeployments(basename + "*");
+                Assert.Zero(allDepl.Length, $"expecting 0 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
+
+                // 1.) First run
+                // -----------------------------------
+
+                var c0 = ControlFunc();
+                var J = c0.CreateJob();
+                Assert.AreEqual(J.Status, JobStatus.PreActivation, "unexpected job status");
+                J.NumberOfMPIProcs = 2;
+                J.Reactivate();
+
+                BoSSSshell.WorkflowMgm.BlockUntilAllJobsTerminate(1000);
+
+                Assert.AreEqual(J.Status, JobStatus.FinishedSuccessful, "unexpected job status");
+                Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Length, 1, "expecting exactly one session after the workseet has been executed");
+                Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Single().ProjectName, basename, "un-expected project name");
+                allDepl = NotebookRunner.GetAllDeployments(basename + "*");
+                
+                
+                Assert.AreEqual(allDepl.Length, 1, $"expecting 1 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
+
+                // 2.) Persistence test: Test that, if the Worksheet is already executed, the job will **not** be re-submitted
+                // --------------------------------------------------------------------------------------------------------------------------
+                // execute the worksheet a second time!
+                ValidationTestRunnerMain.RunWorksheet("MetaJobManager/MetaJobManager.ipynb");
+
+                allDepl = NotebookRunner.GetAllDeployments(basename + "*");
+                Assert.AreEqual(allDepl.Length, 1, $"expecting 1 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
+                BoSSSshell.WorkflowMgm.ResetSessionsCache();
+                Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Length, 1, "expecting exactly one session after the workseet has been executed twice");
+
+                // 3.) delete deployments and test a third time:
+                // -----------------------------------------------
+                NotebookRunner.DeleteDeployments(basename + "*");
+                ValidationTestRunnerMain.RunWorksheet("MetaJobManager/MetaJobManager.ipynb");
+
+                BoSSSshell.WorkflowMgm.ResetSessionsCache();
+                Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Length, 1, "expecting exactly one session after the workseet has been executed twice");
+                allDepl = NotebookRunner.GetAllDeployments(basename + "*");
+                Assert.Zero(allDepl.Length, $"expecting 0 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
+
+
+
+            } finally {
+                JupyterMutex.ReleaseMutex();
+            }
+
+
+
+        }
+
+
+
+
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("BoundaryAndInitialData/BoundaryAndInitialData.ipynb")]
         [Test]
@@ -1752,13 +1870,52 @@ namespace ValidationTestRunner {
         [NUnitFileToCopyHack("MetaJobManager/MetaJobManager.ipynb")]
         [Test]
         static public void Run__MetaJobManager() {
-            //--test=ValidationTestRunner.WorksheetTests_Local.Run__MetaJobManager
+            //--test=ValidationTestRunner.WorksheetTests_Local_short.Run__MetaJobManager
             Mutex JupyterMutex = new Mutex(false, "MetaJobManager_Tutorial");
             try {
+                // 0.) Clean leftover of previous runs
+                // -----------------------------------
                 JupyterMutex.WaitOne();
                 NotebookRunner.DeleteDatabase("MetaJobManager_Tutorial");
                 NotebookRunner.DeleteDeployments("MetaJobManager_Tutorial*");
+
+                var allDepl = NotebookRunner.GetAllDeployments("MetaJobManager_Tutorial*");
+                Assert.Zero(allDepl.Length, $"expecting 0 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
+
+                // 1.) First run
+                // -----------------------------------
+
                 ValidationTestRunnerMain.RunWorksheet("MetaJobManager/MetaJobManager.ipynb");
+
+                BoSSSshell.WorkflowMgm.Init("MetaJobManager_Tutorial");
+
+                Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Length, 1, "expecting exactly one session after the workseet has been executed");
+                Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Single().ProjectName, "MetaJobManager_Tutorial", "un-expected project name");
+                allDepl = NotebookRunner.GetAllDeployments("MetaJobManager_Tutorial*");
+                Assert.AreEqual(allDepl.Length, 1, $"expecting 1 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
+
+                // 2.) Persistence test: Test that, if the Worksheet is already executed, the job will **not** be re-submitted
+                // --------------------------------------------------------------------------------------------------------------------------
+                // execute the worksheet a second time!
+                ValidationTestRunnerMain.RunWorksheet("MetaJobManager/MetaJobManager.ipynb");
+
+                allDepl = NotebookRunner.GetAllDeployments("MetaJobManager_Tutorial*");
+                Assert.AreEqual(allDepl.Length, 1, $"expecting 1 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
+                BoSSSshell.WorkflowMgm.ResetSessionsCache();
+                Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Length, 1, "expecting exactly one session after the workseet has been executed twice");
+
+                // 3.) delete deployments and test a third time:
+                // -----------------------------------------------
+                NotebookRunner.DeleteDeployments("MetaJobManager_Tutorial*");
+                ValidationTestRunnerMain.RunWorksheet("MetaJobManager/MetaJobManager.ipynb");
+
+                BoSSSshell.WorkflowMgm.ResetSessionsCache();
+                Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Length, 1, "expecting exactly one session after the workseet has been executed twice");
+                allDepl = NotebookRunner.GetAllDeployments("MetaJobManager_Tutorial*");
+                Assert.Zero(allDepl.Length, $"expecting 0 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
+
+
+
             } finally {
                 JupyterMutex.ReleaseMutex();
             }
@@ -1794,7 +1951,7 @@ namespace ValidationTestRunner {
             }
         }
 
-        
+
     }
 
     /// <summary>
@@ -1849,7 +2006,7 @@ namespace ValidationTestRunner {
             ValidationTestRunnerMain.RunWorksheet("ParLinslvPerf_XdgStokes.ipynb", allowErrors: true);
 
             ValidationTestRunnerMain.RunWorksheet("ParLinslvPerf_Evaluation.ipynb", allowErrors: false);
-            
+
             // if we reach this point, its a success - backup the datebase
             ValidationTestRunnerMain.BackupDatabase(PROJECT_NAME);
         }
@@ -1901,7 +2058,7 @@ namespace ValidationTestRunner {
             Console.WriteLine("Testing MetaJobManager @ Lichtenberg...");
             ValidationTestRunnerMain.RunWorksheet("MetaJobManager/MetaJobManager.ipynb");
             Console.WriteLine("Finished MetaJobManager @ Lichtenberg.");
-            
+
             // if we reach this point, its a success - backup the datebase
             ValidationTestRunnerMain.BackupDatabase("MetaJobManager_Tutorial");
         }
