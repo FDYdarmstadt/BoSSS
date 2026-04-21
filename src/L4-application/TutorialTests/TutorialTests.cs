@@ -35,37 +35,14 @@ namespace BoSSS.Application.TutorialTests {
             /*
             BoSSS.Solution.Application.InitMPI(new string[0]);
 
-            Task<int>[] legion = new Task<int>[100];
-
-            string fileName = "CsharpAndBoSSSpad.ipynb";
-            string file = File.ReadAllText(fileName);
-
-            for (int iTask = 0; iTask < legion.Length; iTask++) {
-                string fileName_i = $"CsharpAndBoSSSpad{iTask}.ipynb";
-                File.WriteAllText(fileName_i, file);
-
-                int Taskfunc() {
-                    var runner = new NotebookRunner(fileName_i, "", true);
-                    return runner.ErrCount;
-                }
-
-                legion[iTask] = Task.Run(Taskfunc); 
-            }
-
-            Task.WaitAll(legion);
-
-            int SuccCount = legion.Where(task => task.Result == 0).Count(), Failcount = legion.Where(task => task.Result != 0).Count();
-            Console.WriteLine($"Executed {legion.Length} worksheets: {SuccCount} successes, {Failcount} fails.");
-            
-            csMPI.Raw.mpiFinalize();
-            return legion.Sum(task => Math.Abs(task.Result));
+ ;
             */
             
 
             AllUpTest.DirectoryOffset = Path.Combine("..", "..", "..", ".." ,"..", ".." , "doc", "handbook");
             
             if(!Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(), AllUpTest.DirectoryOffset)))
-                throw new IOException();
+                throw new IOException("not running in nexpected directory");
 
             // if we enter Main, it seems we are executing the tutorial tests locally...
             // so delete any local tex files since we want to run the scripts from doc/handbook
@@ -79,12 +56,14 @@ namespace BoSSS.Application.TutorialTests {
 
             BoSSS.Solution.Application.InitMPI(new string[0]);
 
+            BoSSS.Application.TutorialTests.WorkflowMgmTests.Run__WorkFlowManagerFunctionalityCheck_1();
               
             // start the minibatchprocessor which is used internally
             //bool iStartedThisShit = AllUpTest.OneTimeSetUp();
 
             var losScriptos = GetListOfScripts();
             int r = 0;
+/*
             int i = 1;
             foreach(var s in losScriptos) {
                 AllUpTest.RunWorksheet(s);
@@ -94,6 +73,7 @@ namespace BoSSS.Application.TutorialTests {
             
 
             //AllUpTest.OneTimeTearDown(iStartedThisShit);
+            */
             csMPI.Raw.mpiFinalize();
             return r;
 

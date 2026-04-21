@@ -385,6 +385,21 @@ namespace BoSSS.Application.TutorialTests {
             }
         }
 
+        public static DirectoryInfo[] GetAllDeployments(string DirectoryWildCard) {
+            var ret = new List<DirectoryInfo>();
+            
+            foreach (var q in BoSSSshell.ExecutionQueues) {
+
+                var localBaseDir = new DirectoryInfo(q.DeploymentBaseDirectory);
+                if(localBaseDir.Exists) {
+                    var deplDirs = localBaseDir.GetDirectories(DirectoryWildCard, SearchOption.TopDirectoryOnly);
+                    ret.AddRange(deplDirs);
+                }
+
+            }
+
+            return ret.ToArray();
+        }
     }
 
 }
