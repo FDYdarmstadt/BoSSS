@@ -856,7 +856,7 @@ namespace ValidationTestRunner {
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__ViscousEddies
             Run__LongTest(
                 "ViscousEddies",
-                [ "PrintingNip/ViscousEddies_Run.ipynb" ],
+                ["PrintingNip/ViscousEddies_Run.ipynb"],
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0),
                 "ViscousEddies @ FDYcluster");
         }
@@ -871,7 +871,7 @@ namespace ValidationTestRunner {
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__CapillaryWave
             Run__LongTest(
                 "CapillaryWave",
-                [ "XNSE_Solver/CapillaryWave/CapillaryWave.ipynb" ],
+                ["XNSE_Solver/CapillaryWave/CapillaryWave.ipynb"],
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0),
                 "CapillaryWave @ FDYcluster");
         }
@@ -886,7 +886,7 @@ namespace ValidationTestRunner {
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__PhasefieldRisingBubble
             Run__LongTest(
                 "PhasefieldRisingBubble",
-                [ "XNSE_Solver/Phasefield/PhasefieldRisingBubble.ipynb" ],
+                ["XNSE_Solver/Phasefield/PhasefieldRisingBubble.ipynb"],
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0),
                 "PhasefieldRisingBubble @ FDYcluster");
         }
@@ -919,7 +919,7 @@ namespace ValidationTestRunner {
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__TemperatureBoundaryCondition
             Run__LongTest(
                 "TemperatureBoundaryCondition",
-                [ "TemperatureConvergence/TemperatureBoundaryCondition.ipynb" ],
+                ["TemperatureConvergence/TemperatureBoundaryCondition.ipynb"],
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0),
                 "TemperatureBoundaryCondition @ FDYcluster");
         }
@@ -934,7 +934,7 @@ namespace ValidationTestRunner {
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__TemperatureVelocityCoupling
             Run__LongTest(
                 "TemperatureVelocityCoupling",
-                [ "TemperatureConvergence/TemperatureVelocityCoupling.ipynb" ],
+                ["TemperatureConvergence/TemperatureVelocityCoupling.ipynb"],
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0),
                 "TemperatureVelocityCoupling @ FDYcluster");
         }
@@ -1116,7 +1116,7 @@ namespace ValidationTestRunner {
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__3PhaseDemo
             Run__LongTest(
                 "3PhaseDemo",
-                [ "XNSFE_Solver/HeatedWall_Simple/HeatedWall90DegSimple_3PhaseDemo.ipynb" ],
+                ["XNSFE_Solver/HeatedWall_Simple/HeatedWall90DegSimple_3PhaseDemo.ipynb"],
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0),
                 "3Phase Demo @ FDYcluster");
         }
@@ -1132,7 +1132,7 @@ namespace ValidationTestRunner {
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__HeatedWallSimple
             Run__LongTest(
                 "HeatedWallSimple_VerificationFastMarching",
-                [ "XNSFE_Solver/HeatedWall_Validation/HeatedWallSimple_VerificationFastMarching.ipynb" ],
+                ["XNSFE_Solver/HeatedWall_Validation/HeatedWallSimple_VerificationFastMarching.ipynb"],
                 "HeatedWall_Simple*",
                 "delete_HeatedWallSimple",
                 new TimeSpan(days: 10, hours: 1, minutes: 0, seconds: 0),
@@ -1180,7 +1180,7 @@ namespace ValidationTestRunner {
         static public void Run__CouetteTemperatureDifference_ConvStudy() {
             Run__LongTest(
                 "CouetteTemperatureDifference_ConvStudy",
-                [ "LowMach/HeatedCouetteFlow/CouetteTemperatureDifference_ConvStudy.ipynb" ],
+                ["LowMach/HeatedCouetteFlow/CouetteTemperatureDifference_ConvStudy.ipynb"],
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 1),
                 "HeatedCouette @ FDYcluster");
         }
@@ -1281,7 +1281,7 @@ namespace ValidationTestRunner {
             // }
             Run__LongTest(
                 "CounterFlowFlame",
-                [ "LowMach/DiffusionFlames/CoFlowDiffusionFlame/CoFlowFlame_Calculations.ipynb" ],
+                ["LowMach/DiffusionFlames/CoFlowDiffusionFlame/CoFlowFlame_Calculations.ipynb"],
                 new TimeSpan(days: 30, hours: 0, minutes: 0, seconds: 1),
                 "CoFlowDiffusionFlame @ FDYcluster");
         }
@@ -1356,7 +1356,7 @@ namespace ValidationTestRunner {
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__CombustingDroplet
             Run__LongTest(
                 "CombustingDroplet",
-                [ "CombustingDroplet.ipynb" ],
+                ["CombustingDroplet.ipynb"],
                 new TimeSpan(days: 60, hours: 1, minutes: 0, seconds: 1));
         }
 
@@ -1369,7 +1369,7 @@ namespace ValidationTestRunner {
         static public void Run__Droplet3D_FirstPeriodStudy() {
             Run__LongTest(
                 "OscillatingDroplet3D_FirstPeriodStudy",
-                [ "Oscillating-Droplet/Droplet3D-FirstPeriodStudy.ipynb" ],
+                ["Oscillating-Droplet/Droplet3D-FirstPeriodStudy.ipynb"],
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 1));
         }
 
@@ -1452,7 +1452,7 @@ namespace ValidationTestRunner {
 
             Run__LongTest(
                 "LinslvPerfPar_GridGen",
-                [ "ParLinslvPerf_GridGen.ipynb" ],
+                ["ParLinslvPerf_GridGen.ipynb"],
                 new TimeSpan(days: 60, hours: 1, minutes: 0, seconds: 1),
                 "Lets go...");
 
@@ -1472,7 +1472,7 @@ namespace ValidationTestRunner {
         static public void Run__RisingBubble2D_SingleTest() {
             Run__LongTest(
                 "RisingBubble2D",
-                [ "RisingBubble2D_EvaluateSingleTest.ipynb" ],
+                ["RisingBubble2D_EvaluateSingleTest.ipynb"],
                 new TimeSpan(days: 60, hours: 0, minutes: 0, seconds: 1),
                 backupDatabase: false);
         }
@@ -1709,10 +1709,10 @@ namespace ValidationTestRunner {
             foreach(string WorkSheetName in WorkSheetNameS)
                 ValidationTestRunnerMain.RunWorksheet(WorkSheetName);
 
-            if (!string.IsNullOrWhiteSpace(completionMessage))
+            if(!string.IsNullOrWhiteSpace(completionMessage))
                 Console.WriteLine(completionMessage);
 
-            if (backupDatabase)
+            if(backupDatabase)
                 ValidationTestRunnerMain.BackupDatabase(PROJECT_NAME);
 
         }
@@ -1730,124 +1730,6 @@ namespace ValidationTestRunner {
     [TestFixture]
     [NUnitNumThreads(1)]
     static public class WorksheetTests_Local_short {
-
-        [Test]
-        static public void Run__WorkFlowManagerFunctionalityCheck_1() {
-            BoSSS.Solution.Application.InitMPI(num_threads: 1);
-
-            const string basename = "WorkFlowManagerFunctionalityCheck_1";
-
-            
-            GridCommons GridFunction() {
-                var xNodes = GenericBlas.Linspace(0, 10, 41);
-                var yNodes = GenericBlas.Linspace(-1, 1, 9);
-                GridCommons grid = Grid2D.Cartesian2DGrid(xNodes, yNodes);
-                IGrid_Extensions.DefineEdgeTags(grid, delegate (double[] X) {
-                    double x = X[0];
-                    double y = X[1];
-                    if(Math.Abs(y - (-1)) <= 1.0e-8)
-                        return "wall"; // lower wall
-                    if(Math.Abs(y - (+1)) <= 1.0e-8)
-                        return "wall"; // upper wall
-                    if(Math.Abs(x - (0.0)) <= 1.0e-8)
-                        return "Velocity_Inlet"; // inlet
-                    if(Math.Abs(x - (+10.0)) <= 1.0e-8)
-                        return "Pressure_Outlet"; // outlet
-                    throw new ArgumentOutOfRangeException("unknown domain");
-                });
-                return grid;
-            }
-
-            XNSE_Control ControlFunc() {
-                var c = new XNSE_Control();
-                
-                // general description:
-                int k = 1;
-                string desc = "Steady state, channel, k" + k;
-                c.SessionName = "SteadyStateChannel";
-                c.ProjectDescription = desc;
-                c.savetodb = true;
-                c.Tags.Add("k" + k);
-                // setting the grid:
-                c.SetGrid(GridFunction());
-                // DG polynomial degree
-                c.SetDGdegree(k);
-                // Physical parameters:
-                double reynolds = 20;
-                c.PhysicalParameters.rho_A = 1;
-                c.PhysicalParameters.mu_A = 1.0 / reynolds;
-                // Timestepping properties:
-                c.TimesteppingMode = AppControl._TimesteppingMode.Steady;
-
-                c.AddBoundaryValue("Velocity_Inlet", "VelocityX", new Formula("X => 1 - X[0]*X[0]", false));  
-
-                return c;
-            }
-
-
-            Mutex JupyterMutex = new Mutex(false, basename);
-            try {
-                // 0.) Clean leftover of previous runs
-                // -----------------------------------
-                JupyterMutex.WaitOne();
-                NotebookRunner.DeleteDatabase(basename);
-                NotebookRunner.DeleteDeployments(basename + "*");
-                BoSSSshell.WorkflowMgm.Init(basename);
-
-                var allDepl = NotebookRunner.GetAllDeployments(basename + "*");
-                Assert.Zero(allDepl.Length, $"expecting 0 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
-
-                // 1.) First run
-                // -----------------------------------
-
-                var c0 = ControlFunc();
-                var J = c0.CreateJob();
-                Assert.AreEqual(J.Status, JobStatus.PreActivation, "unexpected job status");
-                J.NumberOfMPIProcs = 2;
-                J.Reactivate();
-
-                BoSSSshell.WorkflowMgm.BlockUntilAllJobsTerminate(1000);
-
-                Assert.AreEqual(J.Status, JobStatus.FinishedSuccessful, "unexpected job status");
-                Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Length, 1, "expecting exactly one session after the workseet has been executed");
-                Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Single().ProjectName, basename, "un-expected project name");
-                allDepl = NotebookRunner.GetAllDeployments(basename + "*");
-                
-                
-                Assert.AreEqual(allDepl.Length, 1, $"expecting 1 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
-
-                // 2.) Persistence test: Test that, if the Worksheet is already executed, the job will **not** be re-submitted
-                // --------------------------------------------------------------------------------------------------------------------------
-                // execute the worksheet a second time!
-                ValidationTestRunnerMain.RunWorksheet("MetaJobManager/MetaJobManager.ipynb");
-
-                allDepl = NotebookRunner.GetAllDeployments(basename + "*");
-                Assert.AreEqual(allDepl.Length, 1, $"expecting 1 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
-                BoSSSshell.WorkflowMgm.ResetSessionsCache();
-                Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Length, 1, "expecting exactly one session after the workseet has been executed twice");
-
-                // 3.) delete deployments and test a third time:
-                // -----------------------------------------------
-                NotebookRunner.DeleteDeployments(basename + "*");
-                ValidationTestRunnerMain.RunWorksheet("MetaJobManager/MetaJobManager.ipynb");
-
-                BoSSSshell.WorkflowMgm.ResetSessionsCache();
-                Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Length, 1, "expecting exactly one session after the workseet has been executed twice");
-                allDepl = NotebookRunner.GetAllDeployments(basename + "*");
-                Assert.Zero(allDepl.Length, $"expecting 0 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
-
-
-
-            } finally {
-                JupyterMutex.ReleaseMutex();
-            }
-
-
-
-        }
-
-
-
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("BoundaryAndInitialData/BoundaryAndInitialData.ipynb")]

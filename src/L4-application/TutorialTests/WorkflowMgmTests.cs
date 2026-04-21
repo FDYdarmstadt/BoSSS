@@ -40,12 +40,16 @@ namespace BoSSS.Application.TutorialTests {
 
 
     /// <summary>
-    /// Test for the workflow management 
-    /// <summary>
+    /// Test for the workflow management; should actually be part of BoSSSpad, but here for dependency reasons
+    /// </summary>
     [TestFixture]
     [NUnitNumThreads(1)]
     static public class WorkflowMgmTests {
 
+
+        /// <summary>
+        /// test of job persistence, i.e., that a second try to submit a job actually finds the run which is already in place.
+        /// </summary>
         [Test]
         static public void Run__WorkFlowManagerFunctionalityCheck_1() {
             BoSSS.Solution.Application.InitMPI(num_threads: 1);
@@ -102,50 +106,80 @@ namespace BoSSS.Application.TutorialTests {
 
             Mutex TestMutex = new Mutex(false, basename);
             try {
+                TestMutex.WaitOne();
+                
                 // 0.) Clean leftover of previous runs
                 // -----------------------------------
-                TestMutex.WaitOne();
-                NotebookRunner.DeleteDatabase(basename);
-                NotebookRunner.DeleteDeployments(basename + "*");
-                BoSSSshell.WorkflowMgm.Init(basename);
+                {
+                    NotebookRunner.DeleteDatabase(basename);
+                    NotebookRunner.DeleteDeployments(basename + "*");
+                    BoSSSshell.WorkflowMgm.Init(basename);
 
-                var allDepl = NotebookRunner.GetAllDeployments(basename + "*");
-                Assert.Zero(allDepl.Length, $"expecting 0 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
+                    var allDepl = NotebookRunner.GetAllDeployments(basename + "*");
+                    Assert.Zero(allDepl.Length, $"expecting 0 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
+                }
 
                 // 1.) First run
                 // -----------------------------------
+                {
+                    Console.WriteLine("========================================");
+                    Console.WriteLine("  first job run...");
+                    Console.WriteLine("========================================");
 
-                var c0 = ControlFunc();
-                var J = c0.CreateJob();
-                Assert.AreEqual(J.Status, JobStatus.PreActivation, "unexpected job status");
-                J.NumberOfMPIProcs = 2;
-                J.Reactivate();
+                    var c0 = ControlFunc();
+                    var J = c0.CreateJob();
+                    Assert.AreEqual(J.Status, JobStatus.PreActivation, "unexpected job status");
+                    J.NumberOfMPIProcs = 2;
+                    J.Activate();
 
-                BoSSSshell.WorkflowMgm.BlockUntilAllJobsTerminate(1000);
+                    BoSSSshell.WorkflowMgm.BlockUntilAllJobsTerminate(1000);
 
-                Assert.AreEqual(J.Status, JobStatus.FinishedSuccessful, "unexpected job status");
-                Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Length, 1, "expecting exactly one session after the workseet has been executed");
-                Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Single().ProjectName, basename, "un-expected project name");
-                allDepl = NotebookRunner.GetAllDeployments(basename + "*");
-                Assert.AreEqual(allDepl.Length, 1, $"expecting 1 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
+                    Assert.IsTrue(J.Control.Equals(BoSSSshell.WorkflowMgm.Sessions.First().GetControl()), "equality check for control objects does not seem to work");
 
-                Assert.AreEqual(J.AllDeployments.Count(), 1, $"expecting 1 deployments, but job shows two");
+                    Assert.AreEqual(J.Status, JobStatus.FinishedSuccessful, "unexpected job status");
+                    Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Length, 1, "expecting exactly one session after the workseet has been executed");
+                    Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Single().ProjectName, basename, "un-expected project name");
+                    var allDepl = NotebookRunner.GetAllDeployments(basename + "*");
+                    Assert.AreEqual(allDepl.Length, 1, $"expecting 1 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
 
+                    Assert.AreEqual(J.AllDeployments.Count(), 1, $"expecting 1 deployments, but job shows two");
 
-/*
+                    Console.WriteLine("done. ==================================");
+                    Console.WriteLine();
+                    Console.WriteLine();
+                }
+
                 // 2.) Persistence test: Test that, if the Worksheet is already executed, the job will **not** be re-submitted
                 // --------------------------------------------------------------------------------------------------------------------------
-                // execute the worksheet a second time!
-                RunWorksheet("MetaJobManager/MetaJobManager.ipynb");
+                {
+                    BoSSSshell.WorkflowMgm.ResetProject();
 
-                allDepl = NotebookRunner.GetAllDeployments(basename + "*");
-                Assert.AreEqual(allDepl.Length, 1, $"expecting 1 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
-                BoSSSshell.WorkflowMgm.ResetSessionsCache();
-                Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Length, 1, "expecting exactly one session after the workseet has been executed twice");
+                    Console.WriteLine("========================================");
+                    Console.WriteLine("  second job run...");
+                    Console.WriteLine("========================================");
 
-                // 3.) delete deployments and test a third time:
-                // -----------------------------------------------
-                NotebookRunner.DeleteDeployments(basename + "*");
+
+                    // execute the worksheet a second time!
+                    var c1 = ControlFunc();
+                    var J = c1.CreateJob();
+                    Assert.AreEqual(J.Status, JobStatus.PreActivation, "unexpected job status");
+                    J.NumberOfMPIProcs = 2;
+                    J.Activate();
+
+                    BoSSSshell.WorkflowMgm.BlockUntilAllJobsTerminate(1000);
+
+                    var allDepl = NotebookRunner.GetAllDeployments(basename + "*");
+                    Assert.AreEqual(allDepl.Length, 1, $"expecting 1 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
+                    BoSSSshell.WorkflowMgm.ResetSessionsCache();
+                    Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Length, 1, "expecting exactly one session after the workseet has been executed twice");
+
+                    Console.WriteLine("done. ==================================");
+                    Console.WriteLine();
+                    Console.WriteLine();                }
+                /*
+                                                // 3.) delete deployments and test a third time:
+                                                // -----------------------------------------------
+                                                NotebookRunner.DeleteDeployments(basename + "*");
                 RunWorksheet("MetaJobManager/MetaJobManager.ipynb");
 
                 BoSSSshell.WorkflowMgm.ResetSessionsCache();
@@ -153,7 +187,7 @@ namespace BoSSS.Application.TutorialTests {
                 allDepl = NotebookRunner.GetAllDeployments(basename + "*");
                 Assert.Zero(allDepl.Length, $"expecting 0 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
 
-*/
+                */
 
             } finally {
                 TestMutex.ReleaseMutex();
