@@ -139,10 +139,10 @@ namespace BoSSS.Application.TutorialTests {
                     Assert.AreEqual(J.Status, JobStatus.FinishedSuccessful, "unexpected job status");
                     Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Length, 1, "expecting exactly one session after the workseet has been executed");
                     Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Single().ProjectName, basename, "un-expected project name");
+                    Assert.AreEqual(J.AllDeployments.Count(), 1, $"expecting 1 deployment");
                     var allDepl = NotebookRunner.GetAllDeployments(basename + "*");
                     Assert.AreEqual(allDepl.Length, 1, $"expecting 1 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
 
-                    Assert.AreEqual(J.AllDeployments.Count(), 1, $"expecting 1 deployments, but job shows two");
 
                     Console.WriteLine("done. ==================================");
                     Console.WriteLine();
@@ -168,31 +168,61 @@ namespace BoSSS.Application.TutorialTests {
 
                     BoSSSshell.WorkflowMgm.BlockUntilAllJobsTerminate(1000);
 
+                    Assert.IsTrue(J.Control.Equals(BoSSSshell.WorkflowMgm.Sessions.First().GetControl()), "equality check for control objects does not seem to work");
+
+                    Assert.AreEqual(J.Status, JobStatus.FinishedSuccessful, "unexpected job status");
+                    Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Length, 1, "expecting exactly one session after the workseet has been executed");
+                    Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Single().ProjectName, basename, "un-expected project name");
+                    Assert.AreEqual(J.AllDeployments.Count(), 1, $"expecting 1 deployment");
                     var allDepl = NotebookRunner.GetAllDeployments(basename + "*");
                     Assert.AreEqual(allDepl.Length, 1, $"expecting 1 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
-                    BoSSSshell.WorkflowMgm.ResetSessionsCache();
-                    Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Length, 1, "expecting exactly one session after the workseet has been executed twice");
 
                     Console.WriteLine("done. ==================================");
                     Console.WriteLine();
-                    Console.WriteLine();                }
-                /*
-                                                // 3.) delete deployments and test a third time:
-                                                // -----------------------------------------------
-                                                NotebookRunner.DeleteDeployments(basename + "*");
-                RunWorksheet("MetaJobManager/MetaJobManager.ipynb");
+                    Console.WriteLine();                
+                }
 
-                BoSSSshell.WorkflowMgm.ResetSessionsCache();
-                Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Length, 1, "expecting exactly one session after the workseet has been executed twice");
-                allDepl = NotebookRunner.GetAllDeployments(basename + "*");
-                Assert.Zero(allDepl.Length, $"expecting 0 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
 
-                */
+                // 3.) delete deployments and test a third time:
+                // -----------------------------------------------
+                {
+                    BoSSSshell.WorkflowMgm.ResetProject(ResetJobs:true, deleteDeployments:true);
+                    NotebookRunner.DeleteDeployments(basename + "*");
+
+                    Console.WriteLine("========================================");
+                    Console.WriteLine("  third job run...");
+                    Console.WriteLine("========================================");
+
+
+                    // execute the worksheet a third time!
+                    var c3 = ControlFunc();
+                    var J = c3.CreateJob();
+                    Assert.AreEqual(J.Status, JobStatus.PreActivation, "unexpected job status");
+                    J.NumberOfMPIProcs = 1;
+                    J.Activate();
+
+                    Assert.IsTrue(J.Control.Equals(BoSSSshell.WorkflowMgm.Sessions.First().GetControl()), "equality check for control objects does not seem to work");
+
+                    Assert.AreEqual(J.Status, JobStatus.FinishedSuccessful, "unexpected job status");
+                    Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Length, 1, "expecting exactly one session after the workseet has been executed");
+                    Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Single().ProjectName, basename, "un-expected project name");
+                    Assert.AreEqual(J.AllDeployments.Count(), 1, $"expecting 1 deployment");
+
+                    // note: job should have one deployment, if we can find an existing session,
+                    // but there will be no more deployment directory.
+
+                    var allDepl = NotebookRunner.GetAllDeployments(basename + "*");
+                    Assert.AreEqual(allDepl.Length, 0, $"expecting 0 deployment directories, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
+
+                    Console.WriteLine("done. ==================================");
+                    Console.WriteLine();
+                    Console.WriteLine();
+                }
 
             } finally {
                 TestMutex.ReleaseMutex();
             }
-
+            Console.WriteLine("success!");
 
 
         }

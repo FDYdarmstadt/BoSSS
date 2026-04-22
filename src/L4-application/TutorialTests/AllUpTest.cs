@@ -348,6 +348,8 @@ namespace BoSSS.Application.TutorialTests {
                         foreach(var db in dbDirs) {
                             Console.WriteLine("Deleting database: " + db.FullName);
                             db.Delete(true);
+
+                           
                         }
                     } else {
                         Console.WriteLine("Warning: missing directory: " + localBaseDir.FullName);
@@ -368,12 +370,18 @@ namespace BoSSS.Application.TutorialTests {
                 if(localBaseDir.Exists) {
                     var deplDirs = localBaseDir.GetDirectories(DirectoryWildCard, SearchOption.TopDirectoryOnly);
                     foreach(var d in deplDirs) {
+                        if(BoSSS.Foundation.IO.DatabaseUtils.IsValidBoSSSDatabase(d.ToString()))
+                            continue;
+
                         Console.WriteLine("Deleting deployment: " + d.FullName);
                         try {
                             // we can be forgiving on deletion of old deployments; 
                             // an old deployment will not harm or influence the worksheet execution
                             // (for an old database, it's a different story!
                             d.Delete(true);
+
+                           
+
                         } catch (Exception e) {
                             Console.Error.WriteLine($"{e.GetType()} during deletion of {d.FullName}: {e.Message}.");
                         }
@@ -386,19 +394,28 @@ namespace BoSSS.Application.TutorialTests {
         }
 
         public static DirectoryInfo[] GetAllDeployments(string DirectoryWildCard) {
-            var ret = new List<DirectoryInfo>();
+            var ret = new HashSet<string>(); // hash set does not seem to make the right comparison for directory info
             
             foreach (var q in BoSSSshell.ExecutionQueues) {
 
                 var localBaseDir = new DirectoryInfo(q.DeploymentBaseDirectory);
                 if(localBaseDir.Exists) {
                     var deplDirs = localBaseDir.GetDirectories(DirectoryWildCard, SearchOption.TopDirectoryOnly);
-                    ret.AddRange(deplDirs);
+                    foreach(var d in deplDirs) {
+                        if(BoSSS.Foundation.IO.DatabaseUtils.IsValidBoSSSDatabase(d.ToString()))
+                            continue;
+
+                        if(d.GetFiles().Length <= 0 && d.GetDirectories().Length <= 0)
+                            continue;
+
+
+                        ret.Add(d.ToString());
+                    }
                 }
 
             }
 
-            return ret.ToArray();
+            return ret.Select(str => new DirectoryInfo(str)).ToArray();
         }
     }
 
