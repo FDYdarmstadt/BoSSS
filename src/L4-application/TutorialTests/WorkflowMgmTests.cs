@@ -121,6 +121,7 @@ namespace BoSSS.Application.TutorialTests {
 
                 // 1.) First run
                 // -----------------------------------
+                Guid sessionGuid;
                 {
                     Console.WriteLine("========================================");
                     Console.WriteLine("  first job run...");
@@ -144,7 +145,10 @@ namespace BoSSS.Application.TutorialTests {
                     Assert.AreEqual(allDepl.Length, 1, $"expecting 1 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
 
 
-                    Console.WriteLine("done. ==================================");
+                    sessionGuid = J.LatestSession.ID;
+                    Assert.IsTrue(J.LatestSession.SuccessfulTermination, "session is expected to be successful");
+
+                    Console.WriteLine("done run 1. =============================");
                     Console.WriteLine();
                     Console.WriteLine();
                 }
@@ -177,7 +181,10 @@ namespace BoSSS.Application.TutorialTests {
                     var allDepl = NotebookRunner.GetAllDeployments(basename + "*");
                     Assert.AreEqual(allDepl.Length, 1, $"expecting 1 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
 
-                    Console.WriteLine("done. ==================================");
+                    Assert.AreEqual(sessionGuid, J.LatestSession.ID, "expecting session ID known from first run");
+                    Assert.IsTrue(J.LatestSession.SuccessfulTermination, "session is expected to be successful");
+
+                    Console.WriteLine("done run 2. =============================");
                     Console.WriteLine();
                     Console.WriteLine();                
                 }
@@ -186,7 +193,7 @@ namespace BoSSS.Application.TutorialTests {
                 // 3.) delete deployments and test a third time:
                 // -----------------------------------------------
                 {
-                    BoSSSshell.WorkflowMgm.ResetProject(ResetJobs:true, deleteDeployments:true);
+                    BoSSSshell.WorkflowMgm.ResetProject(ResetJobs:true, deleteDeployments:false);
                     NotebookRunner.DeleteDeployments(basename + "*");
 
                     Console.WriteLine("========================================");
@@ -214,11 +221,15 @@ namespace BoSSS.Application.TutorialTests {
                     var allDepl = NotebookRunner.GetAllDeployments(basename + "*");
                     Assert.AreEqual(allDepl.Length, 0, $"expecting 0 deployment directories, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
 
-                    Console.WriteLine("done. ==================================");
+                    Assert.AreEqual(sessionGuid, J.LatestSession.ID, "expecting session ID known from first run");
+                    Assert.IsTrue(J.LatestSession.SuccessfulTermination, "session is expected to be successful");
+
+                    Console.WriteLine("done run 3. =============================");
                     Console.WriteLine();
                     Console.WriteLine();
                 }
-
+            } catch(Exception) {
+                throw;
             } finally {
                 TestMutex.ReleaseMutex();
             }

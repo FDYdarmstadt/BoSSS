@@ -56,14 +56,14 @@ namespace BoSSS.Application.TutorialTests {
 
             BoSSS.Solution.Application.InitMPI(new string[0]);
 
-            try {
+           // try {
 
                 BoSSS.Application.TutorialTests.WorkflowMgmTests.Run__WorkFlowManagerFunctionalityCheck_1();
 
-            } catch(Exception e) {
+            /*} catch(Exception e) {
                 Console.WriteLine(e.Message);
                 File.WriteAllText("exception.txt", e.ToString());
-            }
+            }*/
             // start the minibatchprocessor which is used internally
             //bool iStartedThisShit = AllUpTest.OneTimeSetUp();
 

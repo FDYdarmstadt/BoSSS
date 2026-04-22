@@ -302,6 +302,7 @@ namespace BoSSS.Application.BoSSSpad {
             } else {
                 Console.WriteLine("Not deleting any sessions, because not specified (`deleteSessions:false`).");
             }
+            ResetSessionsCache();
 
             if (deleteGrids) {
                 Console.WriteLine("Deleting Grids in projects...");
