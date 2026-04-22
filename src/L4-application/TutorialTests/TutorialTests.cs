@@ -56,11 +56,11 @@ namespace BoSSS.Application.TutorialTests {
 
             BoSSS.Solution.Application.InitMPI(new string[0]);
 
-           // try {
+            /*try {
 
                 BoSSS.Application.TutorialTests.WorkflowMgmTests.Run__WorkFlowManagerFunctionalityCheck_1();
 
-            /*} catch(Exception e) {
+            } catch(Exception e) {
                 Console.WriteLine(e.Message);
                 File.WriteAllText("exception.txt", e.ToString());
             }*/
@@ -69,17 +69,25 @@ namespace BoSSS.Application.TutorialTests {
 
             var losScriptos = GetListOfScripts();
             int r = 0;
-/*
+
             int i = 1;
             foreach(var s in losScriptos) {
-                AllUpTest.RunWorksheet(s);
+                
+                try {
+
+                    AllUpTest.RunWorksheet(s);
+
+                } catch(Exception e) {
+                    Console.WriteLine(e.Message);
+                    File.WriteAllText("exception" + i + ".txt", e.ToString());
+                }
                 //Console.WriteLine($"{i} : {s}");
                 i++;
             }
             
 
             //AllUpTest.OneTimeTearDown(iStartedThisShit);
-            */
+            
             csMPI.Raw.mpiFinalize();
             return r;
 

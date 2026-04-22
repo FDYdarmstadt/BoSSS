@@ -1740,8 +1740,8 @@ namespace ValidationTestRunner {
             try {
                 JupyterMutex.WaitOne();
 
-                NotebookRunner.DeleteDatabase("Demo_BoundaryAndInitialData");
-                NotebookRunner.DeleteDeployments("Demo_BoundaryAndInitialData*");
+                WorkflowMgmTestUtils.DeleteDatabase("Demo_BoundaryAndInitialData");
+                WorkflowMgmTestUtils.DeleteDeployments("Demo_BoundaryAndInitialData*");
                 ValidationTestRunnerMain.RunWorksheet("BoundaryAndInitialData/BoundaryAndInitialData.ipynb");
             } finally {
                 JupyterMutex.ReleaseMutex();
@@ -1758,10 +1758,10 @@ namespace ValidationTestRunner {
                 // 0.) Clean leftover of previous runs
                 // -----------------------------------
                 JupyterMutex.WaitOne();
-                NotebookRunner.DeleteDatabase("MetaJobManager_Tutorial");
-                NotebookRunner.DeleteDeployments("MetaJobManager_Tutorial*");
+                WorkflowMgmTestUtils.DeleteDatabase("MetaJobManager_Tutorial");
+                WorkflowMgmTestUtils.DeleteDeployments("MetaJobManager_Tutorial*");
 
-                var allDepl = NotebookRunner.GetAllDeployments("MetaJobManager_Tutorial*");
+                var allDepl = WorkflowMgmTestUtils.GetAllDeployments("MetaJobManager_Tutorial*");
                 Assert.Zero(allDepl.Length, $"expecting 0 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
 
                 // 1.) First run
@@ -1773,7 +1773,7 @@ namespace ValidationTestRunner {
 
                 Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Length, 1, "expecting exactly one session after the workseet has been executed");
                 Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Single().ProjectName, "MetaJobManager_Tutorial", "un-expected project name");
-                allDepl = NotebookRunner.GetAllDeployments("MetaJobManager_Tutorial*");
+                allDepl = WorkflowMgmTestUtils.GetAllDeployments("MetaJobManager_Tutorial*");
                 Assert.AreEqual(allDepl.Length, 1, $"expecting 1 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
 
                 // 2.) Persistence test: Test that, if the Worksheet is already executed, the job will **not** be re-submitted
@@ -1781,19 +1781,19 @@ namespace ValidationTestRunner {
                 // execute the worksheet a second time!
                 ValidationTestRunnerMain.RunWorksheet("MetaJobManager/MetaJobManager.ipynb");
 
-                allDepl = NotebookRunner.GetAllDeployments("MetaJobManager_Tutorial*");
+                allDepl = WorkflowMgmTestUtils.GetAllDeployments("MetaJobManager_Tutorial*");
                 Assert.AreEqual(allDepl.Length, 1, $"expecting 1 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
                 BoSSSshell.WorkflowMgm.ResetSessionsCache();
                 Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Length, 1, "expecting exactly one session after the workseet has been executed twice");
 
                 // 3.) delete deployments and test a third time:
                 // -----------------------------------------------
-                NotebookRunner.DeleteDeployments("MetaJobManager_Tutorial*");
+                WorkflowMgmTestUtils.DeleteDeployments("MetaJobManager_Tutorial*");
                 ValidationTestRunnerMain.RunWorksheet("MetaJobManager/MetaJobManager.ipynb");
 
                 BoSSSshell.WorkflowMgm.ResetSessionsCache();
                 Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Length, 1, "expecting exactly one session after the workseet has been executed twice");
-                allDepl = NotebookRunner.GetAllDeployments("MetaJobManager_Tutorial*");
+                allDepl = WorkflowMgmTestUtils.GetAllDeployments("MetaJobManager_Tutorial*");
                 Assert.Zero(allDepl.Length, $"expecting 0 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
 
 
@@ -1825,8 +1825,8 @@ namespace ValidationTestRunner {
             Mutex JupyterMutex = new Mutex(false, "ConvStudyTutorial");
             try {
                 JupyterMutex.WaitOne();
-                NotebookRunner.DeleteDatabase("ConvStudyTutorial");
-                NotebookRunner.DeleteDeployments("ConvStudyTutorial*");
+                WorkflowMgmTestUtils.DeleteDatabase("ConvStudyTutorial");
+                WorkflowMgmTestUtils.DeleteDeployments("ConvStudyTutorial*");
                 ValidationTestRunnerMain.RunWorksheet("convergenceStudyTutorial/convStudy.ipynb");
             } finally {
                 JupyterMutex.ReleaseMutex();

@@ -36,7 +36,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 
-namespace BoSSS.Application.TutorialTests {
+namespace BoSSS.Application.BoSSSpad {
 
 
     /// <summary>
@@ -51,11 +51,12 @@ namespace BoSSS.Application.TutorialTests {
         /// test of job persistence, i.e., that a second try to submit a job actually finds the run which is already in place.
         /// </summary>
         [Test]
-        static public void Run__WorkFlowManagerFunctionalityCheck_1() {
+        static public void Run__WorkFlowManagerFunctionalityCheck_1(
+            [Values(1, 2)] int SessionEqualityComparisonVariant
+            ) {
             BoSSS.Solution.Application.InitMPI(num_threads: 1);
 
-            const string basename = "WorkFlowManagerFunctionalityCheck_1";
-
+            string basename = "WorkFlowManagerFunctionalityCheck_1" + SessionEqualityComparisonVariant;
 
             GridCommons GridFunction() {
                 var xNodes = GenericBlas.Linspace(0, 10, 41);
@@ -98,6 +99,8 @@ namespace BoSSS.Application.TutorialTests {
                 // Timestepping properties:
                 c.TimesteppingMode = AppControl._TimesteppingMode.Steady;
 
+                c.SessionName = "Channel_40x8k" + k;
+
                 c.AddBoundaryValue("Velocity_Inlet", "VelocityX", new Formula("X => 1 - X[0]*X[0]", false));
 
                 return c;
@@ -111,11 +114,27 @@ namespace BoSSS.Application.TutorialTests {
                 // 0.) Clean leftover of previous runs
                 // -----------------------------------
                 {
-                    NotebookRunner.DeleteDatabase(basename);
-                    NotebookRunner.DeleteDeployments(basename + "*");
+                    WorkflowMgmTestUtils.DeleteDatabase(basename);
+                    WorkflowMgmTestUtils.DeleteDeployments(basename + "*");
+                    
                     BoSSSshell.WorkflowMgm.Init(basename);
 
-                    var allDepl = NotebookRunner.GetAllDeployments(basename + "*");
+                    switch(SessionEqualityComparisonVariant) {
+                        case 1:
+                        BoSSSshell.WorkflowMgm.SetEqualityBasedSessionJobControlCorrelation();
+                        break;
+
+                        case 2:
+                        BoSSSshell.WorkflowMgm.SetNameBasedSessionJobControlCorrelation();
+                        break;
+
+                        default:
+                        throw new ArgumentOutOfRangeException(nameof(SessionEqualityComparisonVariant) + " is expected to be either 1 or 2");
+                    }
+
+
+
+                    var allDepl = WorkflowMgmTestUtils.GetAllDeployments(basename + "*");
                     Assert.Zero(allDepl.Length, $"expecting 0 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
                 }
 
@@ -141,7 +160,7 @@ namespace BoSSS.Application.TutorialTests {
                     Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Length, 1, "expecting exactly one session after the workseet has been executed");
                     Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Single().ProjectName, basename, "un-expected project name");
                     Assert.AreEqual(J.AllDeployments.Count(), 1, $"expecting 1 deployment");
-                    var allDepl = NotebookRunner.GetAllDeployments(basename + "*");
+                    var allDepl = WorkflowMgmTestUtils.GetAllDeployments(basename + "*");
                     Assert.AreEqual(allDepl.Length, 1, $"expecting 1 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
 
 
@@ -178,7 +197,7 @@ namespace BoSSS.Application.TutorialTests {
                     Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Length, 1, "expecting exactly one session after the workseet has been executed");
                     Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Single().ProjectName, basename, "un-expected project name");
                     Assert.AreEqual(J.AllDeployments.Count(), 1, $"expecting 1 deployment");
-                    var allDepl = NotebookRunner.GetAllDeployments(basename + "*");
+                    var allDepl = WorkflowMgmTestUtils.GetAllDeployments(basename + "*");
                     Assert.AreEqual(allDepl.Length, 1, $"expecting 1 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
 
                     Assert.AreEqual(sessionGuid, J.LatestSession.ID, "expecting session ID known from first run");
@@ -194,7 +213,7 @@ namespace BoSSS.Application.TutorialTests {
                 // -----------------------------------------------
                 {
                     BoSSSshell.WorkflowMgm.ResetProject(ResetJobs:true, deleteDeployments:false);
-                    NotebookRunner.DeleteDeployments(basename + "*");
+                    WorkflowMgmTestUtils.DeleteDeployments(basename + "*");
 
                     Console.WriteLine("========================================");
                     Console.WriteLine("  third job run...");
@@ -218,7 +237,7 @@ namespace BoSSS.Application.TutorialTests {
                     // note: job should have one deployment, if we can find an existing session,
                     // but there will be no more deployment directory.
 
-                    var allDepl = NotebookRunner.GetAllDeployments(basename + "*");
+                    var allDepl = WorkflowMgmTestUtils.GetAllDeployments(basename + "*");
                     Assert.AreEqual(allDepl.Length, 0, $"expecting 0 deployment directories, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
 
                     Assert.AreEqual(sessionGuid, J.LatestSession.ID, "expecting session ID known from first run");
