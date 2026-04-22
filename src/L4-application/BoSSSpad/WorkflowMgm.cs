@@ -297,21 +297,32 @@ namespace BoSSS.Application.BoSSSpad {
             if (deleteSessions) {
                 Console.WriteLine("Deleting Sessions in projects...");
                 foreach(var s in this.Sessions) {
-                    s.Delete(true);
+                    var id = s.ID;
+                    try {
+                        s.Delete(true);
+                    } catch(Exception e) {
+                        Console.Error.WriteLine($"Exception deleting session {id}:" + e.ToString());
+                    }
                 }
             } else {
                 Console.WriteLine("Not deleting any sessions, because not specified (`deleteSessions:false`).");
             }
-            ResetSessionsCache();
+            ResetSessionsCache(); // forget cached sessions
 
-            if (deleteGrids) {
+            if(deleteGrids) {
                 Console.WriteLine("Deleting Grids in projects...");
-                foreach (var g in this.Grids) {
-                    g.Delete(true);
+                foreach(var g in this.Grids) {
+                    var id = g.ID;
+                    try {
+                        g.Delete(true);
+                    } catch(Exception e) {
+                        Console.Error.WriteLine($"Exception deleting grid {id}:" + e.ToString());
+                    }
                 }
             } else {
                 Console.WriteLine("Not deleting any grids, because not specified (`deleteGrids:false`).");
             }
+            m_Grids = null; // forget cached grids
 
             if (deleteDeployments) {
                 Console.WriteLine("Deleting Job deployments in projects...");

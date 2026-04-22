@@ -116,11 +116,14 @@ namespace BoSSS.Foundation.IO {
                         found = true;
                         GridGuid = eg.ID;
                     } else {
-                        Console.WriteLine("Running in bacvkup mode, and no equivalent grid is found.");
+                        Console.WriteLine("Running in backup mode, and no equivalent grid is found.");
                         return grd.ID;
                     }
                 } else {
+                    var GridGuidB4 = grid.ID;
                     GridGuid = database.Controller.DBDriver.SaveGridIfUnique(ref grid, out found, database);
+                    if(!GridGuidB4.Equals(GridGuid))
+                        BoSSSshell.WorkflowMgm?.InvalidateCaches();
                 }
 
                 if (found) {
@@ -134,6 +137,7 @@ namespace BoSSS.Foundation.IO {
                 }
 
                 GridGuid = database.Controller.DBDriver.SaveGrid(grid, database);
+                BoSSSshell.WorkflowMgm?.InvalidateCaches();
             }
 
             return GridGuid;
@@ -176,7 +180,11 @@ namespace BoSSS.Foundation.IO {
                         return grd;
                     }
                 } else {
+                    var GridGuidB4 = grid.ID;
                     GridGuid = database.Controller.DBDriver.SaveGridIfUnique(ref grid, out found, database);
+                    if(!GridGuidB4.Equals(GridGuid))
+                        BoSSSshell.WorkflowMgm?.InvalidateCaches();
+
                 }
 
 
@@ -190,6 +198,7 @@ namespace BoSSS.Foundation.IO {
                     Console.WriteLine("BoSSSpad is in backup mode, not saving anything.");
                 } else {
                     database.Controller.DBDriver.SaveGrid(grid, database);
+                    BoSSSshell.WorkflowMgm?.InvalidateCaches();
                 }
                 
             }

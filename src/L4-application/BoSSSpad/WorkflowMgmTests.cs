@@ -116,8 +116,10 @@ namespace BoSSS.Application.BoSSSpad {
                 {
                     WorkflowMgmTestUtils.DeleteDatabase(basename);
                     WorkflowMgmTestUtils.DeleteDeployments(basename + "*");
-                    
+
+                    BoSSSshell.Reset();
                     BoSSSshell.WorkflowMgm.Init(basename);
+                    BoSSSshell.WorkflowMgm.ResetProject(true, true, true, true);
 
                     switch(SessionEqualityComparisonVariant) {
                         case 1:
@@ -203,6 +205,8 @@ namespace BoSSS.Application.BoSSSpad {
                     Assert.AreEqual(sessionGuid, J.LatestSession.ID, "expecting session ID known from first run");
                     Assert.IsTrue(J.LatestSession.SuccessfulTermination, "session is expected to be successful");
 
+                    Assert.AreEqual(1, BoSSSshell.WorkflowMgm.Grids.Length, "expecting exactly one grid");
+
                     Console.WriteLine("done run 2. =============================");
                     Console.WriteLine();
                     Console.WriteLine();                
@@ -224,7 +228,7 @@ namespace BoSSS.Application.BoSSSpad {
                     var c3 = ControlFunc();
                     var J = c3.CreateJob();
                     Assert.AreEqual(J.Status, JobStatus.PreActivation, "unexpected job status");
-                    J.NumberOfMPIProcs = 1;
+                    J.NumberOfMPIProcs = 1; // different number of procs should habe no effect
                     J.Activate();
 
                     Assert.IsTrue(J.Control.Equals(BoSSSshell.WorkflowMgm.Sessions.First().GetControl()), "equality check for control objects does not seem to work");
@@ -243,6 +247,8 @@ namespace BoSSS.Application.BoSSSpad {
                     Assert.AreEqual(sessionGuid, J.LatestSession.ID, "expecting session ID known from first run");
                     Assert.IsTrue(J.LatestSession.SuccessfulTermination, "session is expected to be successful");
 
+                    Assert.AreEqual(1, BoSSSshell.WorkflowMgm.Grids.Length, "expecting exactly one grid");
+
                     Console.WriteLine("done run 3. =============================");
                     Console.WriteLine();
                     Console.WriteLine();
@@ -250,7 +256,11 @@ namespace BoSSS.Application.BoSSSpad {
             } catch(Exception) {
                 throw;
             } finally {
+                WorkflowMgmTestUtils.DeleteDeployments(basename + "*");
+                WorkflowMgmTestUtils.DeleteDatabase(basename);
+
                 TestMutex.ReleaseMutex();
+
             }
             Console.WriteLine("success!");
 
