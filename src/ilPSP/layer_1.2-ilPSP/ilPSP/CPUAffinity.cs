@@ -285,7 +285,8 @@ namespace ilPSP.Utils {
         /// </param>
         /// <param name="allequal">
         /// if true, all MPI ranks on the current Compute Node have exclusive sets of CPUs.
-        /// </param>        /// <returns>
+        /// </param>        
+        /// <returns>
         /// list of CPU indices for all MPI processes running on the current Symmetric-Multi-Threading (SMT) Node (aka. the current Computer)
         /// </returns>
         public static int[] CpuListOnSMP(IEnumerable<int> __CPUlist, out bool disjoint, out bool allequal) {
@@ -313,14 +314,13 @@ namespace ilPSP.Utils {
                 }
             }
 
-            allequal = GlobalCPUList.SetEquals(CPUList);
 
             if(SizeOnSMP == 1) {
-                Debug.Assert(allequal == true);
-                Debug.Assert(disjoint== true);
                 disjoint = false;
+                allequal = true;
+            } else {
+                allequal = CPUList.SetEquals(CPUList);
             }
-
 
             var rr = r.ToArray();
             Array.Sort(rr);
