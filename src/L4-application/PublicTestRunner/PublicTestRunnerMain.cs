@@ -540,12 +540,20 @@ namespace PublicTestRunner {
 
                 modFilter = modFilter.Split("\\", StringSplitOptions.RemoveEmptyEntries)[0];
 
-                if(modFilter.WildcardMatch(Path.GetFileNameWithoutExtension(a.Location)) == expect) {
-                    return true;
+                if(expect == false) {
+                    // an exclude-filter
+                    if(modFilter.WildcardMatch(Path.GetFileNameWithoutExtension(a.Location)) == true) {
+                        return false;
+                    }
+                } else {
+                    // an include-filter
+                    if(modFilter.WildcardMatch(Path.GetFileNameWithoutExtension(a.Location)) == true) {
+                        return true;
+                    }
                 }
             }
 
-            return false;
+            return false; // no match 
         }
 
         /// <summary>
