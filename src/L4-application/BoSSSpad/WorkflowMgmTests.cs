@@ -154,11 +154,26 @@ namespace BoSSS.Application.BoSSSpad {
                     J.NumberOfMPIProcs = 2;
                     J.Activate();
 
+                    Console.WriteLine("Waiting for jobs to finish...");
                     BoSSSshell.WorkflowMgm.BlockUntilAllJobsTerminate(1000);
+                    Console.WriteLine("All jobs finished.");
+                    
+                    /*
+                    var si = BoSSSshell.WorkflowMgm.Sessions.First();
+                    Console.WriteLine("First session: " +  si);
+                    while(si.SuccessfulTermination == false) {
+                        Console.WriteLine("   Triggering reload...");
+                        if(si is SessionProxy sp)
+                            sp.TriggerReload = true;
+                        Thread.Sleep(1000*3);
+                        Console.WriteLine("    First session: " + si);
+                    }
+                    */
 
                     Assert.IsTrue(J.Control.Equals(BoSSSshell.WorkflowMgm.Sessions.First().GetControl()), "equality check for control objects does not seem to work");
 
-                    Assert.AreEqual(J.Status, JobStatus.FinishedSuccessful, "unexpected job status");
+                    var s = J.GetStatus(true);
+                    Assert.AreEqual(JobStatus.FinishedSuccessful, s, "unexpected job status: " + s);
                     Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Length, 1, "expecting exactly one session after the workseet has been executed");
                     Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Single().ProjectName, basename, "un-expected project name");
                     Assert.AreEqual(J.AllDeployments.Count(), 1, $"expecting 1 deployment");
@@ -168,6 +183,11 @@ namespace BoSSS.Application.BoSSSpad {
 
                     sessionGuid = J.LatestSession.ID;
                     Assert.IsTrue(J.LatestSession.SuccessfulTermination, "session is expected to be successful");
+
+                    Console.WriteLine("Session runtime: " + J.LatestSession.GetRunTime());
+                    Console.WriteLine("Job runtime: " + J.LatestDeployment.RunTime);
+
+                    //Assert.IsTrue(J.LatestDeployment.RunTime.TotalSeconds > 0, "expecting a non-zero runtime");
 
                     Console.WriteLine("done run 1. =============================");
                     Console.WriteLine();
@@ -256,8 +276,8 @@ namespace BoSSS.Application.BoSSSpad {
             } catch(Exception) {
                 throw;
             } finally {
-                WorkflowMgmTestUtils.DeleteDeployments(basename + "*");
-                WorkflowMgmTestUtils.DeleteDatabase(basename);
+                //WorkflowMgmTestUtils.DeleteDeployments(basename + "*");
+                //WorkflowMgmTestUtils.DeleteDatabase(basename);
 
                 TestMutex.ReleaseMutex();
 

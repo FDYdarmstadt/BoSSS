@@ -11,15 +11,12 @@ using ilPSP.Tracing;
 using MPI.Wrappers;
 using ilPSP.Utils;
 
-namespace BoSSS.Foundation.IO
-{
-    class TimeStepDatabaseDriver : MPIProcess
-    {
+namespace BoSSS.Foundation.IO {
+    class TimeStepDatabaseDriver :MPIProcess {
 
         readonly IVectorDataSerializer Driver;
         IFileSystemDriver fsDriver;
-        public TimeStepDatabaseDriver(IVectorDataSerializer driver, IFileSystemDriver FsDriver)
-        {
+        public TimeStepDatabaseDriver(IVectorDataSerializer driver, IFileSystemDriver FsDriver) {
             fsDriver = FsDriver;
             Driver = driver;
         }
@@ -30,15 +27,12 @@ namespace BoSSS.Foundation.IO
         public T LoadTimestepInfo<T>(Guid timestepGuid, ISessionInfo session, IDatabaseInfo database)
             where T : TimestepInfo //
         {
-            using (var tr = new FuncTrace())
-            {
+            using(var tr = new FuncTrace()) {
                 tr.Info("Loading time-step " + timestepGuid);
 
                 T tsi = null;
-                if (MyRank == 0)
-                {
-                    using (Stream s = fsDriver.GetTimestepStream(false, timestepGuid))
-                    {
+                if(MyRank == 0) {
+                    using(Stream s = fsDriver.GetTimestepStream(false, timestepGuid)) {
                         tsi = (T)Driver.Deserialize(s, typeof(T));
                         tsi.Session = session;
                         s.Close();
@@ -56,12 +50,10 @@ namespace BoSSS.Foundation.IO
         /// Saves a time-step to the database's persistent memory.
         /// </summary>
         /// <param name="_tsi">Contains Id etc.</param>
-        public void SaveTimestep(TimestepInfo _tsi)
-        {
-            using (var tr = new FuncTrace())
-            {
+        public void SaveTimestep(TimestepInfo _tsi) {
+            using(var tr = new FuncTrace()) {
 
-                if (!(_tsi.ID.Equals(Guid.Empty) && _tsi.StorageID.Equals(Guid.Empty)))
+                if(!(_tsi.ID.Equals(Guid.Empty) && _tsi.StorageID.Equals(Guid.Empty)))
                     throw new ArgumentException("Timestep is already saved in database");
                 var fields = _tsi.Fields.ToArray();
                 var GridDat = fields[0].GridDat;
@@ -69,13 +61,11 @@ namespace BoSSS.Foundation.IO
                 {
                     List<DGField> FieldsFlatten = new List<DGField>();
                     TimestepInfo.FlattenHierarchy(FieldsFlatten, fields);
-                    foreach (var f in FieldsFlatten)
-                    {
-                        if (!object.ReferenceEquals(f.GridDat, GridDat))
+                    foreach(var f in FieldsFlatten) {
+                        if(!object.ReferenceEquals(f.GridDat, GridDat))
                             throw new ArgumentException("mismatch in GridData object.");
 
-                        if (!fields.Contains(f, (a, b) => object.ReferenceEquals(a, b)))
-                        {
+                        if(!fields.Contains(f, (a, b) => object.ReferenceEquals(a, b))) {
                             // here, we ensure that the 'fields' -- list is complete, i.e.
                             // that the flatten hierarchy contains no field which is not already a memeber of 'fields'.
                             // The purpose is e.g. to prevent saving an XDG field without the required level-set field.
@@ -119,19 +109,14 @@ namespace BoSSS.Foundation.IO
                 // =================
                 _tsi.ID = Guid.NewGuid().MPIBroadcast(0);
                 Exception e = null;
-                if (MyRank == 0)
-                {
-                    try
-                    {
+                if(MyRank == 0) {
+                    try {
                         //tsi = new TimestepInfo(physTime, currentSession, TimestepNo, fields, VectorGuid);
-                        using (var s = fsDriver.GetTimestepStream(true, _tsi.ID))
-                        {
+                        using(var s = fsDriver.GetTimestepStream(true, _tsi.ID)) {
                             Driver.Serialize(s, _tsi, typeof(TimestepInfo));
                             s.Close();
                         }
-                    }
-                    catch (Exception ee)
-                    {
+                    } catch(Exception ee) {
                         e = ee;
                         Console.Error.WriteLine(ee.GetType().Name + " on rank " + MyRank + " saving time-step " + _tsi.TimeStepNumber + ": " + ee.Message);
                         Console.Error.WriteLine(ee.StackTrace);
@@ -142,15 +127,11 @@ namespace BoSSS.Foundation.IO
                 // log session
                 // ===========
                 SessionInfo currentSession = (SessionInfo)(_tsi.Session); // hack
-                if (MyRank == 0)
-                {
+                if(MyRank == 0) {
 
-                    try
-                    {
+                    try {
                         currentSession.LogTimeStep(_tsi.ID);
-                    }
-                    catch (Exception ee)
-                    {
+                    } catch(Exception ee) {
                         e = ee;
                         Console.Error.WriteLine(ee.GetType().Name + " on rank " + MyRank + " saving time-step " + _tsi.TimeStepNumber + ": " + ee.Message);
                         Console.Error.WriteLine(ee.StackTrace);
@@ -165,17 +146,13 @@ namespace BoSSS.Foundation.IO
         /// <summary>
         /// loads a single <see cref="TimestepInfo"/>-object from the database.
         /// </summary>
-        public TimestepInfo LoadTimestepInfo(Guid timestepGuid, ISessionInfo session, IDatabaseInfo database)
-        {
-            using (var tr = new FuncTrace())
-            {
+        public TimestepInfo LoadTimestepInfo(Guid timestepGuid, ISessionInfo session, IDatabaseInfo database) {
+            using(var tr = new FuncTrace()) {
                 tr.Info("Loading time-step " + timestepGuid);
 
                 TimestepInfo tsi = null;
-                if (MyRank == 0)
-                {
-                    using (Stream s = fsDriver.GetTimestepStream(false, timestepGuid))
-                    {
+                if(MyRank == 0) {
+                    using(Stream s = fsDriver.GetTimestepStream(false, timestepGuid)) {
                         tsi = (TimestepInfo)Driver.Deserialize(s, typeof(TimestepInfo));
                         tsi.Session = session;
                         s.Close();
@@ -194,24 +171,18 @@ namespace BoSSS.Foundation.IO
         /// </summary>
         /// <param name="sessionGuid">ID of the session.</param>
         /// <returns>A collection of th session's timestep IDs.</returns>
-        public IEnumerable<Guid> GetTimestepGuids(Guid sessionGuid)
-        {
+        public IEnumerable<Guid> GetTimestepGuids(Guid sessionGuid) {
             IList<Guid> timestepUids = new List<Guid>();
 
-            try
-            {
-                using (StreamReader timestepLogReader =
-                new StreamReader(fsDriver.GetTimestepLogStream(sessionGuid)))
-                {
+            try {
+                using(StreamReader timestepLogReader =
+                new StreamReader(fsDriver.GetTimestepLogStream(sessionGuid))) {
 
-                    while (!timestepLogReader.EndOfStream)
-                    {
+                    while(!timestepLogReader.EndOfStream) {
                         timestepUids.Add(Guid.Parse(timestepLogReader.ReadLine()));
                     }
                 }
-            }
-            catch (FileNotFoundException)
-            {
+            } catch(FileNotFoundException) {
                 return new Guid[0];
             }
 
@@ -224,28 +195,22 @@ namespace BoSSS.Foundation.IO
         /// </summary>
         /// <param name="sessionGuid"></param>
         /// <param name="timestepGuid"></param>
-        public void RemoveTimestepGuid(Guid sessionGuid, Guid timestepGuid)
-        {
+        public void RemoveTimestepGuid(Guid sessionGuid, Guid timestepGuid) {
             string logPath = fsDriver.GetTimestepLogPath(sessionGuid);
             string[] lines = File.ReadAllLines(logPath);
 
             bool match = false;
             List<string> reducedLines = new List<string>();
-            foreach (string line in lines)
-            {
+            foreach(string line in lines) {
                 Guid guid = Guid.Parse(line);
-                if (guid.Equals(timestepGuid))
-                {
+                if(guid.Equals(timestepGuid)) {
                     match = true;
-                }
-                else
-                {
+                } else {
                     reducedLines.Add(line);
                 }
             }
 
-            if (!match)
-            {
+            if(!match) {
                 throw new IOException(String.Format(
                     "Time-step guid {0} was not present in the time-step log for session {1}",
                     timestepGuid,
@@ -314,24 +279,19 @@ namespace BoSSS.Foundation.IO
         /// By using this method, it is ensured that the loaded/returned fields
         /// have the same DG polynomial degree as in the database.
         /// </remarks>
-        public IEnumerable<DGField> LoadFields(ITimestepInfo info, IGridData grdDat, IEnumerable<string> NameFilter = null)
-        {
-            using (var tr = new FuncTrace())
-            {
+        public IEnumerable<DGField> LoadFields(ITimestepInfo info, IGridData grdDat, IEnumerable<string> NameFilter = null) {
+            using(var tr = new FuncTrace()) {
                 // check
                 // =====
-                if (!info.Grid.ID.Equals(grdDat.GridID))
+                if(!info.Grid.ID.Equals(grdDat.GridID))
                     throw new ArgumentException("Mismatch in Grid.");
 
                 // Instantiate
                 // ==========
                 IEnumerable<DGField.FieldInitializer> F2LoadInfo;
-                if (NameFilter != null)
-                {
+                if(NameFilter != null) {
                     F2LoadInfo = info.FieldInitializers.Where(fi => NameFilter.Contains(fi.Identification, (a, b) => a.Equals(b)));
-                }
-                else
-                {
+                } else {
                     F2LoadInfo = info.FieldInitializers;
                 }
 

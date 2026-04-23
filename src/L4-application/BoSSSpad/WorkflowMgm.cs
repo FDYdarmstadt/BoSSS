@@ -798,6 +798,13 @@ namespace BoSSS.Application.BoSSSpad {
                     if(terminate) {
                         Console.WriteLine("All jobs finished.");
                         m_Sessions = null;
+                        Thread.Sleep((int)(1000.0 * 30));
+                        foreach( var si in this.Sessions) {
+                            if(si is SessionProxy sp) {
+                                sp.TriggerReload = true;
+                            }
+                        }
+                        m_Sessions = null;
                         return;
                     }
 

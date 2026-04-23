@@ -355,7 +355,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
             if(!bpc.IsDatabaseAllowed(m_ctrl)) {
-                throw new IOException($"Database {ctrl_db} is not allowed for {this.ToString()}; You might either use a different database for this computation OR modify the 'AllowedDatabasesPaths' in '~/.BoSSS/etc/BatchProcessorConfig.json'.");
+                throw new IOException($"Database '{ctrl_db}' is not allowed for {this.ToString()}; You might either use a different database for this computation OR modify the 'AllowedDatabasesPaths' in '~/.BoSSS/etc/BatchProcessorConfig.json'.");
             }
 
 
@@ -1001,8 +1001,15 @@ namespace BoSSS.Application.BoSSSpad {
             /// 
             /// </summary>
             public override string ToString() {
+                string _id = "nix";
+                if(this.Session != null)
+                    _id = this.Session.ID.ToString();
+
                 return "Job token: "
-                    + (this.BatchProcessorIdentifierToken ?? "unknown") + ", "
+                    //+ "FullPath = " + (this?.DeploymentDirectory?.FullName ?? "null") + " "
+                    //+ "Session = " + _id
+                    //+ " "
+                    + (this.BatchProcessorIdentifierToken ?? "unknown-token") + ", "
                     + this.Status
                     + " '" + (this.RelativeDeploymentDirectory ?? "unkown_DeploymentDirectory") + "'"
                     + (m_owner.AssignedBatchProc != null ? (" @ " + m_owner.AssignedBatchProc) : "");
@@ -1194,7 +1201,7 @@ namespace BoSSS.Application.BoSSSpad {
 
         void UpdateDeployments() {
             using(var tr = new FuncTrace()) {
-
+                //tr.InfoToConsole = true;
 
                 // determine all new sessions
                 // ==========================
@@ -1204,6 +1211,7 @@ namespace BoSSS.Application.BoSSSpad {
                         KnownSessionGuids.Add(dep.Session.ID);
                     }
                 }
+                tr.Info("KnownSessionGuids: " + KnownSessionGuids.ToConcatString("[", ", ", "]"));
 
 
                 ISessionInfo[] AllNewSessionsTotal;
@@ -1212,15 +1220,24 @@ namespace BoSSS.Application.BoSSSpad {
                         .Where(sinf => !KnownSessionGuids.Contains(sinf.ID)).ToArray(); // for performance reasons, filter sessions that we already know
                 }
 
+
                 ISessionInfo[] AllNewSessions;
                 using(new BlockTrace("SessionInfoJobCorrelation", tr)) {
                     AllNewSessions = AllNewSessionsTotal
                         .Where(sinf => BoSSSshell.WorkflowMgm.SessionInfoJobCorrelation(sinf, this)).ToArray();
+                    foreach(var si in AllNewSessions) {
+                        if(si is SessionProxy sip) {
+                            sip.TriggerReload = true;
+                        }
+                    }
                 }
+                tr.Info("AllNewSessions: " + AllNewSessions.ToConcatString("[", ", ", "]"));
 
                 // add all new deployment directories
                 // ==================================
-                foreach(DirectoryInfo dirInfo in this.GetAllUnkonwnExistingDeployDirectories()) {
+                var deplDirs = this.GetAllUnkonwnExistingDeployDirectories();
+                tr.Info("deplDirs = " + deplDirs.ToConcatString("[", ", ", "]"));
+                foreach(DirectoryInfo dirInfo in deplDirs) {
                     m_Deployments.Add(new Deployment(dirInfo, this));
                 }
 
@@ -1245,6 +1262,7 @@ namespace BoSSS.Application.BoSSSpad {
                 for(int i = 0; i < AllNewSessions.Length; i++) {
                     var sinf = AllNewSessions[i];
                     if(sinf != null) {
+                        tr.Info($"deploment from session {sinf.ID} -- no directory: {sinf.DeployPath ?? "null"}");
                         // deployment was deleted, but some session was found in the database.
                         m_Deployments.Add(new Deployment(sinf, this));
                     }
@@ -1819,6 +1837,13 @@ namespace BoSSS.Application.BoSSSpad {
                         Deployment[] Success = DeploymentsSoFar.Where(dep => dep.fixedStatus == JobStatus.FinishedSuccessful).Select(TT => TT.Depl).ToArray();
                         tr.Info("Success: " + Success.Length);
                         if(SessionReqForSuccess) {
+                            foreach(ISessionInfo si in this.AllSessions) {
+                                if(si is SessionProxy sip) {
+                                    sip.TriggerReload = true;
+                                }
+                            }
+
+
                             ISessionInfo[] SuccessSessions = this.AllSessions.Where(si => si.SuccessfulTermination()).OrderByDescending(sess => sess.CreationTime).ToArray();
                             if(SuccessSessions.Length <= 0) {
                                 // look twice
@@ -1834,7 +1859,7 @@ namespace BoSSS.Application.BoSSSpad {
                             }
 
                             if(Success.Length > 0) {
-                                tr.Info($"Note: found {Success.Length} successful deployment(s), but job is configured to require a successful result session ('this.SessionReqForSuccess' is true), and none is found. {this.AllSessions.Length} sessions correlated to this job fount in total.");
+                                tr.Info($"Note: found {Success.Length} successful deployment(s), but job is configured to require a successful result session ('this.SessionReqForSuccess' is true), and none is found. {this.AllSessions.Length} sessions correlated to this job fount in total {this.AllSessions.ToConcatString("[", ", ", "]")}.");
                             }
 
                             if(WriteHints) {

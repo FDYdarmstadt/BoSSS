@@ -99,16 +99,20 @@ namespace BoSSS.Application.BoSSSpad {
 
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
-            //BoSSS.Solution.Application.InitMPI(num_threads: 1);
-            //try { 
-            //WorkflowMgmTests.Run__WorkFlowManagerFunctionalityCheck_1(1);
-            //WorkflowMgmTests.Run__WorkFlowManagerFunctionalityCheck_1(2);
-            //} catch(Exception e) {
-            //    Console.WriteLine(e.Message);
-            //    File.WriteAllText("exception.txt", e.ToString());
-            //}
-            //Assert.IsTrue(false, "remove me");
-
+            /*if(args[0] == "abcd") {
+                BoSSS.Solution.Application.InitMPI(num_threads: 1);
+                try {
+                    WorkflowMgmTests.Run__WorkFlowManagerFunctionalityCheck_1(1);
+                    //WorkflowMgmTests.Run__WorkFlowManagerFunctionalityCheck_1(2);
+                } catch(Exception e) {
+                    Console.WriteLine(e.Message);
+                    File.WriteAllText("exception.txt", e.ToString());
+                }
+                string basename = "MetaJobManager_Tutorial";
+                WorkflowMgmTestUtils.DeleteDatabase(basename);
+                WorkflowMgmTestUtils.DeleteDeployments(basename + "*");
+                return 0;
+            }*/
 
 
             // interpretation of command line options

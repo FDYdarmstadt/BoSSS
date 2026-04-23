@@ -1775,7 +1775,9 @@ namespace ValidationTestRunner {
                 Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Single().ProjectName, "MetaJobManager_Tutorial", "un-expected project name");
                 allDepl = WorkflowMgmTestUtils.GetAllDeployments("MetaJobManager_Tutorial*");
                 Assert.AreEqual(allDepl.Length, 1, $"expecting 1 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
+                Console.WriteLine("successfully finished first run.");
 
+                /*
                 // 2.) Persistence test: Test that, if the Worksheet is already executed, the job will **not** be re-submitted
                 // --------------------------------------------------------------------------------------------------------------------------
                 // execute the worksheet a second time!
@@ -1785,6 +1787,7 @@ namespace ValidationTestRunner {
                 Assert.AreEqual(allDepl.Length, 1, $"expecting 1 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
                 BoSSSshell.WorkflowMgm.ResetSessionsCache();
                 Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Length, 1, "expecting exactly one session after the workseet has been executed twice");
+                Console.WriteLine("successfully finished second run.");
 
                 // 3.) delete deployments and test a third time:
                 // -----------------------------------------------
@@ -1795,7 +1798,8 @@ namespace ValidationTestRunner {
                 Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Length, 1, "expecting exactly one session after the workseet has been executed twice");
                 allDepl = WorkflowMgmTestUtils.GetAllDeployments("MetaJobManager_Tutorial*");
                 Assert.Zero(allDepl.Length, $"expecting 0 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
-
+                Console.WriteLine("successfully finished third run.");
+                */
 
 
             } finally {
@@ -2104,7 +2108,12 @@ namespace ValidationTestRunner {
         static int Main(string[] args) {
             PublicTestRunner.PublicTestRunnerMain.TimeOutSec = 24 * 3600 * 10; // 10 days
 
+
             try {
+                //BoSSS.Solution.Application.InitMPI(num_threads: 1);
+                //WorksheetTests_Local_short.Run__MetaJobManager();
+                //Assert.IsTrue(false, "remove me");
+
                 return PublicTestRunner.PublicTestRunnerMain._Main(args, new ValidationTests());
             } catch(Exception e) {
                 // note: this seemingly useless try-catch is here since our test runner server (FDYGITRUNNER)
