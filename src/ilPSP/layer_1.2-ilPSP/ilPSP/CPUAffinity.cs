@@ -314,14 +314,13 @@ namespace ilPSP.Utils {
                 }
             }
 
-
             if(SizeOnSMP == 1) {
                 disjoint = false;
                 allequal = true;
             } else {
-                allequal = CPUList.SetEquals(CPUList);
+                allequal = r.SetEquals(CPUList);
             }
-
+ 
             var rr = r.ToArray();
             Array.Sort(rr);
             return rr;
