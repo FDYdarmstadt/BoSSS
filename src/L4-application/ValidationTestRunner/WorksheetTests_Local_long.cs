@@ -988,7 +988,7 @@ namespace ValidationTestRunner {
         [NUnitFileToCopyHack("XNSFE_Solver/SlipConvergence/*.ipynb", "XNSFE_Solver/SlipConvergence/*.txt")]
         [Test]
         static public void Run__SlipConvergence() {
-            // --test=ValidationTestRunner.WorksheetTests_Local.Run__SlipConvergence
+            // --test=ValidationTestRunner.WorksheetTests_Local_long.Run__SlipConvergence
             Run__LongTest(
                 "SlipConvergence_Droplet",
                 [
@@ -1005,16 +1005,16 @@ namespace ValidationTestRunner {
         /// </summary>
         [NUnitFileToCopyHack("XNSFE_Solver/SlipConvergence/*.ipynb", "XNSFE_Solver/SlipConvergence/*.txt")]
         [Test]
-        static public void Run__SlipConvergence_Zoom() {
-            // --test=ValidationTestRunner.WorksheetTests_Local.Run__SlipConvergence
+        static public void Run__Zoom_SlipConvergence() {
+            // --test=ValidationTestRunner.WorksheetTests_Local_long.Run__SlipConvergence
             Run__LongTest(
-                "SlipConvergence_Droplet_Zoom",
+                "Zoom_SlipConvergence_Droplet",
                 [
-                    "XNSFE_Solver/SlipConvergence/SlipConvergence_Droplet_Zoom.ipynb",
-                    "XNSFE_Solver/SlipConvergence/SlipConvergence_Droplet_Zoom_Postprocessing.ipynb"
+                    "XNSFE_Solver/SlipConvergence/Zoom_SlipConvergence_Droplet.ipynb",
+                    "XNSFE_Solver/SlipConvergence/Zoom_SlipConvergence_Droplet_Postprocessing.ipynb"
                 ],
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0),
-                "SlipConvergence_Droplet_Zoom @ FDYcluster");
+                "Zoom_SlipConvergence_Droplet @ FDYcluster");
         }
 
         /// <summary>

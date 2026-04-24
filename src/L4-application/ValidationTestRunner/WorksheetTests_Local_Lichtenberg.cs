@@ -134,8 +134,4 @@ namespace ValidationTestRunner {
             ValidationTestRunnerMain.BackupDatabase("MetaJobManager_Tutorial");
         }
     }
-
- 
-
-       
 }
