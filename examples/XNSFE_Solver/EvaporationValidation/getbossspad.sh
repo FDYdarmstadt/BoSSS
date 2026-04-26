@@ -1,1 +1,3 @@
-dotnet publish ../../../../internal/src/Master.sln -c Release -v q -o ./binaries
+dotnet publish ../../../src/L4-application/BoSSSpad/BoSSSpad.csproj -c Release -v q -o ./binaries > build.out
+echo $?
+

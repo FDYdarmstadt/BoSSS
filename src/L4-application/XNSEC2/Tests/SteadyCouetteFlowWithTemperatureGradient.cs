@@ -52,7 +52,7 @@ namespace BoSSS.Application.XNSEC {
         /// <summary>
         /// SteadyCouetteFlowWithTemperatureGradient
         /// </summary>
-        static public XNSEC_Control SteadyCouetteFlowWithTemperatureGradient(int DGp = 2, int nCells = 5, string dbpath = null, bool powerLaw = true) {
+        static public XNSEC_Control SteadyCouetteFlowWithTemperatureGradient(int DGp = 2, int nCells = 5, string dbpath = null, string altdbpath = null, bool powerLaw = true) {
             XNSEC_Control C = new XNSEC_Control();
             //Console.WriteLine("SteadyCouetteFlowWithTemperatureGradient");
             C.NumberOfChemicalSpecies = 1;
@@ -60,6 +60,7 @@ namespace BoSSS.Application.XNSEC {
             // Solver configuration
             // ==============
             C.DbPath = dbpath; // "D:\\bosss_db"; 
+            C.AlternateDbPaths = [(altdbpath, null)];
             C.ProjectName = "CouetteFlowTempGrad_DG" + DGp + "K" + nCells;
             C.ProjectDescription = "Steady Low Mach couette flow with temperature gradient";
             C.savetodb = dbpath == null ? false : true;

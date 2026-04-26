@@ -106,7 +106,14 @@ namespace ValidationTestRunner {
 
         virtual public bool CopyManagedAssembliesCentrally => false;
 
-        virtual public int RetryCount => 2;
+        virtual public int RetryCount {
+            get {
+                if(PublicTestRunnerMain.BOSSS_RUNTESTFROMBACKUP_ENVVAR) 
+                    return 2;
+                else 
+                    return 1;
+            }
+        }
 
         virtual public bool DeleteSuccessfulTestFiles => false;
     }

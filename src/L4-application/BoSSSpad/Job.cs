@@ -2095,8 +2095,8 @@ namespace BoSSS.Application.BoSSSpad {
                         }
                     }
 
-                    if(EntryAssemblyRedirection == null) {
-                        // copy "runtimes" directory from .NET core/.NET5
+                    if(EntryAssemblyRedirection.IsEmptyOrWhite()) {
+                        // copy "runtimes" directory from .NET core/.NET8
                         string runtimes_Src = Path.Combine(Path.GetDirectoryName(EntryAssembly.Location), "runtimes");
                         string runtimes_Dst = Path.Combine(DeployDir, "runtimes");
                         if(Directory.Exists(runtimes_Src)) {
