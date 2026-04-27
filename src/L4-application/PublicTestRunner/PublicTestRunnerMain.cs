@@ -1065,6 +1065,16 @@ namespace PublicTestRunner {
                         } else {
                             Console.WriteLine();
                         }
+
+                        if(File.Exists("CANCEL_SIGNAL.txt")) {
+                            Console.WriteLine("Got cancel file...");
+                            try {
+                                File.Delete("CANCEL_SIGNAL.txt");
+                            } catch(Exception e) { }
+
+                            break;
+                        }
+
                     }
 
                     // Stop all remaining Jobs
