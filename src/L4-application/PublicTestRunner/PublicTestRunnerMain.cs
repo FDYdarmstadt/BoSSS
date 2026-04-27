@@ -732,7 +732,18 @@ namespace PublicTestRunner {
                 // deployment of assemblies
                 string NativeOverride;
                 string RelManagedPath;
-                if(TestTypeProvider.CopyManagedAssembliesCentrally) {
+
+                if(bpc.DeployRuntime != TestTypeProvider.CopyManagedAssembliesCentrally) {
+                    
+                }
+
+
+                if(TestTypeProvider.CopyManagedAssembliesCentrally || bpc.DeployRuntime) {
+                    if(bpc.DeployRuntime == false) {
+                        Console.WriteLine($"NOTE: althoug {nameof(BatchProcessorClient.DeployRuntime)} for the batch queue {bpc}, this behavour is overriden by {nameof(ITestTypeProvider.CopyManagedAssembliesCentrally)}.");
+                    }
+
+
                     string mngdir = RunnerPrefix + DebugOrReleaseSuffix + "_" + DateNtime + "_managed";
                     var ManagedOverride = new DirectoryInfo(Path.Combine(bpc.DeploymentBaseDirectory, mngdir));
                     ManagedOverride.Create();

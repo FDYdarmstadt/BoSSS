@@ -231,6 +231,7 @@ namespace BoSSS.Application.BoSSSpad {
 
 
             // Deploy native libs ...
+            string nativeOverrideValue = null;
             if (BatchSys.DeployRuntime == true) {
                 string BosssInstall = BoSSS.Foundation.IO.Utils.GetBoSSSInstallDir();
                 var BosssBinNative = new DirectoryInfo(Path.Combine(BosssInstall, "bin", "native", BatchSys.RuntimeLocation));
@@ -238,10 +239,17 @@ namespace BoSSS.Application.BoSSSpad {
                 Console.WriteLine("   copied '" + BatchSys.RuntimeLocation + "' runtime.");
                 // ... but only once
                 BatchSys.DeployRuntime = false;
+
+                nativeOverrideValue = Path.Combine("..", DeployDir.Name);
+                if(BatchSys is SlurmClient slurm) {
+                    nativeOverrideValue = (new DirectoryInfo(nativeOverrideValue)).FullName;
+                    nativeOverrideValue = slurm.DeploymentDirectoryAtRemote(nativeOverrideValue);
+                }
             }
 
             foreach(var job in jobs) {
-                job.EnvironmentVars.Add(BoSSS.Foundation.IO.Utils.BOSSS_NATIVE_OVERRIDE, Path.Combine("..", DeployDir.Name));
+                if(nativeOverrideValue.IsNonEmpty())
+                    job.EnvironmentVars.Add(BoSSS.Foundation.IO.Utils.BOSSS_NATIVE_OVERRIDE, nativeOverrideValue);
                 job.EntryAssemblyRedirection = Path.Combine("..", DeployDir.Name, Path.GetFileName(EntryAssembly.Location));
                 job.Activate(BatchSys);
             }

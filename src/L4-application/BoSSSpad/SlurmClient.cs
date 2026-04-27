@@ -165,7 +165,12 @@ namespace BoSSS.Application.BoSSSpad {
                 .TrimEnd('/', '\\');
             var tmp = DeploymentBaseDirectoryAtRemote;
 
-            return tmp + "/" + RelativeDeploymentDirectory;
+            var ret = tmp + "/" + RelativeDeploymentDirectory;
+
+            if(ret.ContainsWhite())
+                ret = "'" + ret + "'";
+            
+            return ret;
         }
 
 
