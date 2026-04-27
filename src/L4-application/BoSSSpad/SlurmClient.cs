@@ -165,7 +165,12 @@ namespace BoSSS.Application.BoSSSpad {
                 .TrimEnd('/', '\\');
             var tmp = DeploymentBaseDirectoryAtRemote;
 
-            return tmp + "/" + RelativeDeploymentDirectory;
+            var ret = tmp + "/" + RelativeDeploymentDirectory;
+
+            if(ret.ContainsWhite())
+                ret = "'" + ret + "'";
+            
+            return ret;
         }
 
 
@@ -744,6 +749,18 @@ namespace BoSSS.Application.BoSSSpad {
 
         }
 
+        string GetSanitizedEntryAssemblyname(Job myJob) {
+            string a = myJob.EntryAssemblyName;
+
+            a = a.Replace('\\', '/');
+
+            if(a.ContainsWhite())
+                a = "'" + a + "'";
+        
+            return a;
+        }
+
+
         private void WriteMPIStartup(StreamWriter sw, Job myJob, int MPIprocs, int NumThreads, int TotalThreadsPerRank) {
 
             var myStartup = this.mpiStartup;
@@ -762,7 +779,7 @@ namespace BoSSS.Application.BoSSSpad {
                     sw.WriteLine($"export OMP_NUM_THREADS={NumThreads}");
                     sw.WriteLine($"mpirun -n {MPIprocs} --map-by slot:PE={TotalThreadsPerRank}:HWTCPUS --bind-to hwthread " +
                         $"{base.DotnetRuntime} " +
-                        myJob.EntryAssemblyName +
+                        GetSanitizedEntryAssemblyname(myJob) + 
                         "");
                     break;
                 }
@@ -773,7 +790,7 @@ namespace BoSSS.Application.BoSSSpad {
                         //"--output=rank_%t_trace.out strace -f -e clone " + // for debugging threading
                         $"bash -c 'export OMP_NUM_THREADS={NumThreads}; " + //if not used like this, srun overwrites OMP_NUM_THREADS to TotalThreadsPerRank.
                         $"{base.DotnetRuntime} " +
-                        myJob.EntryAssemblyName +
+                        GetSanitizedEntryAssemblyname(myJob) +
                         "'");
 
                     break;

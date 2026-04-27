@@ -1,6 +1,7 @@
 using BoSSS.Foundation.IO;
 using BoSSS.Solution;
 using BoSSS.Solution.Control;
+using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -18,10 +19,10 @@ namespace BoSSS.Solution {
                                                        // some testing with a using(){} around a statement like here did not give like a null reference exception...
                                                        // apparently the object.Dispose() is called, but it is not collected and the reference in the event handler is still valid
 
-            if (app.Control.savetodb && !app.CurrentSessionInfo.SuccessfulTermination) {
-                //Console.WriteLine("**saving exception to database ...");
-
-                SaveException(e, app.CurrentSessionInfo);
+            if (app?.Control?.savetodb ?? false) {
+                if(!(app?.CurrentSessionInfo?.SuccessfulTermination ?? false)) {
+                    SaveException(e, app.CurrentSessionInfo);
+                }
                 // app.SaveToDatabase(-1, -1.0); this would be nice, but atm can cause deadlocks
             }
 
@@ -41,9 +42,17 @@ namespace BoSSS.Solution {
         }
 
         private static void SaveException(Exception e, SessionInfo s) {
-
-            var dbDrv = s.Database.Controller.DBDriver;
-            SingleExceptionDataSet.LogException(dbDrv, s, e);
+            var dbDrv = s?.Database?.Controller?.DBDriver;
+            if(dbDrv != null) {
+                SingleExceptionDataSet.LogException(dbDrv, s, e);
+            } else {
+                using(var stw = new StreamWriter("Exception-" + DateTime.Now.ToString("MMMdd_HHmmss") + "." + csMPI.Rank_World + "of" + csMPI.Size_World + ".txt")) {
+                    stw.WriteLine("Got some exception: " + e);
+                    stw.WriteLine(e.StackTrace);
+                    stw.Flush();
+                    stw.Close();
+                }
+            }
         }
 
         /// <summary>

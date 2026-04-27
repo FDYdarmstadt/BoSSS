@@ -516,13 +516,20 @@ namespace ValidationTestRunner {
         /// <summary>
         /// Printing Nip Stokes Simulations
         /// Section 5.1 Rieckmann (2024) https://doi.org/10.26083/tuprints-00028626
+        /// 
+        /// Note: 
+        /// additional artifacts in 
+        /// - `./PrintingNip/Figures` (raw gnuplot figures), 
+        /// - `./PrintingNip/Output` (preview pdf with figures),
+        /// - `./PrintingNip/Files` (datatables in csv format)
+        /// can be generated when also running "Part0" and "Part6". This is not part of testing!
         /// </summary>
         [NUnitFileToCopyHack("PrintingNip/*.ipynb", "PrintingNip/*.sh", "PrintingNip/*.tex", "PrintingNip/*.txt")]
         [Test]
         static public void Run__PrintingNip() {
 
             // additional artifacts in ./PrintingNip/Figures (raw gnuplot figures), ./PrintingNip/Output (preview pdf with figures), ./PrintingNip/Files (datatables in csv format) can be generated when also running "Part0" and "Part6". This is not part of testing!
-            // --test=ValidationTestRunner.WorksheetTests_Local.Run__PrintingNip
+            // --test=ValidationTestRunner.WorksheetTests_Local_long.Run__PrintingNip
 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "PrintingNip_Part1",
