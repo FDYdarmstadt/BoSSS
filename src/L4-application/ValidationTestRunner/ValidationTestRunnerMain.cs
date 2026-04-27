@@ -186,7 +186,7 @@ namespace ValidationTestRunner {
 
             //List<string> DirsToIgnore = new List<string>();
             //bool delete = false; // deletion is decided based on the age of the database folder
-            (var delete, var DirsToIgnore) = BackupDatabase_IfOld(Directory, DeletionAge, nau, enforce, "todelete");
+            (var delete, var DirsToIgnore) = BackupDatabase_IfOld(Directory, DeletionAge, nau, enforce, "todelete", true);
 
             if(delete) {
                 Console.WriteLine("deletion of old deployments in execution queues");
@@ -224,15 +224,29 @@ namespace ValidationTestRunner {
         }
 
         /// <summary>
-        /// creates a backup of a database 
+        /// creates a backup of a database, at the end of a successful run; will be used for the backup-runs later on.
         /// </summary>
         public static void BackupDatabase(string db_Directory_name) {
-            BackupDatabase_IfOld(db_Directory_name, TimeSpan.Zero, DateTime.Now, true, "bkup");
+            BackupDatabase_IfOld(db_Directory_name, TimeSpan.Zero, DateTime.Now, true, "bkup", false); // backup will be a copy
         }
 
-        private static (bool database_is_expired, List<string> backup_directory_names) BackupDatabase_IfOld(string Directory, TimeSpan DeletionAge, DateTime nau, bool enforce, string backup_name_prefix) {
+        private static (bool database_is_expired, List<string> backup_directory_names) BackupDatabase_IfOld(string Directory, TimeSpan DeletionAge, DateTime nau, bool enforce, string backup_name_prefix, bool deleteOriginal) {
             List<string> DirsToIgnore = new List<string>();
             bool delete = false;
+
+            // don't catch exception because we want to know when the backup did not work
+            void CopyFilesRecursively(string sourcePath, string targetPath) {
+
+                //Now Create all of the directories
+                foreach(string dirPath in System.IO.Directory.GetDirectories(sourcePath, "*", SearchOption.AllDirectories)) {
+                    System.IO.Directory.CreateDirectory(dirPath.Replace(sourcePath, targetPath));
+                }
+
+                //Copy all the files & Replaces any files with the same name
+                foreach(string newPath in System.IO.Directory.GetFiles(sourcePath, "*.*", SearchOption.AllDirectories)) {
+                    File.Copy(newPath, newPath.Replace(sourcePath, targetPath), true);
+                }
+            }
 
             foreach(var q in BoSSSshell.ExecutionQueues) {
 
@@ -254,7 +268,12 @@ namespace ValidationTestRunner {
                                 delete = true;
                                 string NewName = Path.Combine(Path.GetDirectoryName(db.FullName), backup_name_prefix + "-" + db.CreationTime.ToString("yyyyMMMdd_HHmmss") + "." + db.Name);
                                 Console.WriteLine("Renaming existing database: " + db.FullName + " -> " + NewName);
-                                db.MoveTo(NewName);
+                                
+                                if(deleteOriginal)
+                                    db.MoveTo(NewName); // just rename
+                                else 
+                                    CopyFilesRecursively(db.FullName, NewName); // copy
+                                
                                 DirsToIgnore.Add(NewName);
                             }
                         }
