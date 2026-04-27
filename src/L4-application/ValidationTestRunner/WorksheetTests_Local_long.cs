@@ -1107,7 +1107,7 @@ namespace ValidationTestRunner {
         //[Test]
         static public void Run__DropletReboundGauthier() {
             Run__LongTest(
-                "DropletReboundGauthier"
+                "DropletReboundGauthier",
                 ["DropletReboundGauthier_Run.ipynb"]);
         }
 
