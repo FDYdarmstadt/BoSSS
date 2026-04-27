@@ -23,7 +23,7 @@ using XESTSF;
 
 namespace ValidationTestRunner {
 
-   
+
     /// <summary>
     /// NUnit entry point for each example worksheet which represents a long-term validation test
     /// </summary>
@@ -82,9 +82,9 @@ namespace ValidationTestRunner {
         [NUnitFileToCopyHack("AgglomerationTestcases/rotatingPopcorn2D.ipynb", "AgglomerationTestcases/rotatingPopcorn2Dpost.ipynb")]
         [Test]
         static public void Run__RotatingPopcorn2D() {
-             Run__LongTest(
-                "Popcorn2D_condStudy",
-                ["AgglomerationTestcases/rotatingPopcorn2D.ipynb", "AgglomerationTestcases/rotatingPopcorn2Dpost.ipynb"]);
+            Run__LongTest(
+               "Popcorn2D_condStudy",
+               ["AgglomerationTestcases/rotatingPopcorn2D.ipynb", "AgglomerationTestcases/rotatingPopcorn2Dpost.ipynb"]);
         }
 
         /// <summary>
@@ -96,7 +96,7 @@ namespace ValidationTestRunner {
         static public void Run__RotatingPopcorn3D() {
             Run__LongTest(
                 "Popcorn3D_condStudy",
-                ["AgglomerationTestcases/rotatingPopcorn3D.ipynb" ,"AgglomerationTestcases/rotatingPopcorn3Dpost.ipynb"],
+                ["AgglomerationTestcases/rotatingPopcorn3D.ipynb", "AgglomerationTestcases/rotatingPopcorn3Dpost.ipynb"],
                 new TimeSpan(days: 150, hours: 1, minutes: 0, seconds: 0));
         }
 
@@ -108,6 +108,7 @@ namespace ValidationTestRunner {
         [NUnitFileToCopyHack("ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_HPC.ipynb", "ShockFitting/Studies/ConvergenceStudy/bosss_db_levelSets.zip", "ShockFitting/Studies/ConvergenceStudy/BowShockPoints.txt", "ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_PostProcessing.ipynb")]
         [Test]
         static public void Run__XDGIST_BowShock() {
+            // --test=ValidationTestRunner.WorksheetTests_Local_long.Run__XDGIST_BowShock
             Run__LongTest(
                 "XESF_BowShock_ConvStudy",
                 ["ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_HPC.ipynb", "ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_PostProcessing.ipynb"],
@@ -263,10 +264,10 @@ namespace ValidationTestRunner {
             "XNSE_Solver/RisingBubble/Featflow_referenceData/c2g3l4.txt", "XNSE_Solver/RisingBubble/Featflow_referenceData/c2g3l4s.txt")]
         [Test]
         static public void Run__XNSEpaper_RisingBubble_Testcase2() {
-             Run__LongTest(
-                "XNSEpaper_RisingBubble2",
-                ["RisingBubble_Testcase2_Run.ipynb", "RisingBubble_Testcase2_Evaluation.ipynb"],
-                new TimeSpan(days: 120, hours: 1, minutes: 0, seconds: 0));
+            Run__LongTest(
+               "XNSEpaper_RisingBubble2",
+               ["RisingBubble_Testcase2_Run.ipynb", "RisingBubble_Testcase2_Evaluation.ipynb"],
+               new TimeSpan(days: 120, hours: 1, minutes: 0, seconds: 0));
         }
 
         #endregion
@@ -283,7 +284,7 @@ namespace ValidationTestRunner {
         /// via the generalized Navier boundary condition* (https://doi.org/10.1002/fld.5016).
         /// </summary>
         [NUnitFileToCopyHack("XNSE_Solver/DropletOnWall/StaticDropletOnSlipWall_convergence_Evaluation.ipynb")]
-       // [Test]
+        // [Test]
         static public void Run__CLpaper_DropletOnWall_convergence() {
 
             // delete the database if it is more than XX days old;
@@ -299,7 +300,7 @@ namespace ValidationTestRunner {
             ValidationTestRunnerMain.RunWorksheet("StaticDropletOnSlipWall_convergence_Evaluation.ipynb");
 
             Console.WriteLine("CLpaper_DropletOnWall_convergence @ FDYcluster");
-            
+
         }
 
         /// <summary>
@@ -344,7 +345,7 @@ namespace ValidationTestRunner {
         [Test]
         static public void Run__CLpaper_DropletSpreading() {
             Run__LongTest("CLpaper_DropletSpreadingUnderGravity",
-                ["DropletSpreadingUnderGravity_Run.ipynb" , "DropletSpreadingUnderGravity_Evaluation.ipynb"] ,
+                ["DropletSpreadingUnderGravity_Run.ipynb", "DropletSpreadingUnderGravity_Evaluation.ipynb"],
                 new TimeSpan(days: 120, hours: 1, minutes: 0, seconds: 0));
         }
 
@@ -363,9 +364,9 @@ namespace ValidationTestRunner {
             "XNSE_Solver/CL_TwoPhaseCouetteFlow/refData/gerbeau_2009_fig12_asymmetric.csv")]
         [Test]
         static public void Run__CLpaper_TwoPhaseCouetteFlow() {
-             Run__LongTest("CLpaper_TwoPhaseCouetteFlow",
-                ["TwoPhaseCouetteFlow_Run.ipynb", "TwoPhaseCouetteFlow_Evaluation.ipynb"] ,
-                new TimeSpan(days: 120, hours: 1, minutes: 0, seconds: 0));
+            Run__LongTest("CLpaper_TwoPhaseCouetteFlow",
+               ["TwoPhaseCouetteFlow_Run.ipynb", "TwoPhaseCouetteFlow_Evaluation.ipynb"],
+               new TimeSpan(days: 120, hours: 1, minutes: 0, seconds: 0));
         }
 
         #endregion
@@ -1413,7 +1414,7 @@ namespace ValidationTestRunner {
         }
 
         static void Run__LongTest(string PROJECT_NAME, IEnumerable<string> WorkSheetNameS, string completionMessage = null, bool backupDatabase = true) {
-             Run__LongTest(PROJECT_NAME, WorkSheetNameS, resultsShelfLife: new TimeSpan(days: 30, hours: 0, minutes: 0, seconds: 12), completionMessage, backupDatabase);
+            Run__LongTest(PROJECT_NAME, WorkSheetNameS, resultsShelfLife: new TimeSpan(days: 30, hours: 0, minutes: 0, seconds: 12), completionMessage, backupDatabase);
         }
 
 
@@ -1442,7 +1443,4 @@ namespace ValidationTestRunner {
 
         }
     }
-
-
-
-   }
+}
