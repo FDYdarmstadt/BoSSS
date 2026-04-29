@@ -243,6 +243,7 @@ namespace BoSSS.Foundation.IO {
                 Process.Start(Path.Combine(DatabaseDriver.GetSessionDirectory(session), TextFile + ".txt"));
         }
 
+
         /// <summary>
         /// Convenience interface to create a
         /// <see cref="SessionExportInstruction"/>
@@ -1272,6 +1273,29 @@ namespace BoSSS.Foundation.IO {
                 return "Opening files in external application (kdiff3)";
             }
         }
+
+        /// <summary>
+        /// Difference between firs and last recorded write to disk.
+        /// </summary>
+        public static TimeSpan GetRunTime(this ISessionInfo session) {
+            var start = session.CreationTime;
+            if(session.WriteTime < start)
+                start = session.WriteTime;
+            var end = session.WriteTime;
+            if(session.CreationTime > end)
+                end = session.CreationTime;
+
+            foreach(var ts in session.Timesteps) {
+                if(ts.WriteTime < start)
+                    start = ts.WriteTime;
+                if(ts.CreationTime > end)
+                    end = ts.CreationTime;
+            }
+
+            return end - start;
+        }
+
+
 
         /// <summary>
         /// Retrieves an estimate for the run time of the given session

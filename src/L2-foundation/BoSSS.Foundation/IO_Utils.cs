@@ -591,8 +591,11 @@ namespace BoSSS.Foundation.IO {
                     return DateTime.MaxValue;
                 }
 
-                string entityFilePath = Path.Combine(sessFolderPath, "Session.info");
-                var t = File.GetLastWriteTime(entityFilePath);
+                var allInfo = Directory.GetFiles(sessFolderPath, "Session.info*");
+                List<DateTime> fileTimes = allInfo.Select(filepath => File.GetLastWriteTime(filepath)).ToList();
+                var t = fileTimes.Max();
+                //string entityFilePath = Path.Combine(sessFolderPath, "Session.info");
+                //var t = File.GetLastWriteTime(entityFilePath);
                 return t;
             } catch (Exception) {
                 Console.WriteLine("Error at loading of session:"+ session.ID);

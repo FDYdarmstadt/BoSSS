@@ -211,30 +211,36 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public Func<Job, AppControl, bool> JobAppControlCorrelation;
 
-        internal bool RunWorkflowFromBackup {
+
+        static bool? m_RunWorkflowFromBackup = null;
+
+        static internal bool RunWorkflowFromBackup {
             get {
-                using (var tr = new FuncTrace("RunWorkflowFromBackup")) {
+                if(m_RunWorkflowFromBackup != null)
+                    return m_RunWorkflowFromBackup.Value;
+
+                using(var tr = new FuncTrace("RunWorkflowFromBackup")) {
                     //string runfromBackup = System.Environment.GetEnvironmentVariable("BOSSS_RUNTESTFROMBACKUP");
                     //return runfromBackup.IsEmptyOrWhite() == false;
                     const string magicFile = "BOSSS_RUNTESTFROMBACKUP.txt";
                     bool exists = File.Exists(magicFile);
                     tr.Info($"File {magicFile} exists? {exists} (current directory: {System.Environment.CurrentDirectory})");
+                    m_RunWorkflowFromBackup = exists;
                     return exists;
                 }
             }
         }
 
-
         /// <summary>
         /// Defines the name of the current project; also creates a default database
         /// </summary>
-        public void Init(string ProjectName, BatchProcessorClient ExecutionQueue = null) {
-            if ((m_CurrentProject == null) || (!m_CurrentProject.Equals(ProjectName)))
+        public void Init(string ProjectName, BatchProcessorClient ExecutionQueue = null, bool NoDatabaseAtAll = false) {
+            if((m_CurrentProject == null) || (!m_CurrentProject.Equals(ProjectName)))
                 InvalidateCaches();
             m_CurrentProject = ProjectName;
             Console.WriteLine("Project name is set to '{0}'.", ProjectName);
 
-            if (ExecutionQueue == null) {
+            if(ExecutionQueue == null) {
                 ExecutionQueue = BoSSSshell.GetDefaultQueue();
                 Console.WriteLine("Default Execution queue is chosen for the database.");
             }
@@ -242,52 +248,46 @@ namespace BoSSS.Application.BoSSSpad {
             //if(InteractiveShell.ExecutionQueues.Any(Q => Q is MiniBatchProcessorClient))
             //    MiniBatchProcessor.Server.StartIfNotRunning();
 
-            if (RunWorkflowFromBackup == false) {
-                try {
-                    DefaultDatabase = ExecutionQueue.CreateOrOpenCompatibleDatabase(ProjectName);
-                } catch (Exception e) {
-                    Console.Error.WriteLine($"{e.GetType().Name} caught during creation/opening of default database: {e.Message}.");
-                }
-            } else {
-                Console.WriteLine("trying to run from backup database...");
-                var pp = ExecutionQueue.AllowedDatabasesPaths[0];
-                var baseDir = new DirectoryInfo(pp.LocalMountPath);
-
-                if (!Path.IsPathRooted(pp.LocalMountPath))
-                    throw new IOException($"Illegal entry for `AllowedDatabasesPaths` for {this.ToString()}: only absolute/rooted paths are allowed, but {pp.LocalMountPath} is not.");
-
-                var bkupDbs = baseDir.GetDirectories("bkup*." + ProjectName);
-                Console.WriteLine("   Bkup Database dirs: " + bkupDbs.ToConcatString("", ", ", ";"));
-
-                if (bkupDbs.Length <= 0) {
-                    Console.Error.WriteLine("No Backups found; unable to run worksheet from backup database.");
-                    Console.WriteLine("Trying to create/open default database.");
-
+            if(NoDatabaseAtAll == false) {
+                if(RunWorkflowFromBackup == false) {
                     try {
                         DefaultDatabase = ExecutionQueue.CreateOrOpenCompatibleDatabase(ProjectName);
-                    } catch (Exception e) {
+                    } catch(Exception e) {
                         Console.Error.WriteLine($"{e.GetType().Name} caught during creation/opening of default database: {e.Message}.");
                     }
-
                 } else {
+                    Console.WriteLine("trying to run from backup database...");
+                    var pp = ExecutionQueue.AllowedDatabasesPaths[0];
+                    var baseDir = new DirectoryInfo(pp.LocalMountPath);
 
-                    var dbDir = bkupDbs.OrderBy(dir => dir.CreationTime).Last(); // select newest available backup
-                    Console.WriteLine("Selecting newest available backup: " + dbDir);
+                    if(!Path.IsPathRooted(pp.LocalMountPath))
+                        throw new IOException($"Illegal entry for `AllowedDatabasesPaths` for {this.ToString()}: only absolute/rooted paths are allowed, but {pp.LocalMountPath} is not.");
+
+                    var bkupDbs = baseDir.GetDirectories("bkup*." + ProjectName);
+                    Console.WriteLine("   Bkup Database dirs: " + bkupDbs.ToConcatString("", ", ", ";"));
+
+                    if(bkupDbs.Length <= 0) {
+                        throw new IOException("No Backups found; unable to run worksheet from backup database.");
+
+                    } else {
+
+                        var dbDir = bkupDbs.OrderBy(dir => dir.CreationTime).Last(); // select newest available backup
+                        Console.WriteLine("Selecting newest available backup: " + dbDir);
 
 
-                    IDatabaseInfo dbi = BoSSSshell.OpenDatabase(dbDir.FullName);
+                        IDatabaseInfo dbi = BoSSSshell.OpenDatabase(dbDir.FullName);
 
-                    if (!pp.PathAtRemote.IsEmptyOrWhite()) {
-                        string fullPathAtRemote = pp.PathAtRemote.TrimEnd('/', '\\');
-                        string remoteDirSep = pp.PathAtRemote.Contains('/') ? "/" : "\\";
-                        fullPathAtRemote = fullPathAtRemote + remoteDirSep + dbDir;
-                        DatabaseInfo.AddAlternateDbPaths(dbDir.FullName, fullPathAtRemote, null);
+                        if(!pp.PathAtRemote.IsEmptyOrWhite()) {
+                            string fullPathAtRemote = pp.PathAtRemote.TrimEnd('/', '\\');
+                            string remoteDirSep = pp.PathAtRemote.Contains('/') ? "/" : "\\";
+                            fullPathAtRemote = fullPathAtRemote + remoteDirSep + dbDir;
+                            DatabaseInfo.AddAlternateDbPaths(dbDir.FullName, fullPathAtRemote, null);
+                        }
+
+                        DefaultDatabase = dbi;
                     }
-
-                    DefaultDatabase = dbi;
                 }
             }
-
         }
 
         /// <summary>
@@ -297,20 +297,32 @@ namespace BoSSS.Application.BoSSSpad {
             if (deleteSessions) {
                 Console.WriteLine("Deleting Sessions in projects...");
                 foreach(var s in this.Sessions) {
-                    s.Delete(true);
+                    var id = s.ID;
+                    try {
+                        s.Delete(true);
+                    } catch(Exception e) {
+                        Console.Error.WriteLine($"Exception deleting session {id}:" + e.ToString());
+                    }
                 }
             } else {
                 Console.WriteLine("Not deleting any sessions, because not specified (`deleteSessions:false`).");
             }
+            ResetSessionsCache(); // forget cached sessions
 
-            if (deleteGrids) {
+            if(deleteGrids) {
                 Console.WriteLine("Deleting Grids in projects...");
-                foreach (var g in this.Grids) {
-                    g.Delete(true);
+                foreach(var g in this.Grids) {
+                    var id = g.ID;
+                    try {
+                        g.Delete(true);
+                    } catch(Exception e) {
+                        Console.Error.WriteLine($"Exception deleting grid {id}:" + e.ToString());
+                    }
                 }
             } else {
                 Console.WriteLine("Not deleting any grids, because not specified (`deleteGrids:false`).");
             }
+            m_Grids = null; // forget cached grids
 
             if (deleteDeployments) {
                 Console.WriteLine("Deleting Job deployments in projects...");
@@ -785,6 +797,13 @@ namespace BoSSS.Application.BoSSSpad {
 
                     if(terminate) {
                         Console.WriteLine("All jobs finished.");
+                        m_Sessions = null;
+                        Thread.Sleep((int)(1000.0 * 30));
+                        foreach( var si in this.Sessions) {
+                            if(si is SessionProxy sp) {
+                                sp.TriggerReload = true;
+                            }
+                        }
                         m_Sessions = null;
                         return;
                     }

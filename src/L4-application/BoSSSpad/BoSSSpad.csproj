@@ -47,7 +47,7 @@
     <!--PackageReference Include="Microsoft.DotNet.Interactive.Formatting" Version="1.0.0-beta.21606.1" /-->
     <PackageReference Include="Microsoft.DotNet.Interactive.Documents" Version="1.0.0-beta.21459.1" />
     <PackageReference Include="Microsoft.DotNet.Interactive.Formatting" Version="1.0.0-beta.21459.1" />
-    <PackageReference Include="Microsoft.HPC.SDK" Version="6.3.8310" />
+    <!--PackageReference Include="Microsoft.HPC.SDK" Version="6.3.8310" /-->
     <!--PackageReference Include="System.Drawing.Common" Version="8.0.7" /-->
   </ItemGroup>
   <ItemGroup>
@@ -99,8 +99,10 @@
     <ProjectReference Include="..\ZLS\ZLS.csproj" />
 	<ProjectReference Include="..\HFSI\HFSI.csproj" />
   </ItemGroup>
+  <!-- 
   <PropertyGroup>
-    <PreBuildEvent>git describe --long &gt; "$(SolutionDir)\version.txt"
+    <PreBuildEvent>git describe -_-long &gt; "$(SolutionDir)\version.txt"
 		git rev-parse HEAD &gt;&gt; "$(SolutionDir)\version.txt"</PreBuildEvent>
   </PropertyGroup>
+  -->
 </Project>

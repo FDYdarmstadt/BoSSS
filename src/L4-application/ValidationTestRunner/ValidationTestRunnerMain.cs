@@ -1,6 +1,10 @@
 ﻿using BoSSS.Application.BoSSSpad;
+using BoSSS.Application.LsTest;
 using BoSSS.Application.TutorialTests;
 using BoSSS.Application.XNSE_Solver;
+using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Solution.Control;
 using FreeXNSE;
 using ilPSP;
 using ilPSP.Utils;
@@ -22,7 +26,7 @@ namespace ValidationTestRunner {
     /// <summary>
     /// Extends the public tests to some which are only available in the internal part of BoSSS
     /// </summary>
-    class ValidationTests : ITestTypeProvider {
+    class ValidationTests :ITestTypeProvider {
 
         public Type[] FullTest {
             get {
@@ -126,93 +130,103 @@ namespace ValidationTestRunner {
         [NUnitFileToCopyHack("AgglomerationTestcases/collidingSpheres2D.ipynb", "AgglomerationTestcases/collidingSpheres2Dpost.ipynb")]
         [Test]
         static public void Run__AggCollidingSpheres2D() {
-            // delete the database if it is more than 150 days old;
+            throw new ApplicationException("deactivated for now");
+
+            /*
+            // delete the database if it is sufficiently old
             // this will cause a re-execution of all computations
             // otherwise, i.e. if the database is not deleted, sessions from the database 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
-                "CollidingSpheres2D_condStudy",
+                "CollidingSpheres2D_condStudy");
+
+            ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/collidingSpheres2D.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/collidingSpheres2Dpost.ipynb");
+
+            Console.WriteLine("AggCollidingSpheres2D @ FDYcluster");
+
+            // if we reach this point, its a success - backup the datebase
+            ValidationTestRunnerMain.BackupDatabase("CollidingSpheres2D_condStudy");
+            */
+        }
+
+
+        /// <summary>
+        /// XNSE Solver, 
+        /// publication results for: Toprak, Kummer: Cell agglomeration strategy for cut cells in eXtended discontinuous Galerkin methods
+        /// </summary>
+        [NUnitFileToCopyHack("AgglomerationTestcases/collidingSpheres3D.ipynb", "AgglomerationTestcases/collidingSpheres3Dpost.ipynb")]
+        [Test]
+        static public void Run__AggCollidingSpheres3D() {
+            // delete the database if it is more than 75 days old;
+            // this will cause a re-execution of all computations
+            // otherwise, i.e. if the database is not deleted, sessions from the database 
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "CollidingSpheres3D_condStudy");
+
+            ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/collidingSpheres3D.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/collidingSpheres3Dpost.ipynb");
+
+            Console.WriteLine("AggCollidingSpheres3D @ FDYcluster");
+
+            // if we reach this point, its a success - backup the datebase
+            ValidationTestRunnerMain.BackupDatabase("CollidingSpheres3D_condStudy");
+        }
+
+        /// <summary>
+        /// XNSE Solver, 
+        /// publication results for: Toprak, Kummer: Cell agglomeration strategy for cut cells in eXtended discontinuous Galerkin methods
+        /// </summary>
+        [NUnitFileToCopyHack("AgglomerationTestcases/rotatingPopcorn2D.ipynb", "AgglomerationTestcases/rotatingPopcorn2Dpost.ipynb")]
+        [Test]
+        static public void Run__RotatingPopcorn2D() {
+            // delete the database if it is more than 75 days old;
+            // this will cause a re-execution of all computations
+            // otherwise, i.e. if the database is not deleted, sessions from the database 
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "Popcorn2D_condStudy");
+
+            ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/rotatingPopcorn2D.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/rotatingPopcorn2Dpost.ipynb");
+
+            Console.WriteLine("RotatingPopcorn2D @ FDYcluster");
+
+            // if we reach this point, its a success - backup the datebase
+            ValidationTestRunnerMain.BackupDatabase("Popcorn2D_condStudy");
+        }
+
+        /// <summary>
+        /// XNSE Solver, 
+        /// publication results for: Toprak, Kummer: Cell agglomeration strategy for cut cells in eXtended discontinuous Galerkin methods
+        /// </summary>
+        [NUnitFileToCopyHack("AgglomerationTestcases/rotatingPopcorn3D.ipynb", "AgglomerationTestcases/rotatingPopcorn3Dpost.ipynb")]
+        [Test]
+        static public void Run__RotatingPopcorn3D() {
+            // delete the database if it is more than 75 days old;
+            // this will cause a re-execution of all computations
+            // otherwise, i.e. if the database is not deleted, sessions from the database 
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "Popcorn3D_condStudy",
+                "Popcorn3D_condStudy",
+                "delete_Popcorn3D_condStudy",
                 new TimeSpan(days: 150, hours: 1, minutes: 0, seconds: 0));
 
-			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/collidingSpheres2D.ipynb");
-			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/collidingSpheres2Dpost.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/rotatingPopcorn3D.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/rotatingPopcorn3Dpost.ipynb");
 
-			Console.WriteLine("AggCollidingSpheres2D @ FDYcluster");
-		}
+            Console.WriteLine("RotatingPopcorn3D @ FDYcluster");
 
-
-		/// <summary>
-		/// XNSE Solver, 
-		/// publication results for: Toprak, Kummer: Cell agglomeration strategy for cut cells in eXtended discontinuous Galerkin methods
-		/// </summary>
-		[NUnitFileToCopyHack("AgglomerationTestcases/collidingSpheres3D.ipynb", "AgglomerationTestcases/collidingSpheres3Dpost.ipynb")]
-		[Test]
-		static public void Run__AggCollidingSpheres3D() {
-			// delete the database if it is more than 75 days old;
-			// this will cause a re-execution of all computations
-			// otherwise, i.e. if the database is not deleted, sessions from the database 
-			ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
-				"CollidingSpheres3D_condStudy",
-				new TimeSpan(days: 150, hours: 1, minutes: 0, seconds: 0));
-
-			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/collidingSpheres3D.ipynb");
-			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/collidingSpheres3Dpost.ipynb");
-
-			Console.WriteLine("AggCollidingSpheres3D @ FDYcluster");
-		}
-
-		/// <summary>
-		/// XNSE Solver, 
-		/// publication results for: Toprak, Kummer: Cell agglomeration strategy for cut cells in eXtended discontinuous Galerkin methods
-		/// </summary>
-		[NUnitFileToCopyHack("AgglomerationTestcases/rotatingPopcorn2D.ipynb", "AgglomerationTestcases/rotatingPopcorn2Dpost.ipynb")]
-		[Test]
-		static public void Run__RotatingPopcorn2D() {
-			// delete the database if it is more than 75 days old;
-			// this will cause a re-execution of all computations
-			// otherwise, i.e. if the database is not deleted, sessions from the database 
-			ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
-				"Popcorn2D_condStudy",
-				"Popcorn2D_condStudy",
-				"Popcorn2D_condStudy",
-				new TimeSpan(days: 150, hours: 1, minutes: 0, seconds: 0));
-
-			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/rotatingPopcorn2D.ipynb");
-			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/rotatingPopcorn2Dpost.ipynb");
-
-			Console.WriteLine("RotatingPopcorn2D @ FDYcluster");
-		}
-
-		/// <summary>
-		/// XNSE Solver, 
-		/// publication results for: Toprak, Kummer: Cell agglomeration strategy for cut cells in eXtended discontinuous Galerkin methods
-		/// </summary>
-		[NUnitFileToCopyHack("AgglomerationTestcases/rotatingPopcorn3D.ipynb", "AgglomerationTestcases/rotatingPopcorn3Dpost.ipynb")]
-		[Test]
-		static public void Run__RotatingPopcorn3D() {
-			// delete the database if it is more than 75 days old;
-			// this will cause a re-execution of all computations
-			// otherwise, i.e. if the database is not deleted, sessions from the database 
-			ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
-				"Popcorn3D_condStudy",
-				"Popcorn3D_condStudy",
-				"Popcorn3D_condStudy",
-				new TimeSpan(days: 150, hours: 1, minutes: 0, seconds: 0));
-
-			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/rotatingPopcorn3D.ipynb");
-			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/rotatingPopcorn3Dpost.ipynb");
-
-			Console.WriteLine("RotatingPopcorn3D @ FDYcluster");
-		}
+            // if we reach this point, its a success - backup the datebase
+            ValidationTestRunnerMain.BackupDatabase("Popcorn3D_condStudy");
+        }
 
 
-		/// <summary>
-		/// XDG-IST Solver, 
-		/// publication results for: Vandergrift, Kummer: An extended discontinuous Galerkin shock tracking method, https://onlinelibrary.wiley.com/doi/full/10.1002/fld.5293
-		/// </summary>
-		[NUnitFileToCopyHack("ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_HPC.ipynb", "ShockFitting/Studies/ConvergenceStudy/bosss_db_levelSets.zip", "ShockFitting/Studies/ConvergenceStudy/BowShockPoints.txt", "ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_PostProcessing.ipynb")]
-		[Test]
-		static public void Run__XDGIST_BowShock()
-        {
+        /// <summary>
+        /// XDG-IST Solver, 
+        /// publication results for: Vandergrift, Kummer: An extended discontinuous Galerkin shock tracking method, https://onlinelibrary.wiley.com/doi/full/10.1002/fld.5293
+        /// </summary>
+        [NUnitFileToCopyHack("ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_HPC.ipynb", "ShockFitting/Studies/ConvergenceStudy/bosss_db_levelSets.zip", "ShockFitting/Studies/ConvergenceStudy/BowShockPoints.txt", "ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_PostProcessing.ipynb")]
+        [Test]
+        static public void Run__XDGIST_BowShock() {
             // delete the database if it is more than 75 days old;
             // this will cause a re-execution of all computations
             // otherwise, i.e. if the database is not deleted, sessions from the database 
@@ -226,6 +240,9 @@ namespace ValidationTestRunner {
             ValidationTestRunnerMain.RunWorksheet("ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_PostProcessing.ipynb");
 
             Console.WriteLine("XDGISTBowShock @ FDYcluster");
+
+            // if we reach this point, its a success - backup the datebase
+            ValidationTestRunnerMain.BackupDatabase("XESF_BowShock_ConvStudy");
         }
 
         /// <summary>
@@ -249,6 +266,9 @@ namespace ValidationTestRunner {
             ValidationTestRunnerMain.RunWorksheet("ShockFitting/Studies/ConvergenceStudy/AcousticWave1D_ConvergenceStudy_PostProcessing.ipynb");
 
             Console.WriteLine("XDGIST1DShockAcoustic @ FDYcluster");
+
+            // if we reach this point, its a success - backup the datebase
+            ValidationTestRunnerMain.BackupDatabase("XESTSF_ShockAcousticInteraction1D_ConvergenceStudy");
         }
 
         /// <summary>
@@ -257,8 +277,7 @@ namespace ValidationTestRunner {
         /// </summary>
         [NUnitFileToCopyHack("ShockFitting/Studies/ConvergenceStudy/CNSAcousticWave1DHPC_ConvStudy.ipynb", "ShockFitting/Studies/ConvergenceStudy/CNSAcousticWave1DHPC_ConvStudy_PostProcessing.ipynb")]
         [Test]
-        static public void Run__CNS_1DShockAcoustic()
-        {
+        static public void Run__CNS_1DShockAcoustic() {
             // delete the database if it is more than 25 days old;
             // this will cause a re-execution of all computations
             // otherwise, i.e. if the database is not deleted, sessions from the database 
@@ -272,6 +291,9 @@ namespace ValidationTestRunner {
             ValidationTestRunnerMain.RunWorksheet("ShockFitting/Studies/ConvergenceStudy/CNSAcousticWave1DHPC_ConvStudy_PostProcessing.ipynb");
 
             Console.WriteLine("CNS1DShockAcoustic @ FDYcluster");
+
+            // if we reach this point, its a success - backup the datebase
+            ValidationTestRunnerMain.BackupDatabase("CNS_AcousticWave1D_ConvStudy");
         }
 
         /// <summary>
@@ -296,6 +318,9 @@ namespace ValidationTestRunner {
             ValidationTestRunnerMain.RunWorksheet("rheology/ConfinedCylinder_ConvergenceStudy_Postprocessing.ipynb");
 
             Console.WriteLine("RheologyConfinedCylinder @ FDYcluster");
+
+            // if we reach this point, its a success - backup the datebase
+            ValidationTestRunnerMain.BackupDatabase("ConfinedCylinder_ConvergenceStudy");
         }
 
 
@@ -321,6 +346,9 @@ namespace ValidationTestRunner {
             ValidationTestRunnerMain.RunWorksheet("HelicalSymmetricSolver/Post_Processing_HagenPoiseulle.ipynb");
 
             Console.WriteLine("Helical_HagenPoiseulle @ FDYcluster");
+
+            // if we reach this point, its a success - backup the datebase
+            ValidationTestRunnerMain.BackupDatabase("Helical_HagenPoiseulle");
         }
 
 
@@ -346,6 +374,9 @@ namespace ValidationTestRunner {
             ValidationTestRunnerMain.RunWorksheet("HelicalSymmetricSolver/Post_Processing_Centrifugal.ipynb");
 
             Console.WriteLine("Helical_Centrifugal @ FDYcluster");
+
+            // if we reach this point, its a success - backup the datebase
+            ValidationTestRunnerMain.BackupDatabase("Helical_Centrifugal");
         }
 
 
@@ -357,7 +388,7 @@ namespace ValidationTestRunner {
         /// Application to two-dimensional settings* (https://doi.org/10.1002%2Fnme.6853). 
         /// </summary>
         [NUnitFileToCopyHack("XNSE_Solver/CapillaryWave/CapillaryWave_Run.ipynb", "XNSE_Solver/CapillaryWave/CapillaryWave_Evaluation.ipynb",
-            "XNSE_Solver/CapillaryWave/CWrefDatConv_La3.txt", "XNSE_Solver/CapillaryWave/CWrefDatConv_La3e5.txt", 
+            "XNSE_Solver/CapillaryWave/CWrefDatConv_La3.txt", "XNSE_Solver/CapillaryWave/CWrefDatConv_La3e5.txt",
             "XNSE_Solver/CapillaryWave/CWrefDatConv_La120.txt", "XNSE_Solver/CapillaryWave/CWrefDatConv_La3000.txt")]
         [Test]
         static public void Run__XNSEpaper_CapillaryWave() {
@@ -432,7 +463,7 @@ namespace ValidationTestRunner {
         /// </summary>
         [NUnitFileToCopyHack("XNSE_Solver/RisingBubble/RisingBubble_Testcase1_Run.ipynb", "XNSE_Solver/RisingBubble/RisingBubble_Testcase1_Evaluation.ipynb",
             "XNSE_Solver/RisingBubble/Featflow_referenceData/c1g1l7.txt", "XNSE_Solver/RisingBubble/Featflow_referenceData/c1g1l7s.txt",
-            "XNSE_Solver/RisingBubble/Featflow_referenceData/c1g2l3.txt", "XNSE_Solver/RisingBubble/Featflow_referenceData/c1g2l3s.txt", 
+            "XNSE_Solver/RisingBubble/Featflow_referenceData/c1g2l3.txt", "XNSE_Solver/RisingBubble/Featflow_referenceData/c1g2l3s.txt",
             "XNSE_Solver/RisingBubble/Featflow_referenceData/c1g3l4.txt", "XNSE_Solver/RisingBubble/Featflow_referenceData/c1g3l4s.txt",
             "XNSE_Solver/RisingBubble/Featflow_referenceData/c2g1l8.txt", "XNSE_Solver/RisingBubble/Featflow_referenceData/c2g1l8s.txt",
             "XNSE_Solver/RisingBubble/Featflow_referenceData/c2g2l3.txt", "XNSE_Solver/RisingBubble/Featflow_referenceData/c2g2l3s.txt",
@@ -495,7 +526,7 @@ namespace ValidationTestRunner {
         /// *The extended discontinuous Galerkin method adapted for moving contact line problems 
         /// via the generalized Navier boundary condition* (https://doi.org/10.1002/fld.5016).
         /// </summary>
-        [NUnitFileToCopyHack( "XNSE_Solver/DropletOnWall/StaticDropletOnSlipWall_convergence_Evaluation.ipynb")]
+        [NUnitFileToCopyHack("XNSE_Solver/DropletOnWall/StaticDropletOnSlipWall_convergence_Evaluation.ipynb")]
         [Test]
         static public void Run__CLpaper_DropletOnWall_convergence() {
 
@@ -572,9 +603,9 @@ namespace ValidationTestRunner {
         /// *The extended discontinuous Galerkin method adapted for moving contact line problems 
         /// via the generalized Navier boundary condition* (https://doi.org/10.1002/fld.5016).
         /// </summary>
-        [NUnitFileToCopyHack("XNSE_Solver/CL_TwoPhaseCouetteFlow/TwoPhaseCouetteFlow_Run.ipynb", 
+        [NUnitFileToCopyHack("XNSE_Solver/CL_TwoPhaseCouetteFlow/TwoPhaseCouetteFlow_Run.ipynb",
             "XNSE_Solver/CL_TwoPhaseCouetteFlow/TwoPhaseCouetteFlow_Evaluation.ipynb",
-            "XNSE_Solver/CL_TwoPhaseCouetteFlow/refData/gerbeau_2009_fig11_velocity.csv", 
+            "XNSE_Solver/CL_TwoPhaseCouetteFlow/refData/gerbeau_2009_fig11_velocity.csv",
             "XNSE_Solver/CL_TwoPhaseCouetteFlow/refData/gerbeau_2009_fig11_velocityWall.csv",
             "XNSE_Solver/CL_TwoPhaseCouetteFlow/refData/Qian_2006_fig20_symmetric.csv",
             "XNSE_Solver/CL_TwoPhaseCouetteFlow/refData/gerbeau_2009_fig12_symmetric.csv",
@@ -611,8 +642,7 @@ namespace ValidationTestRunner {
             "CapillaryRise/CapillaryRise_SFB1194_meshStudy_Run.ipynb",
             "CapillaryRise/CapillaryRise_SFB1194_meshStudy_Evaluation.ipynb")]
         [Test]
-        static public void Run__CapillaryRisePaper_meshStudy()
-        {
+        static public void Run__CapillaryRisePaper_meshStudy() {
 
             // delete the database if it is more than XX days old;
             // this will cause a re-execution of all computations
@@ -638,8 +668,7 @@ namespace ValidationTestRunner {
             "CapillaryRise/CapillaryRise_SFB1194_OmegaStudy_Run.ipynb",
             "CapillaryRise/CapillaryRise_SFB1194_OmegaStudy_Evaluation.ipynb")]
         [Test]
-        static public void Run__CapillaryRisePaper_OmegaStudy()
-        {
+        static public void Run__CapillaryRisePaper_OmegaStudy() {
 
             // delete the database if it is more than XX days old;
             // this will cause a re-execution of all computations
@@ -752,20 +781,15 @@ namespace ValidationTestRunner {
             "Oscillating-Droplet/paperData/AspectRatioOverTime/m4/m4_Oh01_eta03_WNLT.txt")]
         [Test]
         static public void Run__OscillatingDropletPaper_LargeAmplitude() {
-
-            // delete the database if it is more than XX days old;
-            // this will cause a re-execution of all computations
-            // otherwise, i.e. if the database is not deleted, sessions from the database 
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            Run__LongTest(
                 "OscillatingDropletPaper",
-                "OscillatingDropletPaper*",
-                "DELETE_OscillatingDropletPaper",
-                new TimeSpan(days: 120, hours: 1, minutes: 0, seconds: 0));
-
-            ValidationTestRunnerMain.RunWorksheet("OscillatingDroplet_DACH_LargeAmplitude_Run.ipynb");
-            ValidationTestRunnerMain.RunWorksheet("OscillatingDroplet_DACH_LargeAmplitude_Evaluation.ipynb");
-
-            Console.WriteLine("OscillatingDropletPaper_LargeAmplitude @ FDYcluster");
+                [
+                    "OscillatingDroplet_DACH_LargeAmplitude_Run.ipynb",
+                    "OscillatingDroplet_DACH_LargeAmplitude_Evaluation.ipynb"
+                ],
+                new TimeSpan(days: 120, hours: 1, minutes: 0, seconds: 0),
+                "OscillatingDropletPaper_LargeAmplitude @ FDYcluster",
+                backupDatabase: false);
         }
 
         #endregion
@@ -789,23 +813,15 @@ namespace ValidationTestRunner {
 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "PrintingNip_Part1",
-                "PrintingNip_Part1*",
-                "delete_PRINTINGNIP",
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "PrintingNip_Part2",
-                "PrintingNip_Part2*",
-                "delete_PRINTINGNIP",
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "PrintingNip_Part3",
-                "PrintingNip_Part3*",
-                "delete_PRINTINGNIP",
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "PrintingNip_Part4",
-                "PrintingNip_Part4*",
-                "delete_PRINTINGNIP",
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
 
             ValidationTestRunnerMain.RunWorksheet("PrintingNip/Part1_PrintingNip_Correlation_Run.ipynb");
@@ -822,6 +838,12 @@ namespace ValidationTestRunner {
             ValidationTestRunnerMain.RunWorksheet("PrintingNip/Part5_PrintingNip_Validation.ipynb");
 
             Console.WriteLine("PrintingNip @ FDYcluster");
+
+            // if we reach this point, its a success - backup the datebase
+            ValidationTestRunnerMain.BackupDatabase("PrintingNip_Part1");
+            ValidationTestRunnerMain.BackupDatabase("PrintingNip_Part2");
+            ValidationTestRunnerMain.BackupDatabase("PrintingNip_Part3");
+            ValidationTestRunnerMain.BackupDatabase("PrintingNip_Part4");
         }
 
         /// <summary>
@@ -831,16 +853,12 @@ namespace ValidationTestRunner {
         [NUnitFileToCopyHack("PrintingNip/*.ipynb")]
         [Test]
         static public void Run__ViscousEddies() {
-
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__ViscousEddies
-
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            Run__LongTest(
                 "ViscousEddies",
-                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
-
-            ValidationTestRunnerMain.RunWorksheet("PrintingNip/ViscousEddies_Run.ipynb");
-
-            Console.WriteLine("ViscousEddies @ FDYcluster");
+                ["PrintingNip/ViscousEddies_Run.ipynb"],
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0),
+                "ViscousEddies @ FDYcluster");
         }
 
         /// <summary>
@@ -850,16 +868,12 @@ namespace ValidationTestRunner {
         [NUnitFileToCopyHack("XNSE_Solver/CapillaryWave/*.ipynb")]
         [Test]
         static public void Run__CapillaryWave() {
-
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__CapillaryWave
-
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            Run__LongTest(
                 "CapillaryWave",
-                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
-
-            ValidationTestRunnerMain.RunWorksheet("XNSE_Solver/CapillaryWave/CapillaryWave.ipynb");
-
-            Console.WriteLine("CapillaryWave @ FDYcluster");
+                ["XNSE_Solver/CapillaryWave/CapillaryWave.ipynb"],
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0),
+                "CapillaryWave @ FDYcluster");
         }
 
         /// <summary>
@@ -869,16 +883,12 @@ namespace ValidationTestRunner {
         [NUnitFileToCopyHack("XNSE_Solver/Phasefield/*.ipynb")]
         [Test]
         static public void Run__PhasefieldRisingBubble() {
-
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__PhasefieldRisingBubble
-
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            Run__LongTest(
                 "PhasefieldRisingBubble",
-                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
-
-            ValidationTestRunnerMain.RunWorksheet("XNSE_Solver/Phasefield/PhasefieldRisingBubble.ipynb");
-
-            Console.WriteLine("PhasefieldRisingBubble @ FDYcluster");
+                ["XNSE_Solver/Phasefield/PhasefieldRisingBubble.ipynb"],
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0),
+                "PhasefieldRisingBubble @ FDYcluster");
         }
 
         /// <summary>
@@ -888,18 +898,15 @@ namespace ValidationTestRunner {
         [NUnitFileToCopyHack("XNSE_Solver/Phasefield/*.ipynb")]
         [Test]
         static public void Run__PhasefieldContactline() {
-
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__PhasefieldContactline
-
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            Run__LongTest(
                 "PhasefieldContactLine",
-                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
-
-            ValidationTestRunnerMain.RunWorksheet("XNSE_Solver/Phasefield/PhasefieldContactLine.ipynb");
-            ValidationTestRunnerMain.RunWorksheet("XNSE_Solver/Phasefield/PhasefieldContactLine_Postprocessing.ipynb");
-
-
-            Console.WriteLine("PhasefieldContactline @ FDYcluster");
+                [
+                    "XNSE_Solver/Phasefield/PhasefieldContactLine.ipynb",
+                    "XNSE_Solver/Phasefield/PhasefieldContactLine_Postprocessing.ipynb"
+                ],
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0),
+                "PhasefieldContactline @ FDYcluster");
         }
 
         /// <summary>
@@ -909,17 +916,12 @@ namespace ValidationTestRunner {
         [NUnitFileToCopyHack("TemperatureConvergence/*.ipynb", "TemperatureConvergence/*.txt")]
         [Test]
         static public void Run__TemperatureBoundaryCondition() {
-
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__TemperatureBoundaryCondition
-
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            Run__LongTest(
                 "TemperatureBoundaryCondition",
-                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
-
-            ValidationTestRunnerMain.RunWorksheet("TemperatureConvergence/TemperatureBoundaryCondition.ipynb");
-
-
-            Console.WriteLine("TemperatureBoundaryCondition @ FDYcluster");
+                ["TemperatureConvergence/TemperatureBoundaryCondition.ipynb"],
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0),
+                "TemperatureBoundaryCondition @ FDYcluster");
         }
 
         /// <summary>
@@ -929,17 +931,12 @@ namespace ValidationTestRunner {
         [NUnitFileToCopyHack("TemperatureConvergence/*.ipynb")]
         [Test]
         static public void Run__TemperatureVelocityCoupling() {
-
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__TemperatureVelocityCoupling
-
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            Run__LongTest(
                 "TemperatureVelocityCoupling",
-                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
-
-            ValidationTestRunnerMain.RunWorksheet("TemperatureConvergence/TemperatureVelocityCoupling.ipynb");
-
-
-            Console.WriteLine("TemperatureVelocityCoupling @ FDYcluster");
+                ["TemperatureConvergence/TemperatureVelocityCoupling.ipynb"],
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0),
+                "TemperatureVelocityCoupling @ FDYcluster");
         }
 
         /// <summary>
@@ -949,17 +946,15 @@ namespace ValidationTestRunner {
         [NUnitFileToCopyHack("XNSFE_Solver/EvaporationValidation/*.ipynb", "XNSFE_Solver/EvaporationValidation/*.csv")]
         [Test]
         static public void Run__StefanProblem() {
-
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__StefanProblem
-
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            Run__LongTest(
                 "StefanProblem",
-                new TimeSpan(days: 90, hours: 1, minutes: 0, seconds: 0));
-
-            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/EvaporationValidation/StefanProblem_Run.ipynb");
-            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/EvaporationValidation/StefanProblem_Evaluate.ipynb");
-
-            Console.WriteLine("StefanProblem @ FDYcluster");
+                [
+                    "XNSFE_Solver/EvaporationValidation/StefanProblem_Run.ipynb",
+                    "XNSFE_Solver/EvaporationValidation/StefanProblem_Evaluate.ipynb"
+                ],
+                new TimeSpan(days: 90, hours: 1, minutes: 0, seconds: 0),
+                "StefanProblem @ FDYcluster");
         }
 
         /// <summary>
@@ -969,17 +964,15 @@ namespace ValidationTestRunner {
         [NUnitFileToCopyHack("XNSFE_Solver/EvaporationValidation/*.ipynb", "XNSFE_Solver/EvaporationValidation/*.csv")]
         [Test]
         static public void Run__SuckingProblem() {
-
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__SuckingProblem
-
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            Run__LongTest(
                 "SuckingProblem",
-                new TimeSpan(days: 90, hours: 1, minutes: 0, seconds: 0));
-
-            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/EvaporationValidation/SuckingProblem_Run.ipynb");
-            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/EvaporationValidation/SuckingProblem_Evaluate.ipynb");
-
-            Console.WriteLine("SuckingProblem @ FDYcluster");
+                [
+                    "XNSFE_Solver/EvaporationValidation/SuckingProblem_Run.ipynb",
+                    "XNSFE_Solver/EvaporationValidation/SuckingProblem_Evaluate.ipynb"
+                ],
+                new TimeSpan(days: 90, hours: 1, minutes: 0, seconds: 0),
+                "SuckingProblem @ FDYcluster");
         }
 
         /// <summary>
@@ -989,19 +982,17 @@ namespace ValidationTestRunner {
         [NUnitFileToCopyHack("XNSFE_Solver/EvaporationValidation/*.ipynb", "XNSFE_Solver/EvaporationValidation/*.csv")]
         [Test]
         static public void Run__Filmboiling() {
-
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__Filmboiling
-
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            Run__LongTest(
                 "Filmboiling_v2",
+                [
+                    "XNSFE_Solver/EvaporationValidation/Filmboiling_Run.ipynb",
+                    "XNSFE_Solver/EvaporationValidation/Filmboiling_Evaluate.ipynb"
+                ],
                 "Filmboiling*",
                 "delete_Filmboiling",
-                new TimeSpan(days: 90, hours: 1, minutes: 0, seconds: 0));
-
-            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/EvaporationValidation/Filmboiling_Run.ipynb");
-            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/EvaporationValidation/Filmboiling_Evaluate.ipynb");
-
-            Console.WriteLine("Filmboiling @ FDYcluster");
+                new TimeSpan(days: 90, hours: 1, minutes: 0, seconds: 0),
+                "Filmboiling @ FDYcluster");
         }
 
         /// <summary>
@@ -1011,19 +1002,17 @@ namespace ValidationTestRunner {
         [NUnitFileToCopyHack("XNSFE_Solver/EvaporationValidation/*.ipynb", "XNSFE_Solver/EvaporationValidation/*.csv")]
         [Test]
         static public void Run__ScrivenProblem() {
-
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__ScrivenProblem
-
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            Run__LongTest(
                 "ScrivenProblem_v3",
+                [
+                    "XNSFE_Solver/EvaporationValidation/ScrivenProblem_Run.ipynb",
+                    "XNSFE_Solver/EvaporationValidation/ScrivenProblem_Evaluate.ipynb"
+                ],
                 "ScrivenProblem*",
                 "delete_ScrivenProblem",
-                new TimeSpan(days: 90, hours: 1, minutes: 0, seconds: 0));
-
-            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/EvaporationValidation/ScrivenProblem_Run.ipynb");
-            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/EvaporationValidation/ScrivenProblem_Evaluate.ipynb");
-
-            Console.WriteLine("ScrivenProblem @ FDYcluster");
+                new TimeSpan(days: 90, hours: 1, minutes: 0, seconds: 0),
+                "ScrivenProblem @ FDYcluster");
         }
 
         /// <summary>
@@ -1034,17 +1023,14 @@ namespace ValidationTestRunner {
         [Test]
         static public void Run__ContactLineSingularity() {
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__ContactLineSingularity
-
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            Run__LongTest(
                 "ContactLineSingularity",
-                "ContactLineSingularity*",
-                "delete_ContactLineSingularity",
-                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
-
-            ValidationTestRunnerMain.RunWorksheet("FreeXNSE/ContactLineSingularity/ContactLineModeling.ipynb");
-            ValidationTestRunnerMain.RunWorksheet("FreeXNSE/ContactLineSingularity/ContactLineModeling_Postprocessing.ipynb");
-
-            Console.WriteLine("ContactLineSingularity @ FDYcluster");
+                [
+                    "FreeXNSE/ContactLineSingularity/ContactLineModeling.ipynb",
+                    "FreeXNSE/ContactLineSingularity/ContactLineModeling_Postprocessing.ipynb"
+                ],
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0),
+                "ContactLineSingularity @ FDYcluster");
         }
 
         /// <summary>
@@ -1055,15 +1041,14 @@ namespace ValidationTestRunner {
         [Test]
         static public void Run__SlugInChannel() {
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__SlugInChannel
-
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            Run__LongTest(
                 "SlugInChannel",
-                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
-
-            ValidationTestRunnerMain.RunWorksheet("FreeXNSE/SlugInChannel/ContactLineModelingSlugInChannel.ipynb");
-            ValidationTestRunnerMain.RunWorksheet("FreeXNSE/SlugInChannel/ContactLineModelingSlugInChannel_Postprocessing.ipynb");
-
-            Console.WriteLine("SlugInChannel @ FDYcluster");
+                [
+                    "FreeXNSE/SlugInChannel/ContactLineModelingSlugInChannel.ipynb",
+                    "FreeXNSE/SlugInChannel/ContactLineModelingSlugInChannel_Postprocessing.ipynb"
+                ],
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0),
+                "SlugInChannel @ FDYcluster");
         }
 
         /// <summary>
@@ -1074,15 +1059,14 @@ namespace ValidationTestRunner {
         [Test]
         static public void Run__ContactAngleHysteresis() {
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__ContactAngleHysteresis
-
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            Run__LongTest(
                 "ContactAngleHysteresis",
-                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
-
-            ValidationTestRunnerMain.RunWorksheet("FreeXNSE/ContactAngleHysteresis/ContactLineModelingContactAngleHysteresis.ipynb");
-            ValidationTestRunnerMain.RunWorksheet("FreeXNSE/ContactAngleHysteresis/ContactLineModelingContactAngleHysteresis_Postprocessing.ipynb");
-
-            Console.WriteLine("ContactAngleHysteresis @ FDYcluster");
+                [
+                    "FreeXNSE/ContactAngleHysteresis/ContactLineModelingContactAngleHysteresis.ipynb",
+                    "FreeXNSE/ContactAngleHysteresis/ContactLineModelingContactAngleHysteresis_Postprocessing.ipynb"
+                ],
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0),
+                "ContactAngleHysteresis @ FDYcluster");
         }
 
         /// <summary>
@@ -1093,15 +1077,14 @@ namespace ValidationTestRunner {
         [Test]
         static public void Run__SlipConvergence() {
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__SlipConvergence
-
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            Run__LongTest(
                 "SlipConvergence_Droplet",
-                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
-
-            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/SlipConvergence/SlipConvergence_Droplet.ipynb");
-            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/SlipConvergence/SlipConvergence_Droplet_Postprocessing.ipynb");
-
-            Console.WriteLine("SlipConvergence_Droplet @ FDYcluster");
+                [
+                    "XNSFE_Solver/SlipConvergence/SlipConvergence_Droplet.ipynb",
+                    "XNSFE_Solver/SlipConvergence/SlipConvergence_Droplet_Postprocessing.ipynb"
+                ],
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0),
+                "SlipConvergence_Droplet @ FDYcluster");
         }
 
         /// <summary>
@@ -1112,15 +1095,14 @@ namespace ValidationTestRunner {
         [Test]
         static public void Run__SlipConvergence_Zoom() {
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__SlipConvergence
-
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            Run__LongTest(
                 "SlipConvergence_Droplet_Zoom",
-                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
-
-            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/SlipConvergence/SlipConvergence_Droplet_Zoom.ipynb");
-            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/SlipConvergence/SlipConvergence_Droplet_Zoom_Postprocessing.ipynb");
-
-            Console.WriteLine("SlipConvergence_Droplet_Zoom @ FDYcluster");
+                [
+                    "XNSFE_Solver/SlipConvergence/SlipConvergence_Droplet_Zoom.ipynb",
+                    "XNSFE_Solver/SlipConvergence/SlipConvergence_Droplet_Zoom_Postprocessing.ipynb"
+                ],
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0),
+                "SlipConvergence_Droplet_Zoom @ FDYcluster");
         }
 
         /// <summary>
@@ -1132,14 +1114,11 @@ namespace ValidationTestRunner {
         static public void Run__3PhaseDemo() {
             // test just confirms runnability of worksheet, no hard data is compared (it is just a qualitative example)
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__3PhaseDemo
-
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            Run__LongTest(
                 "3PhaseDemo",
-                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
-
-            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/HeatedWall_Simple/HeatedWall90DegSimple_3PhaseDemo.ipynb");
-
-            Console.WriteLine("3Phase Demo @ FDYcluster");
+                ["XNSFE_Solver/HeatedWall_Simple/HeatedWall90DegSimple_3PhaseDemo.ipynb"],
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0),
+                "3Phase Demo @ FDYcluster");
         }
 
         /// <summary>
@@ -1151,21 +1130,13 @@ namespace ValidationTestRunner {
         [Test]
         static public void Run__HeatedWallSimple() {
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__HeatedWallSimple
-            string really = System.Environment.GetEnvironmentVariable("RUN_HEATEDWALLSIMPLE");
-            if (really.IsEmptyOrWhite()) {
-                Console.WriteLine("skipping Run__HeatedWallSimple ");
-                return;
-            } else {
-                Console.WriteLine("RUN_HEATEDWALLSIMPLE = " + really);
-            }
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            Run__LongTest(
                 "HeatedWallSimple_VerificationFastMarching",
+                ["XNSFE_Solver/HeatedWall_Validation/HeatedWallSimple_VerificationFastMarching.ipynb"],
                 "HeatedWall_Simple*",
                 "delete_HeatedWallSimple",
-                new TimeSpan(days: 10, hours: 1, minutes: 0, seconds: 0));
-
-            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/HeatedWall_Validation/HeatedWallSimple_VerificationFastMarching.ipynb");
-            Console.WriteLine("HeatedWallSimple @ FDYcluster");
+                new TimeSpan(days: 10, hours: 1, minutes: 0, seconds: 0),
+                "HeatedWallSimple @ FDYcluster");
         }
 
         /// <summary>
@@ -1179,22 +1150,23 @@ namespace ValidationTestRunner {
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__HeatedWallConvergence
 
             string really = System.Environment.GetEnvironmentVariable("RUN_HEATEDWALLCONVERGENCE");
-            if (really.IsEmptyOrWhite()) {
+            if(really.IsEmptyOrWhite()) {
                 Console.WriteLine("skipping Run__HeatedWallConvergence ");
                 return;
             } else {
                 Console.WriteLine("RUN_HEATEDWALLCONVERGENCE = " + really);
             }
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            Run__LongTest(
                 "HeatedWallSimple_VerificationFastMarching",
+                [
+                    "XNSFE_Solver/HeatedWall_Validation/HeatedWallConvergenceValidation_Controls.ipynb",
+                    "XNSFE_Solver/HeatedWall_Validation/HeatedWallConvergenceValidation_Postprocessing.ipynb",
+                    "XNSFE_Solver/HeatedWall_Validation/HeatedWallConvergenceValidation_Comparison.ipynb"
+                ],
                 "HeatedWall_Simple*",
                 "delete_HeatedWallConvergence",
-                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
-
-            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/HeatedWall_Validation/HeatedWallConvergenceValidation_Controls.ipynb");
-            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/HeatedWall_Validation/HeatedWallConvergenceValidation_Postprocessing.ipynb");
-            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/HeatedWall_Validation/HeatedWallConvergenceValidation_Comparison.ipynb");
-            Console.WriteLine("HeatedWallConvergence @ FDYcluster");
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0),
+                "HeatedWallConvergence @ FDYcluster");
         }
 
         #endregion
@@ -1206,18 +1178,11 @@ namespace ValidationTestRunner {
             )]
         [Test]
         static public void Run__CouetteTemperatureDifference_ConvStudy() {
-            Console.WriteLine("HeatedCouette @ FDYcluster");
-
-            // delete the database if it is more than XX days old;
-            // this will cause a re-execution of all computations
-            // otherwise, i.e. if the database is not deleted, sessions from the database 
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            Run__LongTest(
                 "CouetteTemperatureDifference_ConvStudy",
-                "CouetteTemperatureDifference_ConvStudyca*",
-                "delete_CouetteTemperatureDifference_ConvStudy",
-                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 1));
-            ValidationTestRunnerMain.RunWorksheet("LowMach/HeatedCouetteFlow/CouetteTemperatureDifference_ConvStudy.ipynb");
-
+                ["LowMach/HeatedCouetteFlow/CouetteTemperatureDifference_ConvStudy.ipynb"],
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 1),
+                "HeatedCouette @ FDYcluster");
         }
 
 
@@ -1232,17 +1197,14 @@ namespace ValidationTestRunner {
         [Test]
         static public void Run__HeatedCavityRayleighSweep() {
             //--test=ValidationTestRunner.WorksheetTests_Local.Run__HeatedCavityRayleighSweep 
-            Console.WriteLine("HeatedCavity_RaSweep @ FDYcluster");
-
-            // delete the database if it is more than XX days old;
-            // this will cause a re-execution of all computations
-            // otherwise, i.e. if the database is not deleted, sessions from the database 
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            Run__LongTest(
                 "HeatedCavity_RayleighSweepStudy",
-                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 1));
-            ValidationTestRunnerMain.RunWorksheet("LowMach/HeatedSquareCavity/HeatedCavity_RaSweep.ipynb");
-            ValidationTestRunnerMain.RunWorksheet("LowMach/HeatedSquareCavity/HeatedCavity_RaSweepPostProc.ipynb");
-
+                [
+                    "LowMach/HeatedSquareCavity/HeatedCavity_RaSweep.ipynb",
+                    "LowMach/HeatedSquareCavity/HeatedCavity_RaSweepPostProc.ipynb"
+                ],
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 1),
+                "HeatedCavity_RaSweep @ FDYcluster");
         }
         /// <summary>
         /// Test of the Low-Mach solver;
@@ -1251,15 +1213,14 @@ namespace ValidationTestRunner {
         [NUnitFileToCopyHack("LowMach/HeatedSquareCavity/HeatedCavity_ConvStudy.ipynb", "LowMach/HeatedSquareCavity/HeatedCavity_ConvStudyPostProc.ipynb")]
         [Test]
         static public void Run__HeatedCavityConvergenceStudy() {
-            Console.WriteLine("HeatedCavity_ConvStudy @ FDYcluster");
-
-
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            Run__LongTest(
                 "HeatedCavity_ConvergenceStudy",
-                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 1));
-            ValidationTestRunnerMain.RunWorksheet("LowMach/HeatedSquareCavity/HeatedCavity_ConvStudy.ipynb");
-            ValidationTestRunnerMain.RunWorksheet("LowMach/HeatedSquareCavity/HeatedCavity_ConvStudyPostProc.ipynb");
-
+                [
+                    "LowMach/HeatedSquareCavity/HeatedCavity_ConvStudy.ipynb",
+                    "LowMach/HeatedSquareCavity/HeatedCavity_ConvStudyPostProc.ipynb"
+                ],
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 1),
+                "HeatedCavity_ConvStudy @ FDYcluster");
         }
 
 
@@ -1271,14 +1232,15 @@ namespace ValidationTestRunner {
         [Test]
         static public void Run__HeatedCavityNusseltStudy() {
             //ValidationTestRunner.WorksheetTests_Local.Run__HeatedCavityNusseltStudy
-            Console.WriteLine("HeatedCavityNusseltStudy @ FDYcluster");
             //System.Diagnostics.Debugger.Launch();
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            Run__LongTest(
                 "HeatedCavity_NusseltStudy",
-                new TimeSpan(days: 30, hours: 0, minutes: 0, seconds: 1));
-            ValidationTestRunnerMain.RunWorksheet("LowMach/HeatedSquareCavity/HeatedCavity_NusseltStudy.ipynb");
-            ValidationTestRunnerMain.RunWorksheet("LowMach/HeatedSquareCavity/HeatedCavity_NusseltStudyPostProc.ipynb");
-
+                [
+                    "LowMach/HeatedSquareCavity/HeatedCavity_NusseltStudy.ipynb",
+                    "LowMach/HeatedSquareCavity/HeatedCavity_NusseltStudyPostProc.ipynb"
+                ],
+                new TimeSpan(days: 30, hours: 0, minutes: 0, seconds: 1),
+                "HeatedCavityNusseltStudy @ FDYcluster");
         }
 
         /// <summary>
@@ -1291,14 +1253,16 @@ namespace ValidationTestRunner {
             "LowMach/DiffusionFlames/CounterDiffusionFlame/ML*.txt")]
         [Test]
         static public void Run__CounterDiffusionFlame() {
-            Console.WriteLine("CounterFlowFlame @ FDYcluster");
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            Run__LongTest(
                 "CounterFlowFlame_MF_FullComparison",
+                [
+                    "LowMach/DiffusionFlames/CounterDiffusionFlame/CounterFlowFlame_Calculations.ipynb",
+                    "LowMach/DiffusionFlames/CounterDiffusionFlame/CounterFlowFlame_PostProc.ipynb"
+                ],
                 "CounterFlowFlame_MF_FullComparison*",
                 "delete_CounterDiffusionFlame",
-                new TimeSpan(days: 30, hours: 0, minutes: 0, seconds: 1));
-            ValidationTestRunnerMain.RunWorksheet("LowMach/DiffusionFlames/CounterDiffusionFlame/CounterFlowFlame_Calculations.ipynb");
-            ValidationTestRunnerMain.RunWorksheet("LowMach/DiffusionFlames/CounterDiffusionFlame/CounterFlowFlame_PostProc.ipynb");
+                new TimeSpan(days: 30, hours: 0, minutes: 0, seconds: 1),
+                "CounterFlowFlame @ FDYcluster");
         }
 
 
@@ -1308,22 +1272,18 @@ namespace ValidationTestRunner {
         [NUnitFileToCopyHack("LowMach/DiffusionFlames/CoFlowDiffusionFlame/CoFlowFlame_Calculations.ipynb")]
         [Test]
         static public void Run__CoFlowDiffusionFlame() {
-            Console.WriteLine("CoFlowDiffusionFlame @ FDYcluster");
-
-            string really = System.Environment.GetEnvironmentVariable("RUN_COFLOWFLAME");
-            if (really.IsEmptyOrWhite()) {
-                Console.WriteLine("skipping Run__CoFlowDiffusionFlame ");
-                return;
-            } else {
-                Console.WriteLine("RUN_COFLOWFLAME = " + really);
-            }
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            // string really = System.Environment.GetEnvironmentVariable("RUN_COFLOWFLAME");
+            // if (really.IsEmptyOrWhite()) {
+            //     Console.WriteLine("skipping Run__CoFlowDiffusionFlame ");
+            //     return;
+            // } else {
+            //     Console.WriteLine("RUN_COFLOWFLAME = " + really);
+            // }
+            Run__LongTest(
                 "CounterFlowFlame",
-                new TimeSpan(days: 30, hours: 0, minutes: 0, seconds: 1));
-
-
-            ValidationTestRunnerMain.RunWorksheet("LowMach/DiffusionFlames/CoFlowDiffusionFlame/CoFlowFlame_Calculations.ipynb");
-
+                ["LowMach/DiffusionFlames/CoFlowDiffusionFlame/CoFlowFlame_Calculations.ipynb"],
+                new TimeSpan(days: 30, hours: 0, minutes: 0, seconds: 1),
+                "CoFlowDiffusionFlame @ FDYcluster");
         }
 
 
@@ -1331,12 +1291,13 @@ namespace ValidationTestRunner {
 
         [Test]
         static public void Run__HeatedBackwardFacingStep() {
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            Run__LongTest(
                 "HeatedBackwardFacingStep",
+                [
+                    "LowMach/HeatedBackwardFacingStep/HeatedBackwardFacingStep.ipynb",
+                    "LowMach/HeatedBackwardFacingStep/HeatedBackwardFacingStep_PostProc.ipynb"
+                ],
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 1));
-
-            ValidationTestRunnerMain.RunWorksheet("LowMach/HeatedBackwardFacingStep/HeatedBackwardFacingStep.ipynb");
-            ValidationTestRunnerMain.RunWorksheet("LowMach/HeatedBackwardFacingStep/HeatedBackwardFacingStep_PostProc.ipynb");
         }
 
 
@@ -1354,13 +1315,14 @@ namespace ValidationTestRunner {
         [Test]
         static public void Run__DiffusionFlameConvergenceStudy() {
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__DiffusionFlameConvergenceStudy
-            Console.WriteLine("Convergence study of diffusion flame @ FDYcluster");
-
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            Run__LongTest(
                 "DiffFlameConvergenceStudy",
-                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 1));
-            ValidationTestRunnerMain.RunWorksheet("LowMach/DiffusionFlames/ChamberedDiffusionFlame/ChamberFlame_ConvStudy_Calculations.ipynb");
-            ValidationTestRunnerMain.RunWorksheet("LowMach/DiffusionFlames/ChamberedDiffusionFlame/ChamberFlame_ConvStudy_PostProc.ipynb");
+                [
+                    "LowMach/DiffusionFlames/ChamberedDiffusionFlame/ChamberFlame_ConvStudy_Calculations.ipynb",
+                    "LowMach/DiffusionFlames/ChamberedDiffusionFlame/ChamberFlame_ConvStudy_PostProc.ipynb"
+                ],
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 1),
+                "Convergence study of diffusion flame @ FDYcluster");
         }
 
         /// <summary> 
@@ -1374,54 +1336,28 @@ namespace ValidationTestRunner {
             "Oscillating-Droplet/data/InitialValues/m*/polarVel*.txt")]
         [Test]
         static public void Run__Droplet3D() {
-
-            string really = null; // System.Environment.GetEnvironmentVariable("RUN_DROPLET");
-            if (really.IsEmptyOrWhite()) {
-                Console.WriteLine("skipping Run__Droplet3D ");
-                return;
-            } else {
-                Console.WriteLine("RUN_DROPLET = " + really);
-            }
-
-            Console.WriteLine("Let's go...");
-
-            // delete the database if it is more than XX days old;
-            // this will cause a re-execution of all computations
-            // otherwise, i.e. if the database is not deleted, sessions from the database 
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            Run__LongTest(
                 "OscillatingDroplet3D",
+                [
+                    "Oscillating-Droplet/Droplet3D.ipynb",
+                    "Oscillating-Droplet/Droplet3D.ipynb"
+                ],
                 new TimeSpan(days: 60, hours: 1, minutes: 0, seconds: 1));
-            ValidationTestRunnerMain.RunWorksheet("Oscillating-Droplet/Droplet3D.ipynb");
-
-            ValidationTestRunnerMain.RunWorksheet("Oscillating-Droplet/Droplet3D.ipynb");
         }
 
 
         /// <summary> 
-        /// combustion of a droplet,
-        /// from the project of Juan Gutierrez
+        /// combustion of a droplet, from the project of Juan Gutierrez
+        /// (** probably never worked?**)
         /// </summary>
         [NUnitFileToCopyHack("examples/CombustingDroplet/CombustingDroplet.ipynb")]
         [Test]
         static public void Run__CombustingDroplet() {
-            //ValidationTestRunner.WorksheetTests_Local.Run__CombustingDroplet
-            string really = System.Environment.GetEnvironmentVariable("RUN_COMBDROPLET");
-            if (really.IsEmptyOrWhite()) {
-                Console.WriteLine("skipping Run__CombustingDroplet ");
-                return;
-            } else {
-                Console.WriteLine("RUN_COMBDROPLET = " + really);
-            }
-
-            Console.WriteLine("Let's go...");
-
-            // delete the database if it is more than XX days old;
-            // this will cause a re-execution of all computations
-            // otherwise, i.e. if the database is not deleted, sessions from the database 
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__CombustingDroplet
+            Run__LongTest(
                 "CombustingDroplet",
+                ["CombustingDroplet.ipynb"],
                 new TimeSpan(days: 60, hours: 1, minutes: 0, seconds: 1));
-            ValidationTestRunnerMain.RunWorksheet("CombustingDroplet.ipynb");
         }
 
         /// <summary> 
@@ -1431,25 +1367,10 @@ namespace ValidationTestRunner {
         [NUnitFileToCopyHack("Oscillating-Droplet/Droplet3D-FirstPeriodStudy.ipynb", "Oscillating-Droplet/data/InitialValues/m*/surfaceDrop*.txt")]
         [Test]
         static public void Run__Droplet3D_FirstPeriodStudy() {
-
-            string really = null; // System.Environment.GetEnvironmentVariable("RUN_DROPLET_FIRSTPERIOD");
-            if (really.IsEmptyOrWhite()) {
-                Console.WriteLine("skipping Run__Droplet3D_FirstPeriodStudy ");
-                return;
-            } else {
-                Console.WriteLine("RUN_DROPLET_FIRSTPERIOD = " + really);
-            }
-
-            Console.WriteLine("Let's go...");
-
-            // delete the database if it is more than XX days old;
-            // this will cause a re-execution of all computations
-            // otherwise, i.e. if the database is not deleted, sessions from the database 
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            Run__LongTest(
                 "OscillatingDroplet3D_FirstPeriodStudy",
+                ["Oscillating-Droplet/Droplet3D-FirstPeriodStudy.ipynb"],
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 1));
-
-            ValidationTestRunnerMain.RunWorksheet("Oscillating-Droplet/Droplet3D-FirstPeriodStudy.ipynb");
         }
 
 
@@ -1466,7 +1387,7 @@ namespace ValidationTestRunner {
         static public void Run__DropletReboundGauthier() {
 
             string really = System.Environment.GetEnvironmentVariable("RUN_DROPLET_REBOUND_GAUTHIER");
-            if (really.IsEmptyOrWhite()) {
+            if(really.IsEmptyOrWhite()) {
                 Console.WriteLine("skipping Run__DropletReboundGauthier ");
                 return;
             } else {
@@ -1490,7 +1411,7 @@ namespace ValidationTestRunner {
 
 
         /// <summary>
-        /// Steady state convergence study of a Kovasznay flow for checking the Dong BC
+        ///  Dong Boundary Condition: Steady-State Convergence study computing Kovasznay Flow
         /// </summary>
         [NUnitFileToCopyHack(
             "examples/DropletImpact/DongBC_SteadyStateConvStudy_KovasznayFlow.ipynb",
@@ -1508,6 +1429,9 @@ namespace ValidationTestRunner {
             //ValidationTestRunnerMain.RunWorksheet("DongBC_SteadyStateConvStudy_KovasznayFlow.ipynb");
 
             ValidationTestRunnerMain.RunWorksheet("DongBC_SteadyStateConvStudy_KovasznayFlow_PostProcessing.ipynb");
+
+            // if we reach this point, its a success - backup the datebase
+            ValidationTestRunnerMain.BackupDatabase("KovasznayFlow_ConvStudy");
         }
 
 
@@ -1519,23 +1443,18 @@ namespace ValidationTestRunner {
         static public void Run__ParLinSlvPerfPar_GridGen() {
 
             string really = System.Environment.GetEnvironmentVariable("RUN_PARLINSLVPERF_GRIDGEN");
-            if (really.IsEmptyOrWhite()) {
+            if(really.IsEmptyOrWhite()) {
                 Console.WriteLine("skipping Run__ParLinSlvPerf_GridGen");
                 return;
             } else {
                 Console.WriteLine("RUN_PARLINSLVPERF_GRIDGEN = " + really);
             }
 
-            Console.WriteLine("Lets go...");
-
-            // delete the database if it is more than XX days old;
-            // this will cause a re-execution of all computations
-            // otherwise, i.e. if the database is not deleted, sessions from the database 
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            Run__LongTest(
                 "LinslvPerfPar_GridGen",
-                new TimeSpan(days: 60, hours: 1, minutes: 0, seconds: 1));
-
-            ValidationTestRunnerMain.RunWorksheet("ParLinslvPerf_GridGen.ipynb");
+                ["ParLinslvPerf_GridGen.ipynb"],
+                new TimeSpan(days: 60, hours: 1, minutes: 0, seconds: 1),
+                "Lets go...");
 
         }
 
@@ -1551,19 +1470,11 @@ namespace ValidationTestRunner {
             "examples/RisingBubble/RisingBubble2D_EvaluateSingleTest.ipynb")]
         [Test]
         static public void Run__RisingBubble2D_SingleTest() {
-
-            // delete the database if it is more than XX days old;
-            // this will cause a re-execution of all computations
-            // otherwise, i.e. if the database is not deleted, sessions from the database 
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            Run__LongTest(
                 "RisingBubble2D",
-                $"RisingBubble2D*",
-                "delete_RisingBubble2D",
-                new TimeSpan(days: 60, hours: 0, minutes: 0, seconds: 1));
-
-            //ValidationTestRunnerMain.RunWorksheet("DongBC_SteadyStateConvStudy_KovasznayFlow.ipynb");
-
-            ValidationTestRunnerMain.RunWorksheet("RisingBubble2D_EvaluateSingleTest.ipynb");
+                ["RisingBubble2D_EvaluateSingleTest.ipynb"],
+                new TimeSpan(days: 60, hours: 0, minutes: 0, seconds: 1),
+                backupDatabase: false);
         }
 
         #endregion
@@ -1703,21 +1614,17 @@ namespace ValidationTestRunner {
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__LinslvPerfSer
 
             string PROJECT_NAME = System.Environment.GetEnvironmentVariable("LinslvPerfSer") ?? "LinslvPerfSer"; // this allows to modify the project name for testing purposes
-
-            // delete the database if it is more than XX days old;
-            // this will cause a re-execution of all computations
-            // otherwise, i.e. if the database is not deleted, sessions from the database 
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            Run__LongTest(
                 PROJECT_NAME,
+                [
+                    "LinslvPerf_ConstPoissonMpi1.ipynb",
+                    "LinslvPerf_XdgPoissonSer.ipynb",
+                    "LinslvPerf_BottiPietroStokes2D.ipynb",
+                    "LinslvPerf_BottiPietroStokes3D.ipynb",
+                    "LinslvPerf_XdgStokes.ipynb",
+                    "LinslvPerf_Evaluation.ipynb"
+                ],
                 new TimeSpan(days: 60, hours: 0, minutes: 0, seconds: 1));
-
-            ValidationTestRunnerMain.RunWorksheet("LinslvPerf_ConstPoissonMpi1.ipynb");
-            ValidationTestRunnerMain.RunWorksheet("LinslvPerf_XdgPoissonSer.ipynb");
-            ValidationTestRunnerMain.RunWorksheet("LinslvPerf_BottiPietroStokes2D.ipynb");
-            ValidationTestRunnerMain.RunWorksheet("LinslvPerf_BottiPietroStokes3D.ipynb");
-            ValidationTestRunnerMain.RunWorksheet("LinslvPerf_XdgStokes.ipynb");
-
-            ValidationTestRunnerMain.RunWorksheet("LinslvPerf_Evaluation.ipynb");
         }
 
 
@@ -1761,17 +1668,7 @@ namespace ValidationTestRunner {
         [NUnitFileToCopyHack("memprofile/memprofile.ipynb")]
         [Test]
         static public void Run__memprofile() {
-
-            const string PROJECT_NAME = "memprofile";
-
-            // delete the database if it is more than XX days old;
-            // this will cause a re-execution of all computations
-            // otherwise, i.e. if the database is not deleted, sessions from the database 
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
-                PROJECT_NAME,
-                new TimeSpan(days: 10, hours: 0, minutes: 0, seconds: 1));
-
-            ValidationTestRunnerMain.RunWorksheet("memprofile/memprofile.ipynb");
+            Run__LongTest("memprofile", ["memprofile/memprofile.ipynb"], new TimeSpan(days: 10, hours: 0, minutes: 0, seconds: 1));
         }
 
         /// <summary> 
@@ -1781,19 +1678,44 @@ namespace ValidationTestRunner {
         [Test]
         static public void Run__DropletInShearFlow() {
             //--test=ValidationTestRunner.WorksheetTests_Local_long.Run__DropletInShearFlow
+            Run__LongTest("DropletInShearFlow", ["DropletInShearFlow/DropletInShearFlow.ipynb"], new TimeSpan(days: 10, hours: 0, minutes: 0, seconds: 1));
+        }
 
-            const string PROJECT_NAME = "DropletInShearFlow";
-
+        static void Run__LongTest(string PROJECT_NAME, IEnumerable<string> WorkSheetNameS, TimeSpan resultsShelfLife, string completionMessage = null, bool backupDatabase = true) {
             // delete the database if it is more than XX days old;
             // this will cause a re-execution of all computations
             // otherwise, i.e. if the database is not deleted, sessions from the database 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 PROJECT_NAME,
-                new TimeSpan(days: 10, hours: 0, minutes: 0, seconds: 1));
+                resultsShelfLife);
 
-            ValidationTestRunnerMain.RunWorksheet("DropletInShearFlow/DropletInShearFlow.ipynb");
+            Run__LongTestCore(PROJECT_NAME, WorkSheetNameS, completionMessage, backupDatabase);
         }
 
+        static void Run__LongTest(string PROJECT_NAME, IEnumerable<string> WorkSheetNameS, string deploymentPattern, string deleteDeploymentsJobName, TimeSpan resultsShelfLife, string completionMessage = null, bool backupDatabase = true) {
+            // delete the database if it is more than XX days old;
+            // this will cause a re-execution of all computations
+            // otherwise, i.e. if the database is not deleted, sessions from the database 
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                PROJECT_NAME,
+                deploymentPattern,
+                deleteDeploymentsJobName,
+                resultsShelfLife);
+
+            Run__LongTestCore(PROJECT_NAME, WorkSheetNameS, completionMessage, backupDatabase);
+        }
+
+        static void Run__LongTestCore(string PROJECT_NAME, IEnumerable<string> WorkSheetNameS, string completionMessage, bool backupDatabase) {
+            foreach(string WorkSheetName in WorkSheetNameS)
+                ValidationTestRunnerMain.RunWorksheet(WorkSheetName);
+
+            if(!string.IsNullOrWhiteSpace(completionMessage))
+                Console.WriteLine(completionMessage);
+
+            if(backupDatabase)
+                ValidationTestRunnerMain.BackupDatabase(PROJECT_NAME);
+
+        }
     }
 
 
@@ -1818,8 +1740,8 @@ namespace ValidationTestRunner {
             try {
                 JupyterMutex.WaitOne();
 
-                NotebookRunner.DeleteDatabase("Demo_BoundaryAndInitialData");
-                NotebookRunner.DeleteDeployments("Demo_BoundaryAndInitialData*");
+                WorkflowMgmTestUtils.DeleteDatabase("Demo_BoundaryAndInitialData");
+                WorkflowMgmTestUtils.DeleteDeployments("Demo_BoundaryAndInitialData*");
                 ValidationTestRunnerMain.RunWorksheet("BoundaryAndInitialData/BoundaryAndInitialData.ipynb");
             } finally {
                 JupyterMutex.ReleaseMutex();
@@ -1830,13 +1752,56 @@ namespace ValidationTestRunner {
         [NUnitFileToCopyHack("MetaJobManager/MetaJobManager.ipynb")]
         [Test]
         static public void Run__MetaJobManager() {
-            //--test=ValidationTestRunner.WorksheetTests_Local.Run__MetaJobManager
+            //--test=ValidationTestRunner.WorksheetTests_Local_short.Run__MetaJobManager
             Mutex JupyterMutex = new Mutex(false, "MetaJobManager_Tutorial");
             try {
+                // 0.) Clean leftover of previous runs
+                // -----------------------------------
                 JupyterMutex.WaitOne();
-                NotebookRunner.DeleteDatabase("MetaJobManager_Tutorial");
-                NotebookRunner.DeleteDeployments("MetaJobManager_Tutorial*");
+                WorkflowMgmTestUtils.DeleteDatabase("MetaJobManager_Tutorial");
+                WorkflowMgmTestUtils.DeleteDeployments("MetaJobManager_Tutorial*");
+
+                var allDepl = WorkflowMgmTestUtils.GetAllDeployments("MetaJobManager_Tutorial*");
+                Assert.Zero(allDepl.Length, $"expecting 0 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
+
+                // 1.) First run
+                // -----------------------------------
+
                 ValidationTestRunnerMain.RunWorksheet("MetaJobManager/MetaJobManager.ipynb");
+
+                BoSSSshell.WorkflowMgm.Init("MetaJobManager_Tutorial");
+
+                Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Length, 1, "expecting exactly one session after the workseet has been executed");
+                Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Single().ProjectName, "MetaJobManager_Tutorial", "un-expected project name");
+                allDepl = WorkflowMgmTestUtils.GetAllDeployments("MetaJobManager_Tutorial*");
+                Assert.AreEqual(allDepl.Length, 1, $"expecting 1 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
+                Console.WriteLine("successfully finished first run.");
+
+                /*
+                // 2.) Persistence test: Test that, if the Worksheet is already executed, the job will **not** be re-submitted
+                // --------------------------------------------------------------------------------------------------------------------------
+                // execute the worksheet a second time!
+                ValidationTestRunnerMain.RunWorksheet("MetaJobManager/MetaJobManager.ipynb");
+
+                allDepl = WorkflowMgmTestUtils.GetAllDeployments("MetaJobManager_Tutorial*");
+                Assert.AreEqual(allDepl.Length, 1, $"expecting 1 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
+                BoSSSshell.WorkflowMgm.ResetSessionsCache();
+                Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Length, 1, "expecting exactly one session after the workseet has been executed twice");
+                Console.WriteLine("successfully finished second run.");
+
+                // 3.) delete deployments and test a third time:
+                // -----------------------------------------------
+                WorkflowMgmTestUtils.DeleteDeployments("MetaJobManager_Tutorial*");
+                ValidationTestRunnerMain.RunWorksheet("MetaJobManager/MetaJobManager.ipynb");
+
+                BoSSSshell.WorkflowMgm.ResetSessionsCache();
+                Assert.AreEqual(BoSSSshell.WorkflowMgm.Sessions.Length, 1, "expecting exactly one session after the workseet has been executed twice");
+                allDepl = WorkflowMgmTestUtils.GetAllDeployments("MetaJobManager_Tutorial*");
+                Assert.Zero(allDepl.Length, $"expecting 0 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
+                Console.WriteLine("successfully finished third run.");
+                */
+
+
             } finally {
                 JupyterMutex.ReleaseMutex();
             }
@@ -1864,15 +1829,15 @@ namespace ValidationTestRunner {
             Mutex JupyterMutex = new Mutex(false, "ConvStudyTutorial");
             try {
                 JupyterMutex.WaitOne();
-                NotebookRunner.DeleteDatabase("ConvStudyTutorial");
-                NotebookRunner.DeleteDeployments("ConvStudyTutorial*");
+                WorkflowMgmTestUtils.DeleteDatabase("ConvStudyTutorial");
+                WorkflowMgmTestUtils.DeleteDeployments("ConvStudyTutorial*");
                 ValidationTestRunnerMain.RunWorksheet("convergenceStudyTutorial/convStudy.ipynb");
             } finally {
                 JupyterMutex.ReleaseMutex();
             }
         }
 
-        
+
     }
 
     /// <summary>
@@ -1927,6 +1892,9 @@ namespace ValidationTestRunner {
             ValidationTestRunnerMain.RunWorksheet("ParLinslvPerf_XdgStokes.ipynb", allowErrors: true);
 
             ValidationTestRunnerMain.RunWorksheet("ParLinslvPerf_Evaluation.ipynb", allowErrors: false);
+
+            // if we reach this point, its a success - backup the datebase
+            ValidationTestRunnerMain.BackupDatabase(PROJECT_NAME);
         }
 
     }
@@ -1976,6 +1944,9 @@ namespace ValidationTestRunner {
             Console.WriteLine("Testing MetaJobManager @ Lichtenberg...");
             ValidationTestRunnerMain.RunWorksheet("MetaJobManager/MetaJobManager.ipynb");
             Console.WriteLine("Finished MetaJobManager @ Lichtenberg.");
+
+            // if we reach this point, its a success - backup the datebase
+            ValidationTestRunnerMain.BackupDatabase("MetaJobManager_Tutorial");
         }
 
 
@@ -1995,6 +1966,17 @@ namespace ValidationTestRunner {
 
         /// <summary>
         /// Deletes a database <paramref name="Directory"/> if it older than specified by <paramref name="DeletionAge"/>
+        /// <see cref="DeleteDatabaseAndDeploymentsWhenOld(string, string, string, TimeSpan)"/>
+        /// </summary>
+        public static void DeleteDatabaseAndDeploymentsWhenOld(string Directory) {
+            var t = new TimeSpan(days: 30, hours: 0, minutes: 0, seconds: 12);
+            DeleteDatabaseAndDeploymentsWhenOld(Directory, t);
+        }
+
+        /// <summary>
+        /// Deletes a database, resp. moves it to a backup directory, 
+        /// if the database in <paramref name="Directory"/> if it older than specified by <paramref name="DeletionAge"/>
+        /// Furthermore, all matching job deploymnets will be deleted
         /// - this will cause a re-execution of all computations specified in the test.
         /// - otherwise, i.e. if the database is not deleted, existing sessions from the database may be taken if they match 
         ///    the respective compute job (<see cref="Job"/>)
@@ -2016,13 +1998,13 @@ namespace ValidationTestRunner {
             var nau = DateTime.Now;
 
             EnforceDeletionEnvVar = EnforceDeletionEnvVar.ToUpperInvariant();
-            
+
 
             bool enforce = false;
             if(EnforceDeletionEnvVar != null) {
                 string really = System.Environment.GetEnvironmentVariable(EnforceDeletionEnvVar) ?? "";
                 string really2 = System.Environment.GetEnvironmentVariable("BOSSS_DELTETE_OLD_DEPLOYMENTS_DATABASES_MASTER") ?? "";
-                if ((really.IsNonEmpty() && really.Trim() != "0")
+                if((really.IsNonEmpty() && really.Trim() != "0")
                     || (really2.IsNonEmpty() && really2.Trim() != "0")
                     || masterEnforceDeletion) {
 
@@ -2035,8 +2017,56 @@ namespace ValidationTestRunner {
             //Console.WriteLine("Note Deletion deactivated !!!!!!!!!!!!!!!!!!!!!!!!!");
             //return; /*
 
+            //List<string> DirsToIgnore = new List<string>();
+            //bool delete = false; // deletion is decided based on the age of the database folder
+            (var delete, var DirsToIgnore) = BackupDatabase_IfOld(Directory, DeletionAge, nau, enforce, "todelete");
+
+            if(delete) {
+                Console.WriteLine("deletion of old deployments in execution queues");
+                foreach(var q in BoSSSshell.ExecutionQueues) {
+                    // delete old deployment
+                    // =====================
+
+                    {
+                        Console.WriteLine("searching for deployments in: " + q.DeploymentBaseDirectory);
+
+                        var deplDirs = (new DirectoryInfo(q.DeploymentBaseDirectory)).GetDirectories(DeployMents, SearchOption.TopDirectoryOnly);
+                        foreach(var d in deplDirs) {
+                            if(DirsToIgnore.Any(keepDir => keepDir.Equals(d.FullName)))
+                                continue; // don't delete the db
+
+                            if(delete && d.Exists) {
+                                try {
+                                    Console.WriteLine("Deleting deployment dir: " + d.FullName);
+                                    d.Delete(true);
+                                    Console.WriteLine("  done.");
+                                } catch(Exception e) {
+                                    Console.Error.WriteLine("   caught exception: " + e);
+                                }
+                            }
+                        }
+                    }
+
+
+                    Console.Out.Flush();
+                }
+            } else {
+                Console.WriteLine("No deletion of old deployments");
+            }
+            //*/
+        }
+
+        /// <summary>
+        /// creates a backup of a database 
+        /// </summary>
+        public static void BackupDatabase(string db_Directory_name) {
+            BackupDatabase_IfOld(db_Directory_name, TimeSpan.Zero, DateTime.Now, true, "bkup");
+        }
+
+        private static (bool database_is_expired, List<string> backup_directory_names) BackupDatabase_IfOld(string Directory, TimeSpan DeletionAge, DateTime nau, bool enforce, string backup_name_prefix) {
             List<string> DirsToIgnore = new List<string>();
-            bool delete = false; // deletion is decided based on the age of the database folder
+            bool delete = false;
+
             foreach(var q in BoSSSshell.ExecutionQueues) {
 
                 Console.WriteLine("Checking queue: " + q);
@@ -2055,7 +2085,7 @@ namespace ValidationTestRunner {
                             var age = nau - db.CreationTime;
                             if((age > DeletionAge || enforce) && db.Exists) {
                                 delete = true;
-                                string NewName = Path.Combine(Path.GetDirectoryName(db.FullName), "bkup-" + db.CreationTime.ToString("yyyyMMMdd_HHmmss") + "." + db.Name);
+                                string NewName = Path.Combine(Path.GetDirectoryName(db.FullName), backup_name_prefix + "-" + db.CreationTime.ToString("yyyyMMMdd_HHmmss") + "." + db.Name);
                                 Console.WriteLine("Renaming existing database: " + db.FullName + " -> " + NewName);
                                 db.MoveTo(NewName);
                                 DirsToIgnore.Add(NewName);
@@ -2065,34 +2095,7 @@ namespace ValidationTestRunner {
                 }
             }
 
-            if(delete) {
-                Console.WriteLine("deletion of old deployments in execution queues");
-                foreach(var q in BoSSSshell.ExecutionQueues) {
-                    // delete old deployment
-                    // =====================
-
-                    {
-                        Console.WriteLine("searching for deployments in: " + q.DeploymentBaseDirectory);
-
-                        var deplDirs = (new DirectoryInfo(q.DeploymentBaseDirectory)).GetDirectories(DeployMents, SearchOption.TopDirectoryOnly);
-                        foreach(var d in deplDirs) {
-                            if(DirsToIgnore.Any(keepDir => keepDir.Equals(d.FullName)))
-                                continue; // don't delete the db
-
-                            if(delete && d.Exists) {
-                                Console.WriteLine("Deleting deployment dir: " + d.FullName);
-                                d.Delete(true);
-                            }
-                        }
-                    }
-
-
-                    Console.Out.Flush();
-                }
-            } else {
-                Console.WriteLine("No deletion of old deployments");
-            }
-            //*/
+            return (delete, DirsToIgnore);
         }
 
         /// <summary>
@@ -2105,7 +2108,12 @@ namespace ValidationTestRunner {
         static int Main(string[] args) {
             PublicTestRunner.PublicTestRunnerMain.TimeOutSec = 24 * 3600 * 10; // 10 days
 
+
             try {
+                //BoSSS.Solution.Application.InitMPI(num_threads: 1);
+                //WorksheetTests_Local_short.Run__MetaJobManager();
+                //Assert.IsTrue(false, "remove me");
+
                 return PublicTestRunner.PublicTestRunnerMain._Main(args, new ValidationTests());
             } catch(Exception e) {
                 // note: this seemingly useless try-catch is here since our test runner server (FDYGITRUNNER)

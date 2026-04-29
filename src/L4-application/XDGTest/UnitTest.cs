@@ -230,6 +230,8 @@ namespace BoSSS.Application.XDGTest {
 
                 var si = TestDb3.Sessions.First(); 
                 int[] tsiNumbers = si.Timesteps.Select(tsi => tsi.TimeStepNumber.MajorNumber).ToArray();
+                Console.WriteLine("ExpectedTs2ndRun = " + ExpectedTs2ndRun.ToConcatString("[", ", ", "]"));
+                Console.WriteLine("tsiNumbers       = " + tsiNumbers.ToConcatString("[", ", ", "]"));
                 Assert.IsTrue(ExpectedTs2ndRun.ListEquals(tsiNumbers), "mismatch between saved time-steps in test database and expected saves.");
 
                    

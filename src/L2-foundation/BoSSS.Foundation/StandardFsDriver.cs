@@ -273,7 +273,6 @@ namespace BoSSS.Foundation.IO {
         /// - false: an exception is thrown if the file already exists;
         /// - true: an existing file would be overwritten
         /// </param>
-        /// <returns></returns>
         private Stream OpenFileExclusiveBlocking(bool create, string RelPath, bool ForceOverride) {
             using(var tr = new FuncTrace()) {
                 tr.Info("opening file '" + RelPath + "', create='" + create + "'");
@@ -343,6 +342,167 @@ namespace BoSSS.Foundation.IO {
                 }
             }
         }
+
+
+
+        /// <summary>
+        /// This is intended for files which store objects: 
+        /// - Opens some file in the database **exclusively**, i.e. if it is opened for writing (<paramref name="create"/> == true)
+        ///   this method will block on any other process 
+        ///   for write **and read** operations until the file 
+        ///   is released by the first process.
+        /// - Simultaneous reading should be allowed, however.
+        /// - Files will never be overwritten, instead new versions will be written.
+        ///   This helps with the caching, especially in network file systems
+        /// </summary>
+        /// <param name="create">
+        /// - true: creates a new file for writing;
+        /// - false: open a file for reading;
+        /// </param>
+        /// <param name="RelPath">
+        /// relative path within the base paths.
+        /// </param>
+        /// <returns>
+        /// a file stream
+        /// </returns>
+        private Stream OpenFileExclusiveBlockingVersionized(bool create, string RelPath) {
+            using(var tr = new FuncTrace()) {
+                //tr.InfoToConsole = true;
+                tr.Info("opening file '" + RelPath + "', create='" + create + "'");
+
+                string fullpath = Path.Combine(BasePath, RelPath);
+                string fullDirectory = Path.GetDirectoryName(fullpath);
+                string fileName = Path.GetFileName(fullpath);
+
+                string GetFullPathVersionized(int version) {
+                    if(version < 0)
+                        throw new ArgumentOutOfRangeException();
+                    if(version == 0)
+                        return fullpath;  // v0 without extension for backward compatibility
+                    else
+                        return fullpath + ".v" + version;
+                }
+
+                // find most recent file version
+                // -----------------------------
+
+                int TrimLen = fullpath.Length;
+                var allFiles = System.IO.Directory.GetFiles(fullDirectory, fileName + ".v*");
+                string mostRecentFile = null;
+                int mostRecentVersion = -1;
+                var sortedVersions = new Dictionary<int, string>();
+
+                if(File.Exists(fullpath)) {
+                    mostRecentFile = fullpath;
+                    mostRecentVersion = 0;
+                    sortedVersions.Add(0, fullpath);
+                }
+
+                if(allFiles.Length > 0) {
+                    foreach(string file in allFiles) {
+                        int version = -1;
+                        try {
+                            string versionString = file.Substring(TrimLen + 2);
+                            version = int.Parse(versionString);
+                        } catch (Exception e) {
+                            tr.Error("OpenFileExclusiveBlockingVersionized IO Error: " + e.ToString());
+                            continue;
+                        }
+
+                        sortedVersions.Add(version, file);
+
+                        if(version > mostRecentVersion) {
+                            mostRecentFile = file;
+                            mostRecentVersion = version;
+                        }
+                    }
+                }
+                tr.Info("most recent version: " + mostRecentVersion);
+
+                if(create) {
+                    // ++++++++++++++++++++++++++++++++++
+                    // create new file
+                    // ++++++++++++++++++++++++++++++++++
+
+                    string fullpathVersionized = GetFullPathVersionized(mostRecentVersion + 1);
+
+                    FileStream fs = null;
+                    int i = 0;
+                    while(fs == null) {
+                        try {
+                            fs = new FileStream(fullpathVersionized, FileMode.CreateNew,
+                                FileAccess.ReadWrite, FileShare.None);
+                        } catch(IOException ioe) {
+                            fs = null;
+                            tr.Info($"Write access to file {fullpathVersionized} is delayed by {ioe.GetType().Name}: {ioe.Message}.");
+                            i++;
+                            if(i > 1000) {
+                                tr.Logger.Error($"Write access to file {fullpathVersionized} TIMEOUT: {ioe.GetType().Name}: {ioe.Message}.");
+                                throw new IOException("File write open failed more than 1000 times. ", ioe);
+                            }
+                            System.Threading.Thread.Sleep(System.DateTime.Now.Millisecond + 501);
+                        }
+                    }
+
+                    
+                    if(sortedVersions.Count > 10) {
+                        var keys = sortedVersions.Keys.ToArray();
+                        Array.Sort(keys);
+                        foreach(var key in keys.Take(sortedVersions.Count - 10)) {
+                            try {
+                                File.Delete(sortedVersions[key]);
+                            } catch (Exception) {
+
+                            }
+                        }
+                    }
+                    
+
+                    //if(i > 0)
+                    //    Console.WriteLine();
+                    return fs;
+
+                } else {
+                    // ++++++++++++++++++++++++++++
+                    // try to open file for reading
+                    // ++++++++++++++++++++++++++++
+
+                    int VersionToRead = mostRecentVersion;
+                   
+                    FileNotFoundException exc = null;
+
+                    int i = 0;
+                    while(true) {
+                        try {
+                            byte[] allBytes = File.ReadAllBytes(GetFullPathVersionized(VersionToRead));
+                            tr.Info("Read " + allBytes.Length + " bytes from version " + VersionToRead);
+                            var ms = new MemoryStream(allBytes);
+                            return ms;
+                        } catch(FileNotFoundException fnf) {
+                            exc = fnf;
+                            throw exc;
+                        } catch(IOException ioe) {
+                            tr.Info($"Read access to file {GetFullPathVersionized(VersionToRead)} is delayed by {ioe.GetType().Name}: {ioe.Message}.");
+                            i++;
+                            if(i > 10) {
+                                if(VersionToRead > 0) {
+                                    i = 0;
+                                    VersionToRead--;
+                                } else {
+                                    tr.Logger.Error($"Read access to file {fullpath} TIMEOUT: {ioe.GetType().Name}: {ioe.Message}.");
+                                    throw new IOException("File read open failed very often. ", ioe);
+                                }
+                            }
+                            System.Threading.Thread.Sleep(System.DateTime.Now.Millisecond * 3 + 27);
+                        }
+                    }
+                }
+            }
+        }
+
+
+
+
 
         /// <summary>
         /// 
@@ -439,7 +599,7 @@ namespace BoSSS.Foundation.IO {
 
             string filename = Path.Combine(dirname, "Session.info");
 
-            return OpenFileExclusiveBlocking(create, filename, true);
+            return OpenFileExclusiveBlockingVersionized(create, filename);
         }
 
         /// <summary>
