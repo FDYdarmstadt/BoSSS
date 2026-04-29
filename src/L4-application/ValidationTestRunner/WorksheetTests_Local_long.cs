@@ -287,19 +287,12 @@ namespace ValidationTestRunner {
         // [Test]
         static public void Run__CLpaper_DropletOnWall_convergence() {
 
-            // delete the database if it is more than XX days old;
-            // this will cause a re-execution of all computations
-            // otherwise, i.e. if the database is not deleted, sessions from the database 
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
-                "CLpaper_DropletOnWall",
-                "CLpaper_DropletOnWall*",
-                "DELETE_CLpaper_DropletOnWall",
-                new TimeSpan(days: 120, hours: 1, minutes: 0, seconds: 0));
+            // original:
+            ////ValidationTestRunnerMain.RunWorksheet("StaticDropletOnSlipWall_convergence_Run.ipynb"); file is missing????
+            //ValidationTestRunnerMain.RunWorksheet("StaticDropletOnSlipWall_convergence_Evaluation.ipynb");
 
-            //ValidationTestRunnerMain.RunWorksheet("StaticDropletOnSlipWall_convergence_Run.ipynb");
-            ValidationTestRunnerMain.RunWorksheet("StaticDropletOnSlipWall_convergence_Evaluation.ipynb");
-
-            Console.WriteLine("CLpaper_DropletOnWall_convergence @ FDYcluster");
+            Run__LongTest("CLpaper_DropletOnWall",
+                ["StaticDropletOnSlipWall_convergence_Run.ipynb", "StaticDropletOnSlipWall_convergence_Evaluation.ipynb" ]);
 
         }
 
@@ -312,21 +305,6 @@ namespace ValidationTestRunner {
             "XNSE_Solver/DropletOnWall/StaticDropletOnSlipWall_transient_Evaluation.ipynb")]
         [Test]
         static public void Run__CLpaper_DropletOnWall_transient() {
-
-            // delete the database if it is more than XX days old;
-            // this will cause a re-execution of all computations
-            // otherwise, i.e. if the database is not deleted, sessions from the database 
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
-                "CLpaper_DropletOnWall",
-                "CLpaper_DropletOnWall*",
-                "DELETE_CLpaper_DropletOnWall",
-                new TimeSpan(days: 120, hours: 1, minutes: 0, seconds: 0));
-
-            ValidationTestRunnerMain.RunWorksheet("StaticDropletOnSlipWall_transient_Run.ipynb");
-            ValidationTestRunnerMain.RunWorksheet("StaticDropletOnSlipWall_transient_Evaluation.ipynb");
-
-            Console.WriteLine("CLpaper_DropletOnWall_transient @ FDYcluster");
-
             Run__LongTest("CLpaper_StaticDropletOnSlipWall",
                 ["StaticDropletOnSlipWall_transient_Run.ipynb", "StaticDropletOnSlipWall_transient_Evaluation.ipynb"],
                 new TimeSpan(days: 120, hours: 1, minutes: 0, seconds: 0));
@@ -544,6 +522,10 @@ namespace ValidationTestRunner {
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "PrintingNip_Part4",
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
+            var footprint_before1 = ValidationTestRunnerMain.GetDatabaseFootprint("PrintingNip_Part1");
+            var footprint_before2 = ValidationTestRunnerMain.GetDatabaseFootprint("PrintingNip_Part2");
+            var footprint_before3 = ValidationTestRunnerMain.GetDatabaseFootprint("PrintingNip_Part3");
+            var footprint_before4 = ValidationTestRunnerMain.GetDatabaseFootprint("PrintingNip_Part4");
 
             ValidationTestRunnerMain.RunWorksheet("PrintingNip/Part1_PrintingNip_Correlation_Run.ipynb");
             ValidationTestRunnerMain.RunWorksheet("PrintingNip/Part1_PrintingNip_Correlation_Evaluate.ipynb");
@@ -560,11 +542,31 @@ namespace ValidationTestRunner {
 
             Console.WriteLine("PrintingNip @ FDYcluster");
 
+            var footprint_after1 = ValidationTestRunnerMain.GetDatabaseFootprint("PrintingNip_Part1");
+            var footprint_after2 = ValidationTestRunnerMain.GetDatabaseFootprint("PrintingNip_Part2");
+            var footprint_after3 = ValidationTestRunnerMain.GetDatabaseFootprint("PrintingNip_Part3");
+            var footprint_after4 = ValidationTestRunnerMain.GetDatabaseFootprint("PrintingNip_Part4");
+
+
+            
+            bool dbChanged1 = !ilPSP.IEnumerableExtensions.SetEquals(footprint_before1.GridIDs, footprint_after1.GridIDs) 
+                              || !ilPSP.IEnumerableExtensions.SetEquals(footprint_before1.SessionIDs, footprint_after1.SessionIDs);
+            bool dbChanged2 = !ilPSP.IEnumerableExtensions.SetEquals(footprint_before2.GridIDs, footprint_after2.GridIDs) 
+                              || !ilPSP.IEnumerableExtensions.SetEquals(footprint_before2.SessionIDs, footprint_after2.SessionIDs);
+            bool dbChanged3 = !ilPSP.IEnumerableExtensions.SetEquals(footprint_before3.GridIDs, footprint_after3.GridIDs) 
+                              || !ilPSP.IEnumerableExtensions.SetEquals(footprint_before3.SessionIDs, footprint_after3.SessionIDs);
+            bool dbChanged4 = !ilPSP.IEnumerableExtensions.SetEquals(footprint_before4.GridIDs, footprint_after4.GridIDs) 
+                              || !ilPSP.IEnumerableExtensions.SetEquals(footprint_before4.SessionIDs, footprint_after4.SessionIDs);
+
             // if we reach this point, its a success - backup the datebase
-            ValidationTestRunnerMain.BackupDatabase("PrintingNip_Part1");
-            ValidationTestRunnerMain.BackupDatabase("PrintingNip_Part2");
-            ValidationTestRunnerMain.BackupDatabase("PrintingNip_Part3");
-            ValidationTestRunnerMain.BackupDatabase("PrintingNip_Part4");
+            if(dbChanged1)
+                ValidationTestRunnerMain.BackupDatabase("PrintingNip_Part1");
+            if(dbChanged2)
+                ValidationTestRunnerMain.BackupDatabase("PrintingNip_Part2");
+            if(dbChanged3)
+                ValidationTestRunnerMain.BackupDatabase("PrintingNip_Part3");
+            if(dbChanged4)
+                ValidationTestRunnerMain.BackupDatabase("PrintingNip_Part4");
         }
 
         /// <summary>
@@ -1139,20 +1141,9 @@ namespace ValidationTestRunner {
             "examples/DropletImpact/DongBC_SteadyStateConvStudy_KovasznayFlow_PostProcessing.ipynb")]
         [Test]
         static public void Run__KovasznayFlow_DongBC() {
-
-            // delete the database if it is more than XX days old;
-            // this will cause a re-execution of all computations
-            // otherwise, i.e. if the database is not deleted, sessions from the database 
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
-                "KovasznayFlow_ConvStudy",
+            Run__LongTest("KovasznayFlow_ConvStudy",
+                ["DongBC_SteadyStateConvStudy_KovasznayFlow.ipynb", "DongBC_SteadyStateConvStudy_KovasznayFlow_PostProcessing.ipynb"],
                 new TimeSpan(days: 60, hours: 0, minutes: 0, seconds: 1));
-
-            //ValidationTestRunnerMain.RunWorksheet("DongBC_SteadyStateConvStudy_KovasznayFlow.ipynb");
-
-            ValidationTestRunnerMain.RunWorksheet("DongBC_SteadyStateConvStudy_KovasznayFlow_PostProcessing.ipynb");
-
-            // if we reach this point, its a success - backup the datebase
-            ValidationTestRunnerMain.BackupDatabase("KovasznayFlow_ConvStudy");
         }
 
 
@@ -1432,13 +1423,22 @@ namespace ValidationTestRunner {
         }
 
         static void Run__LongTestCore(string PROJECT_NAME, IEnumerable<string> WorkSheetNameS, string completionMessage, bool backupDatabase) {
+
+            var footprint_before = ValidationTestRunnerMain.GetDatabaseFootprint(PROJECT_NAME);
+
             foreach(string WorkSheetName in WorkSheetNameS)
                 ValidationTestRunnerMain.RunWorksheet(WorkSheetName);
 
             if(!string.IsNullOrWhiteSpace(completionMessage))
                 Console.WriteLine(completionMessage);
 
-            if(backupDatabase)
+            var footprint_after = ValidationTestRunnerMain.GetDatabaseFootprint(PROJECT_NAME);
+
+            bool gridsChanged =  !ilPSP.IEnumerableExtensions.SetEquals(footprint_before.GridIDs, footprint_after.GridIDs);
+            bool sessionsChanged =  !ilPSP.IEnumerableExtensions.SetEquals(footprint_before.SessionIDs, footprint_after.SessionIDs);
+            bool dbChanged = sessionsChanged || gridsChanged;
+
+            if(backupDatabase && dbChanged)
                 ValidationTestRunnerMain.BackupDatabase(PROJECT_NAME);
 
         }
