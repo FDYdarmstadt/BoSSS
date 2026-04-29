@@ -167,7 +167,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             LevelSetGradient.Gradient(1.0, (SinglePhaseField)LsTrk.LevelSets[0]);
             SinglePhaseField[] Normals = LevelSetGradient.ToArray();
 
-            XQuadSchemeHelper SchemeHelper = this.LsTrk.GetXDGSpaceMetrics(this.m_HMForder).XQuadSchemeHelper;
+            XQuadSchemeHelper SchemeHelper = this.LsTrk.GetXDGSpaceMetrics().XQuadSchemeHelper;
             EdgeQuadratureScheme SurfaceElement_Edge = SchemeHelper
                 .Get_SurfaceElement_EdgeQuadScheme(this.LsTrk.GetSpeciesId("A"), this.LsTrk.GetSpeciesId("B"), 0)
                 .Restrict(this.LsTrk.GridDat.GetBoundaryEdgeMask());

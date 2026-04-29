@@ -283,6 +283,9 @@ namespace BoSSS.Application.BoSSSpad {
                 throw new NotSupportedException("Project management not initialized - set project name (try e.g. 'WorkflowMgm.CurrentProject = \"BlaBla\"').");
             }
 
+            // path translation for databases
+
+
             // we pass the startup-arguments through environment variables, which is 
             // (a bit) more robust (with respect to escape-characters, etc.) than 
             // command line arguments.
@@ -291,6 +294,10 @@ namespace BoSSS.Application.BoSSSpad {
                 "--prjnmn" , PrjName,
                 "--sesnmn", this.Name
             };
+
+
+
+
 
             m_EnvironmentVars.Clear();
             for(int i = 0; i < args.Length; i++) {

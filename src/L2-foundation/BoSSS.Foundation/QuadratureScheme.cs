@@ -958,7 +958,7 @@ namespace BoSSS.Foundation.Quadrature {
         }
 
         /// <summary>
-        /// Restricts the <see cref="QuadratureScheme{TQuadRule, TDomain}.Domain"/> to elements which are included in <paramref name="mask"/>
+        /// Restricts this <see cref="QuadratureScheme{TQuadRule, TDomain}.Domain"/> to elements which are included in <paramref name="mask"/>
         /// </summary>
         public EdgeQuadratureScheme Restrict(EdgeMask mask) {
             if(mask.MaskType == MaskType.Logical)
@@ -966,7 +966,7 @@ namespace BoSSS.Foundation.Quadrature {
             var restDomain = this.Domain.Intersect(mask);
             var ret = new EdgeQuadratureScheme(this.IntegrationMetric, this.m_UseDefaultFactories, restDomain);
             foreach(var kkk in this.FactoryChain) {
-                this.AddFactoryDomainPair(kkk.RuleFactory, kkk.Domain);
+                ret.AddFactoryDomainPair(kkk.RuleFactory, kkk.Domain);
             }
             return ret;
         }
