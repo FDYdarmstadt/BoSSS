@@ -348,7 +348,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                 tr.Info("Trying to determine status of SLURM job in " + DeployDir);
 
-                bool runningFileExists = false;
+                //bool runningFileExists = false;
                 string runningFile = Path.Combine(DeployDir, "isrunning.txt");
                 using(new BlockTrace("FILE_CHECK", tr)) {
 
@@ -371,11 +371,10 @@ namespace BoSSS.Application.BoSSSpad {
                         return (ExitCode == 0 ? JobStatus.FinishedSuccessful : JobStatus.FailedOrCanceled, ExitCode);
                     }
 
-                    string runningFile = Path.Combine(DeployDir, "isrunning.txt");
                     if(File.Exists(runningFile)) {
                         // no decicion yet;
                         // e.g. assume that slurm terminated the Job after 24 hours => maybe 'isrunning.txt' is not deleted and 'exit.txt' does not exist
-                        runningFileExists = true;
+                        //runningFileExists = true;
                         tr.Info("found running.txt token");
                     } else {
                         // no decicion yet;
