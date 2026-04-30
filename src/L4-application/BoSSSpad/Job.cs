@@ -1764,8 +1764,7 @@ namespace BoSSS.Application.BoSSSpad {
                 // ========================================================================
 
                 Console.WriteLine($"Deploying job {this.Name} ... ");
-                Debugger.Launch();
-                
+               
 
                 // deploy additional files
                 string DeploymentDirectory = this.DeployExecuteables();
