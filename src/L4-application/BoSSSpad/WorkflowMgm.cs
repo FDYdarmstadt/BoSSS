@@ -214,7 +214,12 @@ namespace BoSSS.Application.BoSSSpad {
 
         static bool? m_RunWorkflowFromBackup = null;
 
-        static internal bool RunWorkflowFromBackup {
+        /// <summary>
+        /// true, if one of the two backup-markers is present: 
+        /// - the magic file `BOSSS_RUNTESTFROMBACKUP.txt` in the current 
+        /// - maybe, the environment variable `BOSSS_RUNTESTFROMBACKUP`
+        /// </summary>
+        static public bool RunWorkflowFromBackup {
             get {
                 if(m_RunWorkflowFromBackup != null)
                     return m_RunWorkflowFromBackup.Value;

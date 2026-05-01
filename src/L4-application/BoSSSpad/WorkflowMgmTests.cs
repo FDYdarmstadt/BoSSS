@@ -48,6 +48,50 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         /// <summary>
+        /// Tests batch-processor database path translation and generated remote roots.
+        /// </summary>
+        [Test]
+        static public void AlternateDatabasePathTranslationTest() {
+            string localRoot = Path.Combine(Path.GetTempPath(), "bosss-local-root");
+            string localDbPath = Path.Combine(localRoot, @"case\database");
+
+            var client = new AlternateDatabasePathTestBatchProcessor();
+            client.AllowedDatabasesPaths.Clear();
+            client.AllowedDatabasesPaths.Add(new AllowedDatabasesPair(localRoot, "/remote/root"));
+
+            Assert.IsTrue(client.TryTranslateDatabasePath(localDbPath, out string remoteDbPath));
+            Assert.AreEqual("/remote/root/case/database", remoteDbPath);
+
+            var remoteRoots = client.GetAllowedDatabaseRemotePaths().ToArray();
+            Assert.AreEqual(1, remoteRoots.Length);
+            Assert.AreEqual("/remote/root", remoteRoots[0].Item1);
+            Assert.IsNull(remoteRoots[0].Item2);
+        }
+
+        class AlternateDatabasePathTestBatchProcessor : BatchProcessorClient {
+            public override void Cancel(string idToken, string message) {
+                throw new NotImplementedException();
+            }
+
+            public override (JobStatus, int? ExitCode) EvaluateStatus(string idToken, object optInfo, string DeployDir) {
+                throw new NotImplementedException();
+            }
+
+            public override string GetStderrFile(string idToken, string DeployDir) {
+                throw new NotImplementedException();
+            }
+
+            public override string GetStdoutFile(string idToken, string DeployDir) {
+                throw new NotImplementedException();
+            }
+
+            public override (string id, object optJobObj) Submit(Job myJob, string DeploymentDirectory) {
+                throw new NotImplementedException();
+            }
+        }
+
+
+        /// <summary>
         /// test of job persistence, i.e., that a second try to submit a job actually finds the run which is already in place.
         /// </summary>
         [Test]

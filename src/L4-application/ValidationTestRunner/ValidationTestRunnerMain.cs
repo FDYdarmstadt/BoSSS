@@ -4,6 +4,7 @@ using BoSSS.Application.TutorialTests;
 using BoSSS.Application.XNSE_Solver;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.IO;
 using BoSSS.Solution.Control;
 using FreeXNSE;
 using ilPSP;
@@ -140,6 +141,65 @@ namespace ValidationTestRunner {
             DeleteDatabaseAndDeploymentsWhenOld(Directory, t);
         }
 
+        public static (ISet<Guid> SessionIDs, ISet<Guid> GridIDs) GetDatabaseFootprint(string Directory) {
+            var sessionIDs = new HashSet<Guid>();
+            var gridIDs = new HashSet<Guid>();
+            
+            foreach(var q in BoSSSshell.ExecutionQueues) {
+
+                Console.WriteLine("Checking queue: " + q);
+
+                // move old databases to backup
+                // ============================
+
+                {
+                    //var dirsToDelete = new HashSet<DirectoryInfo>();
+                    //bool delete = false;
+                    foreach(var allowedPath in q.AllowedDatabasesPaths) {
+                        var localBaseDir = new DirectoryInfo(allowedPath.LocalMountPath);
+
+                        var dbDirs = localBaseDir.GetDirectories(Directory, SearchOption.TopDirectoryOnly);
+                        foreach(var db in dbDirs) {
+                            if(DatabaseUtils.IsValidBoSSSDatabase(db.FullName)) {
+                                var sessionDir = db.GetDirectories("sessions").Single();
+                                var allSessionDirs = sessionDir.GetDirectories();
+
+                                foreach(var s in allSessionDirs) {
+                                    var id = new Guid(s.Name);
+                                    sessionIDs.Add(id);
+                                }
+
+                                var gridsDir = db.GetDirectories("grids").Single();
+                                var allGrids = gridsDir.GetFiles("*.grid");
+                                foreach(var g in allGrids) {
+                                    var id = new Guid(Path.GetFileNameWithoutExtension(g.Name));
+                                    gridIDs.Add(id);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return (sessionIDs, gridIDs);
+        }
+
+
+        public static bool? m_InBackupMode = null;
+
+        public static bool InBackupMode {
+            get {
+                if(m_InBackupMode != null)
+                    return m_InBackupMode.Value;
+                
+                m_InBackupMode = WorkflowMgm.RunWorkflowFromBackup;
+                if(m_InBackupMode ?? false) {
+                    Console.WriteLine("Run-From-Backup mode activated ('BOSSS_RUNTESTFROMBACKUP.txt' file exists); not messing with any database or deployment directories.");
+                }
+                return m_InBackupMode.Value;
+            }
+        }
+
         /// <summary>
         /// Deletes a database, resp. moves it to a backup directory, 
         /// if the database in <paramref name="Directory"/> if it older than specified by <paramref name="DeletionAge"/>
@@ -231,6 +291,8 @@ namespace ValidationTestRunner {
         }
 
         private static (bool database_is_expired, List<string> backup_directory_names) BackupDatabase_IfOld(string Directory, TimeSpan DeletionAge, DateTime nau, bool enforce, string backup_name_prefix, bool deleteOriginal) {
+            
+            
             List<string> DirsToIgnore = new List<string>();
             bool delete = false;
 
@@ -268,18 +330,23 @@ namespace ValidationTestRunner {
                                 delete = true;
                                 string NewName = Path.Combine(Path.GetDirectoryName(db.FullName), backup_name_prefix + "-" + db.CreationTime.ToString("yyyyMMMdd_HHmmss") + "." + db.Name);
                                 Console.WriteLine("Renaming existing database: " + db.FullName + " -> " + NewName);
-                                
-                                if(deleteOriginal)
-                                    db.MoveTo(NewName); // just rename
-                                else 
-                                    CopyFilesRecursively(db.FullName, NewName); // copy
-                                
+
+                                if(!ValidationTestRunnerMain.InBackupMode) {
+                                    if(deleteOriginal)
+                                        db.MoveTo(NewName); // just rename
+                                    else
+                                        CopyFilesRecursively(db.FullName, NewName); // copy
+                                }
+
                                 DirsToIgnore.Add(NewName);
                             }
                         }
                     }
                 }
             }
+
+            if(ValidationTestRunnerMain.InBackupMode)
+                delete = false;
 
             return (delete, DirsToIgnore);
         }

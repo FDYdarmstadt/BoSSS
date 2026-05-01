@@ -31,6 +31,11 @@ namespace BoSSS.Foundation.IO {
     /// </summary>
     public class DatabaseInfo : IDatabaseInfo {
 
+        /// <summary>
+        /// Job-local file containing additional database paths deployed next to the solver executable.
+        /// </summary>
+        public const string AlternateDatabasePathsFileName = "AlternateDatabasePaths.txt";
+
         static List<DatabaseInfo> DatabaseInfos;
 
         static object padlock_DatabaseInfos = new object();
@@ -125,6 +130,7 @@ namespace BoSSS.Foundation.IO {
             allPaths.Add((_path, null));
             if(AlternateDbPaths != null)
                 allPaths.AddRange(AlternateDbPaths);
+            AddAlternateDbPathsUnique(allPaths, ReadDeployedAlternateDatabasePaths());
 
             string mName = System.Environment.MachineName.ToLowerInvariant();
 
@@ -384,7 +390,7 @@ namespace BoSSS.Foundation.IO {
         public (string DbPath, string MachineFilter)[] AlternateDbPaths {
             get {
                 return ReadAlternateDbPaths(this.Path);
-            }    
+            }
         }
 
         static (string DbPath, string MachineFilter)[] ReadAlternateDbPaths(string dbPath) {
@@ -392,24 +398,68 @@ namespace BoSSS.Foundation.IO {
                 throw new ArgumentNullException();
             string p = System.IO.Path.Combine(dbPath, "AlternatePaths.txt");
 
-            if (!File.Exists(p))
+            return ReadAlternateDbPathsFile(p);
+        }
+
+        /// <summary>
+        /// Reads the line-oriented alternate database path format used by database-local
+        /// <c>AlternatePaths.txt</c> and job-local <see cref="AlternateDatabasePathsFileName"/>.
+        /// </summary>
+        public static (string DbPath, string MachineFilter)[] ReadAlternateDbPathsFile(string path) {
+            if(path == null)
+                throw new ArgumentNullException();
+            if(!File.Exists(path))
                 return new ValueTuple<string, string>[0];
 
-            string[] lines = File.ReadAllLines(p);
+            return ParseAlternateDbPathLines(File.ReadAllLines(path));
+        }
+
+        /// <summary>
+        /// Parses alternate database path lines. Blank lines are ignored, and lines starting
+        /// with <c>;;</c> after leading whitespace are treated as comments.
+        /// </summary>
+        public static (string DbPath, string MachineFilter)[] ParseAlternateDbPathLines(IEnumerable<string> lines) {
+            if(lines == null)
+                throw new ArgumentNullException();
 
             var ret = new List<ValueTuple<string, string>>();
-            foreach (var line in lines) {
-                if (line.StartsWith(";;"))
+            foreach(var line in lines) {
+                if(line == null)
                     continue;
-                string[] parts = line.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length >= 2) {
-                    ret.Add((parts[0], parts[1]));
-                } else if (parts.Length >= 1) {
-                    ret.Add((parts[0], null));
+                if(line.IsEmptyOrWhite())
+                    continue;
+                if(line.TrimStart().StartsWith(";;"))
+                    continue;
+
+                string[] parts = line.Split(new[] { "," }, 2, StringSplitOptions.None);
+                string dbPath = parts[0].Trim();
+                if(dbPath.IsEmptyOrWhite())
+                    continue;
+                string machineFilter = null;
+                if(parts.Length >= 2) {
+                    machineFilter = parts[1].Trim();
+                    if(machineFilter.IsEmptyOrWhite())
+                        machineFilter = null;
                 }
+                ret.Add((dbPath, machineFilter));
             }
 
             return ret.ToArray();
+        }
+
+        static (string DbPath, string MachineFilter)[] ReadDeployedAlternateDatabasePaths() {
+            string path = System.IO.Path.Combine(Directory.GetCurrentDirectory(), AlternateDatabasePathsFileName);
+            return ReadAlternateDbPathsFile(path);
+        }
+
+        static void AddAlternateDbPathsUnique(List<ValueTuple<string, string>> paths, IEnumerable<ValueTuple<string, string>> additionalPaths) {
+            foreach(var p in additionalPaths) {
+                if(p.Item1.IsEmptyOrWhite())
+                    continue;
+                if(paths.Any(q => q.Item1 == p.Item1 && q.Item2 == p.Item2))
+                    continue;
+                paths.Add(p);
+            }
         }
 
         /// <summary>
