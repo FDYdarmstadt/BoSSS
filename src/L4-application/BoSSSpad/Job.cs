@@ -348,6 +348,15 @@ namespace BoSSS.Application.BoSSSpad {
             if(m_ctrl == null)
                 return;
 
+            // Set project and session name 
+            // =============================
+
+            m_ctrl.ProjectName = BoSSSshell.WorkflowMgm.CurrentProject;
+            if(m_ctrl.SessionName != this.Name) {
+                Console.WriteLine("Warning: missmatch between Job name and session name specified in control object; setting to " + this.Name);
+                m_ctrl.SessionName = this.Name;
+            }
+
             // check the database 
             // ==================
             IDatabaseInfo ctrl_db = m_ctrl.GetDatabase();
