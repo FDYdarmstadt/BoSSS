@@ -283,6 +283,9 @@ namespace BoSSS.Application.BoSSSpad {
                 throw new NotSupportedException("Project management not initialized - set project name (try e.g. 'WorkflowMgm.CurrentProject = \"BlaBla\"').");
             }
 
+            // path translation for databases
+
+
             // we pass the startup-arguments through environment variables, which is 
             // (a bit) more robust (with respect to escape-characters, etc.) than 
             // command line arguments.
@@ -291,6 +294,10 @@ namespace BoSSS.Application.BoSSSpad {
                 "--prjnmn" , PrjName,
                 "--sesnmn", this.Name
             };
+
+
+
+
 
             m_EnvironmentVars.Clear();
             for(int i = 0; i < args.Length; i++) {
@@ -491,6 +498,12 @@ namespace BoSSS.Application.BoSSSpad {
             //ctrl.VerifyEx();
             m_ctrl = ctrl;
             m_ctrl.ProjectName = BoSSSshell.WorkflowMgm.CurrentProject;
+
+            if(m_ctrl.SessionName != this.Name) {
+                Console.WriteLine("Warning: missmatch between Job name and session name specified in control object; setting to " + this.Name);
+                m_ctrl.SessionName = this.Name;
+            }
+
 
             // note: serialization is done later, immediately before deployment,
             // since we may need to fix database issues (path on batch system, evtl. transfer of grid)
@@ -1720,7 +1733,7 @@ namespace BoSSS.Application.BoSSSpad {
                 if(this.AssignedBatchProc == null)
                     throw new NotSupportedException("Job must be activated before.");
 
-                
+                                
                 // ================
                 // status
                 // ================
@@ -1728,7 +1741,8 @@ namespace BoSSS.Application.BoSSSpad {
                 // some database syncing might be necessary 
                 FiddleControlFile(AssignedBatchProc);
 
-                var stat = GetStatus(true);
+                var stat = GetStatus(false);
+                tr.Info("(re)activating job, got state: " + stat + "");
                 if(stat != JobStatus.Unknown) {
                     int sc = this.SubmitCount;
                     if(stat == JobStatus.FailedOrCanceled && sc < RetryCount) {
@@ -1750,8 +1764,7 @@ namespace BoSSS.Application.BoSSSpad {
                 // ========================================================================
 
                 Console.WriteLine($"Deploying job {this.Name} ... ");
-                
-
+               
 
                 // deploy additional files
                 string DeploymentDirectory = this.DeployExecuteables();
@@ -1831,7 +1844,7 @@ namespace BoSSS.Application.BoSSSpad {
                         //    tr.Info("Running from backup - ignoring any deployment.");
                         //} else {
                         DeploymentsSoFar = this.AllDeployments.Select(dep => (dep, dep.Status)).ToArray();
-                        //    tr.Info("Deployments so far (" + DeploymentsSoFar.Length + "): " + DeploymentsSoFar.ToConcatString("", ", ", ";"));
+                        tr.Info("Deployments so far (" + DeploymentsSoFar.Length + "): " + DeploymentsSoFar.ToConcatString("", ", ", ";"));
                         //}
 
                         Deployment[] Success = DeploymentsSoFar.Where(dep => dep.fixedStatus == JobStatus.FinishedSuccessful).Select(TT => TT.Depl).ToArray();
@@ -1856,9 +1869,11 @@ namespace BoSSS.Application.BoSSSpad {
                                 tr.Info($"Info: Found successful session \"{SuccessSessions.First()}\" -- job is marked as successful, no further action.");
                                 this.statusCache = JobStatus.FinishedSuccessful;
                                 return JobStatus.FinishedSuccessful;
+                            } else {
+                                tr.Info($"Info: Found no successful session so far.");
                             }
 
-                            if(Success.Length > 0) {
+                            if(Success.Length > 0 && SuccessSessions.Length <= 0) {
                                 tr.Info($"Note: found {Success.Length} successful deployment(s), but job is configured to require a successful result session ('this.SessionReqForSuccess' is true), and none is found. {this.AllSessions.Length} sessions correlated to this job fount in total {this.AllSessions.ToConcatString("[", ", ", "]")}.");
                             }
 
@@ -1927,7 +1942,7 @@ namespace BoSSS.Application.BoSSSpad {
                         // what now?
                         // ============
 
-                        tr.Error("unable to determine job status - unknown");
+                        tr.Info($"unable to determine status of job '{this.Name}' status");
                         return JobStatus.Unknown;
                     }
                 }

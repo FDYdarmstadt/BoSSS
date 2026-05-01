@@ -17,12 +17,14 @@ limitations under the License.
 //using Azure.Identity;
 using ilPSP;
 using ilPSP.Tracing;
+using MiniBatchProcessor;
 using System;
 using System.Collections.Generic;
 //using Renci.SshNet;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
+using System.Threading;
 //using System.Runtime.InteropServices.WindowsRuntime;
 
 namespace BoSSS.Application.BoSSSpad {
@@ -121,7 +123,7 @@ namespace BoSSS.Application.BoSSSpad {
         public string ExecutionTime {
             get;
             set;
-        } = "05:00:00";
+        } = "24:00:00"; // = "14-00:00:00"; 14 days?
 
         /// <summary>
         /// Base directory where the executables should be deployed,
@@ -346,6 +348,8 @@ namespace BoSSS.Application.BoSSSpad {
 
                 tr.Info("Trying to determine status of SLURM job in " + DeployDir);
 
+                //bool runningFileExists = false;
+                string runningFile = Path.Combine(DeployDir, "isrunning.txt");
                 using(new BlockTrace("FILE_CHECK", tr)) {
 
                     int? ExitFileOverride = Job.Deployment.ReadJobStatusFile(DeployDir, out var status_from_file);
@@ -367,15 +371,16 @@ namespace BoSSS.Application.BoSSSpad {
                         return (ExitCode == 0 ? JobStatus.FinishedSuccessful : JobStatus.FailedOrCanceled, ExitCode);
                     }
 
-                    string runningFile = Path.Combine(DeployDir, "isrunning.txt");
                     if(File.Exists(runningFile)) {
                         // no decicion yet;
                         // e.g. assume that slurm terminated the Job after 24 hours => maybe 'isrunning.txt' is not deleted and 'exit.txt' does not exist
+                        //runningFileExists = true;
                         tr.Info("found running.txt token");
                     } else {
-                        // no 'isrunning.txt'-token and no 'exit.txt' token: job should be pending in queue
+                        // no decicion yet;
+                        // no 'isrunning.txt'-token and no 'exit.txt' token: job could be pending in queue, or it might have been cancelled by the user before it was started
                         tr.Info("job seems to be pending");
-                        return (JobStatus.PendingInExecutionQueue, null);
+                        //return (JobStatus.PendingInExecutionQueue, null);
 
                         //isRunning = false;
                         //isTerminated = false;
@@ -403,10 +408,10 @@ namespace BoSSS.Application.BoSSSpad {
                             line = Reader.ReadLine();
                         tr.Info("line is " + (line ?? "Null"));
 
-                        if(line == null || !line.Equals("state", StringComparison.InvariantCultureIgnoreCase)) {
-                            tr.Info("returning `Unknown` state");
-                            return (JobStatus.Unknown, null);
-                        }
+                        //if(line == null || !line.Equals("state", StringComparison.InvariantCultureIgnoreCase)) {
+                        //    tr.Info("returning `Unknown` state");
+                        //    return (JobStatus.Unknown, null);
+                        //}
 
                         string jobstatus = Reader.ReadLine();
                         tr.Info("jobstatus is `" + (jobstatus ?? "Null") + "`");
@@ -436,15 +441,47 @@ namespace BoSSS.Application.BoSSSpad {
                             case "COMPLETED":
                             // completed, but 'exit.txt' does not exist, something is shady here
                             tr.Info("returning `FailedOrCanceled`");
-                            return (JobStatus.FailedOrCanceled, -1);
+                            Thread.Sleep(1000 * 30); // this is a rare case, sleep a bit before testing again for the exit file. 
+                            return LastChance();
 
                             default:
-                            tr.Error($"unable to determine job status (id {idToken}) returning `Unknown`; string is >{jobstatus}<");
-                            return (JobStatus.Unknown, null);
+                            tr.Warning($"unable to determine job (id {idToken}) status from SLURM; squeue returning string >{jobstatus}<");
+                            break;
                         }
                         //}
                     }
                 }
+
+                (JobStatus, int?) LastChance() {
+                    using(new BlockTrace("FALLBACK", tr)) {
+                        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                        // if we reach this point, evaluation by files and by slurm failed 
+                        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                        // last chance...
+                        string exitFile = Path.Combine(DeployDir, "exit.txt");
+                        if(File.Exists(exitFile)) {
+
+                            int ExitCode;
+                            try {
+                                ExitCode = int.Parse(File.ReadAllText(exitFile).Trim());
+                                tr.Info("found `exit.txt`, parsed code is " + ExitCode);
+                            } catch(Exception) {
+                                ExitCode = int.MinValue;
+                                tr.Info("found `exit.txt`, but unable to parse code: setting exit code to " + ExitCode);
+                            }
+                            return (ExitCode == 0 ? JobStatus.FinishedSuccessful : JobStatus.FailedOrCanceled, ExitCode);
+                        }
+
+                        // job is most likely failed:
+                        return (JobStatus.FailedOrCanceled, null);
+                    }
+
+
+                }
+
+                Thread.Sleep(1000 * 10); // this is a rare case, sleep a bit before testing again for the exit file. 
+                return LastChance();
             }
         }
 
@@ -869,6 +906,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public override DateTime? GetEndTime(string idToken, object optInfo, string DeployDir) {
             var endTimeFile = Path.Combine(DeployDir, "EndTime.txt");
+            string exitFile = Path.Combine(DeployDir, "exit.txt");
             if(File.Exists(endTimeFile)) {
                 var FI = new FileInfo(endTimeFile);
                 var timeCoarse = FI.CreationTime;
@@ -879,8 +917,8 @@ namespace BoSSS.Application.BoSSSpad {
                 } catch(Exception) {
                     return timeCoarse;
                 }
-            } else {
-                string exitFile = Path.Combine(DeployDir, "exit.txt");
+            } else if(File.Exists(exitFile)) {
+                
                 if(File.Exists(exitFile)) {
                     var FI = new FileInfo(exitFile);
                     var timeCoarse = FI.CreationTime;
@@ -888,6 +926,8 @@ namespace BoSSS.Application.BoSSSpad {
                 } else {
                     return base.GetEndTime(idToken, optInfo, DeployDir);
                 }
+            } else {
+                return base.GetEndTime(idToken, optInfo, DeployDir);
             }
         }
 

@@ -1106,29 +1106,11 @@ namespace ValidationTestRunner {
             "examples/DropletImpact/vonKarmanFlowSolution_HAMcoeffV.txt",
             "examples/DropletImpact/vonKarmanFlowSolution_HAMcoeffW.txt",
             "examples/DropletImpact/vonKarmanFlowSolution_HAMcoeffP.txt")]
-        [Test]
+        //[Test]
         static public void Run__DropletReboundGauthier() {
-
-            string really = System.Environment.GetEnvironmentVariable("RUN_DROPLET_REBOUND_GAUTHIER");
-            if(really.IsEmptyOrWhite()) {
-                Console.WriteLine("skipping Run__DropletReboundGauthier ");
-                return;
-            } else {
-                Console.WriteLine("RUN_DROPLET_REBOUND_GAUTHIER = " + really);
-            }
-
-            Console.WriteLine("Let's go...");
-
-            // delete the database if it is more than XX days old;
-            // this will cause a re-execution of all computations
-            // otherwise, i.e. if the database is not deleted, sessions from the database 
-            //ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
-            //    "DropletReboundGauthier",
-            //    "DropletReboundGauthier*",
-            //    "delete_DropletReboundGauthier",
-            //    new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 1));
-
-            ValidationTestRunnerMain.RunWorksheet("DropletReboundGauthier_Run.ipynb");
+            Run__LongTest(
+                "DropletReboundGauthier",
+                ["DropletReboundGauthier_Run.ipynb"]);
         }
 
 

@@ -19,7 +19,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Threading;
 using ilPSP.Tracing;
+using ilPSP.Utils;
 using MPI.Wrappers;
 
 namespace BoSSS.Foundation.IO {
@@ -353,7 +355,7 @@ namespace BoSSS.Foundation.IO {
         ///   is released by the first process.
         /// - Simultaneous reading should be allowed, however.
         /// - Files will never be overwritten, instead new versions will be written.
-        ///   This helps with the caching, especially in network file systems
+        ///   This helps with the caching in network file systems, if not all clients are up-to-date
         /// </summary>
         /// <param name="create">
         /// - true: creates a new file for writing;
@@ -385,44 +387,61 @@ namespace BoSSS.Foundation.IO {
 
                 // find most recent file version
                 // -----------------------------
+                string mostRecentFile;
+                int mostRecentVersion;
+                 Dictionary<int, string> sortedVersions;
 
-                int TrimLen = fullpath.Length;
-                var allFiles = System.IO.Directory.GetFiles(fullDirectory, fileName + ".v*");
-                string mostRecentFile = null;
-                int mostRecentVersion = -1;
-                var sortedVersions = new Dictionary<int, string>();
+                void UpdateFileList() {
+                    mostRecentFile = null;
+                    mostRecentVersion = -1;
+                    sortedVersions = new Dictionary<int, string>();
 
-                if(File.Exists(fullpath)) {
-                    mostRecentFile = fullpath;
-                    mostRecentVersion = 0;
-                    sortedVersions.Add(0, fullpath);
-                }
 
-                if(allFiles.Length > 0) {
-                    foreach(string file in allFiles) {
-                        int version = -1;
-                        try {
-                            string versionString = file.Substring(TrimLen + 2);
-                            version = int.Parse(versionString);
-                        } catch (Exception e) {
-                            tr.Error("OpenFileExclusiveBlockingVersionized IO Error: " + e.ToString());
-                            continue;
-                        }
+                    int TrimLen = fullpath.Length;
+                    var allFiles = System.IO.Directory.GetFiles(fullDirectory, fileName + ".v*");
+                    foreach(var p in System.IO.Directory.GetFiles(fullDirectory, fileName)) {
+                        p.AddToArray(ref allFiles);
+                    }
 
-                        sortedVersions.Add(version, file);
+                    if(File.Exists(fullpath)) {
+                        mostRecentFile = fullpath;
+                        mostRecentVersion = 0;
+                        sortedVersions.Add(0, fullpath);
+                    }
 
-                        if(version > mostRecentVersion) {
-                            mostRecentFile = file;
-                            mostRecentVersion = version;
+                    if(allFiles.Length > 0) {
+                        foreach(string file in allFiles) {
+                            int version = -1;
+                            try {
+                                string versionString = file.Substring(TrimLen + 2);
+                                version = int.Parse(versionString);
+                            } catch(Exception e) {
+                                tr.Error("OpenFileExclusiveBlockingVersionized IO Error: " + e.ToString());
+                                continue;
+                            }
+
+                            sortedVersions.Add(version, file);
+
+                            if(version > mostRecentVersion) {
+                                mostRecentFile = file;
+                                mostRecentVersion = version;
+                            }
                         }
                     }
+                    tr.Info("most recent version: " + mostRecentVersion);
                 }
-                tr.Info("most recent version: " + mostRecentVersion);
+
+
+                UpdateFileList();
 
                 if(create) {
                     // ++++++++++++++++++++++++++++++++++
                     // create new file
                     // ++++++++++++++++++++++++++++++++++
+
+                    //
+                    // Note: we assume that only one process is writing 
+                    //
 
                     string fullpathVersionized = GetFullPathVersionized(mostRecentVersion + 1);
 
@@ -479,8 +498,17 @@ namespace BoSSS.Foundation.IO {
                             var ms = new MemoryStream(allBytes);
                             return ms;
                         } catch(FileNotFoundException fnf) {
-                            exc = fnf;
-                            throw exc;
+                            tr.Info($"Read access to file {GetFullPathVersionized(VersionToRead)} is delayed by {fnf.GetType().Name}: {fnf.Message}.");
+                            Thread.Sleep(5*1000);
+                            UpdateFileList();
+                            VersionToRead = mostRecentVersion;
+                            
+                            if(i > 10) {
+                                exc = fnf;
+                                throw exc;
+                            } else {
+                                i++;
+                            }
                         } catch(IOException ioe) {
                             tr.Info($"Read access to file {GetFullPathVersionized(VersionToRead)} is delayed by {ioe.GetType().Name}: {ioe.Message}.");
                             i++;

@@ -291,10 +291,7 @@ namespace ValidationTestRunner {
         }
 
         private static (bool database_is_expired, List<string> backup_directory_names) BackupDatabase_IfOld(string Directory, TimeSpan DeletionAge, DateTime nau, bool enforce, string backup_name_prefix, bool deleteOriginal) {
-            if(InBackupMode) {
-                Console.WriteLine("not creating a DB backup, because currently in backup-mode");
-                return;
-            }
+            
             
             List<string> DirsToIgnore = new List<string>();
             bool delete = false;
@@ -333,18 +330,23 @@ namespace ValidationTestRunner {
                                 delete = true;
                                 string NewName = Path.Combine(Path.GetDirectoryName(db.FullName), backup_name_prefix + "-" + db.CreationTime.ToString("yyyyMMMdd_HHmmss") + "." + db.Name);
                                 Console.WriteLine("Renaming existing database: " + db.FullName + " -> " + NewName);
-                                
-                                if(deleteOriginal)
-                                    db.MoveTo(NewName); // just rename
-                                else 
-                                    CopyFilesRecursively(db.FullName, NewName); // copy
-                                
+
+                                if(!ValidationTestRunnerMain.InBackupMode) {
+                                    if(deleteOriginal)
+                                        db.MoveTo(NewName); // just rename
+                                    else
+                                        CopyFilesRecursively(db.FullName, NewName); // copy
+                                }
+
                                 DirsToIgnore.Add(NewName);
                             }
                         }
                     }
                 }
             }
+
+            if(ValidationTestRunnerMain.InBackupMode)
+                delete = false;
 
             return (delete, DirsToIgnore);
         }

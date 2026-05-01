@@ -103,7 +103,7 @@ namespace BoSSS.Application.XNSFE_Solver.PhysicalBasedTestcases {
             var QuadDom = clqs.Domain;
             var boundaryEdge = gridDat.GetBoundaryEdgeMask().GetBitMask();
             var boundaryCutEdge = QuadDom.Intersect(new EdgeMask(gridDat, boundaryEdge, MaskType.Geometrical));
-            var factory = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder).XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(0, LsTrk.GridDat.Grid.RefElements[0]);
+            var factory = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder).XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(0, LsTrk.GridDat.Grid.EdgeRefElements.Single());
             clqs = new EdgeQuadratureScheme(factory, boundaryCutEdge);
 
             // we proceed under the assumption to have 2 contactpoints, one at x < 0, the other at x > 0
@@ -123,9 +123,8 @@ namespace BoSSS.Application.XNSFE_Solver.PhysicalBasedTestcases {
                     NodeSet Enode_l = QR.Nodes;
                     int trf = LsTrk.GridDat.Edges.Edge2CellTrafoIndex[i0, 0];
                     NodeSet Vnode_l = Enode_l.GetVolumeNodeSet(LsTrk.GridDat, trf, false);
-                    NodeSet Vnode_g = Vnode_l.CloneAs();
                     int cell = LsTrk.GridDat.Edges.CellIndices[i0, 0];
-                    LsTrk.GridDat.TransformLocal2Global(Vnode_l, Vnode_g, cell);
+                    var Vnode_g = LsTrk.GridDat.TransformLocal2Global(Vnode_l, cell);
 
                     EvalResult[0, 0, 0] = Vnode_g[0, 0];                    
 
