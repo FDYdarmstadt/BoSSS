@@ -40,25 +40,12 @@ namespace ValidationTestRunner {
         /// publication results for: Toprak, Kummer: Cell agglomeration strategy for cut cells in eXtended discontinuous Galerkin methods
         /// </summary>
         [NUnitFileToCopyHack("AgglomerationTestcases/collidingSpheres2D.ipynb", "AgglomerationTestcases/collidingSpheres2Dpost.ipynb")]
-        //[Test]
+        //[Test] // fk,01may26: was originally deactivated by Toprak (?), for whatever reason
         static public void Run__AggCollidingSpheres2D() {
-            throw new ApplicationException("deactivated for now");
+            Run__LongTest(
+                "CollidingSpheres2D_condStudy",
+                [ "AgglomerationTestcases/collidingSpheres2D.ipynb", "AgglomerationTestcases/collidingSpheres2Dpost.ipynb" ]);
 
-            /*
-            // delete the database if it is sufficiently old
-            // this will cause a re-execution of all computations
-            // otherwise, i.e. if the database is not deleted, sessions from the database 
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
-                "CollidingSpheres2D_condStudy");
-
-            ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/collidingSpheres2D.ipynb");
-            ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/collidingSpheres2Dpost.ipynb");
-
-            Console.WriteLine("AggCollidingSpheres2D @ FDYcluster");
-
-            // if we reach this point, its a success - backup the datebase
-            ValidationTestRunnerMain.BackupDatabase("CollidingSpheres2D_condStudy");
-            */
         }
 
 
@@ -92,7 +79,7 @@ namespace ValidationTestRunner {
         /// publication results for: Toprak, Kummer: Cell agglomeration strategy for cut cells in eXtended discontinuous Galerkin methods
         /// </summary>
         [NUnitFileToCopyHack("AgglomerationTestcases/rotatingPopcorn3D.ipynb", "AgglomerationTestcases/rotatingPopcorn3Dpost.ipynb")]
-        [Test]
+        //[Test] // fk, 29may26: deactivated, too expensive for validation tests
         static public void Run__RotatingPopcorn3D() {
             Run__LongTest(
                 "Popcorn3D_condStudy",
