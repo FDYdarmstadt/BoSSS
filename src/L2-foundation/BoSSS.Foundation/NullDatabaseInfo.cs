@@ -85,9 +85,18 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// Contains nothing
         /// </summary>
-        public (string, string)[] AlternateDbPaths {
+        public string[] AlternateDbPaths {
             get {
-                return new ValueTuple<string, string>[0];
+                return new string[0];
+            }
+        }
+
+        /// <summary>
+        /// emtpy Guid for dummy db
+        /// </summary>
+        public Guid ID {
+            get {  
+                return Guid.Empty; 
             }
         }
 
@@ -116,6 +125,16 @@ namespace BoSSS.Foundation.IO {
         /// Always false
         /// </summary>
         public bool PathMatch(string otherPath) {
+            return false;
+        }
+
+        /// <summary>
+        /// does nothing
+        /// </summary>
+        /// <return>
+        /// Always false
+        /// </return>
+        public bool AddAlternateDbPath(string altPath) {
             return false;
         }
 

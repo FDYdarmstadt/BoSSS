@@ -16,7 +16,7 @@ namespace BoSSS.Application.DatabaseTests {
     /// </summary>
     class MiscTests : DatabaseTest {
 
-
+        /*
         [Test]
         public void AlternateDatabasePathParserTest() {
             var paths = DatabaseInfo.ParseAlternateDbPathLines(new[] {
@@ -36,6 +36,7 @@ namespace BoSSS.Application.DatabaseTests {
             Assert.AreEqual("/trimmed/db", paths[2].DbPath);
             Assert.AreEqual("node42", paths[2].MachineFilter);
         }
+        */
 
 
         [Test]

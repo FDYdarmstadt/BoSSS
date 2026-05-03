@@ -1467,7 +1467,17 @@ namespace BoSSS.Solution {
             if (this.Control == null || (this.Control.DbPath.IsNullOrEmpty() && (this.Control.AlternateDbPaths == null || this.Control.AlternateDbPaths.Length <= 0))) {
                 return NullDatabaseInfo.Instance;
             } else {
-                return DatabaseInfo.Open(this.Control.DbPath, this.Control.AlternateDbPaths);
+
+                var allPaths = DatabasePaths.LoadAll();
+
+                var altPaths = this.Control.AlternateDbPaths.Select(tt => tt.DbPath).ToList();
+                foreach(var kv in allPaths) {
+                    if(this.Control.DbID == Guid.Empty || this.Control.DbID == kv.Key) {
+                        altPaths.AddRange(kv.Value);
+                    }
+                }
+
+                return DatabaseInfo.Open(this.Control.DbPath, altPaths);
             }
         }
 

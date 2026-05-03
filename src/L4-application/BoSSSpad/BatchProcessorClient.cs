@@ -447,7 +447,7 @@ namespace BoSSS.Application.BoSSSpad {
                 string fullPathAtRemote = pp.PathAtRemote.TrimEnd('/', '\\');
                 string remoteDirSep = pp.PathAtRemote.Contains('/') ? "/" : "\\";
                 fullPathAtRemote = fullPathAtRemote + remoteDirSep + dbDir;
-                DatabaseInfo.AddAlternateDbPaths(fullPath, fullPathAtRemote, null);
+                dbi.AddAlternateDbPath(fullPathAtRemote);
             }
 
 

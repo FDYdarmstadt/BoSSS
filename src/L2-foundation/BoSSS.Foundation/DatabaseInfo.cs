@@ -16,25 +16,26 @@ limitations under the License.
 
 using ilPSP;
 using ilPSP.Tracing;
+using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 
 namespace BoSSS.Foundation.IO {
+
+
 
     /// <summary>
     /// Standard implementation of a database info object.
     /// </summary>
     public class DatabaseInfo : IDatabaseInfo {
 
-        /// <summary>
-        /// Job-local file containing additional database paths deployed next to the solver executable.
-        /// </summary>
-        public const string AlternateDatabasePathsFileName = "AlternateDatabasePaths.txt";
+        
 
         static List<DatabaseInfo> DatabaseInfos;
 
@@ -88,8 +89,12 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// Open the database
         /// </summary>
-        public static DatabaseInfo Open((string DbPath, string MachineFilter)[] AlternateDbPaths) {
-            return Open(null, AlternateDbPaths);
+        /// <param name="DbPaths">
+        /// multiple directories where to search for the datebease;
+        /// this is intended for use in HPC cluster environments, where the database directory might have different mount paths on different computers.
+        /// </param>
+        public static DatabaseInfo Open(string[] DbPaths) {
+            return Open(null, DbPaths);
         }
 
         /// <summary>
@@ -121,52 +126,40 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// Open the database
         /// </summary>
-        public static DatabaseInfo Open(string _path, (string DbPath, string MachineFilter)[] AlternateDbPaths = null) {
-            if(_path == null && (AlternateDbPaths == null || AlternateDbPaths.Length <= 0))
+        /// <param name="AlternateDbPaths">
+        /// alternative paths, where to search for a BoSSS database if it is not found at the primary path <paramref name="_path"/>;
+        /// this is intended for use in HPC cluster environments, where the database directory might have different mount paths on different computers.
+        /// </param>
+        /// <param name="_path">
+        /// default path to load from
+        /// </param>
+        public static DatabaseInfo Open(string _path, IEnumerable<string> AlternateDbPaths = null) {
+            if(_path == null && (AlternateDbPaths == null || AlternateDbPaths.Count() <= 0))
                 throw new ArgumentException("hey, buddy, you must provide some path to open");
-            
-            List<ValueTuple<string, string>> allPaths = new List<(string, string)>();
 
-            allPaths.Add((_path, null));
-            if(AlternateDbPaths != null)
-                allPaths.AddRange(AlternateDbPaths);
-            AddAlternateDbPathsUnique(allPaths, ReadDeployedAlternateDatabasePaths());
+            HashSet<string> allPaths = new HashSet<string>() { _path };
+            allPaths.AddRange(AlternateDbPaths);
 
-            string mName = System.Environment.MachineName.ToLowerInvariant();
 
             string dbPath = null;
-            foreach(var t in allPaths) {
-                string __path = t.Item1;
-                string filter = t.Item2;
-
-                if(!filter.IsNullOrEmpty() && !filter.IsEmptyOrWhite()) {
-                    if(!mName.Contains(filter)) {
-                        continue;
-                    }
-                }
-
+            foreach(var __path in allPaths) {
                 if(Directory.Exists(__path) || File.Exists(__path)) { // the latter is for ZIP-file databases
                     dbPath = __path;
                     break;
                 }
-
             }
 
             if(dbPath == null) {
-                Console.Error.WriteLine("Unable to open database: ");
-                Console.Error.WriteLine($"primary path: {_path}");
-                if (AlternateDbPaths == null || AlternateDbPaths.Length <= 0) {
-                    Console.Error.WriteLine("No alternative paths specified.");
-                } else {
-                    Console.Error.WriteLine("Got " + AlternateDbPaths.Length + " all other paths: ");
-                    for(int i = 0; i < AlternateDbPaths.Length; i++) {
-                        Console.Error.WriteLine($"  #{i}: {AlternateDbPaths[i].DbPath}, filter is {AlternateDbPaths[i].MachineFilter}");
-                    }
+                using(var sw = new StringWriter()) {
+                    sw.WriteLine("Unable to open database: ");
+                    sw.WriteLine($"primary path: {_path}");
+                    sw.WriteLine(" Alernative paths: " + AlternateDbPaths.ToConcatString());
 
+                    throw new IOException(sw.ToString());
                 }
-
-                throw new IOException("Unable to open database - all given paths either don't exist or are ruled out by the machine filter on this machine with name " + mName + " .");
             }
+
+            
 
 
             lock(padlock_DatabaseInfos) {
@@ -199,6 +192,8 @@ namespace BoSSS.Foundation.IO {
             }
         }
 
+        private DatabaseInfoJson databaseInfoJson;
+
 
 
         /// <summary>
@@ -209,8 +204,10 @@ namespace BoSSS.Foundation.IO {
             this.Path = path;
             if(path == null) {
                 Controller = NullDatabaseController.Instance;
+                databaseInfoJson = new DatabaseInfoJson();
             } else {
                 Controller = new DatabaseController(this);
+                databaseInfoJson = new DatabaseInfoJson(path);
             }
         }
 
@@ -253,6 +250,7 @@ namespace BoSSS.Foundation.IO {
         /// detects if some other path actually also points to this database
         /// </summary>
         public bool PathMatch(string otherPath) {
+            /*
             if(this.Path == otherPath)
                 return true;
             if(!Directory.Exists(otherPath))
@@ -266,6 +264,21 @@ namespace BoSSS.Foundation.IO {
             string file2 = System.IO.Path.Combine(otherPath, TokenName);
 
             return File.Exists(file2);
+            */
+
+            if(this.Path == otherPath)
+                return true;
+            if(otherPath.IsEmptyOrWhite())
+                return false;
+            if(!Directory.Exists(otherPath))
+                return false;
+
+            if(!DatabaseUtils.IsValidBoSSSDatabase(otherPath)) 
+                return false;
+
+            var o = new DatabaseInfoJson(otherPath);
+            return o.ID == this.ID;
+
         }
 
         /// <summary>
@@ -331,8 +344,8 @@ namespace BoSSS.Foundation.IO {
             }
         }
 
-         /// <summary>
-        /// Reference equality
+        /// <summary>
+        /// true, id the <see cref="IDatabaseInfo.ID"/> of <paramref name="other"/> matches with this database id
         /// </summary>
         public bool Equals(IDatabaseInfo other) {
             if(other == null)
@@ -342,20 +355,11 @@ namespace BoSSS.Foundation.IO {
 
             string mName = System.Environment.MachineName.ToLowerInvariant();
 
-            List<ValueTuple<string, string>> allPaths = new List<(string, string)>();
-            allPaths.Add((other.Path, null));
+            List<string> allPaths = new List<string>();
+            allPaths.Add(other.Path);
             allPaths.AddRange(other.AlternateDbPaths);
 
-            foreach(var t in allPaths) {
-                string path = t.Item1;
-                string filter = t.Item2;
-
-                if(!filter.IsNullOrEmpty() && !filter.IsEmptyOrWhite()) {
-                    if(!mName.Contains(filter)) {
-                        continue;
-                    }
-                }
-
+            foreach(var path in allPaths) {
                 if(this.PathMatch(path))
                     return true;
             }
@@ -377,22 +381,31 @@ namespace BoSSS.Foundation.IO {
         /// 
         /// </summary>
         public override int GetHashCode() {
-            return 1; // deactivate hashing
+            return this.ID.GetHashCode();
         }
 
 
         /// <summary>
         /// Alternative paths to access the database, if the main path is not present on a given machine.
         /// This allows to use the same control file or object on different machines, where the database is located in a different path.
-        /// - 1st entry: path into the local file system
-        /// - 2nd entry: optional machine name filter
         /// </summary>
-        public (string DbPath, string MachineFilter)[] AlternateDbPaths {
+        public string[] AlternateDbPaths {
             get {
-                return ReadAlternateDbPaths(this.Path);
+                var r = new List<string>();
+                r.AddRange(databaseInfoJson.Paths);
+                r.Remove(this.Path);
+                return r.ToArray();
             }
         }
 
+
+        public Guid ID {
+            get {
+                return databaseInfoJson.ID;
+            }
+        }
+
+        /*
         static (string DbPath, string MachineFilter)[] ReadAlternateDbPaths(string dbPath) {
             if (dbPath == null)
                 throw new ArgumentNullException();
@@ -400,7 +413,9 @@ namespace BoSSS.Foundation.IO {
 
             return ReadAlternateDbPathsFile(p);
         }
+        */
 
+        /*
         /// <summary>
         /// Reads the line-oriented alternate database path format used by database-local
         /// <c>AlternatePaths.txt</c> and job-local <see cref="AlternateDatabasePathsFileName"/>.
@@ -414,6 +429,7 @@ namespace BoSSS.Foundation.IO {
             return ParseAlternateDbPathLines(File.ReadAllLines(path));
         }
 
+        /*
         /// <summary>
         /// Parses alternate database path lines. Blank lines are ignored, and lines starting
         /// with <c>;;</c> after leading whitespace are treated as comments.
@@ -451,6 +467,7 @@ namespace BoSSS.Foundation.IO {
             string path = System.IO.Path.Combine(Directory.GetCurrentDirectory(), AlternateDatabasePathsFileName);
             return ReadAlternateDbPathsFile(path);
         }
+        */
 
         static void AddAlternateDbPathsUnique(List<ValueTuple<string, string>> paths, IEnumerable<ValueTuple<string, string>> additionalPaths) {
             foreach(var p in additionalPaths) {
@@ -469,10 +486,11 @@ namespace BoSSS.Foundation.IO {
         /// - true: the path was added
         /// - false: the alternate path is already registered for the database and was not added again.
         /// </return>
-        public static bool AddAlternateDbPaths(string dbPath, string altPath, string machFilter) {
-            if (altPath == null)
+        public bool AddAlternateDbPath(string altPath) {
+            if (altPath.IsEmptyOrWhite())
                 throw new ArgumentNullException();
 
+            /*
             var PathsSoFar = ReadAlternateDbPaths(dbPath);
             foreach(var tt in PathsSoFar) {
                 if (tt.DbPath == altPath && tt.MachineFilter == machFilter)
@@ -498,8 +516,17 @@ namespace BoSSS.Foundation.IO {
             }
 
             return true;
+            */
+
+            if(!databaseInfoJson.Paths.Contains(altPath)) {
+                databaseInfoJson.Paths.Add(altPath);
+                databaseInfoJson.Save();
+                return true;
+            } else {
+                return false;
+            }
         }
 
-
+        
     }
 }
