@@ -403,7 +403,7 @@ namespace BoSSS.Foundation.IO {
                         p.AddToArray(ref allFiles);
                     }
 
-                    if(File.Exists(fullpath)) {
+                    if(File.Exists(fullpath)) {  // v0 actuall has NO `.v0` extension for backward compatibility
                         mostRecentFile = fullpath;
                         mostRecentVersion = 0;
                         sortedVersions.Add(0, fullpath);
@@ -413,8 +413,12 @@ namespace BoSSS.Foundation.IO {
                         foreach(string file in allFiles) {
                             int version = -1;
                             try {
-                                string versionString = file.Substring(TrimLen + 2);
-                                version = int.Parse(versionString);
+                                if(file == fullpath) {
+                                    version = 0;
+                                } else {
+                                    string versionString = file.Substring(TrimLen + 2);
+                                    version = int.Parse(versionString);
+                                }
                             } catch(Exception e) {
                                 tr.Error("OpenFileExclusiveBlockingVersionized IO Error: " + e.ToString());
                                 continue;

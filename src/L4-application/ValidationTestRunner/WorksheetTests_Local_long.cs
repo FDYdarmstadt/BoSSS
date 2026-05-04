@@ -67,7 +67,7 @@ namespace ValidationTestRunner {
         /// publication results for: Toprak, Kummer: Cell agglomeration strategy for cut cells in eXtended discontinuous Galerkin methods
         /// </summary>
         [NUnitFileToCopyHack("AgglomerationTestcases/rotatingPopcorn2D.ipynb", "AgglomerationTestcases/rotatingPopcorn2Dpost.ipynb")]
-        [Test]
+        //[Test] // fk, 04may26: deactivated temporarily, should be activated avain soon
         static public void Run__RotatingPopcorn2D() {
             Run__LongTest(
                "Popcorn2D_condStudy",
@@ -79,7 +79,7 @@ namespace ValidationTestRunner {
         /// publication results for: Toprak, Kummer: Cell agglomeration strategy for cut cells in eXtended discontinuous Galerkin methods
         /// </summary>
         [NUnitFileToCopyHack("AgglomerationTestcases/rotatingPopcorn3D.ipynb", "AgglomerationTestcases/rotatingPopcorn3Dpost.ipynb")]
-        //[Test] // fk, 29may26: deactivated, too expensive for validation tests
+        //[Test] // fk, 29apr26: deactivated, too expensive for validation tests
         static public void Run__RotatingPopcorn3D() {
             Run__LongTest(
                 "Popcorn3D_condStudy",

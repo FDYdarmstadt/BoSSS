@@ -1202,7 +1202,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                                         CheckInt[i] += 1;
                                     }
                                     if(CheckInt[i] > 1) {
-                                        Debugger.Launch();
                                         throw new ArgumentException("Clusters are overlapping!");
                                     }
                                 }

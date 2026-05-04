@@ -1021,6 +1021,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                     double CondNo = this.CondNumMatlab(); // matlab seems to be more reliable
                                                           //double CondNo = this.Cond2Matlab();
                                                           //double CondNo = this.CondLAPACK();
+                    //this.Cond2Arnoldi()
                     Ret.Add("TotCondNo-" + VarNames, CondNo);
 
                     if (CalculateMassMatrix) {
