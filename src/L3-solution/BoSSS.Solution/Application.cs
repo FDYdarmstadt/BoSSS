@@ -1470,7 +1470,7 @@ namespace BoSSS.Solution {
 
                 var allPaths = DatabasePaths.LoadAll();
 
-                var altPaths = this.Control.AlternateDbPaths.Select(tt => tt.DbPath).ToList();
+                var altPaths = (this?.Control?.AlternateDbPaths?.Select(tt => tt.DbPath)?.ToList()) ?? (new List<string>());
                 foreach(var kv in allPaths) {
                     if(this.Control.DbID == Guid.Empty || this.Control.DbID == kv.Key) {
                         altPaths.AddRange(kv.Value);

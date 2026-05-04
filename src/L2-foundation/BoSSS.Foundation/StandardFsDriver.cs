@@ -398,15 +398,15 @@ namespace BoSSS.Foundation.IO {
 
                     int TrimLen = fullpath.Length;
                     var allFiles = System.IO.Directory.GetFiles(fullDirectory, fileName + ".v*");
-                    foreach(var p in System.IO.Directory.GetFiles(fullDirectory, fileName)) {
-                        p.AddToArray(ref allFiles);
-                    }
+                    //foreach(var p in System.IO.Directory.GetFiles(fullDirectory, fileName)) { // v0 actually has NO `.v0` extension for backward compatibility
+                    //    p.AddToArray(ref allFiles);
+                    //}
 
                     if(File.Exists(fullpath)) {  // v0 actually has NO `.v0` extension for backward compatibility
                         mostRecentFile = fullpath;
                         mostRecentVersion = 0;
-                        if(sortedVersions.ContainsKey(0))
-                            Console.Error.WriteLine($"Strange: already containing key {0}, >{sortedVersions[0]}<; trying to add >{fullpath}<");
+                        //if(sortedVersions.ContainsKey(0))
+                        //    Console.Error.WriteLine($"Strange: already containing key {0}, >{sortedVersions[0]}<; trying to add >{fullpath}<");
                         sortedVersions[0] = fullpath;
                     }
 
@@ -426,7 +426,7 @@ namespace BoSSS.Foundation.IO {
                             }
 
                         if(sortedVersions.ContainsKey(version))
-                            Console.Error.WriteLine($"Strange 3: already containing key {0}, >{sortedVersions[version]}<; trying to add >{file}<");
+                            //Console.Error.WriteLine($"Strange 3: already containing key {0}, >{sortedVersions[version]}<; trying to add >{file}<");
 
                             sortedVersions[version] = file;
 
