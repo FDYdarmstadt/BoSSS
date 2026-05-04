@@ -576,7 +576,7 @@ namespace ValidationTestRunner {
         /// Section 6.1 Rieckmann (2024) https://doi.org/10.26083/tuprints-00028626
         /// </summary>
         [NUnitFileToCopyHack("XNSE_Solver/CapillaryWave/*.ipynb")]
-        [Test]
+        //[Test] fk, 04may26: deactivated because worksheet is missing
         static public void Run__CapillaryWave() {
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__CapillaryWave
             Run__LongTest(

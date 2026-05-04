@@ -389,13 +389,12 @@ namespace BoSSS.Foundation.IO {
                 // -----------------------------
                 string mostRecentFile;
                 int mostRecentVersion;
-                 Dictionary<int, string> sortedVersions;
+                Dictionary<int, string> sortedVersions;
 
                 void UpdateFileList() {
                     mostRecentFile = null;
                     mostRecentVersion = -1;
                     sortedVersions = new Dictionary<int, string>();
-
 
                     int TrimLen = fullpath.Length;
                     var allFiles = System.IO.Directory.GetFiles(fullDirectory, fileName + ".v*");
@@ -403,10 +402,12 @@ namespace BoSSS.Foundation.IO {
                         p.AddToArray(ref allFiles);
                     }
 
-                    if(File.Exists(fullpath)) {  // v0 actuall has NO `.v0` extension for backward compatibility
+                    if(File.Exists(fullpath)) {  // v0 actually has NO `.v0` extension for backward compatibility
                         mostRecentFile = fullpath;
                         mostRecentVersion = 0;
-                        sortedVersions.Add(0, fullpath);
+                        if(sortedVersions.ContainsKey(0))
+                            Console.Error.WriteLine($"Strange: already containing key {0}, >{sortedVersions[0]}<; trying to add >{fullpath}<");
+                        sortedVersions[0] = fullpath;
                     }
 
                     if(allFiles.Length > 0) {
@@ -424,7 +425,10 @@ namespace BoSSS.Foundation.IO {
                                 continue;
                             }
 
-                            sortedVersions.Add(version, file);
+                        if(sortedVersions.ContainsKey(version))
+                            Console.Error.WriteLine($"Strange 3: already containing key {0}, >{sortedVersions[version]}<; trying to add >{file}<");
+
+                            sortedVersions[version] = file;
 
                             if(version > mostRecentVersion) {
                                 mostRecentFile = file;

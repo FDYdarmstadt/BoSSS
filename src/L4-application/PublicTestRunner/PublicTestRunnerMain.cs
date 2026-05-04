@@ -738,7 +738,7 @@ namespace PublicTestRunner {
                 }
 
 
-                if(TestTypeProvider.CopyManagedAssembliesCentrally || bpc.DeployRuntime) {
+                if(TestTypeProvider.CopyManagedAssembliesCentrally/* || bpc.DeployRuntime*/) {
                     if(bpc.DeployRuntime == false) {
                         Console.WriteLine($"NOTE: althoug {nameof(BatchProcessorClient.DeployRuntime)} for the batch queue {bpc}, this behavour is overriden by {nameof(ITestTypeProvider.CopyManagedAssembliesCentrally)}.");
                     }

@@ -33,9 +33,11 @@ namespace ValidationTestRunner {
             get {
                 var ret = new Type[] {
                     typeof(ValidationTestRunnerMain),
-                    typeof(XESTSFMain),
                     typeof(SAIDTMain), // required to have the SAIDT binary available
-                    typeof(FreeXNSE.FreeXNSE) // required to have the FreeXNSE binary available
+                    typeof(FreeXNSE.FreeXNSE), // required to have the FreeXNSE binary available
+                    typeof(StokesHelical_Ak.HelicalMain),
+                    typeof(XESF.XESFMain),
+                    typeof(XESTSF.XESTSFMain)
                 };
                 return ret;
             }
@@ -360,8 +362,7 @@ namespace ValidationTestRunner {
 
         static int Main(string[] args) {
             PublicTestRunner.PublicTestRunnerMain.TimeOutSec = 24 * 3600 * 10; // 10 days
-
-
+            
             try {
                 //BoSSS.Solution.Application.InitMPI(num_threads: 1);
                 //WorksheetTests_Local_short.Run__MetaJobManager();

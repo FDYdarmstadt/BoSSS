@@ -445,7 +445,7 @@ namespace BoSSS.Application.BoSSSpad {
                             return LastChance();
 
                             default:
-                            tr.Warning($"unable to determine job (id {idToken}) status from SLURM; squeue returning string >{jobstatus}<");
+                            tr.Info($"unable to determine job (id {idToken}) status from SLURM; squeue returning string >{jobstatus}<");
                             break;
                         }
                         //}
