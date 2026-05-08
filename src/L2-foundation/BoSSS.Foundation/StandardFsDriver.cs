@@ -396,6 +396,7 @@ namespace BoSSS.Foundation.IO {
                     mostRecentVersion = -1;
                     sortedVersions = new Dictionary<int, string>();
 
+
                     int TrimLen = fullpath.Length;
                     var allFiles = System.IO.Directory.GetFiles(fullDirectory, fileName + ".v*");
                     //foreach(var p in System.IO.Directory.GetFiles(fullDirectory, fileName)) { // v0 actually has NO `.v0` extension for backward compatibility
