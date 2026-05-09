@@ -62,9 +62,10 @@ namespace ilPSP {
         public static void WaitForDebugger() {
             if(System.Diagnostics.Debugger.IsAttached)
                 return;
-
-            Console.WriteLine("Waiting for debugger to attach...");
-            Console.Out.Flush();
+            
+            int pid = Process.GetCurrentProcess().Id;
+            Console.Error.WriteLine($"Waiting for debugger to attach (PID {pid})...");
+            Console.Error.Flush();
             while(!System.Diagnostics.Debugger.IsAttached) {
                 System.Threading.Thread.Sleep(1000);
             }

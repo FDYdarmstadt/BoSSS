@@ -1573,7 +1573,18 @@ namespace BoSSS.Solution {
                         if (timestep == null || timestep.MajorNumber < 0) {
                             tsi_toLoad = session.Timesteps.OrderBy(tsi => tsi.PhysicalTime).Last();
                         } else {
-                            tsi_toLoad = session.Timesteps.Single(t => t.TimeStepNumber.Equals(timestep));
+                            try {
+                                tsi_toLoad = session.Timesteps.Single(t => t.TimeStepNumber.Equals(timestep));
+                            } catch (Exception e) {
+                                string GetAvailTS() {
+                                    try {
+                                        return session.Timesteps.Select(tsi => tsi.TimeStepNumber).ToConcatString();
+                                    } catch (Exception e) {
+                                        return e.GetType().ToString() + ": " + e.Message;
+                                    }
+                                }
+                                throw new AggregateException($"unable to find timestep {timestep} in session to restart ({session}); available timesteps: {GetAvailTS()}", e);
+                            }
                         }
 
                         if (this.Control.GridGuid != null && this.Control.GridGuid != default(Guid) && this.Control.GridGuid != Guid.Empty) {
