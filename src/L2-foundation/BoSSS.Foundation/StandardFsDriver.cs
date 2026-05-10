@@ -427,7 +427,7 @@ namespace BoSSS.Foundation.IO {
                             }
 
                         if(sortedVersions.ContainsKey(version))
-                            //Console.Error.WriteLine($"Strange 3: already containing key {0}, >{sortedVersions[version]}<; trying to add >{file}<");
+                            Console.Error.WriteLine($"Strange 3: already containing key {0}, >{sortedVersions[version]}<; trying to add >{file}<");
 
                             sortedVersions[version] = file;
 
