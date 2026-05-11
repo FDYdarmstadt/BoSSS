@@ -493,7 +493,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public void TestFreeMeanValue(CoordinateVector SolutionVec, double HomotopyValue) {
             using (var ft = new FuncTrace()) {
-                ft.InfoToConsole = true;
+                ft.InfoToConsole = false;
                 ft.Info("Checking for free mean value.");
 
                 int L = this.CurrentLin.Mapping.LocalLength;
@@ -533,6 +533,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     double ResNormA = ResidualBeforMeanCor.MPI_L2Norm();
                     double ResNormB = ResidualAfterMeanCor.MPI_L2Norm();
 
+                    /*
                     // test code begin ....
                     double[] __ResidualDifference = ResidualAfterMeanCor.CloneAs();
                     __ResidualDifference.AccV(-1.0, ResidualBeforMeanCor);
@@ -551,6 +552,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //Tecplot.Tecplot.PlotFields(__ResidualDifferenceDg, "ResiDiff", 0, 2);
                         
                     // test code end...
+                    */
 
                     double RefVal = Math.Max(Math.Max(BLAS.MachineEps.Sqrt(), Math.Max(ResNormA, ResNormB) * 1e-7), Math.Abs(SolNormA - SolNormB) * 1e-7);
                     if (Dist > RefVal) {
