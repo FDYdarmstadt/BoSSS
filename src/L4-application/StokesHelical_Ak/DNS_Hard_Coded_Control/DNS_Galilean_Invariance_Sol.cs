@@ -103,7 +103,7 @@ namespace StokesHelical_Ak {
             //Ctrl.NoOfTimesteps = dtRefining * 200*4;
             Ctrl.NoOfTimesteps = dtRefining * 100;
             Ctrl.steady = false;
-            Ctrl.ExactResidual = false;
+            //Ctrl.ExactResidual = false;
 
             // DG degree
             // =========

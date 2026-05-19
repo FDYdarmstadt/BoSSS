@@ -16,6 +16,7 @@ using BoSSS.Solution.Utils;
 using BoSSS.Solution.Tecplot;
 using System.Linq;
 using BoSSS.Foundation.Quadrature;
+using BoSSS.Foundation.XDG.Quadrature;
 
 namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
     /// <summary>
@@ -147,6 +148,53 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         }
 
         /// <summary>
+        /// When multiple level sets are supplied, this method returns a delegate that gives the maximum value from the list of level sets.
+        /// </summary>
+        /// <param name="delegates"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        private _2D ReturnMaxDelegate(IList<_2D> delegates, string CalculateMethod = "Max") {
+            if (delegates.Count == 0)
+                throw new Exception("No level sets are submitted, call Submit2DLevelSet() method first!");
+
+            if (delegates.Count == 1)
+                return delegates.First();
+
+            switch (CalculateMethod) {
+                case "Max":
+                    return (x0, x1) => delegates.Max(del => del(x0, x1));
+                case "Min":
+                    return (x0, x1) => delegates.Min(del => del(x0, x1));
+                default:
+                    throw new ArgumentException("Invalid CalculateMethod. Use 'Max' or 'Min'.");
+            }
+
+        }
+
+        /// <summary>
+        /// When multiple level sets are supplied, this method returns a delegate that gives the maximum value from the list of level sets.
+        /// </summary>
+        /// <param name="delegates"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        private _3D ReturnMaxDelegate(IList<_3D> delegates, string CalculateMethod = "Max") {
+            if (delegates.Count == 0)
+                throw new Exception("No level sets are submitted, call Submit3DLevelSet() method first!");
+
+            if (delegates.Count == 1)
+                return delegates.First();
+
+            switch (CalculateMethod) {
+                case "Max":
+                    return (x0, x1, x2) => delegates.Max(del => del(x0, x1, x2));
+                case "Min":
+                    return (x0, x1, x2) => delegates.Min(del => del(x0, x1, x2));
+                default:
+                    throw new ArgumentException("Invalid CalculateMethod. Use 'Max' or 'Min'.");
+            }
+        }
+
+        /// <summary>
         /// Submit a level set in 2D
         /// </summary>
         /// <param name="inLevelSet">A delegate with (double, double) => double </param>
@@ -237,6 +285,33 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         }
 
         /// <summary>
+        /// Project the submitted level sets
+        /// </summary>
+        /// <param name="degree">degree of the level set</param>
+        public void ProjectLevelSet(int degree, CutCellQuadratureMethod cellQuadratureMethod, string CalculateMethod = "Max") {
+            Basis b = new Basis(grd, degree);
+            var levSet0 = new LevelSet(b, "LevelSetField0");
+
+            // Projection
+            if (grd.SpatialDimension == 2) {
+                _2D inLevelSet = ReturnMaxDelegate(Levelsets2D, CalculateMethod);
+                levSet0.ProjectField(inLevelSet);
+
+            } else if (grd.SpatialDimension == 3) {
+                _3D inLevelSet = ReturnMaxDelegate(Levelsets3D, CalculateMethod);
+                levSet0.ProjectField(inLevelSet);
+
+            } else {
+                throw new Exception("Only 2D and 3D meshes are supported.");
+            }
+
+
+            lsTrk = new LevelSetTracker(grd.GridData, CutCellQuadratureMethod.Classic, 1, new string[] { "A", "B" }, levSet0);
+            lsTrk.UpdateTracker(0.0);
+            Console.WriteLine($"Successful projection of level set with {cellQuadratureMethod.ToString()}");
+        }
+
+        /// <summary>
         /// Plot the current state as a .plt file
         /// </summary>
         /// <param name="superSampling">the super sampling level</param>
@@ -269,6 +344,8 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         public void CompileQuadRules(int deg, int SpeciesId = -1) {
             // If interface, do not bother to calculate others
             if(SpeciesId == 0) {
+                //if (lsTrk.GridDat.SpatialDimension == 3)
+                //    System.Diagnostics.Debugger.Launch();
                 CompileLevelsetQuadRules(deg);
                 return;
             }
@@ -295,7 +372,23 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             var scheme = metrics.XQuadSchemeHelper.GetLevelSetQuadScheme(levelSetIndex, lsTrk.Regions.GetCutCellMask4LevSet(levelSetIndex));
             var rules = scheme.Compile(grd.GridData, deg);
 
-            rulesInterface = rules;
+            var volScalingFab = new CellIntegrationMetric();
+            var intScalingFab = new LevelSetIntegrationMetric(lsTrk.DataHistories[levelSetIndex].Current);
+
+            var _rulesInterface = new CompositeQuadRule<QuadRule>(null, lsTrk.GridDat);
+            foreach (var crp in rules) {
+                var volScalings = volScalingFab.GetScalingsForNonlinElements(lsTrk.GridDat, crp.Rule, crp.Chunk.i0, crp.Chunk.Len);
+                var intScalings = intScalingFab.GetScalingsForNonlinElements(lsTrk.GridDat, crp.Rule, crp.Chunk.i0, crp.Chunk.Len);
+
+                var scaledRule = crp.Rule.CloneAs();
+                for (int _j = 0; _j < crp.Chunk.Len; _j++) {
+                    for (int k = 0; k < crp.Rule.NoOfNodes; k++) {
+                        scaledRule.Weights[k] = crp.Rule.Weights[k] * intScalings[_j, k] / volScalings[_j, k];
+                    }
+                }
+                _rulesInterface.chunkRulePairs.Add(new ChunkRulePair<QuadRule>(crp.Chunk, scaledRule));
+            }
+            rulesInterface = _rulesInterface;
         }
 
 

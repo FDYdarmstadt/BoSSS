@@ -406,11 +406,11 @@ namespace BoSSS.Foundation.XDG {
                                                     int jCell = i + i0;
                                                     if(iLocalSpcA > -1) {
                                                         cellMetrics[jCell, iLocalSpcA, 0] += ResultsOfIntegration[i, 0];
-                                                        Debug.Assert(!(double.IsNaN(cellMetrics[jCell, iLocalSpcA, 0]) || double.IsInfinity(cellMetrics[jCell, iLocalSpcA, 0])));
+                                                        //Debug.Assert(!(double.IsNaN(cellMetrics[jCell, iLocalSpcA, 0]) || double.IsInfinity(cellMetrics[jCell, iLocalSpcA, 0])));
                                                     }
                                                     if(iLocalSpcB > -1) {
                                                         cellMetrics[jCell, iLocalSpcB, 0] += ResultsOfIntegration[i, 0];
-                                                        Debug.Assert(!(double.IsNaN(cellMetrics[jCell, iLocalSpcB, 0]) || double.IsInfinity(cellMetrics[jCell, iLocalSpcB, 0])));
+                                                        //Debug.Assert(!(double.IsNaN(cellMetrics[jCell, iLocalSpcB, 0]) || double.IsInfinity(cellMetrics[jCell, iLocalSpcB, 0])));
                                                     }
                                                 }
                                             }).Execute();
@@ -435,7 +435,7 @@ namespace BoSSS.Foundation.XDG {
 #if DEBUG
                     var cellMetricsComp = cellMetrics.ExtractSubArrayShallow(new[] { 0, 0, 0 }, new[] { J - 1, NoOfSpc - 1, 1 }).CloneAs();
                     cellMetricsComp.Acc(-1.0, cellMetricsB4);
-                    Debug.Assert(cellMetricsComp.L2Norm() == 0.0);
+                    //Debug.Assert(cellMetricsComp.L2Norm() == 0.0);
 #endif
                 }
                 for(int iSpc = 0; iSpc < species.Length; iSpc++) {

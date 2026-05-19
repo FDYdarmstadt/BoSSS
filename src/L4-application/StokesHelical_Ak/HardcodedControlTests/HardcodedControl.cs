@@ -457,7 +457,7 @@ namespace StokesHelical_Ak {
                                     // Solver Properties
                                     //=============
                                     Ctrl.steady = false;
-                                    Ctrl.ExactResidual = false;
+                                    //Ctrl.ExactResidual = false;
                                     Ctrl.HagenPoisseulle = true;
                                     // DG degree
                                     // =========
