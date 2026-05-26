@@ -491,7 +491,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// if any entry in <see cref="IDifferentialOperator.FreeMeanValue"/> is true, 
         /// a change in the mean/average value of the respective variable must **not** have any effect on the residual.
         /// </summary>
-        public void TestFreeMeanValue(CoordinateVector SolutionVec, double HomotopyValue) {
+        public bool TestFreeMeanValue(CoordinateVector SolutionVec, double HomotopyValue) {
             using (var ft = new FuncTrace()) {
                 ft.InfoToConsole = false;
                 ft.Info("Checking for free mean value.");
@@ -570,12 +570,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
 
                         ft.Error($"Something seems wrong with `FreeMeanValue`: drastic change of operator residual; Original residual: {ResNormA}; residual after distortion {ResNormB}; distance is {Dist}, per component: {ResidualDifferenceNorms.ToConcatString()}, reference value {RefVal}");
-                        Console.Error.WriteLine($"Something seems wrong with `FreeMeanValue`: drastic change of operator residual; Original residual: {ResNormA}; residual after distortion {ResNormB}; distance is {Dist}, per component: {ResidualDifferenceNorms.ToConcatString()}, reference value {RefVal}");
+                        //Console.Error.WriteLine($"Something seems wrong with `FreeMeanValue`: drastic change of operator residual; Original residual: {ResNormA}; residual after distortion {ResNormB}; distance is {Dist}, per component: {ResidualDifferenceNorms.ToConcatString()}, reference value {RefVal}");
                         Tecplot.Tecplot.PlotFields(ResidualDifferenceDg, "ResidualDifference33", 0, 2);
-                        throw new ArithmeticException($"Something seems wrong with `FreeMeanValue`: drastic change of operator residual; Original residual: {ResNormA}; residual after distortion {ResNormB}; distance is {Dist}, reference value {RefVal}");
-
+                        //throw new ArithmeticException($"Something seems wrong with `FreeMeanValue`: drastic change of operator residual; Original residual: {ResNormA}; residual after distortion {ResNormB}; distance is {Dist}, reference value {RefVal}");
+                        return false;
+                    } else {
+                        return true;
                     }
                 }
+            
+                return true;
             }
         }
 
