@@ -12,6 +12,7 @@ namespace BoSSS.Application.DatabaseTests {
         public static void Main() {
             BoSSS.Solution.Application.InitMPI();
             PrintActiveThreads();
+            //ilPSP.Environment.WaitForDebugger();
 #if DEBUG
             StartDebugger();
 #endif
@@ -27,7 +28,7 @@ namespace BoSSS.Application.DatabaseTests {
 
             var t2 = new DBDriverTests();
             t2.Init();
-            t2.TestCopySession();
+            t2.TestDeleteSession();
             t2.CleanUp();
         }
 
@@ -42,10 +43,10 @@ namespace BoSSS.Application.DatabaseTests {
 
         static void StartDebugger() {
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
-            if(size > 1) {
+            if(size > 0) {
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
                 if(rank == 1)
-                     Debugger.Launch();
+                    ilPSP.Environment.WaitForDebugger();
             }
         }
     }
