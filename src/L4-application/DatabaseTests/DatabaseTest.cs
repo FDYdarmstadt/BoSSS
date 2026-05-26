@@ -61,7 +61,7 @@ namespace BoSSS.Application.DatabaseTests {
             }
 
             foreach(string filePath in Directory.GetFiles(templateBasePath, "*", SearchOption.AllDirectories)) {
-                if(Path.GetFileName(filePath) == "DatabaseInfo.json")
+                if(Path.GetFileName(filePath) == DatabaseInfoJson.Filename)
                     // don't copy the `DatabaseInfo.json`
                     // we consider a copy to be a "different database" because it might contain other sessions, etc., after teh copy is modified.
                     // (although, one could argue that there is only one BoSSS database in the entire world, due to Guids, which is just spread across different directories)

@@ -30,19 +30,23 @@ namespace BoSSS.Foundation.IO {
             Paths = new HashSet<string>();
             Paths.Add(CurrentPath);
 
-            if(base.Load()) {
-                // file already existed 
+            try {
+                if(base.Load()) {
+                    // file already existed 
 
-                // add current path if neccessary
-                if(!Paths.Contains(CurrentPath)) {
-                    Paths.Add(CurrentPath);
-                    base.Save();
+                    // add current path if necessary
+                    if(!Paths.Contains(CurrentPath)) {
+                        Paths.Add(CurrentPath);
+                        base.Save();
+                    }
+
+
+                } else {
+                    // file was freshly created
+
                 }
-
-
-            } else {
-                // file was freshly created
-
+            } catch(Exception e) {
+                Console.WriteLine("IO Error database file: " + e);
             }
 
         }
@@ -59,7 +63,7 @@ namespace BoSSS.Foundation.IO {
         public ISet<string> Paths;
 
         /// <summary>
-        /// filenam
+        /// filename 
         /// </summary>
         public static readonly string Filename = "DatabaseInfo.json";
 
