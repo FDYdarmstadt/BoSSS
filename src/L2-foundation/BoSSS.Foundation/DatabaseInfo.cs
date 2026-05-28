@@ -153,7 +153,7 @@ namespace BoSSS.Foundation.IO {
                 using(var sw = new StringWriter()) {
                     sw.WriteLine("Unable to open database: ");
                     sw.WriteLine($"primary path: {_path}");
-                    sw.WriteLine(" Alernative paths: " + AlternateDbPaths.ToConcatString());
+                    sw.WriteLine(" Alternative paths: " + AlternateDbPaths.ToConcatString());
 
                     throw new IOException(sw.ToString());
                 }
@@ -207,7 +207,7 @@ namespace BoSSS.Foundation.IO {
                 databaseInfoJson = new DatabaseInfoJson();
             } else {
                 Controller = new DatabaseController(this);
-                databaseInfoJson = new DatabaseInfoJson(path);
+                databaseInfoJson = new DatabaseInfoJson(Controller.DBDriver?.FsDriver?.BasePath ?? path);
             }
         }
 

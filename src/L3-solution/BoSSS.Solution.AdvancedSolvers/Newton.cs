@@ -679,6 +679,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public static Action<DGField[]> DiagnosticFunction;
+
+
+        bool EnableFreeMeanValueAdjustment = true;
+
         private void NewtonStep(CoordinateVector SolutionVec, int itc, double[] CurSol, double[] CurRes, double HomotopyValue, ref double norm_CurRes, ref double TrustRegionDelta) {
             using (var tr = new FuncTrace()) {
                 tr.InfoToConsole = false;
@@ -798,9 +802,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 // fix the pressure
                 // ----------------
-                if (CurrentLin.FreeMeanValue.Any()) {
+                //if(CurrentLin.FreeMeanValue.Any() && EnableFreeMeanValueAdjustment == false) {
+                //    Console.WriteLine("Free mean value adjustment disabled.");
+                //}
+
+
+                if (CurrentLin.FreeMeanValue.Any() && EnableFreeMeanValueAdjustment == true) {
                     if (itc == 1 || itc % 5 == 0) // execute this expensive test not to often.
-                        base.TestFreeMeanValue(SolutionVec, HomotopyValue);
+                        EnableFreeMeanValueAdjustment = base.TestFreeMeanValue(SolutionVec, HomotopyValue);
 
                     DGField[] flds = SolutionVec.Mapping.Fields.ToArray();
                     bool[] FreeMeanValue = CurrentLin.FreeMeanValue;

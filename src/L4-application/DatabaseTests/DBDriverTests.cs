@@ -253,8 +253,12 @@ namespace BoSSS.Application.DatabaseTests {
 
             int ret = 0;
             foreach (var f in files) {
-                if (Path.GetExtension(f) != ".token")
-                    ret++;
+                if (Path.GetExtension(f) == ".token")
+                    continue;
+                if (Path.GetFileName(f) == DatabaseInfoJson.Filename)
+                    continue;
+
+                ret++;
             }
             return ret;
         }

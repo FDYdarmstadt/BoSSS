@@ -7,20 +7,17 @@ using BoSSS.Foundation.IO;
 using ilPSP;
 using NUnit.Framework;
 
-namespace BoSSS.Application.DatabaseTests
-{
-    class DatabaseTest : MPITest
-    {
+namespace BoSSS.Application.DatabaseTests {
+    class DatabaseTest :MPITest {
         protected IDatabaseInfo databaseWithFiles;
 
         protected IDatabaseInfo emptyDatabase;
-        
-       
-        
+
+
+
         [NUnitFileToCopyHack("DatabaseTests/bosss_db_test_template.zip")]
         [SetUp]
-        public void Init()
-        {
+        public void Init() {
             string templateDatabasePath = "bosss_db_test_template.zip";
 
             // Temporary filesystem driver to unzip the test database.
@@ -35,16 +32,13 @@ namespace BoSSS.Application.DatabaseTests
         }
 
         [TearDown]
-        public void CleanUp()
-        {
+        public void CleanUp() {
             RemoveTestDatabase(databaseWithFiles);
             RemoveTestDatabase(emptyDatabase);
         }
 
-        private IDatabaseInfo CreateEmptyDatabase(string basePath)
-        {
-            if (Directory.Exists(basePath))
-            {
+        private IDatabaseInfo CreateEmptyDatabase(string basePath) {
+            if(Directory.Exists(basePath)) {
                 throw new Exception("Database folder already exists");
             }
 
@@ -57,20 +51,21 @@ namespace BoSSS.Application.DatabaseTests
             return DatabaseInfo.Open(basePath);
         }
 
-        private IDatabaseInfo GetDatabaseCopy(string newBasePath, string templateBasePath)
-        {
+        private IDatabaseInfo GetDatabaseCopy(string newBasePath, string templateBasePath) {
             CreateEmptyDatabase(newBasePath);
             IDatabaseInfo templateDB = DatabaseInfo.Open(templateBasePath);
 
-            foreach (Guid sessionID in templateDB.Controller.DBDriver.FsDriver.GetAllSessionGUIDs())
-            {
+            foreach(Guid sessionID in templateDB.Controller.DBDriver.FsDriver.GetAllSessionGUIDs()) {
                 Directory.CreateDirectory(Path.Combine(newBasePath,
                     StandardFsDriver.SessionsDir, sessionID.ToString()));
             }
 
-            foreach (string filePath in Directory.GetFiles(templateBasePath, "*",
-                SearchOption.AllDirectories))
-            {
+            foreach(string filePath in Directory.GetFiles(templateBasePath, "*", SearchOption.AllDirectories)) {
+                if(Path.GetFileName(filePath) == DatabaseInfoJson.Filename)
+                    // don't copy the `DatabaseInfo.json`
+                    // we consider a copy to be a "different database" because it might contain other sessions, etc., after teh copy is modified.
+                    // (although, one could argue that there is only one BoSSS database in the entire world, due to Guids, which is just spread across different directories)
+                    continue;
                 File.Copy(filePath, filePath.Replace(templateBasePath, newBasePath));
             }
 

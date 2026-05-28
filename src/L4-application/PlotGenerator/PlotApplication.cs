@@ -154,8 +154,13 @@ namespace BoSSS.PlotGenerator {
         /// </summary>
         protected void Run() {
             ISessionInfo session = m_Database.Controller.GetSessionInfo(m_config.SessionGuid);
-            var timesteps = session.Timesteps.Where(
-                tsi => this.m_config.TimeSteps.Contains(tsi.TimeStepNumber)).ToArray();
+            IEnumerable<ITimestepInfo> selectedTimesteps = session.Timesteps;
+            if (this.m_config.TimeSteps != null && this.m_config.TimeSteps.Count > 0) {
+                selectedTimesteps = selectedTimesteps.Where(
+                    tsi => this.m_config.TimeSteps.Contains(tsi.TimeStepNumber));
+            }
+
+            var timesteps = selectedTimesteps.OrderBy(tsi => tsi.TimeStepNumber).ToArray();
             int TotCnt = timesteps.Count();
 
             int process = this.DBDriver.MyRank + 1;
@@ -180,7 +185,12 @@ namespace BoSSS.PlotGenerator {
 
                 
                 WriteMessage(process, processCount, "Loading timestep ... (" + (i+1) + " of " + TotCnt + ")");
-                var fields = DBDriver.LoadFields(ts, this.GridDat, this.m_config.FieldNames).ToList();
+                IEnumerable<string> fieldNames = this.m_config.FieldNames;
+                if (fieldNames != null && !fieldNames.Any()) {
+                    fieldNames = null;
+                }
+
+                var fields = DBDriver.LoadFields(ts, this.GridDat, fieldNames).ToList();
                 WriteMessage(process, processCount, "Loaded timestep " + timestepNo + ". Plotting...");
 
                 //{

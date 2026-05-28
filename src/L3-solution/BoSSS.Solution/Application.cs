@@ -1464,7 +1464,7 @@ namespace BoSSS.Solution {
         /// </summary>
         /// <returns></returns>
         protected virtual IDatabaseInfo GetDatabase() {
-            if (this.Control == null || (this.Control.DbPath.IsNullOrEmpty() && (this.Control.AlternateDbPaths == null || this.Control.AlternateDbPaths.Length <= 0))) {
+            if (this.Control == null || (this.Control.DbPath.IsNullOrEmpty() && (this.Control.AlternateDbPaths == null || this.Control.AlternateDbPaths.Length <= 0 || this.Control.AlternateDbPaths.All(tt => tt.DbPath.IsEmptyOrWhite())))) {
                 return NullDatabaseInfo.Instance;
             } else {
 
