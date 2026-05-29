@@ -887,7 +887,16 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
         public double CondMassMatrix() {
             var Mtx = this.m_MultigridOp.MassMatrix;
-            return Mtx.cond();
+
+            double cond = 0.0;
+            for(long j = Mtx.RowPartitioning.i0; j < Mtx.RowPartitioning.iE; j++) {
+                var Mtx_jj = Mtx.GetBlock(j, j);
+                double cond_jj = Mtx_jj.Cond();
+                cond = Math.Max(cond, cond_jj);
+            }
+
+            return cond;
+            //return Mtx.cond();
         }
 
         /// <summary>
@@ -1021,7 +1030,18 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                     double CondNo = this.CondNumMatlab(); // matlab seems to be more reliable
                                                           //double CondNo = this.Cond2Matlab();
                                                           //double CondNo = this.CondLAPACK();
-                    //this.Cond2Arnoldi()
+                    //double CondNo = this.Cond2Arnoldi();
+                    //Console.WriteLine("Remember to activate MATLAB again !!!!!!!!!!!!!!!");
+                    //Console.WriteLine("Remember to activate MATLAB again !!!!!!!!!!!!!!!");
+                    //Console.WriteLine("Remember to activate MATLAB again !!!!!!!!!!!!!!!");
+                    //Console.WriteLine("Remember to activate MATLAB again !!!!!!!!!!!!!!!");
+                    //Console.WriteLine("Remember to activate MATLAB again !!!!!!!!!!!!!!!");
+                    //Console.WriteLine("Remember to activate MATLAB again !!!!!!!!!!!!!!!");
+                    //Console.WriteLine("Remember to activate MATLAB again !!!!!!!!!!!!!!!");
+                    //Console.WriteLine("Remember to activate MATLAB again !!!!!!!!!!!!!!!");
+                    //Console.WriteLine("Remember to activate MATLAB again !!!!!!!!!!!!!!!");
+                    //Console.WriteLine("Remember to activate MATLAB again !!!!!!!!!!!!!!!");
+                    //Console.WriteLine("Remember to activate MATLAB again !!!!!!!!!!!!!!!");
                     Ret.Add("TotCondNo-" + VarNames, CondNo);
 
                     if (CalculateMassMatrix) {

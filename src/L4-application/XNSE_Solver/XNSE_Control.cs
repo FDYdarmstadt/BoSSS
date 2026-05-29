@@ -246,7 +246,6 @@ namespace BoSSS.Application.XNSE_Solver {
                         // fast marching with Curvature and default filtering 
                         methodTagLS = "FastMarchCurv";
                         Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
-                        FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
                         AdvancedDiscretizationOptions.FilterConfiguration = Solution.LevelSetTools.CurvatureAlgorithms.FilterConfiguration.Default;
                         AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
                         break;
@@ -283,7 +282,6 @@ namespace BoSSS.Application.XNSE_Solver {
                         // (standard) fast marching with Laplace Beltrami without filtering
                         methodTagLS = "FastMarchLB";
                         Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
-                        FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
                         AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
                         break;
                     }

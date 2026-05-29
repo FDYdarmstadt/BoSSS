@@ -166,8 +166,7 @@ namespace BoSSS.Application.XNSE_Solver {
             ctrl.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             ctrl.Option_LevelSetEvolution = BoSSS.Solution.LevelSetTools.LevelSetEvolution.StokesExtension;
             ctrl.Timestepper_LevelSetHandling = BoSSS.Solution.XdgTimestepping.LevelSetHandling.LieSplitting;
-            ctrl.FastMarchingReInitPeriod = 150;
-
+            
             ctrl.SkipSolveAndEvaluateResidual = false;
 
             ctrl.TimeSteppingScheme = BoSSS.Solution.XdgTimestepping.TimeSteppingScheme.ImplicitEuler;

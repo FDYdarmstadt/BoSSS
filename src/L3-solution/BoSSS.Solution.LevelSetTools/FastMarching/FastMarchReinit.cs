@@ -48,8 +48,8 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
             LevelSetBasis = __LevelSetBasis;
             LevelSetMapping = new UnsetteledCoordinateMapping(__LevelSetBasis);
 
-            //lsEllipt = new LocalSolver_Elliptic(__LevelSetBasis);
-            //lsGeom = new LocalSolver_Geometric(__LevelSetBasis);
+            lsEllipt = new LocalSolver_Elliptic(__LevelSetBasis);
+            lsGeom = new LocalSolver_Geometric(__LevelSetBasis);
             gradModule = new GradientModule();
 
             //This plotter can plot each single update of the resp. field. 

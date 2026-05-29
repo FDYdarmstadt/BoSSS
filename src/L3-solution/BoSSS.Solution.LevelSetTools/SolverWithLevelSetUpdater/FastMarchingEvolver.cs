@@ -62,9 +62,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         public IList<string> ParameterNames => parameters;
 
-        // reinitilization
-        //public Func<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>, bool> AfterMovePhaseInterface => Reinitialize;
-
+        
         /// <summary>
         /// performs re-initialization
         /// </summary>
@@ -76,11 +74,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             IReadOnlyDictionary<string, DGField> DomainVarFields,
             IReadOnlyDictionary<string, DGField> ParameterVarFields) {
 
-            return this.Reinitialize(levelSet, time, dt, incremental, DomainVarFields, ParameterVarFields);
-
+            return this.Reinitialize(levelSet, time, dt, incremental, DomainVarFields, ParameterVarFields, false);
         }
-
-
 
         /// <summary>
         /// Provides access to the internally constructed extension velocity.
@@ -163,7 +158,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// <param name="RI_Timestep"></param>
         public void SetReInitTimestepNumber(int RI_Timestep) {
             ReInit_TimestepIndex = RI_Timestep;
-        } 
+        }
 
 
         public bool Reinitialize(
@@ -172,7 +167,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             double dt,
             bool incremental,
             IReadOnlyDictionary<string, DGField> DomainVarFields,
-            IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            IReadOnlyDictionary<string, DGField> ParameterVarFields,
+            bool enforce) {
 
             bool changed = false;
             ReInit_TimestepIndex++;
@@ -180,18 +176,21 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             //Console.WriteLine($"ReInit_TimestepIndex = {ReInit_TimestepIndex}");
 
             // after level-set evolution and for initializing non-signed-distance level set fields
-            if (ReInit_Period > 0 && ReInit_TimestepIndex % ReInit_Period == 0) {
-                
+            if(enforce
+                || (ReInit_Period > 0 && ReInit_TimestepIndex % ReInit_Period == 0)) {
+
                 Console.WriteLine("Performing ReInit");
                 ReInit_Control.Potential = ReInitPotential.BastingSingleWell;
                 EllipticReInit.EllipticReInit ReInitPDE = new EllipticReInit.EllipticReInit(phaseInterface.Tracker, ReInit_Control, phaseInterface.DGLevelSet);
                 ReInitPDE.ReInitialize(Restriction: phaseInterface.Tracker.Regions.GetCutCellSubGrid());
 
+                /*
                 FastMarchReinit FastMarchReinitSolver = new FastMarchReinit(phaseInterface.DGLevelSet.Basis);
                 CellMask Accepted = phaseInterface.Tracker.Regions.GetCutCellMask();
                 CellMask ActiveField = phaseInterface.Tracker.Regions.GetNearFieldMask(1);
                 CellMask NegativeField = phaseInterface.Tracker.Regions.GetSpeciesMask("A");
                 FastMarchReinitSolver.FirstOrderReinit(phaseInterface.DGLevelSet, Accepted, NegativeField, ActiveField);
+                */
                 changed = true;
             }
 

@@ -103,11 +103,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
 #region HIGKLY_SPECIFIC_CONFIGURATIONS
 
-        /// <summary>
-        /// options for additional penalization terms for fast marching
-        /// </summary>
-        [DataMember]
-        public Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
+        ///// <summary>
+        ///// options for additional penalization terms for fast marching
+        ///// </summary>
+        //[DataMember]
+        //public Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
 
         /// <summary>
         /// Options for the initialization of the Fourier Level-set
@@ -132,11 +132,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         public EllipticExtVelAlgoControl EllipticExtVelAlgoControl = new EllipticExtVelAlgoControl();
         
-        /// <summary>
-        /// Reinitilization period for Fastmarching
-        /// </summary>
-        [DataMember]
-        public int FastMarchingReInitPeriod = 0;
+        ///// <summary>
+        ///// Reinitilization period for Fastmarching;
+        ///// Setting this 0 (probably) 
+        ///// </summary>
+        //[DataMember]
+        //public int FastMarchingReInitPeriod = 0;
 
         /// <summary>
         /// An explicit expression (y = f(x)) of the initial 0 Level-set. Used for <see cref="SplineLevelSet"/>
@@ -171,7 +172,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
 
         /// <summary>
-        /// Reinitilization period for the LevelSetUpdater
+        /// Reinitilization period for the Level Set updater,
+        /// if <see cref="Option_LevelSetEvolution"/> or <see cref="Option_LevelSetEvolution2"/>
+        /// is set to 
+        /// <see cref="LevelSetEvolution.StokesExtension"/> or <see cref="LevelSetEvolution.FastMarching"/>.
         /// </summary>
         [DataMember]
         public int ReInitPeriod = 0;
