@@ -201,7 +201,7 @@ namespace ValidationTestRunner {
         static public void Run__XNSEpaper_DropletInEquilibrium_transient() {
             Run__LongTest("XNSEpaper_Droplet_transient",
                 ["DropletInEquilibrium_transient_Run.ipynb", "DropletInEquilibrium_transient_Evaluation.ipynb"],
-                new TimeSpan(days: 120, hours: 1, minutes: 0, seconds: 0));
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
         }
 
         /// <summary>
@@ -214,7 +214,7 @@ namespace ValidationTestRunner {
         static public void Run__XNSEpaper_DropletOscillating() {
             Run__LongTest("XNSEpaper_Droplet_oscillating",
                 ["DropletOscillating_Run.ipynb", "DropletOscillating_Evaluation.ipynb"],
-                new TimeSpan(days: 120, hours: 1, minutes: 0, seconds: 0));
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
         }
 
         /// <summary>
@@ -234,7 +234,7 @@ namespace ValidationTestRunner {
             Run__LongTest(
                 "XNSEpaper_RisingBubble1",
                 ["RisingBubble_Testcase1_Run.ipynb", "RisingBubble_Testcase1_Evaluation.ipynb"],
-                new TimeSpan(days: 120, hours: 1, minutes: 0, seconds: 0));
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
         }
 
         /// <summary>
@@ -254,7 +254,7 @@ namespace ValidationTestRunner {
             Run__LongTest(
                "XNSEpaper_RisingBubble2",
                ["RisingBubble_Testcase2_Run.ipynb", "RisingBubble_Testcase2_Evaluation.ipynb"],
-               new TimeSpan(days: 120, hours: 1, minutes: 0, seconds: 0));
+               new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
         }
 
         #endregion

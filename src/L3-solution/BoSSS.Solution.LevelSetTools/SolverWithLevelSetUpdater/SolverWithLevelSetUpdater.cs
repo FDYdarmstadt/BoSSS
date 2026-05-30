@@ -395,9 +395,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// calls <see cref="LevelSetTracker.UpdateTracker(double, int, bool, int[])">
         /// </summary>
         protected virtual void InitializeLevelSets(LevelSetUpdater lsUpdater, double time) {
-            ilPSP.Environment.WaitForDebugger();
-
-
             var lsNames = this.LevelSetNames;
             int NoOfLevelSets = lsNames.Length;
             if (NoOfLevelSets != lsUpdater.LevelSets.Count)

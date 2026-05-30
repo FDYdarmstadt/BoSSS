@@ -362,8 +362,10 @@ namespace ValidationTestRunner {
 
         static int Main(string[] args) {
             PublicTestRunner.PublicTestRunnerMain.TimeOutSec = 24 * 3600 * 10; // 10 days
-            
+
+
             try {
+           
                 //BoSSS.Solution.Application.InitMPI(num_threads: 1);
                 //WorksheetTests_Local_short.Run__MetaJobManager();
                 //Assert.IsTrue(false, "remove me");

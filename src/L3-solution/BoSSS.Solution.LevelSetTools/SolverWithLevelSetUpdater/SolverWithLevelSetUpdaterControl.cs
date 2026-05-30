@@ -50,7 +50,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// See <see cref="LevelSetEvolution"/>.
         /// </summary>
         [DataMember]
-        public LevelSetEvolution Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+        public LevelSetEvolution Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
 
         /// <summary>
         /// Evolution option for the second level-set (name <see cref="BoSSS.Solution.NSECommon.VariableNames.LevelSetCGidx"/>(1))
@@ -132,21 +132,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         public EllipticExtVelAlgoControl EllipticExtVelAlgoControl = new EllipticExtVelAlgoControl();
         
-        ///// <summary>
-        ///// Reinitilization period for Fastmarching;
-        ///// Setting this 0 (probably) 
-        ///// </summary>
-        //[DataMember]
-        //public int FastMarchingReInitPeriod = 0;
-
         /// <summary>
         /// An explicit expression (y = f(x)) of the initial 0 Level-set. Used for <see cref="SplineLevelSet"/>
         /// </summary>
         [NonSerialized]
         [JsonIgnore]
         public Func<double, double> Phi0Initial;
-
-
 
         /// <summary>
         /// Control Options for ReInit

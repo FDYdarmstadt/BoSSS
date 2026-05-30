@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases;
+using System.Diagnostics;
 
 
 namespace BoSSS.Application.XNSE_Solver {
@@ -70,7 +71,6 @@ namespace BoSSS.Application.XNSE_Solver {
             ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TaylorCouetteConvergenceTest(2, Tests.TaylorCouette.Mode.Test2Phase, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, false, NonLinearSolverCode.Picard);
             //BoSSS.Application.XNSE_Solver.Tests.StaticDropletElementalTest.TestStaticDroplet2D_ExactSolution();
             //throw new Exception("remove");
-
 
             {
                 XNSE._Main(args, false, delegate () {
