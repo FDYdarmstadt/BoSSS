@@ -458,13 +458,13 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
                     SubRHS.Clear();
                     SubSolution.Clear();
 
-                    SubRHS.AccVi64(1.0, RHS, default(long[]), SubVecIdx);
-                    SubSolution.AccVi64(1.0, NewPhi.CoordinateVector, default(long[]), SubVecIdx);
+                    SubRHS.AccVi64(1.0, RHS, default(long[]), SubVecIdx, b_index_shift: -Phi.Mapping.i0);
+                    SubSolution.AccVi64(1.0, NewPhi.CoordinateVector, default(long[]), SubVecIdx, b_index_shift: -Phi.Mapping.i0);
 
                     Result = slv.Solve(SubSolution, SubRHS);
 
                     NewPhi.Clear(RestrictionMask);
-                    NewPhi.CoordinateVector.AccVi64(1.0, SubSolution, SubVecIdx, default(long[]) );
+                    NewPhi.CoordinateVector.AccVi64(1.0, SubSolution, SubVecIdx, default(long[]), acc_index_shift: -Phi.Mapping.i0);
 
                 }
                 else {
