@@ -297,8 +297,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					options[(int)METIS.OptionCodes.METIS_OPTION_NITER] = 10; // This is the default refinement iterations
 					options[(int)METIS.OptionCodes.METIS_OPTION_UFACTOR] = 30; // Maximum imbalance of 3 percent (this is the default kway clustering)
 					options[(int)METIS.OptionCodes.METIS_OPTION_NUMBERING] = 0;
+                    options[(int) METIS.OptionCodes.METIS_OPTION_SEED] = 0;
 
-					int J = xadj.Length - 1;
+                    int J = xadj.Length - 1;
 					part = new int[J];
 					Debug.Assert(xadj.Where(idx => idx > adjncy.Length).Count() == 0);
 					Debug.Assert(adjncy.Where(j => j >= J).Count() == 0);
@@ -910,6 +911,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		MultigridOperator m_op;
 
 		public void Init(MultigridOperator op) {
+            Console.WriteLine($"SchwarzForCoarseMesh initialized on level {op.LevelIndex}");
 #if DEBUG
             InitWithTest(op, true);
 #else
@@ -1061,12 +1063,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 			readonly SchwarzForCoarseMesh m_owner;
 
-			public CommunicationStuff(SchwarzForCoarseMesh owner, IBlockPartitioning Part, List<long>[] BlockGlobalIdx) {
+            readonly int m_LevelIndex;
+            readonly int m_Rank;
+
+            public CommunicationStuff(SchwarzForCoarseMesh owner, IBlockPartitioning Part, List<long>[] BlockGlobalIdx) {
 				using (new FuncTrace()) {
 					m_owner = owner;
-					int NoOfBlocks = m_owner.m_BlockSolvers.Length;
+                    m_LevelIndex = m_owner.m_op.LevelIndex;
+                    m_Rank = Part.MpiRank;
+                    int NoOfBlocks = m_owner.m_BlockSolvers.Length;
+                    Console.WriteLine($"CommunicationStuff initialized for SchwarzForCoarseMesh on level {m_LevelIndex} with {NoOfBlocks} blocks.");
 
-					BlockIdxs = new int[NoOfBlocks][];
+                    BlockIdxs = new int[NoOfBlocks][];
 					GlobalIdxs = new int[NoOfBlocks][];
 					var _externBlockIdxs = new List<int>[Part.MpiSize][];
 					var _externPackageIdxs = new List<int>[Part.MpiSize][];
@@ -1118,7 +1126,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 							GlobalIdxs[iBlock] = locRHSinsertIdxSrc.ToArray();
 							BlockIdxs[iBlock] = locRHSinsertIdxTrg.ToArray();
 
-							if (GlobalIdxs[iBlock].Length > 0) {
+                            ExportIndices(iBlock, BlockIdxs[iBlock], GlobalIdxs[iBlock]);
+
+                            if (GlobalIdxs[iBlock].Length > 0) {
 								Debug.Assert(GlobalIdxs[iBlock].Min() >= 0);
 								Debug.Assert(GlobalIdxs[iBlock].Max() < Part.LocalLength);
 
@@ -1193,15 +1203,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				}
 			}
 
+            void ExportIndices(int iBlock, int[] blockIdx, int[] globalIdx) {
+                //string dir = Path.Combine("bosss_mtx", $"Level_{m_LevelIndex}", $"Rank_{m_Rank}");
+                //Directory.CreateDirectory(dir);
+
+                //blockIdx.SaveToTextFile(Path.Combine(dir, $"BlockIdxs_Block{iBlock}.txt"));
+                //globalIdx.SaveToTextFile(Path.Combine(dir, $"GlobalIdxs_Block{iBlock}.txt"));
+
+                blockIdx.SaveToTextFile($"bosss_mtx\\BlockIdxs_Block{iBlock}_{m_LevelIndex}.txt");
+                globalIdx.SaveToTextFile($"bosss_mtx\\GlobalIdxs_Block{iBlock}_{m_LevelIndex}.txt");
+            }
 
 
 
-			/// <summary>
-			/// Data copy indices into Schwarz blocks, for each Schwarz block, for data exchange on this MPI processor
-			/// - 1st index: Schwarz block index
-			/// - 2nd index: enumeration
-			/// </summary>
-			int[][] BlockIdxs;
+
+            /// <summary>
+            /// Data copy indices into Schwarz blocks, for each Schwarz block, for data exchange on this MPI processor
+            /// - 1st index: Schwarz block index
+            /// - 2nd index: enumeration
+            /// </summary>
+            int[][] BlockIdxs;
 
 			/// <summary>
 			/// Data copy indices into global vectors, for each Schwarz block, for data exchange on this MPI processor
@@ -1241,6 +1262,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			/// </summary>
 			int[] PackagesSize;
 
+            int LevelIdx = 0;
 
 			ArrayMessenger<double> Global2Blocks;
 
@@ -1279,7 +1301,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 						Debug.Assert((BlockIdxs[iBlock] == null) == (m_owner.m_BlockSolvers[iBlock] == null));
 						Debug.Assert((GlobalIdxs[iBlock] == null) == (m_owner.m_BlockSolvers[iBlock] == null));
 
-						if (m_owner.m_BlockSolvers[iBlock] != null) {
+                        // save BlockIdxs and GlobalIdx
+                        // how to add level to name so not overwritten for different levels?
+                        
+                        //BlockIdxs[iBlock].SaveToTextFile($"bosss_mtx\\BlockIdxs_Block{iBlock}_Level{LevelIdx}.txt");
+                        //GlobalIdxs[iBlock].SaveToTextFile($"bosss_mtx\\GlobalIdxs_Block{iBlock}_Level{LevelIdx}.txt");
+                        
+
+                        if (m_owner.m_BlockSolvers[iBlock] != null) {
 							double[] localRHS = localRHSs[iBlock];
 							var locRHSinsSrc = BlockIdxs[iBlock];
 							var locRHSinsTrg = GlobalIdxs[iBlock];
@@ -1291,11 +1320,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 							}
 						}
 					}
+                    LevelIdx++;
 
-					// insert received data
-					// ====================
+                    // insert received data
+                    // ====================
 
-					while (Global2Blocks.GetNext(out int OriginProc, out double[] data)) {
+                    while (Global2Blocks.GetNext(out int OriginProc, out double[] data)) {
 						var eBlockIdxs = externBlockIdxs[OriginProc];
 						var ePacketIdxs = externPackageIdxs[OriginProc];
 
@@ -1377,7 +1407,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 						Debug.Assert((BlockIdxs[iBlock] == null) == (m_owner.m_BlockSolvers[iBlock] == null));
 						Debug.Assert((GlobalIdxs[iBlock] == null) == (m_owner.m_BlockSolvers[iBlock] == null));
 
-						if (m_owner.m_BlockSolvers[iBlock] != null) {
+                        //BlockIdxs[iBlock].SaveToTextFile($"bosss_mtx\\ABlockIdxs_Block{iBlock}_Level{LevelIdx}.txt");
+                        //GlobalIdxs[iBlock].SaveToTextFile($"bosss_mtx\\AGlobalIdxs_Block{iBlock}_Level{LevelIdx}.txt");
+
+                        if (m_owner.m_BlockSolvers[iBlock] != null) {
 							double[] localSol = localSolS[iBlock];
 							var locRHSinsSrc = BlockIdxs[iBlock];
 							var locRHSinsTrg = GlobalIdxs[iBlock];
@@ -1391,6 +1424,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 							//}
 						}
 					}
+                    LevelIdx++;
 
 					// insert received data
 					// ====================

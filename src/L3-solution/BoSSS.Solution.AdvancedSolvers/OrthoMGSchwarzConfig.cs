@@ -1,8 +1,10 @@
 ﻿using ilPSP;
+using ilPSP.LinSolvers;
 using ilPSP.LinSolvers.HYPRE;
 using ilPSP.Tracing;
 using log4net.Core;
 using MPI.Wrappers;
+using NUnit.Framework.Constraints;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -446,6 +448,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     tr.Info($"KcycleMultiSchwarz: lv {iLevel}, DOFs: " + op_lv.Mapping.MpiSize.ForLoop(rnk => op_lv.Mapping.GetLocalLength(rnk)).ToConcatString("[", ",", "]") + ", sum = " + op_lv.Mapping.TotalLength);
                     tr.Info($"KcycleMultiSchwarz: lv {iLevel}, Cells " + op_lv.Mapping.MpiSize.ForLoop(rnk => op_lv.Mapping.GetLocalNoOfBlocks(rnk)).ToConcatString("[", ",", "]") + ", sum = " + op_lv.Mapping.TotalNoOfBlocks);
 
+                    op_lv.OperatorMatrix.SaveToTextFileSparse("bosss_mtx\\AS_" + iLevel + ".txt");
+                    // also export restriction and prolongation operators
+                    if ( op_lv.GetPrologonationOperator != null ) {
+                        var prolongOp = op_lv.GetPrologonationOperator * op_lv.RightChangeOfBasis;
+                        prolongOp.SaveToTextFileSparse("bosss_mtx\\AS_prolong_" + iLevel + "-" + (iLevel - 1) + ".txt");
+                    }
+                    if ( op_lv.GetRestrictionOperator != null ) {
+                        var restrOp = op_lv.LeftChangeOfBasis * op_lv.GetRestrictionOperator;
+                        restrOp.SaveToTextFileSparse("bosss_mtx\\AS_restr_" + (iLevel - 1) + "-" + iLevel + ".txt");
+                    }
+
                     bool TerminateMultigrid = false;
                     if(iLevel >= this.NoOfMultigridLevels) {
                         tr.Info($"KcycleMultiSchwarz: maximum number of multigrid levels ({this.NoOfMultigridLevels}) reached.");
@@ -454,6 +467,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     if(this.CoarseUsepTG && op_lv.Mapping.TotalLength > this.CoarseKickIn) {
                         long CoarseLength = ((long)this.GetLowOrderLength(op_lv)).MPISum();
+                        tr.Info($"KcycleMultiSchwarz: lv {iLevel}, coarsening grid");
 
                         if (CoarseLength <= this.CoarseKickIn) {
                             tr.Info($"KcycleMultiSchwarz: lv {iLevel}, using p-two-grid (pTG), low-degree is {this.Get_pMaxOfCoarseSolver(op_lv.Degrees.Max())}, low-order DOF {CoarseLength} <= kick-in-value ({this.CoarseKickIn}). ");
@@ -482,6 +496,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         // ++++++++++++++++++++++++++++++++++++++
 
                         if (this.CoarseUsepTG && op_lv.Mapping.TotalLength > this.CoarseKickIn) {
+                            tr.Info($"KCycleSchwarz: lv {iLevel}, terminating MG recursion and using p-two-grid");
                             // + + + + + + + + + + + + + + + + + + +
                             // ... use p-two-grid as coarse solver
                             // + + + + + + + + + + + + + + + + + + +
@@ -499,6 +514,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             levelSolver = _levelSolver2;
 
                         } else {
+                            tr.Info($"KCycleSchwarz: lv {iLevel}, terminating MG recursion and using direct solver");
                             // + + + + + + + + + + + + + + + + +
                             // ... use direct as coarse solver
                             // + + + + + + + + + + + + + + + + +
@@ -518,7 +534,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
 
                     } else {
-
+                        tr.Info($"KCycleSchwarz: lv {iLevel}, not terminating MG recursion and doing more recursions");
                         // +++++++++++++++++++++++++++++++++++
                         // do some further multigrid recursion
                         // +++++++++++++++++++++++++++++++++++
@@ -568,7 +584,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         } else if(iLevel == 2) {
                             (_levelSolver).TerminationCriterion = delegate (int i, double r0, double r) {
                                 var ret = ((i <= 1 || r > r0 * 0.5) && (r0 > MachineEpsilon || r > MachineEpsilon) && (i <= 2), true);
-                                // do at least one iteration until r < 0.1 r0 or max. 20 iterations, with safeguard for tiny residuals
+                                // do at least one iteration until r < 0.5 r0 or max. 20 iterations, with safeguard for tiny residuals
                                 return ret;
                             };
                         } else {
