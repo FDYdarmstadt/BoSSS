@@ -153,7 +153,8 @@ namespace PublicTestRunner {
                     typeof(XESF.Tests.XESFTestProgram),
                     //typeof(XNSE_ParallelTests.XNSE_ParallelTests),
                     typeof(StokesHelical_Ak.HelicalMain),
-                    typeof(BoSSS.Application.BoSSSpad.WorkflowMgmTests)
+                    typeof(BoSSS.Application.BoSSSpad.WorkflowMgmTests),
+                    typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_MultithreadingTest)
                 };
 
 
