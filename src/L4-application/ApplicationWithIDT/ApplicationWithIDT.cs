@@ -740,8 +740,8 @@ namespace ApplicationWithIDT {
                 createBackUp();
 
                 //just to be safe, project spline Level Set on PrimaryOptimizationLevelSet
-                foreach ( LevelSetOptimizationState s in this.LevelSetOptStates ) {
-                    if ( s.LevelSetOpti is SplineOptiLevelSet spliny ) {
+                foreach(LevelSetOptimizationState s in this.LevelSetOptStates) {
+                    if(s.LevelSetOpti is SplineOptiLevelSet spliny) {
                         s.LsTBO.Clear();
                         s.LsTBO.ProjectFromForeignGrid(1.0, spliny);
                     }
