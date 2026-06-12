@@ -348,10 +348,16 @@ namespace ApplicationWithIDT {
         /// current value of the objective function
         /// </summary>
         public double f_phi { get; set; }
+        
         /// <summary>
         /// Current Agglomeration Threshold
         /// </summary>
-        public double CurrentAgglo { get; set; }
+        public double CurrentAgglo {
+            get {
+                return this.Control.AgglomerationThreshold;
+            }
+        }
+
         /// <summary>
         /// Current L2 Norm of constraint (L2 means that Residual is regarded as XDG field)
         /// </summary>
@@ -507,7 +513,6 @@ namespace ApplicationWithIDT {
             gamma = Control.Gamma_Start;
             CurMinIter = Control.minimalSQPIterations[0];
             ReiniTMaxIter = Control.ReiniTMaxIters[0];
-            CurrentAgglo = Control.AgglomerationThreshold;
             //chose the Merit Function used in Globalization
             ChooseMeritFunction();
             ChooseFphiType();
@@ -2581,7 +2586,7 @@ namespace ApplicationWithIDT {
                     }
                 }
                 gamma = Control.Gamma_Start;
-                CurrentAgglo = Control.AgglomerationThreshold;
+                
             }
 
 

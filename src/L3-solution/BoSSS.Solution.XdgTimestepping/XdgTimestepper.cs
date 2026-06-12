@@ -678,7 +678,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                                 var mtxBuilder = XdgOperator.GetFDJacobianBuilder(LsTrk, __CurrentState, this.Parameters, Mapping, LsTrkHistoryIndex);
                                 mtxBuilder.time = time;
                                 mtxBuilder.MPITtransceive = true;
-                                if(mtxBuilder.Eval is XDifferentialOperatorMk2.XEvaluatorNonlin evn) { // length-scale hack
+                                if(mtxBuilder.Eval is XDifferentialOperatorMk2.XEvaluatorBase evn) { // length-scale hack
                                     foreach(var kv in AgglomeratedCellLengthScales) {
                                         evn.CellLengthScales[kv.Key] = kv.Value;
                                     }

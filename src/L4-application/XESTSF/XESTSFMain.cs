@@ -554,7 +554,6 @@ namespace XESTSF {
 
             this.XSpatialOperator.LinearizationHint = LinearizationHint.FDJacobi;
             this.XSpatialOperator.AgglomerationThreshold = this.Control.AgglomerationThreshold;
-            CurrentAgglo = this.Control.AgglomerationThreshold;
             this.XSpatialOperator.Commit();
 
             if(Control.GetInitialValue == GetInitialValue.FromP0Timestepping) {
