@@ -1975,12 +1975,15 @@ namespace BoSSS.Foundation.XDG {
             foreach (var comps in m_EquationComponents.Values) {
                 foreach (IEquationComponent c in comps) {
                     foreach (string varname in c.ArgumentOrdering) {
+                        if(varname.IsEmptyOrWhite())
+                            throw new ApplicationException("configuration error in differential operator; empty/null name in argument ordering of component " + c.GetType().Name);
+
                         if (Array.IndexOf<string>(m_DomainVar, varname) < 0) {
 
                             if (allowVarAddition)
                                 m_DomainVar = m_DomainVar.Cat(varname);
                             else {
-                                throw new ApplicationException("configuration error in spatial differential operator; equation component " + c.ToString() + " depends on variable \""
+                                throw new ApplicationException("configuration error in differential operator; equation component " + c.ToString() + " depends on variable \""
                                     + varname
                                     + "\", but this name is not a member of the domain variable list: "
                                     + m_DomainVar.ToConcatString("[", ", ", "]"));
@@ -1995,7 +1998,7 @@ namespace BoSSS.Foundation.XDG {
                                 if (allowVarAddition)
                                     m_ParameterVar = m_ParameterVar.Cat(varname);
                                 else {
-                                    throw new ApplicationException("configuration error in spatial differential operator; equation component " + c.ToString() + " depends on (parameter) variable \""
+                                    throw new ApplicationException("configuration error in differential operator; equation component " + c.ToString() + " depends on (parameter) variable \""
                                         + varname
                                         + "\", but this name is not a member of the parameter variable list: "
                                         + m_ParameterVar.ToConcatString("[", ", ", "]"));

@@ -52,10 +52,19 @@ namespace BoSSS.Solution.XNSECommon {
         /// <summary>
         /// 
         /// </summary>
-        public XLaplace_Bulk(double __penatly_baseFactor, string n, XLaplaceBCs boundaries, double sw, double _muA, double _muB, XLaplace_Interface.Mode _m)
-            : base(__penatly_baseFactor, n) {
-            muA = _muA;
-            muB = _muB;
+        public XLaplace_Bulk(double __penatly_baseFactor, string ArgumentVarName, XLaplaceBCs boundaries, double sw, double _muA, double _muB, XLaplace_Interface.Mode _m) 
+            : this(__penatly_baseFactor, ArgumentVarName, boundaries, sw, new (string, double)[] { ("A", _muA), ("B", _muB) }, _m) //
+        { }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public XLaplace_Bulk(double __penatly_baseFactor, string ArgumentVarName, XLaplaceBCs boundaries, double sw, (string speciesName, double mu)[] speciesViscosities, XLaplace_Interface.Mode _m)
+            : base(__penatly_baseFactor, ArgumentVarName) {
+            foreach(var (speciesName, mu) in speciesViscosities) {
+                m_SpeciesToVisc[speciesName] = mu;
+            }
             base.m_alpha = sw;
             this.boundaries = boundaries;
             //this.LsTrk = __LsTrk;
@@ -63,8 +72,7 @@ namespace BoSSS.Solution.XNSECommon {
             this.m_Mode = _m;
         }
 
-        double muA;
-        double muB;
+        Dictionary<string,double> m_SpeciesToVisc = new Dictionary<string, double>();
         //LevelSetTracker LsTrk;
         double penatly_baseFactor;
         XLaplace_Interface.Mode m_Mode;
@@ -73,11 +81,10 @@ namespace BoSSS.Solution.XNSECommon {
         string current_species;
 
         public void SetParameter(string speciesName) {
-            switch (speciesName) {
-                case "A": species_Mu = muA; otherSpecies_Mu = muB; break;
-                case "B": species_Mu = muB; otherSpecies_Mu = muA; break;
-                default: throw new ArgumentException("Unknown species.");
+            if(!m_SpeciesToVisc.ContainsKey(speciesName)) {
+                throw new ArgumentException("Unknown species: " + speciesName);
             }
+            species_Mu = m_SpeciesToVisc[speciesName];
             current_species = speciesName;
             //Console.WriteLine("current spc = " + current_species);
         }
@@ -366,9 +373,5 @@ namespace BoSSS.Solution.XNSECommon {
         public IList<string> ParameterOrdering {
             get { return null; }
         }
-
-        
     }
-
-
 }
