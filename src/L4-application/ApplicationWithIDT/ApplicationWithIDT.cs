@@ -3072,14 +3072,14 @@ namespace ApplicationWithIDT {
 
 
             // Level Set Update
-            for ( int iLS = 0; iLS < this.LevelSetOptStates.Length; iLS++ ) {
+            for(int iLS = 0; iLS < this.LevelSetOptStates.Length; iLS++) {
                 var state = this.LevelSetOptStates[iLS];
                 int Lstate = state.GetOptimizationDOFCount();
-                if ( Control.PartiallyFixLevelSetForSpaceTime && state.LevelSetOpti is SplineOptiLevelSet splineLS ) {
+                if(Control.PartiallyFixLevelSetForSpaceTime && state.LevelSetOpti is SplineOptiLevelSet splineLS) {
                     double yMin = splineLS.y.Min(); //lower boundary of space time domain
 
-                    for ( int localIndex = 0; localIndex < Lstate; localIndex++ ) {
-                        if ( Math.Abs(yMin - splineLS.y[localIndex]) > 1e-14 ) {
+                    for(int localIndex = 0; localIndex < Lstate; localIndex++) {
+                        if(localIndex < splineLS.y.Length && Math.Abs(yMin - splineLS.y[localIndex]) > 1e-14) {
                             // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                             // greater than initial time: allowed to move the node, 
                             // only accumulate if DOF if it is not on lower time boundary (here yMin=tMin)
@@ -3091,7 +3091,7 @@ namespace ApplicationWithIDT {
                     }
 
                 } else {
-                    for(int localIndex = 0; localIndex < Lstate; localIndex++ ) {
+                    for(int localIndex = 0; localIndex < Lstate; localIndex++) {
                         int i = LevelSetOptAggregator.MapLocalToGlobal(iLS, localIndex);
                         state.LevelSetOpti.AccToParam(localIndex, m_alpha * step_t[i + length_r]);
                     }
