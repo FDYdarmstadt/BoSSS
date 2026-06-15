@@ -68,6 +68,12 @@ namespace PublicTestRunner {
         (Type type, int NoOfProcs)[] MpiReleaseOnlyTests { get; }
 
         /// <summary>
+        /// List of tests that are discoverable for explicit `nunit3` / `list`
+        /// calls, but are not included in normal job-manager test runs.
+        /// </summary>
+        Type[] SpecialOnlyTests { get; }
+
+        /// <summary>
         /// Root for data searches
         /// </summary>
         DirectoryInfo GetRepositoryBaseDir();
@@ -154,7 +160,6 @@ namespace PublicTestRunner {
                     //typeof(XNSE_ParallelTests.XNSE_ParallelTests),
                     typeof(StokesHelical_Ak.HelicalMain),
                     typeof(BoSSS.Application.BoSSSpad.WorkflowMgmTests),
-                    typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_MultithreadingTest)
                 };
 
 
@@ -184,6 +189,10 @@ namespace PublicTestRunner {
                         (typeof(ALTSTests.Program), 4),
                         (typeof(CNS_MPITests.Tests.LoadBalancing.ShockTubeLoadBalancingTests), 4),
                         (typeof(HilbertTest.HilbertTest), 4),
+                    };
+
+        public virtual Type[] SpecialOnlyTests => new Type[] {
+                        typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_MultithreadingTest),
                     };
 
         public virtual DirectoryInfo GetRepositoryBaseDir() {
@@ -251,7 +260,7 @@ namespace PublicTestRunner {
         /// <summary>
         /// finds all assemblies which potentially contain tests.
         /// </summary>
-        static Assembly[] GetAllAssembliesForTests() {
+        static Assembly[] GetAllAssembliesForTests(bool includeSpecialOnlyTests = false) {
             using(new FuncTrace()) {
                 var R = new HashSet<Assembly>();
 
@@ -269,6 +278,14 @@ namespace PublicTestRunner {
                 if(discoverRelease) {
                     if(TestTypeProvider.ReleaseOnlyTests != null) {
                         foreach(Type t in TestTypeProvider.ReleaseOnlyTests) {
+                            _ = R.Add(t.Assembly);
+                        }
+                    }
+                }
+
+                if(includeSpecialOnlyTests) {
+                    if(TestTypeProvider.SpecialOnlyTests != null) {
+                        foreach(Type t in TestTypeProvider.SpecialOnlyTests) {
                             _ = R.Add(t.Assembly);
                         }
                     }
@@ -1563,7 +1580,7 @@ namespace PublicTestRunner {
             }
 
             using var ftr = new FuncTrace();
-            Assembly[] assln = GetAllAssembliesForTests();
+            Assembly[] assln = GetAllAssembliesForTests(includeSpecialOnlyTests: true);
 
             if(MpiSize != 1) {
                 // this seems some parallel run
