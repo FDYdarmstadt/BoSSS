@@ -71,7 +71,7 @@ namespace PublicTestRunner {
         /// List of tests that are discoverable for explicit `nunit3` / `list`
         /// calls, but are not included in normal job-manager test runs.
         /// </summary>
-        Type[] SpecialOnlyTests { get; }
+        Type[] SpecialOnlyTests => Array.Empty<Type>();
 
         /// <summary>
         /// Root for data searches
