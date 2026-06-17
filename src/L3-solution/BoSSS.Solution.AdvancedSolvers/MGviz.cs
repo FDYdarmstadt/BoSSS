@@ -1,5 +1,6 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
+using BoSSS.Foundation.Grid;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -33,6 +34,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
+        public static DGField[] PlotGridLevels(this MultigridOperator op) {
+            var Ret = new List<DGField>();
+            var baseGrid = op.BaseGridProblemMapping.GridDat;
+            var p0Basis = new Basis(baseGrid, 0);
+
+            for(var __op = op; __op != null; __op = __op.CoarserLevel) {
+                int iLevel = __op.LevelIndex;
+                int[][] AggCellParts = __op.Mapping.AggGrid.iLogicalCells.AggregateCellToParts;
+                int J = __op.Mapping.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
+
+                var marker = new SinglePhaseField(p0Basis, "markerLv" + iLevel);
+                 
+                for(int jLog = 0; jLog < J; jLog++) {
+                    foreach(int jGeom in __op.Mapping.AggGrid.GetGeometricCellIndices(jLog)) {
+                        marker.SetMeanValue(jGeom, jLog);
+                    }
+                }
+            }
+            return Ret.ToArray();
+        }
     }
 
 

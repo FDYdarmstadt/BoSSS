@@ -93,7 +93,13 @@ namespace BoSSS.Solution.Control {
 		/// Flexible GMRES, allowing variable preconditioners for GMRES <see cref="AdvancedSolvers.FlexGMRES"/>
 		/// </summary>
 		FlexGMRES = 81,
-	}
+
+
+        /// <summary>
+        /// A Schur complement solver for Stokes/Navier-Stokes systems, <see cref="AdvancedSolvers.SchurComplementForStokes"/>
+        /// </summary>
+        SchurComplementForStokes = 101,
+    }
     
 
     /// <summary>
@@ -143,7 +149,10 @@ namespace BoSSS.Solution.Control {
 				//case LinearSolverCode.SchurPrecond:
 				//	return new AdvancedSolvers.SchurPrecondConfig();
 
-				case LinearSolverCode.FlexGMRES:
+				case LinearSolverCode.SchurComplementForStokes:
+					return new AdvancedSolvers.SchurComplementForStokes.Config();
+
+                case LinearSolverCode.FlexGMRES:
 					return new AdvancedSolvers.FGMRESConfig();
 
 				default:

@@ -506,7 +506,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         this.m_RawOperatorMatrix = OperatorMatrix;
 
                         if(MassMatrix != null)
-                            this.m_RawMassMatrix = MassMatrix;  //is BlockMsrMatrix) ? ((BlockMsrMatrix)MassMatrix) : MassMatrix.ToMsrMatrix();
+                            this.m_RawMassMatrix = MassMatrix;
                         else
                             this.m_RawMassMatrix = null;
                     } else {
@@ -562,7 +562,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        BlockMsrMatrix m_RawOperatorMatrix = null; // forgotten after Setup() public
+        BlockMsrMatrix m_RawOperatorMatrix = null; // forgotten after Setup() call
 		BlockMsrMatrix m_RawMassMatrix = null;
 
         bool setupdone = false;
@@ -599,16 +599,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //#if DEBUG
                         //                    var __PrlgOperator_Check = this.FinerLevel.Mapping.FromOtherLevelMatrix(this.Mapping);
                         //#endif
-                        var __PrlgOperator = this.Mapping.GetProlongationOperator(this.FinerLevel.Mapping);
+                        var _PrlgOperator = this.Mapping.GetProlongationOperator(this.FinerLevel.Mapping);
                         //var __PrlgOperator = this.FinerLevel.Mapping.FromOtherLevelMatrix(this.Mapping);
-                        Debug.Assert(__PrlgOperator.RowPartitioning.LocalLength == this.FinerLevel.Mapping.LocalLength);
-                        Debug.Assert(__PrlgOperator.ColPartition.LocalLength == this.Mapping.LocalLength);
-
+                        Debug.Assert(_PrlgOperator.RowPartitioning.LocalLength == this.FinerLevel.Mapping.LocalLength);
+                        Debug.Assert(_PrlgOperator.ColPartition.LocalLength == this.Mapping.LocalLength);
 
                         if(this.FinerLevel.RightChangeOfBasis_Inverse != null)
-                            RawProlongation = BlockMsrMatrix.Multiply(this.FinerLevel.RightChangeOfBasis_Inverse, __PrlgOperator);
+                            RawProlongation = BlockMsrMatrix.Multiply(this.FinerLevel.RightChangeOfBasis_Inverse, _PrlgOperator);
                         else
-                            RawProlongation = __PrlgOperator;
+                            RawProlongation = _PrlgOperator;
 
                         RawRestriction = RawProlongation.Transpose();
                     }
@@ -747,10 +746,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-		/// <summary>
-		/// get the restriction operator for the coarse mesh
-		/// </summary>
-		public BlockMsrMatrix GetRestrictionOperator {
+        /// <summary>
+        /// get the restriction operator for the coarse mesh
+        /// </summary>
+        public BlockMsrMatrix GetRestrictionOperator {
 			get { return m_RestrictionOperator; }
 		}
 
@@ -1001,6 +1000,112 @@ namespace BoSSS.Solution.AdvancedSolvers {
 #endif
             }
         }
+
+        /// <summary>
+        /// Extracts a sub-matrix related to varibles indexed by <paramref name="varIndices"/> from the operator matrix <see cref="OperatorMatrix"/>
+        /// and builds a multigrid operator around it, inheriting propeorties from this operator.
+        /// </summary>
+        public MultigridOperator GetSubOperator(params int[] VarIndices) {
+            var SubMatrixIndices = this.Mapping.GetSubvectorIndices(VarIndices);
+
+            var SubOperatorMatrix = this.OperatorMatrix.GetSubMatrix(SubMatrixIndices, SubMatrixIndices);
+            var SubMassMatrix = this.MassMatrix?.GetSubMatrix(SubMatrixIndices, SubMatrixIndices);
+
+
+            MultigridOperator.ChangeOfBasisConfig[] GetChangeOfBasisConfig_Level(MultigridOperator __op) {
+                var originalConfig = __op.m_Config;
+                var ret = new List<MultigridOperator.ChangeOfBasisConfig>();
+                var AllVars = __op.DgMapping.NoOfVariables.ForLoop(i => i);
+                var ComplVars = AllVars.SetDifference(VarIndices);
+                foreach(var itm in originalConfig) {
+                    if(itm.VarIndex.SetIntersection(VarIndices).Count() > 0 && itm.VarIndex.SetIntersection(ComplVars).Count() > 0) {
+                        throw new NotSupportedException("For the Schur complement, the change-of-basis configuration must not mix velocity and pressure variables.");
+                    }
+
+                    if(itm.VarIndex.IsSubsetOf(VarIndices)) {
+                        ret.Add(itm);
+                    }
+                }
+                return ret.ToArray();
+            }
+
+            List<ChangeOfBasisConfig[]> ChangeOfBasisConfigs = new List<ChangeOfBasisConfig[]>();
+            for(MultigridOperator op = this; op != null; op = op.CoarserLevel) {
+                ChangeOfBasisConfigs.Add(GetChangeOfBasisConfig_Level(op));
+            }
+
+            var SubProblemMapping = new UnsetteledCoordinateMapping(VarIndices.Select(idx => this.BaseGridProblemMapping.BasisS[idx]));
+
+
+            AggregationGridBasis[] GetCDBasesFromLevel(MultigridOperator op) {
+                var cdBases = new AggregationGridBasis[op.Mapping.NoOfVariables - 1];
+                for(int i = 0; i < cdBases.Length; i++) {
+                    cdBases[i] = op.Mapping.AggBasis[i];
+                }
+                return cdBases;
+            }
+
+            AggregationGridBasis[][] GetCDBasesAllLevels() {
+                var cdBases = new AggregationGridBasis[this.NoOfLevels][];
+                for(int i = 0; i < cdBases.Length; i++) {
+                    cdBases[i] = GetCDBasesFromLevel(this.GetLevel(i));
+                }
+                return cdBases;
+            }
+
+
+            MultigridOperator ret = new MultigridOperator(null, GetCDBasesAllLevels(), SubProblemMapping, ChangeOfBasisConfigs); //
+            {
+                ret.m_OperatorMatrix = SubOperatorMatrix;
+                ret.m_MassMatrix = SubMassMatrix;
+                ret.m_LeftChangeOfBasis = this.m_LeftChangeOfBasis.GetSubMatrix(SubMatrixIndices, SubMatrixIndices);
+                ret.m_RightChangeOfBasis = this.m_LeftChangeOfBasis.GetSubMatrix(SubMatrixIndices, SubMatrixIndices);
+                ret.m_LeftChangeOfBasis_Inverse = this.m_LeftChangeOfBasis_Inverse?.GetSubMatrix(SubMatrixIndices, SubMatrixIndices);
+                ret.m_RightChangeOfBasis_Inverse = this.m_RightChangeOfBasis_Inverse?.GetSubMatrix(SubMatrixIndices, SubMatrixIndices);
+
+                ret.setupdone = true;
+            }
+
+            CheckSubOperator(VarIndices, ret, this);
+
+            return ret;
+        }
+
+        static void CheckSubOperator(int[] SubOpVarIndices, MultigridOperator SubOp, MultigridOperator FullOp) {
+#if DEBUG
+            MultigridOperator __subOp = SubOp;
+            long[] __FinerVelocityDofIndices = null;
+            for(MultigridOperator __fullOp = FullOp; __fullOp != null && __subOp != null; __fullOp = __fullOp.CoarserLevel) {
+                Debug.Assert(__fullOp.LevelIndex == __subOp.LevelIndex);
+                int lvIdx = __fullOp.LevelIndex;
+
+                var __VelocityDofIndices = __fullOp.Mapping.GetSubvectorIndices(SubOpVarIndices);
+
+                var cdMatrix_1 = __fullOp.OperatorMatrix.GetSubMatrix(__VelocityDofIndices, __VelocityDofIndices);
+                var cdMatrix_2 = __subOp.OperatorMatrix;
+                double mtxERR = cdMatrix_1.MatrixDistFrobenius(cdMatrix_2);
+                double denom = Math.Max(cdMatrix_1.FrobeniusNorm(), cdMatrix_2.FrobeniusNorm());
+
+                double lpcERR = __fullOp.LeftChangeOfBasis.GetSubMatrix(__VelocityDofIndices, __VelocityDofIndices).MatrixDistFrobenius(__subOp.LeftChangeOfBasis);
+
+                double rstERR = -1;
+                if(lvIdx > 0) {
+                    rstERR = __fullOp.GetRestrictionOperator.GetSubMatrix(__VelocityDofIndices, __FinerVelocityDofIndices).MatrixDistFrobenius(__subOp.GetRestrictionOperator);
+                }
+                double mtxERR_Rel = mtxERR / denom;
+                if(mtxERR_Rel > 1.0e-8) {
+                    throw new ArithmeticException($"Large difference between submatrix and full matrix operators, lv { lvIdx }, L_sub = { __subOp.Mapping.TotalLength}, \tL_tot = { __fullOp.Mapping.TotalLength}" +
+                                                  $"cdERR: {mtxERR:0.###e-00},\trel: {mtxERR_Rel:0.###e-00};\tlpcERR = {lpcERR:0.###e-00},\trstERR = {rstERR:0.###e-00}");
+                }
+                //Console.WriteLine($"   -- lv {lvIdx}, L_sub = {__cdMultigridOp.Mapping.TotalLength}, \tL_tot = {__op.Mapping.TotalLength} Schur Complement,\tMtx diff: {cdERR:0.###e-00},\trel: {cdERR_Rel:0.###e-00};\tlpcERR = {lpcERR:0.###e-00},\trstERR = {rstERR:0.###e-00}");
+
+                __subOp = __subOp.CoarserLevel;
+                __FinerVelocityDofIndices = __VelocityDofIndices;
+            }
+#endif
+        }
+
+
 
         /// <summary>
         /// DG coordinate mapping which corresponds to this mesh level, resp. operator matrix (<see cref="OperatorMatrix"/>, <see cref="MassMatrix"/>).

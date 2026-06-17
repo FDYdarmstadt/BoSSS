@@ -448,16 +448,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     tr.Info($"KcycleMultiSchwarz: lv {iLevel}, DOFs: " + op_lv.Mapping.MpiSize.ForLoop(rnk => op_lv.Mapping.GetLocalLength(rnk)).ToConcatString("[", ",", "]") + ", sum = " + op_lv.Mapping.TotalLength);
                     tr.Info($"KcycleMultiSchwarz: lv {iLevel}, Cells " + op_lv.Mapping.MpiSize.ForLoop(rnk => op_lv.Mapping.GetLocalNoOfBlocks(rnk)).ToConcatString("[", ",", "]") + ", sum = " + op_lv.Mapping.TotalNoOfBlocks);
 
-                    op_lv.OperatorMatrix.SaveToTextFileSparse("bosss_mtx\\AS_" + iLevel + ".txt");
-                    // also export restriction and prolongation operators
-                    if ( op_lv.GetPrologonationOperator != null ) {
-                        var prolongOp = op_lv.GetPrologonationOperator * op_lv.RightChangeOfBasis;
-                        prolongOp.SaveToTextFileSparse("bosss_mtx\\AS_prolong_" + iLevel + "-" + (iLevel - 1) + ".txt");
-                    }
-                    if ( op_lv.GetRestrictionOperator != null ) {
-                        var restrOp = op_lv.LeftChangeOfBasis * op_lv.GetRestrictionOperator;
-                        restrOp.SaveToTextFileSparse("bosss_mtx\\AS_restr_" + (iLevel - 1) + "-" + iLevel + ".txt");
-                    }
+                    //op_lv.OperatorMatrix.SaveToTextFileSparse("bosss_mtx\\AS_" + iLevel + ".txt");
+                    //// also export restriction and prolongation operators
+                    //if ( op_lv.GetPrologonationOperator != null ) {
+                    //    var prolongOp = op_lv.GetPrologonationOperator * op_lv.RightChangeOfBasis;
+                    //    prolongOp.SaveToTextFileSparse("bosss_mtx\\AS_prolong_" + iLevel + "-" + (iLevel - 1) + ".txt");
+                    //}
+                    //if ( op_lv.GetRestrictionOperator != null ) {
+                    //    var restrOp = op_lv.LeftChangeOfBasis * op_lv.GetRestrictionOperator;
+                    //    restrOp.SaveToTextFileSparse("bosss_mtx\\AS_restr_" + (iLevel - 1) + "-" + iLevel + ".txt");
+                    //}
 
                     bool TerminateMultigrid = false;
                     if(iLevel >= this.NoOfMultigridLevels) {
