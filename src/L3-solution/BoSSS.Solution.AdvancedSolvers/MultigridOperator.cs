@@ -1002,7 +1002,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
-        /// Extracts a sub-matrix related to varibles indexed by <paramref name="varIndices"/> from the operator matrix <see cref="OperatorMatrix"/>
+        /// Extracts a sub-matrix related to varibles indexed by <paramref name="VarIndices"/> from the operator matrix <see cref="OperatorMatrix"/>
         /// and builds a multigrid operator around it, inheriting propeorties from this operator.
         /// </summary>
         public MultigridOperator GetSubOperator(params int[] VarIndices) {
