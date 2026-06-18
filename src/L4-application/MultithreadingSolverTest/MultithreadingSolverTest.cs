@@ -277,7 +277,7 @@ namespace BoSSS.Application.MultithreadingSolverTest {
             if(profilingBin != null)
                 files.Add(profilingBin);
             else if(!delete)
-                Console.WriteLine($"No profiling_bin.*.*.bin found for testcase '{testcase}', threads={threads}, run={run}.");
+                Console.WriteLine($"No profiling_bin.json found for testcase '{testcase}', threads={threads}, run={run}.");
 
             files.AddRange(Directory.GetFiles(cwd, "trace_*.txt"));
             files.AddRange(Directory.GetFiles(cwd, "profiling_summary.*.*.txt"));
