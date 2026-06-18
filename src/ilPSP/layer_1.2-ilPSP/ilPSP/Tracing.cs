@@ -121,6 +121,18 @@ namespace ilPSP.Tracing {
         }
 
         /// <summary>
+        /// Only call this if you really know what you are doing; this will reset the whole call tree and the overall time measurement, so use with care.
+        /// </summary>
+        public static void Reset() {
+            TotalTime.Reset();
+            _Root = new MethodCallRecord(null, "root_frame") {
+                m_ActiveStopwatch = TotalTime
+            };
+            Current = _Root;
+            TotalTime.Start();
+        }
+
+        /// <summary>
         /// the root of the call tree; the runtime (see <see cref="MethodCallRecord.m_TicksSpentInMethod"/>) of the root object is equal to
         /// the overall time spend in the application so far.
         /// </summary>

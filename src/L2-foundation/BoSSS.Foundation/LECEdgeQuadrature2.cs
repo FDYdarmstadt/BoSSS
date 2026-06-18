@@ -102,8 +102,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 if (q == null)
                     return;
 
-                q.CustomTimers = new Stopwatch[] { new Stopwatch(), new Stopwatch(), new Stopwatch(), new Stopwatch(), new Stopwatch() };
-                q.CustomTimers_Names = new string[] { "Flux-Eval", "Basis-Eval", "LoopsLECedge", "ParametersAndNormals", "Flux-Trafo" };
+                q.CustomTimers = new Stopwatch[] { new Stopwatch(), new Stopwatch(), new Stopwatch(), new Stopwatch(), new Stopwatch(), new Stopwatch()};
+                q.CustomTimers_Names = new string[] { "Flux-Eval", "Basis-Eval", "LoopsLECedge", "ParametersAndNormals", "Flux-Trafo", "Flux-Lock-Wait" };
                 q.CustomTimers_RootPointer = new int[q.CustomTimers_Names.Length];
                 ArrayTools.SetAll(q.CustomTimers_RootPointer, -1);
                 this.Flux_Eval = q.CustomTimers[0];
@@ -111,6 +111,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 this.Loops = q.CustomTimers[2];
                 this.ParametersAndNormals = q.CustomTimers[3];
                 this.FluxTrafo = q.CustomTimers[4];
+                this.FluxLockWait = q.CustomTimers[5];
 
                 Debug.Assert(Array.IndexOf(q.CustomTimers_Names, "Flux-Eval") == 0);
                 this.m_Edgeform_UxV_Watches = this.m_Edgeform_UxV.InitStopWatches(0, q);
@@ -254,6 +255,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             Stopwatch Loops;
             Stopwatch ParametersAndNormals;
             Stopwatch FluxTrafo;
+            Stopwatch FluxLockWait;
 
 
             // 1st index (staggered): test variable/component variable
@@ -483,9 +485,11 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                 try {
                     this.Flux_Eval.Start();
-                    if ( MustLock )
+                    if ( MustLock) {
+                        FluxLockWait.Start();
                         Monitor.Enter(this.m_owner);
-
+                        FluxLockWait.Stop();
+                    }
                     {
                         List<MyChunk> Edges = new List<MyChunk>();
                         // sweep over edges and determine which are interior and which are boundary

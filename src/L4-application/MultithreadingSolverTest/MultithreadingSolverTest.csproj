@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
-		<OutputType>Library</OutputType>
+		<OutputType>Exe</OutputType>
 		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 	</PropertyGroup>
 	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -15,6 +15,9 @@
 		<ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj" />
 		<ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj" />
 		<ProjectReference Include="..\XNSE_Solver\XNSE_Solver.csproj" />
+		<ProjectReference Include="..\ipPoisson\ipPoisson.csproj" />
+		<ProjectReference Include="..\XdgPoisson3\XdgPoisson3.csproj" />
 		<ProjectReference Include="..\XNSE_Solver_MPItest\XNSE_Solver_MPItest.csproj" />
+		<ProjectReference Include="..\BoSSSpad\BoSSSpad.csproj" />
 	</ItemGroup>
 </Project>

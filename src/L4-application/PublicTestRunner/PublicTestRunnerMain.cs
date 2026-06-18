@@ -192,7 +192,7 @@ namespace PublicTestRunner {
                     };
 
         public virtual Type[] SpecialOnlyTests => new Type[] {
-                        typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_MultithreadingTest),
+                        typeof(BoSSS.Application.MultithreadingSolverTest.MultithreadingSolverTest),
                     };
 
         public virtual DirectoryInfo GetRepositoryBaseDir() {
