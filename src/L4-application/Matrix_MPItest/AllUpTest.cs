@@ -528,7 +528,7 @@ namespace BoSSS.Application.Matrix_MPItest {
 
                 BlockMsrMatrix M = solver.OperatorMatrix;
                 double[] B = new double[M.RowPartitioning.LocalLength];
-                double[] X = new double[M.ColPartition.LocalLength];
+                double[] X = new double[M.ColPartitioning.LocalLength];
 
                 Random R = new Random();
                 for (int i = 0; i < X.Length; i++)

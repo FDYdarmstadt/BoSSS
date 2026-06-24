@@ -634,7 +634,7 @@ namespace StokesHelical_Ak {
                 if (rhs.Count != map.LocalLength)
                     throw new ArgumentException();
                 if (Mtx != null) {
-                    if (!Mtx.RowPartitioning.EqualsPartition(map) || !Mtx.ColPartition.EqualsPartition(map))
+                    if (!Mtx.RowPartitioning.EqualsPartition(map) || !Mtx.ColPartitioning.EqualsPartition(map))
                         throw new ArgumentException();
                 }
 

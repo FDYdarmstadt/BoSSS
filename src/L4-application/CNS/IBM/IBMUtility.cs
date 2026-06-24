@@ -53,7 +53,7 @@ namespace CNS.IBM {
 
             if (acc.Count != M.RowPartitioning.LocalLength)
                 throw new ArgumentException("mismatch between accumulator and number of rows, i.e. row partition.", "acc");
-            if (a.Count != M.ColPartition.LocalLength)
+            if (a.Count != M.ColPartitioning.LocalLength)
                 throw new ArgumentException("mismatch between input vector 'a' and number of columns, i.e. column partition.", "a");
 
             //int M1 = M.NoOfColsPerBlock;

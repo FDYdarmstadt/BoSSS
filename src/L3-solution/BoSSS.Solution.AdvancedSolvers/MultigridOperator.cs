@@ -279,7 +279,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                 var map = this.BaseGridProblemMapping;
-                if (!Mtx.RowPartitioning.EqualsPartition(map) || !Mtx.ColPartition.EqualsPartition(map))
+                if (!Mtx.RowPartitioning.EqualsPartition(map) || !Mtx.ColPartitioning.EqualsPartition(map))
                     throw new ArgumentException();
 
 
@@ -478,7 +478,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             using(new FuncTrace()) {
                 if(!OperatorMatrix.RowPartitioning.EqualsPartition(_ProblemMapping))
                     throw new ArgumentException("Row partitioning mismatch.");
-                if(!OperatorMatrix.ColPartition.EqualsPartition(_ProblemMapping))
+                if(!OperatorMatrix.ColPartitioning.EqualsPartition(_ProblemMapping))
                     throw new ArgumentException("Column partitioning mismatch.");
 
                 m_AbstractOperator = __AbstractOperator;
@@ -492,7 +492,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if(MassMatrix != null) {
                     if(!MassMatrix.RowPartitioning.Equals(_ProblemMapping))
                         throw new ArgumentException("Row partitioning mismatch.");
-                    if(!MassMatrix.ColPartition.Equals(_ProblemMapping))
+                    if(!MassMatrix.ColPartitioning.Equals(_ProblemMapping))
                         throw new ArgumentException("Column partitioning mismatch.");
                 }
 
@@ -602,7 +602,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         var _PrlgOperator = this.Mapping.GetProlongationOperator(this.FinerLevel.Mapping);
                         //var __PrlgOperator = this.FinerLevel.Mapping.FromOtherLevelMatrix(this.Mapping);
                         Debug.Assert(_PrlgOperator.RowPartitioning.LocalLength == this.FinerLevel.Mapping.LocalLength);
-                        Debug.Assert(_PrlgOperator.ColPartition.LocalLength == this.Mapping.LocalLength);
+                        Debug.Assert(_PrlgOperator.ColPartitioning.LocalLength == this.Mapping.LocalLength);
 
                         if(this.FinerLevel.RightChangeOfBasis_Inverse != null)
                             RawProlongation = BlockMsrMatrix.Multiply(this.FinerLevel.RightChangeOfBasis_Inverse, _PrlgOperator);

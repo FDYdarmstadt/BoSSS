@@ -263,9 +263,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // ==============
                 VerifyConfig();
                 Debug.Assert(OpMatrix.RowPartitioning.LocalLength == this.Mapping.LocalLength);
-                Debug.Assert(OpMatrix.ColPartition.LocalLength == this.Mapping.LocalLength);
+                Debug.Assert(OpMatrix.ColPartitioning.LocalLength == this.Mapping.LocalLength);
                 Debug.Assert(MassMatrix == null || (MassMatrix.RowPartitioning.LocalLength == this.Mapping.LocalLength));
-                Debug.Assert(MassMatrix == null || (MassMatrix.ColPartition.LocalLength == this.Mapping.LocalLength));
+                Debug.Assert(MassMatrix == null || (MassMatrix.ColPartitioning.LocalLength == this.Mapping.LocalLength));
 
                 AggregationGridBasis[] basisS = this.Mapping.AggBasis;
                 int[] Degrees = this.Mapping.DgDegree;

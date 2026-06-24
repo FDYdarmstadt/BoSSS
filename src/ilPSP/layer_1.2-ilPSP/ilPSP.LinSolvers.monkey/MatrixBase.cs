@@ -109,7 +109,7 @@ namespace ilPSP.LinSolvers.monkey {
         /// <summary>
         /// gets the column partition (the partition that a vector must habe to be multiplied by this matrix);
         /// </summary>
-        virtual public IPartitioning ColPartition { get { return m_ColPart; } }
+        virtual public IPartitioning ColPartitioning { get { return m_ColPart; } }
 
         /// <summary>
         /// gets the row partition (how the rows of the matrix are distributed among the different 
@@ -122,7 +122,7 @@ namespace ilPSP.LinSolvers.monkey {
         /// </summary>
         public MPI_Comm MPI_Comm {
             get {
-                if (RowPartitioning.MPI_Comm != ColPartition.MPI_Comm)
+                if (RowPartitioning.MPI_Comm != ColPartitioning.MPI_Comm)
                     throw new ApplicationException("Internal error -- mismatch between row and column MPI communicator.");
                 return RowPartitioning.MPI_Comm;
             }
@@ -139,7 +139,7 @@ namespace ilPSP.LinSolvers.monkey {
         /// number of columns, over all mpi processors
         /// </summary>
         public long NoOfCols {
-            get { return ColPartition.TotalLength; }
+            get { return ColPartitioning.TotalLength; }
         }
 
 
@@ -150,12 +150,12 @@ namespace ilPSP.LinSolvers.monkey {
             ilPSP.MPICollectiveWatchDog.Watch();
             if (M.RowPartitioning.IsMutable)
                 throw new NotSupportedException();
-            if (M.ColPartition.IsMutable)
+            if (M.ColPartitioning.IsMutable)
                 throw new NotSupportedException();
             m_CellSize = 1; // ggT(M.RowPartitioning.BlockSize, M.ColPartition.BlockSize);
 
             
-            m_ColPart = M.ColPartition;
+            m_ColPart = M.ColPartitioning;
             m_RowPart = M.RowPartitioning;
 
             //if (M.ColPerBlock != M.RowsPerBlock)
@@ -623,14 +623,14 @@ namespace ilPSP.LinSolvers.monkey {
 
             if (acc.Count < this.RowPartitioning.LocalLength)
                 throw new ArgumentException("array is too short - must be as least as big as the local length of the row partition.", "acc");
-            if (a.Count < this.ColPartition.LocalLength)
+            if (a.Count < this.ColPartitioning.LocalLength)
                 throw new ArgumentException("array is too short - must be as least as big as the local length of the column partition.", "a");
             if (object.ReferenceEquals(a, acc))
                 throw new ArgumentException("in-place computation is not supported.", "a,acc");
 
             // create vector objects
             bool dummy;
-            VectorBase _a = CreateVec(a, this.ColPartition, out dummy);
+            VectorBase _a = CreateVec(a, this.ColPartitioning, out dummy);
             using (VectorBase.CommVector _a_comm = _a.CreateCommVector(this)) {
                 bool notWriteBackReq;
                 VectorBase _acc = CreateVec(acc, this.RowPartitioning, out notWriteBackReq);
@@ -641,7 +641,7 @@ namespace ilPSP.LinSolvers.monkey {
                 _acc.Lock();
 
                 // check args
-                if (!_a.Part.Equals(this.ColPartition))
+                if (!_a.Part.Equals(this.ColPartitioning))
                     throw new ArgumentException("mismatch between column partition and partition of a.", "a");
                 if (!_acc.Part.Equals(this.RowPartitioning))
                     throw new ArgumentException("mismatch between row partition and partition of acc.", "acc");

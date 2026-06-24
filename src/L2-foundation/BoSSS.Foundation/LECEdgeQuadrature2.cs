@@ -1358,7 +1358,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             if(m_Matrix != null) {
                 if (Matrix.RowPartitioning.LocalLength != RowMap.LocalLength)
                     throw new ArgumentException("Matrix mismatch: local number of rows", "Matrix");
-                if (Matrix.ColPartition.LocalLength != ColMap.LocalLength)
+                if (Matrix.ColPartitioning.LocalLength != ColMap.LocalLength)
                     throw new ArgumentException("Matrix mismatch: number of columns", "Matrix");
             }
             if(m_AffineVector != null) {

@@ -208,7 +208,7 @@ namespace ilPSP.LinSolvers.monkey.CUDA {
         protected override VectorBase CreateVec<T>(T a, IPartitioning len, out bool CopyIsShallow) {
             if (a.Count != len.LocalLength)
                 throw new ArgumentException("count of a must be at least 'len'!", "len");
-            if (len.MPI_Comm != this.ColPartition.MPI_Comm)
+            if (len.MPI_Comm != this.ColPartitioning.MPI_Comm)
                 throw new ArgumentException();
 
 

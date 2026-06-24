@@ -329,7 +329,7 @@ namespace BoSSS.Foundation.SpecFEM {
 
             for(int j = 0; j < J; j++) {
                 long i0 = j * N + R.RowPartitioning.i0; // row offset into R for cell 'j'
-                long j0 = j * ModalBasis.Length + R.ColPartition.i0; // column offset into R for cell 'j'
+                long j0 = j * ModalBasis.Length + R.ColPartitioning.i0; // column offset into R for cell 'j'
                 double tr = Trafo[j];
 
                 for(int n = 0; n < N; n++) { // loop over rows
@@ -365,7 +365,7 @@ namespace BoSSS.Foundation.SpecFEM {
 
             for(int j = 0; j < J; j++) {
                 long i0 = j * N + R.RowPartitioning.i0; // column offset into R for cell 'j'
-                long j0 = j * ModalBasis.Length + R.ColPartition.i0; // row offset into R for cell 'j'
+                long j0 = j * ModalBasis.Length + R.ColPartitioning.i0; // row offset into R for cell 'j'
                 double tr = Trafo[j];
 
                 for(int m = 0; m < M; m++) { // loop over rows

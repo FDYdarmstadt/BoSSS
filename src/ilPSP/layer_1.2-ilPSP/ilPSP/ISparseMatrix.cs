@@ -65,7 +65,7 @@ namespace ilPSP.LinSolvers {
         /// but the behavior of several operations, like transpose (where it defines the row partition of the result)
         /// or the Matrix/Vector product (where it defines the partition of the vector).
         /// </summary>
-        IPartitioning ColPartition { get; }
+        IPartitioning ColPartitioning { get; }
 
 
         /// <summary>
@@ -90,7 +90,7 @@ namespace ilPSP.LinSolvers {
         /// <param name="a">
         /// length must be equal to the local length 
         /// (see <see cref="Partitioning.LocalLength"/>) of the column partition,
-        /// <see cref="ColPartition"/>;
+        /// <see cref="ColPartitioning"/>;
         /// </param>
         /// <param name="beta"></param>
         /// <param name="acc">

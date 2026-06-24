@@ -233,6 +233,7 @@ namespace BoSSS.Application.SipPoisson {
                     base.TerminationKey = true;
                 }
 
+                /*
                 // export MG matrices and operators
                 var mgOperator = this.LapaceIp.GetMultigridOperator(this.T.Mapping, MgConfig);
                 int mgLevel = 0;
@@ -269,11 +270,10 @@ namespace BoSSS.Application.SipPoisson {
                 }
                 Console.WriteLine("Saved all MG levels (matrices and vectors).");
                 //throw new Exception("end"); // exit bc only mtxs needed
+                */
 
                 // call solver
                 // -----------
-                //LastMatrix = this.LapaceIp.GetMatrix(T.Mapping, MgConfig: this.MgConfig);
-                //Console.WriteLine("Remember to re-activate solver !!!!!!!");
                 this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, verbose: true, queryHandler: base.QueryHandler);
 
 

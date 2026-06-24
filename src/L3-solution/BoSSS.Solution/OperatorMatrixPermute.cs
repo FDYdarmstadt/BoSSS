@@ -50,7 +50,7 @@ namespace BoSSS.Solution.Utils {
             if (!M.RowPartitioning.Equals(RowMap)) {
                 throw new ArgumentException();
             }
-            if (!M.ColPartition.Equals(ColMap)) {
+            if (!M.ColPartitioning.Equals(ColMap)) {
                 throw new ArgumentException();
             }
 
@@ -104,7 +104,7 @@ namespace BoSSS.Solution.Utils {
 
         private static MsrMatrix ColumnPermute(MsrMatrix M, int[] ColPerm) {
             MsrMatrix M2;
-            M2 = new MsrMatrix(M.RowPartitioning, M.ColPartition);
+            M2 = new MsrMatrix(M.RowPartitioning, M.ColPartitioning);
 
             long[] ColIdx = null;
             double[] MtxVals = null;

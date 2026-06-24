@@ -93,7 +93,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                 this.UseDoublePrecision = __UseDoublePrecision;
                 if(M.RowPartitioning.IsMutable)
                     throw new NotSupportedException();
-                if(M.ColPartition.IsMutable)
+                if(M.ColPartitioning.IsMutable)
                     throw new NotSupportedException();
 
                 if(M.NoOfCols != M.NoOfRows)
@@ -102,8 +102,8 @@ namespace ilPSP.LinSolvers.PARDISO {
                 RowPart = M.RowPartitioning;
 
                 int size = M.RowPartitioning.MpiSize, rank = M.RowPartitioning.MpiRank;
-                Debug.Assert(M.RowPartitioning.MpiRank == M.ColPartition.MpiRank);
-                Debug.Assert(M.RowPartitioning.MpiSize == M.ColPartition.MpiSize);
+                Debug.Assert(M.RowPartitioning.MpiRank == M.ColPartitioning.MpiRank);
+                Debug.Assert(M.RowPartitioning.MpiSize == M.ColPartitioning.MpiSize);
                 m_comm = M.MPI_Comm;
 
                 int LR;

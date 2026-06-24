@@ -183,7 +183,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 if(!Mtx.RowPartitioning.EqualsPartition(MgMap)) //notice that on Debug configuration Mtx may not be initialized
 					throw new ArgumentException("Row partitioning mismatch.");
-                if(!Mtx.ColPartition.EqualsPartition(MgMap))
+                if(!Mtx.ColPartitioning.EqualsPartition(MgMap))
                     throw new ArgumentException("Column partitioning mismatch.");
 
                 Mtx.CheckForNanOrInfM(typeof(DirectSolver) + ", matrix definition: ");

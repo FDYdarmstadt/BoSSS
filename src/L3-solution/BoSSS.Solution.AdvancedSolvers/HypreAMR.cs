@@ -80,7 +80,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             if (!Mtx.RowPartitioning.EqualsPartition(MgMap))
                 throw new ArgumentException("Row partitioning mismatch.");
-            if (!Mtx.ColPartition.EqualsPartition(MgMap))
+            if (!Mtx.ColPartitioning.EqualsPartition(MgMap))
                 throw new ArgumentException("Column partitioning mismatch.");
 
             m_matrix = Mtx.CloneAs();

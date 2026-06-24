@@ -484,7 +484,7 @@ namespace BoSSS.Foundation.Grid {
 
             if (!_Mtx.RowPartitioning.Equals(RowMap))
                 throw new ArgumentException();
-            if (!_Mtx.ColPartition.Equals(ColMap))
+            if (!_Mtx.ColPartitioning.Equals(ColMap))
                 throw new ArgumentException();
 
 

@@ -149,7 +149,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		private double MinimizeResidual(double[] outX, double[] Sol0, double[] Res0, double[] outRes, string id, bool plot = false) {
 			using (var ft = new FuncTrace()) {
 				Debug.Assert(SolHistory.Count == MxxHistory.Count);
-				Debug.Assert(outX.Length == OpMatrix.ColPartition.LocalLength);
+				Debug.Assert(outX.Length == OpMatrix.ColPartitioning.LocalLength);
 				//Debug.Assert(Sol0.Length == m_MgOperator.Mapping.LocalLength);
 				Debug.Assert(Res0.Length == OpMatrix.RowPartitioning.LocalLength);
 				Debug.Assert(outRes.Length == OpMatrix.RowPartitioning.LocalLength);
@@ -620,7 +620,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 				if (!Mtx.RowPartitioning.EqualsPartition(MgMap))
 					throw new ArgumentException("Row partitioning mismatch.");
-				if (!Mtx.ColPartition.EqualsPartition(MgMap))
+				if (!Mtx.ColPartitioning.EqualsPartition(MgMap))
 					throw new ArgumentException("Column partitioning mismatch.");
 
 

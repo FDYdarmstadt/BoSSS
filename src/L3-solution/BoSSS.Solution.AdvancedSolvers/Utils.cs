@@ -110,7 +110,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
             int n = A.RowPartitioning.LocalLength;
-            if (A.ColPartition.LocalLength != A.RowPartitioning.LocalLength)
+            if (A.ColPartitioning.LocalLength != A.RowPartitioning.LocalLength)
             {
                 throw new ArgumentException("the sizes of input matrix incorrect");
             }

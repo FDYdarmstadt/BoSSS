@@ -38,7 +38,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 return instance;
             }
 
-            
+            [DataMember]
+            public int NumberOfJacobiIter = 2;
+
+            [DataMember]
+            public double JacobiUnderRelax = 0.5;
+
+
         }
 
         Config m_config = new Config();
@@ -142,6 +148,56 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// typically, this is zero; otherwise it might contain stabilization terms.
         /// </summary>
         BlockMsrMatrix M22Matrix;
+
+
+        void EvaluateSchurComplementMatrix<U, V>(double alpha, V Input, double beta, U Result)
+            where U : IList<double>
+            where V : IList<double> // 
+        {
+            int L = VelocityDivergence.RowPartitioning.LocalLength;
+            if(PressureGradient.ColPartitioning.LocalLength != L)
+                throw new ApplicationException("mismatch - number of columns, pressure gradient matrix");
+            if(M22Matrix!= null) {
+                if(M22Matrix.RowPartitioning.LocalLength != L) 
+                    throw new ApplicationException("mismatch - number of rows, M22 matrix");
+                if(M22Matrix.ColPartitioning.LocalLength != L)
+                    throw new ApplicationException("mismatch - number of columns, M22 matrix");
+            }
+
+            if(Result.Count != L)
+                throw new ArgumentException("mismatch, length of input vector");
+            if(Input.Count != L)
+                throw new ArgumentException("mismatch, length of input vector");
+
+            double[] ResultXbeta = null;
+            if(beta != 0.0)
+                ResultXbeta = Result.ToArray();
+
+            int LV = VelocityDivergence.ColPartitioning.LocalLength;
+            double[] PresGrad = new double[LV];
+            double[] CDsol = new double[LV];
+
+            // evaluate pressure gradient
+            PressureGradient.SpMV(1.0, Input, 0.0, PresGrad);
+
+            // Solve Conv/Diff System
+            ConvectionDiffusionSolver.Solve(CDsol, PresGrad);
+
+            // take velocity divergence
+            VelocityDivergence.SpMV(-1.0, CDsol, 0.0, Result);
+
+            // add M22 contribution
+            if(M22Matrix != null) {
+                M22Matrix.SpMV(1.0, Input, 1.0, Result);
+            }
+
+            if(alpha != 1.0) 
+                Result.ScaleV(alpha);
+            if(beta != 0.0)
+                Result.AccV(beta, ResultXbeta);
+        }
+
+        
 
 
 

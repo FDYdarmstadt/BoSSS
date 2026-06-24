@@ -52,7 +52,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 if(!M.RowPartitioning.EqualsPartition(MgMap))
                     throw new ArgumentException("Row partitioning mismatch.");
-                if(!M.ColPartition.EqualsPartition(MgMap))
+                if(!M.ColPartitioning.EqualsPartition(MgMap))
                     throw new ArgumentException("Column partitioning mismatch.");
 
                 Mtx = M;

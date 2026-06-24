@@ -644,7 +644,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 if(OpMtx != null) {
                     if(!OpMtx.RowPartitioning.EqualsPartition(Mapping))
                         throw new ArgumentException("Codomain/Matrix Row mapping mismatch.");
-                    if(!OpMtx.ColPartition.EqualsPartition(Mapping))
+                    if(!OpMtx.ColPartitioning.EqualsPartition(Mapping))
                         throw new ArgumentException("Domain/Matrix column mapping mismatch.");
                 }
 

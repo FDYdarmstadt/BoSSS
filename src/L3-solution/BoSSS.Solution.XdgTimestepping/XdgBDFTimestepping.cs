@@ -22,9 +22,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BoSSS.Platform;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Timestepping;
 using ilPSP;
@@ -33,16 +30,7 @@ using ilPSP.Tracing;
 using MPI.Wrappers;
 using NUnit.Framework;
 using BoSSS.Solution.Gnuplot;
-using System.IO;
-using BoSSS.Foundation.Grid;
 using BoSSS.Solution.Queries;
-using NUnit.Framework.Constraints;
-using System.Runtime.InteropServices.ComTypes;
-using BoSSS.Solution.Tecplot;
-using BoSSS.Foundation.IO;
-using MathNet.Numerics;
-using BoSSS.Foundation.Grid.Classic;
-using CommandLine;
 
 
 namespace BoSSS.Solution.XdgTimestepping {
@@ -1519,15 +1507,17 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                         using (var linearSolver = GetLinearSolver(mgOperator)) {
                             // try to solve the saddle-point system.
-                            //TimeSpan duration;
+                            TimeSpan duration;
                             using (new BlockTrace("Solver_Run", tr)) {
                                 var st = DateTime.Now;
 
+                                /*
                                 // ==============================
                                 int mgLevel = 0;
                                 global::System.IO.Directory.CreateDirectory("bosss_mtx");
                                 Console.WriteLine(global::System.IO.Directory.GetCurrentDirectory());
                                 while ( mgOperator != null ) {
+                                    
                                     int D = this.m_LsTrk.GridDat.SpatialDimension;
                                     Console.WriteLine($"Dimension {D}");
                                     var VelIdx = mgOperator.Mapping.GetSubvectorIndices(D.ForLoop(d => d)); // 0, 1, 2 for velocities
@@ -1539,6 +1529,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                                     RHS.SaveToTextFile("bosss_mtx\\RHS_" + mgLevel + ".txt");
 
                                     Console.WriteLine($"On level idx {mgOperator.LevelIndex}");
+                                    
                                     if ( mgOperator.LevelIndex >= 1 ) {
                                         var Mfine = mgOperator.FinerLevel.OperatorMatrix;
 
@@ -1587,30 +1578,27 @@ namespace BoSSS.Solution.XdgTimestepping {
                                 }
                                 Console.WriteLine("Saved all MG levels (matrices and vectors).");
                                 throw new Exception("end"); // exit bc only mtxs needed
-                                // ==============================
+                                // ============================== */
 
-                                //mgOperator.UseSolver(linearSolver, m_Stack_u[0], RHS);
-                                ////mgOperator.ComputeResidual(this.Residuals, m_Stack_u[0], RHS);
-                                //duration = DateTime.Now - st;
+                                mgOperator.UseSolver(linearSolver, m_Stack_u[0], RHS);
+                                //mgOperator.ComputeResidual(this.Residuals, m_Stack_u[0], RHS);
+                                duration = DateTime.Now - st;
                             }
-                            //tr.Info("solver success: " + linearSolver.Converged + "; runtime: " + duration.TotalSeconds + " sec.");
-                            //success = linearSolver.Converged;
+                            tr.Info("solver success: " + linearSolver.Converged + "; runtime: " + duration.TotalSeconds + " sec.");
+                            success = linearSolver.Converged;
 
-                            //// 'revert' agglomeration
-                            //Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
-                            //m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
+                            // 'revert' agglomeration
+                            Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
+                            m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
 
-                            //if (base.QueryHandler != null) {
-                            //    base.QueryHandler.ValueQuery(QueryHandler.Conv, linearSolver.Converged ? 1.0 : 0.0, true);
-                            //    base.QueryHandler.ValueQuery(QueryHandler.NoIter, linearSolver.ThisLevelIterations, true);
-                            //    base.QueryHandler.ValueQuery(QueryHandler.NoOfCells, this.m_LsTrk.GridDat.CellPartitioning.TotalLength, true);
-                            //    base.QueryHandler.ValueQuery(QueryHandler.DOFs, mgOperator.Mapping.TotalLength, true); // 'essential' DOF, in the XDG case less than cordinate mapping length 
-                            //}
+                            if (base.QueryHandler != null) {
+                                base.QueryHandler.ValueQuery(QueryHandler.Conv, linearSolver.Converged ? 1.0 : 0.0, true);
+                                base.QueryHandler.ValueQuery(QueryHandler.NoIter, linearSolver.ThisLevelIterations, true);
+                                base.QueryHandler.ValueQuery(QueryHandler.NoOfCells, this.m_LsTrk.GridDat.CellPartitioning.TotalLength, true);
+                                base.QueryHandler.ValueQuery(QueryHandler.DOFs, mgOperator.Mapping.TotalLength, true); // 'essential' DOF, in the XDG case less than cordinate mapping length 
+                            }
                         }
                     }
-
-
-
                 } else {
                     // ++++++++++++++++++++++++++++++++++++
                     // compute residual of actual solution 

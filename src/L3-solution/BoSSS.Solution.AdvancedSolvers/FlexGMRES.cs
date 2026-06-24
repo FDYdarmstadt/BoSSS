@@ -118,7 +118,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 if(!M.RowPartitioning.EqualsPartition(MgMap)) //notice that on Debug configuration M may not be initialized
 					throw new ArgumentException("Row partitioning mismatch.");
-                if(!M.ColPartition.EqualsPartition(MgMap))
+                if(!M.ColPartitioning.EqualsPartition(MgMap))
                     throw new ArgumentException("Column partitioning mismatch.");
 
                 if (!IsPreconditionerInitiated)
@@ -147,7 +147,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         {
             int L = B.Count;
 
-            if(X.Count != this.m_MgOp.OperatorMatrix.ColPartition.LocalLength)
+            if(X.Count != this.m_MgOp.OperatorMatrix.ColPartitioning.LocalLength)
                 throw new ArgumentException("Wrong length of unknowns vector.", "X");
             if(B.Count != this.m_MgOp.OperatorMatrix.RowPartitioning.LocalLength)
                 throw new ArgumentException("Wrong length of RHS vector.", "B");
