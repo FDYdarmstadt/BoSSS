@@ -1126,7 +1126,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             GlobalIdxs[iBlock] = locRHSinsertIdxSrc.ToArray();
                             BlockIdxs[iBlock] = locRHSinsertIdxTrg.ToArray();
 
-                            ExportIndices(iBlock, BlockIdxs[iBlock], GlobalIdxs[iBlock]);
+                            //ExportIndices(iBlock, BlockIdxs[iBlock], GlobalIdxs[iBlock]);
 
                             if(GlobalIdxs[iBlock].Length > 0) {
                                 Debug.Assert(GlobalIdxs[iBlock].Min() >= 0);
