@@ -2171,9 +2171,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="Res">output: on exit <paramref name="B"/> - <see cref="OpMatrix"/>*<paramref name="X"/></param>
         public void Residual(double[] Res, double[] X, double[] B) {
             using(new FuncTrace()) {
-                Debug.Assert(Res.Length == OpMatrix.ColPartition.LocalLength);
-                Debug.Assert(X.Length == OpMatrix.ColPartition.LocalLength);
-                Debug.Assert(B.Length == OpMatrix.ColPartition.LocalLength);
+                Debug.Assert(Res.Length == OpMatrix.ColPartitioning.LocalLength);
+                Debug.Assert(X.Length == OpMatrix.ColPartitioning.LocalLength);
+                Debug.Assert(B.Length == OpMatrix.ColPartitioning.LocalLength);
                 int L = Res.Length;
                 Array.Copy(B, Res, L);
                 OpMatrix.SpMV(-1.0, X, 1.0, Res);
