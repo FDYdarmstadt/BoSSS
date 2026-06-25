@@ -34,7 +34,7 @@ namespace AdvancedSolverTests.SolverChooser {
                 //Act and Assert
 
                 foreach(LinearSolverCode code in lincodes) {
-                    if(code == LinearSolverCode.SchurPrecond) {
+                    if(code == LinearSolverCode.SchurPrecond || code == LinearSolverCode.SchurComplementForStokes) {
                         Console.WriteLine($"Skipping {LinearSolverCode.SchurPrecond}: the Schur Complement requires a (D+1)×(D+1) - system, an the test system here is only 2×2.");
                         continue;
                     }
