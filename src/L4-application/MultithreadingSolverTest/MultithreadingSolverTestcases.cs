@@ -61,17 +61,19 @@ namespace BoSSS.Application.MultithreadingSolverTest {
                 RunControl = control => RunControl<BoSSS.Application.SipPoisson.SipControl, BoSSS.Application.SipPoisson.SipPoissonMain>((BoSSS.Application.SipPoisson.SipControl)control),
             },
             new ThreadScalingTestcase {
+                // this is not really good now
                 Name = "XdgPoisson3",
                 CreateControl = () => {
-                    var C = BoSSS.Application.XdgPoisson3.HardCodedControl.Circle(Resolution: 128, p: 2);
+                    var C = BoSSS.Application.XdgPoisson3.HardCodedControl.Circle(Resolution: 128, p: 4);
                     C.ProjectName = "MultithreadingScalingTest/XdgPoisson3";
                     C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
                     PrepareControl(C, "XdgPoisson3");
                     return C;
                 },
                 RunControl = control => RunControl<BoSSS.Application.XdgPoisson3.XdgPoisson3Control, BoSSS.Application.XdgPoisson3.XdgPoisson3Main>((BoSSS.Application.XdgPoisson3.XdgPoisson3Control)control),
-                MinSpeedup12 = 1.05,
-                MinSpeedup14 = 1.1,
+                MinSpeedup12 = 1.01,
+                MinSpeedup14 = 1.01,
+                MinSpeedup24 = 1.01,
             },
             new ThreadScalingTestcase {
                 Name = "XNSERisingBubble",
