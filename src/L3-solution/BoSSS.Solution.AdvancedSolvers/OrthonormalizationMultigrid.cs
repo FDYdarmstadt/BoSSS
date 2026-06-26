@@ -110,17 +110,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
 		/// <summary>
-		/// 
+		/// Minimizes the residual from scratch over all vectors currently in the Krylov space.
+		/// Resets <paramref name="outX"/> to <paramref name="Sol0"/> and rebuilds the solution
+		/// by applying each basis vector's optimal coefficient independently (possible because
+		/// <see cref="MxxHistory"/> is orthonormal under <see cref="InnerProduct"/>).
 		/// </summary>
 		public double FullMinimization(double[] outX, double[] Sol0, double[] Res0, double[] outRes) {
-			//var ids = Alphas.Select(ttt => ttt.id);
 			Alphas.Clear();
-			double LastResi = -1;
-            while(Alphas.Count < SolHistory.Count) {
-				LastResi = MinimizeResidual(outX, Sol0, Res0, outRes, "lulu");
-				//ids = ids.Skip(1);
+			int L = outX.Length;
+			Array.Copy(Sol0, outX, L);
+			Array.Copy(Res0, outRes, L);
+			double lastResNorm = Norm(outRes);
+			for (int k = 0; k < SolHistory.Count; k++) {
+				double alpha_k = InnerProduct(MxxHistory[k], Res0);
+				BLAS.daxpy(L, alpha_k, SolHistory[k], 1, outX, 1);
+				BLAS.daxpy(L, -alpha_k, MxxHistory[k], 1, outRes, 1);
+				lastResNorm = Norm(outRes);
+				Alphas.Add((alpha_k, lastResNorm, "full"));
 			}
-			return LastResi;
+			return lastResNorm;
 		}
 
 
@@ -176,23 +184,24 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
 
-				if (m_UsedMoreThanOneOrthoCycle || KrylovDim % RecalcResiPeriod == 0) { // 40 should be a decent compromise between performance and stability
+				if (m_UsedMoreThanOneOrthoCycle || KrylovDim % RecalcResiPeriod == 0) { // 40 is a decent compromise between performance and stability
 
 					// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 					// once in a while, re-compute the residual to get rid of round-off errors which might accumulate
 					// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-
+					// delta = outX - Sol0  (the cumulative correction; avoids temporarily mutating Sol0)
+					double[] delta = new double[L];
+					Array.Copy(outX, delta, L);
+					BLAS.daxpy(L, -1.0, Sol0, 1, delta, 1);
 					outRes.SetV(Res0);
-					Sol0.AccV(-1.0, outX);
-					this.OpMatrix.SpMV(1.0, Sol0, 1.0, outRes);
-					Sol0.AccV(+1.0, outX);
+					this.OpMatrix.SpMV(-1.0, delta, 1.0, outRes);   // outRes = Res0 - A*delta = B - A*outX
 				}
 
 
 				double ResNorm = Norm(outRes);
-				double tol = Math.Max(ResNorm, oldResiNorm) * 0.2;
-				tol = Math.Max(tol, 1.0e-7);
+				double tol = Math.Max(ResNorm, oldResiNorm) * 0.02;  // orthogonal projection cannot increase residual; 2% slack for floating-point noise
+				tol = Math.Max(tol, 1.0e-10);
 				if (ResNorm > oldResiNorm + tol)
 					throw new ArithmeticException($"residual increase (L = {L}): old norm: {oldResiNorm}, new norm {ResNorm}, reduction factor: {ResNorm / oldResiNorm} at {id}");
 
@@ -208,7 +217,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			}
 		}
 
-		public int RecalcResiPeriod = 1;
+		public int RecalcResiPeriod = 40;
+
+		/// <summary>
+		/// Maximum number of Krylov vectors before a restart. When this limit is reached,
+		/// the history is cleared (restarted GMRES-style) and a fresh Krylov space is built.
+		/// Default is <see cref="int.MaxValue"/> (no restart).
+		/// </summary>
+		public int MaxKrylovDim = int.MaxValue;
 
 
 		bool m_UsedMoreThanOneOrthoCycle = false;
@@ -321,7 +337,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 									}
 								}
 
-								double gamma = 1 / NewMxxNorm;
+								double gamma = 1 / NormMxx;   // NormMxx was refreshed above; NewMxxNorm is stale (the pre-restart near-zero value)
 								BLAS.dscal(L, gamma, Mxx, 1);
 								BLAS.dscal(L, gamma, X, 1);
 							} else {
@@ -350,9 +366,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			}
 		}
 
+		double[] _Diagonal;
+
 		public double[] Diagonal {
-			get;
-			set;
+			get => _Diagonal;
+			set {
+				if (value != null) {
+					for (int i = 0; i < value.Length; i++)
+						if (value[i] <= 0)
+							throw new ArgumentException($"Diagonal entry [{i}] is non-positive: {value[i]}");
+				}
+				_Diagonal = value;
+			}
 		}
 
 
@@ -360,19 +385,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// Inner Product use for orthonormalization (not necessarily the standard l2-product)
 		/// </summary>
 		public double InnerProduct(double[] A, double[] B) {
-			if (Diagonal == null) {
+			if (_Diagonal == null) {
 				Debug.Assert(A.Length == B.Length);
 				return BLAS.ddot(A.Length, A, 1, B, 1).MPISum(comm);
 			} else {
-				int L = Diagonal.Length;
+				int L = _Diagonal.Length;
 				Debug.Assert(A.Length == L);
 				Debug.Assert(B.Length == L);
 
 				double acc = 0;
 				for(int i = 0; i < L; i++) {
-					if (Diagonal[i] <= 0)
-						throw new ArithmeticException("fucked up diagonal");
-					acc += A[i] * B[i] * Diagonal[i];
+					acc += A[i] * B[i] * _Diagonal[i];
 				}
 				return acc.MPISum(comm);
 			}
@@ -382,7 +405,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// norm induced by <see cref="InnerProduct(double[], double[])"/>
 		/// </summary>
 		public double Norm(double[] A) {
-			if (Diagonal == null) {
+			if (_Diagonal == null) {
 				return A.MPI_L2Norm(comm);
 			} else {
 				return InnerProduct(A, A).Sqrt();
@@ -415,6 +438,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// guess for the solution (typically, preconditioner output); will be modified during the orthonormalization
 		/// </param>
 		public double AddSolAndMinimizeResidual(ref double[] xGuess, double[] outX, double[] Sol0, double[] Res0, double[] outRes, string name) {
+			if (SolHistory.Count >= MaxKrylovDim) {
+				// Krylov space is full: restart (restarted-GMRES style).
+				// outX and outRes remain valid; only the history is cleared.
+				Clear();
+			}
 			var (_, _CancellationTriggered) = AddSol(ref xGuess, name);
 
 			double newResNorm = MinimizeResidual(outX, Sol0, Res0, outRes, name, false);
@@ -431,10 +459,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			var R = new CoreOrthonormalizationProcedure(this.OpMatrix);
 			R.Alphas.AddRange(this.Alphas);
 			R.CancellationTriggered = this.CancellationTriggered;
-			R.Diagonal = this.Diagonal?.CloneAs();
+			R.Diagonal = this._Diagonal?.CloneAs();
 			R.MxxHistory.AddRange(this.MxxHistory.Select(a => a.CloneAs()));
 			R.SolHistory.AddRange(this.SolHistory.Select(a => a.CloneAs()));
 			R.RecalcResiPeriod = this.RecalcResiPeriod;
+			R.MaxKrylovDim = this.MaxKrylovDim;
 			R.m_UsedMoreThanOneOrthoCycle = this.m_UsedMoreThanOneOrthoCycle;
 
 			return R;
@@ -626,6 +655,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
 				ortho = new CoreOrthonormalizationProcedure(Mtx);
+				ortho.MaxKrylovDim = myConfig.MaxKrylovDim;
 
 
 				// set operator
