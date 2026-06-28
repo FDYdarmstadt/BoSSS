@@ -39,6 +39,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		[DataMember]
         public double MachineEpsilon = GenericBlas.MachineEps * 1000;   // DoubleMachineEpsilon 2⁻⁵² * 1000
 
+        /// <summary>
+        /// amount of debug-information which will be printed;
+        /// - 0 should write no output
+        /// - 1 should write inforamtion about configuration, etc
+        /// - higher values should write information durting iterations
+        /// </summary>
+        [DataMember]
+        public uint WriteDebugInfoLevel = 0;
+
 		/// <summary>
 		/// Termination criterion based on the threshold <see cref="ConvergenceCriterion"/>.
 		/// </summary>

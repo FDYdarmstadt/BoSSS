@@ -131,30 +131,35 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			return lastResNorm;
 		}
 
+        /// <summary>
+        /// In exact arithmetics, the error must not grow during <see cref="MinimizeResidual"/>
+        /// However, 
+        /// </summary>
+        const double AllowedRelativeResidualIncreaseThreshold = 0.02;
 
-		/// <summary>
-		/// Residual minimization in the space spanned by <see cref="SolHistory"/>/<see cref="MxxHistory"/>
-		/// </summary>
-		/// <param name="outX">
-		/// - input: the solution build upon all vectors in the Krylov space **except the last one**
-		/// - output: on exit, updated by the contribution from the most recent Krylov basis
-		/// </param>
-		/// <param name="Res0">
-		/// residual with respect to the initial guess
-		/// </param>
-		/// <param name="Sol0">
-		/// initial guess; required for checking <paramref name="outRes"/>,
-		/// resp. for re-computing <paramref name="outRes"/> in the case of severe round-of errors.
-		/// </param>
-		/// <param name="outRes">
-		/// - input: the residual with respect to the input value of <paramref name="outX"/>
-		/// - output: on exit, the residual with respect to the output value of <paramref name="outX"/>
-		/// </param>
-		/// <param name="id">
-		/// name/information for debugging and analysis
-		/// </param>
-		/// <param name="plot"></param>
-		private double MinimizeResidual(double[] outX, double[] Sol0, double[] Res0, double[] outRes, string id, bool plot = false) {
+        /// <summary>
+        /// Residual minimization in the space spanned by <see cref="SolHistory"/>/<see cref="MxxHistory"/>
+        /// </summary>
+        /// <param name="outX">
+        /// - input: the solution build upon all vectors in the Krylov space **except the last one**
+        /// - output: on exit, updated by the contribution from the most recent Krylov basis
+        /// </param>
+        /// <param name="Res0">
+        /// residual with respect to the initial guess
+        /// </param>
+        /// <param name="Sol0">
+        /// initial guess; required for checking <paramref name="outRes"/>,
+        /// resp. for re-computing <paramref name="outRes"/> in the case of severe round-of errors.
+        /// </param>
+        /// <param name="outRes">
+        /// - input: the residual with respect to the input value of <paramref name="outX"/>
+        /// - output: on exit, the residual with respect to the output value of <paramref name="outX"/>
+        /// </param>
+        /// <param name="id">
+        /// name/information for debugging and analysis
+        /// </param>
+        /// <param name="plot"></param>
+        private double MinimizeResidual(double[] outX, double[] Sol0, double[] Res0, double[] outRes, string id, bool plot = false) {
 			using (var ft = new FuncTrace()) {
 				Debug.Assert(SolHistory.Count == MxxHistory.Count);
 				Debug.Assert(outX.Length == OpMatrix.ColPartitioning.LocalLength);
@@ -182,32 +187,56 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				BLAS.daxpy(L, alpha_i, SolHistory[i], 1, outX, 1); // accumulate solution correction...
 				BLAS.daxpy(L, -alpha_i, MxxHistory[i], 1, outRes, 1); // ...and its effect on the residual
 
+                bool RecalcResi = false;
+                double ResNorm = Norm(outRes);
+                double tol = Math.Max(ResNorm, oldResiNorm) * AllowedRelativeResidualIncreaseThreshold;  // orthogonal projection cannot increase residual; 2% slack for floating-point noise
+                tol = Math.Max(tol, 1.0e-10);
+                if(ResNorm > oldResiNorm + tol)
+                    RecalcResi = true;
+
+                RecalcResi |= m_UsedMoreThanOneOrthoCycle;
+                RecalcResi |= KrylovDim % RecalcResiPeriod == 0;
+
+                if(RecalcResi) {
+
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    // once in a while, re-compute the residual to get rid of round-off errors which might accumulate
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    //double[] outRes2 = outRes.CloneAs();
+                    
+
+                    // delta = outX - Sol0  (the cumulative correction; avoids temporarily mutating Sol0)
+                    double[] delta = outX.CloneAs();
+                    BLAS.daxpy(L, -1.0, Sol0, 1, delta, 1);
+                    outRes.SetV(Res0);
+                    this.OpMatrix.SpMV(-1.0, delta, 1.0, outRes);
+                    
+                    // without additional memory, but mybe more round-off-error
+                    //outRes.SetV(Res0);
+                    //Sol0.AccV(-1.0, outX);
+                    //this.OpMatrix.SpMV(1.0, Sol0, 1.0, outRes);
+                    //Sol0.AccV(+1.0, outX);
+
+                    //double dist = outRes.MPI_L2Dist(outRes2);
+                    //double denom = Math.Max(Norm(outRes2), Norm(outRes2));
+                    //Console.WriteLine($"  residual gap : relative={dist / denom:g4}  absolute={dist:g4}  (KrylovDim={KrylovDim} lv {L})");
 
 
-				if (m_UsedMoreThanOneOrthoCycle || KrylovDim % RecalcResiPeriod == 0) { // 40 is a decent compromise between performance and stability
+                    //outRes.SetV(Res0);
+                    //this.OpMatrix.SpMV(-1.0, delta, 1.0, outRes);   // outRes = Res0 - A*delta = B - A*outX
 
-					// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-					// once in a while, re-compute the residual to get rid of round-off errors which might accumulate
-					// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-					// delta = outX - Sol0  (the cumulative correction; avoids temporarily mutating Sol0)
-					double[] delta = new double[L];
-					Array.Copy(outX, delta, L);
-					BLAS.daxpy(L, -1.0, Sol0, 1, delta, 1);
-					outRes.SetV(Res0);
-					this.OpMatrix.SpMV(-1.0, delta, 1.0, outRes);   // outRes = Res0 - A*delta = B - A*outX
-				}
+                    ResNorm = Norm(outRes);
+                    tol = Math.Max(ResNorm, oldResiNorm) * AllowedRelativeResidualIncreaseThreshold;  // orthogonal projection cannot increase residual; 2% slack for floating-point noise
+                    tol = Math.Max(tol, 1.0e-10);
+                }
 
 
-				double ResNorm = Norm(outRes);
-				double tol = Math.Max(ResNorm, oldResiNorm) * 0.02;  // orthogonal projection cannot increase residual; 2% slack for floating-point noise
-				tol = Math.Max(tol, 1.0e-10);
-				if (ResNorm > oldResiNorm + tol)
+                ft.Info($"reduction factor: {ResNorm / oldResiNorm}: old norm: {oldResiNorm}, new norm {ResNorm}");
+                if (ResNorm > oldResiNorm + tol)
 					throw new ArithmeticException($"residual increase (L = {L}): old norm: {oldResiNorm}, new norm {ResNorm}, reduction factor: {ResNorm / oldResiNorm} at {id}");
 
 
-				if (plot)
-					ft.Info($"reduction factor: {ResNorm / oldResiNorm}: old norm: {oldResiNorm}, new norm {ResNorm}");
+                //Console.WriteLine($"  -- reduction factor: {ResNorm / oldResiNorm}: old norm: {oldResiNorm}, new norm {ResNorm}");
 
 
 
@@ -217,14 +246,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			}
 		}
 
-		public int RecalcResiPeriod = 40;
+        /// <summary>
+        /// How often to recompute the residual via SpMV (instead of accumulating incrementally).
+        /// - Period of 1 means every step
+        /// - Larger values reduce SpMV cost but mix incremental and SpMV norms at the boundary step,
+        ///   which can exceed the residual-increase tolerance for ill-conditioned systems in MPI.
+        /// </summary>
+        public int RecalcResiPeriod = 8;
 
-		/// <summary>
-		/// Maximum number of Krylov vectors before a restart. When this limit is reached,
-		/// the history is cleared (restarted GMRES-style) and a fresh Krylov space is built.
-		/// Default is <see cref="int.MaxValue"/> (no restart).
-		/// </summary>
-		public int MaxKrylovDim = int.MaxValue;
+        /// <summary>
+        /// Maximum number of Krylov vectors before a restart. When this limit is reached,
+        /// the history is cleared (restarted GMRES-style) and a fresh Krylov space is built.
+        /// Default is <see cref="int.MaxValue"/> (no restart).
+        /// </summary>
+        public int MaxKrylovDim = int.MaxValue;
 
 
 		bool m_UsedMoreThanOneOrthoCycle = false;
@@ -1133,23 +1168,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			} // end of functrace
 		}
 
-            /// <summary>
-            /// Debug-Output should always go through the <see cref="FuncTrace"/>;
-            /// If one would like to see it on screen, turn it on by setting `tr.InfoToConsole = true`.
-            /// </summary>
-            /// <param name="tr"></param>
-            /// <param name="iter"></param>
-            /// <param name="res"></param>
-            /// <param name="text"></param>
-            void WriteDebug(FuncTrace tr, int iter, double res, string text) {
+        /// <summary>
+        /// Debug-Output should always go through the <see cref="FuncTrace"/>;
+        /// If one would like to see it on screen, turn it on by setting `tr.InfoToConsole = true`.
+        /// </summary>
+        void WriteDebug(FuncTrace tr, int iter, double res, string text) {
+            if(this.config.WriteDebugInfoLevel < 2)
+                return;
+            
             int iLevel = ((m_OpMapPair as MultigridOperator)?.LevelIndex ?? -1);
 
             if(iLevel >= 0)
-                    tr.InfoToConsole = true; // set to `true` if you want to see output
-                tr.Info($"{string.Concat(Enumerable.Repeat("-", iLevel))} OrthoMG, current level={iLevel}, iteration={iter} {(text != null ? " - " + text : "")} and res norm: {res}");
+                tr.InfoToConsole = true; // set to `true` if you want to see output
+            tr.Info($"{string.Concat(Enumerable.Repeat("-", iLevel))} OrthoMG, current level={iLevel}, iteration={iter} {(text != null ? " - " + text : "")} and res norm: {res}");
 
-                return;
-            }
+            return;
+        }
 
         /// <summary>
         /// For performance optimization, the <see cref="OrthonormalizationMultigrid"/>
