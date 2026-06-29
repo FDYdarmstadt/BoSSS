@@ -1617,7 +1617,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				// set operator
 				// ============
 				MigrateFromWorldToSubComms();
-				ortho = new CoreOrthonormalizationProcedure(subCommSmootherOpMatrix);
+				ortho = new CoreOrthonormalizationProcedureWMatrix(subCommSmootherOpMatrix);
 				CreatePermutations();
 
 #if DEBUG
