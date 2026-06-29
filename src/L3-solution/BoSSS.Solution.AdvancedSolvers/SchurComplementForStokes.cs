@@ -622,16 +622,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int m_degree = 4;
 
             public override void Init(int __NoOfPressureDoFs) {
-                base.Init(__NoOfPressureDoFs);
+                using(var f = new FuncTrace()) {
+                    f.InfoToConsole = m_Owner.m_config.WriteDebugInfoLevel >= 1;
+                    base.Init(__NoOfPressureDoFs);
 
-                double lambdaMaxEstimate = EstimateLargestEigenvalue(iterations: 20);
+                    double lambdaMaxEstimate = EstimateLargestEigenvalue(iterations: 20);
+                    f.Info("MatrixFreeChebyshevPreconditioner, largest eigenvalue " + lambdaMaxEstimate);
 
-                (m_lambdaMin, m_lambdaMax) =
-                    MatrixFreeChebyshevPreconditioner.ChooseSmoothingInterval(
-                        lambdaMaxEstimate,
-                        lowerFraction: 0.1,
-                        safetyFactor: 1.2
-                    );
+                    (m_lambdaMin, m_lambdaMax) =
+                        MatrixFreeChebyshevPreconditioner.ChooseSmoothingInterval(
+                            lambdaMaxEstimate,
+                            lowerFraction: 0.1,
+                            safetyFactor: 1.2
+                        );
+                }
             }
 
             double m_lambdaMin, m_lambdaMax;
