@@ -44,8 +44,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             public ISolverFactory ConvectionDiffusionSolver = new AdvancedSolvers.OrthoMGSchwarzConfig() {
 #if DEBUG
                 CoarseKickIn = 100, // for debugging purposes, enforce a later switch to direct solver, so that we have a non-trivial multigrid depth on coarse meshes.
-                NoOfMultigridLevels = 2
+                NoOfMultigridLevels = 2,
 #endif
+                WriteDebugInfoLevel = 44
             };
 
             override public ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
@@ -280,7 +281,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 orgTermCrit = spt.TerminationCriterion;
                 double MachineEpsilon = GenericBlas.MachineEps;
                 spt.TerminationCriterion = delegate (int i, double r0, double r) {
-                    var ret = ((i <= 1 || r > r0 * 0.1) && (r0 > MachineEpsilon || r > MachineEpsilon) && (i <= 10), true);
+                    var ret = ((r > r0 * 0.1) && (r0 > MachineEpsilon || r > MachineEpsilon) && (i <= 10), true);
                     // do at least one iteration until r < 0.1 r0 or max. 10 iterations, with safeguard for tiny residuals
                     return ret;
                 };

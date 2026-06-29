@@ -423,7 +423,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         ISolverSmootherTemplate KcycleMultiSchwarz(MultigridOperator op, Func<int, int> SchwarzblockSize) {
             //Debugger.Launch();
 			using (var tr = new FuncTrace()) {
-                tr.InfoToConsole = true;
+                if(this.WriteDebugInfoLevel >= 1)
+                    tr.InfoToConsole = true;
                 int MSLength = op.NoOfLevels;
 
                 int mpiSz = op.Mapping.MpiSize;
@@ -565,6 +566,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             levelSolver = GetTaskParallelOrthoMG(tr, iLevel, locBlk, glbBlk, maxDG, smoother1, null);
                         else
                             levelSolver = GetNormalOrthoMG(tr, iLevel, locBlk, glbBlk, maxDG, smoother1, null);
+                        
 					}
 
                     // Set termination criterion for respective level
@@ -658,6 +660,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			var _levelSolver4 = new TaskParallelOrthoMG() { 
                 Smoothers = smoothers,
 			};
+            _levelSolver4.config.WriteDebugInfoLevel = this.WriteDebugInfoLevel;
 
             if(ForcedNoOfPostSmootherSweeps > 0) 
                 _levelSolver4.config.MinimumNoOfPostSmootherSweeps = ForcedNoOfPostSmootherSweeps;
@@ -680,6 +683,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 											  //_levelSolver4.config.m_omega = 2; // w-cycle
 			_levelSolver4.config.SkipPreSmoother = this.SkipPreSmoother;
 			_levelSolver4.config.AdditiveVariant = this.AdditiveVariant;
+            _levelSolver4.config.WriteDebugInfoLevel = this.WriteDebugInfoLevel;
 
 			if (altSmooth3 != null) {
 				_levelSolver4.AdditionalPostSmoothers = new[] { altSmooth3 };
