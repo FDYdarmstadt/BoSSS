@@ -241,6 +241,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
             where U : IList<double>
             where V : IList<double> // 
         {
+            EvaluateSchurComplementMatrix<U, V>(alpha, Input, beta, Result, false);
+        }
+
+        void EvaluateSchurComplementMatrix<U, V>(double alpha, V Input, double beta, U Result, bool lowRes = false)
+            where U : IList<double>
+            where V : IList<double> // 
+        {
             int L = VelocityDivergence.RowPartitioning.LocalLength;
             if(PressureGradient.ColPartitioning.LocalLength != L)
                 throw new ApplicationException("mismatch - number of columns, pressure gradient matrix");
@@ -268,7 +275,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
             PressureGradient.SpMV(1.0, Input, 0.0, PresGrad);
 
             // Solve Conv/Diff System
-            ConvectionDiffusionSolver.Solve(CDsol, PresGrad);
+            Func<int, double, double, (bool bNotTerminate, bool bSuccess)> orgTermCrit = null;
+            if(lowRes && ConvectionDiffusionSolver is IProgrammableTermination spt) {
+                orgTermCrit = spt.TerminationCriterion;
+                double MachineEpsilon = GenericBlas.MachineEps;
+                spt.TerminationCriterion = delegate (int i, double r0, double r) {
+                    var ret = ((i <= 1 || r > r0 * 0.1) && (r0 > MachineEpsilon || r > MachineEpsilon) && (i <= 10), true);
+                    // do at least one iteration until r < 0.1 r0 or max. 10 iterations, with safeguard for tiny residuals
+                    return ret;
+                };
+            }
+            try {
+                ConvectionDiffusionSolver.Solve(CDsol, PresGrad);
+            } finally {
+                if(orgTermCrit != null)
+                    (ConvectionDiffusionSolver as IProgrammableTermination).TerminationCriterion = orgTermCrit;
+            }
 
             // take velocity divergence
             VelocityDivergence.SpMV(-1.0, CDsol, 0.0, Result);
@@ -694,7 +716,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     // residual <- r - Sz
                     Sz.ClearEntries();
-                    m_Owner.EvaluateSchurComplementMatrix(1.0, z, 0.0, Sz);
+                    m_Owner.EvaluateSchurComplementMatrix(1.0, z, 0.0, Sz, true);
 
                     for(int i = 0; i < NoOfPressureDOFs; ++i)
                         residual[i] = r[i] - Sz[i];
@@ -721,7 +743,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 for(int it = 0; it < iterations; ++it) {
                     y.ClearEntries();
-                    m_Owner.EvaluateSchurComplementMatrix(1.0, x, 0.0, y);
+                    m_Owner.EvaluateSchurComplementMatrix(1.0, x, 0.0, y, true);
 
                     lambda = x.MPI_InnerProd(y, m_Owner.m_comm) / x.MPI_L2NormPow2(m_Owner.m_comm);
 
