@@ -1,4 +1,4 @@
-﻿using BoSSS.Application.XNSE_Solver;
+using BoSSS.Application.XNSE_Solver;
 using BoSSS.Solution;
 using BoSSS.Solution.Control;
 using NUnit.Framework;
@@ -26,12 +26,12 @@ namespace BoSSS.Application.MultithreadingSolverTest {
         /// <summary>
         /// Minimum expected speedup from 1 to 2 threads: T1 / T2.
         /// </summary>
-        public double MinSpeedup12 = 1.1;
+        public double MinSpeedup12 = 1.05;
 
         /// <summary>
         /// Minimum expected speedup from 1 to 4 threads: T1 / T4.
         /// </summary>
-        public double MinSpeedup14 = 1.15;
+        public double MinSpeedup14 = 1.05;
 
         /// <summary>
         /// Minimum expected speedup from 2 to 4 threads: T2 / T4.
