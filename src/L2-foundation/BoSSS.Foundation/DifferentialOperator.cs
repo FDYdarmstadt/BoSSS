@@ -1800,7 +1800,7 @@ namespace BoSSS.Foundation {
                         if(OnlyAffine == false) {
                             if(!Matrix.RowPartitioning.EqualsPartition(base.CodomainMapping))
                                 throw new ArgumentException("wrong number of columns in matrix.", "Matrix");
-                            if(!Matrix.ColPartition.EqualsPartition(base.DomainMapping))
+                            if(!Matrix.ColPartitioning.EqualsPartition(base.DomainMapping))
                                 throw new ArgumentException("wrong number of rows in matrix.", "Matrix");
                         }
 
@@ -2612,7 +2612,7 @@ namespace BoSSS.Foundation {
 
                 if(!Matrix.RowPartitioning.EqualsPartition(codMap))
                     throw new ArgumentException("Mismatch in matrix row partition.");
-                if(!Matrix.ColPartition.EqualsPartition(domMap))
+                if(!Matrix.ColPartitioning.EqualsPartition(domMap))
                     throw new ArgumentException("Mismatch in matrix column partition.");
                 if(AffineOffset.Count != codMap.LocalLength)
                     throw new ArgumentException("Mismatch in length of affine offset.");

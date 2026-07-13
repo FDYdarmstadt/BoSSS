@@ -218,52 +218,14 @@ namespace BoSSS.Application.BoSSSpad {
                 fullDbPath = dbi.Path;
             }
 
-
-            // check if path is allowed
-            foreach ( var pp in AllowedDatabasesPaths ) {
-                if ( !Path.IsPathRooted(pp.LocalMountPath) ) {
-                    throw new IOException($"Illegal entry for `AllowedDatabasesPaths` for {this.ToString()}: only absolute/rooted paths are allowed, but {pp.LocalMountPath} is not.");
+            if(TryTranslateDatabasePath(fullDbPath, out string fullAltPath)) {
+                if ( ctrl.AlternateDbPaths != null ) {
+                    if ( ctrl.AlternateDbPaths.Any(tt => tt.DbPath.Equals(fullAltPath)) )
+                        return true;
                 }
 
-                if ( fullDbPath.StartsWith(pp.LocalMountPath, StringComparison.InvariantCultureIgnoreCase) ) {
-                    var relDbPath = fullDbPath.Substring(pp.LocalMountPath.Length);
-                    relDbPath = relDbPath.TrimStart(new char[] { '\\', '/' });
-
-
-                    string PathAtRemote = pp.PathAtRemote;
-                    if ( PathAtRemote.IsEmptyOrWhite() )
-                        PathAtRemote = pp.LocalMountPath;
-                    PathAtRemote = PathAtRemote.TrimEnd(new char[] { '\\', '/' });
-
-                    string DirSep;
-                    if ( PathAtRemote.StartsWith("/") ) {
-                        // very likely to be a Unix path
-
-                        // convert Windows path to UNIX
-                        relDbPath = relDbPath.Replace('\\', '/');
-
-                        // (don't consider the other way, i.e. Unix to Windows:
-                        // nobody who works on Linux seriously 
-                        // considers a Windows HPC system).
-
-                        DirSep = "/";
-                    } else {
-                        DirSep = @"\";
-                    }
-
-                    string fullAltPath = PathAtRemote + DirSep + relDbPath;
-
-                    if ( ctrl.AlternateDbPaths != null ) {
-                        if ( ctrl.AlternateDbPaths.Any(tt => tt.DbPath.Equals(fullAltPath)) )
-                            return true;
-                    }
-
-                    (fullAltPath, default(string)).AddToArray(ref ctrl.AlternateDbPaths);
-
-                    return true;
-
-                }
-
+                (fullAltPath, default(string)).AddToArray(ref ctrl.AlternateDbPaths);
+                return true;
             }
 
             return false;
@@ -290,46 +252,89 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
 
-            // check if path is allowed
-            foreach ( var pp in AllowedDatabasesPaths ) {
-                if ( !Path.IsPathRooted(pp.LocalMountPath) ) {
-                    throw new IOException($"Illegal entry for `AllowedDatabasesPaths` for {this.ToString()}: only absolute/rooted paths are allowed, but {pp.LocalMountPath} is not.");
-                }
+            return TryTranslateDatabasePath(fullDbPath, out _);
+        }
 
-                if ( fullDbPath.StartsWith(pp.LocalMountPath, StringComparison.InvariantCultureIgnoreCase) ) {
-                    var relDbPath = fullDbPath.Substring(pp.LocalMountPath.Length);
-                    relDbPath = relDbPath.TrimStart(new char[] { '\\', '/' });
-
-
-                    string PathAtRemote = pp.PathAtRemote;
-                    if ( PathAtRemote.IsEmptyOrWhite() )
-                        PathAtRemote = pp.LocalMountPath;
-                    PathAtRemote = PathAtRemote.TrimEnd(new char[] { '\\', '/' });
-
-                    string DirSep;
-                    if ( PathAtRemote.StartsWith("/") ) {
-                        // very likely to be a Unix path
-
-                        // convert Windows path to UNIX
-                        relDbPath = relDbPath.Replace('\\', '/');
-
-                        // (don't consider the other way, i.e. Unix to Windows:
-                        // nobody who works on Linux seriously 
-                        // considers a Windows HPC system).
-
-                        DirSep = "/";
-                    } else {
-                        DirSep = @"\";
-                    }
-
-                    string fullAltPath = PathAtRemote + DirSep + relDbPath;
-
-                    return true;
-                }
-
+        /// <summary>
+        /// Maps a local database path to the path which should be visible to the remote batch system.
+        /// </summary>
+        public bool TryTranslateDatabasePath(string dbPath, out string remoteDbPath) {
+            if(dbPath == null)
+                throw new ArgumentNullException();
+            if ( AllowedDatabasesPaths == null || AllowedDatabasesPaths.Count <= 0 ) {
+                remoteDbPath = dbPath;
+                return true;
             }
 
+            string fullDbPath;
+            if ( !System.IO.Path.IsPathRooted(dbPath) ) {
+                fullDbPath = Path.GetFullPath(dbPath);
+            } else {
+                fullDbPath = dbPath;
+            }
+
+            foreach ( var pp in AllowedDatabasesPaths ) {
+                if ( TryTranslateDatabasePath(fullDbPath, pp, out remoteDbPath) )
+                    return true;
+            }
+
+            remoteDbPath = null;
             return false;
+        }
+
+        /// <summary>
+        /// Remote-visible roots derived from <see cref="AllowedDatabasesPaths"/>.
+        /// </summary>
+        public IEnumerable<ValueTuple<string, string>> GetAllowedDatabaseRemotePaths() {
+            if(AllowedDatabasesPaths == null)
+                yield break;
+
+            foreach(var pp in AllowedDatabasesPaths) {
+                CheckAllowedDatabasePair(pp);
+                string pathAtRemote = GetRemoteMountPath(pp);
+                if(pathAtRemote.IsEmptyOrWhite())
+                    continue;
+                yield return (pathAtRemote, default(string));
+            }
+        }
+
+        static string GetRemoteMountPath(AllowedDatabasesPair pp) {
+            string pathAtRemote = pp.PathAtRemote;
+            if ( pathAtRemote.IsEmptyOrWhite() )
+                pathAtRemote = pp.LocalMountPath;
+            return pathAtRemote.TrimEnd(new char[] { '\\', '/' });
+        }
+
+        bool TryTranslateDatabasePath(string fullDbPath, AllowedDatabasesPair pp, out string remoteDbPath) {
+            CheckAllowedDatabasePair(pp);
+
+            if ( fullDbPath.StartsWith(pp.LocalMountPath, StringComparison.InvariantCultureIgnoreCase) ) {
+                var relDbPath = fullDbPath.Substring(pp.LocalMountPath.Length);
+                relDbPath = relDbPath.TrimStart(new char[] { '\\', '/' });
+
+                string pathAtRemote = GetRemoteMountPath(pp);
+
+                string dirSep;
+                if ( pathAtRemote.StartsWith("/") ) {
+                    // very likely to be a Unix path
+                    relDbPath = relDbPath.Replace('\\', '/');
+                    dirSep = "/";
+                } else {
+                    dirSep = @"\";
+                }
+
+                remoteDbPath = pathAtRemote + dirSep + relDbPath;
+                return true;
+            }
+
+            remoteDbPath = null;
+            return false;
+        }
+
+        void CheckAllowedDatabasePair(AllowedDatabasesPair pp) {
+            if ( !Path.IsPathRooted(pp.LocalMountPath) ) {
+                throw new IOException($"Illegal entry for `AllowedDatabasesPaths` for {this.ToString()}: only absolute/rooted paths are allowed, but {pp.LocalMountPath} is not.");
+            }
         }
 
         DateTime? GetFileCreationTime(string path) {
@@ -442,7 +447,7 @@ namespace BoSSS.Application.BoSSSpad {
                 string fullPathAtRemote = pp.PathAtRemote.TrimEnd('/', '\\');
                 string remoteDirSep = pp.PathAtRemote.Contains('/') ? "/" : "\\";
                 fullPathAtRemote = fullPathAtRemote + remoteDirSep + dbDir;
-                DatabaseInfo.AddAlternateDbPaths(fullPath, fullPathAtRemote, null);
+                dbi.AddAlternateDbPath(fullPathAtRemote);
             }
 
 

@@ -18,5 +18,7 @@
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj" />
     <ProjectReference Include="..\FreeXNSE\FreeXNSE.csproj" />
     <ProjectReference Include="..\PublicTestRunner\PublicTestRunner.csproj" />
+	<ProjectReference Include="..\StokesHelical_Ak\StokesHelical_Ak.csproj" />
+	<ProjectReference Include="..\XESF\XESF.csproj" />
   </ItemGroup>
 </Project>

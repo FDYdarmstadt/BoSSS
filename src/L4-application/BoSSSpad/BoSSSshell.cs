@@ -511,7 +511,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Reset states which survive a restart of the interpreter.
         /// </summary>
-        static void Reset() {
+        public static void Reset() {
             databases = new IDatabaseInfo[0];
             m_WorkflowMgm = null;
             executionQueues = null;

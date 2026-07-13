@@ -805,7 +805,7 @@ namespace ilPSP.Tracing {
     /// </summary>
     public class BlockTrace : Tmeas {
 
-        readonly FuncTrace _f;
+        readonly Tmeas _f;
 
         /// <summary>
         /// ctor
@@ -819,7 +819,7 @@ namespace ilPSP.Tracing {
         /// <param name="timeToCout">
         /// if true, the time elapsed in the block will be printed to console 
         /// </param>
-        public BlockTrace(string Title, FuncTrace f, bool timeToCout = false) {
+        public BlockTrace(string Title, Tmeas f, bool timeToCout = false) {
             if (!Tracer.InstrumentationSwitch)
                 return;
             if (ilPSP.Environment.InParallelSection)

@@ -16,6 +16,28 @@ namespace BoSSS.Application.DatabaseTests {
     /// </summary>
     class MiscTests : DatabaseTest {
 
+        /*
+        [Test]
+        public void AlternateDatabasePathParserTest() {
+            var paths = DatabaseInfo.ParseAlternateDbPathLines(new[] {
+                ";; comment",
+                "   ;; indented comment",
+                "",
+                "/work/db,",
+                "/scratch/db,cluster",
+                "  /trimmed/db  ,  node42  "
+            });
+
+            Assert.AreEqual(3, paths.Length);
+            Assert.AreEqual("/work/db", paths[0].DbPath);
+            Assert.IsNull(paths[0].MachineFilter);
+            Assert.AreEqual("/scratch/db", paths[1].DbPath);
+            Assert.AreEqual("cluster", paths[1].MachineFilter);
+            Assert.AreEqual("/trimmed/db", paths[2].DbPath);
+            Assert.AreEqual("node42", paths[2].MachineFilter);
+        }
+        */
+
 
         [Test]
         public void GridEquivalenceTest() {

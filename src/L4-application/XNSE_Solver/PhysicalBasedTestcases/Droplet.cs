@@ -465,9 +465,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.Option_LevelSetEvolution = LevelSetEvolution.None; // (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
-            //C.Option_LevelSetEvolution = (steadyInterface) ? LevelSetEvolution.None : LevelSetEvolution.Fourier;
-            C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
-
+            
             C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
             //C.PhysicalParameters.mu_I = 1.0 * sigma;
             //C.PhysicalParameters.lambda_I = 2.0 * sigma;

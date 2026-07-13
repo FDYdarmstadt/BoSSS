@@ -1293,7 +1293,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                     EdgeEvalSomething(i0, Length, NS.NoOfNodes, new MultidimensionalArray[] { m_ParameterFieldsValues_IN[np], m_ParameterFieldsValues_OUT[np] },
                         delegate (int jCell, int nodeSetIdx, MultidimensionalArray buf) {
                             if (m_owner.m_ParameterFields[np] != null)
-                                m_owner.m_ParameterFields[np].Evaluate(jCell, 1, NS.GetVolumeNodeSet(m_owner.m_GridDat, nodeSetIdx, false), buf);
+                                m_owner.m_ParameterFields[np].Evaluate(jCell, 1, NS.GetVolumeNodeSet(m_owner.m_GridDat, nodeSetIdx, true), buf);
                             else
                                 buf.Clear();
                         });
@@ -1358,7 +1358,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             if(m_Matrix != null) {
                 if (Matrix.RowPartitioning.LocalLength != RowMap.LocalLength)
                     throw new ArgumentException("Matrix mismatch: local number of rows", "Matrix");
-                if (Matrix.ColPartition.LocalLength != ColMap.LocalLength)
+                if (Matrix.ColPartitioning.LocalLength != ColMap.LocalLength)
                     throw new ArgumentException("Matrix mismatch: number of columns", "Matrix");
             }
             if(m_AffineVector != null) {

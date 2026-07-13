@@ -183,7 +183,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 if(!Mtx.RowPartitioning.EqualsPartition(MgMap)) //notice that on Debug configuration Mtx may not be initialized
 					throw new ArgumentException("Row partitioning mismatch.");
-                if(!Mtx.ColPartition.EqualsPartition(MgMap))
+                if(!Mtx.ColPartitioning.EqualsPartition(MgMap))
                     throw new ArgumentException("Column partitioning mismatch.");
 
                 Mtx.CheckForNanOrInfM(typeof(DirectSolver) + ", matrix definition: ");
@@ -384,8 +384,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 Exception lastException = null;
                 for (int iSolver = 0; iSolver <= altSolvers.Length; iSolver++) {
                     {
-                        if (iSolver == 0) {
-                            if (m_Solver == null)
+                        if(iSolver == 0) {
+                            if(m_Solver == null)
                                 m_Solver = GetSolver(m_Mtx);
                         } else {
                             m_Solver?.Dispose();
@@ -399,8 +399,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         try {
                             m_Solver.Solve(X, B);
                             X.CheckForNanOrInfV(true, true, true, typeof(DirectSolver).Name + ", solution after solver call: ");
-                        }
-                        catch (Exception e) {
+                        } catch(Exception e) {
                             lastException = e;
                             Console.Error.WriteLine(e);
                             Console.Error.WriteLine(e.StackTrace);
@@ -414,7 +413,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         m_ThisLevelIterations++;
                         //Console.WriteLine("done.");
 
-                        if (m_Solver is PARDISOSolver pslv) {
+                        if(m_Solver is PARDISOSolver pslv) {
                             m_UsedMemoryInLastCall = pslv.UsedMemory();
                         }
                     }

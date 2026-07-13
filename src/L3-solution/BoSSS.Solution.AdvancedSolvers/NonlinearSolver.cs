@@ -29,6 +29,7 @@ using System.Diagnostics;
 using System.CodeDom;
 using BoSSS.Solution.Tecplot;
 using ilPSP.Tracing;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -490,9 +491,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// if any entry in <see cref="IDifferentialOperator.FreeMeanValue"/> is true, 
         /// a change in the mean/average value of the respective variable must **not** have any effect on the residual.
         /// </summary>
-        public void TestFreeMeanValue(CoordinateVector SolutionVec, double HomotopyValue) {
+        public bool TestFreeMeanValue(CoordinateVector SolutionVec, double HomotopyValue) {
             using (var ft = new FuncTrace()) {
-                ft.InfoToConsole = true;
+                ft.InfoToConsole = false;
+                ft.Info("Checking for free mean value.");
 
                 int L = this.CurrentLin.Mapping.LocalLength;
 
@@ -531,20 +533,53 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     double ResNormA = ResidualBeforMeanCor.MPI_L2Norm();
                     double ResNormB = ResidualAfterMeanCor.MPI_L2Norm();
 
+                    /*
+                    // test code begin ....
+                    double[] __ResidualDifference = ResidualAfterMeanCor.CloneAs();
+                    __ResidualDifference.AccV(-1.0, ResidualBeforMeanCor);
+                    DGField[] __ResidualDifferenceDg = this.CurrentLin.ProlongateRhsToDg(__ResidualDifference, "residualDifference");
+                    double[] __ResidualDifferenceNorms = __ResidualDifferenceDg.Select(dgf => (dgf is XDGField xdgf) ? xdgf.L2NormAllSpecies() : dgf.L2Norm()).ToArray();
 
+                    var __LevelSets = __ResidualDifferenceDg.Select(dfg => dfg as XDGField).FirstOrDefault()?.Basis?.Tracker?.LevelSets ?? null;
+                    if(__LevelSets != null) {
+                        foreach(var ls in __LevelSets) {
+                            if(ls is DGField dgLs)
+                                dgLs.AddToArray(ref __ResidualDifferenceDg);
+                        }
+                    }
+
+                    ft.Info($"`FreeMeanValue` check: Original residual: {ResNormA}; residual after distortion {ResNormB}; distance is {Dist}, per component: {__ResidualDifferenceNorms.ToConcatString()}");
+                    //Tecplot.Tecplot.PlotFields(__ResidualDifferenceDg, "ResiDiff", 0, 2);
+                        
+                    // test code end...
+                    */
 
                     double RefVal = Math.Max(Math.Max(BLAS.MachineEps.Sqrt(), Math.Max(ResNormA, ResNormB) * 1e-7), Math.Abs(SolNormA - SolNormB) * 1e-7);
                     if (Dist > RefVal) {
-                        ft.Error($"Something seems wrong with `FreeMeanValue`: drastic change of operator residual; Original residual: {ResNormA}; residual after distortion {ResNormB}; distance is {Dist}, reference value {RefVal}");
-                        Console.Error.WriteLine($"Something seems wrong with `FreeMeanValue`: drastic change of operator residual; Original residual: {ResNormA}; residual after distortion {ResNormB}; distance is {Dist}, reference value {RefVal}");
-                        //throw new ArithmeticException($"Something seems wrong with `FreeMeanValue`: drastic change of operator residual; Original residual: {ResNormA}; residual after distortion {ResNormB}; distance is {Dist}, reference value {RefVal}");
-
                         double[] ResidualDifference = ResidualAfterMeanCor.CloneAs();
                         ResidualDifference.AccV(-1.0, ResidualBeforMeanCor);
                         DGField[] ResidualDifferenceDg = this.CurrentLin.ProlongateRhsToDg(ResidualDifference, "residualDifference");
-                        Tecplot.Tecplot.PlotFields(ResidualDifferenceDg, "ResidualDifference", 0, 2);
+                        double[] ResidualDifferenceNorms = ResidualDifferenceDg.Select(dgf => (dgf is XDGField xdgf) ? xdgf.L2NormAllSpecies() : dgf.L2Norm()).ToArray();
+
+                        var LevelSets = ResidualDifferenceDg.Select(dfg => dfg as XDGField).FirstOrDefault()?.Basis?.Tracker?.LevelSets ?? null;
+                        if(LevelSets != null) {
+                            foreach(var ls in LevelSets) {
+                                if(ls is DGField dgLs)
+                                    dgLs.AddToArray(ref ResidualDifferenceDg);
+                            }
+                        }
+
+                        ft.Error($"Something seems wrong with `FreeMeanValue`: drastic change of operator residual; Original residual: {ResNormA}; residual after distortion {ResNormB}; distance is {Dist}, per component: {ResidualDifferenceNorms.ToConcatString()}, reference value {RefVal}");
+                        //Console.Error.WriteLine($"Something seems wrong with `FreeMeanValue`: drastic change of operator residual; Original residual: {ResNormA}; residual after distortion {ResNormB}; distance is {Dist}, per component: {ResidualDifferenceNorms.ToConcatString()}, reference value {RefVal}");
+                        Tecplot.Tecplot.PlotFields(ResidualDifferenceDg, "ResidualDifference33", 0, 2);
+                        //throw new ArithmeticException($"Something seems wrong with `FreeMeanValue`: drastic change of operator residual; Original residual: {ResNormA}; residual after distortion {ResNormB}; distance is {Dist}, reference value {RefVal}");
+                        return false;
+                    } else {
+                        return true;
                     }
                 }
+            
+                return true;
             }
         }
 

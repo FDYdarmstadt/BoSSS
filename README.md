@@ -7,7 +7,7 @@ application of numerical discretization schemes based on the Discontinuous Galer
 ## Getting Started
 
 ### Wiki:
-- [Public BoSSS Wiki](https://git.rwth-aachen.de/kummer/bosss-public/-/wikis/home) (mirror/clone, publicly accessible)
+- [Public BoSSS Wiki](https://git.rwth-aachen.de/bosss-public/bosss-public/-/wikis/home) (mirror/clone, publicly accessible)
 - [Internal BoSSS Wiki](https://git.rwth-aachen.de/bosss1/bosss-experimental-3/-/wikis/home) (primary, restricted access)
 
 ### Installation instructions:
@@ -16,14 +16,14 @@ application of numerical discretization schemes based on the Discontinuous Galer
 
 ### Developer Starting Guide:
 (Compiling from source code, etc.)
-- [Getting Started as Developer/Public Wiki](https://git.rwth-aachen.de/kummer/bosss-public/-/wikis/Getting-Started/Working-with-BoSSS-as-a-Developer)
+- [Getting Started as Developer/Public Wiki](https://git.rwth-aachen.de/bosss-public/bosss-public/-/wikis/Getting-Started/Working-with-BoSSS-as-a-Developer)
 - [Getting Started as Developer/Internal Wiki](https://git.rwth-aachen.de/bosss1/bosss-experimental-3/-/wikis/Getting-Started/Working-with-BoSSS-as-a-Developer)
 
 ### Latest Installers:
-- Please Read [Installation/Public Wiki](https://git.rwth-aachen.de/kummer/bosss-public/-/wikis/Getting-Started/Installation-and-Testing) first!
-- Windows: https://kummer.pages.rwth-aachen.de/bosss-public/BoSSS-setup-latest.exe
+- Please Read [Installation/Public Wiki](https://git.rwth-aachen.de/bosss-public/bosss-public/-/wikis/Getting-Started/Installation-and-Testing) first!
+- Windows: https://git.rwth-aachen.de/bosss-public/bosss-public/BoSSS-setup-latest.exe
 - Linux: https://kummer.pages.rwth-aachen.de/bosss-public/BoSSS-setup-latest.run
-- (If links fail, please take a look at https://kummer.pages.rwth-aachen.de/bosss-public/ and search for `*.exe` or `*.run` - files)
+- (If links fail, please take a look at https://bosss-public.pages.rwth-aachen.de/documentation-pages/ and search for `*.exe` or `*.run` - files)
 
 ## Note for publication
 

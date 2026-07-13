@@ -77,7 +77,7 @@ namespace ilPSP.LinSolvers {
 
                 if (!rowmap.EqualsPartition(M.RowPartitioning))
                     throw new ArgumentException();
-                if (!colmap.EqualsPartition(M.ColPartition))
+                if (!colmap.EqualsPartition(M.ColPartitioning))
                     throw new ArgumentException();
 
                 BlockMsrMatrix R = new BlockMsrMatrix(rowmap, colmap);
@@ -280,7 +280,7 @@ namespace ilPSP.LinSolvers {
 		/// <summary>
 		/// distribution of matrix column over MPI processors
 		/// </summary>
-		public IPartitioning ColPartition {
+		public IPartitioning ColPartitioning {
             get {
                 Debug.Assert(m_ColPartitioning.IsMutable == false);
                 return m_ColPartitioning;
@@ -1655,7 +1655,7 @@ namespace ilPSP.LinSolvers {
                 throw new ArgumentException("Row index out of range.");
             if(j0 < 0)
                 throw new ArgumentException("Column index out of range.");
-            if(j0 + J > this.ColPartition.TotalLength)
+            if(j0 + J > this.ColPartitioning.TotalLength)
                 throw new ArgumentException("Column index out of range.");
             if(I <= 0 || J <= 0)
                 return;
@@ -1751,7 +1751,7 @@ namespace ilPSP.LinSolvers {
                 throw new ArgumentException("Row index out of range.");
             if(j0 < 0)
                 throw new ArgumentException("Column index out of range.");
-            if(j0 + J > this.ColPartition.TotalLength)
+            if(j0 + J > this.ColPartitioning.TotalLength)
                 throw new ArgumentException("Column index out of range.");
             if(I <= 0 || J <= 0)
                 return;
@@ -1863,7 +1863,7 @@ namespace ilPSP.LinSolvers {
                 throw new ArgumentException("Row index out of range.");
             if(j0 < 0)
                 throw new ArgumentException("Column index out of range.");
-            if(j0 + J > this.ColPartition.TotalLength)
+            if(j0 + J > this.ColPartitioning.TotalLength)
                 throw new ArgumentException("Column index out of range.");
             if(I <= 0 || J <= 0)
                 return;
@@ -3665,8 +3665,8 @@ namespace ilPSP.LinSolvers {
 
                 long[] LocalColIndexPermutation; // mapping: [local column index into this matrix (index)] ----> [global index into target matrix (content)]
                 {
-                    int L = this.ColPartition.LocalLength;
-                    long iCol0 = this.ColPartition.i0;
+                    int L = this.ColPartitioning.LocalLength;
+                    long iCol0 = this.ColPartitioning.i0;
                     LocalColIndexPermutation = new long[L];
                     ArrayTools.SetAll(LocalColIndexPermutation, long.MinValue);
 
@@ -3682,7 +3682,7 @@ namespace ilPSP.LinSolvers {
                                 throw new ArgumentException("Source and target column indices enumeration must have the same length, if provided.");
                             iColTarget = EnuColTarget.Current;
                         } else {
-                            iColTarget = Counter + Target.ColPartition.i0;
+                            iColTarget = Counter + Target.ColPartitioning.i0;
                         }
 
                         LocalColIndexPermutation[iColSource - iCol0] = iColTarget;
@@ -4063,11 +4063,11 @@ namespace ilPSP.LinSolvers {
                                 throw new ArgumentException("Source and target column indices enumeration must have the same length, if provided.");
                             iColTarget = EnuColTarget.Current;
                         } else {
-                            iColTarget = Counter + Target.ColPartition.i0;
+                            iColTarget = Counter + Target.ColPartitioning.i0;
                         }
 
                         m_ColPartitioning.TestIfInLocalRange(iColSource);
-                        Target.ColPartition.TestIfInLocalRange(iColTarget);
+                        Target.ColPartitioning.TestIfInLocalRange(iColTarget);
 
                         // loop over all possible target processors...
                         bool AllFinish = true;
@@ -4331,7 +4331,7 @@ namespace ilPSP.LinSolvers {
 		/// off-diagonal entries.
 		/// </returns>
 		public bool CheckIfSquareMatrix() {
-            return (RowPartitioning.TotalLength == ColPartition.TotalLength);
+            return (RowPartitioning.TotalLength == ColPartitioning.TotalLength);
 		}
 
 		/// <summary>
@@ -5023,7 +5023,7 @@ namespace ilPSP.LinSolvers {
                     while(jPointer < _jE) {
                         int[] ColSblk_i0, ColSblkLen;
                         long jBlockCol, j0_Block, jE_Block;
-                        if(BM.ColPartition.IsInLocalRange(jPointer)) {
+                        if(BM.ColPartitioning.IsInLocalRange(jPointer)) {
 
                             jBlockCol = BM._ColPartitioning.GetBlockIndex(jPointer);
                             j0_Block = BM._ColPartitioning.GetBlockI0(jBlockCol);
@@ -5695,9 +5695,9 @@ namespace ilPSP.LinSolvers {
                     throw new ArgumentException("Number of rows mismatch between C and A.");
                 if(C.RowPartitioning.i0 != A.RowPartitioning.i0)
                     throw new ArgumentException("Partitioning mismatch between C and A.");
-                if(A.ColPartition.LocalLength != B.RowPartitioning.LocalLength)
+                if(A.ColPartitioning.LocalLength != B.RowPartitioning.LocalLength)
                     throw new ArgumentException("Number of columns mismatch between A and B.");
-                if(B.ColPartition.LocalLength != C._ColPartitioning.LocalLength)
+                if(B.ColPartitioning.LocalLength != C._ColPartitioning.LocalLength)
                     throw new ArgumentException("Number of columns mismatch between C and B.");
                 MPI_Comm comm = C.MPI_Comm;
                 if(A.MPI_Comm != comm)
@@ -5834,8 +5834,8 @@ namespace ilPSP.LinSolvers {
                                     _inBlock = true;
                                     jPointer = _j0;
 
-                                    Debug.Assert(_j0 >= A.ColPartition.i0, "12");
-                                    Debug.Assert(_jE <= A.ColPartition.iE, "13");
+                                    Debug.Assert(_j0 >= A.ColPartitioning.i0, "12");
+                                    Debug.Assert(_jE <= A.ColPartitioning.iE, "13");
                                     Debug.Assert(_j0 < _jE, "14");
                                 }
                                 if(!inBlock) {

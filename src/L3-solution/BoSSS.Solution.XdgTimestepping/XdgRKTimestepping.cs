@@ -1018,7 +1018,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             where V1 : IList<double>
             where V2 : IList<double> //
         {
-            Debug.Assert(X.Count == M.ColPartition.LocalLength);
+            Debug.Assert(X.Count == M.ColPartitioning.LocalLength);
             Debug.Assert(B.Count == M.RowPartitioning.LocalLength);
 
             var Part = M.RowPartitioning;

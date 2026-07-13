@@ -54,7 +54,7 @@ namespace ilPSP.LinSolvers.monkey {
         abstract public class CommVector : IDisposable {
             
             internal CommVector(MatrixBase M, VectorBase owner) {
-                if (!owner.Part.Equals(M.ColPartition)) {
+                if (!owner.Part.Equals(M.ColPartitioning)) {
                     throw new ArgumentException("column partition of matrix must be equal to partion of vector", "M");
                 }
                 m_Mtx = M;

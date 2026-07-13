@@ -107,8 +107,11 @@ namespace BoSSS.Application.BoSSSpad {
                         if(l12.Length < 2)
                             continue;
 
-                        if(l12[0].Trim().Equals(projectName, StringComparison.InvariantCultureIgnoreCase))
-                            return l12[1].Trim();
+                        string _projectName = l12[0].Trim();
+                        string _queuename = l12[1].Trim();
+
+                        if(_projectName.Equals(projectName, StringComparison.InvariantCultureIgnoreCase))
+                            return _queuename;
                     }
 
 

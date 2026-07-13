@@ -395,7 +395,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// calls <see cref="LevelSetTracker.UpdateTracker(double, int, bool, int[])">
         /// </summary>
         protected virtual void InitializeLevelSets(LevelSetUpdater lsUpdater, double time) {
-
             var lsNames = this.LevelSetNames;
             int NoOfLevelSets = lsNames.Length;
             if (NoOfLevelSets != lsUpdater.LevelSets.Count)
@@ -415,16 +414,13 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     throw new ApplicationException();
 
 
-                ScalarFunction Phi_InitialValue = null;
-                if (Control.InitialValues_EvaluatorsVec.TryGetValue(LevelSetCG, out var scalarFunctionTimeDep)) {
-                    Phi_InitialValue = scalarFunctionTimeDep.SetTime(0.0);
-                }
+                Control.InitialValues_EvaluatorsVec.TryGetValue(LevelSetCG, out ScalarFunctionTimeDep Phi_InitialValue);
 
                 switch (Control.Get_Option_LevelSetEvolution(iLevSet)) {
                     case LevelSetEvolution.Fourier: {
                         pair.DGLevelSet.Clear();
                         if (Phi_InitialValue != null)
-                            pair.DGLevelSet.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(time));
+                            pair.DGLevelSet.ProjectField(Phi_InitialValue.SetTime(time));
                         break;
                     }
                     case LevelSetEvolution.Prescribed:
@@ -433,20 +429,20 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     case LevelSetEvolution.None: {
                         pair.DGLevelSet.Clear();
                         if (Phi_InitialValue != null)
-                            pair.DGLevelSet.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(time));
+                            pair.DGLevelSet.ProjectField(Phi_InitialValue.SetTime(time));
                         break;
                     }
                     case LevelSetEvolution.FastMarching: {
                         pair.DGLevelSet.Clear();
                         if(Phi_InitialValue != null)
-                            pair.DGLevelSet.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(time));
+                            pair.DGLevelSet.ProjectField(Phi_InitialValue.SetTime(time));
                         LsUpdater.ReInitOnStart(pair);
                         break;
                     }
                     case LevelSetEvolution.Phasefield: {
                         pair.DGLevelSet.Clear();
                         if (Phi_InitialValue != null)
-                            pair.DGLevelSet.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(time));
+                            pair.DGLevelSet.ProjectField(Phi_InitialValue.SetTime(time));
                         
                         break;
                     }

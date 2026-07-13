@@ -267,7 +267,7 @@ namespace ilPSP.LinSolvers {
         static public MsrMatrix ToMsrMatrix(this IMutableMatrixEx M) {
             using (new FuncTrace()) {
 
-                MsrMatrix R = new MsrMatrix(M.RowPartitioning, M.ColPartition);
+                MsrMatrix R = new MsrMatrix(M.RowPartitioning, M.ColPartitioning);
 
                 long[] col = null;
                 double[] val = null;
@@ -652,7 +652,7 @@ namespace ilPSP.LinSolvers {
         /// </summary>
         static public void AccEyeSp(this ISparseMatrix M, double factor = 1.0) {
             using (new FuncTrace()) {
-                if (M.RowPartitioning.LocalLength != M.ColPartition.LocalLength)
+                if (M.RowPartitioning.LocalLength != M.ColPartitioning.LocalLength)
                     throw new ArgumentException("supported only for quadratic matrices");
 
                 var rm = M.RowPartitioning;
@@ -675,12 +675,12 @@ namespace ilPSP.LinSolvers {
         static public void AccDenseMatrix(this IMutableMatrixEx tis, double alpha, IMatrix FullMtx) {
             if (tis.RowPartitioning.LocalLength != FullMtx.NoOfRows)
                 throw new ArgumentException("Mismatch in number of rows.");
-            if (tis.ColPartition.TotalLength != FullMtx.NoOfCols)
+            if (tis.ColPartitioning.TotalLength != FullMtx.NoOfCols)
                 throw new ArgumentException("Mismatch in number of columns.");
 
             long i0 = tis.RowPartitioning.i0;
             int I = tis.RowPartitioning.LocalLength;
-            int J = checked((int)(tis.ColPartition.TotalLength));
+            int J = checked((int)(tis.ColPartitioning.TotalLength));
             long[] col = null;
             double[] val = null;
 

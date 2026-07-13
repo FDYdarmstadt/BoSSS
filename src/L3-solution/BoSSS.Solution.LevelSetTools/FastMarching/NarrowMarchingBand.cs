@@ -270,31 +270,6 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             SubGrid NegGrid = new SubGrid(Neg);
 
 
-            if (plotMarchingSteps) {
-                TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 0 });
-                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(Velocity, ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
-            }
-
-            //DGField PosField = new SinglePhaseField(new Basis(gdat, 0), "positiveLevelSetWing");
-            //DGField NegField = new SinglePhaseField(new Basis(gdat, 0), "negativeLevelSetWing");
-            //foreach (Chunk cnk in Pos) {
-            //    for (int i = cnk.i0; i < cnk.JE; i++) {
-            //        PosField.SetMeanValue(i, 1.0);
-            //    }
-            //}
-            //foreach (Chunk cnk in Neg) {
-            //    for (int i = cnk.i0; i < cnk.JE; i++) {
-            //        NegField.SetMeanValue(i, 1.0);
-            //    }
-            //}
-            //CellMask intersect = Pos.Intersect(Neg);
-            //DGField IntersectField = new SinglePhaseField(new Basis(gdat, 0), "intersectLevelSetWing");
-            //foreach (Chunk cnk in intersect) {
-            //    for (int i = cnk.i0; i < cnk.JE; i++) {
-            //        IntersectField.SetMeanValue(i, 1.0);
-            //    }
-            //}
-            //Tecplot.Tecplot.PlotFields(new DGField[] { PosField, NegField, IntersectField }, "LevelSetWings", 0.0, 1);
 
             // check that the far fields are not touching in the species seperated by this levelset
             var spc = Tracker.GetSpeciesSeparatedByLevSet(iLevSet);
@@ -316,22 +291,6 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 NewLevelSet.Clear(NEAR);
                 NewLevelSet.Acc(1.0, OldLevSet, NEAR);
             }
-
-            // for testing purposes
-            //BitArray testBit = new BitArray(J);
-            //testBit[0] = true;
-            //testBit[1] = true;
-            //testBit[2] = true;
-            //testBit[3] = true;
-            //testBit[12] = true;
-            //testBit[15] = true;
-            //testBit[48] = true;
-            //testBit[51] = true;
-            //testBit[60] = true;
-            //testBit[63] = true;
-            //CellMask testMask = new CellMask(gdat, testBit);
-            //NewLevelSet.Clear(testMask);
-
 
             // set values in positive and negative FAR region to +1 and -1
             // -----------------------------------------------------------
@@ -358,6 +317,22 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 //    LevelSetGrad[d].Coordinates.SaveToTextFile("LevelSetGrad_" + d + "_bR_onProc" + gdat.MpiRank);
                 //else
                 //    LevelSetGrad[d].Coordinates.SaveToTextFile("LevelSetGrad_" + d + "_bR");
+            }
+
+
+
+            if(plotMarchingSteps) {
+                TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 0 });
+                var signedDistErr = new SinglePhaseField(OldLevSet.Basis, "SignedDistError");
+                signedDistErr.ProjectFunction(1.0, 
+                    (Vector X, double[] FuncVals, int jCell) => 1.0 - FuncVals.L2Norm(),
+                    new CellQuadratureScheme(domain: NEAR),
+                    LevelSetGrad.ToArray());
+
+                LevelSetGrad[0].Identification = "LevelSetGrad0";
+                LevelSetGrad[0].Identification = "LevelSetGrad1";
+
+                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(Velocity, ExtVel, NewLevelSet, signedDistErr, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
             }
 
 
@@ -401,7 +376,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 }
             }
 
-            Console.WriteLine("No of pos/neg reinit: {0}, {1}", NoOfPosReinit, NoOfNegReinit);
+            Console.WriteLine($"No of pos/neg reinit: {NoOfPosReinit}, {NoOfNegReinit}");
             bool reinitialize = NoOfPosReinit.MPISum() > 0 || NoOfNegReinit.MPISum() > 0;
 
             CellMask ReinitPos = new CellMask(gdat, ReinitPosBitmask);
@@ -420,24 +395,27 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             marcher.AvgInit(NewLevelSet, KnownWithExt);
 
             if (reinitialize) {
-                CellMask NegativeField = Tracker.Regions.GetSpeciesMask("A");
-                marcher.FirstOrderReinit(NewLevelSet, Known, NegativeField, Reinit);
-                NewLevelSet.MPIExchange();
-                marcher.UpdateAvg(NewLevelSet, NEARwithExt);
-                OldLevSet.Clear(Reinit);
-                OldLevSet.Acc(1.0, NewLevelSet, Reinit);
+                if (gdat.MpiSize == 1) {
+                    // Higher-order reinitialization using cell-local elliptic+geometric solvers.
+                    // Not MPI-parallel; falls back to first-order below for multi-process runs.
+                    if (NoOfPosReinit > 0)
+                        marcher.Reinitialize(NewLevelSet, ReinitPos, +1, Known, LevelSetGrad, null);
+                    if (NoOfNegReinit > 0)
+                        marcher.Reinitialize(NewLevelSet, ReinitNeg, -1, Known, LevelSetGrad, null);
+                    OldLevSet.Clear(ReinitPos);
+                    OldLevSet.Clear(ReinitNeg);
+                    OldLevSet.Acc(1.0, NewLevelSet, ReinitPos);
+                    OldLevSet.Acc(1.0, NewLevelSet, ReinitNeg);
+                } else {
+                    // First-order fallback for MPI > 1 (lower signed-distance accuracy but MPI-compatible).
+                    CellMask NegativeField = Tracker.Regions.GetSpeciesMask("A");
+                    marcher.FirstOrderReinit(NewLevelSet, Known, NegativeField, Reinit);
+                    NewLevelSet.MPIExchange();
+                    marcher.UpdateAvg(NewLevelSet, NEARwithExt);
+                    OldLevSet.Clear(Reinit);
+                    OldLevSet.Acc(1.0, NewLevelSet, Reinit);
+                }
             }
-
-            //if (NoOfPosReinit.MPISum() > 0)
-            //    marcher.Reinitialize(NewLevelSet, ReinitPos, +1, Known, LevelSetGrad, null);
-            //if (NoOfNegReinit.MPISum() > 0)
-            //    marcher.Reinitialize(NewLevelSet, ReinitNeg, -1, Known, LevelSetGrad, null);
-
-            //// save reinit at OLD levelset, to prevent doing it multiple times
-            //OldLevSet.Clear(ReinitPos);
-            //OldLevSet.Clear(ReinitNeg);
-            //OldLevSet.Acc(1.0, NewLevelSet, ReinitPos);
-            //OldLevSet.Acc(1.0, NewLevelSet, ReinitNeg);
 
             // bring gradient up to date
             marcher.GradientUpdate(NEARgrid, NewLevelSet, LevelSetGrad);
@@ -613,10 +591,10 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             TimeEvoOp.EquationComponents["c1"].Add(new UpwindStabiForm(D));
             TimeEvoOp.Commit();
 
-            RungeKutta RunschCjuda = new RungeKutta(RungeKuttaScheme.TVD3, TimeEvoOp,
+            RungeKutta rk = new RungeKutta(RungeKuttaScheme.TVD3, TimeEvoOp,
                 LevelSet.Mapping, new CoordinateMapping(ArrayTools.Cat<DGField>(LevelSetGrad, ExtVel)), sgrd: NEARgrid);
 
-            RunschCjuda.OnBeforeComputeChangeRate += delegate (double AbsTime, double RelTime) {
+            rk.OnBeforeComputeChangeRate += delegate (double AbsTime, double RelTime) {
                 marcher.GradientUpdate(NEARgrid, LevelSet, LevelSetGrad);
             };
 
@@ -628,7 +606,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             //    throw new ArithmeticException("Levelset CFL exceeded");
             //}
 
-            RunschCjuda.Perform(dt);
+            rk.Perform(dt);
 
             LevelSet.CheckForNanOrInf(true, true, true);
 
@@ -694,6 +672,15 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             }
         }
 
+        /// <summary>
+        /// This form represents the spatial operator of the evolution equation 
+        /// \[
+        ///   \partial_t \varphi + \nabla \varphi \cdot \vec{S} = 0,
+        /// \]
+        /// in a **strong form**,
+        /// where $ \vec{S} $ is the extension velocity vector.
+        /// It is stabilized using <see cref="UpwindStabiForm"/>.
+        /// </summary>
         class LevelSetEvoTerm_Vector : IVolumeForm {
 
             int D;
@@ -730,6 +717,14 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
         }
 
 
+        /// <summary>
+        /// This form represents the spatial operator of the evolution equation 
+        /// \[
+        ///   \partial_t \varphi + | \nabla \varphi | s = 0,
+        /// \]
+        /// in a **strong form**,
+        /// where $ s $ is the extension velocity in normal direction.
+        /// </summary>
         class LevelSetEvoTerm_Source : IVolumeForm {
 
             //double source;

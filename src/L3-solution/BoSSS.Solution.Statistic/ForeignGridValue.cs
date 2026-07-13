@@ -40,7 +40,7 @@ namespace BoSSS.Solution.Statistic {
             TimestepID = tst.ID;
             SessionID = tst.Session.ID;
 
-            var bla = tst.Database.AlternateDbPaths.ToList();
+            var bla = tst.Database.AlternateDbPaths.Select(_DbPath => (_DbPath, default(string))).ToList();
             bla.Insert(0, (tst.Database.Path, null));
 
             this.DbPaths = bla.ToArray();
@@ -100,7 +100,7 @@ namespace BoSSS.Solution.Statistic {
 
         void Init() {
             if(m_Database == null) {
-                m_Database = DatabaseInfo.Open(this.DbPaths);
+                m_Database = DatabaseInfo.Open(this.DbPaths.Select(tt => tt.DbPath).ToArray());
             }
 
             if(m_Session == null) {

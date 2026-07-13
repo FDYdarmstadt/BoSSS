@@ -22,9 +22,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BoSSS.Platform;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Timestepping;
 using ilPSP;
@@ -33,12 +30,7 @@ using ilPSP.Tracing;
 using MPI.Wrappers;
 using NUnit.Framework;
 using BoSSS.Solution.Gnuplot;
-using System.IO;
-using BoSSS.Foundation.Grid;
 using BoSSS.Solution.Queries;
-using NUnit.Framework.Constraints;
-using System.Runtime.InteropServices.ComTypes;
-using BoSSS.Solution.Tecplot;
 
 
 namespace BoSSS.Solution.XdgTimestepping {
@@ -530,8 +522,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     var CC = new SinglePhaseField(new Basis(this.m_LsTrk.GridDat, 0), "CutCells");
                     CC.AccConstant(1.0, base.m_LsTrk.Regions.GetCutCellMask());
 
-                    var FieldsToPlot = new List<DGField>();
-                    FieldsToPlot.Add(CC);
+                    var FieldsToPlot = new List<DGField>() { CC };
 
                     for (int iLs = 0; iLs < this.m_LsTrk.NoOfLevelSets; iLs++) {
 
@@ -657,12 +648,13 @@ namespace BoSSS.Solution.XdgTimestepping {
             using (new FuncTrace()) {
                 if (m_PrivateBalancingInfo != null)
                     throw new NotSupportedException("Method has already been called without matching call to `DataRestoreAfterBalancing`");
-                
-                m_PrivateBalancingInfo = new PrivateBalancingInfo();
-                m_PrivateBalancingInfo.NoOfFields = m_Stack_u[0].Mapping.Fields.Count;
 
-                // backup solution stack
-                m_PrivateBalancingInfo.m_Stack_u = new bool[m_Stack_u.Length];
+                m_PrivateBalancingInfo = new PrivateBalancingInfo {
+                    NoOfFields = m_Stack_u[0].Mapping.Fields.Count,
+
+                    // backup solution stack
+                    m_Stack_u = new bool[m_Stack_u.Length]
+                };
                 for (int i = 0; i < m_Stack_u.Length; i++) {
                     CoordinateVector U_i = m_Stack_u[i];
                     if (U_i != null) {
@@ -1519,6 +1511,75 @@ namespace BoSSS.Solution.XdgTimestepping {
                             using (new BlockTrace("Solver_Run", tr)) {
                                 var st = DateTime.Now;
 
+                                /*
+                                // ==============================
+                                int mgLevel = 0;
+                                global::System.IO.Directory.CreateDirectory("bosss_mtx");
+                                Console.WriteLine(global::System.IO.Directory.GetCurrentDirectory());
+                                while ( mgOperator != null ) {
+                                    
+                                    int D = this.m_LsTrk.GridDat.SpatialDimension;
+                                    Console.WriteLine($"Dimension {D}");
+                                    var VelIdx = mgOperator.Mapping.GetSubvectorIndices(D.ForLoop(d => d)); // 0, 1, 2 for velocities
+                                    var PIdx = mgOperator.Mapping.GetSubvectorIndices(new int[] { D });     // 3 for pressure
+                                    mgOperator.OperatorMatrix.SaveToTextFileSparse("bosss_mtx\\FullMatrix_" + mgLevel + ".txt"); // has code for reading in mtx
+                                    VelIdx.SaveToTextFile("bosss_mtx\\vel_idx_" + mgLevel + ".txt");
+                                    PIdx.SaveToTextFile("bosss_mtx\\p_idx_" + mgLevel + ".txt");
+
+                                    RHS.SaveToTextFile("bosss_mtx\\RHS_" + mgLevel + ".txt");
+
+                                    Console.WriteLine($"On level idx {mgOperator.LevelIndex}");
+                                    
+                                    if ( mgOperator.LevelIndex >= 1 ) {
+                                        var Mfine = mgOperator.FinerLevel.OperatorMatrix;
+
+                                        //Console.WriteLine("as testing start");
+                                        ///// !=!=! test this, compare to Python AS impl !=!=!
+                                        //var ASconf = new SchwarzForCoarseMesh.Config() {
+                                        //     NoOfBlocks = 2,
+                                        //     EnableOverlapScaling = false,
+                                        //     Overlap = 1
+                                        //};
+                                        //Debugger.Launch();
+                                        //Console.WriteLine("as conf created");
+
+                                        //var ASinstnce = ASconf.CreateInstance(mgOperator);
+                                        //// wants 18 zetabytes of memory
+                                        //Console.WriteLine($"{RHS.Length} vs {RHS.GetLength(0)}, {RHS.GetLength(1)}, {RHS.GetLength(2)}");
+                                        //double[] ASsol = new double[RHS.Length];
+                                        //ASinstnce.Solve(ASsol, RHS);
+                                        //ASsol.SaveToTextFile("bosss_mtx\\as_test_sol_" + mgLevel + ".txt");
+                                        //Console.WriteLine("as testing end");
+
+
+
+                                        var Mcoarse2 = mgOperator.GetRestrictionOperator * Mfine * mgOperator.GetPrologonationOperator;
+                                        var Mcoarse3 = mgOperator.LeftChangeOfBasis * Mcoarse2 * mgOperator.RightChangeOfBasis;
+
+
+                                        double dist = Mcoarse3.MatrixDistFrobenius(mgOperator.OperatorMatrix);
+
+                                        Console.WriteLine($"MG level {mgLevel}: distance of coarse matrix to 'ideal' coarse matrix is {dist}");
+                                    }
+
+
+                                    // be careful about which operator goes to which level
+                                    if ( mgOperator.GetPrologonationOperator != null ) {
+                                        var prolongOp = mgOperator.GetPrologonationOperator * mgOperator.RightChangeOfBasis;
+                                        prolongOp.SaveToTextFileSparse("bosss_mtx\\prolong_" + mgLevel + "-" + (mgLevel - 1) + ".txt");
+                                    }
+                                    if ( mgOperator.GetRestrictionOperator != null ) {
+                                        var restrOp = mgOperator.LeftChangeOfBasis * mgOperator.GetRestrictionOperator;
+                                        restrOp.SaveToTextFileSparse("bosss_mtx\\restr_" + (mgLevel - 1) + "-" + mgLevel + ".txt");
+                                    }
+
+                                    mgOperator = mgOperator.CoarserLevel;
+                                    mgLevel++;
+                                }
+                                Console.WriteLine("Saved all MG levels (matrices and vectors).");
+                                throw new Exception("end"); // exit bc only mtxs needed
+                                // ============================== */
+
                                 mgOperator.UseSolver(linearSolver, m_Stack_u[0], RHS);
                                 //mgOperator.ComputeResidual(this.Residuals, m_Stack_u[0], RHS);
                                 duration = DateTime.Now - st;
@@ -1538,9 +1599,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                             }
                         }
                     }
-
-
-
                 } else {
                     // ++++++++++++++++++++++++++++++++++++
                     // compute residual of actual solution 

@@ -39,10 +39,8 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// Alternative paths to access the database, if <see cref="Path"/> is not present on a given machine.
         /// This allows to use the same control file or object on different machines, where the database is located in a different path.
-        /// - 1st entry: path into the local file system
-        /// - 2nd entry: optional machine name filter
         /// </summary>
-        (string DbPath, string MachineFilter)[] AlternateDbPaths {
+        string[] AlternateDbPaths {
             get;
         }
 
@@ -74,5 +72,22 @@ namespace BoSSS.Foundation.IO {
         IDictionary<string, IEnumerable<ISessionInfo>> Projects {
             get;
         }
+
+        /// <summary>
+        /// identification GUID for the datebase itself
+        /// </summary>
+        Guid ID { 
+            get; 
+        }
+
+        /// <summary>
+        /// Adds a new <see cref="IDatabaseInfo.AlternateDbPaths"/> to the database configuration
+        /// </summary>
+        /// <return>
+        /// - true: the path was added
+        /// - false: the alternate path is already registered for the database and was not added again.
+        /// </return>
+        bool AddAlternateDbPath(string altPath);
+
     }
 }

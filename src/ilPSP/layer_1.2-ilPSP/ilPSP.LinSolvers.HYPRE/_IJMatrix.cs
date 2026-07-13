@@ -62,7 +62,7 @@ namespace ilPSP.LinSolvers.HYPRE {
         /// number of columns, over all mpi processors
         /// </summary>
         public long NoOfCols {
-            get { return ColPartition.TotalLength; }
+            get { return ColPartitioning.TotalLength; }
         }
 
         /// <summary>
@@ -71,15 +71,15 @@ namespace ilPSP.LinSolvers.HYPRE {
         /// <param name="mtx"></param>
         public IJMatrix(IMutableMatrixEx mtx) {
 
-            if (mtx.RowPartitioning.MPI_Comm != mtx.ColPartition.MPI_Comm)
+            if (mtx.RowPartitioning.MPI_Comm != mtx.ColPartitioning.MPI_Comm)
                 throw new ArgumentException();
             if (mtx.RowPartitioning.IsMutable)
                 throw new ArgumentException();
-            if (mtx.ColPartition.IsMutable)
+            if (mtx.ColPartitioning.IsMutable)
                 throw new ArgumentException();
 
             m_RowPartition = mtx.RowPartitioning;
-            m_ColPartition = mtx.ColPartition;
+            m_ColPartition = mtx.ColPartitioning;
 
           
             if (mtx.NoOfRows != mtx.NoOfCols)
@@ -95,8 +95,8 @@ namespace ilPSP.LinSolvers.HYPRE {
             MPI_Comm comm = mtx.RowPartitioning.MPI_Comm;
             int ilower = (int) mtx.RowPartitioning.i0;
             int iupper = (int) ilower + mtx.RowPartitioning.LocalLength - 1;
-            int jlower = (int) mtx.ColPartition.i0;
-            int jupper = (int) jlower + mtx.ColPartition.LocalLength - 1;
+            int jlower = (int) mtx.ColPartitioning.i0;
+            int jupper = (int) jlower + mtx.ColPartitioning.LocalLength - 1;
 
             HypreException.Check(Wrappers.IJMatrix.Create(comm, ilower, iupper, jlower, jupper, out m_IJMatrix));
             HypreException.Check(Wrappers.IJMatrix.SetObjectType(m_IJMatrix, Wrappers.Constants.HYPRE_PARCSR));
@@ -197,7 +197,7 @@ namespace ilPSP.LinSolvers.HYPRE {
         /// multiplied with this matrix (matrix times column vector)
         /// must be partitioned.
         /// </summary>
-        public IPartitioning ColPartition {
+        public IPartitioning ColPartitioning {
             get { return m_ColPartition; }
         }
 
@@ -206,7 +206,7 @@ namespace ilPSP.LinSolvers.HYPRE {
         /// </summary>
         public MPI_Comm MPI_Comm {
             get {
-                if (RowPartitioning.MPI_Comm != ColPartition.MPI_Comm)
+                if (RowPartitioning.MPI_Comm != ColPartitioning.MPI_Comm)
                     throw new ApplicationException("Internal error -- mismatch between row and column MPI communicator.");
                 return RowPartitioning.MPI_Comm;
             }
@@ -225,7 +225,7 @@ namespace ilPSP.LinSolvers.HYPRE {
             where VectorType1 : System.Collections.Generic.IList<double>
             where VectorType2 : System.Collections.Generic.IList<double> {
 
-            if (a.Count < ColPartition.LocalLength)
+            if (a.Count < ColPartitioning.LocalLength)
                 throw new ArgumentException("length/count of 'a' must be equal to local length of column partition", "a");
             if (acc.Count < RowPartitioning.LocalLength)
                 throw new ArgumentException("length/count of 'acc' must be greater or equal to local length of row partition", "acc");
@@ -236,7 +236,7 @@ namespace ilPSP.LinSolvers.HYPRE {
             IJVector _acc = new IJVector(RowPartitioning);
             if( beta != 0.0)
                 _acc.SetValues(acc);
-            IJVector _a = new IJVector(ColPartition);
+            IJVector _a = new IJVector(ColPartitioning);
             _a.SetValues(a);
             
             HypreException.Check(Wrappers.ParCSRMatrix.ParCSRMatrixMatvec(alpha, m_ParCSR_matrix, _a.ParCRS_vector, beta, _acc.ParCRS_vector));

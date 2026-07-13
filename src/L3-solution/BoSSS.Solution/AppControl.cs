@@ -1194,6 +1194,12 @@ namespace BoSSS.Solution.Control {
         public string DbPath = null;
 
         /// <summary>
+        /// optional ID, when the database path should be obtained from the `DatabasePaths.json` file (see <see cref="DatabasePaths"/>, <see cref="IDatabaseInfo.ID"/>, <see cref="DatabaseInfoJson.ID"/>);
+        /// </summary>
+        [DataMember]
+        public Guid DbID = Guid.Empty;
+
+        /// <summary>
         /// Alternative paths to access the database, if <see cref="DbPath"/> is not present on a given machine.
         /// This allows to use the same control file or object on different machines, where the database is located in a different path.
         /// - 1st entry: path into the local file system
@@ -1207,7 +1213,8 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         public void SetDatabase(IDatabaseInfo dbi) {
             DbPath = dbi.Path;
-            AlternateDbPaths = dbi.AlternateDbPaths;
+            DbID = dbi.ID;
+            AlternateDbPaths = dbi.AlternateDbPaths.Select(paht => (paht, default(string))).ToArray();
         }
         
 

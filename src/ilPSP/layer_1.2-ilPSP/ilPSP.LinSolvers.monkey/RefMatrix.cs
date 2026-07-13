@@ -243,7 +243,7 @@ namespace ilPSP.LinSolvers.monkey.CPU {
         protected override VectorBase CreateVec<T>(T a, IPartitioning len, out bool CopyIsShallow) {
             if (a.Count != len.LocalLength)
                 throw new ArgumentException("count of a must be at least 'len'!", "len");
-            if (len.MPI_Comm != this.ColPartition.MPI_Comm)
+            if (len.MPI_Comm != this.ColPartitioning.MPI_Comm)
                 throw new ArgumentException();
 
             IPartitioning part_a = len;
@@ -347,8 +347,8 @@ namespace ilPSP.LinSolvers.monkey.CPU {
             //MatrixBase.ELLPACKmod comp2 = new ELLPACKmod(_tmp, 40, 4);
             MatrixBase.ManualCacheELLPACK comp2 = new ManualCacheELLPACK(_tmp, 1, 4, 2);
 
-            double[] x = new double[this.ColPartition.LocalLength];
-            double[] y = new double[this.ColPartition.LocalLength];
+            double[] x = new double[this.ColPartitioning.LocalLength];
+            double[] y = new double[this.ColPartitioning.LocalLength];
 
             double alpha = 1.234;
             double beta = 432.1;

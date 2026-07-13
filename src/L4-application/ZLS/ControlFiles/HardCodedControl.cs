@@ -648,12 +648,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
 
-            //C.LinearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.PARDISO };
-
-
             C.Option_LevelSetEvolution = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
-            //C.Option_LevelSetEvolution = (steadyInterface) ? LevelSetEvolution.None : LevelSetEvolution.Fourier;
-            C.FastMarchingPenaltyTerms = BoSSS.Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.None;
 
             C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
             //C.PhysicalParameters.mu_I = 1.0 * sigma;
@@ -670,20 +665,14 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
-
-            //C.Timestepper_LevelSetHandling = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
-
-            //C.LSunderrelax = 0.05;
             C.Timestepper_LevelSetHandling = (steadyInterface) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
-
             C.TimesteppingMode = compMode;
-            //C.CompMode = AppControl._CompMode.Transient; 
 
-            double dt = 0.1; //0.01;
+            double dt = 0.1; 
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            C.NoOfTimesteps = 1; // 12500; // (int)(125.0 / dt);
+            C.NoOfTimesteps = 1; 
             C.saveperiod = 10;
 
 

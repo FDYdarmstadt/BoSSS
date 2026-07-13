@@ -41,7 +41,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </summary>
         public void Redistribute(IDatabaseInfo db, GridPartType method, string PartOptions) {
             using (var tr = new FuncTrace()) {
-                tr.InfoToConsole = true;
+                tr.InfoToConsole = false;
                 ilPSP.MPICollectiveWatchDog.Watch(MPI.Wrappers.csMPI.Raw._COMM.WORLD);
 
                 int size;
@@ -1202,7 +1202,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                                         CheckInt[i] += 1;
                                     }
                                     if(CheckInt[i] > 1) {
-                                        Debugger.Launch();
                                         throw new ArgumentException("Clusters are overlapping!");
                                     }
                                 }

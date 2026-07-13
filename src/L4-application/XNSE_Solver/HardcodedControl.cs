@@ -2012,7 +2012,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Lorenzo Botti, Daniele A. Di Pietro; https://doi.org/10.1007/s42967-021-00142-5
         /// </summary>
         public static XNSE_Control BottiDiPietro2D(int Res = 20, int p = 2) {
-            // --control cs: BoSSS.Application.XNSE_Solver.HardcodedControl.BottiDiPietro2D()
+            // --control "cs:BoSSS.Application.XNSE_Solver.HardcodedControl.BottiDiPietro2D()"
             var C = new XNSE_Control();
 
             C.GridFunc = delegate () {
@@ -2089,6 +2089,8 @@ namespace BoSSS.Application.XNSE_Solver {
             //}; //new SchurPrecondConfig();
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+
+            C.LinearSolver = LinearSolverCode.SchurComplementForStokes.GetConfig();
 
             return C;
         }
@@ -2214,9 +2216,9 @@ namespace BoSSS.Application.XNSE_Solver {
 				return -Math.PI * X[2] * Math.Cos(Math.PI * X[0]);
 			}
 
-			double Pressure(double[] X) {
-				return Math.Sin(Math.PI * X[1]) * Math.Cos(Math.PI * X[1]) * Math.Sin(Math.PI * X[2]);
-			}
+			//double Pressure(double[] X) {
+			//	return Math.Sin(Math.PI * X[1]) * Math.Cos(Math.PI * X[1]) * Math.Sin(Math.PI * X[2]);
+			//}
 
 			//double RhsX(double[] X) {
 			//             return -(2 * Math.PI.Pow2() * Math.Sin(Math.PI * X[0]) + Math.PI * Math.Cos(Math.PI * X[0]) * Math.Cos(Math.PI * X[1]) * Math.Sin(Math.PI * X[2]));

@@ -142,7 +142,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
            
 			if (!M.RowPartitioning.EqualsPartition(MgMap.Partitioning))
                 throw new ArgumentException("Row partitioning mismatch.");
-            if (!M.ColPartition.EqualsPartition(MgMap.Partitioning))
+            if (!M.ColPartitioning.EqualsPartition(MgMap.Partitioning))
                 throw new ArgumentException("Column partitioning mismatch.");
 
             Uidx = MgMap.GetSubvectorIndices( D.ForLoop(i => i));
@@ -456,7 +456,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //SchurRHSMtx.SaveToTextFileSparse("SchurRHSMtx");
 
                         //Using direct solver
-                        var Ainv = new MsrMatrix(ConvDiff.RowPartitioning, ConvDiff.ColPartition);
+                        var Ainv = new MsrMatrix(ConvDiff.RowPartitioning, ConvDiff.ColPartitioning);
                         int rank;
 						csMPI.Raw.Comm_Rank(Ainv.MPI_Comm, out rank);
 

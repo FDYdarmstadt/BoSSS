@@ -1903,7 +1903,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region levelset
 
             C.Option_LevelSetEvolution = steady? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
-            C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
 
             #endregion
 
@@ -2371,10 +2370,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // =========
             #region levelset
 
-            //C.Option_LevelSetEvolution = LevelSetEvolution.Prescribed;
             C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
-            C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
-
+            
             #endregion
 
 

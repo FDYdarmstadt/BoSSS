@@ -84,7 +84,7 @@ Dafür müssen aber einige Sachen richtig eingestellt sein:
    |---timesteps
    |---AlternatePaths.txt
    ```
-   der Inhalt von `AlternatePaths.txt` ist eine Auflistung von Verteichniss-Pfaden, mit optionalen Filtern für die Maschine
+   der Inhalt von `AlternatePaths.txt` ist eine Auflistung von Verzeichniss-Pfaden, mit optionalen Filtern für die Maschine
    ```
    X:\bosss_db_lichtenberg,stormbreaker
    /home/fk69umer/bosss_db_lichtenberg,

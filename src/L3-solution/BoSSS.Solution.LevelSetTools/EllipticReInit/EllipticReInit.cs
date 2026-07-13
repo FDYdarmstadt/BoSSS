@@ -180,40 +180,40 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
             ReInitializeWithOutput(LS, Restriction);
         }
 
-            // Local Variables for Iteration
+        // Local Variables for Iteration
 
-            // <summary>
-            // Counter for Iteration Steps
-            // </summary>
+        // <summary>
+        // Counter for Iteration Steps
+        // </summary>
 
 
-            //double OldResidual = double.MaxValue;
-            //int divergencecounter = 0;
-            ///// <summary>
-            ///// Checks for Reaching Max. Number of Iterations and Divergence of Algorithm
-            ///// </summary>
-            ///// <param name="Residual">Change Rate of the Algorithm</param>
-            ///// <returns>Reaching Max Iterations, Aborts when diverged</returns>
-            //public bool CheckAbortCriteria(double Residual, int IterationCounter) {
-            //    if (Residual <= ConvergenceCriterion) {
-            //        Console.WriteLine("EllipticReInit converged after {0} Iterations ", IterationCounter);
-            //        return true;
-            //    }
-            //    if (Residual >= OldResidual) divergencecounter++;
-            //    else divergencecounter = 0;
-            //    if (IterationCounter >= MaxIteration) {
-            //        Console.WriteLine("Elliptic Reinit Max Iterations Reached");
-            //        return true;
-            //    };
-            //    if (divergencecounter > MaxIteration / 2) {
-            //        Console.WriteLine("Elliptic Reinit diverged - Aborting");
-            //        throw new ApplicationException();
-            //    }
+        //double OldResidual = double.MaxValue;
+        //int divergencecounter = 0;
+        ///// <summary>
+        ///// Checks for Reaching Max. Number of Iterations and Divergence of Algorithm
+        ///// </summary>
+        ///// <param name="Residual">Change Rate of the Algorithm</param>
+        ///// <returns>Reaching Max Iterations, Aborts when diverged</returns>
+        //public bool CheckAbortCriteria(double Residual, int IterationCounter) {
+        //    if (Residual <= ConvergenceCriterion) {
+        //        Console.WriteLine("EllipticReInit converged after {0} Iterations ", IterationCounter);
+        //        return true;
+        //    }
+        //    if (Residual >= OldResidual) divergencecounter++;
+        //    else divergencecounter = 0;
+        //    if (IterationCounter >= MaxIteration) {
+        //        Console.WriteLine("Elliptic Reinit Max Iterations Reached");
+        //        return true;
+        //    };
+        //    if (divergencecounter > MaxIteration / 2) {
+        //        Console.WriteLine("Elliptic Reinit diverged - Aborting");
+        //        throw new ApplicationException();
+        //    }
 
-            //    OldResidual = Residual;
-            //    IterationCounter++;
-            //    return false;
-            //}
+        //    OldResidual = Residual;
+        //    IterationCounter++;
+        //    return false;
+        //}
 
 
         //bool PreviouslyOnSubgrid = false;
@@ -230,27 +230,27 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
         /// False, for the rest of the domain, thus the flux to the adjacent cells wil be evaluated
         /// </param>
         public void UpdateOperators(SubGrid Restriction = null, bool IncludingInterface = true) {
-            if (!IncludingInterface) { throw new NotImplementedException("Untested, not yet functional!"); }
-            using (new FuncTrace()) {
+            if(!IncludingInterface) { throw new NotImplementedException("Untested, not yet functional!"); }
+            using(new FuncTrace()) {
                 //using (var slv = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
                 //using (var slv = new ilPSP.LinSolvers.PARDISO.PARDISOSolver()) {
                 //using (var slv = new ilPSP.LinSolvers.HYPRE.GMRES()) {
 
-                if (Control.Upwinding) {
+                if(Control.Upwinding) {
                     OldPhi.Clear();
                     OldPhi.Acc(1.0, Phi);
                     //Calculate
                     LevelSetGradient.Clear();
                     LevelSetGradient.Gradient(1.0, Phi, Restriction?.VolumeMask);
                     //LevelSetGradient.Gradient(1.0, Phi);
-                    
+
                     //LevelSetGradient.GradientByFlux(1.0, Phi);
                     MeanLevelSetGradient.Clear();
                     MeanLevelSetGradient.AccLaidBack(1.0, LevelSetGradient, Restriction?.VolumeMask);
                     //MeanLevelSetGradient.AccLaidBack(1.0, LevelSetGradient);
                 }
 
-                if (slv != null) slv.Dispose();
+                if(slv != null) slv.Dispose();
 
                 slv = Control.solverFactory();
 
@@ -286,7 +286,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
                 mtxBuilder.ComputeMatrix(OpMatrix_interface, OpAffine_interface);
 
                 // Regenerate OpMatrix for subgrid -> adjacent cells must be trated as boundary
-                if (Restriction != null){
+                if(Restriction != null) {
 
                     OpMatrix_bulk.Clear();
                     OpAffine_bulk.Clear();
@@ -302,7 +302,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
                     //    edgescheme = new EdgeQuadratureScheme(true, IncludingInterface ? Restriction.AllEdgesMask : null);
                     //}
                     //else {
-                        edgescheme = new EdgeQuadratureScheme(true, IncludingInterface ? Restriction.InnerEdgesMask : null);
+                    edgescheme = new EdgeQuadratureScheme(true, IncludingInterface ? Restriction.InnerEdgesMask : null);
                     //}
                     Operator_bulk.ComputeMatrixEx(Phi.Mapping,
                             parameterFields,
@@ -314,7 +314,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
                 }
                 // recalculate full Matrix
                 //else if (PreviouslyOnSubgrid) {
-                else { 
+                else {
                     OpMatrix_bulk.Clear();
                     OpAffine_bulk.Clear();
 
@@ -341,13 +341,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
                 OpAffine.AccV(1.0, OpAffine_bulk);
                 OpAffine.AccV(1.0, OpAffine_interface);
 
-
-#if DEBUG
-                ilPSP.Connectors.Matlab.BatchmodeConnector matlabConnector;
-                matlabConnector = new BatchmodeConnector();
-#endif
-
-                if (Restriction != null) {
+                if(Restriction != null) {
                     SubVecIdx = Phi.Mapping.GetSubvectorIndices(Restriction, true, new int[] { 0 });
                     int L = SubVecIdx.Length;
                     SubMatrix = new MsrMatrix(L);
@@ -358,27 +352,17 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
 
                     slv.DefineMatrix(SubMatrix);
 #if DEBUG
-                    Console.WriteLine("ConditionNumber of ReInit-Matrix is " + SubMatrix.condest().ToString("E"));
+                    //Console.WriteLine("ConditionNumber of ReInit-Matrix is " + SubMatrix.condest().ToString("E"));
 #endif
-                }
-                else {
+                } else {
                     slv.DefineMatrix(OpMatrix);
 #if DEBUG
                     //Console.WriteLine("ConditionNumber of ReInit-Matrix is " + OpMatrix.condest().ToString("E"));
 #endif
                 }
-
-
-
-                
             }
         }
 
-
-
-
-        
-        
         
         /// <summary>
         /// 
@@ -474,13 +458,13 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
                     SubRHS.Clear();
                     SubSolution.Clear();
 
-                    SubRHS.AccVi64(1.0, RHS, default(long[]), SubVecIdx);
-                    SubSolution.AccVi64(1.0, NewPhi.CoordinateVector, default(long[]), SubVecIdx);
+                    SubRHS.AccVi64(1.0, RHS, default(long[]), SubVecIdx, b_index_shift: -Phi.Mapping.i0);
+                    SubSolution.AccVi64(1.0, NewPhi.CoordinateVector, default(long[]), SubVecIdx, b_index_shift: -Phi.Mapping.i0);
 
                     Result = slv.Solve(SubSolution, SubRHS);
 
                     NewPhi.Clear(RestrictionMask);
-                    NewPhi.CoordinateVector.AccVi64(1.0, SubSolution, SubVecIdx, default(long[]) );
+                    NewPhi.CoordinateVector.AccVi64(1.0, SubSolution, SubVecIdx, default(long[]), acc_index_shift: -Phi.Mapping.i0);
 
                 }
                 else {

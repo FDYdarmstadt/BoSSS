@@ -805,6 +805,15 @@ namespace ilPSP {
 
 
         /// <summary>
+        /// <see cref="ToConcatString(IEnumerable, string, string, string)"/> with default formatting
+        /// </summary>
+        public static string ToConcatString(this System.Collections.IEnumerable ie) {
+            return ie.ToConcatString("[", ", ", "]");
+        }
+
+
+
+        /// <summary>
         /// Helps to print an enumeration of objects into a nice string, e.g. something like:
         /// ```
         ///   (obj1, obj2, obj3)

@@ -591,7 +591,7 @@ namespace BoSSS.Foundation.Caching {
                     i0[0] = e;
                     iE[0] = e;
 
-                    this.m_ComputeValues(NS.GetVolumeNodeSet(this.GridData, edge1, false), jCell1, 1, Degree, Rin.ExtractSubArrayShallow(i0, iE));
+                    this.m_ComputeValues(NS.GetVolumeNodeSet(this.GridData, edge1, true), jCell1, 1, Degree, Rin.ExtractSubArrayShallow(i0, iE));
                 }
 
                 return Rin;
@@ -706,11 +706,11 @@ namespace BoSSS.Foundation.Caching {
                     iE[0] = e;
 
                     if(RinReq) {
-                        this.m_ComputeValues(NS.GetVolumeNodeSet(this.GridData, edge1, false), jCell1, 1, Degree, Rin.ExtractSubArrayShallow(i0, iE));
+                        this.m_ComputeValues(NS.GetVolumeNodeSet(this.GridData, edge1, true), jCell1, 1, Degree, Rin.ExtractSubArrayShallow(i0, iE));
                     }
                     if(RotReq) {
                         if(jCell2 >= 0) {
-                            this.m_ComputeValues(NS.GetVolumeNodeSet(this.GridData, edge2, false), jCell2, 1, Degree, Rot.ExtractSubArrayShallow(i0, iE));
+                            this.m_ComputeValues(NS.GetVolumeNodeSet(this.GridData, edge2, true), jCell2, 1, Degree, Rot.ExtractSubArrayShallow(i0, iE));
                         } else {
                             Rot.ExtractSubArrayShallow(i0, iE).Clear();
                         }
@@ -1482,7 +1482,7 @@ namespace BoSSS.Foundation.Caching {
                     i0[0] = e;
                     iE[0] = e - 1;
 
-                    this.GridData.Edges.GetNormalsForCell(NS.GetVolumeNodeSet(this.GridData, edge1, false), jCell1, iFace1, Normals, Metrics, e);
+                    this.GridData.Edges.GetNormalsForCell(NS.GetVolumeNodeSet(this.GridData, edge1, true), jCell1, iFace1, Normals, Metrics, e);
                 }
             }
         }
@@ -1717,7 +1717,7 @@ namespace BoSSS.Foundation.Caching {
         private void NewMethod1(NodeSet NS, int Degree, MultidimensionalArray Value, int iTrafo, int N) {
 
             // values for node set 'NS' under edge-to-cell trafo #iKrefIN
-            MultidimensionalArray value_iTrafo = this.GridData.ChefBasis.BasisValues.GetValues(NS.GetVolumeNodeSet(this.GridData, iTrafo, false), Degree);
+            MultidimensionalArray value_iTrafo = this.GridData.ChefBasis.BasisValues.GetValues(NS.GetVolumeNodeSet(this.GridData, iTrafo, true), Degree);
             Debug.Assert(value_iTrafo.GetLength(1) >= N);
             if(value_iTrafo.GetLength(1) > N) {
                 value_iTrafo = value_iTrafo.ExtractSubArrayShallow([0, 0], [NS.NoOfNodes - 1, N - 1]);
@@ -1729,7 +1729,7 @@ namespace BoSSS.Foundation.Caching {
         private void NewMethod2(NodeSet NS, int Degree, MultidimensionalArray Value, int iTrafo, int N) {
 
             // values for node set 'NS' under edge-to-cell trafo #iKrefIN
-            MultidimensionalArray value_iTrafo = this.GridData.ChefBasis.BasisGradientValues.GetValues(NS.GetVolumeNodeSet(this.GridData, iTrafo, false), Degree);
+            MultidimensionalArray value_iTrafo = this.GridData.ChefBasis.BasisGradientValues.GetValues(NS.GetVolumeNodeSet(this.GridData, iTrafo, true), Degree);
             Debug.Assert(value_iTrafo.GetLength(1) >= N);
             int D = value_iTrafo.GetLength(2);
             Debug.Assert(D == this.GridData.SpatialDimension);

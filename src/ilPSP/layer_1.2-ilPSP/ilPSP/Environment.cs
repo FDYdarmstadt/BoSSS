@@ -55,13 +55,17 @@ namespace ilPSP {
     public static class Environment {
 
         /// <summary>
-        /// Alternative to `Dbugger.Launch()`
+        /// Only for debugging: block until a debugger is attached;
+        /// This is an alternative to `Dbugger.Launch()`, 
+        /// mainly inteded for Linux, where `Dbugger.Launch()` does not work (it does nothing).
         /// </summary>
         public static void WaitForDebugger() {
             if(System.Diagnostics.Debugger.IsAttached)
                 return;
-
-            Console.WriteLine("Waiting for debugger to attach...");
+            
+            int pid = Process.GetCurrentProcess().Id;
+            Console.Error.WriteLine($"Waiting for debugger to attach (PID {pid})...");
+            Console.Error.Flush();
             while(!System.Diagnostics.Debugger.IsAttached) {
                 System.Threading.Thread.Sleep(1000);
             }
@@ -712,7 +716,7 @@ namespace ilPSP {
 
                         int num_procs_tot = System.Environment.ProcessorCount;
                         tr.Info($"System reports {num_procs_tot} CPUs, {MPIranksOnNode} MPI ranks on current node.");
-                        int num_procs = Math.Max(1, num_procs_tot - 2); // leave some cores for the system.
+                        int num_procs = Math.Max(1, Math.Min(num_procs_tot - 2, 4)); // on servers with loads of CPU's, dont use all
                         int num_procs_per_process = Math.Max(1, num_procs / MPIranksOnNode);
                         if(num_procs_per_process > 1 && num_procs_per_process % 2 != 0)
                             num_procs_per_process--; // choose an even number
@@ -1077,5 +1081,6 @@ namespace ilPSP {
                 return m_MpiEnv;
             }
         }
+
     }
 }

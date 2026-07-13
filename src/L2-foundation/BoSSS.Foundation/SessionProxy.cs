@@ -75,7 +75,9 @@ namespace BoSSS.Foundation.IO {
         SessionInfo valueFunc() {
             // Allow graceful handling when loading faulty sessions
             try {
-                return this.Database.Controller.DBDriver.LoadSession(m_sessionID, this.Database);
+                var si = this.Database.Controller.DBDriver.LoadSession(m_sessionID, this.Database);
+                //Console.WriteLine($"loaded session {si}: {si.SuccessfulTermination}");
+                return si;
             } catch (Exception e) {
                 Console.Error.WriteLine(
                     $"Loading session {ID} failed with message '{e.Message}'");

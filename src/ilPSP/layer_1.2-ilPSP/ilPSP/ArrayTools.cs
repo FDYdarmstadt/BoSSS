@@ -499,7 +499,32 @@ namespace ilPSP.Utils {
                 dest[i0 + i] = sub[i];
             }
         }
-
+        /*
+        /// <summary>
+        /// Overwrites a part of a vector.
+        /// </summary>
+        public static void SetSubVector<W,V>(this W dest, V sub, int[] indices)
+            where W : System.Collections.IList
+            where V : System.Collections.IList //
+        {
+            int Length = indices.Length;
+            for(int i = 0; i < Length; i++) {
+                dest[indices[i]] = sub[i];
+            }
+        }
+        */
+        /// <summary>
+        /// Overwrites a part of a vector.
+        /// </summary>
+        public static void SetSubVector<W, V>(this W dest, V sub, int[] indices)
+            where W : IList<double>
+            where V : IList<double> //
+        {
+            int Length = indices.Length;
+            for(int i = 0; i < Length; i++) {
+                dest[indices[i]] = sub[i];
+            }
+        }
 
 
         /// <summary>

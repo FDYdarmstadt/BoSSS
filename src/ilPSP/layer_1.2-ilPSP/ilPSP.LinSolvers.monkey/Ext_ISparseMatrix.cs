@@ -36,7 +36,7 @@ namespace ilPSP.LinSolvers {
             where VectorType2 : IList<double> 
         {
             Debug.Assert(M.RowPartitioning.IsMutable == false);
-            Debug.Assert(M.ColPartition.IsMutable == false);
+            Debug.Assert(M.ColPartitioning.IsMutable == false);
 
             if (M.RowPartitioning.MpiSize > 1) {
                 // parallel

@@ -1464,10 +1464,20 @@ namespace BoSSS.Solution {
         /// </summary>
         /// <returns></returns>
         protected virtual IDatabaseInfo GetDatabase() {
-            if (this.Control == null || (this.Control.DbPath.IsNullOrEmpty() && (this.Control.AlternateDbPaths == null || this.Control.AlternateDbPaths.Length <= 0))) {
+            if (this.Control == null || (this.Control.DbPath.IsNullOrEmpty() && (this.Control.AlternateDbPaths == null || this.Control.AlternateDbPaths.Length <= 0 || this.Control.AlternateDbPaths.All(tt => tt.DbPath.IsEmptyOrWhite())))) {
                 return NullDatabaseInfo.Instance;
             } else {
-                return DatabaseInfo.Open(this.Control.DbPath, this.Control.AlternateDbPaths);
+
+                var allPaths = DatabasePaths.LoadAll();
+
+                var altPaths = (this?.Control?.AlternateDbPaths?.Select(tt => tt.DbPath)?.ToList()) ?? (new List<string>());
+                foreach(var kv in allPaths) {
+                    if(this.Control.DbID == Guid.Empty || this.Control.DbID == kv.Key) {
+                        altPaths.AddRange(kv.Value);
+                    }
+                }
+
+                return DatabaseInfo.Open(this.Control.DbPath, altPaths);
             }
         }
 
@@ -1563,7 +1573,18 @@ namespace BoSSS.Solution {
                         if (timestep == null || timestep.MajorNumber < 0) {
                             tsi_toLoad = session.Timesteps.OrderBy(tsi => tsi.PhysicalTime).Last();
                         } else {
-                            tsi_toLoad = session.Timesteps.Single(t => t.TimeStepNumber.Equals(timestep));
+                            try {
+                                tsi_toLoad = session.Timesteps.Single(t => t.TimeStepNumber.Equals(timestep));
+                            } catch (Exception e) {
+                                string GetAvailTS() {
+                                    try {
+                                        return session.Timesteps.Select(tsi => tsi.TimeStepNumber).ToConcatString();
+                                    } catch (Exception e) {
+                                        return e.GetType().ToString() + ": " + e.Message;
+                                    }
+                                }
+                                throw new AggregateException($"unable to find timestep {timestep} in session to restart ({session}); available timesteps: {GetAvailTS()}", e);
+                            }
                         }
 
                         if (this.Control.GridGuid != null && this.Control.GridGuid != default(Guid) && this.Control.GridGuid != Guid.Empty) {

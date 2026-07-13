@@ -7,8 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace BoSSS.Application.BoSSSpad
-{
+namespace BoSSS.Application.BoSSSpad {
 
 
 
@@ -16,8 +15,7 @@ namespace BoSSS.Application.BoSSSpad
     /// <summary>
     /// Workflow management.
     /// </summary>
-    public partial class WorkflowMgm
-    {
+    public partial class WorkflowMgm {
 
         ConditionNumberReader m_condReader;
 
@@ -27,11 +25,9 @@ namespace BoSSS.Application.BoSSSpad
         /// for this CondLogger should be already added as Insitu post processing tool
         /// Not updated automatically, call <see cref="ConditionNumberReader.Update"/> in order to re-evaluate errors
         /// </summary>
-        public ConditionNumberReader condReader
-        {
-            get
-            {
-                if (m_condReader == null)
+        public ConditionNumberReader condReader {
+            get {
+                if(m_condReader == null)
                     m_condReader = new ConditionNumberReader(this);
                 return m_condReader;
             }
@@ -41,13 +37,11 @@ namespace BoSSS.Application.BoSSSpad
         /// <summary>
         /// Automatic condition number data for all sessions in the current project 
         /// </summary>
-        public class ConditionNumberReader
-        {
+        public class ConditionNumberReader {
 
             WorkflowMgm owner;
 
-            internal ConditionNumberReader(WorkflowMgm __owner)
-            {
+            internal ConditionNumberReader(WorkflowMgm __owner) {
                 owner = __owner;
             }
 
@@ -56,15 +50,15 @@ namespace BoSSS.Application.BoSSSpad
             /// Returns the all column names associated with condition number tables
             /// </summary>
             /// <param name="sessions"></param>
-            public string[] GetColumnNames(ISessionInfo[] sessions = null){
+            public string[] GetColumnNames(ISessionInfo[] sessions = null) {
                 string[] allColumnNames = new string[] { "" };
 
-                if (sessions is null)
+                if(sessions is null)
                     sessions = owner.Sessions.Where(sess => sess.SuccessfulTermination == true).ToArray();
 
 
                 int numberSessions = sessions.Count();
-                for (int j = 0; j < numberSessions; j++){
+                for(int j = 0; j < numberSessions; j++) {
                     ISessionInfo currentSession = sessions.Pick(j);
 
 
@@ -73,19 +67,16 @@ namespace BoSSS.Application.BoSSSpad
                     string[] lines;
                     string header;
 
-                    try
-                    { //reading
+                    try { //reading
                         lines = File.ReadAllLines(path);
                         header = lines[0];
-                    } catch
-                    {
+                    } catch {
                         continue;
                     }
 
                     //Get column names
                     var columnsNames = header.Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries);
-                    if (!allColumnNames.SequenceEqual(columnsNames))
-                    {
+                    if(!allColumnNames.SequenceEqual(columnsNames)) {
                         allColumnNames = columnsNames;
                         allColumnNames.ForEach(c => Console.Write(c + ", "));
                         Console.WriteLine("");
@@ -106,7 +97,7 @@ namespace BoSSS.Application.BoSSSpad
             public void Update(ISessionInfo[] sessions = null, string[] columnNames = null, Func<List<double>, double> operation = null, string marker = "") {
                 // Get all sessions which are successfully terminated
                 // ==================================================
-                 sessions ??= owner.Sessions.Where(sess => sess.SuccessfulTermination == true).ToArray();
+                sessions ??= owner.Sessions.Where(sess => sess.SuccessfulTermination == true).ToArray();
 
                 // Check if any specific column is provided. (Be aware that column names can vary for different dimensions.)
                 columnNames ??= GetColumnNames(sessions);
@@ -116,18 +107,17 @@ namespace BoSSS.Application.BoSSSpad
 
                 // Set columns in session table
                 // =====================================
-                foreach (string column in columnNames)
-                {
+                foreach(string column in columnNames) {
                     string colName = column + marker;
 
-                    if (owner.AdditionalSessionTableColums.ContainsKey(colName))
+                    if(owner.AdditionalSessionTableColums.ContainsKey(colName))
                         owner.AdditionalSessionTableColums.Remove(colName);
 
 
                     owner.AdditionalSessionTableColums.Add(colName, delegate (ISessionInfo s) {
                         object ret = 0.0;
 
-                        if (condTable.ContainsKey(s.ID))
+                        if(condTable.ContainsKey(s.ID))
                             ret = operation == null ? condTable[s.ID][colName] : operation(condTable[s.ID][colName]); // if operation null, return the list. Otherwise, apply the operation
 
                         return ret;

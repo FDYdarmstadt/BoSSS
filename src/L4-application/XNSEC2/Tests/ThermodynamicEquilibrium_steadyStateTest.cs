@@ -290,7 +290,6 @@ namespace BoSSS.Application.XNSEC {
             #region levelset
 
             C.Option_LevelSetEvolution = steady ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
-            C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
 
             #endregion
 
@@ -585,7 +584,6 @@ namespace BoSSS.Application.XNSEC {
             #region levelset
 
             C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
-            C.FastMarchingPenaltyTerms = BoSSS.Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
 
             #endregion
 

@@ -699,7 +699,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 {
                     var resultT = result.Transpose();
                     BlockMsrMatrix ShoudBeId;
-                    if (result.RowPartitioning.TotalLength < result.ColPartition.TotalLength)
+                    if (result.RowPartitioning.TotalLength < result.ColPartitioning.TotalLength)
                         ShoudBeId = BlockMsrMatrix.Multiply(result, resultT);
                     else
                         ShoudBeId = BlockMsrMatrix.Multiply(resultT, result);

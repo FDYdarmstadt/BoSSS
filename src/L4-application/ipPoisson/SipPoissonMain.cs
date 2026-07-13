@@ -14,36 +14,38 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using System.Collections.Generic;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.Quadrature;
-using BoSSS.Solution;
-using BoSSS.Solution.Utils;
-using ilPSP.LinSolvers;
-using ilPSP.Tracing;
-using ilPSP.Utils;
-using System.Diagnostics;
-using MPI.Wrappers;
 using BoSSS.Platform;
-using ilPSP;
-using System.Linq;
-using NUnit.Framework;
+using BoSSS.Platform.Utils.Geom;
+using BoSSS.Solution;
 using BoSSS.Solution.AdvancedSolvers;
-using ilPSP.Connectors.Matlab;
-using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.Statistic;
-using System.IO;
-using BoSSS.Platform.Utils.Geom;
-using System.Threading;
+using BoSSS.Solution.Utils;
+using ilPSP;
+using ilPSP.Connectors.Matlab;
+using ilPSP.LinSolvers;
 using ilPSP.LinSolvers.PARDISO;
+using ilPSP.Tracing;
+using ilPSP.Utils;
+using log4net.Core;
+using MPI.Wrappers;
+using NUnit.Framework;
+using NUnit.Framework.Constraints;
+using System;
 using System.Collections;
-using System.Runtime.InteropServices;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace BoSSS.Application.SipPoisson {
 
@@ -231,11 +233,47 @@ namespace BoSSS.Application.SipPoisson {
                     base.TerminationKey = true;
                 }
 
+                /*
+                // export MG matrices and operators
+                var mgOperator = this.LapaceIp.GetMultigridOperator(this.T.Mapping, MgConfig);
+                int mgLevel = 0;
+                global::System.IO.Directory.CreateDirectory("bosss_mtx");
+                while ( mgOperator != null ) {
+                    //int D = this.LsTrk.GridDat.SpatialDimension;
+                    int D = 2;
+                    //var VelIdx = mgOperator.Mapping.GetSubvectorIndices(D.ForLoop(d => d)); // 0, 1, 2 for velocities
+                    //var PIdx = mgOperator.Mapping.GetSubvectorIndices(new int[] { D });     // 3 for pressure
+                    mgOperator.OperatorMatrix.SaveToTextFileSparse("bosss_mtx\\FullMatrix_" + mgLevel + ".txt"); // has code for reading in mtx
+                    //VelIdx.SaveToTextFile("bosss_mtx\\vel_idx_" + mgLevel + ".txt");
+                    //PIdx.SaveToTextFile("bosss_mtx\\p_idx_" + mgLevel + ".txt");
+
+                    //this.RHS.SaveToTextFile("bosss_mtx\\RHS_" + mgLevel + ".txt");
+
+                    Console.WriteLine($"On level idx {mgOperator.LevelIndex}");
+
+                    // be careful about which operator goes to which level
+                    if ( mgOperator.GetPrologonationOperator != null ) {
+                        var prolongOp = mgOperator.GetPrologonationOperator * mgOperator.RightChangeOfBasis;
+                        prolongOp.SaveToTextFileSparse("bosss_mtx\\prolong_" + mgLevel + "-" + (mgLevel - 1) + ".txt");
+                    } else {
+                        Console.WriteLine($"No prolongation operator on level {mgLevel}");
+                    }
+                    if ( mgOperator.GetRestrictionOperator != null ) {
+                        var restrOp = mgOperator.LeftChangeOfBasis * mgOperator.GetRestrictionOperator;
+                        restrOp.SaveToTextFileSparse("bosss_mtx\\restr_" + (mgLevel - 1) + "-" + mgLevel + ".txt");
+                    } else {
+                        Console.WriteLine($"No restriction operator on level {mgLevel}");
+                    }
+
+                    mgOperator = mgOperator.CoarserLevel;
+                    mgLevel++;
+                }
+                Console.WriteLine("Saved all MG levels (matrices and vectors).");
+                //throw new Exception("end"); // exit bc only mtxs needed
+                */
 
                 // call solver
                 // -----------
-                //LastMatrix = this.LapaceIp.GetMatrix(T.Mapping, MgConfig: this.MgConfig);
-                //Console.WriteLine("Remember to re-activate solver !!!!!!!");
                 this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, verbose: true, queryHandler: base.QueryHandler);
 
 
@@ -295,8 +333,8 @@ namespace BoSSS.Application.SipPoisson {
                             //Degree = Math.Max(1, p - iLevel)
                         }
                     };
-
                 }
+                // export here bc has config?
 
                 return config;
             }

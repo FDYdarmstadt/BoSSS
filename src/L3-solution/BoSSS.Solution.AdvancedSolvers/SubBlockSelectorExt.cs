@@ -547,7 +547,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                                                 throw new Exception(e.Message);
                                             }
                                             Debug.Assert(Trgi0 < target.RowPartitioning.LocalLength);
-                                            Debug.Assert(Trgj0 < target.ColPartition.LocalLength);
+                                            Debug.Assert(Trgj0 < target.ColPartitioning.LocalLength);
 
                                             target.AccBlock(Trgi0, Trgj0, 1.0, tmpBlock);
                                         } 

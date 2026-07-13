@@ -55,7 +55,7 @@ namespace BoSSS.Platform {
         /// </summary>
         public MPI_Comm MPI_Comm {
             get {
-                if (RowPartitioning.MPI_Comm != ColPartition.MPI_Comm)
+                if (RowPartitioning.MPI_Comm != ColPartitioning.MPI_Comm)
                     throw new ApplicationException("Internal error -- mismatch between row and column MPI communicator.");
                 return RowPartitioning.MPI_Comm;
             }
@@ -75,7 +75,7 @@ namespace BoSSS.Platform {
             var ret = new BlockDiagonalMatrix();
             ret.Blox = this.Blox.CloneAs();
             ret.m_RowPart = this.RowPartitioning; // immutable object, so shallow cloning is ok.
-            ret.m_ColumnPart = this.ColPartition;
+            ret.m_ColumnPart = this.ColPartitioning;
             return ret;
         }
 
@@ -132,10 +132,10 @@ namespace BoSSS.Platform {
         /// <param name="ColBlkSz">number of columns per block; all blocks in the matrix have the same size</param>
         /// <param name="RowBlkSz">number of rows per block; all blocks in the matrix have the same size</param>
         public BlockDiagonalMatrix(MsrMatrix Src, int RowBlkSz, int ColBlkSz)
-            : this(Src.RowPartitioning, Src.ColPartition, RowBlkSz, ColBlkSz) //
+            : this(Src.RowPartitioning, Src.ColPartitioning, RowBlkSz, ColBlkSz) //
         {
             long i0Row = Src.RowPartitioning.i0;
-            long i0Col = Src.ColPartition.i0;
+            long i0Col = Src.ColPartitioning.i0;
 
             for (int BlockNo = 0; BlockNo < NoOfBlocks; BlockNo++) {
                 for (int RowBlock = 0; RowBlock < this.NoOfRowsPerBlock; RowBlock++) {
@@ -428,7 +428,7 @@ namespace BoSSS.Platform {
         /// <summary>
         /// column partition that is induced by the row partition
         /// </summary>
-        public IPartitioning ColPartition {
+        public IPartitioning ColPartitioning {
             get {
                 return m_ColumnPart;
             }
@@ -453,7 +453,7 @@ namespace BoSSS.Platform {
                 int _M = left.NoOfColsPerBlock;  // left blocks: no. of columns = right blocks: no. of rows
                 int _L = _M; // right blocks: no. of columns. Hope that fits, otherwise inefficient
 
-                MsrMatrix result = new MsrMatrix(left.RowPartitioning, right.ColPartition);
+                MsrMatrix result = new MsrMatrix(left.RowPartitioning, right.ColPartitioning);
 
                 MultidimensionalArray lBlock = MultidimensionalArray.Create(_N, _M);
                 //MsrMatrix.MSREntry[][] BlockRow = new MsrMatrix.MSREntry[_M][];
@@ -549,7 +549,7 @@ namespace BoSSS.Platform {
                 throw new NotSupportedException("Can't invert matrix with non-square blocks.");
 
             // Matrix for the result
-            BlockDiagonalMatrix res = new BlockDiagonalMatrix(RowPartitioning, ColPartition, NoOfRowsPerBlock, NoOfColsPerBlock);
+            BlockDiagonalMatrix res = new BlockDiagonalMatrix(RowPartitioning, ColPartitioning, NoOfRowsPerBlock, NoOfColsPerBlock);
 
             // FullMatrix to calculate inverse
             for (int BlockNo = 0; BlockNo < NoOfBlocks; BlockNo++) {
@@ -582,7 +582,7 @@ namespace BoSSS.Platform {
             }
 
             // Matrix for the result
-            BlockDiagonalMatrix res = new BlockDiagonalMatrix(RowPartitioning, ColPartition, NoOfRowsPerBlock, NoOfColsPerBlock);
+            BlockDiagonalMatrix res = new BlockDiagonalMatrix(RowPartitioning, ColPartitioning, NoOfRowsPerBlock, NoOfColsPerBlock);
 
             // FullMatrix to calculate inverse
             var tmp = MultidimensionalArray.Create(this.NoOfRowsPerBlock, NoOfColsPerBlock);
@@ -632,7 +632,7 @@ namespace BoSSS.Platform {
         /// </summary>
         public long NoOfCols {
             get {
-                return ColPartition.TotalLength;
+                return ColPartitioning.TotalLength;
             }
         }
 

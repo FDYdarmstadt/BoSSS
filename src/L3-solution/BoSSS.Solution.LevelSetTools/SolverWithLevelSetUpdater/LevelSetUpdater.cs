@@ -693,9 +693,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             /// in case of fast marching we want to ensure signed distance formulation -> will be relocated on next merge request
             /// </summary>
             public void ReInitOnStart(DualLevelSet phaseInterface) {
-                if(lsMover is FastMarchingEvolver) {
+                if(lsMover is FastMarchingEvolver lsMover_fastmarch) {
                     //Console.WriteLine("ReInit on start for FastMarchingEvolver");
-                    ((FastMarchingEvolver)lsMover).Reinitialize(phaseInterface, 0.0, 0.0, false, null, null);
+                    lsMover_fastmarch.Reinitialize(phaseInterface, 0.0, 0.0, false, null, null, true);
                 }
                 SetInternalTimestepNumber(0);
             }

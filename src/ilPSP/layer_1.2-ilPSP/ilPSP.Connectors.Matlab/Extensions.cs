@@ -297,7 +297,7 @@ namespace ilPSP.Connectors.Matlab {
                 throw new ArgumentNullException();
             if (M.RowPartitioning.LocalLength != RHS.Count)
                 throw new ArgumentException("Mismatch between number of rows and length of right-hand-side.");
-            if (M.ColPartition.LocalLength != X.Count)
+            if (M.ColPartitioning.LocalLength != X.Count)
                 throw new ArgumentException("Mismatch between number of columns and length of unknown vector.");
 
             MultidimensionalArray Xwrapper = MultidimensionalArray.Create(X.Count, 1);

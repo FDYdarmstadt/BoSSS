@@ -97,7 +97,5 @@ namespace BoSSS.Foundation.IO {
             Directory.Delete(dbDir, true);
         }
 
-
-
     }
 }

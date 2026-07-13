@@ -34,7 +34,7 @@ namespace ilPSP {
         /// Loading of control file in default location (<see cref="GetDefaultFilePath"/>);
         /// if file is not present, the current status will be saved.
         /// </summary>
-        virtual public void Load() {
+        virtual public bool Load() {
             string p = GetDefaultFilePath();
             if(File.Exists(p)) {
                 string text = File.ReadAllText(p);
@@ -44,12 +44,11 @@ namespace ilPSP {
                     using(JsonReader reader = new JsonTextReader(tr)) {
                         GetFormatter().Populate(reader, this);
                     }
-
                 }
-                
-                
+                return true;
             } else {
                 Save();
+                return false;
             }
         }
 
@@ -58,6 +57,14 @@ namespace ilPSP {
         /// </summary>
         public void Save() {
             string p = GetDefaultFilePath();
+            string text = SerializeToText();
+            File.WriteAllText(p, text);
+        }
+
+        /// <summary>
+        /// composes the Json string
+        /// </summary>
+        public string SerializeToText() {
             string text;
             using(var tw = new StringWriter()) {
                 //tw.WriteLine(this.GetType().AssemblyQualifiedName);
@@ -67,9 +74,9 @@ namespace ilPSP {
 
                 text = tw.ToString();
             }
-            File.WriteAllText(p, text);
-        }
 
+            return text;
+        }
 
         protected abstract string GetDefaultFilePath();
     }
