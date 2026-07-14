@@ -26,18 +26,18 @@ namespace BoSSS.Application.MultithreadingSolverTest {
         /// <summary>
         /// Minimum expected speedup from 1 to 2 threads: T1 / T2.
         /// </summary>
-        public double MinSpeedup12 = 1.05;
+        public double MinSpeedup12 = 1.1;
 
         /// <summary>
         /// Minimum expected speedup from 1 to 4 threads: T1 / T4.
         /// </summary>
-        public double MinSpeedup14 = 1.05;
+        public double MinSpeedup14 = 1.3;
 
         /// <summary>
         /// Minimum expected speedup from 2 to 4 threads: T2 / T4.
         /// Use values below 1.0 if 4 threads may be slightly slower than 2.
         /// </summary>
-        public double MinSpeedup24 = 1.01;
+        public double MinSpeedup24 = 1.05;
 
         /// <summary>
         /// Number of measured runs after the warm-up.
@@ -56,8 +56,12 @@ namespace BoSSS.Application.MultithreadingSolverTest {
                     C.ProjectName = "MultithreadingScalingTest/ipPoisson";
                     C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
                     PrepareControl(C, "ipPoisson");
+                    
                     return C;
                 },
+                MinSpeedup12 = 1.2,
+                MinSpeedup14 = 1.5,
+                MinSpeedup24 = 1.2,
                 RunControl = control => RunControl<BoSSS.Application.SipPoisson.SipControl, BoSSS.Application.SipPoisson.SipPoissonMain>((BoSSS.Application.SipPoisson.SipControl)control),
             },
             new ThreadScalingTestcase {
@@ -71,9 +75,6 @@ namespace BoSSS.Application.MultithreadingSolverTest {
                     return C;
                 },
                 RunControl = control => RunControl<BoSSS.Application.XdgPoisson3.XdgPoisson3Control, BoSSS.Application.XdgPoisson3.XdgPoisson3Main>((BoSSS.Application.XdgPoisson3.XdgPoisson3Control)control),
-                MinSpeedup12 = 1.01,
-                MinSpeedup14 = 1.01,
-                MinSpeedup24 = 1.01,
             },
             new ThreadScalingTestcase {
                 Name = "XNSERisingBubble",
