@@ -698,8 +698,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.StokesExtentionUseBCmap = StokesExtentionBoundaryOption.useBcMap;
 
             C.AdaptiveMeshRefinement = true;
-            //C.activeAMRlevelIndicators.Add(new ContactPointRefinerZLS { maxRefinementLevel = AMRlvl });
-            C.activeAMRlevelIndicators.Add(new AMRatInnerContactLine { maxRefinementLevel = AMRlvl, levelSets = new[] { 0, 1 }, FieldWidth = 0 });
+            C.activeAMRlevelIndicators.Add(new ContactPointRefinerZLS { maxRefinementLevel = AMRlvl });
+            //C.activeAMRlevelIndicators.Add(new AMRatInnerContactLine { maxRefinementLevel = AMRlvl, levelSets = new[] { 0, 1 }, FieldWidth = 0 });
             C.AMR_startUpSweeps = AMRlvl;
             //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { levelSet = 0, maxRefinementLevel = AMRlvl - 2});
             //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { levelSet = 1, maxRefinementLevel = AMRlvl });
