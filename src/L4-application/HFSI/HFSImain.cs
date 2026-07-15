@@ -15,8 +15,8 @@ namespace HFSISolver {
     class HFSImain {
 
         static void Main(string[] args) {
-            BoSSS.Solution.Application.InitMPI();
-            BoSSS.Solution.Application.DeleteOldPlotFiles();
+            //BoSSS.Solution.Application.InitMPI(num_threads: 4);
+            //BoSSS.Solution.Application.DeleteOldPlotFiles();
 
             RunSolver(args);
             //ConditionNumberScaling();

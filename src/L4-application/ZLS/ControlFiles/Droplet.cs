@@ -695,6 +695,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.StokesExtentionUseBCmap = StokesExtentionBoundaryOption.useBcMap;
 
             C.AdaptiveMeshRefinement = true;
             //C.activeAMRlevelIndicators.Add(new ContactPointRefinerZLS { maxRefinementLevel = AMRlvl });
@@ -999,8 +1000,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             double dt = 1e-1;
             C.dtMax = dt;
             C.dtMin = dt;
-            //C.Endtime = 100;
-            C.NoOfTimesteps = 1000;
+            C.Endtime = 100;
             C.saveperiod = 1;
 
             #endregion

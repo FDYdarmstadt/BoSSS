@@ -501,6 +501,7 @@ namespace HFSISolver.Tests {
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
+            C.StokesExtentionUseBCmap = StokesExtentionBoundaryOption.ZeroFlux;
             C.AdaptiveMeshRefinement = false;
             C.activeAMRlevelIndicators.Add(new AMRonNarrowband { maxRefinementLevel = AMRlvl });
             C.AMR_startUpSweeps = AMRlvl;
