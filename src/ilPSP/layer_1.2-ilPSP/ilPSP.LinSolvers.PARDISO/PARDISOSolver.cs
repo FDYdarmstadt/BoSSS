@@ -37,7 +37,7 @@ namespace ilPSP.LinSolvers.PARDISO {
     /// PARDISO is ether distributed with the INTEL MKL library, or it may be downloaded
     /// from http://www.pardiso-project.org/;
     /// </remarks>
-    public class PARDISOSolver : ISparseSolverExt, IDisposable {
+    public class PARDISOSolver : IExternalDirectSolver, IDisposable {
 
         /// <summary>
         /// ctor

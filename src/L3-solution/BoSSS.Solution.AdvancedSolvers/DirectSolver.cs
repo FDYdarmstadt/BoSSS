@@ -21,6 +21,7 @@ using System.Linq;
 using ilPSP.LinSolvers;
 using ilPSP.LinSolvers.PARDISO;
 using ilPSP.LinSolvers.MUMPS;
+using ilPSP.LinSolvers.UMFPACK;
 using ilPSP.Utils;
 using MPI.Wrappers;
 using BoSSS.Platform;
@@ -155,6 +156,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// Using <see cref="MUMPSSolver"/>.
             /// </summary>
             MUMPS,
+
+            /// <summary>
+            /// Using <see cref="UMFPACKSolver"/>.
+            /// </summary>
+            UMFPACK,
 
             /// <summary>
             /// Conversion to dense matrix, solution 
@@ -310,18 +316,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     throw new NotSupportedException($"{config.WhichSolver} is not supported in single precision");
             }
 
+            bool CachingOn = false;
+            if (ActivateCaching != null) {
+                CachingOn = ActivateCaching.Invoke(m_ThisLevelIterations, (MatrixNMapping as MultigridOperator)?.LevelIndex ?? -1);
+            }
 
             switch (config.WhichSolver) {
                 case _whichSolver.PARDISO:
-                bool CachingOn = false;
-                if (ActivateCaching != null) {
-                    CachingOn = ActivateCaching.Invoke(m_ThisLevelIterations, (MatrixNMapping as MultigridOperator)?.LevelIndex ?? -1);
-                }
-
-                    
                 solver = new PARDISOSolver() {
                     CacheFactorization = CachingOn,
                     UseDoublePrecision = config.UseDoublePrecision,
+                    Parallelism = RunSerial ? Parallelism.SEQ : Parallelism.OMP
+                };
+                break;
+
+                case _whichSolver.UMFPACK:
+                solver = new UMFPACKSolver() {
+                    CacheFactorization = CachingOn,
                     Parallelism = RunSerial ? Parallelism.SEQ : Parallelism.OMP
                 };
                 break;
@@ -361,6 +372,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         Func<ISparseSolver>[] altSolvers = new Func<ISparseSolver>[] {
             () => new PARDISOSolver() { Parallelism = Parallelism.SEQ },
+            () => new UMFPACKSolver() { Parallelism = Parallelism.SEQ },
             () => new MUMPSSolver() { Parallelism = Parallelism.SEQ }
         };
 

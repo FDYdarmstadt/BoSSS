@@ -97,7 +97,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <summary>
         /// Test on a curved grid.
         /// </summary>
-        public static SipControl TestCurved() {
+        public static SipControl TestCurved(LinearSolverCode solverCode = LinearSolverCode.direct_pardiso) {
             //BoSSS.Application.SipPoisson.SipHardcodedControl.TestCurved();
             var R = new SipControl();
             R.ProjectName = "ipPoison/curved";
@@ -109,11 +109,7 @@ namespace BoSSS.Application.SipPoisson {
             R.InitialValues_Evaluators.Add("RHS", X => 0.0);
             R.InitialValues_Evaluators.Add("Tex", X => (Math.Log(X[0].Pow2() + X[1].Pow2()) / Math.Log(4.0)) + 1.0);
             R.ExactSolution_provided = true;
-            R.LinearSolver = new BoSSS.Solution.AdvancedSolvers.OrthoMGSchwarzConfig() {
-                //R.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
-                TargetBlockSize = 1000,
-                NoOfMultigridLevels = 4
-            };
+            R.LinearSolver = solverCode.GetConfig();
             R.SuperSampling = 2;
 
             R.GridFunc = delegate () {
@@ -203,7 +199,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <summary>
         /// Test on a Cartesian grid, with an exact polynomial solution.
         /// </summary>
-        public static SipControl TestCartesian1(int xRes = 32, double xStretch = 1.0, int yRes = 16, double yStretch = 1.01, int pDG = 2) {
+        public static SipControl TestCartesian1(int xRes = 32, double xStretch = 1.0, int yRes = 16, double yStretch = 1.01, int pDG = 2, LinearSolverCode solverCode = LinearSolverCode.direct_pardiso) {
             //BoSSS.Application.SipPoisson.SipHardcodedControl.TestCartesian1()
             var RR = new SipControl();
             RR.ProjectName = "ipPoison/cartesian";
@@ -240,7 +236,7 @@ namespace BoSSS.Application.SipPoisson {
 
             RR.GridPartType = BoSSS.Foundation.Grid.GridPartType.none;
 
-            RR.LinearSolver = new Solution.AdvancedSolvers.DirectSolver.Config() { WhichSolver = Solution.AdvancedSolvers.DirectSolver._whichSolver.PARDISO };
+            RR.LinearSolver = solverCode.GetConfig();
 
             return RR;
         }
