@@ -47,6 +47,12 @@ namespace BoSSS.Solution.Control {
         direct_pardiso = 2,
 
 
+        /// <summary>
+        /// Direct solver, the default option
+        /// </summary>
+        direct = 2,
+
+
         ///// <summary>
         ///// Conjugate gradient (from monkey library) without any preconditioning (<see cref="AdvancedSolvers.MonkeySolver.Config"/>
         ///// </summary>
