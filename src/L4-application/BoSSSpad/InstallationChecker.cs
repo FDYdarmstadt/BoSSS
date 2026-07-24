@@ -107,11 +107,14 @@ namespace BoSSS.Application.BoSSSpad {
 
                 CheckDynamicLibrary("Tecplot", () => new UnsafeTECIO(), isOptional: true);
 
-                CheckDynamicLibrary("MUMPS", () => new UnsafeMUMPS(ilPSP.Parallelism.SEQ), isOptional: true);
+                CheckDynamicLibrary("MUMPS (sequential)", () => new UnsafeMUMPS(ilPSP.Parallelism.SEQ), isOptional: true);
                 CheckDynamicLibrary("MUMPS (MPI)", () => new UnsafeMUMPS(ilPSP.Parallelism.MPI), isOptional: true);
 
-                CheckDynamicLibrary("PARDISO (Intel MKL)", () => new ilPSP.LinSolvers.PARDISO.Wrapper_MKL( ilPSP.Parallelism.SEQ), isOptional: true);
-                CheckDynamicLibrary("PARDISO (Intel MKL, OMP)", () => new ilPSP.LinSolvers.PARDISO.Wrapper_MKL( ilPSP.Parallelism.OMP), isOptional: true);
+                CheckDynamicLibrary("PARDISO (Intel MKL, sequential)", () => new ilPSP.LinSolvers.PARDISO.Wrapper_MKL(ilPSP.Parallelism.SEQ), isOptional: true);
+                CheckDynamicLibrary("PARDISO (Intel MKL, OMP)", () => new ilPSP.LinSolvers.PARDISO.Wrapper_MKL(ilPSP.Parallelism.OMP), isOptional: true);
+                
+                CheckDynamicLibrary("UMFPACK (sequential)", () => new ilPSP.LinSolvers.UMFPACK.UnsafeUMFPACK(ilPSP.Parallelism.SEQ), isOptional: true);
+                CheckDynamicLibrary("UMFPACK (OMP)", () => new ilPSP.LinSolvers.UMFPACK.UnsafeUMFPACK(ilPSP.Parallelism.OMP), isOptional: true);
 
                 CheckDynamicLibrary("PARDISO (v5)", () => new ilPSP.LinSolvers.PARDISO.Wrapper_v5(), isOptional: true);
 
