@@ -38,14 +38,14 @@ namespace ilPSP.LinSolvers.UMFPACK {
         static (string[] _LibNames, string[][][] PrequesiteLibraries, GetNameMangling[] NameMangling, PlatformID[] OsFilter, int[] PointerSizeFilter) SelectLibrary(Parallelism par) {
             switch(SelectPar(par)) {
                 case Parallelism.SEQ:
-                return (new string[] { "UMFPACK_seq.dll", "libBoSSSnative_seq.so" },
+                return (new string[] { "BoSSSnative_seq.dll", "libBoSSSnative_seq.so" },
                     new string[2][][],
                     new GetNameMangling[] { DynLibLoader.Identity, DynLibLoader.Identity },
                     new[] { PlatformID.Win32NT, PlatformID.Unix },
                     new int[] { -1, -1 });
 
                 case Parallelism.OMP:
-                return (new string[] { "UMFPACK_omp.dll", "libBoSSSnative_omp.so" },
+                return (new string[] { "BoSSSnative_omp.dll", "libBoSSSnative_omp.so" },
                     new string[2][][],
                     new GetNameMangling[] { DynLibLoader.Identity, DynLibLoader.Identity },
                     new[] { PlatformID.Win32NT, PlatformID.Unix },
