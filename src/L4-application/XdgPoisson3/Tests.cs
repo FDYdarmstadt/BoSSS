@@ -50,7 +50,35 @@ namespace BoSSS.Application.XdgPoisson3 {
         [Test]
         public static void IterativeSolverTest([Values(Code.exp_Kcycle_schwarz_CoarseMesh, Code.exp_Kcycle_schwarz_PerProcess, Code.exp_gmres_levelpmg)] Code SolverName) {
             //BoSSS.Application.XdgPoisson3.Tests.IterativeSolverTest
-            using (var solver = new XdgPoisson3Main()) {
+            using(var solver = new XdgPoisson3Main()) {
+
+                int Res, p;
+#if DEBUG
+                Res = 6;
+                p = 2;
+#else
+                Res = 12;
+                p = 3;
+#endif
+                var C = HardCodedControl.Ball3D(pDeg: p, Res: Res, solverCode: SolverName);
+
+                if(C.LinearSolver is OrthoMGSchwarzConfig omgs) {
+                    omgs.CoarseKickIn = 10000; // small threshold for direct solver ensures that we are actually using a multigrid method and not just a direct solver on fines level
+                    omgs.CoarseUsepTG = false;
+                }
+
+                solver.Init(C);
+                solver.RunSolverMode();
+            }
+        }
+
+        /// <summary>
+        /// Test for direct solver
+        /// </summary>
+        [Test]
+        public static void DirectSolverTest([Values(Code.direct_pardiso, Code.direct_mumps, Code.direct_umfpack)] Code SolverName) {
+            //BoSSS.Application.XdgPoisson3.Tests.IterativeSolverTest
+            using(var solver = new XdgPoisson3Main()) {
 
                 int Res, p;
 #if DEBUG
@@ -77,15 +105,15 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// Testing of a rather simple test-case with an exact solution;
         /// this should e.g. confirm that the agglomeration works correctly
         /// </summary>
-        [Test]    
+        [Test]
         public static void ParabolaTest(
-            [Values(2,3,4)] int dgDegree,
+            [Values(2, 3, 4)] int dgDegree,
             [Values(0.0, 0.6)] double AggThresshold,
             [Values(CutCellQuadratureMethod.Classic, CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadratureType
             ) //
         {
             //BoSSS.Application.XdgPoisson3.Tests.ParabolaTest(2, 0.6)
-            using (var solver = new XdgPoisson3Main()) {
+            using(var solver = new XdgPoisson3Main()) {
                 if(cutCellQuadratureType == CutCellQuadratureMethod.Classic && solver.MPISize > 1) {
                     Console.WriteLine($"Reminder: {CutCellQuadratureMethod.Classic} does not work MPI-parallel");
                     return;
@@ -124,13 +152,11 @@ namespace BoSSS.Application.XdgPoisson3 {
         [Test]
 #endif
         public static void ScalingCircle2D(
-        //[Values(1)] 
-        [Values(1,2,3,4)]
-            int dgDegree
+            [Values(1,2,3,4)] int dgDegree
         ) //
         {
             int sz = ilPSP.Environment.MPIEnv.MPI_Size;
-            if (sz > 1) {
+            if(sz > 1) {
                 Console.WriteLine("ScalingCircle2D: skipping for more than 1 processor.");
                 return;// deactivate for multiple procs.
             }
@@ -138,7 +164,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             var Controls = new List<XdgPoisson3Control>();
 
             int[] ResS = null;
-            switch (dgDegree) {
+            switch(dgDegree) {
                 case 1: ResS = new int[] { 8, 9, 16, 17, 32, 33, 64, 65, 128 }; break;
                 case 2: ResS = new int[] { 8, 9, 16, 17, 32, 33, 64, 65 }; break;
                 case 3: ResS = new int[] { 8, 9, 16, 17, 32, 33, 64 }; break;
@@ -146,7 +172,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                 default: throw new NotImplementedException();
             }
 
-            foreach (int res in ResS) {
+            foreach(int res in ResS) {
                 var C = HardCodedControl.Circle(Resolution: res, p: dgDegree);
                 C.LinearSolver = Code.direct_pardiso.GetConfig();
                 C.savetodb = false;
@@ -175,8 +201,7 @@ namespace BoSSS.Application.XdgPoisson3 {
 //        [Test]
 #endif
         public static void LargeCircle2D(
-        [Values(4,5)]
-            int dgDegree
+            [Values(4, 5)] int dgDegree
         ) //
         {
 
