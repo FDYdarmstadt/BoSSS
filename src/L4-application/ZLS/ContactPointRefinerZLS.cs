@@ -36,7 +36,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             int J = GridData.CellPartitioning.LocalLength;
             int[] levels = new int[J];
 
-            CellMask band = LsTrk.Regions.GetNearMask4LevSet(0,0).Intersect(LsTrk.Regions.GetNearMask4LevSet(1,0));
+            CellMask band = LsTrk.Regions.GetNearMask4LevSet(0,1).Intersect(LsTrk.Regions.GetNearMask4LevSet(1,1));
             var bitmask = band.GetBitMask();
 
             int cellsToRefine = 0;
