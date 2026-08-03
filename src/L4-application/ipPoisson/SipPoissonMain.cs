@@ -61,6 +61,10 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
+            //InitMPI(args);
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestCurved(LinearSolverCode.direct_umfpack);
+            //return;
+
             _Main(args, false, delegate () {
                 SipPoissonMain p = new SipPoissonMain();
 

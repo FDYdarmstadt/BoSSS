@@ -235,4 +235,27 @@ namespace ilPSP.LinSolvers {
             where Tdiag : IList<double>
             where Trhs : IList<double>;
     }
+
+    /// <summary>
+    /// Common interface for external direct solvers which can select native parallelism
+    /// and cache native factorizations.
+    /// </summary>
+    public interface IExternalDirectSolver : ISparseSolverExt {
+
+        /// <summary>
+        /// Level of parallelism used by the native solver backend.
+        /// </summary>
+        Parallelism Parallelism {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Keep native symbolic/numeric factorization data between repeated solves.
+        /// </summary>
+        bool CacheFactorization {
+            get;
+            set;
+        }
+    }
 }

@@ -46,6 +46,17 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         direct_pardiso = 2,
 
+        /// <summary>
+        /// Direct solver (<see cref="ilPSP.LinSolvers.UMFPACK.UMFPACKSolver"/>) without any pre-processing of the matrix.
+        /// </summary>
+        direct_umfpack = 3,
+
+
+        /// <summary>
+        /// Direct solver, the default option
+        /// </summary>
+        direct = 2,
+
 
         ///// <summary>
         ///// Conjugate gradient (from monkey library) without any preconditioning (<see cref="AdvancedSolvers.MonkeySolver.Config"/>
@@ -117,6 +128,9 @@ namespace BoSSS.Solution.Control {
                 case LinearSolverCode.automatic:
                 case LinearSolverCode.direct_pardiso:
                     return new AdvancedSolvers.DirectSolver.Config() { WhichSolver = AdvancedSolvers.DirectSolver._whichSolver.PARDISO };
+
+                case LinearSolverCode.direct_umfpack:
+                    return new AdvancedSolvers.DirectSolver.Config() { WhichSolver = AdvancedSolvers.DirectSolver._whichSolver.UMFPACK };
 
                 case LinearSolverCode.direct_mumps:
                     return new AdvancedSolvers.DirectSolver.Config() { WhichSolver = AdvancedSolvers.DirectSolver._whichSolver.MUMPS };
