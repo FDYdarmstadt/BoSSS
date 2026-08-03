@@ -574,9 +574,9 @@ namespace ZwoLevelSetSolver.ControlFiles {
             int kelem = 8;
 
             C.GridFunc = delegate () {
-                double[] Xnodes = GenericBlas.Linspace(-xSize, xSize, kelem + 1);
+                double[] Xnodes = GenericBlas.Linspace(-xSize, 0, kelem / 2 + 1);
                 double[] Ynodes = GenericBlas.Linspace(yBottom, yTop, kelem / 8 * 3 + 1);
-                double[] Znodes = GenericBlas.Linspace(-xSize, xSize, kelem + 1);
+                double[] Znodes = GenericBlas.Linspace(-xSize, 0, kelem / 2 + 1);
                 var grd = Grid3D.Cartesian3DGrid(Xnodes, Ynodes, Znodes);
 
                 grd.EdgeTagNames.Add(1, "wall_lower");
@@ -594,11 +594,11 @@ namespace ZwoLevelSetSolver.ControlFiles {
                         et = 2;
                     if(Math.Abs(X[0] + xSize) <= 1.0e-8)
                         et = 3;
-                    if(Math.Abs(X[0] - xSize) <= 1.0e-8)
+                    if(Math.Abs(X[0] - 0) <= 1.0e-8)
                         et = 4;
                     if(Math.Abs(X[2] + xSize) <= 1.0e-8)
                         et = 5;
-                    if(Math.Abs(X[2] - xSize) <= 1.0e-8)
+                    if(Math.Abs(X[2] - 0) <= 1.0e-8)
                         et = 6;
 
                     return et;
