@@ -120,6 +120,7 @@ namespace ilPSP.Tracing {
             TotalTime.Start();
         }
 
+
         /// <summary>
         /// the root of the call tree; the runtime (see <see cref="MethodCallRecord.m_TicksSpentInMethod"/>) of the root object is equal to
         /// the overall time spend in the application so far.
@@ -137,6 +138,7 @@ namespace ilPSP.Tracing {
 //#endif
                 return _Root;
             }
+
         }
 
 
@@ -156,10 +158,66 @@ namespace ilPSP.Tracing {
             return ((MPI.Wrappers.IMPIdriver_wTimeTracer)MPI.Wrappers.csMPI.Raw).TicksSpent;
         }
 
-        
+        public sealed class IsolatedTraceRootScope :IDisposable {
+            readonly MethodCallRecord oldRoot;
+            readonly MethodCallRecord oldCurrent;
+            readonly Stopwatch oldTotalTime;
+            readonly bool oldInstrumentationSwitch;
 
-        
+            bool disposed;
+
+            internal IsolatedTraceRootScope(string rootName) {
+                oldRoot = _Root;
+                oldCurrent = Current;
+                oldTotalTime = TotalTime;
+                oldInstrumentationSwitch = InstrumentationSwitch;
+
+                TotalTime = new Stopwatch();
+
+                _Root = new MethodCallRecord(null, rootName) {
+                    m_ActiveStopwatch = TotalTime
+                };
+
+                Current = _Root;
+                TotalTime.Start();
+            }
+
+            public MethodCallRecord Root {
+                get {
+                    return _Root;
+                }
+            }
+
+            public void Dispose() {
+                if(disposed)
+                    return;
+
+                disposed = true;
+
+                if(TotalTime != null && TotalTime.IsRunning)
+                    TotalTime.Stop();
+
+                if(_Root != null)
+                    _Root.UpdateTime();
+
+                _Root = oldRoot;
+                Current = oldCurrent;
+                TotalTime = oldTotalTime;
+                InstrumentationSwitch = oldInstrumentationSwitch;
+            }
+        }
+
+        public static IsolatedTraceRootScope IsolateRoot(string rootName = "root_frame") {
+            if(rootName == null)
+                throw new ArgumentNullException(nameof(rootName));
+
+            return new IsolatedTraceRootScope(rootName);
+        }
+
+
     }
+
+
 
     /// <summary>
     /// Levels of memory instrumentation during func tracing

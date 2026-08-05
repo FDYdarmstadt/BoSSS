@@ -28,7 +28,7 @@ using BoSSS.Platform.LinAlg;
 namespace BoSSS.Foundation.Quadrature.Linear {
 
 
-    class LinearVolumeFormVectorizer : IVolumeForm_GradUxGradV, IVolumeForm_UxV, IVolumeForm_UxGradV, IVolumeForm_GradUxV, IVolumeSource_V, IVolumeSource_GradV, IMultitreadSafety {
+    class LinearVolumeFormVectorizer :IVolumeForm_GradUxGradV, IVolumeForm_UxV, IVolumeForm_UxGradV, IVolumeForm_GradUxV, IVolumeSource_V, IVolumeSource_GradV, IMultitreadSafety {
 
         public TermActivationFlags VolTerms {
             get;
@@ -47,7 +47,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         /// Returns name of nested form.
         /// </summary>
         public override string ToString() {
-            return "LinearVolumeFormVectorizer: " +  volForm.ToString();
+            return "LinearVolumeFormVectorizer: " + volForm.ToString();
         }
 
 
@@ -379,17 +379,17 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         bool m_SetupMultithread_executed = false;
 
         void SetupMultithread() {
-            if (m_SetupMultithread_executed == true)
+            if(m_SetupMultithread_executed == true)
                 return;
             m_SetupMultithread_executed = true;
 
-            if (this.volForm is IMultitreadSafety ms) {
-                if (ms.IsMultithreadSafe) {
+            if(this.volForm is IMultitreadSafety ms) {
+                if(ms.IsMultithreadSafe) {
                     // nothing to do
                     m_IsMultithreadSafe = true;
                 } else {
                     var clone = (IVolumeForm)ms.CloneForThread();
-                    if (clone != null) {
+                    if(clone != null) {
                         this.volForm = clone;
                         m_IsMultithreadSafe = true;
                     } else {
@@ -406,7 +406,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
         public IEquationComponent CloneForThread() {
             SetupMultithread();
-            if (this.m_IsMultithreadSafe == true)
+            if(this.m_IsMultithreadSafe == true)
                 return this; // it's not necessary to clone the vectorizer, since these guys are anyway created for each thread
             else
                 return null;
@@ -414,7 +414,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
         public object GetPadlock() {
             SetupMultithread();
-            if (this.volForm is IMultitreadSafety ms)
+            if(this.volForm is IMultitreadSafety ms)
                 return ms.GetPadlock();
             else
                 return this.volForm;
@@ -422,14 +422,14 @@ namespace BoSSS.Foundation.Quadrature.Linear {
     }
 
 
-    class LinearEdgeFormVectorizer : IEdgeform_GradUxV, IEdgeform_UxGradV, IEdgeSource_V, IEdgeSource_GradV, IEdgeForm_UxV, IEdgeform_GradUxGradV, IMultitreadSafety {
+    class LinearEdgeFormVectorizer :IEdgeform_GradUxV, IEdgeform_UxGradV, IEdgeSource_V, IEdgeSource_GradV, IEdgeForm_UxV, IEdgeform_GradUxGradV, IMultitreadSafety {
 
 
         /// <summary>
         /// Returns name of nested form.
         /// </summary>
         public override string ToString() {
-            return "LinearEdgeFormVectorizer: " +  edgeForm.ToString();
+            return "LinearEdgeFormVectorizer: " + edgeForm.ToString();
         }
 
         public TermActivationFlags BoundaryEdgeTerms {
@@ -454,7 +454,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
         IEdgeForm edgeForm;
 
-  
+
 
         /// <summary>
         /// ordering of argument variables
@@ -474,7 +474,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             }
         }
 
-       
+
 
         // "global" variables
         double[] uA;
@@ -492,7 +492,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         int NoParams;
 
 
-        private double GetCoeff(ref double d1, ref double d2, ref CommonParams inp) {
+        private void AssertInnerEdgeWorkArrays(ref CommonParams inp) {
             int D = inp.Normal.Dim;
             Debug.Assert(this.NoArgs == this.ArgumentOrdering.Count);
 
@@ -504,12 +504,20 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             Debug.Assert(Grad_uB.GetLength(1) == D);
             Debug.Assert(Grad_vA.Length == D);
             Debug.Assert(Grad_vB.Length == D);
+        }
 
+        private double GetSourceProbe(ref double d2, ref CommonParams inp) {
+            AssertInnerEdgeWorkArrays(ref inp);
             Debug.Assert(this.edgeForm.InnerEdgeForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB) == 0.0);
 
             d2 = 1; // set test function
             double a1 = this.edgeForm.InnerEdgeForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB); // probe for the source/affine part
-            //Debug.Assert((this.InnerEdgeTerms & (TermActivationFlags.GradV | TermActivationFlags.V)) != 0 || a1 == 0);
+            d2 = 0; // reset
+            return a1;
+        }
+
+        private double GetCoeffWithSourceProbe(ref double d1, ref double d2, ref CommonParams inp, double a1) {
+            d2 = 1; // set test function
             d1 = 1; // set trial function
             double a = this.edgeForm.InnerEdgeForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB); // probe for the bilinear+affine part
             d1 = 0; // reset
@@ -517,24 +525,28 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             return a - a1;
         }
 
+        private double GetCoeff(ref double d1, ref double d2, ref CommonParams inp) {
+            double a1 = GetSourceProbe(ref d2, ref inp);
+            return GetCoeffWithSourceProbe(ref d1, ref d2, ref inp, a1);
+        }
+
         private double GetSourceCoeff(ref double d2, ref CommonParams inp) {
-            Debug.Assert(this.edgeForm.InnerEdgeForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB) == 0.0);
-
-            d2 = 1;
-            double a = this.edgeForm.InnerEdgeForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB);
+            double a = GetSourceProbe(ref d2, ref inp);
             //Debug.Assert((this.InnerEdgeTerms & (TermActivationFlags.GradV | TermActivationFlags.V)) != 0 || a == 0);
-
-            d2 = 0;
             return a;
         }
 
-        private double GetCoeffBnd(ref double d1, ref double d2, ref CommonParamsBnd inp) {
+        private double GetSourceProbeBnd(ref double d2, ref CommonParamsBnd inp) {
             Debug.Assert(this.edgeForm.BoundaryEdgeForm(ref inp, uA, Grad_uA, vA, Grad_vA) == 0.0);
 
             d2 = 1;
             double a1 = this.edgeForm.BoundaryEdgeForm(ref inp, uA, Grad_uA, vA, Grad_vA);
-            //Debug.Assert((this.BoundaryEdgeTerms & (TermActivationFlags.GradV | TermActivationFlags.V)) != 0 || a1 == 0);
+            d2 = 0;
+            return a1;
+        }
 
+        private double GetCoeffBndWithSourceProbe(ref double d1, ref double d2, ref CommonParamsBnd inp, double a1) {
+            d2 = 1;
             d1 = 1;
             double a = this.edgeForm.BoundaryEdgeForm(ref inp, uA, Grad_uA, vA, Grad_vA);
             d1 = 0;
@@ -542,14 +554,14 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             return a - a1;
         }
 
+        private double GetCoeffBnd(ref double d1, ref double d2, ref CommonParamsBnd inp) {
+            double a1 = GetSourceProbeBnd(ref d2, ref inp);
+            return GetCoeffBndWithSourceProbe(ref d1, ref d2, ref inp, a1);
+        }
+
         private double GetSourceCoeffBnd(ref double d2, ref CommonParamsBnd inp) {
-            Debug.Assert(this.edgeForm.BoundaryEdgeForm(ref inp, uA, Grad_uA, vA, Grad_vA) == 0.0);
-
-            d2 = 1;
-            double a = this.edgeForm.BoundaryEdgeForm(ref inp, uA, Grad_uA, vA, Grad_vA);
+            double a = GetSourceProbeBnd(ref d2, ref inp);
             Debug.Assert((this.BoundaryEdgeTerms & (TermActivationFlags.GradV | TermActivationFlags.V)) != 0 || a == 0);
-
-            d2 = 0;
             return a;
         }
 
@@ -577,7 +589,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 cp.jCellIn = E2C[cp.iEdge, 0];
                 cp.jCellOut = E2C[cp.iEdge, 1];
 
-                for (int k = 0; k < K; k++) { // loop over quadrature nodes
+                for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
                     for(int d = 0; d < D; d++) {
                         cp.Normal[d] = efp.Normals[l, k, d];
@@ -589,12 +601,15 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                         cp.Parameters_OUT[np] = efp.ParameterVars_OUT[np][l, k];
                     }
 
+                    double src_vA = GetSourceProbe(ref vA, ref cp);
+                    double src_vB = GetSourceProbe(ref vB, ref cp);
+
                     for(int d = 0; d < D; d++) {
                         for(int c = 0; c < NoArgs; c++) {
-                            GradUxV[l, k, 0, 0, c, d] = GetCoeff(ref Grad_uA[c, d], ref vA, ref cp);
-                            GradUxV[l, k, 0, 1, c, d] = GetCoeff(ref Grad_uB[c, d], ref vA, ref cp);
-                            GradUxV[l, k, 1, 0, c, d] = GetCoeff(ref Grad_uA[c, d], ref vB, ref cp);
-                            GradUxV[l, k, 1, 1, c, d] = GetCoeff(ref Grad_uB[c, d], ref vB, ref cp);
+                            GradUxV[l, k, 0, 0, c, d] = GetCoeffWithSourceProbe(ref Grad_uA[c, d], ref vA, ref cp, src_vA);
+                            GradUxV[l, k, 0, 1, c, d] = GetCoeffWithSourceProbe(ref Grad_uB[c, d], ref vA, ref cp, src_vA);
+                            GradUxV[l, k, 1, 0, c, d] = GetCoeffWithSourceProbe(ref Grad_uA[c, d], ref vB, ref cp, src_vB);
+                            GradUxV[l, k, 1, 1, c, d] = GetCoeffWithSourceProbe(ref Grad_uB[c, d], ref vB, ref cp, src_vB);
                         }
                     }
                 }
@@ -631,9 +646,11 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                         cp.Parameters_IN[np] = efp.ParameterVars_IN[np][l, k];
                     }
 
+                    double src_vA = GetSourceProbeBnd(ref vA, ref cp);
+
                     for(int d = 0; d < D; d++) {
                         for(int c = 0; c < NoArgs; c++) {
-                            GradUxV[l, k, c, d] = GetCoeffBnd(ref Grad_uA[c, d], ref vA, ref cp);
+                            GradUxV[l, k, c, d] = GetCoeffBndWithSourceProbe(ref Grad_uA[c, d], ref vA, ref cp, src_vA);
                         }
                     }
                 }
@@ -671,7 +688,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 cp.jCellIn = E2C[cp.iEdge, 0];
                 cp.jCellOut = E2C[cp.iEdge, 1];
 
-                for (int k = 0; k < K; k++) { // loop over quadrature nodes
+                for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
                     for(int d = 0; d < D; d++) {
                         cp.Normal[d] = efp.Normals[l, k, d];
@@ -684,11 +701,14 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                     }
 
                     for(int d = 0; d < D; d++) {
+                        double src_Grad_vA = GetSourceProbe(ref Grad_vA[d], ref cp);
+                        double src_Grad_vB = GetSourceProbe(ref Grad_vB[d], ref cp);
+
                         for(int c = 0; c < NoArgs; c++) {
-                            UxGradV[l, k, 0, 0, c, d] = GetCoeff(ref uA[c], ref Grad_vA[d], ref cp);
-                            UxGradV[l, k, 0, 1, c, d] = GetCoeff(ref uB[c], ref Grad_vA[d], ref cp);
-                            UxGradV[l, k, 1, 0, c, d] = GetCoeff(ref uA[c], ref Grad_vB[d], ref cp);
-                            UxGradV[l, k, 1, 1, c, d] = GetCoeff(ref uB[c], ref Grad_vB[d], ref cp);
+                            UxGradV[l, k, 0, 0, c, d] = GetCoeffWithSourceProbe(ref uA[c], ref Grad_vA[d], ref cp, src_Grad_vA);
+                            UxGradV[l, k, 0, 1, c, d] = GetCoeffWithSourceProbe(ref uB[c], ref Grad_vA[d], ref cp, src_Grad_vA);
+                            UxGradV[l, k, 1, 0, c, d] = GetCoeffWithSourceProbe(ref uA[c], ref Grad_vB[d], ref cp, src_Grad_vB);
+                            UxGradV[l, k, 1, 1, c, d] = GetCoeffWithSourceProbe(ref uB[c], ref Grad_vB[d], ref cp, src_Grad_vB);
                         }
                     }
                 }
@@ -718,13 +738,13 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             cp.GridDat = efp.GridDat;
             cp.time = efp.time;
 
-            for (int l = 0; l < L; l++) { // loop over edges 
+            for(int l = 0; l < L; l++) { // loop over edges 
                 cp.iEdge = efp.e0 + l;
                 cp.EdgeTag = _EdgeTags[cp.iEdge];
                 cp.jCellIn = E2C[cp.iEdge, 0];
                 cp.jCellOut = E2C[cp.iEdge, 1];
 
-                for (int k = 0; k < K; k++) { // loop over quadrature nodes
+                for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
                     for(int d = 0; d < D; d++) {
                         cp.Normal[d] = efp.Normals[l, k, d];
@@ -736,13 +756,16 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                         cp.Parameters_OUT[np] = efp.ParameterVars_OUT[np][l, k];
                     }
 
-                    for(int d1 = 0; d1 < D; d1++) {
-                        for(int d2 = 0; d2 < D; d2++) {
+                    for(int d2 = 0; d2 < D; d2++) {
+                        double src_Grad_vA = GetSourceProbe(ref Grad_vA[d2], ref cp);
+                        double src_Grad_vB = GetSourceProbe(ref Grad_vB[d2], ref cp);
+
+                        for(int d1 = 0; d1 < D; d1++) {
                             for(int c = 0; c < NoArgs; c++) {
-                                GradUxGradV[l, k, 0, 0, c, d1, d2] = GetCoeff(ref Grad_uA[c, d1], ref Grad_vA[d2], ref cp);
-                                GradUxGradV[l, k, 0, 1, c, d1, d2] = GetCoeff(ref Grad_uB[c, d1], ref Grad_vA[d2], ref cp);
-                                GradUxGradV[l, k, 1, 0, c, d1, d2] = GetCoeff(ref Grad_uA[c, d1], ref Grad_vB[d2], ref cp);
-                                GradUxGradV[l, k, 1, 1, c, d1, d2] = GetCoeff(ref Grad_uB[c, d1], ref Grad_vB[d2], ref cp);
+                                GradUxGradV[l, k, 0, 0, c, d1, d2] = GetCoeffWithSourceProbe(ref Grad_uA[c, d1], ref Grad_vA[d2], ref cp, src_Grad_vA);
+                                GradUxGradV[l, k, 0, 1, c, d1, d2] = GetCoeffWithSourceProbe(ref Grad_uB[c, d1], ref Grad_vA[d2], ref cp, src_Grad_vA);
+                                GradUxGradV[l, k, 1, 0, c, d1, d2] = GetCoeffWithSourceProbe(ref Grad_uA[c, d1], ref Grad_vB[d2], ref cp, src_Grad_vB);
+                                GradUxGradV[l, k, 1, 1, c, d1, d2] = GetCoeffWithSourceProbe(ref Grad_uB[c, d1], ref Grad_vB[d2], ref cp, src_Grad_vB);
                             }
                         }
                     }
@@ -796,8 +819,10 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                     }
 
                     for(int d = 0; d < D; d++) {
+                        double src_Grad_vA = GetSourceProbeBnd(ref Grad_vA[d], ref cp);
+
                         for(int c = 0; c < NoArgs; c++) {
-                            UxGradV[l, k, c, d] = GetCoeffBnd(ref uA[c], ref Grad_vA[d], ref cp);
+                            UxGradV[l, k, c, d] = GetCoeffBndWithSourceProbe(ref uA[c], ref Grad_vA[d], ref cp, src_Grad_vA);
                         }
                     }
                 }
@@ -832,10 +857,12 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                         cp.Parameters_IN[np] = efp.ParameterVars_IN[np][l, k];
                     }
 
-                    for(int d1 = 0; d1 < D; d1++) {
-                        for(int d2 = 0; d2 < D; d2++) {
+                    for(int d2 = 0; d2 < D; d2++) {
+                        double src_Grad_vA = GetSourceProbeBnd(ref Grad_vA[d2], ref cp);
+
+                        for(int d1 = 0; d1 < D; d1++) {
                             for(int c = 0; c < NoArgs; c++) {
-                                GradUxGradV[l, k, c, d1, d2] = GetCoeffBnd(ref Grad_uA[c, d1], ref Grad_vA[d2], ref cp);
+                                GradUxGradV[l, k, c, d1, d2] = GetCoeffBndWithSourceProbe(ref Grad_uA[c, d1], ref Grad_vA[d2], ref cp, src_Grad_vA);
                             }
                         }
                     }
@@ -859,14 +886,14 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             cp.GridDat = efp.GridDat;
             cp.time = efp.time;
 
-            
+
             for(int l = 0; l < L; l++) { // loop over edges
                 cp.iEdge = efp.e0 + l;
                 cp.EdgeTag = _EdgeTags[cp.iEdge];
                 cp.jCellIn = E2C[cp.iEdge, 0];
                 cp.jCellOut = E2C[cp.iEdge, 1];
 
-                for (int k = 0; k < K; k++) { // loop over quadrature nodes
+                for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
                     for(int d = 0; d < D; d++) {
                         cp.Normal[d] = efp.Normals[l, k, d];
@@ -926,7 +953,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             InitGlobals(efp);
             var E2C = efp.GridDat.iGeomEdges.CellIndices;
             var _EdgeTags = efp.GridDat.iGeomEdges.EdgeTags;
-            
+
             CommonParams cp;
             cp.Normal = new Vector(D);
             cp.X = new Vector(D);
@@ -942,7 +969,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 cp.jCellIn = E2C[cp.iEdge, 0];
                 cp.jCellOut = E2C[cp.iEdge, 1];
 
-                for (int k = 0; k < K; k++) { // loop over quadrature nodes
+                for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
                     for(int d = 0; d < D; d++) {
                         cp.Normal[d] = efp.Normals[l, k, d];
@@ -1018,13 +1045,13 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             cp.GridDat = efp.GridDat;
             cp.time = efp.time;
 
-            for (int l = 0; l < L; l++) { // loop over edges 
+            for(int l = 0; l < L; l++) { // loop over edges 
                 cp.iEdge = efp.e0 + l;
                 cp.EdgeTag = _EdgeTags[cp.iEdge];
                 cp.jCellIn = E2C[cp.iEdge, 0];
                 cp.jCellOut = E2C[cp.iEdge, 1];
 
-                for (int k = 0; k < K; k++) { // loop over quadrature nodes
+                for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
                     for(int d = 0; d < D; d++) {
                         cp.Normal[d] = efp.Normals[l, k, d];
@@ -1036,11 +1063,14 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                         cp.Parameters_OUT[np] = efp.ParameterVars_OUT[np][l, k];
                     }
 
-                    for (int c = 0; c < NoArgs; c++) {
-                        UxV[l, k, 0, 0, c] = GetCoeff(ref uA[c], ref vA, ref cp);
-                        UxV[l, k, 0, 1, c] = GetCoeff(ref uB[c], ref vA, ref cp);
-                        UxV[l, k, 1, 0, c] = GetCoeff(ref uA[c], ref vB, ref cp);
-                        UxV[l, k, 1, 1, c] = GetCoeff(ref uB[c], ref vB, ref cp);
+                    double src_vA = GetSourceProbe(ref vA, ref cp);
+                    double src_vB = GetSourceProbe(ref vB, ref cp);
+
+                    for(int c = 0; c < NoArgs; c++) {
+                        UxV[l, k, 0, 0, c] = GetCoeffWithSourceProbe(ref uA[c], ref vA, ref cp, src_vA);
+                        UxV[l, k, 0, 1, c] = GetCoeffWithSourceProbe(ref uB[c], ref vA, ref cp, src_vA);
+                        UxV[l, k, 1, 0, c] = GetCoeffWithSourceProbe(ref uA[c], ref vB, ref cp, src_vB);
+                        UxV[l, k, 1, 1, c] = GetCoeffWithSourceProbe(ref uB[c], ref vB, ref cp, src_vB);
                     }
                 }
             }
@@ -1077,8 +1107,10 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                     }
 
 
+                    double src_vA = GetSourceProbeBnd(ref vA, ref cp);
+
                     for(int c = 0; c < NoArgs; c++) {
-                        UxV[l, k, c] = GetCoeffBnd(ref uA[c], ref vA, ref cp);
+                        UxV[l, k, c] = GetCoeffBndWithSourceProbe(ref uA[c], ref vA, ref cp, src_vA);
                     }
                 }
             }
@@ -1106,17 +1138,17 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         bool m_SetupMultithread_executed = false;
 
         void SetupMultithread() {
-            if (m_SetupMultithread_executed == true)
+            if(m_SetupMultithread_executed == true)
                 return;
             m_SetupMultithread_executed = true;
 
-            if (this.edgeForm is IMultitreadSafety ms) {
-                if (ms.IsMultithreadSafe) {
+            if(this.edgeForm is IMultitreadSafety ms) {
+                if(ms.IsMultithreadSafe) {
                     // nothing to do
                     m_IsMultithreadSafe = true;
                 } else {
                     var clone = (IEdgeForm)ms.CloneForThread();
-                    if (clone != null) {
+                    if(clone != null) {
                         this.edgeForm = clone;
                         m_IsMultithreadSafe = true;
                     } else {
@@ -1137,15 +1169,15 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
         public IEquationComponent CloneForThread() {
             SetupMultithread();
-            if (this.m_IsMultithreadSafe == true)
+            if(this.m_IsMultithreadSafe == true)
                 return this; // it's not necessary to clone the vectorizer, since these guys are anyway created for each thread
             else
-                return null; 
+                return null;
         }
 
         public object GetPadlock() {
             SetupMultithread();
-            if (this.edgeForm is IMultitreadSafety ms)
+            if(this.edgeForm is IMultitreadSafety ms)
                 return ms.GetPadlock();
             else
                 return this.edgeForm;
