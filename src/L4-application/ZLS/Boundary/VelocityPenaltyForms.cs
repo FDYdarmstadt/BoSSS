@@ -456,7 +456,7 @@ namespace ZwoLevelSetSolver.Boundary {
         public string NegativeSpecies => fluidSpecies;
 
         public TermActivationFlags LevelSetTerms {
-            get { return TermActivationFlags.UxV | TermActivationFlags.GradUxV; }
+            get { return TermActivationFlags.UxV; }
         }
 
         public IList<string> ArgumentOrdering => variableNames;
@@ -550,7 +550,7 @@ namespace ZwoLevelSetSolver.Boundary {
             double[] uIN_normal = ComputeNormalVelocity(_uIN, inp.Normal);
             double[] uOUT_normal = ComputeNormalVelocity(_uOUT, inp.Normal);
 
-            double flux = (uIN_normal[d] - uOUT_normal[d]) * (_vIN - _vOUT) * Penalty(inp.jCellIn, inp.jCellOut);
+            double flux = viscosity * (uIN_normal[d] - uOUT_normal[d]) * (_vIN - _vOUT) * Penalty(inp.jCellIn, inp.jCellOut);
             //double flux = PenaltyIn(inp.jCellIn) * (_uIN[d] - _uOUT[d]) * (penaltyFluid * _vIN - penaltySolid * _vOUT);
 
 
@@ -609,7 +609,7 @@ namespace ZwoLevelSetSolver.Boundary {
         public string NegativeSpecies => fluidSpecies;
 
         public TermActivationFlags LevelSetTerms {
-            get { return TermActivationFlags.UxV | TermActivationFlags.GradUxV; }
+            get { return TermActivationFlags.UxV; }
         }
 
         public IList<string> ArgumentOrdering => variableNames;
@@ -703,7 +703,7 @@ namespace ZwoLevelSetSolver.Boundary {
             double[] uIN_tangential = ComputeTangentialVelocity(_uIN, inp.Normal);
             double[] uOUT_tangential = ComputeTangentialVelocity(_uOUT, inp.Normal);
 
-            double flux = (uIN_tangential[d] - uOUT_tangential[d]) * (_vIN - _vOUT) * Penalty(inp.jCellIn, inp.jCellOut);
+            double flux = viscosity * (uIN_tangential[d] - uOUT_tangential[d]) * (_vIN - _vOUT) * Penalty(inp.jCellIn, inp.jCellOut);
             //double flux = PenaltyIn(inp.jCellIn) * (_uIN[d] - _uOUT[d]) * (penaltyFluid * _vIN - penaltySolid * _vOUT);
 
 
