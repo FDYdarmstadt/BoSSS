@@ -151,6 +151,14 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         [DataMember]
         public StokesExtentionBoundaryOption StokesExtentionUseBCmap = StokesExtentionBoundaryOption.FreeSlipAtWall;
 
+        /// <summary>
+        /// If set, the Stokes-extension velocity solve (<see cref="LevelSetEvolution.StokesExtension"/>) is
+        /// performed through PETSc using this options string, instead of the default direct-solver fallback
+        /// chain. Null/empty (the default) preserves the original behavior.
+        /// </summary>
+        [DataMember]
+        public string StokesExtensionPetscOptions = null;
+
 
         #endregion
 

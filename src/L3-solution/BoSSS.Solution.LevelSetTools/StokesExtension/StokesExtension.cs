@@ -53,6 +53,15 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         const double viscosity = 1.0;
 
         /// <summary>
+        /// If set, the extension's linear system is solved through PETSc
+        /// (<see cref="BoSSS.Solution.AdvancedSolvers.PetscGMRESConfig"/>) using this options string,
+        /// instead of the default direct-solver fallback chain (<see cref="ilPSP.LinSolvers.SimpleSolversInterface.Solve_Direct"/>).
+        /// If the PETSc solve throws, the existing direct-solver fallback in <see cref="SolveExtension"/> still applies.
+        /// Null/empty (the default) preserves the original behavior.
+        /// </summary>
+        public string PetscOptions = null;
+
+        /// <summary>
         /// Bulk of the artificial Stokes extension equation;
         /// 
         /// Note that it would also be possible to integrate this operator with <see cref="GetInterfaceOperator(int)"/>:
@@ -321,7 +330,13 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                     var Pre_Sol = ExtenstionSolVec.CloneAs();
                     tr.Info("StokesExtension.SolveExtension trying with Multigridoperator");
                     mgOp.TransformRhsInto(RHS, Pre_RHS, true);
-                    mgOp.OperatorMatrix.Solve_Direct(Pre_Sol, Pre_RHS);
+                    if(!string.IsNullOrWhiteSpace(PetscOptions)) {
+                        var petscSolver = new PetscGMRESConfig() { PetscOptions = PetscOptions }.CreateInstance(mgOp);
+                        petscSolver.Solve(Pre_Sol, Pre_RHS);
+                        petscSolver.Dispose();
+                    } else {
+                        mgOp.OperatorMatrix.Solve_Direct(Pre_Sol, Pre_RHS);
+                    }
                     mgOp.TransformSolFrom(ExtenstionSolVec, Pre_Sol);
                     e = null;
                 } catch(Exception ee) {

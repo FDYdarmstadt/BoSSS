@@ -47,8 +47,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// <summary>
         /// ctor
         /// </summary>
-        public StokesExtensionEvolver(string levelSetName, int hMForder, int D, IncompressibleBoundaryCondMap bcMap, double AgglomThreshold, IGridData grd, 
-            bool fullStokes = true, StokesExtentionBoundaryOption useBCmap = StokesExtentionBoundaryOption.FreeSlipAtWall, EllipticReInitAlgoControl ReInitControl = null, int ReInitPeriod = 0) {
+        public StokesExtensionEvolver(string levelSetName, int hMForder, int D, IncompressibleBoundaryCondMap bcMap, double AgglomThreshold, IGridData grd,
+            bool fullStokes = true, StokesExtentionBoundaryOption useBCmap = StokesExtentionBoundaryOption.FreeSlipAtWall, EllipticReInitAlgoControl ReInitControl = null, int ReInitPeriod = 0,
+            string petscOptions = null) {
             for(int d = 0; d < D; d++) {
                 if(!bcMap.bndFunction.ContainsKey(NSECommon.VariableNames.Velocity_d(d)))
                     throw new ArgumentException($"Missing boundary condition for variable {NSECommon.VariableNames.Velocity_d(d)}.");
@@ -69,6 +70,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
             ReInit_Control = ReInitControl != null ? ReInitControl : new EllipticReInitAlgoControl();
             this.ReInit_Period = ReInitPeriod;
+            this.petscOptions = petscOptions;
 
         }
 
@@ -82,6 +84,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         bool fullStokes;
         StokesExtentionBoundaryOption useBCmap;
         IncompressibleBoundaryCondMap bcmap;
+        string petscOptions;
 
         /// <summary>
         /// should only be the interface velocity vector; typically, a phase-averaged velocity.
@@ -193,7 +196,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 }
                 //dgPltList.AddRange(meanVelocity);
 
-                var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold, fullStokes, useBCMap: useBCmap);
+                var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold, fullStokes, useBCMap: useBCmap) {
+                    PetscOptions = this.petscOptions
+                };
                 ExtVelBuilder.SolveExtension(levelSet.LevelSetIndex, levelSet.Tracker, meanVelocity, extensionVelocity);
                 //dgPltList.AddRange(extensionVelocity);
 

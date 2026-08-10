@@ -293,7 +293,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                             stokesExtEvo = new StokesExtensionEvolver(LevelSetCG, QuadOrder(), D,
                             GetBcMap(),
                             this.Control.AgglomerationThreshold, this.GridData, useBCmap: this.Control.StokesExtentionUseBCmap, 
-                            ReInitControl: this.Control.ReInitControl, ReInitPeriod: this.Control.ReInitPeriod);
+                            ReInitControl: this.Control.ReInitControl, ReInitPeriod: this.Control.ReInitPeriod,
+                            petscOptions: this.Control.StokesExtensionPetscOptions);
                         }
                         lsUpdater.AddEvolver(LevelSetCG, stokesExtEvo);
                         break;
