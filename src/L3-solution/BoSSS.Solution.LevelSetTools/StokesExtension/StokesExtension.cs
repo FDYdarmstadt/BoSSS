@@ -335,7 +335,15 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                         petscSolver.Solve(Pre_Sol, Pre_RHS);
                         petscSolver.Dispose();
                     } else {
-                        mgOp.OperatorMatrix.Solve_Direct(Pre_Sol, Pre_RHS);
+                        // mgOp.OperatorMatrix.Solve_Direct(Pre_Sol, Pre_RHS);
+                        var schurSolver = new SchurComplementForStokes.Config() {
+                            ConvergenceCriterion = 1e-10,
+                            MaxSolverIterations = 50,
+                            WriteDebugInfoLevel = 0
+                        }.CreateInstance(mgOp);
+                        schurSolver.Solve(Pre_Sol, Pre_RHS);
+                        schurSolver.Dispose();
+                        // mgOp.OperatorMatrix.Solve_Direct(Pre_Sol, Pre_RHS);
                     }
                     mgOp.TransformSolFrom(ExtenstionSolVec, Pre_Sol);
                     e = null;
