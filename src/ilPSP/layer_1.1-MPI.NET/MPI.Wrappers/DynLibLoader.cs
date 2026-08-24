@@ -346,6 +346,18 @@ namespace MPI.Wrappers.Utils {
                     continue;
                 }
 
+                bool hasDirectoryPart = _LibName.IndexOf(Path.DirectorySeparatorChar) >= 0
+                    || _LibName.IndexOf(Path.AltDirectorySeparatorChar) >= 0;
+                if(hasDirectoryPart && !ContainesWildCards(_LibName)) {
+                    string candidate = Path.Combine(di.FullName, _LibName);
+                    if(File.Exists(candidate)) {
+                        string fullPath = Path.GetFullPath(candidate);
+                        Info("Found '" + fullPath + "'");
+                        LibNames.Add(fullPath);
+                    }
+                    continue;
+                }
+
                 FileInfo[] files;
                 try {
                     files = di.GetFiles(_LibName);

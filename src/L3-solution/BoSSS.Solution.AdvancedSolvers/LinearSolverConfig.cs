@@ -20,6 +20,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Runtime.Serialization;
+using ilPSP.LinSolvers.PETSc;
 
 namespace BoSSS.Solution.Control {
 
@@ -50,6 +51,36 @@ namespace BoSSS.Solution.Control {
         /// Direct solver (<see cref="ilPSP.LinSolvers.UMFPACK.UMFPACKSolver"/>) without any pre-processing of the matrix.
         /// </summary>
         direct_umfpack = 3,
+
+        /// <summary>
+        /// PETSc direct LU using PETSc's default factorization package. The
+        /// portable baseline supports this option on a single MPI rank.
+        /// </summary>
+        direct_petsc = 10,
+
+        /// <summary>
+        /// PETSc direct LU using MUMPS. The selected native PETSc library must
+        /// have been built with MUMPS.
+        /// </summary>
+        direct_petsc_mumps = 11,
+
+        /// <summary>
+        /// PETSc direct LU using SuperLU_DIST. The selected native PETSc library
+        /// must have been built with SuperLU_DIST.
+        /// </summary>
+        direct_petsc_superlu_dist = 12,
+
+        /// <summary>
+        /// PETSc direct LU using SuiteSparse UMFPACK. This is a single-rank
+        /// backend and must be present in the selected native PETSc library.
+        /// </summary>
+        direct_petsc_umfpack = 13,
+
+        /// <summary>
+        /// PETSc direct Cholesky using PETSc's default factorization package.
+        /// The matrix must be symmetric positive-definite.
+        /// </summary>
+        direct_petsc_cholesky = 14,
 
 
         /// <summary>
@@ -134,6 +165,29 @@ namespace BoSSS.Solution.Control {
 
                 case LinearSolverCode.direct_mumps:
                     return new AdvancedSolvers.DirectSolver.Config() { WhichSolver = AdvancedSolvers.DirectSolver._whichSolver.MUMPS };
+
+                case LinearSolverCode.direct_petsc:
+                    return new AdvancedSolvers.PETScDirectSolverConfig();
+
+                case LinearSolverCode.direct_petsc_mumps:
+                    return new AdvancedSolvers.PETScDirectSolverConfig() {
+                        Backend = PETScDirectBackend.Mumps
+                    };
+
+                case LinearSolverCode.direct_petsc_superlu_dist:
+                    return new AdvancedSolvers.PETScDirectSolverConfig() {
+                        Backend = PETScDirectBackend.SuperLuDist
+                    };
+
+                case LinearSolverCode.direct_petsc_umfpack:
+                    return new AdvancedSolvers.PETScDirectSolverConfig() {
+                        Backend = PETScDirectBackend.Umfpack
+                    };
+
+                case LinearSolverCode.direct_petsc_cholesky:
+                    return new AdvancedSolvers.PETScDirectSolverConfig() {
+                        Factorization = PETScDirectFactorization.Cholesky
+                    };
 
                 case LinearSolverCode.exp_Kcycle_schwarz:
                     return new AdvancedSolvers.OrthoMGSchwarzConfig();
