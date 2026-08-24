@@ -126,7 +126,7 @@ namespace PETScTest {
             double residual;
             int reason;
             if(solverMode == SolverMode.Krylov) {
-                using(var solver = new PETScSolver {
+                using(var solver = new PETScKrylovSolver {
                     NativeVariant = nativeVariant,
                     Options = "-ksp_type cg -pc_type jacobi -ksp_rtol 1e-12 -ksp_atol 1e-50 -ksp_max_it 1000"
                 }) {

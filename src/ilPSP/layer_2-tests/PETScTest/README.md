@@ -37,6 +37,11 @@ Release. `PETSC_MPI_LAUNCHER` defaults to `mpiexec` on both platforms.
 
 ## Direct-solver API
 
+The options-driven iterative class is named `PETScKrylovSolver`; its Level-3
+configuration is `PETScKrylovSolverConfig`. Direct and Krylov implementations
+share `PETScSolverBase`, which owns matrix transfer, native lifecycle, solve
+validation, convergence statistics, and disposal.
+
 For an ilPSP matrix, use the typed API rather than constructing PETSc option
 strings manually:
 

@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 using System;
-using System.Collections.Generic;
 using System.Text;
 
 namespace ilPSP.LinSolvers.PETSc {
@@ -75,16 +74,7 @@ namespace ilPSP.LinSolvers.PETSc {
     /// factorization preconditioner. Distributed direct solves require a backend
     /// such as MUMPS or SuperLU_DIST to be compiled into PETSc.
     /// </remarks>
-    public sealed class PETScDirectSolver : ISparseSolver {
-
-        PETScSolver m_Solver;
-        bool m_Disposed;
-
-        /// <summary>
-        /// Native PETSc parallel runtime. This must be set before
-        /// <see cref="DefineMatrix"/>.
-        /// </summary>
-        public PETScNativeVariant NativeVariant { get; set; } = PETScNativeVariant.Mpi;
+    public sealed class PETScDirectSolver : PETScSolverBase {
 
         /// <summary>
         /// Factorization to perform.
@@ -101,16 +91,6 @@ namespace ilPSP.LinSolvers.PETSc {
         /// for example package-specific pivoting or ordering controls.
         /// </summary>
         public string AdditionalOptions { get; set; } = string.Empty;
-
-        /// <summary>
-        /// PETSc convergence reason from the most recent solve.
-        /// </summary>
-        public int ConvergenceReason => m_Solver?.ConvergenceReason ?? 0;
-
-        /// <summary>
-        /// PETSc residual norm from the most recent solve.
-        /// </summary>
-        public double ResidualNorm => m_Solver?.ResidualNorm ?? double.NaN;
 
         /// <summary>
         /// Produces the PETSc option string corresponding to a typed direct-solver
@@ -164,62 +144,18 @@ namespace ilPSP.LinSolvers.PETSc {
             return options.ToString();
         }
 
-        /// <summary>
-        /// Defines and factors the sparse matrix.
-        /// </summary>
-        public void DefineMatrix(IMutableMatrixEx matrix) {
-            if(matrix == null)
-                throw new ArgumentNullException(nameof(matrix));
-            ThrowIfDisposed();
-            if(m_Solver != null)
-                throw new InvalidOperationException("DefineMatrix can only be called once in the lifetime of a PETSc direct solver.");
+        /// <inheritdoc/>
+        protected override string SolverOptions => BuildOptions(Factorization, Backend, AdditionalOptions);
 
-            var solver = new PETScSolver {
-                NativeVariant = NativeVariant,
-                Options = BuildOptions(Factorization, Backend, AdditionalOptions)
-            };
-            try {
-                solver.DefineMatrix(matrix);
-            } catch(Exception error) {
-                solver.Dispose();
-                if(Backend != PETScDirectBackend.Default) {
-                    throw new InvalidOperationException(
-                        "PETSc could not initialize the requested direct-solver backend '"
-                        + Backend
-                        + "'. Ensure that this backend was compiled into the selected native PETSc variant.",
-                        error);
-                }
-                throw;
-            }
-            m_Solver = solver;
-        }
-
-        /// <summary>
-        /// Solves the factored sparse system.
-        /// </summary>
-        public SolverResult Solve<Tunknowns, Trhs>(Tunknowns x, Trhs rhs)
-            where Tunknowns : IList<double>
-            where Trhs : IList<double> {
-            ThrowIfDisposed();
-            if(m_Solver == null)
-                throw new InvalidOperationException("DefineMatrix must be called before Solve.");
-            return m_Solver.Solve(x, rhs);
-        }
-
-        /// <summary>
-        /// Releases the PETSc solver and its factorization.
-        /// </summary>
-        public void Dispose() {
-            if(m_Disposed)
-                return;
-            m_Solver?.Dispose();
-            m_Solver = null;
-            m_Disposed = true;
-        }
-
-        void ThrowIfDisposed() {
-            if(m_Disposed)
-                throw new ObjectDisposedException(nameof(PETScDirectSolver));
+        /// <inheritdoc/>
+        protected override Exception CreateSetupException(Exception error) {
+            if(Backend == PETScDirectBackend.Default)
+                return error;
+            return new InvalidOperationException(
+                "PETSc could not initialize the requested direct-solver backend '"
+                + Backend
+                + "'. Ensure that this backend was compiled into the selected native PETSc variant.",
+                error);
         }
     }
 }

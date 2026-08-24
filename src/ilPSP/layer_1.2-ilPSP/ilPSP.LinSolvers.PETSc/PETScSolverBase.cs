@@ -23,15 +23,15 @@ using MPI.Wrappers;
 namespace ilPSP.LinSolvers.PETSc {
 
     /// <summary>
-    /// Options-driven PETSc KSP solver for distributed BoSSS matrices.
+    /// Common native matrix, solver, and lifecycle implementation for PETSc solvers.
     /// </summary>
     /// <remarks>
     /// The native implementation supports Linux and Windows and uses
     /// MPI_COMM_WORLD for the MPI variants. <see cref="PETScNativeVariant.OpenMp"/> uses PETSc MPIUNI
-    /// and is therefore restricted to one BoSSS MPI rank. PETSc's KSP and PC
-    /// types are selected through <see cref="Options"/>.
+    /// and is therefore restricted to one BoSSS MPI rank. Derived classes only
+    /// supply their PETSc options and optional field decomposition.
     /// </remarks>
-    public sealed class PETScSolver : ISparseSolver {
+    public abstract class PETScSolverBase : ISparseSolver {
 
         UnsafePETSc m_Native;
         IntPtr m_Solver;
@@ -44,22 +44,28 @@ namespace ilPSP.LinSolvers.PETSc {
         public PETScNativeVariant NativeVariant { get; set; } = PETScNativeVariant.Mpi;
 
         /// <summary>
-        /// PETSc command-line-style options, for example
-        /// <c>-ksp_type cg -pc_type jacobi -ksp_rtol 1e-10</c>.
+        /// PETSc command-line-style options supplied by the concrete solver.
         /// </summary>
-        public string Options { get; set; } = "-ksp_type gmres -pc_type jacobi -ksp_rtol 1e-10 -ksp_atol 1e-50 -ksp_max_it 10000";
+        protected abstract string SolverOptions { get; }
 
         /// <summary>
         /// Optional local portion of the first field's global row indices for PCFIELDSPLIT.
         /// Both field arrays must be supplied together.
         /// </summary>
-        public int[] FirstFieldRows { get; set; }
+        protected virtual int[] SolverFirstFieldRows => null;
 
         /// <summary>
         /// Optional local portion of the second field's global row indices for PCFIELDSPLIT.
         /// Both field arrays must be supplied together.
         /// </summary>
-        public int[] SecondFieldRows { get; set; }
+        protected virtual int[] SolverSecondFieldRows => null;
+
+        /// <summary>
+        /// Allows a concrete solver to add context to a native setup failure.
+        /// </summary>
+        protected virtual Exception CreateSetupException(Exception error) {
+            return error;
+        }
 
         /// <summary>
         /// PETSc convergence reason returned by the most recent solve.
@@ -97,7 +103,7 @@ namespace ilPSP.LinSolvers.PETSc {
             if(globalRows > int.MaxValue || globalRowStart > int.MaxValue)
                 throw new NotSupportedException("The packaged PETSc uses 32-bit indices and this matrix exceeds that range.");
 
-            ValidateFieldRows(FirstFieldRows, SecondFieldRows, globalRows);
+            ValidateFieldRows(SolverFirstFieldRows, SolverSecondFieldRows, globalRows);
 
             m_LocalRows = matrix.RowPartitioning.LocalLength;
             int[] rowPointers = new int[m_LocalRows + 1];
@@ -120,13 +126,12 @@ namespace ilPSP.LinSolvers.PETSc {
             }
 
             m_Native = new UnsafePETSc(NativeVariant);
-            // Use the lifecycle-aware entry point. It records that BoSSS initialized PETSc,
-            // allowing application shutdown to finalize PETSc before MPI is finalized.
-            Check(m_Native.InitializeRuntime(), "PETSc initialization");
-
             int[] columnArray = columns.Count > 0 ? columns.ToArray() : new int[1];
             double[] valueArray = values.Count > 0 ? values.ToArray() : new double[1];
             try {
+                // This records that BoSSS initialized PETSc, allowing application
+                // shutdown to finalize PETSc before MPI is finalized.
+                Check(m_Native.InitializeRuntime(), "PETSc initialization");
                 Check(
                     m_Native.CreateKspSolver(
                         m_LocalRows,
@@ -135,18 +140,21 @@ namespace ilPSP.LinSolvers.PETSc {
                         rowPointers,
                         columnArray,
                         valueArray,
-                        Options ?? string.Empty,
-                        FirstFieldRows?.Length ?? 0,
-                        FirstFieldRows,
-                        SecondFieldRows?.Length ?? 0,
-                        SecondFieldRows,
+                        SolverOptions ?? string.Empty,
+                        SolverFirstFieldRows?.Length ?? 0,
+                        SolverFirstFieldRows,
+                        SolverSecondFieldRows?.Length ?? 0,
+                        SolverSecondFieldRows,
                         out m_Solver),
                     "PETSc matrix/KSP setup");
-            } catch {
+            } catch(Exception error) {
                 m_Native.Dispose();
                 m_Native = null;
                 m_LocalRows = -1;
-                throw;
+                Exception setupError = CreateSetupException(error);
+                if(ReferenceEquals(setupError, error))
+                    throw;
+                throw setupError;
             }
         }
 
@@ -222,10 +230,10 @@ namespace ilPSP.LinSolvers.PETSc {
 
             foreach(int row in first)
                 if(row < 0 || row >= globalRows)
-                    throw new ArgumentOutOfRangeException(nameof(FirstFieldRows), $"Field row {row} is outside [0,{globalRows}).");
+                throw new ArgumentOutOfRangeException("firstFieldRows", $"Field row {row} is outside [0,{globalRows}).");
             foreach(int row in second)
                 if(row < 0 || row >= globalRows)
-                    throw new ArgumentOutOfRangeException(nameof(SecondFieldRows), $"Field row {row} is outside [0,{globalRows}).");
+                    throw new ArgumentOutOfRangeException("secondFieldRows", $"Field row {row} is outside [0,{globalRows}).");
         }
 
         static void ValidateResult(double[] solution, double residualNorm, int convergenceReason) {
@@ -246,7 +254,7 @@ namespace ilPSP.LinSolvers.PETSc {
 
         void ThrowIfDisposed() {
             if(m_Disposed)
-                throw new ObjectDisposedException(nameof(PETScSolver));
+                throw new ObjectDisposedException(GetType().Name);
         }
 
         /// <summary>
@@ -275,5 +283,41 @@ namespace ilPSP.LinSolvers.PETSc {
             if(destroyError != null)
                 throw destroyError;
         }
+    }
+
+    /// <summary>
+    /// Options-driven PETSc Krylov solver for distributed BoSSS matrices.
+    /// </summary>
+    /// <remarks>
+    /// PETSc KSP and preconditioner types are selected through <see cref="Options"/>.
+    /// </remarks>
+    public sealed class PETScKrylovSolver : PETScSolverBase {
+
+        /// <summary>
+        /// PETSc command-line-style options, for example
+        /// <c>-ksp_type cg -pc_type jacobi -ksp_rtol 1e-10</c>.
+        /// </summary>
+        public string Options { get; set; } = "-ksp_type gmres -pc_type jacobi -ksp_rtol 1e-10 -ksp_atol 1e-50 -ksp_max_it 10000";
+
+        /// <summary>
+        /// Optional local portion of the first field's global row indices for PCFIELDSPLIT.
+        /// Both field arrays must be supplied together.
+        /// </summary>
+        public int[] FirstFieldRows { get; set; }
+
+        /// <summary>
+        /// Optional local portion of the second field's global row indices for PCFIELDSPLIT.
+        /// Both field arrays must be supplied together.
+        /// </summary>
+        public int[] SecondFieldRows { get; set; }
+
+        /// <inheritdoc/>
+        protected override string SolverOptions => Options;
+
+        /// <inheritdoc/>
+        protected override int[] SolverFirstFieldRows => FirstFieldRows;
+
+        /// <inheritdoc/>
+        protected override int[] SolverSecondFieldRows => SecondFieldRows;
     }
 }

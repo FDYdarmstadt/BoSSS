@@ -72,7 +72,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Creates and initializes a direct PETSc solver for a multigrid level.
         /// </summary>
         public ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
-            var solver = new PETScKSP {
+            var solver = new PETScMultigridSolver {
                 Options = PETScDirectSolver.BuildOptions(Factorization, Backend, AdditionalOptions),
                 NativeVariant = NativeVariant
             };
@@ -116,10 +116,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
     /// <summary>
-    /// Configuration for the options-driven PETSc KSP adapter.
+    /// Configuration for the options-driven PETSc Krylov solver adapter.
     /// </summary>
     [Serializable]
-    public sealed class PETScKSPConfig : IterativeSolverConfig {
+    public sealed class PETScKrylovSolverConfig : IterativeSolverConfig {
 
         /// <summary>
         /// PETSc command-line-style options. The KSP and preconditioner are not fixed by
@@ -149,12 +149,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         [DataMember]
         public int[] SecondFieldVariables;
 
-        public override string Name => "PETSc KSP (options-driven)";
+        public override string Name => "PETSc Krylov solver (options-driven)";
 
-        public override string Shortname => "PETSc-KSP";
+        public override string Shortname => "PETSc-Krylov";
 
         public override ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
-            var solver = new PETScKSP {
+            var solver = new PETScMultigridSolver {
                 Options = ComposeOptions(),
                 NativeVariant = NativeVariant,
                 FirstFieldVariables = FirstFieldVariables == null ? null : (int[])FirstFieldVariables.Clone(),
@@ -175,11 +175,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
     }
 
     /// <summary>
-    /// Level-3 adapter from a <see cref="MultigridOperator"/> to the ilPSP PETSc KSP solver.
+    /// Shared Level-3 adapter from a <see cref="MultigridOperator"/> to a PETSc solver.
     /// </summary>
-    public sealed class PETScKSP : ISolverSmootherTemplate {
+    public sealed class PETScMultigridSolver : ISolverSmootherTemplate {
 
-        PETScSolver m_Solver;
+        PETScKrylovSolver m_Solver;
         MultigridOperator m_Operator;
         int m_Iterations;
         bool m_Converged;
@@ -229,7 +229,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             DisposeSolver();
             ValidateFieldVariables(op);
 
-            var solver = new PETScSolver {
+            var solver = new PETScKrylovSolver {
                 Options = Options ?? string.Empty,
                 NativeVariant = NativeVariant
             };
@@ -253,7 +253,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             where U : IList<double>
             where V : IList<double> {
             if(m_Solver == null)
-                throw new InvalidOperationException("PETSc KSP is not initialized.");
+                throw new InvalidOperationException("PETSc solver is not initialized.");
 
             var result = m_Solver.Solve(X, B);
             m_Iterations += result.NoOfIterations;
@@ -270,7 +270,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public object Clone() {
-            return new PETScKSP {
+            return new PETScMultigridSolver {
                 Options = Options,
                 NativeVariant = NativeVariant,
                 FirstFieldVariables = FirstFieldVariables == null ? null : (int[])FirstFieldVariables.Clone(),
