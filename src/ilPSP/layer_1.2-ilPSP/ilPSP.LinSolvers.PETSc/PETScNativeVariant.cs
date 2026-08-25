@@ -22,19 +22,26 @@ namespace ilPSP.LinSolvers.PETSc {
     public enum PETScNativeVariant {
 
         /// <summary>
-        /// Distributed-memory OpenMPI build. This is the default and also supports one rank.
+        /// Selects OpenMP for one MPI rank, MPI for multiple ranks with one
+        /// thread each, and MPI plus OpenMP for multiple multi-threaded ranks.
         /// </summary>
-        Mpi,
+        Auto = 0,
+
+        // Seq = 1, // we don't have this :)
 
         /// <summary>
         /// Shared-memory OpenMP build using PETSc MPIUNI. BoSSS must run with one MPI rank.
         /// </summary>
-        OpenMp,
+        OpenMp = 2,
+
+        /// <summary>
+        /// Distributed-memory OpenMPI build. This also supports one rank.
+        /// </summary>
+        Mpi = 3,
 
         /// <summary>
         /// Hybrid OpenMPI and OpenMP build.
         /// </summary>
-        MpiOpenMp
+        MpiOpenMp = 4        
     }
 }
-

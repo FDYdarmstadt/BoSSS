@@ -38,7 +38,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Native PETSc parallel runtime.
         /// </summary>
         [DataMember]
-        public PETScNativeVariant NativeVariant = PETScNativeVariant.Mpi;
+        public PETScNativeVariant NativeVariant = PETScNativeVariant.Auto;
 
         /// <summary>
         /// LU or Cholesky factorization.
@@ -131,10 +131,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public string PETScOptions = "-ksp_type gmres -pc_type jacobi";
 
         /// <summary>
-        /// Native PETSc parallel runtime. MPI remains the default.
+        /// Native PETSc parallel runtime. The default selects a variant automatically.
         /// </summary>
         [DataMember]
-        public PETScNativeVariant NativeVariant = PETScNativeVariant.Mpi;
+        public PETScNativeVariant NativeVariant = PETScNativeVariant.Auto;
 
         /// <summary>
         /// Optional BoSSS variable indices that form PETSc field split 0. Both split arrays
@@ -192,7 +192,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Native PETSc parallel runtime.
         /// </summary>
-        public PETScNativeVariant NativeVariant { get; set; } = PETScNativeVariant.Mpi;
+        public PETScNativeVariant NativeVariant { get; set; } = PETScNativeVariant.Auto;
 
         /// <summary>
         /// Optional BoSSS variable indices for PETSc field split 0.

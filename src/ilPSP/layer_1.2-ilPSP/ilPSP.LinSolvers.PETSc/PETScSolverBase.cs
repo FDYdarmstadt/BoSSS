@@ -40,8 +40,32 @@ namespace ilPSP.LinSolvers.PETSc {
 
         /// <summary>
         /// Parallel runtime used by PETSc. This must be set before <see cref="DefineMatrix"/>.
+        /// The default selects a variant from the active MPI and threading configuration.
         /// </summary>
-        public PETScNativeVariant NativeVariant { get; set; } = PETScNativeVariant.Mpi;
+        public PETScNativeVariant NativeVariant { get; set; } = PETScNativeVariant.Auto;
+
+        /// <summary>
+        /// Native variant selected when <see cref="DefineMatrix"/> was called.
+        /// </summary>
+        public PETScNativeVariant? EffectiveNativeVariant { get; private set; }
+
+        /// <summary>
+        /// Resolves an explicitly requested variant or selects one automatically.
+        /// </summary>
+        public static PETScNativeVariant ResolveNativeVariant(PETScNativeVariant requestedVariant, int mpiSize, int numThreads) {
+            if(mpiSize < 1)
+                throw new ArgumentOutOfRangeException(nameof(mpiSize), mpiSize, "The MPI size must be positive.");
+            if(numThreads < 1)
+                throw new ArgumentOutOfRangeException(nameof(numThreads), numThreads, "The thread count must be positive.");
+
+            if(requestedVariant != PETScNativeVariant.Auto)
+                return requestedVariant;
+            if(mpiSize == 1)
+                return PETScNativeVariant.OpenMp;
+            if(numThreads == 1)
+                return PETScNativeVariant.Mpi;
+            return PETScNativeVariant.MpiOpenMp;
+        }
 
         /// <summary>
         /// PETSc command-line-style options supplied by the concrete solver.
@@ -93,7 +117,12 @@ namespace ilPSP.LinSolvers.PETSc {
                 throw new NotSupportedException("The current PETSc native ABI supports MPI_COMM_WORLD only.");
 
             csMPI.Raw.Comm_Size(matrix.MPI_Comm, out int mpiSize);
-            if(NativeVariant == PETScNativeVariant.OpenMp && mpiSize != 1)
+            PETScNativeVariant effectiveNativeVariant = ResolveNativeVariant(
+                NativeVariant,
+                mpiSize,
+                ilPSP.Environment.NumThreads);
+            EffectiveNativeVariant = effectiveNativeVariant;
+            if(effectiveNativeVariant == PETScNativeVariant.OpenMp && mpiSize != 1)
                 throw new NotSupportedException("The PETSc OpenMP variant uses MPIUNI and requires exactly one BoSSS MPI rank. Use MpiOpenMp for multiple ranks.");
 
             MPICollectiveWatchDog.Watch(matrix.MPI_Comm);
@@ -125,7 +154,7 @@ namespace ilPSP.LinSolvers.PETSc {
                 rowPointers[localRow + 1] = columns.Count;
             }
 
-            m_Native = new UnsafePETSc(NativeVariant);
+            m_Native = new UnsafePETSc(effectiveNativeVariant);
             int[] columnArray = columns.Count > 0 ? columns.ToArray() : new int[1];
             double[] valueArray = values.Count > 0 ? values.ToArray() : new double[1];
             try {

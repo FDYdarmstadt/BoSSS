@@ -1,22 +1,14 @@
 @echo off
 setlocal
 
-set "NATIVE_DIR=%~1"
-if not defined NATIVE_DIR set "NATIVE_DIR=%BOSSS_NATIVE_DIR%"
-if not defined NATIVE_DIR (
-    echo Usage: run-variant-tests.bat ^<BoSSS-native-BUILDS-directory^>
-    exit /b 2
-)
-if not exist "%NATIVE_DIR%" (
-    echo Native library directory does not exist: "%NATIVE_DIR%"
-    exit /b 2
-)
 if not defined PETSC_TEST_CONFIGURATION set "PETSC_TEST_CONFIGURATION=Release"
 if not defined PETSC_MPI_LAUNCHER set "PETSC_MPI_LAUNCHER=mpiexec"
 
 set "PROJECT_DIR=%~dp0"
 set "TEST_DLL=%PROJECT_DIR%bin\%PETSC_TEST_CONFIGURATION%\net8.0\PETScTest.dll"
 dotnet build "%PROJECT_DIR%PETScTest.csproj" -c "%PETSC_TEST_CONFIGURATION%"
+if errorlevel 1 exit /b %errorlevel%
+dotnet "%TEST_DLL%" --test-auto-selection
 if errorlevel 1 exit /b %errorlevel%
 
 call :run_serial "MPI, one rank and one thread" petsc_mpi 1
@@ -31,11 +23,23 @@ call :run_mpi "MPI+OpenMP, two ranks and two threads per rank" petsc_mpi_omp 2 0
 if errorlevel 1 exit /b %errorlevel%
 call :run_mpi "OpenMP-only rejects two MPI ranks" petsc_omp 1 1
 if errorlevel 1 exit /b %errorlevel%
+call :run_serial "Automatic selection, one rank and two threads" auto 2
+if errorlevel 1 exit /b %errorlevel%
+call :run_mpi "Automatic selection, two ranks and one thread" auto 1 0
+if errorlevel 1 exit /b %errorlevel%
+call :run_mpi "Automatic selection, two ranks and two threads per rank" auto 2 0
+if errorlevel 1 exit /b %errorlevel%
 call :run_serial "Direct LU through MPI variant, one rank" petsc_mpi 1 direct_lu
 if errorlevel 1 exit /b %errorlevel%
 call :run_serial "Direct Cholesky through OpenMP variant" petsc_omp 2 direct_cholesky
 if errorlevel 1 exit /b %errorlevel%
 call :run_serial "Direct LU through hybrid variant, one rank" petsc_mpi_omp 2 direct_lu
+if errorlevel 1 exit /b %errorlevel%
+call :run_mpi "Large MPI matrix, two ranks" petsc_mpi 1 0 2048
+if errorlevel 1 exit /b %errorlevel%
+call :run_serial "Large OpenMP matrix" petsc_omp 2 krylov 4096
+if errorlevel 1 exit /b %errorlevel%
+call :run_mpi "Large MPI+OpenMP matrix, two ranks" petsc_mpi_omp 2 0 2048
 if errorlevel 1 exit /b %errorlevel%
 
 echo All PETSc variant tests passed.
@@ -43,21 +47,20 @@ exit /b 0
 
 :run_serial
 echo == %~1 ==
-set "BOSSS_NATIVE_DIR=%NATIVE_DIR%"
-set "BOSSS_PETSC_VARIANT=%~2"
-set "BOSSS_PETSC_SOLVER_MODE=%~4"
-if not defined BOSSS_PETSC_SOLVER_MODE set "BOSSS_PETSC_SOLVER_MODE=krylov"
-set "BOSSS_PETSC_EXPECT_OPENMP_MPI_REJECTION=0"
+set "SOLVER_MODE=%~4"
+if not defined SOLVER_MODE set "SOLVER_MODE=krylov"
+set "LOCAL_ROWS=%~5"
+if not defined LOCAL_ROWS set "LOCAL_ROWS=4"
 set "OMP_NUM_THREADS=%~3"
-dotnet "%TEST_DLL%"
+dotnet "%TEST_DLL%" --variant "%~2" --solver "%SOLVER_MODE%" --local-rows "%LOCAL_ROWS%"
 exit /b %errorlevel%
 
 :run_mpi
 echo == %~1 ==
-set "BOSSS_NATIVE_DIR=%NATIVE_DIR%"
-set "BOSSS_PETSC_VARIANT=%~2"
-set "BOSSS_PETSC_SOLVER_MODE=krylov"
+set "LOCAL_ROWS=%~5"
+if not defined LOCAL_ROWS set "LOCAL_ROWS=4"
 set "OMP_NUM_THREADS=%~3"
-set "BOSSS_PETSC_EXPECT_OPENMP_MPI_REJECTION=%~4"
-%PETSC_MPI_LAUNCHER% -n 2 dotnet "%TEST_DLL%"
+set "EXPECT_REJECTION_ARG="
+if "%~4"=="1" set "EXPECT_REJECTION_ARG=--expect-openmp-mpi-rejection"
+%PETSC_MPI_LAUNCHER% -n 2 dotnet "%TEST_DLL%" --variant "%~2" --solver krylov --local-rows "%LOCAL_ROWS%" %EXPECT_REJECTION_ARG%
 exit /b %errorlevel%
