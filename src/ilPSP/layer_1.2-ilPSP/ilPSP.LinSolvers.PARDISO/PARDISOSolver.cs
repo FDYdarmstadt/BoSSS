@@ -37,7 +37,7 @@ namespace ilPSP.LinSolvers.PARDISO {
     /// PARDISO is ether distributed with the INTEL MKL library, or it may be downloaded
     /// from http://www.pardiso-project.org/;
     /// </remarks>
-    public class PARDISOSolver : ISparseSolverExt, IDisposable {
+    public class PARDISOSolver : IExternalDirectSolver, IDisposable {
 
         /// <summary>
         /// ctor
@@ -535,9 +535,9 @@ namespace ilPSP.LinSolvers.PARDISO {
             csMPI.Raw.Comm_Size(this.MpiComm, out size);
             csMPI.Raw.Comm_Rank(this.MpiComm, out rank);
             Debug.Assert(size == m_OrgMatrix.RowPartitioning.MpiSize);
-            Debug.Assert(size == m_OrgMatrix.ColPartition.MpiSize);
+            Debug.Assert(size == m_OrgMatrix.ColPartitioning.MpiSize);
             Debug.Assert(rank == m_OrgMatrix.RowPartitioning.MpiRank);
-            Debug.Assert(rank == m_OrgMatrix.ColPartition.MpiRank);
+            Debug.Assert(rank == m_OrgMatrix.ColPartitioning.MpiRank);
 
             if(rank == 0)
                 Debug.Assert(P0__x_IN.Length == m_OrgMatrix.RowPartitioning.TotalLength);
@@ -600,9 +600,9 @@ namespace ilPSP.LinSolvers.PARDISO {
             csMPI.Raw.Comm_Size(this.MpiComm, out size);
             csMPI.Raw.Comm_Rank(this.MpiComm, out rank);
             Debug.Assert(size == m_OrgMatrix.RowPartitioning.MpiSize);
-            Debug.Assert(size == m_OrgMatrix.ColPartition.MpiSize);
+            Debug.Assert(size == m_OrgMatrix.ColPartitioning.MpiSize);
             Debug.Assert(rank == m_OrgMatrix.RowPartitioning.MpiRank);
-            Debug.Assert(rank == m_OrgMatrix.ColPartition.MpiRank);
+            Debug.Assert(rank == m_OrgMatrix.ColPartitioning.MpiRank);
 
 
             // This is bad style: 

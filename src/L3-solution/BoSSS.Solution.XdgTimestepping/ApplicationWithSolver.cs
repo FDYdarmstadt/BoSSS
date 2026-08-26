@@ -532,30 +532,51 @@ namespace BoSSS.Solution.XdgTimestepping {
             double time = physTime - (historyIndex * this.Control.GetFixedTimestep());
 
             ITimestepInfo tsi;
-            if (restartFields[historyIndex - 1].Where(stf => stf is XDGField).Any()) {
+            if(restartFields[historyIndex - 1].Where(stf => stf is XDGField).Any()) {
 
-                var ls = this.IOFields.Single(iof => iof.Identification == "Phi");
-                SinglePhaseField lsBkUp = new SinglePhaseField(ls.Basis);
-                lsBkUp.Acc(1.0, ls);
+                var ls = this.IOFields.SingleOrDefault(iof => iof.Identification == "Phi");
+                SinglePhaseField lsBkUp = null;
+                if(ls != null) {
+                    lsBkUp = new SinglePhaseField(ls.Basis);
+                    lsBkUp.Acc(1.0, ls);
+                }
+
+                var ls2 = this.IOFields.SingleOrDefault(iof => iof.Identification == "Phi2");
+                SinglePhaseField ls2BkUp = null;
+                if(ls2 != null) {
+                    ls2BkUp = new SinglePhaseField(ls2.Basis);
+                    ls2BkUp.Acc(1.0, ls2);
+                }
 
                 ICollection<DGField> restartIOFields = new List<DGField>();
-                foreach (DGField rf in restartFields[historyIndex - 1]) {
-
-                    if (rf.Identification == "Phi") {
+                foreach(DGField rf in restartFields[historyIndex - 1]) {
+                    if(rf.Identification == "Phi" && ls != null) {
                         ls.Clear();
                         ls.Acc(1.0, rf);
                         restartIOFields.Add(ls);
+                    } else if(rf.Identification == "Phi2" && ls2 != null) { 
+                        ls2.Clear();
+                        ls2.Acc(1.0, rf);
+                        restartIOFields.Add(ls2);
                     } else {
                         restartIOFields.Add(rf);
                     }
+                }
 
+                if(ls2 != null && !restartIOFields.Any(f => f.Identification == "Phi2")) {
+                    restartIOFields.Add(ls2);
                 }
 
                 tsi = SaveFieldsToDatabase(restartIOFields, tsn, time);
 
-                ls.Clear();
-                ls.Acc(1.0, lsBkUp);
-
+                if(ls != null && lsBkUp != null) {
+                    ls.Clear();
+                    ls.Acc(1.0, lsBkUp);
+                }
+                if(ls2 != null && ls2BkUp != null) {
+                    ls2.Clear();
+                    ls2.Acc(1.0, ls2BkUp);
+                }
             } else {
                 tsi = SaveFieldsToDatabase(restartFields[historyIndex - 1], tsn, time);
             }

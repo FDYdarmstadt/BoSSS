@@ -112,7 +112,7 @@ namespace BoSSS.Foundation {
         /// <param name="Matrix">
         /// On entry, some pre-allocated matrix; on exit, the operator matrix, scaled by <paramref name="alpha"/>, will be accumulated.
         /// - <see cref="ISparseMatrix.RowPartitioning"/> correlates with <see cref="IEvaluator.CodomainMapping"/>.
-        /// - <see cref="ISparseMatrix.ColPartition"/> correlates with <see cref="IEvaluator.DomainMapping"/>
+        /// - <see cref="ISparseMatrix.ColPartitioning"/> correlates with <see cref="IEvaluator.DomainMapping"/>
         /// </param>
         /// <param name="AffineOffset">
         /// On entry, some pre-allocated vector; on exit, the affine vector, scaled by <paramref name="alpha"/>, will be accumulated.

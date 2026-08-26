@@ -30,7 +30,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             if(!OpMatrix.RowPartitioning.EqualsPartition(MgMap.Partitioning))
                 throw new ArgumentException("Row partitioning mismatch.");
-            if(!OpMatrix.ColPartition.EqualsPartition(MgMap.Partitioning))
+            if(!OpMatrix.ColPartitioning.EqualsPartition(MgMap.Partitioning))
                 throw new ArgumentException("Column partitioning mismatch.");
 
             // init solver chain

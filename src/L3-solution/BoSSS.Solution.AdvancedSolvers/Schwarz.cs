@@ -639,7 +639,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 if (!Mop.RowPartitioning.EqualsPartition(MgMap))
                     throw new ArgumentException("Row partitioning mismatch.");
-                if (!Mop.ColPartition.EqualsPartition(MgMap))
+                if (!Mop.ColPartitioning.EqualsPartition(MgMap))
                     throw new ArgumentException("Column partitioning mismatch.");
 
                 var ag = MgMap.AggGrid;

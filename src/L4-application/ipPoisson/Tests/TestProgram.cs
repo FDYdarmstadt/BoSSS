@@ -44,10 +44,10 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
 
         [Test]
-        public static void TestCartesian() {
+        public static void TestCartesian([Values(SolverCodes.direct_mumps, SolverCodes.direct_umfpack, SolverCodes.direct_pardiso)] SolverCodes solverCode) {
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestCartesian
             using(SipPoisson.SipPoissonMain p = new SipPoissonMain()) {
-                var ctrl = SipHardcodedControl.TestCartesian1();
+                var ctrl = SipHardcodedControl.TestCartesian1(solverCode: solverCode);
                 p.Init(ctrl);
                 p.RunSolverMode();
 
@@ -75,10 +75,10 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
 
         [Test]
-        public static void TestCurved() {
+        public static void TestCurved([Values(SolverCodes.direct_mumps, SolverCodes.direct_umfpack, SolverCodes.direct_pardiso)] SolverCodes solverCode) {
             // --test=BoSSS.Application.SipPoisson.Tests.TestProgram.TestCurved
             using(SipPoissonMain p = new SipPoissonMain()) {
-                var ctrl = SipHardcodedControl.TestCurved();
+                var ctrl = SipHardcodedControl.TestCurved(solverCode);
                 p.Init(ctrl);
                 p.RunSolverMode();
                 //Application<SipControl>._Main(new string[] {

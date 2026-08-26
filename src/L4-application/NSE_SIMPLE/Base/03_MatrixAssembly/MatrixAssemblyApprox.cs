@@ -75,7 +75,7 @@ namespace NSE_SIMPLE {
 
         protected override MsrMatrix ComputeMatrix() {
             MsrMatrix Src = m_Src.AssemblyMatrix;
-            MsrMatrix Approx = new MsrMatrix(Src.RowPartitioning, Src.ColPartition);
+            MsrMatrix Approx = new MsrMatrix(Src.RowPartitioning, Src.ColPartitioning);
             
             long i0 = Src.RowPartitioning.i0;
             int LocalLength = Src.RowPartitioning.LocalLength;
@@ -108,7 +108,7 @@ namespace NSE_SIMPLE {
                     }
                     break;
                 case PredictorApproximations.BlockDiagonal:
-                    BlockDiagonalMatrix SrcBlock = new BlockDiagonalMatrix(Src, Src.RowPartitioning.LocalLength / m_NoOfCells, Src.ColPartition.LocalLength / m_NoOfCells );
+                    BlockDiagonalMatrix SrcBlock = new BlockDiagonalMatrix(Src, Src.RowPartitioning.LocalLength / m_NoOfCells, Src.ColPartitioning.LocalLength / m_NoOfCells );
                     Approx.Acc(1.0, SrcBlock);
                     Approx.Acc(BDFfactor, m_Rho);
                     break;

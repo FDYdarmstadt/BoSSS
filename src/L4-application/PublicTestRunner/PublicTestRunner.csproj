@@ -3,6 +3,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -58,6 +59,7 @@
     <ProjectReference Include="..\XNSE_Solver\XNSE_Solver.csproj" />
     <ProjectReference Include="..\XNSE_Solver_LargeMPItest\XNSE_Solver_LargeMPItest.csproj" />
     <ProjectReference Include="..\XNSE_Solver_MPItest\XNSE_Solver_MPItest.csproj" />
+	<ProjectReference Include="..\MultithreadingSolverTest\MultithreadingSolverTest.csproj" />
     <ProjectReference Include="..\ZLS\ZLS.csproj" />
 	<ProjectReference Include="..\HFSI\HFSI.csproj" />
     <ProjectReference Include="..\ZwoLsTest\ZwoLsTest.csproj" />

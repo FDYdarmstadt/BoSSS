@@ -27,7 +27,7 @@ namespace ZwoLevelSetSolver {
             Option_LevelSetEvolution2 = BoSSS.Solution.LevelSetTools.LevelSetEvolution.StokesExtension;
             AdvancedDiscretizationOptions.ViscosityMode = BoSSS.Solution.XNSECommon.ViscosityMode.FullySymmetric;
             AdvancedDiscretizationOptions.PenaltySafety = 1;
-            base.StokesExtentionUseBCmap = StokesExtentionBoundaryOption.ZeroFlux;
+            base.StokesExtentionUseBCmap = StokesExtentionBoundaryOption.useBcMap;
             base.CutCellQuadratureType = BoSSS.Foundation.XDG.CutCellQuadratureMethod.Saye;
         }
 

@@ -47,7 +47,7 @@ namespace ilPSP.LinSolvers {
         /// </summary>
         public MPI_Comm MPI_Comm {
             get {
-                if (RowPartitioning.MPI_Comm != ColPartition.MPI_Comm)
+                if (RowPartitioning.MPI_Comm != ColPartitioning.MPI_Comm)
                     throw new ApplicationException("Internal error -- mismatch between row and column MPI communicator.");
                 return RowPartitioning.MPI_Comm;
             }
@@ -75,7 +75,7 @@ namespace ilPSP.LinSolvers {
         /// <summary>
         /// distribution of matrix rows over MPI processors
         /// </summary>
-        public IPartitioning ColPartition {
+        public IPartitioning ColPartitioning {
             get {
                 return m_ColPartitioning;
             }
@@ -273,7 +273,7 @@ namespace ilPSP.LinSolvers {
                         // serialize matrix data
                         var container = new SerializationContainer() {
                             NoOfRows = this.RowPartitioning.TotalLength,
-                            NoOfColumns = this.ColPartition.TotalLength,
+                            NoOfColumns = this.ColPartitioning.TotalLength,
                             entries = entries
                         };
 
@@ -349,7 +349,7 @@ namespace ilPSP.LinSolvers {
         /// See <see cref="ISparseMatrix.RowPartitioning"/>.
         /// </param>
         /// <param name="ColPart">
-        /// See <see cref="ISparseMatrix.ColPartition"/>.
+        /// See <see cref="ISparseMatrix.ColPartitioning"/>.
         /// </param>
         /// <param name="AllocEntriesPerRow">
         /// the number of entries that are allocated on construction, for each row
@@ -392,7 +392,7 @@ namespace ilPSP.LinSolvers {
         /// </summary>
         public MsrMatrix(IMutableMatrixEx otherMtx) :
             this(otherMtx.RowPartitioning.IsMutable ? otherMtx.RowPartitioning.GetImmutablePartition() : otherMtx.RowPartitioning,
-                otherMtx.ColPartition.IsMutable ? otherMtx.ColPartition.GetImmutablePartition() : otherMtx.ColPartition) {
+                otherMtx.ColPartitioning.IsMutable ? otherMtx.ColPartitioning.GetImmutablePartition() : otherMtx.ColPartitioning) {
             this.Acc(1.0, otherMtx);
         }
 
@@ -416,7 +416,7 @@ namespace ilPSP.LinSolvers {
         /// creates a non-shallow copy of this object
         /// </summary>
         public MsrMatrix CloneAs() {
-            MsrMatrix ret = new MsrMatrix(this.RowPartitioning, this.ColPartition);
+            MsrMatrix ret = new MsrMatrix(this.RowPartitioning, this.ColPartitioning);
 
             int L = this.m_Entries.Length;
             for (int i = 0; i < L; i++) {
@@ -501,7 +501,7 @@ namespace ilPSP.LinSolvers {
 
             if (acc.Count != this.m_RowPartitioning.LocalLength)
                 throw new ArgumentException("length of accumulator must be at least the update length of the row map.");
-            if (a.Count != this.ColPartition.LocalLength)
+            if (a.Count != this.ColPartitioning.LocalLength)
                 throw new ArgumentException("length of a must be at least the count (updated + external) of the column map.");
             if (object.ReferenceEquals(a, acc))
                 throw new ArgumentException("in-place computation is not supported.", "a,acc");
@@ -635,10 +635,10 @@ namespace ilPSP.LinSolvers {
 
                 int Q;
                 if(ColumnIndicesSource == null && ColIndicesTarget == null) {
-                    if(this.ColPartition.LocalLength != Target.ColPartition.LocalLength)
+                    if(this.ColPartitioning.LocalLength != Target.ColPartitioning.LocalLength)
                         throw new ArgumentException("Mismatch in local number of columns.");
 
-                    Q = this.ColPartition.LocalLength;
+                    Q = this.ColPartitioning.LocalLength;
                 } else if(ColumnIndicesSource != null && ColIndicesTarget != null) {
                     if(ColumnIndicesSource.Count != ColIndicesTarget.Count)
                         throw new ArgumentException("Mismatch in length of source and target column index vector.");
@@ -789,7 +789,7 @@ namespace ilPSP.LinSolvers {
         /// </summary>
         public MsrMatrix Transpose() {
 
-            MsrMatrix T = new MsrMatrix(this.ColPartition, this.RowPartitioning);
+            MsrMatrix T = new MsrMatrix(this.ColPartitioning, this.RowPartitioning);
 
             int Size;
             csMPI.Raw.Comm_Size(this.MPI_Comm, out Size);
@@ -805,7 +805,7 @@ namespace ilPSP.LinSolvers {
 
             // local transpose
             // ---------------
-            IPartitioning rowPart = this.ColPartition;
+            IPartitioning rowPart = this.ColPartitioning;
 
             int i0targ = (int)rowPart.i0;
             int iEndtarg = i0targ + rowPart.LocalLength;
@@ -1061,7 +1061,7 @@ namespace ilPSP.LinSolvers {
 
                 MsrMatrix res = new MsrMatrix(
                     new Partitioning(left.RowPartitioning.LocalLength, comm),
-                    new Partitioning(right.ColPartition.LocalLength, comm),
+                    new Partitioning(right.ColPartitioning.LocalLength, comm),
                     (int)Math.Ceiling(MaxLen * 4.0));
 
                 unsafe {
@@ -1875,7 +1875,7 @@ namespace ilPSP.LinSolvers {
             int L = ColumnIndices.Length;
             MatrixEntry[] newRow = new MatrixEntry[L];
             this.RowPartitioning.TestIfInLocalRange(RowIndex);
-            long NoCols = this.ColPartition.TotalLength;
+            long NoCols = this.ColPartitioning.TotalLength;
             for(int i = 0; i < L; i++) {
                 if(ColumnIndices[i] < 0 || ColumnIndices[i] >= NoCols)
                     throw new ArgumentOutOfRangeException("Column index out of range.");

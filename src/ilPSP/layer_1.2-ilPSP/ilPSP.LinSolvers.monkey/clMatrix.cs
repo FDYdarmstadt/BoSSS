@@ -214,7 +214,7 @@ namespace ilPSP.LinSolvers.monkey.CL
         {
             if (a.Count != len.LocalLength)
                 throw new ArgumentException("count of a must be at least 'len'!", "len");
-            if (len.MPI_Comm != this.ColPartition.MPI_Comm)
+            if (len.MPI_Comm != this.ColPartitioning.MPI_Comm)
                 throw new ArgumentException();
 
 

@@ -29,7 +29,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     /// (cut-cells and neighboring cells sharing at least one point)
     /// </summary>
     [Serializable]
-    public class ContactPointRefiner : AMRLevelIndicatorWithLevelset {
+    public class ContactPointRefinerZLS : AMRLevelIndicatorWithLevelset {
 
         public override int[] DesiredCellChanges() {
 

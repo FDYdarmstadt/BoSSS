@@ -46,7 +46,7 @@ namespace NSE_SIMPLE {
 
         protected override MsrMatrix ComputeMatrix() {
             MsrMatrix Approx = m_Approx.AssemblyMatrix;
-            MsrMatrix ApproxInv = new MsrMatrix(Approx.RowPartitioning, Approx.ColPartition);
+            MsrMatrix ApproxInv = new MsrMatrix(Approx.RowPartitioning, Approx.ColPartitioning);
 
             switch (m_SolverConf.PredictorApproximation) {
                 case PredictorApproximations.Identity:
@@ -61,7 +61,7 @@ namespace NSE_SIMPLE {
                     }
                     break;
                 case PredictorApproximations.BlockDiagonal:
-                    BlockDiagonalMatrix ApproxBlock = new BlockDiagonalMatrix(Approx, Approx.RowPartitioning.LocalLength / m_LocalNoOfCells, Approx.ColPartition.LocalLength / m_LocalNoOfCells);
+                    BlockDiagonalMatrix ApproxBlock = new BlockDiagonalMatrix(Approx, Approx.RowPartitioning.LocalLength / m_LocalNoOfCells, Approx.ColPartitioning.LocalLength / m_LocalNoOfCells);
                     BlockDiagonalMatrix ApproxBlockInv = ApproxBlock.Invert();
                     ApproxInv.Acc(1.0, ApproxBlockInv);
                     break;

@@ -989,7 +989,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// partitioning of columns over all MPI processes
             /// </summary>
-            public IPartitioning ColPartition {
+            public IPartitioning ColPartitioning {
                 get {
                     return ColMapping;
                 }

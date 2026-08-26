@@ -130,6 +130,14 @@ namespace BoSSS.Solution {
 
         }
 
+        public string SerializeWithCustomMCR(MethodCallRecord customMCR) {
+            var backup = this.RootCall;
+            this.RootCall = customMCR;
+            var data = this.Serialize();
+            this.RootCall = backup;
+            return data;
+        }
+
         /// <summary>
         /// De-Serializes from a JSON string.
         /// </summary>

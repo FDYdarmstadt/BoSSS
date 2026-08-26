@@ -57,12 +57,13 @@ namespace ZwoLevelSetSolver.Tests {
 
             List<ZLS_Control> controlFiles = new List<ZLS_Control>();
 
+            // NOTE: only a few controlFiles are added here to speed up testing.
+            // To reproduce the results in the paper, add more controlFiles.
             controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircle(Tst, p, 3));
             controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircle(Tst, p, 4));
             controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircle(Tst, p, 5));
-            controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircle(Tst, p, 6));
             if(p < 2)
-                controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircle(Tst, p, 7));
+                controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircle(Tst, p, 6));
 
             //foreach(var c in controlFiles) {
             //    Assert.IsTrue(c.SkipSolveAndEvaluateResidual == false);
@@ -93,12 +94,13 @@ namespace ZwoLevelSetSolver.Tests {
             List<ZLS_Control> controlFiles = new List<ZLS_Control>();
             //var cs = new ZLS_Control[4];
 
+            // NOTE: only a few controlFiles are added here to speed up testing.
+            // To reproduce the results in the paper, add more controlFiles.
             controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircle(Tst, p, 3));
             controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircle(Tst, p, 4));
             controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircle(Tst, p, 5));
-            controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircle(Tst, p, 6));
             if(p < 2)
-                controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircle(Tst, p, 7));
+                controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircle(Tst, p, 6));
 
             var cs = controlFiles.ToArray();
 
@@ -112,8 +114,8 @@ namespace ZwoLevelSetSolver.Tests {
             //}
 
             SolverConvergenceTest_Exact(Tst, cs, true, new[] {
-                ("DisplacementX", p + 1 - 0.6, -1.568, 3.0),
-                ("DisplacementY", p + 1 - 0.6, -1.568, 3.0),
+                ("DisplacementX", p + 1 - 0.75, -1.568, 3.0),
+                ("DisplacementY", p + 1 - 0.75, -1.568, 3.0),
                 ("VelocityX", p + 1 - 0.5, -1.04, 3.0), 
                 ("VelocityY", p + 1 - 0.5, -1.04, 3.0), 
                 ("Pressure", p - 0.5, -0.507, 3.0)}

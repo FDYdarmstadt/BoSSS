@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ilPSP.Utils;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.Serialization;
@@ -36,7 +37,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// Machine epsilon for the iterative solver. Used as a tolerance value for the convergence criterion.
 		/// </summary>
 		[DataMember]
-        public double MachineEpsilon = 2.2204460492503131e-16 * 1000;   // DoubleMachineEpsilon 2⁻⁵² * 1000
+        public double MachineEpsilon = GenericBlas.MachineEps * 1000;   // DoubleMachineEpsilon 2⁻⁵² * 1000
+
+        /// <summary>
+        /// amount of debug-information which will be printed;
+        /// - 0 should write no output
+        /// - 1 should write inforamtion about configuration, etc
+        /// - higher values should write information durting iterations
+        /// </summary>
+        [DataMember]
+        public uint WriteDebugInfoLevel = 0;
 
 		/// <summary>
 		/// Termination criterion based on the threshold <see cref="ConvergenceCriterion"/>.

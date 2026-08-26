@@ -189,14 +189,16 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 // profiling
                 // ---------
 
-                var _CustomTimers = new Stopwatch[] { new Stopwatch(), new Stopwatch(), new Stopwatch(), new Stopwatch(), new Stopwatch(), new Stopwatch() };
-                var _CustomTimers_Names = new string[] { "Flux-Eval", "Basis-Eval", "Field-Eval", "Loops", "ParametersAndNormals", "Flux-Trafo" };
+                var _CustomTimers = new Stopwatch[] { new Stopwatch(), new Stopwatch(), new Stopwatch(), new Stopwatch(), new Stopwatch(), new Stopwatch(), new Stopwatch() };
+                var _CustomTimers_Names = new string[] { "Flux-Eval", "Basis-Eval", "Field-Eval", "Loops", "ParametersAndNormals", "Flux-Trafo", "Flux-Lock-Wait" };
                 Flux_Eval = _CustomTimers[0];
                 Field_Eval = _CustomTimers[2];
                 Basis_Eval = _CustomTimers[1];
                 Loops = _CustomTimers[3];
                 Flux_Trafo = _CustomTimers[5];
+                FluxLockWait = _CustomTimers[6];
                 ParametersAndNormals = _CustomTimers[4];
+
                 q.CustomTimers = _CustomTimers;
                 q.CustomTimers_Names = _CustomTimers_Names;
                 q.CustomTimers_RootPointer = new int[_CustomTimers_Names.Length];
@@ -302,6 +304,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             Stopwatch Basis_Eval;
             Stopwatch Loops;
             Stopwatch ParametersAndNormals;
+            Stopwatch FluxLockWait;
             Stopwatch[][] m_EdgeForm_V_Watches;
             Stopwatch[][] m_EdgeForm_GradV_Watches;
 
@@ -851,12 +854,15 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                 bool MustLock = this.m_owner.Operator.FluxesAreNOTMultithreadSafe;
                 try {
+
                     this.Flux_Eval.Start();
 
                     if ( MustLock ) {
+                        FluxLockWait.Start();
                         //Console.WriteLine($"Entering Monitor on {Thread.CurrentThread.ManagedThreadId}...");
                         Monitor.Enter(m_owner);
                         //Console.WriteLine($"ENTERED Monitor on {Thread.CurrentThread.ManagedThreadId}...");
+                        FluxLockWait.Stop();
                     }
 
                     {

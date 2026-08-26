@@ -295,6 +295,25 @@ namespace ilPSP.Utils {
         {
             return a.MPI_InnerProd(b, csMPI.Raw._COMM.WORLD);
         }
+
+        /// <summary>
+        /// MPI normalization of a vector
+        /// </summary>
+        static public void MPI_Normalize<TX>(this TX a, MPI_Comm comm)
+            where TX : IList<double>// 
+        {
+            double ooNorm = 1.0/a.MPI_L2Norm(comm);
+            a.ScaleV(ooNorm);
+        }
+
+        /// <summary>
+        /// MPI normalization of a vector
+        /// </summary>
+        static public void MPI_Normalize<TX>(this TX a)
+            where TX : IList<double>// 
+        {
+            MPI_Normalize(a, csMPI.Raw._COMM.WORLD);
+        }
     }
 
     /// <summary>
@@ -750,8 +769,12 @@ namespace ilPSP.Utils {
                 // while formally there is no problem that this should work, it seems much more likely
                 // that it's a bug, i.e. the user called it un-intentionally. 
                 throw new ArgumentException("Illegal use: reference-equality of input vectors -- this might be a mis-use instead of intention.");
-            a.ClearEntries();
-            GenericBlas.daxpy(N, alpha, B, 1, a, 1);
+            if(alpha == 1.0 && a is double[] __a && B is double[] __B) {
+                Array.Copy(__B, __a, N);
+            } else {
+                a.ClearEntries();
+                GenericBlas.daxpy(N, alpha, B, 1, a, 1);
+            }
         }
 
         /// <summary>
@@ -1183,8 +1206,8 @@ namespace ilPSP.Utils {
 
         public static string[] GetLibname(Parallelism par) {
             switch (par) {
-                case Parallelism.SEQ: return new string[] { "PARDISO_seq.dll", "libBoSSSnative_seq.so" };
-                case Parallelism.OMP: return new string[] { "PARDISO_omp.dll", "libBoSSSnative_omp.so" };
+                case Parallelism.SEQ: return new string[] { "BoSSSnative_seq.dll", "libBoSSSnative_seq.so" };
+                case Parallelism.OMP: return new string[] { "BoSSSnative_omp.dll", "libBoSSSnative_omp.so" };
                 default: throw new ArgumentOutOfRangeException();
             }
         }

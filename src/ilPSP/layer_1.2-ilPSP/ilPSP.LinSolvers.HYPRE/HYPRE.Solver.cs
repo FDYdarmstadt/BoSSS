@@ -279,7 +279,7 @@ namespace ilPSP.LinSolvers.HYPRE {
 
                     // pass values to HYPRE
                     // ====================
-                    IJVector Unknowns = new IJVector(m_Matrix.ColPartition);
+                    IJVector Unknowns = new IJVector(m_Matrix.ColPartitioning);
                     IJVector Rhs = new IJVector(m_Matrix.RowPartitioning);
 
                     Unknowns.SetValues<Tunknowns>(x);

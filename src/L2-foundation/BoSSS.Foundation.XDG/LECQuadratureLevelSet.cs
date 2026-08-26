@@ -156,7 +156,7 @@ namespace BoSSS.Foundation.XDG {
 
             if (Matrix != null && (Matrix.RowPartitioning.LocalLength != RowMap.LocalLength))
                 throw new ArgumentException("mismatch between matrix number of rows and row mapping.");
-            if (Matrix != null && (Matrix.ColPartition.LocalLength != ColMap.LocalLength))
+            if (Matrix != null && (Matrix.ColPartitioning.LocalLength != ColMap.LocalLength))
                 throw new ArgumentException("mismatch between matrix number of columns and column mapping.");
 
             this.m_LevSetIdx = _iLevSet;

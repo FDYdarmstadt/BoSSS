@@ -182,7 +182,7 @@ namespace BoSSS.Foundation {
 
                 if (!Matrix.RowPartitioning.EqualsPartition(this.CodomainMapping))
                     throw new ArgumentException("Mismatch between matrix columns and domain variable mapping.");
-                if (!Matrix.ColPartition.EqualsPartition(this.DomainMapping))
+                if (!Matrix.ColPartitioning.EqualsPartition(this.DomainMapping))
                     throw new ArgumentException("Mismatch between matrix columns and domain variable mapping.");
                 if (DomainMapping.NoOfVariables != CodomainMapping.NoOfVariables)
                     throw new NotSupportedException($"Mismatch between number of variables in domain ({DomainMapping.NoOfVariables}) and codomain ({CodomainMapping.NoOfVariables}).");

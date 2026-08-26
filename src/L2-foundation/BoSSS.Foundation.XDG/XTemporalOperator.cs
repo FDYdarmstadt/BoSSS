@@ -212,7 +212,7 @@ namespace BoSSS.Foundation.XDG {
 
                 if (!MassMatrix.RowPartitioning.EqualsPartition(this.CodomainMapping))
                     throw new ArgumentException("Mismatch between matrix columns and domain variable mapping.");
-                if (!MassMatrix.ColPartition.EqualsPartition(this.DomainMapping))
+                if (!MassMatrix.ColPartitioning.EqualsPartition(this.DomainMapping))
                     throw new ArgumentException("Mismatch between matrix columns and domain variable mapping.");
                 if (DomainMapping.NoOfVariables != CodomainMapping.NoOfVariables)
                     throw new NotSupportedException($"Mismatch between number of variables in domain ({DomainMapping.NoOfVariables}) and codomain ({CodomainMapping.NoOfVariables}).");

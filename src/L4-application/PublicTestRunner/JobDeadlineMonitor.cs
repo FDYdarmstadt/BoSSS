@@ -55,7 +55,7 @@ namespace PublicTestRunner {
             }
 
             this.shouldUpdateTimes = true;
-            const double TwoHoursInSec = 2*3600;
+            //const double TwoHoursInSec = 2*3600;
             foreach ( var entry in this.overview.Values ) {
                 //if ( entry.avgSeconds > TwoHoursInSec )
                 //    entry.avgSeconds = Math.Min(entry.avgSeconds, 2 * 3600);

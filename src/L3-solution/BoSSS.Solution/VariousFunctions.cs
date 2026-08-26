@@ -24,7 +24,7 @@ namespace BoSSS.Solution.Utils
         /// <param name="iVar"></param>
         static public void AccEyeSp(this ISparseMatrix M, UnsetteledCoordinateMapping map, int[] iVar, double factor = 1.0) {
             using (new FuncTrace()) {
-                if (M.RowPartitioning.LocalLength != M.ColPartition.LocalLength)
+                if (M.RowPartitioning.LocalLength != M.ColPartitioning.LocalLength)
                     throw new ArgumentException("supported only for quadratic matrices");
                 if (map.LocalLength != M.RowPartitioning.LocalLength)
                     throw new ArgumentException();

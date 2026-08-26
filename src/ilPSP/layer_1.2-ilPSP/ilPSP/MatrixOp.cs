@@ -83,7 +83,7 @@ namespace ilPSP.LinSolvers {
             /// </param>
             public MsrExtMatrix(IMutableMatrixEx M, IDictionary<int,long[]> ExtCol) {
 
-                this.ColPart = M.ColPartition;
+                this.ColPart = M.ColPartitioning;
                 long i0Row = M.RowPartitioning.i0, i0Col = this.ColPart.i0;
                 int I = M.RowPartitioning.LocalLength, J = this.ColPart.LocalLength;
                 Mtx = M;
@@ -503,7 +503,7 @@ namespace ilPSP.LinSolvers {
         /// <param name="iDst"></param>
         /// <param name="alpha"></param>
         public void ColAdditionDeferred(long iSrc, long iDst, double alpha) {
-            TestIndex(iDst, m_Matrix.Mtx.ColPartition);
+            TestIndex(iDst, m_Matrix.Mtx.ColPartitioning);
 #if DEBUG
             if (!m_Matrix.ColPart.IsInLocalRange(iSrc)) {
                 if (!m_Matrix.ColProcessorsExternal.ContainsKey(iSrc))

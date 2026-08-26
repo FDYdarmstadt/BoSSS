@@ -46,6 +46,17 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         direct_pardiso = 2,
 
+        /// <summary>
+        /// Direct solver (<see cref="ilPSP.LinSolvers.UMFPACK.UMFPACKSolver"/>) without any pre-processing of the matrix.
+        /// </summary>
+        direct_umfpack = 3,
+
+
+        /// <summary>
+        /// Direct solver, the default option
+        /// </summary>
+        direct = 2,
+
 
         ///// <summary>
         ///// Conjugate gradient (from monkey library) without any preconditioning (<see cref="AdvancedSolvers.MonkeySolver.Config"/>
@@ -93,7 +104,13 @@ namespace BoSSS.Solution.Control {
 		/// Flexible GMRES, allowing variable preconditioners for GMRES <see cref="AdvancedSolvers.FlexGMRES"/>
 		/// </summary>
 		FlexGMRES = 81,
-	}
+
+
+        /// <summary>
+        /// A Schur complement solver for Stokes/Navier-Stokes systems, <see cref="AdvancedSolvers.SchurComplementForStokes"/>
+        /// </summary>
+        SchurComplementForStokes = 101,
+    }
     
 
     /// <summary>
@@ -111,6 +128,9 @@ namespace BoSSS.Solution.Control {
                 case LinearSolverCode.automatic:
                 case LinearSolverCode.direct_pardiso:
                     return new AdvancedSolvers.DirectSolver.Config() { WhichSolver = AdvancedSolvers.DirectSolver._whichSolver.PARDISO };
+
+                case LinearSolverCode.direct_umfpack:
+                    return new AdvancedSolvers.DirectSolver.Config() { WhichSolver = AdvancedSolvers.DirectSolver._whichSolver.UMFPACK };
 
                 case LinearSolverCode.direct_mumps:
                     return new AdvancedSolvers.DirectSolver.Config() { WhichSolver = AdvancedSolvers.DirectSolver._whichSolver.MUMPS };
@@ -143,7 +163,10 @@ namespace BoSSS.Solution.Control {
 				//case LinearSolverCode.SchurPrecond:
 				//	return new AdvancedSolvers.SchurPrecondConfig();
 
-				case LinearSolverCode.FlexGMRES:
+				case LinearSolverCode.SchurComplementForStokes:
+					return new AdvancedSolvers.SchurComplementForStokes.Config();
+
+                case LinearSolverCode.FlexGMRES:
 					return new AdvancedSolvers.FGMRESConfig();
 
 				default:

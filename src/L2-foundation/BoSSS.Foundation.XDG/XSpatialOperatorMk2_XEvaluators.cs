@@ -193,7 +193,7 @@ namespace BoSSS.Foundation.XDG {
                     if(OnlyAffine == false) {
                         if(!Matrix.RowPartitioning.Equals(base.CodomainMapping))
                             throw new ArgumentException("wrong number of columns in matrix.", "Matrix");
-                        if(!Matrix.ColPartition.Equals(base.DomainMapping))
+                        if(!Matrix.ColPartitioning.Equals(base.DomainMapping))
                             throw new ArgumentException("wrong number of rows in matrix.", "Matrix");
                     }
 

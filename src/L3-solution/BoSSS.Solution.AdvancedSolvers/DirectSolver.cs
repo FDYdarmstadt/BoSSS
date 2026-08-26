@@ -21,6 +21,7 @@ using System.Linq;
 using ilPSP.LinSolvers;
 using ilPSP.LinSolvers.PARDISO;
 using ilPSP.LinSolvers.MUMPS;
+using ilPSP.LinSolvers.UMFPACK;
 using ilPSP.Utils;
 using MPI.Wrappers;
 using BoSSS.Platform;
@@ -157,6 +158,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
             MUMPS,
 
             /// <summary>
+            /// Using <see cref="UMFPACKSolver"/>.
+            /// </summary>
+            UMFPACK,
+
+            /// <summary>
             /// Conversion to dense matrix, solution 
             /// via LU-decomposition from LAPACK, see also <see cref="IMatrixExtensions.Solve{T, W}(T, W)"/>.
             /// Only suitable for small systems (less than 10000 DOF).
@@ -183,7 +189,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 if(!Mtx.RowPartitioning.EqualsPartition(MgMap)) //notice that on Debug configuration Mtx may not be initialized
 					throw new ArgumentException("Row partitioning mismatch.");
-                if(!Mtx.ColPartition.EqualsPartition(MgMap))
+                if(!Mtx.ColPartitioning.EqualsPartition(MgMap))
                     throw new ArgumentException("Column partitioning mismatch.");
 
                 Mtx.CheckForNanOrInfM(typeof(DirectSolver) + ", matrix definition: ");
@@ -310,18 +316,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     throw new NotSupportedException($"{config.WhichSolver} is not supported in single precision");
             }
 
+            bool CachingOn = false;
+            if (ActivateCaching != null) {
+                CachingOn = ActivateCaching.Invoke(m_ThisLevelIterations, (MatrixNMapping as MultigridOperator)?.LevelIndex ?? -1);
+            }
 
             switch (config.WhichSolver) {
                 case _whichSolver.PARDISO:
-                bool CachingOn = false;
-                if (ActivateCaching != null) {
-                    CachingOn = ActivateCaching.Invoke(m_ThisLevelIterations, (MatrixNMapping as MultigridOperator)?.LevelIndex ?? -1);
-                }
-
-                    
                 solver = new PARDISOSolver() {
                     CacheFactorization = CachingOn,
                     UseDoublePrecision = config.UseDoublePrecision,
+                    Parallelism = RunSerial ? Parallelism.SEQ : Parallelism.OMP
+                };
+                break;
+
+                case _whichSolver.UMFPACK:
+                solver = new UMFPACKSolver() {
+                    CacheFactorization = CachingOn,
                     Parallelism = RunSerial ? Parallelism.SEQ : Parallelism.OMP
                 };
                 break;
@@ -361,6 +372,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         Func<ISparseSolver>[] altSolvers = new Func<ISparseSolver>[] {
             () => new PARDISOSolver() { Parallelism = Parallelism.SEQ },
+            () => new UMFPACKSolver() { Parallelism = Parallelism.SEQ },
             () => new MUMPSSolver() { Parallelism = Parallelism.SEQ }
         };
 

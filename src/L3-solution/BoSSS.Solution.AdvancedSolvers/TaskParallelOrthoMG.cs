@@ -275,7 +275,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 			BlockMsrMatrix ret; //notice that a null check here might disturb the mpi behavior as 
 
-			if (Mtx.RowPartitioning == targetPartitioning && Mtx.ColPartition == targetPartitioning && blockData == null)
+			if (Mtx.RowPartitioning == targetPartitioning && Mtx.ColPartitioning == targetPartitioning && blockData == null)
 				//this can happen at the first level of tp
 				ret = Mtx.CloneAs();
 			else {
@@ -1617,7 +1617,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				// set operator
 				// ============
 				MigrateFromWorldToSubComms();
-				ortho = new CoreOrthonormalizationProcedure(subCommSmootherOpMatrix);
+				ortho = new CoreOrthonormalizationProcedureWMatrix(subCommSmootherOpMatrix);
 				CreatePermutations();
 
 #if DEBUG
@@ -1659,7 +1659,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if(TpMapping.CoarserLevel == null)
                     throw new NotSupportedException("Already on finest level -- no finer level to restrict from.");
 
-                if(IN_fine.Count != subCommToCoarseRestrictionOperator.ColPartition.LocalLength)
+                if(IN_fine.Count != subCommToCoarseRestrictionOperator.ColPartitioning.LocalLength)
                     throw new ArgumentException("Mismatch in length of fine grid vector (input).", "IN_fine");
 
                 double[] OUT_coarse = new double[subCommToCoarseRestrictionOperator.RowPartitioning.LocalLength];
@@ -1682,7 +1682,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if(TpMapping.CoarserLevel == null)
                     throw new NotSupportedException("Already on finest level -- no finer level to prolongate from.");
 
-                if(IN_coarse.Count != subCommFromCoarseProlongationOperator.ColPartition.LocalLength)
+                if(IN_coarse.Count != subCommFromCoarseProlongationOperator.ColPartitioning.LocalLength)
                     throw new ArgumentException("Mismatch in length of coarse grid vector (input).", "IN_coarse");
 
                 double[] OUT_fine = new double[subCommFromCoarseProlongationOperator.RowPartitioning.LocalLength];
@@ -1839,7 +1839,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         void TestMatrices(BlockMsrMatrix opCommMtx, PermutateAndDistribute Permutation, BlockMsrMatrix subCommMtx, string tag = "t_", bool WriteToFiles = false) {
 			//Create a test vector
 			Random rnd = new Random(44); //seed is 44
-			var TestVector = new double[opCommMtx.ColPartition.LocalLength];
+			var TestVector = new double[opCommMtx.ColPartitioning.LocalLength];
 			for (int i = 0; i < TestVector.Length; i++) {
 				TestVector[i] = rnd.NextDouble();
 			}
@@ -2171,9 +2171,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="Res">output: on exit <paramref name="B"/> - <see cref="OpMatrix"/>*<paramref name="X"/></param>
         public void Residual(double[] Res, double[] X, double[] B) {
             using(new FuncTrace()) {
-                Debug.Assert(Res.Length == OpMatrix.ColPartition.LocalLength);
-                Debug.Assert(X.Length == OpMatrix.ColPartition.LocalLength);
-                Debug.Assert(B.Length == OpMatrix.ColPartition.LocalLength);
+                Debug.Assert(Res.Length == OpMatrix.ColPartitioning.LocalLength);
+                Debug.Assert(X.Length == OpMatrix.ColPartitioning.LocalLength);
+                Debug.Assert(B.Length == OpMatrix.ColPartitioning.LocalLength);
                 int L = Res.Length;
                 Array.Copy(B, Res, L);
                 OpMatrix.SpMV(-1.0, X, 1.0, Res);
@@ -2189,9 +2189,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="Res">output: on exit <paramref name="B"/> - <see cref="subCommSmootherOpMatrix"/>*<paramref name="X"/></param>
         public void ResidualOnSmoother(double[] Res, double[] X, double[] B) {
             using(new FuncTrace()) {
-                Debug.Assert(Res.Length == subCommSmootherOpMatrix.ColPartition.LocalLength);
-                Debug.Assert(X.Length == subCommSmootherOpMatrix.ColPartition.LocalLength);
-                Debug.Assert(B.Length == subCommSmootherOpMatrix.ColPartition.LocalLength);
+                Debug.Assert(Res.Length == subCommSmootherOpMatrix.ColPartitioning.LocalLength);
+                Debug.Assert(X.Length == subCommSmootherOpMatrix.ColPartitioning.LocalLength);
+                Debug.Assert(B.Length == subCommSmootherOpMatrix.ColPartitioning.LocalLength);
                 int L = Res.Length;
                 Array.Copy(B, Res, L);
                 subCommSmootherOpMatrix.SpMV(-1.0, X, 1.0, Res);

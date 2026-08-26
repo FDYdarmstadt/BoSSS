@@ -214,7 +214,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             C.AdaptiveMeshRefinement = true;
-            C.activeAMRlevelIndicators.Add(new ContactPointRefiner { maxRefinementLevel = AMRlvl });
+            C.activeAMRlevelIndicators.Add(new ContactPointRefinerZLS { maxRefinementLevel = AMRlvl });
             C.AMR_startUpSweeps = AMRlvl;
             //C.activeAMRlevelIndicators.Add(new ContactPointRefiner { maxRefinementLevel = 6 });
             //C.AMR_startUpSweeps = 5;
@@ -449,7 +449,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             C.AdaptiveMeshRefinement = true;
-            C.activeAMRlevelIndicators.Add(new ContactPointRefiner { maxRefinementLevel = AMRlvl });
+            C.activeAMRlevelIndicators.Add(new ContactPointRefinerZLS { maxRefinementLevel = AMRlvl });
             C.AMR_startUpSweeps = AMRlvl;
             //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { levelSet = 0, maxRefinementLevel = AMRlvl - 2});
             //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { levelSet = 1, maxRefinementLevel = AMRlvl });
@@ -695,9 +695,11 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.StokesExtentionUseBCmap = StokesExtentionBoundaryOption.useBcMap;
 
             C.AdaptiveMeshRefinement = true;
-            C.activeAMRlevelIndicators.Add(new ContactPointRefiner { maxRefinementLevel = AMRlvl });
+            C.activeAMRlevelIndicators.Add(new ContactPointRefinerZLS { maxRefinementLevel = AMRlvl });
+            //C.activeAMRlevelIndicators.Add(new AMRatInnerContactLine { maxRefinementLevel = AMRlvl, levelSets = new[] { 0, 1 }, FieldWidth = 0 });
             C.AMR_startUpSweeps = AMRlvl;
             //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { levelSet = 0, maxRefinementLevel = AMRlvl - 2});
             //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { levelSet = 1, maxRefinementLevel = AMRlvl });
@@ -740,8 +742,9 @@ namespace ZwoLevelSetSolver.ControlFiles {
         }
         
         
-        public static ZLS_Control Wiki(int p = 4, int AMRlvl = 2, double SlipLength = 0, bool useGravity = true) {
+        public static ZLS_Control Wiki(int p = 3, int AMRlvl = 5, double SlipLength = 0, bool useGravity = true) {
             // --control "cs:ZwoLevelSetSolver.ControlFiles.Droplet.Wiki()"
+            BoSSS.Solution.Application.DeleteOldPlotFiles();
             ZLS_Control C = new ZLS_Control(p);
             C.ImmediatePlotPeriod = 1;
             C.SuperSampling = 3;
@@ -965,7 +968,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             C.AdaptiveMeshRefinement = true;
-            C.activeAMRlevelIndicators.Add(new ContactPointRefiner { maxRefinementLevel = AMRlvl });
+            C.activeAMRlevelIndicators.Add(new ContactPointRefinerZLS { maxRefinementLevel = AMRlvl });
             C.AMR_startUpSweeps = AMRlvl;
             //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { levelSet = 0, maxRefinementLevel = AMRlvl - 2});
             //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { levelSet = 1, maxRefinementLevel = AMRlvl });
@@ -997,8 +1000,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             double dt = 1e-1;
             C.dtMax = dt;
             C.dtMin = dt;
-            //C.Endtime = 100;
-            C.NoOfTimesteps = 1000;
+            C.Endtime = 100;
             C.saveperiod = 1;
 
             #endregion

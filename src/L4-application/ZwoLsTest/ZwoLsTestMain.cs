@@ -823,9 +823,9 @@ namespace BoSSS.Application.ZwoLsTest {
                 ConMatrix2.SaveToFile("conMtx2.bin");
 
             } else {
-                var compOpMatrix = MsrMatrix.LoadFromFile("matrix.bin", csMPI.Raw._COMM.WORLD, OpMatrix.RowPartitioning, OpMatrix.ColPartition);
-                var compConMatrix = MsrMatrix.LoadFromFile("conMtx.bin", csMPI.Raw._COMM.WORLD, ConMatrix.RowPartitioning, ConMatrix.ColPartition);
-                var compConMatrix2 = MsrMatrix.LoadFromFile("conMtx2.bin", csMPI.Raw._COMM.WORLD, ConMatrix2.RowPartitioning, ConMatrix2.ColPartition);
+                var compOpMatrix = MsrMatrix.LoadFromFile("matrix.bin", csMPI.Raw._COMM.WORLD, OpMatrix.RowPartitioning, OpMatrix.ColPartitioning);
+                var compConMatrix = MsrMatrix.LoadFromFile("conMtx.bin", csMPI.Raw._COMM.WORLD, ConMatrix.RowPartitioning, ConMatrix.ColPartitioning);
+                var compConMatrix2 = MsrMatrix.LoadFromFile("conMtx2.bin", csMPI.Raw._COMM.WORLD, ConMatrix2.RowPartitioning, ConMatrix2.ColPartitioning);
 
 
                 compOpMatrix.Acc(-1.0, OpMatrix);

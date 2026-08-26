@@ -228,7 +228,7 @@ namespace BoSSS.Application.BoSSSpad {
                 }
                 dp.TimeSteps = session.Timesteps.Count;
                 //dp.SessionRuntime = session.GetApproximateRunTime().Seconds;
-            } catch (Exception e) { 
+            } catch(Exception e) {
                 System.Console.WriteLine($"Could not extract info from session {session.Name}: {e.Message}");
             }
             return dp;
@@ -279,8 +279,8 @@ namespace BoSSS.Application.BoSSSpad {
                     dp.Strip();
                 System.Console.WriteLine($"Session: {s.Name} added to the datapoints.");
             }
-            if(!strip) { 
-            // normalize missing regions
+            if(!strip) {
+                // normalize missing regions
                 foreach(var dp in dps) {
                     foreach(var m in allMethods) {
                         dp.Records?.TryAdd(m, new());
@@ -291,20 +291,96 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
+        /// Loads exactly one ExtraP datapoint from a profiling folder.
+        /// The folder is expected to contain at least one profiling_bin*.bin file.
+        /// All testcase metadata is provided explicitly by the caller.
+        /// </summary>
+        public static ExtraPDatapoint LoadDatapointFromProfilingFolder(
+            string profilingFolder,
+            int mpi,
+            int threads,
+            int p,
+            int d,
+            int cells,
+            int timesteps,
+            string sessionName = "[from profiling folder]",
+            string solverName = "[from profiling folder]"
+        ) {
+            if(!Directory.Exists(profilingFolder))
+                throw new DirectoryNotFoundException(
+                    $"Profiling folder does not exist: '{profilingFolder}'."
+                );
+
+            string[] profilingBins = Directory
+                .GetFiles(profilingFolder, "profiling_bin*.bin")
+                .OrderBy(Path.GetFileName)
+                .ToArray();
+
+            if(profilingBins.Length == 0)
+                throw new FileNotFoundException(
+                    $"No profiling_bin*.bin file found in '{profilingFolder}'."
+                );
+
+            if(profilingBins.Length > 1)
+                Console.WriteLine(
+                    $"Warning: Multiple profiling_bin*.bin files found in '{profilingFolder}' " +
+                    $"(maybe from multiple MPI processes?). Using the first one: '{profilingBins[0]}'."
+                );
+
+            string json = File.ReadAllText(profilingBins[0]);
+            OnlineProfiling profiling = OnlineProfiling.Deserialize(json);
+
+            return new ExtraPDatapoint {
+                SessionName = sessionName,
+                SolverName = solverName,
+
+                MpiSize = mpi,
+                ThreadSize = threads,
+
+                Cells = cells,
+                P = p,
+                D = d,
+                TimeSteps = timesteps,
+
+                Records = TakeFirstProfile(profiling)
+            };
+        }
+
+
+        /// <summary>
         /// Writes a list of <see cref="ExtraPDatapoint"/> to an extra p txt file.
         /// </summary>
         public static void WriteExtraPFile(List<ExtraPDatapoint> datapoints, string outputFile, bool exclusive = true) {
             if(datapoints == null || datapoints.Count == 0)
                 throw new ArgumentException("No datapoints available.");
+
+            var allParameters = new List<(string Name, Func<ExtraPDatapoint, int> Value)> {
+                ("mpi_procs", dp => dp.MpiSize),
+                ("threads",   dp => dp.ThreadSize),
+                ("mesh",      dp => dp.Cells)
+            };
+
+            // Only keep parameters that actually vary.
+            var parameters = allParameters
+                .Where(p => datapoints.Select(dp => p.Value(dp)).Distinct().Count() > 1)
+                .ToList();
+
+            // Extra-P needs at least one parameter.
+            // If nothing varies, keep "threads" as a harmless fallback.
+            if(parameters.Count == 0) {
+                parameters.Add(allParameters.Single(p => p.Name == "threads"));
+            }
+
             var grouped = datapoints
-                .GroupBy(dp => new {
-                    dp.MpiSize,
-                    dp.ThreadSize,
-                    dp.Cells
+                .GroupBy(dp => string.Join(";", parameters.Select(p => p.Value(dp))))
+                .Select(g => new {
+                    Values = parameters.Select(p => p.Value(g.First())).ToArray(),
+                    Datapoints = g.ToList()
                 })
-                .OrderBy(g => g.Key.MpiSize)
-                .ThenBy(g => g.Key.ThreadSize)
-                .ThenBy(g => g.Key.Cells);
+                .OrderBy(g => g.Values[0])
+                .ThenBy(g => g.Values.Length > 1 ? g.Values[1] : 0)
+                .ThenBy(g => g.Values.Length > 2 ? g.Values[2] : 0)
+                .ToList();
 
             // Clean output file
             if(File.Exists(outputFile))
@@ -314,20 +390,26 @@ namespace BoSSS.Application.BoSSSpad {
             using var sw = new StreamWriter(outputFile, false, utf8NoBom);
 
             // PARAMETERS
-            sw.WriteLine("PARAMETER mpi_procs");
-            sw.WriteLine("PARAMETER threads");
-            sw.WriteLine("PARAMETER mesh");
+            foreach(var p in parameters) {
+                sw.WriteLine($"PARAMETER {p.Name}");
+            }
 
-            sw.WriteLine("POINTS " + string.Join(" ", grouped.Select(g =>$"({g.Key.MpiSize} {g.Key.ThreadSize} {g.Key.Cells})")));
+            sw.WriteLine(
+                "POINTS " + string.Join(
+                    " ",
+                    grouped.Select(g => $"({string.Join(" ", g.Values)})")
+                )
+            );
             sw.WriteLine();
 
             // METHODS
-            if(datapoints[0].Records == null) { 
+            if(datapoints[0].Records == null) {
                 Console.WriteLine("Stripped mode: No method records available in datapoints! Writing basic Extra-P-File.");
                 sw.WriteLine($"REGION root_frame");
                 sw.WriteLine("METRIC time");
+
                 foreach(var group in grouped) {
-                    var values = group.Select(dp => dp.TotalTime);
+                    var values = group.Datapoints.Select(dp => dp.TotalTime);
                     sw.WriteLine($"DATA {string.Join(" ", values)}");
                 }
             } else {
@@ -342,19 +424,18 @@ namespace BoSSS.Application.BoSSSpad {
                     sw.WriteLine("METRIC time");
 
                     foreach(var group in grouped) {
-
-                        var values = group.Select(dp => {
+                        var values = group.Datapoints.Select(dp => {
                             if(dp.Records != null &&
                                 dp.Records.TryGetValue(method, out var calls)) {
                                 if(exclusive) {
                                     return calls.Sum(c => GetExclusiveSeconds(c));
                                 } else {
-                                    // inclusive time without recursive double counting
                                     return calls
                                         .Where(c => !IsRecursiveDescendant(c))
                                         .Sum(c => GetInclusiveSeconds(c));
                                 }
                             }
+
                             return 0.0;
                         });
 
@@ -364,7 +445,10 @@ namespace BoSSS.Application.BoSSSpad {
                     sw.WriteLine();
                 }
             }
-            Console.WriteLine($"Extra-P file written to {outputFile} containing {datapoints.Count} datapoints");
+
+            Console.WriteLine(
+                $"Extra-P file written to {outputFile} containing {datapoints.Count} datapoints and {parameters.Count} parameter(s)"
+            );
         }
     }
 
@@ -373,282 +457,282 @@ namespace BoSSS.Application.BoSSSpad {
     /// and recommendation of MPI + thread configurations based on training data.
     /// </summary>
     public class ExtraPModel {
-        /// <summary>
-        /// Scaling factor for the compute time.
-        /// </summary>
-        public double Ccompute { get; private set; }
+    /// <summary>
+    /// Scaling factor for the compute time.
+    /// </summary>
+    public double Ccompute { get; private set; }
 
-        /// <summary>
-        /// Fixed setup time for the simulation.
-        /// </summary>
-        public double Csetup { get; private set; }
+    /// <summary>
+    /// Fixed setup time for the simulation.
+    /// </summary>
+    public double Csetup { get; private set; }
 
-        /// <summary>
-        /// Exponent for polynomial degree scaling.
-        /// </summary>
-        public double AlphaP { get; private set; }
+    /// <summary>
+    /// Exponent for polynomial degree scaling.
+    /// </summary>
+    public double AlphaP { get; private set; }
 
-        /// <summary>
-        /// Exponent for MPI size scaling.
-        /// </summary>
-        public double AlphaMPI { get; private set; }
+    /// <summary>
+    /// Exponent for MPI size scaling.
+    /// </summary>
+    public double AlphaMPI { get; private set; }
 
-        /// <summary>
-        /// Exponent for thread count scaling.
-        /// </summary>
-        public double AlphaThreads { get; private set; }
+    /// <summary>
+    /// Exponent for thread count scaling.
+    /// </summary>
+    public double AlphaThreads { get; private set; }
 
-        /// <summary>
-        /// Maximum trusted number of MPI processes for strong scaling.
-        /// </summary>
-        public int MaxTrustedMPI { get; private set; } = int.MaxValue;
+    /// <summary>
+    /// Maximum trusted number of MPI processes for strong scaling.
+    /// </summary>
+    public int MaxTrustedMPI { get; private set; } = int.MaxValue;
 
-        /// <summary>
-        /// Maximum number of threads to consider.
-        /// </summary>
-        public double MaxThreads { get; private set; } = int.MaxValue;
+    /// <summary>
+    /// Maximum number of threads to consider.
+    /// </summary>
+    public double MaxThreads { get; private set; } = int.MaxValue;
         
-        /// <summary>
-        /// Minimum number of cells per MPI process to ensure efficiency.
-        /// </summary>
-        public double MinCellsPerMPI { get; private set; } = 0.0;
+    /// <summary>
+    /// Minimum number of cells per MPI process to ensure efficiency.
+    /// </summary>
+    public double MinCellsPerMPI { get; private set; } = 0.0;
 
-        //public List<ExtraPDatapoint> TrainingData { get; private set; }
+    //public List<ExtraPDatapoint> TrainingData { get; private set; }
 
-        /// <summary>
-        /// Constructs an ExtraPModel with all parameters.
-        /// </summary>
-        public ExtraPModel(double ccompute, double csetup, double alphaP, double alphaMPI, double alphaThreads, int maxTrustedMPI, double maxThreads, double minCellsPerMPI
-        ) {
-            Ccompute = ccompute;
-            Csetup = csetup;
-            AlphaP = alphaP;
-            AlphaMPI = alphaMPI;
-            AlphaThreads = alphaThreads;
-            MaxTrustedMPI = maxTrustedMPI;
-            MaxThreads = maxThreads;
-            MinCellsPerMPI = minCellsPerMPI;
-        }
+    /// <summary>
+    /// Constructs an ExtraPModel with all parameters.
+    /// </summary>
+    public ExtraPModel(double ccompute, double csetup, double alphaP, double alphaMPI, double alphaThreads, int maxTrustedMPI, double maxThreads, double minCellsPerMPI
+    ) {
+        Ccompute = ccompute;
+        Csetup = csetup;
+        AlphaP = alphaP;
+        AlphaMPI = alphaMPI;
+        AlphaThreads = alphaThreads;
+        MaxTrustedMPI = maxTrustedMPI;
+        MaxThreads = maxThreads;
+        MinCellsPerMPI = minCellsPerMPI;
+    }
 
-        private ExtraPModel() { }
+    private ExtraPModel() { }
 
-        /// <summary>
-        /// Fits an ExtraPModel from a list of datapoints.
-        /// Detects limits, filters data, and fits the smooth scaling model.
-        /// </summary>
-        /// <param name="data">Training data consisting of ExtraPDatapoints.</param>
-        /// <returns>A fitted ExtraPModel instance.</returns>
-        public static ExtraPModel Fit(List<ExtraPDatapoint> data) {
+    /// <summary>
+    /// Fits an ExtraPModel from a list of datapoints.
+    /// Detects limits, filters data, and fits the smooth scaling model.
+    /// </summary>
+    /// <param name="data">Training data consisting of ExtraPDatapoints.</param>
+    /// <returns>A fitted ExtraPModel instance.</returns>
+    public static ExtraPModel Fit(List<ExtraPDatapoint> data) {
 
-            if(data.Count < 5)
-                throw new ArgumentException("Not enough datapoints.");
+        if(data.Count < 5)
+            throw new ArgumentException("Not enough datapoints.");
 
-            // --- 1. detect hard limits ---
-            int maxMPI = DetectMaxTrustedMPI(data);
-            int maxThreads = Math.Max(data.Max(d => d.ThreadSize), 16);
-            double minCellsPerMPI = DetectMinCellsPerMPI(data, maxMPI);
+        // --- 1. detect hard limits ---
+        int maxMPI = DetectMaxTrustedMPI(data);
+        int maxThreads = Math.Max(data.Max(d => d.ThreadSize), 16);
+        double minCellsPerMPI = DetectMinCellsPerMPI(data, maxMPI);
 
-            // --- 2. filter data ---
-            var filtered = data.Where(dp =>
-                dp.MpiSize <= maxMPI &&
-                CellsPerMPI(dp) >= minCellsPerMPI
-            ).ToList();
+        // --- 2. filter data ---
+        var filtered = data.Where(dp =>
+            dp.MpiSize <= maxMPI &&
+            CellsPerMPI(dp) >= minCellsPerMPI
+        ).ToList();
 
-            // --- 3. fit smooth model ---
-            var model = FitSmoothModel(filtered);
+        // --- 3. fit smooth model ---
+        var model = FitSmoothModel(filtered);
 
-            model.MaxTrustedMPI = maxMPI;
-            model.MinCellsPerMPI = minCellsPerMPI;
-            model.MaxThreads = maxThreads;
-            //model.TrainingData = filtered;
+        model.MaxTrustedMPI = maxMPI;
+        model.MinCellsPerMPI = minCellsPerMPI;
+        model.MaxThreads = maxThreads;
+        //model.TrainingData = filtered;
 
-            return model;
-        }
+        return model;
+    }
 
-        static int DetectMaxTrustedMPI(List<ExtraPDatapoint> data) {
+    static int DetectMaxTrustedMPI(List<ExtraPDatapoint> data) {
 
-            // group by MPI, check monotonic scaling
-            var groups = data.GroupBy(d => d.MpiSize)
-                             .OrderBy(g => g.Key)
-                             .ToList();
-
-            int lastGood = groups.First().Key;
-
-            for(int i = 1; i < groups.Count; i++) {
-                double prevMedian = Median(groups[i - 1].Select(d => d.TotalTime));
-                double currMedian = Median(groups[i].Select(d => d.TotalTime));
-
-                // strong-scaling violation -> spike
-                if(currMedian > 1.2 * prevMedian)
-                    break;
-
-                lastGood = groups[i].Key;
-            }
-
-            return lastGood;
-        }
-
-        static double DetectMinCellsPerMPI(List<ExtraPDatapoint> data, int maxMPI) {
-
-            var valid = data.Where(d => d.MpiSize <= maxMPI)
-                            .Select(d => CellsPerMPI(d))
-                            .OrderBy(x => x)
+        // group by MPI, check monotonic scaling
+        var groups = data.GroupBy(d => d.MpiSize)
+                            .OrderBy(g => g.Key)
                             .ToList();
 
-            // conservative: lower 0.1 quantile
-            int idx = (int)(0.1 * valid.Count);
-            return valid[Math.Max(idx, 0)];
+        int lastGood = groups.First().Key;
+
+        for(int i = 1; i < groups.Count; i++) {
+            double prevMedian = Median(groups[i - 1].Select(d => d.TotalTime));
+            double currMedian = Median(groups[i].Select(d => d.TotalTime));
+
+            // strong-scaling violation -> spike
+            if(currMedian > 1.2 * prevMedian)
+                break;
+
+            lastGood = groups[i].Key;
         }
-        static ExtraPModel FitSmoothModel(List<ExtraPDatapoint> data) {
 
-            double[] alphaPGrid = { 2.0, 2.5, 3.0 };
-            double[] alphaMPIGrid = { 0.7, 0.8, 0.9 };
-            double[] alphaThreadGrid = { 0.5, 0.6, 0.7 };
+        return lastGood;
+    }
 
-            ExtraPModel best = FitLinear(data, alphaPGrid[0], alphaMPIGrid[0], alphaThreadGrid[0]);
-            double bestErr = double.PositiveInfinity;
+    static double DetectMinCellsPerMPI(List<ExtraPDatapoint> data, int maxMPI) {
 
-            foreach(var aP in alphaPGrid)
-                foreach(var aM in alphaMPIGrid)
-                    foreach(var aT in alphaThreadGrid) {
+        var valid = data.Where(d => d.MpiSize <= maxMPI)
+                        .Select(d => CellsPerMPI(d))
+                        .OrderBy(x => x)
+                        .ToList();
 
-                        var model = FitLinear(data, aP, aM, aT);
-                        double err = RelativeRMSError(model, data);
+        // conservative: lower 0.1 quantile
+        int idx = (int)(0.1 * valid.Count);
+        return valid[Math.Max(idx, 0)];
+    }
+    static ExtraPModel FitSmoothModel(List<ExtraPDatapoint> data) {
 
-                        if(err < bestErr) {
-                            bestErr = err;
-                            best = model;
-                        }
+        double[] alphaPGrid = { 2.0, 2.5, 3.0 };
+        double[] alphaMPIGrid = { 0.7, 0.8, 0.9 };
+        double[] alphaThreadGrid = { 0.5, 0.6, 0.7 };
+
+        ExtraPModel best = FitLinear(data, alphaPGrid[0], alphaMPIGrid[0], alphaThreadGrid[0]);
+        double bestErr = double.PositiveInfinity;
+
+        foreach(var aP in alphaPGrid)
+            foreach(var aM in alphaMPIGrid)
+                foreach(var aT in alphaThreadGrid) {
+
+                    var model = FitLinear(data, aP, aM, aT);
+                    double err = RelativeRMSError(model, data);
+
+                    if(err < bestErr) {
+                        bestErr = err;
+                        best = model;
                     }
-
-            return best;
-        }
-
-        static ExtraPModel FitLinear(List<ExtraPDatapoint> data,  double alphaP, double alphaMPI, double alphaThreads) {
-            int n = data.Count;
-            var A = MultidimensionalArray.Create(n, 2);
-            var b = new double[n];
-
-            for(int i = 0; i < n; i++) {
-                A[i, 0] = Work(data[i], alphaP, alphaMPI, alphaThreads);
-                A[i, 1] = 1.0;
-                b[i] = data[i].TotalTime;
-            }
-
-            double[] c = NNLS2(A, b);
-
-            return new ExtraPModel {
-                Ccompute = c[0],
-                Csetup = c[1],
-                AlphaP = alphaP,
-                AlphaMPI = alphaMPI,
-                AlphaThreads = alphaThreads
-            };
-        }
-
-        /// <summary>
-        /// Predicts the runtime for a given datapoint.
-        /// </summary>
-        /// <param name="dp">The ExtraPDatapoint to predict for.</param>
-        /// <param name="ignore_limits">If false, checks MPI size and cells per MPI.</param>
-        /// <returns>Predicted runtime.</returns>
-        public double Predict(ExtraPDatapoint dp, bool ignore_limits = true) {
-
-            if(!ignore_limits && dp.MpiSize > MaxTrustedMPI)
-                throw new InvalidOperationException("MPI outside trusted range.");
-
-            if(!ignore_limits && CellsPerMPI(dp) < MinCellsPerMPI)
-                throw new InvalidOperationException("Too little work per core.");
-
-            return Ccompute * Work(dp, AlphaP, AlphaMPI, AlphaThreads) + Csetup;
-        }
-
-        /// <summary>
-        /// Recommends the MPI and thread configuration for a given problem size.
-        /// Uses the efficiency parameter to filter near-optimal configurations.
-        /// </summary>
-        /// <param name="cells">Number of cells in the simulation.</param>
-        /// <param name="p">Polynomial degree.</param>
-        /// <param name="timesteps">Number of timesteps.</param>
-        /// <param name="efficiency">
-        /// Efficiency threshold (0..1). Configurations with predicted time ≤ t_min / efficiency are considered.
-        /// </param>
-        /// <returns>Tuple of recommended MPI, Threads, and predicted Time.</returns>
-        public (int MPI, int Threads, double Time) RecommendConfiguration(int cells, int p, int timesteps, double efficiency = 0.7) {
-
-            var candidates = new List<(int mpi, int th, double t)>();
-
-            for(int mpi = 1; mpi <= MaxTrustedMPI; mpi++)
-                for(int th = 1; th <= MaxThreads; th++) {
-
-                    var dp = new ExtraPDatapoint {
-                        Cells = cells,
-                        P = p,
-                        TimeSteps = timesteps,
-                        MpiSize = mpi,
-                        ThreadSize = th
-                    };
-
-                    if(CellsPerMPI(dp) < MinCellsPerMPI)
-                        continue;
-
-                    double t = Predict(dp);
-                    candidates.Add((mpi, th, t));
                 }
 
-            if(!candidates.Any())
-                throw new InvalidOperationException("No valid configurations found for the given problem size.");
+        return best;
+    }
 
-            double tMin = candidates.Min(c => c.t);
+    static ExtraPModel FitLinear(List<ExtraPDatapoint> data,  double alphaP, double alphaMPI, double alphaThreads) {
+        int n = data.Count;
+        var A = MultidimensionalArray.Create(n, 2);
+        var b = new double[n];
 
-            var efficient = candidates
-                .Where(c => c.t <= tMin / efficiency)
-                .OrderBy(c => c.t)
-                .First();
-
-            return efficient;
+        for(int i = 0; i < n; i++) {
+            A[i, 0] = Work(data[i], alphaP, alphaMPI, alphaThreads);
+            A[i, 1] = 1.0;
+            b[i] = data[i].TotalTime;
         }
 
-        // HELPERS
-        static double Work(ExtraPDatapoint dp, double aP, double aMPI, double aT) =>
-            dp.Cells * Math.Pow(dp.P, aP) * dp.TimeSteps /
-            (Math.Pow(dp.MpiSize, aMPI) * Math.Pow(dp.ThreadSize, aT));
+        double[] c = NNLS2(A, b);
 
-        static double CellsPerMPI(ExtraPDatapoint dp) =>
-            dp.Cells / (double)(dp.MpiSize);
+        return new ExtraPModel {
+            Ccompute = c[0],
+            Csetup = c[1],
+            AlphaP = alphaP,
+            AlphaMPI = alphaMPI,
+            AlphaThreads = alphaThreads
+        };
+    }
 
-        static double RelativeRMSError(ExtraPModel m, List<ExtraPDatapoint> d) =>
-            Math.Sqrt(d.Average(dp => {
-                double r = (m.Predict(dp) - dp.TotalTime) / dp.TotalTime;
-                return r * r;
-            }));
+    /// <summary>
+    /// Predicts the runtime for a given datapoint.
+    /// </summary>
+    /// <param name="dp">The ExtraPDatapoint to predict for.</param>
+    /// <param name="ignore_limits">If false, checks MPI size and cells per MPI.</param>
+    /// <returns>Predicted runtime.</returns>
+    public double Predict(ExtraPDatapoint dp, bool ignore_limits = true) {
 
-        static double Median(IEnumerable<double> x) {
-            var a = x.OrderBy(v => v).ToArray();
-            return a[a.Length / 2];
-        }
+        if(!ignore_limits && dp.MpiSize > MaxTrustedMPI)
+            throw new InvalidOperationException("MPI outside trusted range.");
 
-        static double[] NNLS2(MultidimensionalArray A, double[] b) {
-            int n = b.Length;
-            var AtA = MultidimensionalArray.Create(2, 2);
-            var Atb = new double[2];
+        if(!ignore_limits && CellsPerMPI(dp) < MinCellsPerMPI)
+            throw new InvalidOperationException("Too little work per core.");
 
-            for(int i = 0; i < n; i++) {
-                Atb[0] += A[i, 0] * b[i];
-                Atb[1] += b[i];
-                AtA[0, 0] += A[i, 0] * A[i, 0];
-                AtA[0, 1] += A[i, 0];
-                AtA[1, 0] += A[i, 0];
-                AtA[1, 1] += 1.0;
+        return Ccompute * Work(dp, AlphaP, AlphaMPI, AlphaThreads) + Csetup;
+    }
+
+    /// <summary>
+    /// Recommends the MPI and thread configuration for a given problem size.
+    /// Uses the efficiency parameter to filter near-optimal configurations.
+    /// </summary>
+    /// <param name="cells">Number of cells in the simulation.</param>
+    /// <param name="p">Polynomial degree.</param>
+    /// <param name="timesteps">Number of timesteps.</param>
+    /// <param name="efficiency">
+    /// Efficiency threshold (0..1). Configurations with predicted time ≤ t_min / efficiency are considered.
+    /// </param>
+    /// <returns>Tuple of recommended MPI, Threads, and predicted Time.</returns>
+    public (int MPI, int Threads, double Time) RecommendConfiguration(int cells, int p, int timesteps, double efficiency = 0.7) {
+
+        var candidates = new List<(int mpi, int th, double t)>();
+
+        for(int mpi = 1; mpi <= MaxTrustedMPI; mpi++)
+            for(int th = 1; th <= MaxThreads; th++) {
+
+                var dp = new ExtraPDatapoint {
+                    Cells = cells,
+                    P = p,
+                    TimeSteps = timesteps,
+                    MpiSize = mpi,
+                    ThreadSize = th
+                };
+
+                if(CellsPerMPI(dp) < MinCellsPerMPI)
+                    continue;
+
+                double t = Predict(dp);
+                candidates.Add((mpi, th, t));
             }
 
-            double det = AtA[0, 0] * AtA[1, 1] - AtA[0, 1] * AtA[1, 0];
-            return new[] {
-                Math.Max(0, ( Atb[0]*AtA[1,1] - Atb[1]*AtA[0,1]) / det),
-                Math.Max(0, (-Atb[0]*AtA[1,0] + Atb[1]*AtA[0,0]) / det)
-            };
-        }
+        if(!candidates.Any())
+            throw new InvalidOperationException("No valid configurations found for the given problem size.");
+
+        double tMin = candidates.Min(c => c.t);
+
+        var efficient = candidates
+            .Where(c => c.t <= tMin / efficiency)
+            .OrderBy(c => c.t)
+            .First();
+
+        return efficient;
     }
+
+    // HELPERS
+    static double Work(ExtraPDatapoint dp, double aP, double aMPI, double aT) =>
+        dp.Cells * Math.Pow(dp.P, aP) * dp.TimeSteps /
+        (Math.Pow(dp.MpiSize, aMPI) * Math.Pow(dp.ThreadSize, aT));
+
+    static double CellsPerMPI(ExtraPDatapoint dp) =>
+        dp.Cells / (double)(dp.MpiSize);
+
+    static double RelativeRMSError(ExtraPModel m, List<ExtraPDatapoint> d) =>
+        Math.Sqrt(d.Average(dp => {
+            double r = (m.Predict(dp) - dp.TotalTime) / dp.TotalTime;
+            return r * r;
+        }));
+
+    static double Median(IEnumerable<double> x) {
+        var a = x.OrderBy(v => v).ToArray();
+        return a[a.Length / 2];
+    }
+
+    static double[] NNLS2(MultidimensionalArray A, double[] b) {
+        int n = b.Length;
+        var AtA = MultidimensionalArray.Create(2, 2);
+        var Atb = new double[2];
+
+        for(int i = 0; i < n; i++) {
+            Atb[0] += A[i, 0] * b[i];
+            Atb[1] += b[i];
+            AtA[0, 0] += A[i, 0] * A[i, 0];
+            AtA[0, 1] += A[i, 0];
+            AtA[1, 0] += A[i, 0];
+            AtA[1, 1] += 1.0;
+        }
+
+        double det = AtA[0, 0] * AtA[1, 1] - AtA[0, 1] * AtA[1, 0];
+        return new[] {
+            Math.Max(0, ( Atb[0]*AtA[1,1] - Atb[1]*AtA[0,1]) / det),
+            Math.Max(0, (-Atb[0]*AtA[1,0] + Atb[1]*AtA[0,0]) / det)
+        };
+    }
+}
 
     /// <summary>
     /// Adds some Extensions to a AppControl 

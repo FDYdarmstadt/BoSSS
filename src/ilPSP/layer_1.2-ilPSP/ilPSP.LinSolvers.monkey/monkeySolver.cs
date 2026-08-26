@@ -315,7 +315,7 @@ namespace ilPSP.LinSolvers.monkey {
                 // pass values to monkey
                 // =====================
                 bool shallow, dummy2;
-                VectorBase X = Device.CreateVector(m_Matrix.ColPartition, x, out shallow);
+                VectorBase X = Device.CreateVector(m_Matrix.ColPartitioning, x, out shallow);
                 VectorBase Rhs = Device.CreateVector(m_Matrix.RowPartitioning, rhs, out dummy2);
 
                 // scale rhs
@@ -360,7 +360,7 @@ namespace ilPSP.LinSolvers.monkey {
                 }
 
                 if (!shallow)
-                    X.GetValues(x, 0, 0, m_Matrix.ColPartition.LocalLength);
+                    X.GetValues(x, 0, 0, m_Matrix.ColPartitioning.LocalLength);
                 X.Dispose();
                 Rhs.Dispose();
 

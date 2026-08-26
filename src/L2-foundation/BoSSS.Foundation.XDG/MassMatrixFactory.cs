@@ -170,7 +170,7 @@ namespace BoSSS.Foundation.XDG {
                     throw new ArgumentException("grid object mismatch");
                 if (!M.RowPartitioning.EqualsPartition(mapping))
                     throw new ArgumentException("Mismatch in row mapping.");
-                if (!M.ColPartition.EqualsPartition(mapping))
+                if (!M.ColPartitioning.EqualsPartition(mapping))
                     throw new ArgumentException("Mismatch in column mapping.");
 
                 if (!_alpha.Keys.IsSubsetOf(this.AvailableSpecies))

@@ -163,7 +163,7 @@ namespace ilPSP.LinSolvers.ILU {
         unsafe private IntPtr CreateInternalMatrixFormat() {
             int nonZ = Convert.ToInt32(m_Matrix.GetTotalNoOfNonZeros());
             int Nrows = m_Matrix.RowPartitioning.LocalLength;
-            int Ncols = m_Matrix.ColPartition.LocalLength;
+            int Ncols = m_Matrix.ColPartitioning.LocalLength;
             Debug.Assert(Nrows == Ncols);
             IntPtr spM = new IntPtr();
             fixed (int* p_ia = ILUfactorization.ia, p_ja = ILUfactorization.ja) {
