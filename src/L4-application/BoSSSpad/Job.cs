@@ -294,11 +294,6 @@ namespace BoSSS.Application.BoSSSpad {
                 "--prjnmn" , PrjName,
                 "--sesnmn", this.Name
             };
-
-
-
-
-
             m_EnvironmentVars.Clear();
             for(int i = 0; i < args.Length; i++) {
                 m_EnvironmentVars.Add("BOSSS_ARG_" + i, args[i]);
@@ -536,7 +531,7 @@ namespace BoSSS.Application.BoSSSpad {
                 "--control", "control.obj",
                 "--prjnmn", PrjName,
                 "--sesnmn", this.Name,
-                "--num_threads", this.NumberOfThreads.ToString()
+                //"--num_threads", this.NumberOfThreads.ToString() // this is set via environment variable OMP_NUM_THREADS, see <see cref="EnvironmentVars"/>
             };
             if(m_ctrl_index >= 0) {
                 ArrayTools.Cat(args, "--pstudy_case", m_ctrl_index.ToString());
@@ -1375,6 +1370,21 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
+        int m_NumberOfNodes = -1;
+
+        /// <summary>
+        /// Number of Nodes (default -1 => not specified)
+        /// </summary>
+        public int NumberOfNodes {
+            get {
+                return m_NumberOfNodes;
+            }
+            set {
+                TestActivation();
+                m_NumberOfNodes = value < 0 ? -1 : value;
+            }
+        }
+
 
         int m_NumberOfThreads = 2;
 
@@ -1391,8 +1401,6 @@ namespace BoSSS.Application.BoSSSpad {
                     throw new ArgumentOutOfRangeException("number of threads must be at least 1");
                 TestActivation();
                 m_NumberOfThreads = value;
-                //AppendBoSSSArgument("--num_threads", m_NumberOfThreads.ToString()); // this messes up all tests, etc., which do not follow the standard argument scheme.
-                //                                                                       if --num_threads is not provided, BoSSS uses OMP_NUM_THREADS
                 m_EnvironmentVars["OMP_NUM_THREADS"] = m_NumberOfThreads.ToString();
             }
         }
@@ -1726,6 +1734,7 @@ namespace BoSSS.Application.BoSSSpad {
                 // ============================================
                 if(this.AssignedBatchProc != null)
                     throw new NotSupportedException("Job can only be activated once.");
+                bpc.VerifyJob(this);
                 this.AddTextFile(GetDatabasePathsObject().SerializeToText(), DatabasePaths.filename);
                 AssignedBatchProc = bpc;
                 AssignedBatchProc.EnsurePathsExist();
