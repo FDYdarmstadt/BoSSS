@@ -864,9 +864,10 @@ namespace ilPSP {
 
                 }
                 if(NumThreads > DedicatedCPUsForThisRank.Count()) {
+                    int requestedNumThreads = NumThreads;
                     NumThreads = Math.Max(1, DedicatedCPUsForThisRank.Count());
                     MaxNumOpenMPthreads = NumThreads;
-                    tr.Error($"R{MPIEnv.MPI_Rank}: Insufficient number of CPUs: NumThreads = {NumThreads}, but got affinity to {DedicatedCPUsForThisRank.ToConcatString("[", ",", "]")}; reducing to {MaxNumOpenMPthreads} threads");
+                    tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity provides {NumThreads} core(s) {DedicatedCPUsForThisRank.ToConcatString("[", ",", "]")}; limiting the requested {requestedNumThreads} OpenMP threads accordingly.");
                 }
 
 
