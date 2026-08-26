@@ -789,6 +789,7 @@ namespace BoSSS.Foundation.XDG {
             /// </summary>
             static bool onlyfordebugging_RuleDiagnosis = false;
 
+
             /// <summary>
             /// quadrature order used for creation of quadrature rules during evaluator creation
             /// </summary>
