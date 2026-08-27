@@ -82,3 +82,5 @@ the first and only PETSc solver in a fresh process on a one-row-per-rank
 identity matrix. Phase markers distinguish setup, solve, disposal and finalization.
 Adding `--pin-csr` keeps the managed CSR arrays pinned through native solver
 destruction, allowing their lifetime to be tested independently.
+The probe also prints its complete one-row CSR ownership data and the relevant
+native libraries mapped into rank zero before `KSPSolve`.

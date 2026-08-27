@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using BoSSS.Application.SipPoisson;
 using BoSSS.Foundation.IO;
 using BoSSS.Solution.AdvancedSolvers;
@@ -268,6 +270,7 @@ namespace PETScTest {
 
         static int RunMumpsLifecycleProbe(PETScNativeVariant nativeVariant, bool pinCsrBuffers, int rank) {
             var partition = new Partitioning(1, csMPI.Raw._COMM.WORLD);
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
             var matrix = new MsrMatrix(partition);
             matrix[partition.i0, partition.i0] = 1.0;
             var solution = new double[1];
@@ -280,9 +283,15 @@ namespace PETScTest {
             };
 
             try {
+                Console.WriteLine(
+                    $"PETSc MUMPS lifecycle probe input: rank={rank}, size={size}, localRows=1, "
+                    + $"globalRows={partition.TotalLength}, globalRowStart={partition.i0}, "
+                    + $"rowPointers=[0,1], columns=[{partition.i0}], values=[1], rhs=[1]");
                 if(rank == 0)
                     Console.WriteLine($"PETSc MUMPS lifecycle probe: DefineMatrix begin (first PETSc solver in process; pinned_csr={pinCsrBuffers})");
                 solver.DefineMatrix(matrix);
+                if(rank == 0)
+                    DumpLoadedNativeLibraries();
                 if(rank == 0)
                     Console.WriteLine("PETSc MUMPS lifecycle probe: DefineMatrix complete; KSPSolve begin");
                 SolverResult result = solver.Solve(solution, rightHandSide);
@@ -296,6 +305,27 @@ namespace PETScTest {
                 if(rank == 0)
                     Console.WriteLine("PETSc MUMPS lifecycle probe: Dispose complete");
             }
+        }
+
+        static void DumpLoadedNativeLibraries() {
+            const string mapsFile = "/proc/self/maps";
+            if(!File.Exists(mapsFile)) {
+                Console.WriteLine("PETSc MUMPS lifecycle probe: /proc/self/maps is unavailable.");
+                return;
+            }
+
+            string[] markers = { "mpi", "petsc", "mumps", "scalapack", "blas", "lapack", "gfortran", "quadmath" };
+            string[] libraries = File.ReadLines(mapsFile)
+                .Select(line => line.Split((char[])null, StringSplitOptions.RemoveEmptyEntries).LastOrDefault())
+                .Where(path => path != null && path.StartsWith("/", StringComparison.Ordinal))
+                .Where(path => markers.Any(marker => path.IndexOf(marker, StringComparison.OrdinalIgnoreCase) >= 0))
+                .Distinct()
+                .OrderBy(path => path, StringComparer.Ordinal)
+                .ToArray();
+
+            Console.WriteLine($"PETSc MUMPS lifecycle probe: loaded native libraries ({libraries.Length}):");
+            foreach(string library in libraries)
+                Console.WriteLine("  " + library);
         }
 
         static int RunSolve(PETScNativeVariant nativeVariant, SolverMode solverMode, PETScDirectBackend directBackend, int localRows) {
