@@ -38,6 +38,18 @@ namespace ilPSP.LinSolvers.PETSc {
         IntPtr m_Solver;
         int m_LocalRows = -1;
         bool m_Disposed;
+        int[] m_PinnedRowPointers;
+        int[] m_PinnedColumnIndices;
+        double[] m_PinnedValues;
+        GCHandle m_RowPointersHandle;
+        GCHandle m_ColumnIndicesHandle;
+        GCHandle m_ValuesHandle;
+
+        /// <summary>
+        /// Diagnostic option which keeps the managed CSR buffers pinned until
+        /// the native PETSc matrix has been destroyed.
+        /// </summary>
+        public bool PinManagedCsrBuffers { get; set; }
 
         /// <summary>
         /// Parallel runtime used by PETSc. This must be set before <see cref="DefineMatrix"/>.
@@ -167,6 +179,8 @@ namespace ilPSP.LinSolvers.PETSc {
             m_Native = new UnsafePETSc(effectiveNativeVariant);
             int[] columnArray = columns.Count > 0 ? columns.ToArray() : new int[1];
             double[] valueArray = values.Count > 0 ? values.ToArray() : new double[1];
+            if(PinManagedCsrBuffers)
+                PinCsrBuffers(rowPointers, columnArray, valueArray);
             try {
                 // This records that BoSSS initialized PETSc, allowing application
                 // shutdown to finalize PETSc before MPI is finalized.
@@ -190,6 +204,7 @@ namespace ilPSP.LinSolvers.PETSc {
                 m_Native.Dispose();
                 m_Native = null;
                 m_LocalRows = -1;
+                ReleasePinnedCsrBuffers();
                 Exception setupError = CreateSetupException(error);
                 if(ReferenceEquals(setupError, error))
                     throw;
@@ -323,12 +338,34 @@ namespace ilPSP.LinSolvers.PETSc {
                 }
             }
 
+            ReleasePinnedCsrBuffers();
             m_Native?.Dispose();
             m_Native = null;
             m_Disposed = true;
             if(destroyError != null)
                 throw destroyError;
             }
+        }
+
+        void PinCsrBuffers(int[] rowPointers, int[] columnIndices, double[] values) {
+            m_PinnedRowPointers = rowPointers;
+            m_PinnedColumnIndices = columnIndices;
+            m_PinnedValues = values;
+            m_RowPointersHandle = GCHandle.Alloc(m_PinnedRowPointers, GCHandleType.Pinned);
+            m_ColumnIndicesHandle = GCHandle.Alloc(m_PinnedColumnIndices, GCHandleType.Pinned);
+            m_ValuesHandle = GCHandle.Alloc(m_PinnedValues, GCHandleType.Pinned);
+        }
+
+        void ReleasePinnedCsrBuffers() {
+            if(m_RowPointersHandle.IsAllocated)
+                m_RowPointersHandle.Free();
+            if(m_ColumnIndicesHandle.IsAllocated)
+                m_ColumnIndicesHandle.Free();
+            if(m_ValuesHandle.IsAllocated)
+                m_ValuesHandle.Free();
+            m_PinnedRowPointers = null;
+            m_PinnedColumnIndices = null;
+            m_PinnedValues = null;
         }
     }
 

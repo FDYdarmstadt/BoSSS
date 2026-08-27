@@ -45,7 +45,7 @@ namespace PETScTest {
             int exitCode = 1;
             try {
                 if(options.ProbeMumpsLifecycle)
-                    exitCode = RunMumpsLifecycleProbe(options.NativeVariant, mpiRank);
+                    exitCode = RunMumpsLifecycleProbe(options.NativeVariant, options.PinCsrBuffers, mpiRank);
                 else
                     exitCode = options.RunTutorial
                         ? RunSipPoissonTutorial(options.NativeVariant, options.SolverMode, options.DirectBackend)
@@ -100,6 +100,7 @@ namespace PETScTest {
             public bool AllowUnavailableDirectBackend;
             public bool RunTutorial;
             public bool ProbeMumpsLifecycle;
+            public bool PinCsrBuffers;
             public string[] BootstrapArguments;
         }
 
@@ -136,6 +137,9 @@ namespace PETScTest {
                         options.ProbeMumpsLifecycle = true;
                         options.SolverMode = SolverMode.DirectLu;
                         options.DirectBackend = PETScDirectBackend.Mumps;
+                        break;
+                    case "--pin-csr":
+                        options.PinCsrBuffers = true;
                         break;
                     default:
                         bootstrapArguments.Add(args[i]);
@@ -262,7 +266,7 @@ namespace PETScTest {
             }
         }
 
-        static int RunMumpsLifecycleProbe(PETScNativeVariant nativeVariant, int rank) {
+        static int RunMumpsLifecycleProbe(PETScNativeVariant nativeVariant, bool pinCsrBuffers, int rank) {
             var partition = new Partitioning(1, csMPI.Raw._COMM.WORLD);
             var matrix = new MsrMatrix(partition);
             matrix[partition.i0, partition.i0] = 1.0;
@@ -271,12 +275,13 @@ namespace PETScTest {
             var solver = new PETScDirectSolver {
                 NativeVariant = nativeVariant,
                 Factorization = PETScDirectFactorization.LU,
-                Backend = PETScDirectBackend.Mumps
+                Backend = PETScDirectBackend.Mumps,
+                PinManagedCsrBuffers = pinCsrBuffers
             };
 
             try {
                 if(rank == 0)
-                    Console.WriteLine("PETSc MUMPS lifecycle probe: DefineMatrix begin (first PETSc solver in process)");
+                    Console.WriteLine($"PETSc MUMPS lifecycle probe: DefineMatrix begin (first PETSc solver in process; pinned_csr={pinCsrBuffers})");
                 solver.DefineMatrix(matrix);
                 if(rank == 0)
                     Console.WriteLine("PETSc MUMPS lifecycle probe: DefineMatrix complete; KSPSolve begin");

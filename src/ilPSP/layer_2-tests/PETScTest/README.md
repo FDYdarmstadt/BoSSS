@@ -80,3 +80,5 @@ and require the corresponding exception.
 For native MUMPS lifecycle diagnosis, `--probe-mumps-lifecycle` runs MUMPS as
 the first and only PETSc solver in a fresh process on a one-row-per-rank
 identity matrix. Phase markers distinguish setup, solve, disposal and finalization.
+Adding `--pin-csr` keeps the managed CSR arrays pinned through native solver
+destruction, allowing their lifetime to be tested independently.
