@@ -46,8 +46,12 @@ namespace PETScTest {
                 ilPSP.Environment.NumThreads);
             int exitCode = 1;
             try {
-                if(options.ProbeMumpsLifecycle)
-                    exitCode = RunMumpsLifecycleProbe(options.NativeVariant, options.PinCsrBuffers, mpiRank);
+                if(options.ProbeMumpsLifecycle || options.ProbeKrylovLifecycle)
+                    exitCode = RunPetscLifecycleProbe(
+                        options.NativeVariant,
+                        options.ProbeKrylovLifecycle ? SolverMode.Krylov : SolverMode.DirectLu,
+                        options.PinCsrBuffers,
+                        mpiRank);
                 else
                     exitCode = options.RunTutorial
                         ? RunSipPoissonTutorial(options.NativeVariant, options.SolverMode, options.DirectBackend)
@@ -75,8 +79,8 @@ namespace PETScTest {
                 Console.WriteLine("Optional PETSc direct-solver backend unavailable; skipped: " + error.Message);
                 exitCode = 0;
             } finally {
-                if(options.ProbeMumpsLifecycle && mpiRank == 0)
-                    Console.WriteLine("PETSc MUMPS lifecycle probe: Finalize begin");
+                if((options.ProbeMumpsLifecycle || options.ProbeKrylovLifecycle) && mpiRank == 0)
+                    Console.WriteLine($"PETSc {LifecycleProbeName(options)} lifecycle probe: Finalize begin");
                 using(var native = new UnsafePETSc(effectiveNativeVariant)) {
                     int petscError = native.FinalizePETScRuntime();
                     if(petscError != 0) {
@@ -84,8 +88,8 @@ namespace PETScTest {
                         exitCode = 3;
                     }
                 }
-                if(options.ProbeMumpsLifecycle && mpiRank == 0)
-                    Console.WriteLine("PETSc MUMPS lifecycle probe: Finalize complete");
+                if((options.ProbeMumpsLifecycle || options.ProbeKrylovLifecycle) && mpiRank == 0)
+                    Console.WriteLine($"PETSc {LifecycleProbeName(options)} lifecycle probe: Finalize complete");
                 if(mpiInitialized)
                     csMPI.Raw.mpiFinalize();
             }
@@ -102,6 +106,7 @@ namespace PETScTest {
             public bool AllowUnavailableDirectBackend;
             public bool RunTutorial;
             public bool ProbeMumpsLifecycle;
+            public bool ProbeKrylovLifecycle;
             public bool PinCsrBuffers;
             public string[] BootstrapArguments;
         }
@@ -140,6 +145,10 @@ namespace PETScTest {
                         options.SolverMode = SolverMode.DirectLu;
                         options.DirectBackend = PETScDirectBackend.Mumps;
                         break;
+                    case "--probe-krylov-lifecycle":
+                        options.ProbeKrylovLifecycle = true;
+                        options.SolverMode = SolverMode.Krylov;
+                        break;
                     case "--pin-csr":
                         options.PinCsrBuffers = true;
                         break;
@@ -150,6 +159,10 @@ namespace PETScTest {
             }
             options.BootstrapArguments = bootstrapArguments.ToArray();
             return options;
+        }
+
+        static string LifecycleProbeName(TestOptions options) {
+            return options.ProbeKrylovLifecycle ? "Krylov" : "MUMPS";
         }
 
         static string NextOptionValue(string[] args, ref int index) {
@@ -268,42 +281,49 @@ namespace PETScTest {
             }
         }
 
-        static int RunMumpsLifecycleProbe(PETScNativeVariant nativeVariant, bool pinCsrBuffers, int rank) {
+        static int RunPetscLifecycleProbe(PETScNativeVariant nativeVariant, SolverMode solverMode, bool pinCsrBuffers, int rank) {
             var partition = new Partitioning(1, csMPI.Raw._COMM.WORLD);
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
             var matrix = new MsrMatrix(partition);
             matrix[partition.i0, partition.i0] = 1.0;
             var solution = new double[1];
             var rightHandSide = new[] { 1.0 };
-            var solver = new PETScDirectSolver {
-                NativeVariant = nativeVariant,
-                Factorization = PETScDirectFactorization.LU,
-                Backend = PETScDirectBackend.Mumps,
-                PinManagedCsrBuffers = pinCsrBuffers
-            };
+            string probeName = solverMode == SolverMode.Krylov ? "Krylov" : "MUMPS";
+            PETScSolverBase solver = solverMode == SolverMode.Krylov
+                ? (PETScSolverBase)new PETScKrylovSolver {
+                    NativeVariant = nativeVariant,
+                    Options = "-ksp_type cg -pc_type jacobi -ksp_rtol 1e-12",
+                    PinManagedCsrBuffers = pinCsrBuffers
+                }
+                : new PETScDirectSolver {
+                    NativeVariant = nativeVariant,
+                    Factorization = PETScDirectFactorization.LU,
+                    Backend = PETScDirectBackend.Mumps,
+                    PinManagedCsrBuffers = pinCsrBuffers
+                };
 
             try {
                 Console.WriteLine(
-                    $"PETSc MUMPS lifecycle probe input: rank={rank}, size={size}, localRows=1, "
+                    $"PETSc {probeName} lifecycle probe input: rank={rank}, size={size}, localRows=1, "
                     + $"globalRows={partition.TotalLength}, globalRowStart={partition.i0}, "
                     + $"rowPointers=[0,1], columns=[{partition.i0}], values=[1], rhs=[1]");
                 if(rank == 0)
-                    Console.WriteLine($"PETSc MUMPS lifecycle probe: DefineMatrix begin (first PETSc solver in process; pinned_csr={pinCsrBuffers})");
+                    Console.WriteLine($"PETSc {probeName} lifecycle probe: DefineMatrix begin (first PETSc solver in process; pinned_csr={pinCsrBuffers})");
                 solver.DefineMatrix(matrix);
                 if(rank == 0)
                     DumpLoadedNativeLibraries();
                 if(rank == 0)
-                    Console.WriteLine("PETSc MUMPS lifecycle probe: DefineMatrix complete; KSPSolve begin");
+                    Console.WriteLine($"PETSc {probeName} lifecycle probe: DefineMatrix complete; KSPSolve begin");
                 SolverResult result = solver.Solve(solution, rightHandSide);
                 if(rank == 0)
-                    Console.WriteLine($"PETSc MUMPS lifecycle probe: KSPSolve complete; converged={result.Converged}, solution={solution[0]:R}");
+                    Console.WriteLine($"PETSc {probeName} lifecycle probe: KSPSolve complete; converged={result.Converged}, solution={solution[0]:R}");
                 return result.Converged && Math.Abs(solution[0] - 1.0) <= 1.0e-10 ? 0 : 1;
             } finally {
                 if(rank == 0)
-                    Console.WriteLine("PETSc MUMPS lifecycle probe: Dispose begin");
+                    Console.WriteLine($"PETSc {probeName} lifecycle probe: Dispose begin");
                 solver.Dispose();
                 if(rank == 0)
-                    Console.WriteLine("PETSc MUMPS lifecycle probe: Dispose complete");
+                    Console.WriteLine($"PETSc {probeName} lifecycle probe: Dispose complete");
             }
         }
 
