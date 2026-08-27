@@ -28,6 +28,10 @@ namespace PETScTest {
                 Console.Error.WriteLine("--expect-openmp-mpi-rejection is valid only with --variant petsc_omp.");
                 return 5;
             }
+            if(options.ExpectUnsupportedDirectConfiguration && options.SolverMode == SolverMode.Krylov) {
+                Console.Error.WriteLine("--expect-unsupported-direct-configuration requires a direct solver mode.");
+                return 5;
+            }
 
             bool mpiInitialized;
             ilPSP.Environment.Bootstrap(options.BootstrapArguments, Utils.GetNativeLibraryDir(), out mpiInitialized);
@@ -46,10 +50,18 @@ namespace PETScTest {
                     Console.Error.WriteLine("Expected the OpenMP-only variant to reject multiple MPI ranks, but the solve ran.");
                     exitCode = 6;
                 }
+                if(options.ExpectUnsupportedDirectConfiguration) {
+                    Console.Error.WriteLine("Expected the unsupported PETSc direct configuration to be rejected, but the solve ran.");
+                    exitCode = 6;
+                }
             } catch(NotSupportedException error) when(
                 options.ExpectOpenMpMpiRejection
                 && error.Message.StartsWith("The PETSc OpenMP variant uses MPIUNI", StringComparison.Ordinal)) {
                 Console.WriteLine("Expected OpenMP-only multi-rank rejection observed: " + error.Message);
+                exitCode = 0;
+            } catch(NotSupportedException error) when(options.ExpectUnsupportedDirectConfiguration
+                && error.Message.StartsWith("PETSc direct backend", StringComparison.Ordinal)) {
+                Console.WriteLine("Expected unsupported PETSc direct configuration observed: " + error.Message);
                 exitCode = 0;
             } catch(InvalidOperationException error) when(options.AllowUnavailableDirectBackend
                 && options.SolverMode != SolverMode.Krylov
@@ -76,6 +88,7 @@ namespace PETScTest {
             public PETScDirectBackend DirectBackend = PETScDirectBackend.Default;
             public int LocalRows = 4;
             public bool ExpectOpenMpMpiRejection;
+            public bool ExpectUnsupportedDirectConfiguration;
             public bool AllowUnavailableDirectBackend;
             public bool RunTutorial;
             public string[] BootstrapArguments;
@@ -100,6 +113,9 @@ namespace PETScTest {
                         break;
                     case "--expect-openmp-mpi-rejection":
                         options.ExpectOpenMpMpiRejection = true;
+                        break;
+                    case "--expect-unsupported-direct-configuration":
+                        options.ExpectUnsupportedDirectConfiguration = true;
                         break;
                     case "--allow-unavailable-direct-backend":
                         options.AllowUnavailableDirectBackend = true;

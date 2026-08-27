@@ -12,7 +12,8 @@ Covered scenarios:
 - typed direct LU and Cholesky through the regular API
 - the optional MUMPS, SuperLU_DIST and UMFPACK packages on every native
   variant; unavailable packages are explicitly reported as skipped
-- every direct backend under two MPI ranks for the MPI and hybrid variants
+- the distributed MUMPS and SuperLU_DIST backends under two MPI ranks for the
+  MPI and hybrid variants
 
 The executable also supports `--tutorial`, which runs a small SIP Poisson
 application with the same PETSc Level-3 configuration. This complements the
@@ -70,3 +71,8 @@ direct solver modes. The test script runs every backend instead of assuming
 which configurations a package supports. `--allow-unavailable-direct-backend`
 turns only the explicit "backend was not compiled" setup error into a skip;
 once a backend is initialized, an unsuccessful solve remains a test failure.
+The ilPSP layer rejects the known sequential `default` and `umfpack` backends
+before native setup when more than one MPI rank is active. It also rejects
+Cholesky with the LU-only UMFPACK and SuperLU_DIST packages.
+The variant scripts include negative tests for every one of these restrictions
+and require the corresponding exception.

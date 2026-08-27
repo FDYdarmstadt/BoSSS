@@ -93,6 +93,13 @@ namespace ilPSP.LinSolvers.PETSc {
         }
 
         /// <summary>
+        /// Validates solver-specific restrictions of the active MPI and PETSc
+        /// configuration before native PETSc resources are created.
+        /// </summary>
+        protected virtual void ValidateParallelConfiguration(int mpiSize, PETScNativeVariant effectiveNativeVariant) {
+        }
+
+        /// <summary>
         /// PETSc convergence reason returned by the most recent solve.
         /// Positive values indicate convergence; negative values indicate divergence.
         /// </summary>
@@ -126,6 +133,7 @@ namespace ilPSP.LinSolvers.PETSc {
             EffectiveNativeVariant = effectiveNativeVariant;
             if(effectiveNativeVariant == PETScNativeVariant.OpenMp && mpiSize != 1)
                 throw new NotSupportedException("The PETSc OpenMP variant uses MPIUNI and requires exactly one BoSSS MPI rank. Use MpiOpenMp for multiple ranks.");
+            ValidateParallelConfiguration(mpiSize, effectiveNativeVariant);
 
             MPICollectiveWatchDog.Watch(matrix.MPI_Comm);
 

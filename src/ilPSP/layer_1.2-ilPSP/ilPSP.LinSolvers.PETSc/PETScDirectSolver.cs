@@ -148,6 +148,20 @@ namespace ilPSP.LinSolvers.PETSc {
         protected override string SolverOptions => BuildOptions(Factorization, Backend, AdditionalOptions);
 
         /// <inheritdoc/>
+        protected override void ValidateParallelConfiguration(int mpiSize, PETScNativeVariant effectiveNativeVariant) {
+            if(Factorization == PETScDirectFactorization.Cholesky
+                && (Backend == PETScDirectBackend.Umfpack || Backend == PETScDirectBackend.SuperLuDist)) {
+                throw new NotSupportedException(
+                    $"PETSc direct backend '{Backend}' supports LU factorization only; Cholesky is not available.");
+            }
+            if(mpiSize > 1 && (Backend == PETScDirectBackend.Default || Backend == PETScDirectBackend.Umfpack)) {
+                throw new NotSupportedException(
+                    $"PETSc direct backend '{Backend}' is sequential and cannot run with {mpiSize} MPI ranks. "
+                    + "Use the Mumps or SuperLuDist backend for distributed direct solves.");
+            }
+        }
+
+        /// <inheritdoc/>
         protected override Exception CreateSetupException(Exception error) {
             if(Backend == PETScDirectBackend.Default)
                 return error;

@@ -63,6 +63,23 @@ run_mpi() {
             "${extra_args[@]}"
 }
 
+run_expected_direct_rejection() {
+    local label="$1"
+    local ranks="$2"
+    local threads="$3"
+    local variant="$4"
+    local solver_mode="$5"
+    local backend="$6"
+    echo "== ${label} =="
+    env \
+        OMP_NUM_THREADS="${threads}" \
+        "${mpi_launcher[@]}" -n "${ranks}" dotnet "${test_dll}" \
+            --variant "${variant}" \
+            --solver "${solver_mode}" \
+            --backend "${backend}" \
+            --expect-unsupported-direct-configuration
+}
+
 run_serial "MPI, one rank and one thread" petsc_mpi 1
 run_mpi "MPI, two ranks" petsc_mpi 1
 run_serial "OpenMP, one thread" petsc_omp 1
@@ -80,10 +97,14 @@ for variant in petsc_mpi petsc_omp petsc_mpi_omp; do
         run_serial "Optional PETSc ${backend} package (${variant}, one rank)" "${variant}" 1 direct_lu 4 "${backend}"
     done
 done
-for backend in default mumps superlu_dist umfpack; do
+for backend in mumps superlu_dist; do
     run_mpi "PETSc ${backend} direct backend (MPI, two ranks)" petsc_mpi 1 0 4 direct_lu "${backend}"
     run_mpi "PETSc ${backend} direct backend (MPI+OpenMP, two ranks)" petsc_mpi_omp 2 0 4 direct_lu "${backend}"
 done
+run_expected_direct_rejection "Default direct backend rejects two MPI ranks" 2 1 petsc_mpi direct_lu default
+run_expected_direct_rejection "UMFPACK direct backend rejects two MPI ranks" 2 1 petsc_mpi direct_lu umfpack
+run_expected_direct_rejection "UMFPACK rejects Cholesky" 1 1 petsc_omp direct_cholesky umfpack
+run_expected_direct_rejection "SuperLU_DIST rejects Cholesky" 1 1 petsc_omp direct_cholesky superlu_dist
 run_mpi "Large MPI matrix, two ranks" petsc_mpi 1 0 2048
 run_serial "Large OpenMP matrix" petsc_omp 2 krylov 4096
 run_mpi "Large MPI+OpenMP matrix, two ranks" petsc_mpi_omp 2 0 2048

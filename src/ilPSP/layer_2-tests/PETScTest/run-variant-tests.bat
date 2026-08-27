@@ -43,12 +43,20 @@ for %%V in (petsc_mpi petsc_omp petsc_mpi_omp) do (
         if errorlevel 1 exit /b 1
     )
 )
-for %%B in (default mumps superlu_dist umfpack) do (
+for %%B in (mumps superlu_dist) do (
     call :run_mpi "PETSc %%B direct backend (MPI, two ranks)" petsc_mpi 1 0 4 direct_lu %%B
     if errorlevel 1 exit /b 1
     call :run_mpi "PETSc %%B direct backend (MPI+OpenMP, two ranks)" petsc_mpi_omp 2 0 4 direct_lu %%B
     if errorlevel 1 exit /b 1
 )
+call :run_expected_direct_rejection "Default direct backend rejects two MPI ranks" 2 1 petsc_mpi direct_lu default
+if errorlevel 1 exit /b %errorlevel%
+call :run_expected_direct_rejection "UMFPACK direct backend rejects two MPI ranks" 2 1 petsc_mpi direct_lu umfpack
+if errorlevel 1 exit /b %errorlevel%
+call :run_expected_direct_rejection "UMFPACK rejects Cholesky" 1 1 petsc_omp direct_cholesky umfpack
+if errorlevel 1 exit /b %errorlevel%
+call :run_expected_direct_rejection "SuperLU_DIST rejects Cholesky" 1 1 petsc_omp direct_cholesky superlu_dist
+if errorlevel 1 exit /b %errorlevel%
 call :run_mpi "Large MPI matrix, two ranks" petsc_mpi 1 0 2048
 if errorlevel 1 exit /b %errorlevel%
 call :run_serial "Large OpenMP matrix" petsc_omp 2 krylov 4096
@@ -85,4 +93,10 @@ set "OMP_NUM_THREADS=%~3"
 set "EXPECT_REJECTION_ARG="
 if "%~4"=="1" set "EXPECT_REJECTION_ARG=--expect-openmp-mpi-rejection"
 %PETSC_MPI_LAUNCHER% -n 2 dotnet "%TEST_DLL%" --variant "%~2" --solver "%SOLVER_MODE%" --local-rows "%LOCAL_ROWS%" %EXPECT_REJECTION_ARG% %BACKEND_ARG%
+exit /b %errorlevel%
+
+:run_expected_direct_rejection
+echo == %~1 ==
+set "OMP_NUM_THREADS=%~3"
+%PETSC_MPI_LAUNCHER% -n %~2 dotnet "%TEST_DLL%" --variant "%~4" --solver "%~5" --backend "%~6" --expect-unsupported-direct-configuration
 exit /b %errorlevel%
