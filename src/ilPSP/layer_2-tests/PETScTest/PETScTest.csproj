@@ -7,5 +7,6 @@
     <ProjectReference Include="..\..\layer_1.2-ilPSP\ilPSP.LinSolvers.PETSc\ilPSP.LinSolvers.PETSc.csproj" />
     <ProjectReference Include="..\..\layer_1.2-ilPSP\ilPSP\ilPSP.csproj" />
     <ProjectReference Include="..\..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj" />
+    <ProjectReference Include="..\..\..\L4-application\ipPoisson\ipPoisson.csproj" />
   </ItemGroup>
 </Project>

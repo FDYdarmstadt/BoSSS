@@ -6,8 +6,10 @@ if not defined PETSC_MPI_LAUNCHER set "PETSC_MPI_LAUNCHER=mpiexec"
 
 set "PROJECT_DIR=%~dp0"
 set "TEST_DLL=%PROJECT_DIR%bin\%PETSC_TEST_CONFIGURATION%\net8.0\PETScTest.dll"
-dotnet build "%PROJECT_DIR%PETScTest.csproj" -c "%PETSC_TEST_CONFIGURATION%"
-if errorlevel 1 exit /b %errorlevel%
+if not "%PETSC_TEST_SKIP_BUILD%"=="1" (
+    dotnet build "%PROJECT_DIR%PETScTest.csproj" -c "%PETSC_TEST_CONFIGURATION%"
+    if errorlevel 1 exit /b %errorlevel%
+)
 dotnet "%TEST_DLL%" --test-auto-selection
 if errorlevel 1 exit /b %errorlevel%
 
@@ -35,6 +37,18 @@ call :run_serial "Direct Cholesky through OpenMP variant" petsc_omp 2 direct_cho
 if errorlevel 1 exit /b %errorlevel%
 call :run_serial "Direct LU through hybrid variant, one rank" petsc_mpi_omp 2 direct_lu
 if errorlevel 1 exit /b %errorlevel%
+for %%V in (petsc_mpi petsc_omp petsc_mpi_omp) do (
+    for %%B in (mumps superlu_dist umfpack) do (
+        call :run_serial "Optional PETSc %%B package (%%V, one rank)" %%V 1 direct_lu 4 %%B
+        if errorlevel 1 exit /b 1
+    )
+)
+for %%B in (default mumps superlu_dist umfpack) do (
+    call :run_mpi "PETSc %%B direct backend (MPI, two ranks)" petsc_mpi 1 0 4 direct_lu %%B
+    if errorlevel 1 exit /b 1
+    call :run_mpi "PETSc %%B direct backend (MPI+OpenMP, two ranks)" petsc_mpi_omp 2 0 4 direct_lu %%B
+    if errorlevel 1 exit /b 1
+)
 call :run_mpi "Large MPI matrix, two ranks" petsc_mpi 1 0 2048
 if errorlevel 1 exit /b %errorlevel%
 call :run_serial "Large OpenMP matrix" petsc_omp 2 krylov 4096
@@ -51,16 +65,24 @@ set "SOLVER_MODE=%~4"
 if not defined SOLVER_MODE set "SOLVER_MODE=krylov"
 set "LOCAL_ROWS=%~5"
 if not defined LOCAL_ROWS set "LOCAL_ROWS=4"
+set "BACKEND=%~6"
+set "BACKEND_ARG="
+if defined BACKEND set "BACKEND_ARG=--backend %BACKEND% --allow-unavailable-direct-backend"
 set "OMP_NUM_THREADS=%~3"
-dotnet "%TEST_DLL%" --variant "%~2" --solver "%SOLVER_MODE%" --local-rows "%LOCAL_ROWS%"
+dotnet "%TEST_DLL%" --variant "%~2" --solver "%SOLVER_MODE%" --local-rows "%LOCAL_ROWS%" %BACKEND_ARG%
 exit /b %errorlevel%
 
 :run_mpi
 echo == %~1 ==
 set "LOCAL_ROWS=%~5"
 if not defined LOCAL_ROWS set "LOCAL_ROWS=4"
+set "SOLVER_MODE=%~6"
+if not defined SOLVER_MODE set "SOLVER_MODE=krylov"
+set "BACKEND=%~7"
+set "BACKEND_ARG="
+if defined BACKEND set "BACKEND_ARG=--backend %BACKEND% --allow-unavailable-direct-backend"
 set "OMP_NUM_THREADS=%~3"
 set "EXPECT_REJECTION_ARG="
 if "%~4"=="1" set "EXPECT_REJECTION_ARG=--expect-openmp-mpi-rejection"
-%PETSC_MPI_LAUNCHER% -n 2 dotnet "%TEST_DLL%" --variant "%~2" --solver krylov --local-rows "%LOCAL_ROWS%" %EXPECT_REJECTION_ARG%
+%PETSC_MPI_LAUNCHER% -n 2 dotnet "%TEST_DLL%" --variant "%~2" --solver "%SOLVER_MODE%" --local-rows "%LOCAL_ROWS%" %EXPECT_REJECTION_ARG% %BACKEND_ARG%
 exit /b %errorlevel%

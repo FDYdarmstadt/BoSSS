@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using MPI.Wrappers;
+using ilPSP.Tracing;
 
 namespace ilPSP.LinSolvers.PETSc {
 
@@ -106,6 +107,7 @@ namespace ilPSP.LinSolvers.PETSc {
         /// Defines and uploads a distributed square matrix to PETSc.
         /// </summary>
         public void DefineMatrix(IMutableMatrixEx matrix) {
+            using(new FuncTrace("PETSC_DefineMatrix")) {
             if(matrix == null)
                 throw new ArgumentNullException(nameof(matrix));
             ThrowIfDisposed();
@@ -183,7 +185,8 @@ namespace ilPSP.LinSolvers.PETSc {
                 Exception setupError = CreateSetupException(error);
                 if(ReferenceEquals(setupError, error))
                     throw;
-                throw setupError;
+                    throw setupError;
+            }
             }
         }
 
@@ -193,6 +196,7 @@ namespace ilPSP.LinSolvers.PETSc {
         public SolverResult Solve<Tunknowns, Trhs>(Tunknowns x, Trhs rhs)
             where Tunknowns : IList<double>
             where Trhs : IList<double> {
+            using(new FuncTrace("PETSC_Solve")) {
             ThrowIfDisposed();
             if(m_Solver == IntPtr.Zero)
                 throw new InvalidOperationException("DefineMatrix must be called before Solve.");
@@ -214,15 +218,18 @@ namespace ilPSP.LinSolvers.PETSc {
             double[] nativeSolution = m_LocalRows > 0 ? solution : new double[1];
             double[] nativeRhs = m_LocalRows > 0 ? rightHandSide : new double[1];
             var stopwatch = Stopwatch.StartNew();
+            int iterations;
+            double residualNorm;
+            int convergenceReason;
             Check(
                 m_Native.Solve(
                     m_Solver,
                     nativeSolution,
                     nativeRhs,
                     useInitialGuess ? 1 : 0,
-                    out int iterations,
-                    out double residualNorm,
-                    out int convergenceReason),
+                    out iterations,
+                    out residualNorm,
+                    out convergenceReason),
                 "PETSc KSPSolve");
             stopwatch.Stop();
 
@@ -240,6 +247,7 @@ namespace ilPSP.LinSolvers.PETSc {
                 NoOfIterations = iterations,
                 RunTime = stopwatch.Elapsed
             };
+            }
         }
 
         static double[] CopyToArray(IList<double> source) {
@@ -291,6 +299,7 @@ namespace ilPSP.LinSolvers.PETSc {
         /// This is collective on MPI_COMM_WORLD when a matrix was defined.
         /// </summary>
         public void Dispose() {
+            using(new FuncTrace("PETSC_Dispose")) {
             if(m_Disposed)
                 return;
 
@@ -311,6 +320,7 @@ namespace ilPSP.LinSolvers.PETSc {
             m_Disposed = true;
             if(destroyError != null)
                 throw destroyError;
+            }
         }
     }
 

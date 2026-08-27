@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using BoSSS.Application.SipPoisson;
 using BoSSS.Foundation.IO;
+using BoSSS.Solution.AdvancedSolvers;
 using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.LinSolvers.PETSc;
@@ -37,7 +39,9 @@ namespace PETScTest {
                 ilPSP.Environment.NumThreads);
             int exitCode = 1;
             try {
-                exitCode = RunSolve(options.NativeVariant, options.SolverMode, options.LocalRows);
+                exitCode = options.RunTutorial
+                    ? RunSipPoissonTutorial(options.NativeVariant, options.SolverMode, options.DirectBackend)
+                    : RunSolve(options.NativeVariant, options.SolverMode, options.DirectBackend, options.LocalRows);
                 if(options.ExpectOpenMpMpiRejection) {
                     Console.Error.WriteLine("Expected the OpenMP-only variant to reject multiple MPI ranks, but the solve ran.");
                     exitCode = 6;
@@ -46,6 +50,11 @@ namespace PETScTest {
                 options.ExpectOpenMpMpiRejection
                 && error.Message.StartsWith("The PETSc OpenMP variant uses MPIUNI", StringComparison.Ordinal)) {
                 Console.WriteLine("Expected OpenMP-only multi-rank rejection observed: " + error.Message);
+                exitCode = 0;
+            } catch(InvalidOperationException error) when(options.AllowUnavailableDirectBackend
+                && options.SolverMode != SolverMode.Krylov
+                && error.Message.StartsWith("PETSc could not initialize the requested direct-solver backend", StringComparison.Ordinal)) {
+                Console.WriteLine("Optional PETSc direct-solver backend unavailable; skipped: " + error.Message);
                 exitCode = 0;
             } finally {
                 using(var native = new UnsafePETSc(effectiveNativeVariant)) {
@@ -64,8 +73,11 @@ namespace PETScTest {
         sealed class TestOptions {
             public PETScNativeVariant NativeVariant = PETScNativeVariant.Auto;
             public SolverMode SolverMode = SolverMode.Krylov;
+            public PETScDirectBackend DirectBackend = PETScDirectBackend.Default;
             public int LocalRows = 4;
             public bool ExpectOpenMpMpiRejection;
+            public bool AllowUnavailableDirectBackend;
+            public bool RunTutorial;
             public string[] BootstrapArguments;
         }
 
@@ -80,11 +92,20 @@ namespace PETScTest {
                     case "--solver":
                         options.SolverMode = ParseSolverMode(NextOptionValue(args, ref i));
                         break;
+                    case "--backend":
+                        options.DirectBackend = ParseDirectBackend(NextOptionValue(args, ref i));
+                        break;
                     case "--local-rows":
                         options.LocalRows = ParseLocalRows(NextOptionValue(args, ref i));
                         break;
                     case "--expect-openmp-mpi-rejection":
                         options.ExpectOpenMpMpiRejection = true;
+                        break;
+                    case "--allow-unavailable-direct-backend":
+                        options.AllowUnavailableDirectBackend = true;
+                        break;
+                    case "--tutorial":
+                        options.RunTutorial = true;
                         break;
                     default:
                         bootstrapArguments.Add(args[i]);
@@ -167,7 +188,51 @@ namespace PETScTest {
             return localRows;
         }
 
-        static int RunSolve(PETScNativeVariant nativeVariant, SolverMode solverMode, int localRows) {
+        static PETScDirectBackend ParseDirectBackend(string value) {
+            switch((value ?? "default").Trim().ToLowerInvariant()) {
+                case "default":
+                    return PETScDirectBackend.Default;
+                case "mumps":
+                    return PETScDirectBackend.Mumps;
+                case "superlu_dist":
+                case "superludist":
+                    return PETScDirectBackend.SuperLuDist;
+                case "umfpack":
+                    return PETScDirectBackend.Umfpack;
+                default:
+                    throw new ArgumentException($"Unsupported PETSc direct backend '{value}'. Expected default, mumps, superlu_dist, or umfpack.");
+            }
+        }
+
+        static int RunSipPoissonTutorial(PETScNativeVariant nativeVariant, SolverMode solverMode, PETScDirectBackend directBackend) {
+            using(var solver = new SipPoissonMain()) {
+                var control = SipHardcodedControl.TestCartesian1(xRes: 8, yRes: 4, pDG: 1);
+                if(solverMode == SolverMode.Krylov) {
+                    control.LinearSolver = new PETScKrylovSolverConfig {
+                        NativeVariant = nativeVariant,
+                        PETScOptions = "-ksp_type cg -pc_type jacobi",
+                        ConvergenceCriterion = 1.0e-10,
+                        MaxSolverIterations = 2000
+                    };
+                } else {
+                    control.LinearSolver = new PETScDirectSolverConfig {
+                        NativeVariant = nativeVariant,
+                        Factorization = solverMode == SolverMode.DirectLu
+                            ? PETScDirectFactorization.LU
+                            : PETScDirectFactorization.Cholesky,
+                        Backend = directBackend
+                    };
+                }
+
+                solver.Init(control);
+                solver.RunSolverMode();
+                double error = (double)solver.QueryHandler.QueryResults["SolL2err"];
+                Console.WriteLine($"PETSc SIP Poisson tutorial: solver={solverMode}, backend={directBackend}, l2_error={error:E3}");
+                return error <= 5.0e-9 ? 0 : 1;
+            }
+        }
+
+        static int RunSolve(PETScNativeVariant nativeVariant, SolverMode solverMode, PETScDirectBackend directBackend, int localRows) {
             var partition = new Partitioning(localRows, csMPI.Raw._COMM.WORLD);
             var matrix = new MsrMatrix(partition);
             long first = partition.i0;
@@ -211,7 +276,7 @@ namespace PETScTest {
                     Factorization = solverMode == SolverMode.DirectLu
                         ? PETScDirectFactorization.LU
                         : PETScDirectFactorization.Cholesky,
-                    Backend = PETScDirectBackend.Default
+                    Backend = directBackend
                 }) {
                     solver.DefineMatrix(matrix);
                     result = solver.Solve(solution, rightHandSide);
@@ -234,7 +299,7 @@ namespace PETScTest {
                 size,
                 ilPSP.Environment.NumThreads);
             if(rank == 0)
-                Console.WriteLine($"PETSc managed smoke test: requested_variant={nativeVariant}, variant={effectiveNativeVariant}, solver={solverMode}, local_rows={localRows}, global_rows={globalRows}, ranks={size}, threads={ilPSP.Environment.NumThreads}, converged={result.Converged}, reason={reason}, iterations={result.NoOfIterations}, residual={residual:E3}, max_error={globalError:E3}");
+                Console.WriteLine($"PETSc managed smoke test: requested_variant={nativeVariant}, variant={effectiveNativeVariant}, solver={solverMode}, backend={directBackend}, local_rows={localRows}, global_rows={globalRows}, ranks={size}, threads={ilPSP.Environment.NumThreads}, converged={result.Converged}, reason={reason}, iterations={result.NoOfIterations}, residual={residual:E3}, max_error={globalError:E3}");
 
             return result.Converged && globalError < 1.0e-10 ? 0 : 1;
         }

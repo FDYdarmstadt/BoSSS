@@ -9,8 +9,14 @@ Covered scenarios:
 - `petsc_omp`: one rank with one and two OpenMP threads
 - `petsc_mpi_omp`: two MPI ranks with two OpenMP threads per rank
 - expected rejection of `petsc_omp` under two BoSSS MPI ranks
-- typed direct LU on the MPI and hybrid variants at one rank
-- typed direct Cholesky on the OpenMP variant
+- typed direct LU and Cholesky through the regular API
+- the optional MUMPS, SuperLU_DIST and UMFPACK packages on every native
+  variant; unavailable packages are explicitly reported as skipped
+- every direct backend under two MPI ranks for the MPI and hybrid variants
+
+The executable also supports `--tutorial`, which runs a small SIP Poisson
+application with the same PETSc Level-3 configuration. This complements the
+matrix smoke tests with an actual BoSSS solver path.
 
 On Linux:
 
@@ -59,8 +65,8 @@ Level-3 configurations can use `PETScDirectSolverConfig`, or the convenience
 codes `direct_petsc`, `direct_petsc_cholesky`, `direct_petsc_mumps`,
 `direct_petsc_superlu_dist`, and `direct_petsc_umfpack`.
 
-The current portable PETSc libraries contain PETSc's default sequential LU and
-Cholesky implementations. MUMPS, SuperLU_DIST, and UMFPACK are exposed by the
-managed API but require rebuilding the native PETSc variants with the selected
-package. Distributed direct solves should use a PETSc build containing MUMPS or
-SuperLU_DIST.
+The test executable accepts `--backend default|mumps|superlu_dist|umfpack` for
+direct solver modes. The test script runs every backend instead of assuming
+which configurations a package supports. `--allow-unavailable-direct-backend`
+turns only the explicit "backend was not compiled" setup error into a skip;
+once a backend is initialized, an unsuccessful solve remains a test failure.

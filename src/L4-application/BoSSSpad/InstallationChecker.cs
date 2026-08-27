@@ -21,6 +21,7 @@ using ilPSP.Utils;
 using ilPSP.Kraypis;
 using BoSSS.Solution.Tecplot;
 using ilPSP.LinSolvers.MUMPS;
+using ilPSP.LinSolvers.PETSc;
 using MPI.Wrappers;
 using MPI.Wrappers.Utils;
 using System;
@@ -109,6 +110,13 @@ namespace BoSSS.Application.BoSSSpad {
 
                 CheckDynamicLibrary("MUMPS (sequential)", () => new UnsafeMUMPS(ilPSP.Parallelism.SEQ), isOptional: true);
                 CheckDynamicLibrary("MUMPS (MPI)", () => new UnsafeMUMPS(ilPSP.Parallelism.MPI), isOptional: true);
+
+                // Loading each wrapper also resolves its dynamically linked PETSc
+                // sub-libraries (e.g. MUMPS and SuperLU_DIST). Missing native
+                // dependencies are reported through the optional-library path.
+                CheckDynamicLibrary("PETSc (OpenMP + sub-libraries)", () => new UnsafePETSc(PETScNativeVariant.OpenMp), isOptional: true);
+                CheckDynamicLibrary("PETSc (MPI + sub-libraries)", () => new UnsafePETSc(PETScNativeVariant.Mpi), isOptional: true);
+                CheckDynamicLibrary("PETSc (MPI, OpenMP + sub-libraries)", () => new UnsafePETSc(PETScNativeVariant.MpiOpenMp), isOptional: true);
 
                 CheckDynamicLibrary("PARDISO (Intel MKL, sequential)", () => new ilPSP.LinSolvers.PARDISO.Wrapper_MKL(ilPSP.Parallelism.SEQ), isOptional: true);
                 CheckDynamicLibrary("PARDISO (Intel MKL, OMP)", () => new ilPSP.LinSolvers.PARDISO.Wrapper_MKL(ilPSP.Parallelism.OMP), isOptional: true);
