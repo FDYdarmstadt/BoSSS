@@ -36,6 +36,7 @@ namespace PETScTest {
             bool mpiInitialized;
             ilPSP.Environment.Bootstrap(options.BootstrapArguments, Utils.GetNativeLibraryDir(), out mpiInitialized);
             ilPSP.Environment.InitThreading(true, null);
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int mpiRank);
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int mpiSize);
             PETScNativeVariant effectiveNativeVariant = PETScSolverBase.ResolveNativeVariant(
                 options.NativeVariant,
@@ -43,9 +44,12 @@ namespace PETScTest {
                 ilPSP.Environment.NumThreads);
             int exitCode = 1;
             try {
-                exitCode = options.RunTutorial
-                    ? RunSipPoissonTutorial(options.NativeVariant, options.SolverMode, options.DirectBackend)
-                    : RunSolve(options.NativeVariant, options.SolverMode, options.DirectBackend, options.LocalRows);
+                if(options.ProbeMumpsLifecycle)
+                    exitCode = RunMumpsLifecycleProbe(options.NativeVariant, mpiRank);
+                else
+                    exitCode = options.RunTutorial
+                        ? RunSipPoissonTutorial(options.NativeVariant, options.SolverMode, options.DirectBackend)
+                        : RunSolve(options.NativeVariant, options.SolverMode, options.DirectBackend, options.LocalRows);
                 if(options.ExpectOpenMpMpiRejection) {
                     Console.Error.WriteLine("Expected the OpenMP-only variant to reject multiple MPI ranks, but the solve ran.");
                     exitCode = 6;
@@ -69,6 +73,8 @@ namespace PETScTest {
                 Console.WriteLine("Optional PETSc direct-solver backend unavailable; skipped: " + error.Message);
                 exitCode = 0;
             } finally {
+                if(options.ProbeMumpsLifecycle && mpiRank == 0)
+                    Console.WriteLine("PETSc MUMPS lifecycle probe: Finalize begin");
                 using(var native = new UnsafePETSc(effectiveNativeVariant)) {
                     int petscError = native.FinalizePETScRuntime();
                     if(petscError != 0) {
@@ -76,6 +82,8 @@ namespace PETScTest {
                         exitCode = 3;
                     }
                 }
+                if(options.ProbeMumpsLifecycle && mpiRank == 0)
+                    Console.WriteLine("PETSc MUMPS lifecycle probe: Finalize complete");
                 if(mpiInitialized)
                     csMPI.Raw.mpiFinalize();
             }
@@ -91,6 +99,7 @@ namespace PETScTest {
             public bool ExpectUnsupportedDirectConfiguration;
             public bool AllowUnavailableDirectBackend;
             public bool RunTutorial;
+            public bool ProbeMumpsLifecycle;
             public string[] BootstrapArguments;
         }
 
@@ -122,6 +131,11 @@ namespace PETScTest {
                         break;
                     case "--tutorial":
                         options.RunTutorial = true;
+                        break;
+                    case "--probe-mumps-lifecycle":
+                        options.ProbeMumpsLifecycle = true;
+                        options.SolverMode = SolverMode.DirectLu;
+                        options.DirectBackend = PETScDirectBackend.Mumps;
                         break;
                     default:
                         bootstrapArguments.Add(args[i]);
@@ -245,6 +259,37 @@ namespace PETScTest {
                 double error = (double)solver.QueryHandler.QueryResults["SolL2err"];
                 Console.WriteLine($"PETSc SIP Poisson tutorial: solver={solverMode}, backend={directBackend}, l2_error={error:E3}");
                 return error <= 5.0e-9 ? 0 : 1;
+            }
+        }
+
+        static int RunMumpsLifecycleProbe(PETScNativeVariant nativeVariant, int rank) {
+            var partition = new Partitioning(1, csMPI.Raw._COMM.WORLD);
+            var matrix = new MsrMatrix(partition);
+            matrix[partition.i0, partition.i0] = 1.0;
+            var solution = new double[1];
+            var rightHandSide = new[] { 1.0 };
+            var solver = new PETScDirectSolver {
+                NativeVariant = nativeVariant,
+                Factorization = PETScDirectFactorization.LU,
+                Backend = PETScDirectBackend.Mumps
+            };
+
+            try {
+                if(rank == 0)
+                    Console.WriteLine("PETSc MUMPS lifecycle probe: DefineMatrix begin (first PETSc solver in process)");
+                solver.DefineMatrix(matrix);
+                if(rank == 0)
+                    Console.WriteLine("PETSc MUMPS lifecycle probe: DefineMatrix complete; KSPSolve begin");
+                SolverResult result = solver.Solve(solution, rightHandSide);
+                if(rank == 0)
+                    Console.WriteLine($"PETSc MUMPS lifecycle probe: KSPSolve complete; converged={result.Converged}, solution={solution[0]:R}");
+                return result.Converged && Math.Abs(solution[0] - 1.0) <= 1.0e-10 ? 0 : 1;
+            } finally {
+                if(rank == 0)
+                    Console.WriteLine("PETSc MUMPS lifecycle probe: Dispose begin");
+                solver.Dispose();
+                if(rank == 0)
+                    Console.WriteLine("PETSc MUMPS lifecycle probe: Dispose complete");
             }
         }
 

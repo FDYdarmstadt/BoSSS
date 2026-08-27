@@ -76,3 +76,7 @@ before native setup when more than one MPI rank is active. It also rejects
 Cholesky with the LU-only UMFPACK and SuperLU_DIST packages.
 The variant scripts include negative tests for every one of these restrictions
 and require the corresponding exception.
+
+For native MUMPS lifecycle diagnosis, `--probe-mumps-lifecycle` runs MUMPS as
+the first and only PETSc solver in a fresh process on a one-row-per-rank
+identity matrix. Phase markers distinguish setup, solve, disposal and finalization.
