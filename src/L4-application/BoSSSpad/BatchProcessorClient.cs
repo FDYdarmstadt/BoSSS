@@ -172,6 +172,17 @@ namespace BoSSS.Application.BoSSSpad {
         abstract public (string id, object optJobObj) Submit(Job myJob, string DeploymentDirectory);
 
         /// <summary>
+        /// Verifies that a job can be submitted to this batch processor.
+        /// </summary>
+        public virtual void VerifyJob(Job myJob) {
+            if (myJob == null)
+                throw new ArgumentNullException(nameof(myJob));
+
+            if (myJob.NumberOfNodes != -1)
+                throw new NotSupportedException($"{nameof(Job.NumberOfNodes)} is not supported by {this.GetType().Name}; set it to -1.");
+        }
+
+        /// <summary>
         /// Cancels the job
         /// </summary>
         /// <param name="idToken"> Id of the Job to cancel.</param>
