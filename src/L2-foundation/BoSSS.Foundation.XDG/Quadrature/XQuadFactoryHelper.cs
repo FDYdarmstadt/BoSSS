@@ -48,7 +48,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// ctor.
         /// </summary>
-        internal XQuadFactoryHelper(LevelSetTracker.LevelSetData[] lsDatas, CutCellQuadratureMethod momentFittingVariant) 
+        protected internal XQuadFactoryHelper(LevelSetTracker.LevelSetData[] lsDatas, CutCellQuadratureMethod momentFittingVariant) 
             : base(lsDatas) {
 
             if(momentFittingVariant == CutCellQuadratureMethod.Algoim)

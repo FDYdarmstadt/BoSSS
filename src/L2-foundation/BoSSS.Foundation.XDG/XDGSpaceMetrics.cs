@@ -63,7 +63,12 @@ namespace BoSSS.Foundation.XDG {
                 // ---------------------
                 // compute all the stuff
                 // ---------------------
-                m_qfHelper = new XQuadFactoryHelperCached((int iThread) => GetXQuadFactoryHelper(lsTrk.CutCellQuadratureType, m_LevelSetData.ToArray()));
+                m_qfHelper = new XQuadFactoryHelperCached((int iThread) => {
+                    var levelSetData = m_LevelSetData.ToArray();
+                    return lsTrk.CustomXQuadFactoryHelper != null
+                        ? lsTrk.CustomXQuadFactoryHelper(levelSetData)
+                        : GetXQuadFactoryHelper(lsTrk.CutCellQuadratureType, levelSetData);
+                });
                 //m_qfHelper = GetXQuadFactoryHelper(lsTrk.CutCellQuadratureType, m_LevelSetData.ToArray());
                 m_XQuadSchemeHelper = new XQuadSchemeHelper(this);
                 m_qfHelper.CreateRulesAndMPIExchgange(this.CutCellQuadOrder);

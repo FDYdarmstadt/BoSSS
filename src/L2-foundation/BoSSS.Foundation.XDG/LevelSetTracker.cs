@@ -396,6 +396,15 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
+        /// Optional application-provided factory for cut-cell quadrature helpers.
+        /// If unset, the default helper for <see cref="CutCellQuadratureType"/> is used.
+        /// </summary>
+        public Func<LevelSetData[], XQuadFactoryHelperBase> CustomXQuadFactoryHelper {
+            get;
+            set;
+        }
+
+        /// <summary>
         /// used by <see cref="ContainesSpecies"/>;
         ///  - 1st index: <em>ID</em>: Species Id minus <see cref="___SpeciesIDOffest"/>;
         ///  - 2nd index: <em>SIGN</em>: <see cref="LevelsetCellSignCode.lsSig"/>;
