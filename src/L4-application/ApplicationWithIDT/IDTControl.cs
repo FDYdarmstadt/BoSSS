@@ -410,12 +410,18 @@ namespace ApplicationWithIDT {
     /// <summary>
     /// GlobalLevelSet: LevelSet is defined by a set of basis functions and coordinates on the global domain
     /// SinglePhaseField: the BoSSS SinglePhaseField is used to obtain the OptiLevelSet
+    /// Custom: opt-in extension point -- <see cref="ApplicationWithIDT{T}.CreateCustomOptiLevelSet"/>
+    /// must be overridden by a derived application class to supply the actual <see cref="IOptiLevelSet"/>
+    /// implementation; selecting this value without such an override throws. Added so solver-specific
+    /// <see cref="IOptiLevelSet"/> implementations (living outside this shared project) can be plugged
+    /// in without this enum, or <c>ApplicationWithIDT</c>, needing to know about them.
     /// </summary>
     public enum OptiLevelSetType {
         GlobalLevelSet,
         SinglePhaseField,
         SpecFemField,
-        SplineLevelSet
+        SplineLevelSet,
+        Custom
     }
     /// <summary>
     /// the enum controls the Merit Function the globalization uses
