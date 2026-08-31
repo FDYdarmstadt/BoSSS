@@ -211,7 +211,7 @@ namespace BoSSS.Application.SipPoisson {
         /// Single run of the solver
         /// </summary>
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
-            using(new FuncTrace()) {
+            using(var tr = new FuncTrace()) {
 
                 int L = 1000;
                 double[] a = new double[L];
@@ -278,7 +278,9 @@ namespace BoSSS.Application.SipPoisson {
 
                 // call solver
                 // -----------
-                this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, verbose: true, queryHandler: base.QueryHandler);
+                using (new BlockTrace("SIP_LinearSolver", tr, timeToCout: true)) {
+                    this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, verbose: true, queryHandler: base.QueryHandler);
+                }
 
 
                 if(base.Control.ExactSolution_provided) {

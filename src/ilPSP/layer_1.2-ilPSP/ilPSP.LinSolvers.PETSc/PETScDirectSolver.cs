@@ -154,6 +154,12 @@ namespace ilPSP.LinSolvers.PETSc {
                 throw new NotSupportedException(
                     $"PETSc direct backend '{Backend}' supports LU factorization only; Cholesky is not available.");
             }
+            if(Backend == PETScDirectBackend.SuperLuDist
+                && effectiveNativeVariant == PETScNativeVariant.OpenMp) {
+                throw new NotSupportedException(
+                    "PETSc direct backend 'SuperLuDist' requires an MPI-capable PETSc native variant. "
+                    + "Use the Mpi or MpiOpenMp variant.");
+            }
             if(mpiSize > 1 && (Backend == PETScDirectBackend.Default || Backend == PETScDirectBackend.Umfpack)) {
                 throw new NotSupportedException(
                     $"PETSc direct backend '{Backend}' is sequential and cannot run with {mpiSize} MPI ranks. "

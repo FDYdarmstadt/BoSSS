@@ -118,6 +118,13 @@ namespace ilPSP.LinSolvers.PETSc {
         public int ConvergenceReason { get; private set; }
 
         /// <summary>
+        /// True if the most recent PETSc KSP solve did not converge.
+        /// PETSc uses positive convergence reasons and zero or negative values
+        /// for an unfinished or diverged solve.
+        /// </summary>
+        public bool DidNotConverge => ConvergenceReason <= 0;
+
+        /// <summary>
         /// Residual norm returned by PETSc for the most recent solve.
         /// </summary>
         public double ResidualNorm { get; private set; } = double.NaN;
@@ -297,6 +304,8 @@ namespace ilPSP.LinSolvers.PETSc {
         }
 
         static void ValidateResult(double[] solution, double residualNorm, int convergenceReason) {
+            if(convergenceReason <= 0)
+                throw new ArithmeticException($"PETSc KSP did not converge; convergence reason {convergenceReason}, residual {residualNorm:R}.");
             if(double.IsNaN(residualNorm) || double.IsInfinity(residualNorm))
                 throw new ArithmeticException($"PETSc returned non-finite residual {residualNorm}; convergence reason {convergenceReason}.");
             for(int i = 0; i < solution.Length; i++)

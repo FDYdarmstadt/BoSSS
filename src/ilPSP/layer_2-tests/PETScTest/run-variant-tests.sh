@@ -94,7 +94,9 @@ run_serial "Direct Cholesky through OpenMP variant" petsc_omp 2 direct_cholesky
 run_serial "Direct LU through hybrid variant, one rank" petsc_mpi_omp 2 direct_lu
 for variant in petsc_mpi petsc_omp petsc_mpi_omp; do
     for backend in mumps superlu_dist umfpack; do
-        run_serial "Optional PETSc ${backend} package (${variant}, one rank)" "${variant}" 1 direct_lu 4 "${backend}"
+        if [[ "${variant}/${backend}" != "petsc_omp/superlu_dist" ]]; then
+            run_serial "Optional PETSc ${backend} package (${variant}, one rank)" "${variant}" 1 direct_lu 4 "${backend}"
+        fi
     done
 done
 for backend in mumps superlu_dist; do
@@ -105,6 +107,7 @@ run_expected_direct_rejection "Default direct backend rejects two MPI ranks" 2 1
 run_expected_direct_rejection "UMFPACK direct backend rejects two MPI ranks" 2 1 petsc_mpi direct_lu umfpack
 run_expected_direct_rejection "UMFPACK rejects Cholesky" 1 1 petsc_omp direct_cholesky umfpack
 run_expected_direct_rejection "SuperLU_DIST rejects Cholesky" 1 1 petsc_omp direct_cholesky superlu_dist
+run_expected_direct_rejection "SuperLU_DIST requires an MPI-capable variant" 1 1 petsc_omp direct_lu superlu_dist
 run_mpi "Large MPI matrix, two ranks" petsc_mpi 1 0 2048
 run_serial "Large OpenMP matrix" petsc_omp 2 krylov 4096
 run_mpi "Large MPI+OpenMP matrix, two ranks" petsc_mpi_omp 2 0 2048

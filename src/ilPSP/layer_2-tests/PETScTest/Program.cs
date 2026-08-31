@@ -255,7 +255,9 @@ namespace PETScTest {
 
         static int RunSipPoissonTutorial(PETScNativeVariant nativeVariant, SolverMode solverMode, PETScDirectBackend directBackend) {
             using(var solver = new SipPoissonMain()) {
-                var control = SipHardcodedControl.TestCartesian1(xRes: 8, yRes: 4, pDG: 1);
+                // The manufactured solution is quadratic, so pDG=2 is required
+                // for the near-machine-precision acceptance criterion below.
+                var control = SipHardcodedControl.TestCartesian1(xRes: 8, yRes: 4, pDG: 2);
                 if(solverMode == SolverMode.Krylov) {
                     control.LinearSolver = new PETScKrylovSolverConfig {
                         NativeVariant = nativeVariant,
@@ -311,7 +313,7 @@ namespace PETScTest {
                     Console.WriteLine($"PETSc {probeName} lifecycle probe: DefineMatrix begin (first PETSc solver in process; pinned_csr={pinCsrBuffers})");
                 solver.DefineMatrix(matrix);
                 if(rank == 0)
-                    DumpLoadedNativeLibraries();
+                    DumpLoadedNativeLibraries(probeName);
                 if(rank == 0)
                     Console.WriteLine($"PETSc {probeName} lifecycle probe: DefineMatrix complete; KSPSolve begin");
                 SolverResult result = solver.Solve(solution, rightHandSide);
@@ -327,10 +329,10 @@ namespace PETScTest {
             }
         }
 
-        static void DumpLoadedNativeLibraries() {
+        static void DumpLoadedNativeLibraries(string probeName) {
             const string mapsFile = "/proc/self/maps";
             if(!File.Exists(mapsFile)) {
-                Console.WriteLine("PETSc MUMPS lifecycle probe: /proc/self/maps is unavailable.");
+                Console.WriteLine($"PETSc {probeName} lifecycle probe: /proc/self/maps is unavailable.");
                 return;
             }
 
@@ -343,7 +345,7 @@ namespace PETScTest {
                 .OrderBy(path => path, StringComparer.Ordinal)
                 .ToArray();
 
-            Console.WriteLine($"PETSc MUMPS lifecycle probe: loaded native libraries ({libraries.Length}):");
+            Console.WriteLine($"PETSc {probeName} lifecycle probe: loaded native libraries ({libraries.Length}):");
             foreach(string library in libraries)
                 Console.WriteLine("  " + library);
         }

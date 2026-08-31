@@ -29,8 +29,8 @@ OutputBaseFilename=BoSSS-setup-{#MyDateTimeString}
 ;OutputBaseFilename={%BUILD_NUMBER%|0}
 Compression=lzma
 SolidCompression=yes
-PrivilegesRequired=none
-; absolutly neccesary to forward the chnages of PATH without restart/logoff
+PrivilegesRequired=admin
+; Broadcast system PATH/BOSSS_INSTALL changes to newly started applications.
 ChangesEnvironment=yes
 
 
@@ -110,9 +110,9 @@ Filename: {app}\bin\native\win\redist\vcredist_x64.exe; \
     Parameters: "/install /passive /norestart"; \
     StatusMsg: "Installing Visual C++ 2017 Redistributables..."; \
 	Flags: waituntilterminated postinstall;
-Filename: {app}\bin\native\win\redist\MSMpiSetup-9.0.1.exe; \
+Filename: {app}\bin\native\win\redist\msmpisetup10.1.exe; \
     Parameters: "-force"; \
-    StatusMsg: "Installing Microsoft MPI..."; \
+    StatusMsg: "Installing Microsoft MPI 10.1..."; \
 	Flags: waituntilterminated skipifsilent postinstall;
 ;Filename: {app}\bin\native\win\redist\NDP472-KB4054531-Web.exe;  \
 ;    StatusMsg: "Installing Microsoft .NET 4.7.2..."; \

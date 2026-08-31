@@ -39,8 +39,10 @@ call :run_serial "Direct LU through hybrid variant, one rank" petsc_mpi_omp 2 di
 if errorlevel 1 exit /b %errorlevel%
 for %%V in (petsc_mpi petsc_omp petsc_mpi_omp) do (
     for %%B in (mumps superlu_dist umfpack) do (
-        call :run_serial "Optional PETSc %%B package (%%V, one rank)" %%V 1 direct_lu 4 %%B
-        if errorlevel 1 exit /b 1
+        if /I not "%%V/%%B"=="petsc_omp/superlu_dist" (
+            call :run_serial "Optional PETSc %%B package (%%V, one rank)" %%V 1 direct_lu 4 %%B
+            if errorlevel 1 exit /b 1
+        )
     )
 )
 for %%B in (mumps superlu_dist) do (
@@ -56,6 +58,8 @@ if errorlevel 1 exit /b %errorlevel%
 call :run_expected_direct_rejection "UMFPACK rejects Cholesky" 1 1 petsc_omp direct_cholesky umfpack
 if errorlevel 1 exit /b %errorlevel%
 call :run_expected_direct_rejection "SuperLU_DIST rejects Cholesky" 1 1 petsc_omp direct_cholesky superlu_dist
+if errorlevel 1 exit /b %errorlevel%
+call :run_expected_direct_rejection "SuperLU_DIST requires an MPI-capable variant" 1 1 petsc_omp direct_lu superlu_dist
 if errorlevel 1 exit /b %errorlevel%
 call :run_mpi "Large MPI matrix, two ranks" petsc_mpi 1 0 2048
 if errorlevel 1 exit /b %errorlevel%
