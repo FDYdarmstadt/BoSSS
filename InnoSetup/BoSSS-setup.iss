@@ -114,9 +114,12 @@ Filename: {app}\bin\native\win\redist\msmpisetup10.1.exe; \
     Parameters: "-force"; \
     StatusMsg: "Installing Microsoft MPI 10.1..."; \
 	Flags: waituntilterminated skipifsilent postinstall;
-;Filename: {app}\bin\native\win\redist\NDP472-KB4054531-Web.exe;  \
-;    StatusMsg: "Installing Microsoft .NET 4.7.2..."; \
-;	Flags: waituntilterminated skipifsilent postinstall;
+Filename: {app}\bin\native\win\redist\dotnet-windowsdesktop-runtime-x64.url; \
+    Description: "Download .NET Desktop Runtime (x64)"; \
+    Flags: shellexec skipifsilent postinstall;
+Filename: {app}\bin\native\win\redist\dotnet-sdk-x64.url; \
+    Description: "Download .NET SDK (x64)"; \
+    Flags: shellexec skipifsilent postinstall;
 	
  
 [Code]

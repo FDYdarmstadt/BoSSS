@@ -4,14 +4,18 @@ rmdir .\doc /S /Q
 dotnet publish ..\src\L4-application\PublicTestRunner\PublicTestRunner.csproj --configuration=Release --output .\bin\Release\net8.0
 mkdir bin\native
 xcopy "%BOSSS_INSTALL%\bin\native" .\bin\native /E /Y
-set "WIN_REDIST=%BOSSS_NATIVE_WINDOWS_REDIST%"
-if not defined WIN_REDIST set "WIN_REDIST=C:\BoSSS-native-windows\WinRedist"
-if not exist "%WIN_REDIST%\msmpisetup10.1.exe" (
-    echo ERROR: Windows redistributables were not found at "%WIN_REDIST%".
+IF NOT EXIST "installer-tmp_win-redist\msmpisetup10.1.exe" (
+    echo ERROR: Missing staged Microsoft MPI installer.
     exit /b 1
 )
-mkdir ".\bin\native\win\redist"
-xcopy "%WIN_REDIST%\*" ".\bin\native\win\redist\" /E /Y
+IF NOT EXIST "installer-tmp_win-redist\vc_redist.x64.exe" (
+    echo ERROR: Missing staged Visual C++ redistributable.
+    exit /b 1
+)
+echo replacing installer redistributables (Windows)
+rmdir .\bin\native\win\redist /S /Q
+mkdir .\bin\native\win\redist
+xcopy .\installer-tmp_win-redist\* .\bin\native\win\redist\ /E /Y
 if errorlevel 1 exit /b %ERRORLEVEL%
 IF EXIST "installer-tmp_win-amd64" (
     echo patching installer native binaries (windows)
