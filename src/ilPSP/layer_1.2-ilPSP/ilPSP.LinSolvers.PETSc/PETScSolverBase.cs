@@ -44,12 +44,20 @@ namespace ilPSP.LinSolvers.PETSc {
         GCHandle m_RowPointersHandle;
         GCHandle m_ColumnIndicesHandle;
         GCHandle m_ValuesHandle;
+        UnsafePETSc._bosss_petsc_ksp_monitor m_KspMonitor;
 
         /// <summary>
         /// Diagnostic option which keeps the managed CSR buffers pinned until
         /// the native PETSc matrix has been destroyed.
         /// </summary>
         public bool PinManagedCsrBuffers { get; set; }
+
+        /// <summary>
+        /// Writes PETSc KSP iteration and residual information through managed
+        /// <see cref="Console"/> output. This is captured by BoSSSpad/Jupyter.
+        /// Set before <see cref="DefineMatrix"/>.
+        /// </summary>
+        public bool PrintConvergenceMonitor { get; set; }
 
         /// <summary>
         /// Parallel runtime used by PETSc. This must be set before <see cref="DefineMatrix"/>.
@@ -118,6 +126,12 @@ namespace ilPSP.LinSolvers.PETSc {
         public int ConvergenceReason { get; private set; }
 
         /// <summary>
+        /// Number of KSP iterations reported by the most recent solve, or -1
+        /// when PETSc failed before it could report solver status.
+        /// </summary>
+        public int IterationCount { get; private set; } = -1;
+
+        /// <summary>
         /// True if the most recent PETSc KSP solve did not converge.
         /// PETSc uses positive convergence reasons and zero or negative values
         /// for an unfinished or diverged solve.
@@ -128,6 +142,12 @@ namespace ilPSP.LinSolvers.PETSc {
         /// Residual norm returned by PETSc for the most recent solve.
         /// </summary>
         public double ResidualNorm { get; private set; } = double.NaN;
+
+        /// <summary>
+        /// PETSc's native error description from the most recent failed solve.
+        /// This is null after a successful solve.
+        /// </summary>
+        public string LastErrorMessage { get; private set; }
 
         /// <summary>
         /// Defines and uploads a distributed square matrix to PETSc.
@@ -207,6 +227,10 @@ namespace ilPSP.LinSolvers.PETSc {
                         SolverSecondFieldRows,
                         out m_Solver),
                     "PETSc matrix/KSP setup");
+                if(PrintConvergenceMonitor) {
+                    m_KspMonitor = WriteKspMonitor;
+                    Check(m_Native.SetKspMonitor(m_Solver, m_KspMonitor, IntPtr.Zero), "PETSc KSP monitor setup");
+                }
             } catch(Exception error) {
                 m_Native.Dispose();
                 m_Native = null;
@@ -251,20 +275,26 @@ namespace ilPSP.LinSolvers.PETSc {
             int iterations;
             double residualNorm;
             int convergenceReason;
-            Check(
-                m_Native.Solve(
-                    m_Solver,
-                    nativeSolution,
-                    nativeRhs,
-                    useInitialGuess ? 1 : 0,
-                    out iterations,
-                    out residualNorm,
-                    out convergenceReason),
-                "PETSc KSPSolve");
+            LastErrorMessage = null;
+            int solveError = m_Native.Solve(
+                m_Solver,
+                nativeSolution,
+                nativeRhs,
+                useInitialGuess ? 1 : 0,
+                out iterations,
+                out residualNorm,
+                out convergenceReason);
             stopwatch.Stop();
 
             ConvergenceReason = convergenceReason;
+            IterationCount = iterations;
             ResidualNorm = residualNorm;
+            if(solveError != 0) {
+                LastErrorMessage = GetLastErrorMessage();
+                throw new ApplicationException(
+                    $"PETSc KSPSolve failed with PETSc error code {solveError}: {LastErrorMessage}; "
+                    + $"KSP reason {convergenceReason}, iterations {iterations}, residual {residualNorm:R}.");
+            }
             ValidateResult(solution, residualNorm, convergenceReason);
 
             if(!ReferenceEquals(solution, x)) {
@@ -313,12 +343,24 @@ namespace ilPSP.LinSolvers.PETSc {
                     throw new ArithmeticException($"PETSc returned a non-finite solution at local index {i}; convergence reason {convergenceReason}.");
         }
 
+        static void WriteKspMonitor(IntPtr context, int iteration, double residualNorm) {
+            try {
+                Console.WriteLine($"PETSC_KSP: iteration={iteration}, residual={residualNorm:R}");
+            } catch {
+                // Exceptions must never cross the native PETSc callback boundary.
+            }
+        }
+
         void Check(int errorCode, string operation) {
             if(errorCode == 0)
                 return;
-            IntPtr messagePointer = m_Native?.LastError() ?? IntPtr.Zero;
-            string message = messagePointer == IntPtr.Zero ? "No PETSc error message was provided." : Marshal.PtrToStringAnsi(messagePointer);
+            string message = GetLastErrorMessage();
             throw new ApplicationException($"{operation} failed with PETSc error code {errorCode}: {message}");
+        }
+
+        string GetLastErrorMessage() {
+            IntPtr messagePointer = m_Native?.LastError() ?? IntPtr.Zero;
+            return messagePointer == IntPtr.Zero ? "No PETSc error message was provided." : Marshal.PtrToStringAnsi(messagePointer);
         }
 
         void ThrowIfDisposed() {
@@ -350,6 +392,7 @@ namespace ilPSP.LinSolvers.PETSc {
             ReleasePinnedCsrBuffers();
             m_Native?.Dispose();
             m_Native = null;
+            m_KspMonitor = null;
             m_Disposed = true;
             if(destroyError != null)
                 throw destroyError;

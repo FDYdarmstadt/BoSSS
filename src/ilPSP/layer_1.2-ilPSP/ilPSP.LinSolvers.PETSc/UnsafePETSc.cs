@@ -98,6 +98,15 @@ namespace ilPSP.LinSolvers.PETSc {
             out IntPtr solver);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate void _bosss_petsc_ksp_monitor(IntPtr context, int iteration, double residualNorm);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _bosss_petsc_set_ksp_monitor(
+            IntPtr solver,
+            _bosss_petsc_ksp_monitor monitor,
+            IntPtr context);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate int _bosss_petsc_solve(
             IntPtr solver,
             double[] solution,
@@ -120,6 +129,7 @@ namespace ilPSP.LinSolvers.PETSc {
         _bosss_petsc_initialize bosss_petsc_initialize;
         _BoSSS_PETSc_Initialize BoSSS_PETSc_Initialize;
         _bosss_petsc_create_ksp_solver bosss_petsc_create_ksp_solver;
+        _bosss_petsc_set_ksp_monitor bosss_petsc_set_ksp_monitor;
         _bosss_petsc_solve bosss_petsc_solve;
         _bosss_petsc_destroy_solver bosss_petsc_destroy_solver;
         _bosss_petsc_last_error bosss_petsc_last_error;
@@ -131,6 +141,8 @@ namespace ilPSP.LinSolvers.PETSc {
         internal _BoSSS_PETSc_Initialize InitializeRuntime => BoSSS_PETSc_Initialize;
 
         internal _bosss_petsc_create_ksp_solver CreateKspSolver => bosss_petsc_create_ksp_solver;
+
+        internal _bosss_petsc_set_ksp_monitor SetKspMonitor => bosss_petsc_set_ksp_monitor;
 
         internal _bosss_petsc_solve Solve => bosss_petsc_solve;
 

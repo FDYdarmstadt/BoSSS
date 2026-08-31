@@ -41,6 +41,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public PETScNativeVariant NativeVariant = PETScNativeVariant.Auto;
 
         /// <summary>
+        /// Emits PETSc KSP iteration/residual lines through managed console
+        /// output, which is visible in BoSSSpad and Jupyter notebooks.
+        /// </summary>
+        [DataMember]
+        public bool PrintConvergenceMonitor;
+
+        /// <summary>
         /// LU or Cholesky factorization.
         /// </summary>
         [DataMember]
@@ -74,7 +81,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
             var solver = new PETScMultigridSolver {
                 Options = PETScDirectSolver.BuildOptions(Factorization, Backend, AdditionalOptions),
-                NativeVariant = NativeVariant
+                NativeVariant = NativeVariant,
+                PrintConvergenceMonitor = PrintConvergenceMonitor
             };
             solver.Init(level);
             return solver;
@@ -96,6 +104,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 && NativeVariant == other.NativeVariant
                 && Factorization == other.Factorization
                 && Backend == other.Backend
+                && PrintConvergenceMonitor == other.PrintConvergenceMonitor
                 && string.Equals(AdditionalOptions, other.AdditionalOptions, StringComparison.Ordinal);
         }
 
@@ -107,6 +116,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int hash = (int)NativeVariant;
                 hash = hash * 397 ^ (int)Factorization;
                 hash = hash * 397 ^ (int)Backend;
+                hash = hash * 397 ^ PrintConvergenceMonitor.GetHashCode();
                 hash = hash * 397 ^ (AdditionalOptions?.GetHashCode() ?? 0);
                 return hash;
             }
@@ -137,6 +147,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public PETScNativeVariant NativeVariant = PETScNativeVariant.Auto;
 
         /// <summary>
+        /// Emits PETSc KSP iteration/residual lines through managed console
+        /// output, which is visible in BoSSSpad and Jupyter notebooks.
+        /// </summary>
+        [DataMember]
+        public bool PrintConvergenceMonitor;
+
+        /// <summary>
         /// Optional BoSSS variable indices that form PETSc field split 0. Both split arrays
         /// must be non-empty when <c>-pc_type fieldsplit</c> is used.
         /// </summary>
@@ -157,6 +174,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             var solver = new PETScMultigridSolver {
                 Options = ComposeOptions(),
                 NativeVariant = NativeVariant,
+                PrintConvergenceMonitor = PrintConvergenceMonitor,
                 FirstFieldVariables = FirstFieldVariables == null ? null : (int[])FirstFieldVariables.Clone(),
                 SecondFieldVariables = SecondFieldVariables == null ? null : (int[])SecondFieldVariables.Clone()
             };
@@ -195,6 +213,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public PETScNativeVariant NativeVariant { get; set; } = PETScNativeVariant.Auto;
 
         /// <summary>
+        /// Enables a managed PETSc KSP monitor for notebook-visible live output.
+        /// </summary>
+        public bool PrintConvergenceMonitor { get; set; }
+
+        /// <summary>
         /// Optional BoSSS variable indices for PETSc field split 0.
         /// </summary>
         public int[] FirstFieldVariables { get; set; }
@@ -214,6 +237,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public double ResidualNorm => m_Solver?.ResidualNorm ?? double.NaN;
 
+        /// <summary>
+        /// Number of PETSc KSP iterations from the most recent solve, or -1 if
+        /// the native solver failed before reporting a KSP status.
+        /// </summary>
+        public int LastSolveIterationCount => m_Solver?.IterationCount ?? -1;
+
+        /// <summary>
+        /// True if the most recent PETSc solve did not reach a positive PETSc
+        /// convergence reason.
+        /// </summary>
+        public bool DidNotConverge => m_Solver?.DidNotConverge ?? false;
+
+        /// <summary>
+        /// Native PETSc error description from the most recent failed solve.
+        /// </summary>
+        public string LastErrorMessage => m_Solver?.LastErrorMessage;
+
         public int IterationsInNested => 0;
 
         public int ThisLevelIterations => m_Iterations;
@@ -231,7 +271,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             var solver = new PETScKrylovSolver {
                 Options = Options ?? string.Empty,
-                NativeVariant = NativeVariant
+                NativeVariant = NativeVariant,
+                PrintConvergenceMonitor = PrintConvergenceMonitor
             };
 
             try {
@@ -273,6 +314,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return new PETScMultigridSolver {
                 Options = Options,
                 NativeVariant = NativeVariant,
+                PrintConvergenceMonitor = PrintConvergenceMonitor,
                 FirstFieldVariables = FirstFieldVariables == null ? null : (int[])FirstFieldVariables.Clone(),
                 SecondFieldVariables = SecondFieldVariables == null ? null : (int[])SecondFieldVariables.Clone()
             };
