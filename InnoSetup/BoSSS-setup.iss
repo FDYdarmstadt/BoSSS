@@ -106,14 +106,14 @@ Root: HKCU; \
 ; Description: "Initialization run of bcl";
 
 [Run]
-Filename: {app}\bin\native\win\redist\vcredist_x64.exe; \
+Filename: {app}\bin\native\win\redist\vc_redist.x64.exe; \
     Parameters: "/install /passive /norestart"; \
-    StatusMsg: "Installing Visual C++ 2017 Redistributables..."; \
-	Flags: waituntilterminated postinstall;
+    StatusMsg: "Installing Microsoft Visual C++ Redistributable..."; \
+	Flags: runascurrentuser waituntilterminated postinstall;
 Filename: {app}\bin\native\win\redist\msmpisetup10.1.exe; \
     Parameters: "-force"; \
     StatusMsg: "Installing Microsoft MPI 10.1..."; \
-	Flags: waituntilterminated skipifsilent postinstall;
+	Flags: runascurrentuser waituntilterminated skipifsilent postinstall;
 Filename: {app}\bin\native\win\redist\dotnet-windowsdesktop-runtime-x64.url; \
     Description: "Download .NET Desktop Runtime (x64)"; \
     Flags: shellexec skipifsilent postinstall;
