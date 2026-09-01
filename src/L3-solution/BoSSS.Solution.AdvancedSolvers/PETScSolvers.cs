@@ -17,6 +17,7 @@ limitations under the License.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Runtime.Serialization;
 using ilPSP.LinSolvers.PETSc;
 
@@ -39,13 +40,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         [DataMember]
         public PETScNativeVariant NativeVariant = PETScNativeVariant.Auto;
-
-        /// <summary>
-        /// Emits PETSc KSP iteration/residual lines through managed console
-        /// output, which is visible in BoSSSpad and Jupyter notebooks.
-        /// </summary>
-        [DataMember]
-        public bool PrintConvergenceMonitor;
 
         /// <summary>
         /// LU or Cholesky factorization.
@@ -81,8 +75,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
             var solver = new PETScMultigridSolver {
                 Options = PETScDirectSolver.BuildOptions(Factorization, Backend, AdditionalOptions),
-                NativeVariant = NativeVariant,
-                PrintConvergenceMonitor = PrintConvergenceMonitor
+                NativeVariant = NativeVariant
             };
             solver.Init(level);
             return solver;
@@ -104,7 +97,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 && NativeVariant == other.NativeVariant
                 && Factorization == other.Factorization
                 && Backend == other.Backend
-                && PrintConvergenceMonitor == other.PrintConvergenceMonitor
                 && string.Equals(AdditionalOptions, other.AdditionalOptions, StringComparison.Ordinal);
         }
 
@@ -116,7 +108,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int hash = (int)NativeVariant;
                 hash = hash * 397 ^ (int)Factorization;
                 hash = hash * 397 ^ (int)Backend;
-                hash = hash * 397 ^ PrintConvergenceMonitor.GetHashCode();
                 hash = hash * 397 ^ (AdditionalOptions?.GetHashCode() ?? 0);
                 return hash;
             }
@@ -134,8 +125,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// PETSc command-line-style options. The KSP and preconditioner are not fixed by
         /// this adapter; for example, use <c>-ksp_type cg -pc_type jacobi</c>.
-        /// Options supplied here take precedence over the tolerance and iteration defaults
-        /// inherited from <see cref="IterativeSolverConfig"/>.
+        /// The inherited <see cref="IterativeSolverConfig"/> fields are translated to
+        /// PETSc options. Options supplied here take precedence; a warning is written
+        /// when an option is also supplied by an inherited field.
         /// </summary>
         [DataMember]
         public string PETScOptions = "-ksp_type gmres -pc_type jacobi";
@@ -145,13 +137,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         [DataMember]
         public PETScNativeVariant NativeVariant = PETScNativeVariant.Auto;
-
-        /// <summary>
-        /// Emits PETSc KSP iteration/residual lines through managed console
-        /// output, which is visible in BoSSSpad and Jupyter notebooks.
-        /// </summary>
-        [DataMember]
-        public bool PrintConvergenceMonitor;
 
         /// <summary>
         /// Optional BoSSS variable indices that form PETSc field split 0. Both split arrays
@@ -174,7 +159,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             var solver = new PETScMultigridSolver {
                 Options = ComposeOptions(),
                 NativeVariant = NativeVariant,
-                PrintConvergenceMonitor = PrintConvergenceMonitor,
                 FirstFieldVariables = FirstFieldVariables == null ? null : (int[])FirstFieldVariables.Clone(),
                 SecondFieldVariables = SecondFieldVariables == null ? null : (int[])SecondFieldVariables.Clone()
             };
@@ -183,12 +167,44 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         string ComposeOptions() {
-            string defaults = string.Format(
-                CultureInfo.InvariantCulture,
-                "-ksp_rtol {0:R} -ksp_atol {0:R} -ksp_max_it {1}",
-                ConvergenceCriterion,
-                MaxSolverIterations);
-            return string.IsNullOrWhiteSpace(PETScOptions) ? defaults : defaults + " " + PETScOptions;
+            var generatedOptions = new List<(string Option, string Value, string Source)> {
+                ("-ksp_rtol", ConvergenceCriterion.ToString("R", CultureInfo.InvariantCulture), nameof(ConvergenceCriterion)),
+                ("-ksp_atol", Math.Max(ConvergenceCriterion, MachineEpsilon).ToString("R", CultureInfo.InvariantCulture), nameof(ConvergenceCriterion) + "/" + nameof(MachineEpsilon)),
+                ("-ksp_min_it", MinSolverIterations.ToString(CultureInfo.InvariantCulture), nameof(MinSolverIterations)),
+                ("-ksp_max_it", MaxSolverIterations.ToString(CultureInfo.InvariantCulture), nameof(MaxSolverIterations))
+            };
+
+            if(WriteDebugInfoLevel >= 1)
+                generatedOptions.Add(("-ksp_converged_reason", null, nameof(WriteDebugInfoLevel)));
+            if(WriteDebugInfoLevel >= 2)
+                generatedOptions.Add(("-ksp_monitor", null, nameof(WriteDebugInfoLevel)));
+
+            foreach(var generated in generatedOptions) {
+                if(ContainsPetscOption(PETScOptions, generated.Option)) {
+                    Console.Error.WriteLine(
+                        $"PETSc configuration warning: {generated.Option} is set both by {generated.Source} "
+                        + $"and PETScOptions; the PETScOptions value takes precedence.");
+                }
+            }
+
+            string overlay = string.Join(" ", generatedOptions.Select(option =>
+                option.Value == null ? option.Option : option.Option + " " + option.Value));
+            return string.IsNullOrWhiteSpace(PETScOptions) ? overlay : overlay + " " + PETScOptions;
+        }
+
+        static bool ContainsPetscOption(string options, string option) {
+            if(string.IsNullOrWhiteSpace(options))
+                return false;
+
+            foreach(string token in options.Split((char[])null, StringSplitOptions.RemoveEmptyEntries)) {
+                if(token.Equals(option, StringComparison.Ordinal)
+                    || token.StartsWith(option + "=", StringComparison.Ordinal))
+                    return true;
+                if(option.Equals("-ksp_monitor", StringComparison.Ordinal)
+                    && token.StartsWith("-ksp_monitor_", StringComparison.Ordinal))
+                    return true;
+            }
+            return false;
         }
     }
 
@@ -211,11 +227,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Native PETSc parallel runtime.
         /// </summary>
         public PETScNativeVariant NativeVariant { get; set; } = PETScNativeVariant.Auto;
-
-        /// <summary>
-        /// Enables a managed PETSc KSP monitor for notebook-visible live output.
-        /// </summary>
-        public bool PrintConvergenceMonitor { get; set; }
 
         /// <summary>
         /// Optional BoSSS variable indices for PETSc field split 0.
@@ -271,8 +282,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             var solver = new PETScKrylovSolver {
                 Options = Options ?? string.Empty,
-                NativeVariant = NativeVariant,
-                PrintConvergenceMonitor = PrintConvergenceMonitor
+                NativeVariant = NativeVariant
             };
 
             try {
@@ -314,7 +324,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return new PETScMultigridSolver {
                 Options = Options,
                 NativeVariant = NativeVariant,
-                PrintConvergenceMonitor = PrintConvergenceMonitor,
                 FirstFieldVariables = FirstFieldVariables == null ? null : (int[])FirstFieldVariables.Clone(),
                 SecondFieldVariables = SecondFieldVariables == null ? null : (int[])SecondFieldVariables.Clone()
             };

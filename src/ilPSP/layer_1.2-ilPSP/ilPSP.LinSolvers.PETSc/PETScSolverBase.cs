@@ -53,13 +53,6 @@ namespace ilPSP.LinSolvers.PETSc {
         public bool PinManagedCsrBuffers { get; set; }
 
         /// <summary>
-        /// Writes PETSc KSP iteration and residual information through managed
-        /// <see cref="Console"/> output. This is captured by BoSSSpad/Jupyter.
-        /// Set before <see cref="DefineMatrix"/>.
-        /// </summary>
-        public bool PrintConvergenceMonitor { get; set; }
-
-        /// <summary>
         /// Parallel runtime used by PETSc. This must be set before <see cref="DefineMatrix"/>.
         /// The default selects a variant from the active MPI and threading configuration.
         /// </summary>
@@ -227,7 +220,7 @@ namespace ilPSP.LinSolvers.PETSc {
                         SolverSecondFieldRows,
                         out m_Solver),
                     "PETSc matrix/KSP setup");
-                if(PrintConvergenceMonitor) {
+                if(RequestsKspMonitor(SolverOptions)) {
                     m_KspMonitor = WriteKspMonitor;
                     Check(m_Native.SetKspMonitor(m_Solver, m_KspMonitor, IntPtr.Zero), "PETSc KSP monitor setup");
                 }
@@ -289,6 +282,8 @@ namespace ilPSP.LinSolvers.PETSc {
             ConvergenceReason = convergenceReason;
             IterationCount = iterations;
             ResidualNorm = residualNorm;
+            if(RequestsConvergedReason(SolverOptions))
+                WriteConvergedReason(convergenceReason, iterations, residualNorm);
             if(solveError != 0) {
                 LastErrorMessage = GetLastErrorMessage();
                 throw new ApplicationException(
@@ -348,6 +343,38 @@ namespace ilPSP.LinSolvers.PETSc {
                 Console.WriteLine($"PETSC_KSP: iteration={iteration}, residual={residualNorm:R}");
             } catch {
                 // Exceptions must never cross the native PETSc callback boundary.
+            }
+        }
+
+        static bool RequestsKspMonitor(string options) {
+            return ContainsPetscOption(options, "ksp_monitor", allowSuffix: true);
+        }
+
+        static bool RequestsConvergedReason(string options) {
+            return ContainsPetscOption(options, "ksp_converged_reason", allowSuffix: false);
+        }
+
+        static bool ContainsPetscOption(string options, string optionName, bool allowSuffix) {
+            if(string.IsNullOrWhiteSpace(options))
+                return false;
+
+            string prefix = "-" + optionName;
+            foreach(string token in options.Split((char[])null, StringSplitOptions.RemoveEmptyEntries)) {
+                if(token.Equals(prefix, StringComparison.Ordinal))
+                    return true;
+                if(allowSuffix
+                    && token.StartsWith(prefix + "_", StringComparison.Ordinal)
+                    && token.Length > prefix.Length + 1)
+                    return true;
+            }
+            return false;
+        }
+
+        static void WriteConvergedReason(int convergenceReason, int iterations, double residualNorm) {
+            try {
+                Console.WriteLine($"PETSC_KSP: convergence_reason={convergenceReason}, iterations={iterations}, residual={residualNorm:R}");
+            } catch {
+                // Console failures must not change solver behavior.
             }
         }
 
