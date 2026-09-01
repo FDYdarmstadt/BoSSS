@@ -882,8 +882,7 @@ namespace ApplicationWithIDT {
         /// It is mainly used for testing.
         /// </summary>
         public void InitializeEverything() {
-            this.SetUpEnvironment();
-            this.CreateFields();
+            this.SetUpEnvironment(); // already creates the tracker and fields (via `CreateFields()`) -- do not call `CreateFields()` again here, it would create a second, stale generation of fields/tracker
             this.SetInitial(0);
             this.CreateEquationsAndSolvers(null);
             PlotCurrentState(0.0, 0, Control.SuperSampling);
