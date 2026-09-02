@@ -247,7 +247,7 @@ namespace ilPSP.LinSolvers.UMFPACK {
                 if(rank == 0) {
                     unsafe {
                         fixed(double* px = _x, pb = _b) {
-                            fixed(int* Ap = m_UMFPACKMatrix.Ap, Ai = m_UMFPACKMatrix.Ai) {
+                            fixed(long* Ap = m_UMFPACKMatrix.Ap, Ai = m_UMFPACKMatrix.Ai) {
                                 double* Ax = (double*)m_UMFPACKMatrix.AxPtr;
 
                                 if(m_Symbolic == null) {
