@@ -29,8 +29,13 @@ OutputBaseFilename=BoSSS-setup-{#MyDateTimeString}
 ;OutputBaseFilename={%BUILD_NUMBER%|0}
 Compression=lzma
 SolidCompression=yes
-PrivilegesRequired=admin
-; Broadcast system PATH/BOSSS_INSTALL changes to newly started applications.
+; Default to a per-user install. The built-in dialog also offers an all-users
+; install, which requests elevation only after the user selects it.
+PrivilegesRequired=lowest
+PrivilegesRequiredOverridesAllowed=dialog
+UsePreviousPrivileges=no
+; Broadcast the selected user or system PATH/BOSSS_INSTALL changes to newly
+; started applications.
 ChangesEnvironment=yes
 
 
@@ -109,17 +114,17 @@ Root: HKCU; \
 Filename: {app}\bin\native\win\redist\vc_redist.x64.exe; \
     Parameters: "/install /passive /norestart"; \
     StatusMsg: "Installing Microsoft Visual C++ Redistributable..."; \
-	Flags: runascurrentuser waituntilterminated postinstall;
+	Flags: runascurrentuser waituntilterminated postinstall; Check: IsAdminInstallMode;
 Filename: {app}\bin\native\win\redist\msmpisetup10.1.exe; \
     Parameters: "-force"; \
     StatusMsg: "Installing Microsoft MPI 10.1..."; \
-	Flags: runascurrentuser waituntilterminated skipifsilent postinstall;
+	Flags: runascurrentuser waituntilterminated skipifsilent postinstall; Check: IsAdminInstallMode;
 Filename: {app}\bin\native\win\redist\dotnet-windowsdesktop-runtime-x64.url; \
     Description: "Download .NET Desktop Runtime (x64)"; \
-    Flags: shellexec skipifsilent postinstall;
+    Flags: shellexec skipifsilent postinstall; Check: IsAdminInstallMode;
 Filename: {app}\bin\native\win\redist\dotnet-sdk-x64.url; \
     Description: "Download .NET SDK (x64)"; \
-    Flags: shellexec skipifsilent postinstall;
+    Flags: shellexec skipifsilent postinstall; Check: IsAdminInstallMode;
 	
  
 [Code]
@@ -127,31 +132,47 @@ function NeedsAddPath(Param: string): boolean;
 var
   OrigPath: string;
 begin
-  if not RegQueryStringValue(HKEY_LOCAL_MACHINE,
-    'SYSTEM\CurrentControlSet\Control\Session Manager\Environment',
-    'Path', OrigPath)
-  then begin
-    Result := True;
-    exit;
+  if IsAdminInstallMode then begin
+    if not RegQueryStringValue(HKEY_LOCAL_MACHINE,
+      'SYSTEM\CurrentControlSet\Control\Session Manager\Environment',
+      'Path', OrigPath) then begin
+      Result := True;
+      exit;
+    end;
+  end else begin
+    if not RegQueryStringValue(HKEY_CURRENT_USER,
+      'Environment', 'Path', OrigPath) then begin
+      Result := True;
+      exit;
+    end;
   end;
   // look for the path with leading and trailing semicolon
   // Pos() returns 0 if not found
   Result := Pos(';' + Param + ';', ';' + OrigPath + ';') = 0;
 end;
 
-// checks is the user is Admin or Regular (non-elevated)
+// A per-user installation remains per-user even when the logged-on account is
+// an administrator. The selected install mode is the only relevant distinction.
 function IsRegularUser(): Boolean;
- begin
- Result := not (IsAdminInstallMode or IsPowerUserLoggedOn);
- end;
+begin
+  Result := not IsAdminInstallMode;
+end;
 
 // the program files dir. for admins,
 // the local app directory for regular users.  
 function DefDirRoot(Param: String): String;
- begin
- if IsRegularUser then
- Result := ExpandConstant('{localappdata}')
- else
- Result := ExpandConstant('{pf}')
- end;
+begin
+  if IsAdminInstallMode then
+    Result := ExpandConstant('{autopf}')
+  else
+    Result := ExpandConstant('{localappdata}');
+end;
+
+// Per-user installs have no elevated dependencies to run, so skip the final
+// page altogether. The all-users flow retains it and shows the dependency
+// checkboxes above.
+function ShouldSkipPage(PageID: Integer): Boolean;
+begin
+  Result := (PageID = wpFinished) and not IsAdminInstallMode;
+end;
 
