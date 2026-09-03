@@ -325,6 +325,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Submits the job to the Microsoft HPC server.
         /// </summary>
         public override (string id, object optJobObj) Submit(Job description, string DeploymentDirectory) {
+            VerifyJob(description);
             using ( new FuncTrace() ) {
                 int NumberOfCores = GetNumberOfCoresForJobDescription(description);
                 string PrjName = BoSSSshell.WorkflowMgm.CurrentProject;
@@ -365,6 +366,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         /// <returns></returns>
         public ISchedulerJob SubmitJobs(IEnumerable<Job> jobs, string DeploymentDirectory, int NumberOfCores = 64) {
+            if (jobs == null)
+                throw new ArgumentNullException(nameof(jobs));
+            jobs = jobs.ToArray();
+            foreach (Job jobDescription in jobs)
+                VerifyJob(jobDescription);
+
             string PrjName = BoSSSshell.WorkflowMgm.CurrentProject;
             IScheduler Scheduler = GetInstance();
             var job = Scheduler.CreateJob();

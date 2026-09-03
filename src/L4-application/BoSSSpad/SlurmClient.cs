@@ -62,6 +62,14 @@ namespace BoSSS.Application.BoSSSpad {
     public class SlurmClient :BatchProcessorClient {
 
         /// <summary>
+        /// Slurm supports all job settings, including an explicit node count.
+        /// </summary>
+        public override void VerifyJob(Job myJob) {
+            if (myJob == null)
+                throw new ArgumentNullException(nameof(myJob));
+        }
+
+        /// <summary>
         /// Username on the SSH server to connect to.
         /// </summary>
         [DataMember]
@@ -546,135 +554,6 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-        /*
-                  /// <summary>
-          /// build batch script with all necessary parameters
-          /// </summary>
-          void buildSlurmScript(Job myJob, string[] moduleLoad, string DeploymentDirectory) {
-
-              //string jobpath_win = "\\home\\" + Username + myJob.DeploymentDirectory.Substring(2);
-              //string jobpath_unix = jobpath_win.Replace("\\", "/");
-              string jobpath_unix = DeploymentDirectoryAtRemote(DeploymentDirectory);
-
-              string jobname = myJob.Name.Replace("\t", "__").Replace(" ", "_");
-              string executiontime = myJob.ExecutionTime != null ? myJob.ExecutionTime : this.ExecutionTime; //if execution time is not defined. Use the default value.
-              int MPIcores = myJob.NumberOfMPIProcs;
-              int NumThreads = myJob.NumberOfThreads;
-              int TotalThreadsPerRank = NumThreads + NumOfServiceCoresPerMPIprocess;  // Total number of threads per MPI process
-                      //string userName = Username;
-              string startupstring;
-              //string quote = "\"";
-              string slurmAccount = this.SlurmAccount;
-              //string memPerCPU = "5000";
-              //if (myJob.MemPerCPU != null) {
-              //    memPerCPU = myJob.MemPerCPU;
-              //} else {
-              //    memPerCPU = "5000";
-              //}
-
-              using (var str = new StringWriter()) {
-
-                  //str.Write($"srun --export=ALL,OMP_NUM_THREADS={NumThreads} --cpu-bind=cores --cpus-per-task={NumThreads} {base.DotnetRuntime} "); // when using SLURM, `srun` is recommended instead of `mpiexec`
-                  str.Write(
-                  $"srun --cpu-bind=cores " +
-                  $"--mem-bind=local " +
-                  //"--output=rank_%t_trace.out strace -f -e clone " + // for debugging threading
-                  $"bash -c 'export OMP_NUM_THREADS={NumThreads}; " + //if not used like this, srun overwrites OMP_NUM_THREADS to TotalThreadsPerRank.
-                  $"{base.DotnetRuntime} ");
-
-                  str.Write(jobpath_unix + "/" + myJob.EntryAssemblyName);
-                  //str.Write(" ");
-                  //str.Write(myJob.EnvironmentVars["BOSSS_ARG_" + 0]);
-                  //str.Write(" ");
-
-                  str.Write("'");
-
-                  startupstring = str.ToString();
-              }
-
-              string path = Path.Combine(DeploymentDirectory, "batch.sh");
-
-              using (StreamWriter sw = File.CreateText(path)) {
-                  sw.NewLine = "\n";                                                      // Unix file endings
-
-                  sw.WriteLine("#!/bin/sh");
-                  sw.WriteLine("#SBATCH -J " + jobname);
-                  if (slurmAccount != null) {
-                      sw.WriteLine("#SBATCH -A " + slurmAccount);
-                  }
-                  sw.WriteLine("#SBATCH -o " + jobpath_unix + "/stdout.txt");
-                  sw.WriteLine("#SBATCH -e " + jobpath_unix + "/stderr.txt");
-                  sw.WriteLine("#SBATCH -t " + executiontime);
-                  //sw.WriteLine("#SBATCH --mem-per-cpu=" + myJob.MemPerCPU);
-                  if (myJob.UseComputeNodesExclusive) {
-                      sw.WriteLine("#SBATCH --exclusive");
-                  }
-
-                  sw.WriteLine("#SBATCH -n " + MPIcores);
-                  sw.WriteLine("#SBATCH -c " + TotalThreadsPerRank);
-
-                  if (!this.Email.IsEmptyOrWhite()) {
-                      sw.WriteLine("#SBATCH --mail-user=" + this.Email);
-                      sw.WriteLine("#SBATCH --mail-type=ALL");
-                  }
-                  foreach (var cmd in this.AdditionalBatchCommands ?? Enumerable.Empty<string>()) {
-                      sw.WriteLine(cmd);
-                  }
-
-                  //sw.WriteLine("#SBATCH --ntasks-per-node 1");                          // Only start one MPI-process per node
-
-                                                                                          // Load modules
-                  foreach (string arg in moduleLoad) {
-                      sw.WriteLine(arg);
-                  }
-
-                  // Set environment variables for Job
-                  foreach (var envvar in myJob.EnvironmentVars) {
-                      if (envvar.Key.ContainsWhite())
-                          throw new NotSupportedException("Unable to handle environment variable with whitespace: " + envvar.Key);
-
-                      string envValue = envvar.Value;
-                      if (envValue.ContainsWhite() || envValue.Contains("'")) {
-                          envValue = envValue.Replace("'", "'\"'\"'"); // see: https:     //stackoverflow.com/questions/1250079/how-to-escape-single-quotes-within-single-quoted-strings
-                          envValue = "'" + envValue + "'";
-                      }
-                      sw.WriteLine($"export {envvar.Key}={envValue}");
-                  }
-
-                  //// ----------  OpenMP  ---------- // it does not make sense to use these flags, as they slow down the speed and srun already handles this
-                  //sw.WriteLine($"export OMP_PLACES=cores");                               // OpenMP sees those the cores as its 'places'
-                  //sw.WriteLine($"export OMP_PROC_BIND=close");                           //keep OpenMP threads fixed to the cores
-
-                  // ---------- .NET GC ---------- //
-                  if(NumOfServiceCoresPerMPIprocess > 64)
-                      throw new InvalidOperationException(
-                          "GC affinity mask supports at most 64 service cores.");
-
-                  // Set GC affinity mask and heap count
-                  ulong mask = 0;
-                  for(int i = 0; i < NumOfServiceCoresPerMPIprocess; i++)
-                      mask |= 1UL << (NumThreads + i);                                    // builds the 64-bit mask
-
-                  sw.WriteLine($"export COMPlus_GCHeapCount={NumOfServiceCoresPerMPIprocess}");
-                  //sw.WriteLine($"export COMPlus_GCHeapAffinitizeMask=0x{mask:X}");
-
-                  // Set startupstring
-                  string RunningToken = DeploymentDirectoryAtRemote(DeploymentDirectory) + "/isrunning.txt";
-                  sw.WriteLine($"touch '{RunningToken}'");
-                  sw.WriteLine("cd " + DeploymentDirectoryAtRemote(DeploymentDirectory)); // this ensures that any files written out (e.g. .plt-files) are placed in the deployment directory rather than ~
-                  sw.WriteLine(startupstring);
-                  sw.WriteLine("echo $? > '" + DeploymentDirectoryAtRemote(DeploymentDirectory) + "/exit.txt'");
-                  sw.WriteLine($"rm '{RunningToken}'");
-                  if (this.DotnetRuntime == "mono") {
-                      sw.WriteLine("echo delete mono-crash-dumps, if there are any...");
-                      sw.WriteLine($"rm core.*");
-                      sw.WriteLine($"rm mono_crash.*");
-                      sw.WriteLine($"rm mono_crash.mem.*");
-                  }
-              }
-
-          }
-        */
 
         /// <summary>
         /// build batch script with all necessary parameters
@@ -686,7 +565,10 @@ namespace BoSSS.Application.BoSSSpad {
             string executiontime = myJob.ExecutionTime != null ? myJob.ExecutionTime : this.ExecutionTime; //if execution time is not defined. Use the default value.
             int MPIprocs = myJob.NumberOfMPIProcs;
             int NumThreads = myJob.NumberOfThreads;
-            int TotalThreadsPerRank = NumThreads + NumOfServiceCoresPerMPIprocess;  // Total number of threads per MPI process
+            int NumServiceThreads = NumOfServiceCoresPerMPIprocess;
+            int NumNodes = myJob.NumberOfNodes;
+            int TotalThreadsPerRank = NumThreads + NumServiceThreads;  // Total number of threads per MPI process
+            // If the total number of threads (including service threads) per rank is odd, increment it by 1 to make it even
             if(TotalThreadsPerRank % 2 == 1)
                 TotalThreadsPerRank++;
             string slurmAccount = this.SlurmAccount;
@@ -712,6 +594,10 @@ namespace BoSSS.Application.BoSSSpad {
 
                 sw.WriteLine("#SBATCH -n " + MPIprocs);
                 sw.WriteLine("#SBATCH -c " + TotalThreadsPerRank);
+
+                if(NumNodes >0) {
+                    sw.WriteLine("#SBATCH -N " + NumNodes);
+                }
 
                 if(!this.Email.IsEmptyOrWhite()) {
                     sw.WriteLine("#SBATCH --mail-user=" + this.Email);

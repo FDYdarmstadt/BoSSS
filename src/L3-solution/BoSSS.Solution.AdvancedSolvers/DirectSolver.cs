@@ -401,7 +401,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 m_Solver = GetSolver(m_Mtx);
                         } else {
                             m_Solver?.Dispose();
-
+                            tr.Warning($"Alternative solver #{iSolver} will be tried, since previous option failed...");
                             m_Solver = altSolvers[iSolver - 1]();
                             m_Solver.DefineMatrix(m_Mtx);
                         }
@@ -413,8 +413,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             X.CheckForNanOrInfV(true, true, true, typeof(DirectSolver).Name + ", solution after solver call: ");
                         } catch(Exception e) {
                             lastException = e;
-                            Console.Error.WriteLine(e);
-                            Console.Error.WriteLine(e.StackTrace);
+                            tr.Error(e + " (dumping matrix `Mtx.txt`, current solution vector `X.txt` and right-hand-side `B.txt`) ");
+                            tr.Error(e.StackTrace);
                             this.Converged = false;
                             m_Mtx.SaveToTextFileSparse("Mtx.txt");
                             X.SaveToTextFile("X.txt");

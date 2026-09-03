@@ -40,10 +40,26 @@ namespace AdvancedSolverTests.SolverChooser {
                     }
 
 
-                    Assert.DoesNotThrow(() => code.GetConfig().CreateInstance(O.MGOp), "", null);
-                    Assert.IsNotNull(code.GetConfig().CreateInstance(O.MGOp));
+                    var config = code.GetConfig();
+                    ISolverSmootherTemplate solver = null;
+                    try {
+                        solver = config.CreateInstance(O.MGOp);
+                        Assert.IsNotNull(solver);
+                    } catch(Exception error) when(IsUnavailablePetscDirectBackend(config, error)) {
+                        Console.WriteLine($"Skipping {code}: optional PETSc direct backend is unavailable ({error.Message})");
+                    } finally {
+                        (solver as IDisposable)?.Dispose();
+                    }
                 }
             }
+        }
+
+        static bool IsUnavailablePetscDirectBackend(ISolverFactory config, Exception error) {
+            if(!(config is PETScDirectSolverConfig))
+                return false;
+
+            return error is ApplicationException
+                && error.Message.Contains("PETSc matrix/KSP setup failed with PETSc error code 92");
         }
 
         [Test]

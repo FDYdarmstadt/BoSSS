@@ -136,6 +136,13 @@ namespace BoSSS.Application.TutorialTests {
             RunWorksheet("tutorial11-Stokes/StokesEq.ipynb");
         }
 
+         /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("tutorial12-LinearSolvers/LinearSolverTutorial.ipynb")]
+        [Test]
+        static public void Run__LinearSolverTutorial() {
+            RunWorksheet("tutorial12-LinearSolvers/LinearSolverTutorial.ipynb");
+        }
+
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("XDGagglomeration/XDGagglomeration.ipynb")]
         [Test]

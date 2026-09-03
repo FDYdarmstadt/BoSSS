@@ -68,6 +68,7 @@ namespace ilPSP.Utils {
         }
 
         public static bool LinuxCpuAffinityError = false;
+        static readonly object LinuxCpuAffinityWarningLock = new object();
 
         /// <summary>
         /// Sets the list of CPU's to which the current process is assigned to;
@@ -87,13 +88,23 @@ namespace ilPSP.Utils {
                 CPUAffinityWindows.SetCurrentThreadAffinity(CPUlist);
 
             } else if(System.Environment.OSVersion.Platform == PlatformID.Unix) {
-                if(LinuxCpuAffinityError)
-                    return;
-
                 //CPUAffinityLinux.SetCurrentThreadAffinity(CPUlist);
-                Console.Error.WriteLine("TPL CPU affinity control on Linux is disabled by default when running under SLURM. " +
-                                        "If you are not using SLURM or another scheduler, you can manually set core affinity using 'taskset -c'.");
-                LinuxCpuAffinityError = true;
+                lock(LinuxCpuAffinityWarningLock) {
+                    if(LinuxCpuAffinityError)
+                        return;
+                    LinuxCpuAffinityError = true;
+                }
+
+                bool printWarning = true;
+                if(csMPI.Raw.Initialized()) {
+                    csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int mpiRank);
+                    printWarning = mpiRank == 0;
+                }
+
+                if(printWarning) {
+                    Console.Error.WriteLine("TPL CPU affinity control on Linux is disabled by default when running under SLURM. " +
+                                            "If you are not using SLURM or another scheduler, you can manually set core affinity using 'taskset -c'.");
+                }
             } else {
                 throw new NotSupportedException("Not implemented for system: " + System.Environment.OSVersion.Platform);
             }

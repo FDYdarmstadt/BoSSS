@@ -533,6 +533,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Submits the job to the Microsoft HPC server.
         /// </summary>
         public override (string id, object optJobObj) Submit(Job myJob, string DeploymentDirectory) {
+            VerifyJob(myJob);
             using (new FuncTrace()) {
 
 

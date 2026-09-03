@@ -58,6 +58,11 @@ namespace BoSSS.Application.BoSSSpad {
             Check,
 
             /// <summary>
+            /// Check the installation and run the solver checks without an interactive prompt.
+            /// </summary>
+            CheckAll,
+
+            /// <summary>
             /// Batch execution of LaTeX files (experimental)
             /// </summary>
             TexBatch,
@@ -130,7 +135,7 @@ namespace BoSSS.Application.BoSSSpad {
                         return int.MinValue;
                     }
 
-                    parseModeSuccesfully = Enum<Modes>.TryParse(args[0].Substring(2), out mode);
+                    parseModeSuccesfully = Enum<Modes>.TryParse(args[0].Substring(2).Replace("-", ""), out mode);
 
                     if(!parseModeSuccesfully) {
 
@@ -155,6 +160,14 @@ namespace BoSSS.Application.BoSSSpad {
                         return int.MinValue;
                     }
                     InstallationChecker.CheckSetup();
+                    break;
+
+                    case Modes.CheckAll:
+                    if(args.Length != 1) {
+                        PrintUsage();
+                        return int.MinValue;
+                    }
+                    InstallationChecker.CheckSetup(runDetailedChecks: true);
                     break;
 
 
@@ -682,6 +695,7 @@ namespace BoSSS.Application.BoSSSpad {
             Console.WriteLine("Option 5: Installation check:");
             Console.WriteLine("--------------------------------------------------");
             Console.WriteLine("    BoSSSpad.exe --check               Check the BoSSS installation.");
+            Console.WriteLine("    BoSSSpad.exe --check-all           Check the installation and run solver checks.");
 
         }
 
