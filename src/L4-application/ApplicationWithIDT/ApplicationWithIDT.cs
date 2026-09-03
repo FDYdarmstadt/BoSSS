@@ -882,8 +882,7 @@ namespace ApplicationWithIDT {
         /// It is mainly used for testing.
         /// </summary>
         public void InitializeEverything() {
-            this.SetUpEnvironment();
-            this.CreateFields();
+            this.SetUpEnvironment(); // already creates the tracker and fields (via `CreateFields()`) -- do not call `CreateFields()` again here, it would create a second, stale generation of fields/tracker
             this.SetInitial(0);
             this.CreateEquationsAndSolvers(null);
             PlotCurrentState(0.0, 0, Control.SuperSampling);
@@ -976,6 +975,13 @@ namespace ApplicationWithIDT {
                 break;
             }
 
+            // opt-in seam: null (the default, for every application that does not override
+            // GetCustomXQuadFactoryHelperFactory) leaves LsTrk/LsTrkStep's CustomXQuadFactoryHelper
+            // unset, exactly today's behavior.
+            base.LsTrk.CustomXQuadFactoryHelper = GetCustomXQuadFactoryHelperFactory(base.LsTrk);
+            if(this.LsTrkStep != null)
+                this.LsTrkStep.CustomXQuadFactoryHelper = GetCustomXQuadFactoryHelperFactory(this.LsTrkStep);
+
             NormalizingConstant = LevelSetOptStates[0].LevelSetOpti.GetParam(0);
             #endregion
         }
@@ -1010,9 +1016,34 @@ namespace ApplicationWithIDT {
                 case OptiLevelSetType.SplineLevelSet:
                 targetState.LevelSetOpti = new SplineOptiLevelSet(levelSetOptiBasis, targetState.LsTBO, LsTrk, lsNumber);
                 break;
+                case OptiLevelSetType.Custom:
+                targetState.LevelSetOpti = CreateCustomOptiLevelSet(targetState, levelSetOptiBasis, lsNumber);
+                break;
                 default:
                 throw new NotImplementedException();
             }
+        }
+
+        /// <summary>
+        /// Opt-in extension point for <see cref="OptiLevelSetType.Custom"/>: override in a derived
+        /// application class to construct an <see cref="IOptiLevelSet"/> implementation that lives
+        /// outside this shared project (e.g. a solver-specific kinked-spline representation).
+        /// Default implementation throws -- selecting <see cref="OptiLevelSetType.Custom"/> without
+        /// overriding this method is a configuration error, not a silently-inert no-op.
+        /// </summary>
+        protected virtual IOptiLevelSet CreateCustomOptiLevelSet(LevelSetOptimizationState targetState, Basis levelSetOptiBasis, int lsNumber) {
+            throw new NotImplementedException($"{nameof(OptiLevelSetType.Custom)} was selected but {nameof(CreateCustomOptiLevelSet)} was not overridden.");
+        }
+
+        /// <summary>
+        /// Opt-in extension point letting a derived application class supply its own
+        /// <see cref="LevelSetTracker.CustomXQuadFactoryHelper"/> delegate for <paramref name="forTracker"/>
+        /// (e.g. <c>LsTrk</c> or <c>LsTrkStep</c>). Default implementation returns <c>null</c>, which
+        /// leaves <see cref="LevelSetTracker.CustomXQuadFactoryHelper"/> unset -- i.e. exactly today's
+        /// behavior for every application that does not override this.
+        /// </summary>
+        protected virtual Func<LevelSetTracker.LevelSetData[], XQuadFactoryHelperBase> GetCustomXQuadFactoryHelperFactory(LevelSetTracker forTracker) {
+            return null;
         }
         /// <summary>
         /// This method needs to be implemented by deriving classes and initialize the multi grid-operator config

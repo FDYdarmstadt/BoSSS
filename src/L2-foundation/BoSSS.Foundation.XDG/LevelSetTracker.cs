@@ -396,6 +396,20 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
+        /// Opt-in override for the cut-cell quadrature factory construction normally performed by
+        /// <see cref="XDGSpaceMetrics"/> based on <see cref="CutCellQuadratureType"/>. When non-null,
+        /// <see cref="XDGSpaceMetrics"/> calls this delegate (with its own <see cref="LevelSetData"/>
+        /// array) instead of the default factory selection, allowing an application to supply a custom
+        /// <see cref="XQuadFactoryHelperBase"/> implementation (e.g. for cut-cell topologies not
+        /// supported by the default factories). Defaults to <c>null</c>, in which case behavior is
+        /// exactly as before this property existed.
+        /// </summary>
+        public Func<LevelSetData[], XQuadFactoryHelperBase> CustomXQuadFactoryHelper {
+            get;
+            set;
+        } = null;
+
+        /// <summary>
         /// used by <see cref="ContainesSpecies"/>;
         ///  - 1st index: <em>ID</em>: Species Id minus <see cref="___SpeciesIDOffest"/>;
         ///  - 2nd index: <em>SIGN</em>: <see cref="LevelsetCellSignCode.lsSig"/>;
