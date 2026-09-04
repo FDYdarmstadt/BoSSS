@@ -113,7 +113,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
                 return 0;
             if(grid.iGeomEdges.IsEdgeConformalWithCell2(jEdge))
                 return 1;
-            throw new NotSupportedException($"Unfortunately, edge {jEdge} is nether conformal with IN- or OUT-edge, i.e., has hanging nodes on both sides of the edge - unable to generate cut-edge-quadrature rule");
+            throw new NotSupportedException($"Unfortunately, edge {jEdge} is neither conformal with IN- or OUT-edge, i.e., has hanging nodes on both sides of the edge - unable to generate cut-edge-quadrature rule");
         }
 
 

@@ -14,25 +14,6 @@ using static BoSSS.Foundation.XDG.LevelSetTracker;
 
 namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
 
-    /*
-    public static class Report {
-        public static void R() {
-            Console.WriteLine("-----------------------------------------------");
-            Console.WriteLine($"all calls: {IntersectingRuleFactory.calls.Elapsed.TotalSeconds:g7}");
-            Console.WriteLine($"  opt val: {GlobalCellFunctionOptimized.stwV.Elapsed.TotalSeconds:g7} \t(calls: {GlobalCellFunctionOptimized.EvalCounterV})");
-            Console.WriteLine($" opt grad: {GlobalCellFunctionOptimized.stwG.Elapsed.TotalSeconds:g7} \t(calls: {GlobalCellFunctionOptimized.EvalCounterG})");
-            Console.WriteLine($" opt hess: {GlobalCellFunctionOptimized.stwH.Elapsed.TotalSeconds:g7} \t(calls: {GlobalCellFunctionOptimized.EvalCounterH})");
-            Console.WriteLine($" opt ctor: {GlobalCellFunctionOptimized.stwC.Elapsed.TotalSeconds:g7}");
-
-            Console.WriteLine($"  ref val: {GlobalCellFunction.stwV.Elapsed.TotalSeconds:g7} \t(calls: {GlobalCellFunction.EvalCounterV})");
-            Console.WriteLine($" ref grad: {GlobalCellFunction.stwG.Elapsed.TotalSeconds:g7} \t(calls: {GlobalCellFunction.EvalCounterG})");
-            Console.WriteLine($" ref hess: {GlobalCellFunction.stwH.Elapsed.TotalSeconds:g7} \t(calls: {GlobalCellFunction.EvalCounterH})");
-
-            Console.WriteLine("-----------------------------------------------");
-        }
-    }
-    */
-
     internal class IntersectingRuleFactory : IQuadRuleFactory<QuadRule> {
 
         readonly IFunctionMap map;
