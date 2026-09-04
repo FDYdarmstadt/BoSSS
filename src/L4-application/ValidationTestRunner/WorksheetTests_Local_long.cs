@@ -1377,6 +1377,36 @@ namespace ValidationTestRunner {
                 "Leidenfrost_3d_HFSI_Fast_Paper @ FDYcluster");
         }
 
+        /// <summary>
+        /// 3D Leidenfrost testcase using the HFSI solver, soft material variant.
+        /// Section 4.3 Miao and Kummer (2026) https://www.doi.org/10.1140/epje/s10189-026-00606-7
+        /// </summary>
+        [NUnitFileToCopyHack("HFSI/Leidenfrost/Leidenfrost_3d_HFSI_Fast_Paper_Soft.ipynb")]
+        [Test]
+        static public void Run__Leidenfrost_3d_HFSI_Fast_Paper_Soft() {
+            // --test=ValidationTestRunner.WorksheetTests_Local_long.Run__Leidenfrost_3d_HFSI_Fast_Paper_Soft
+            Run__LongTest(
+                "ZLS-Leidenfrost-3D-Paper-Soft",
+                ["HFSI/Leidenfrost/Leidenfrost_3d_HFSI_Fast_Paper_Soft.ipynb"],
+                new TimeSpan(days: 10, hours: 1, minutes: 0, seconds: 0),
+                "Leidenfrost_3d_HFSI_Fast_Paper_Soft @ FDYcluster");
+        }
+
+        /// <summary>
+        /// 3D Leidenfrost testcase using the HFSI solver, inclined wall variant.
+        /// Section 4.4 Miao and Kummer (2026) https://www.doi.org/10.1140/epje/s10189-026-00606-7
+        /// </summary>
+        [NUnitFileToCopyHack("HFSI/Leidenfrost/Leidenfrost_HFSI_angle_3d_fast_paper.ipynb")]
+        [Test]
+        static public void Run__Leidenfrost_HFSI_angle_3d_fast_paper() {
+            // --test=ValidationTestRunner.WorksheetTests_Local_long.Run__Leidenfrost_HFSI_angle_3d_fast_paper
+            Run__LongTest(
+                "HFSI-Leidenfrost-Angle-3d",
+                ["HFSI/Leidenfrost/Leidenfrost_HFSI_angle_3d_fast_paper.ipynb"],
+                new TimeSpan(days: 10, hours: 1, minutes: 0, seconds: 0),
+                "Leidenfrost_HFSI_angle_3d_fast_paper @ FDYcluster");
+        }
+
         static void Run__LongTest(string PROJECT_NAME, IEnumerable<string> WorkSheetNameS, TimeSpan resultsShelfLife, string completionMessage = null, bool backupDatabase = true) {
             // delete the database if it is more than XX days old;
             // this will cause a re-execution of all computations
