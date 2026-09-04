@@ -1362,6 +1362,21 @@ namespace ValidationTestRunner {
             Run__LongTest("DropletInShearFlow", ["DropletInShearFlow/DropletInShearFlow.ipynb"], new TimeSpan(days: 10, hours: 0, minutes: 0, seconds: 1));
         }
 
+        /// <summary>
+        /// 3D Leidenfrost testcase using the HFSI solver.
+        /// Section 4.2 Miao and Kummer (2026) https://www.doi.org/10.1140/epje/s10189-026-00606-7
+        /// </summary>
+        [NUnitFileToCopyHack("HFSI/Leidenfrost/Leidenfrost_3d_HFSI_Fast_Paper.ipynb")]
+        [Test]
+        static public void Run__Leidenfrost_3d_HFSI_Fast_Paper() {
+            // --test=ValidationTestRunner.WorksheetTests_Local_long.Run__Leidenfrost_3d_HFSI_Fast_Paper
+            Run__LongTest(
+                "ZLS-Leidenfrost-3D-Paper",
+                ["HFSI/Leidenfrost/Leidenfrost_3d_HFSI_Fast_Paper.ipynb"],
+                new TimeSpan(days: 10, hours: 1, minutes: 0, seconds: 0),
+                "Leidenfrost_3d_HFSI_Fast_Paper @ FDYcluster");
+        }
+
         static void Run__LongTest(string PROJECT_NAME, IEnumerable<string> WorkSheetNameS, TimeSpan resultsShelfLife, string completionMessage = null, bool backupDatabase = true) {
             // delete the database if it is more than XX days old;
             // this will cause a re-execution of all computations
