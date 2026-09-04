@@ -17,10 +17,14 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
         public double[] Center;
         public double[] Diameters;
         public Func<double[], double> LevelSet0;
+        public Func<double[], double[]> LevelSet0Gradient;
+        public Func<double[], double[,]> LevelSet0Hessian;
         public Func<double[], double> LevelSet1;
+        public Func<double[], double[]> LevelSet1Gradient;
+        public Func<double[], double[,]> LevelSet1Hessian;
     }
 
-    
+
     class DelegateIntersectingRuleFactory : IQuadRuleFactory<QuadRule> {
         readonly RefElement Kref;
         readonly Func<int, IEnumerable<IntersectingSubcell>> subcellProvider;
@@ -73,9 +77,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
                 }
 
                 QuadratureRule subRule = finder.FindRule(
-                    new DelegateScalarFunction(Kref.SpatialDimension, subcell.LevelSet0),
+                    new DelegateScalarFunction(Kref.SpatialDimension, subcell.LevelSet0, subcell.LevelSet0Gradient, subcell.LevelSet0Hessian),
                     sign0,
-                    new DelegateScalarFunction(Kref.SpatialDimension, subcell.LevelSet1),
+                    new DelegateScalarFunction(Kref.SpatialDimension, subcell.LevelSet1, subcell.LevelSet1Gradient, subcell.LevelSet1Hessian),
                     sign1,
                     domain,
                     nodeCount,
@@ -109,7 +113,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
         }
 
         static bool IsDegenerate(IntersectingSubcell subcell) {
-            if(subcell.Center == null || subcell.Diameters == null || subcell.LevelSet0 == null || subcell.LevelSet1 == null)
+            if(subcell.Center == null || subcell.Diameters == null
+                || subcell.LevelSet0 == null || subcell.LevelSet0Gradient == null || subcell.LevelSet0Hessian == null
+                || subcell.LevelSet1 == null || subcell.LevelSet1Gradient == null || subcell.LevelSet1Hessian == null)
                 throw new ArgumentException("Invalid intersecting subcell.");
             return subcell.Diameters.Any(d => Math.Abs(d) <= 1.0e-14);
         }
@@ -121,10 +127,14 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
 
     class DelegateScalarFunction : IScalarFunction {
         readonly Func<double[], double> function;
+        readonly Func<double[], double[]> gradientFunction;
+        readonly Func<double[], double[,]> hessianFunction;
 
-        public DelegateScalarFunction(int dimension, Func<double[], double> function) {
+        public DelegateScalarFunction(int dimension, Func<double[], double> function, Func<double[], double[]> gradientFunction, Func<double[], double[,]> hessianFunction) {
             M = dimension;
-            this.function = function;
+            this.function = function ?? throw new ArgumentNullException(nameof(function));
+            this.gradientFunction = gradientFunction ?? throw new ArgumentNullException(nameof(gradientFunction));
+            this.hessianFunction = hessianFunction ?? throw new ArgumentNullException(nameof(hessianFunction));
         }
 
         public int M {
@@ -138,54 +148,33 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
         public (double evaluation, Tensor1 gradient) EvaluateAndGradient(Tensor1 x) {
             double[] point = ToArray(x);
             double evaluation = function(point);
+            double[] grad = gradientFunction(point);
+            if(grad == null || grad.Length != M)
+                throw new InvalidOperationException($"Gradient delegate must return a vector of length {M}.");
             Tensor1 gradient = Tensor1.Zeros(M);
-            double h = 1.0e-6;
-            for(int d = 0; d < M; d++) {
-                double old = point[d];
-                point[d] = old + h;
-                double plus = function(point);
-                point[d] = old - h;
-                double minus = function(point);
-                point[d] = old;
-                gradient[d] = (plus - minus) / (2.0 * h);
-            }
+            for(int d = 0; d < M; d++)
+                gradient[d] = grad[d];
             return (evaluation, gradient);
         }
 
         public (double evaluation, Tensor1 gradient, Tensor2 hessian) EvaluateAndGradientAndHessian(Tensor1 x) {
-            var (evaluation, gradient) = EvaluateAndGradient(x);
-            Tensor2 hessian = Tensor2.Zeros(M);
             double[] point = ToArray(x);
-            double h = 1.0e-5;
-            double center = function(point);
+            double evaluation = function(point);
 
+            double[] grad = gradientFunction(point);
+            if(grad == null || grad.Length != M)
+                throw new InvalidOperationException($"Gradient delegate must return a vector of length {M}.");
+            Tensor1 gradient = Tensor1.Zeros(M);
+            for(int d = 0; d < M; d++)
+                gradient[d] = grad[d];
+
+            double[,] hess = hessianFunction(point);
+            if(hess == null || hess.GetLength(0) != M || hess.GetLength(1) != M)
+                throw new InvalidOperationException($"Hessian delegate must return a {M}x{M} matrix.");
+            Tensor2 hessian = Tensor2.Zeros(M);
             for(int i = 0; i < M; i++) {
-                double oldI = point[i];
-                point[i] = oldI + h;
-                double plus = function(point);
-                point[i] = oldI - h;
-                double minus = function(point);
-                point[i] = oldI;
-                hessian[i, i] = (plus - 2.0 * center + minus) / (h * h);
-
-                for(int j = i + 1; j < M; j++) {
-                    double oldJ = point[j];
-                    point[i] = oldI + h;
-                    point[j] = oldJ + h;
-                    double pp = function(point);
-                    point[j] = oldJ - h;
-                    double pm = function(point);
-                    point[i] = oldI - h;
-                    point[j] = oldJ + h;
-                    double mp = function(point);
-                    point[j] = oldJ - h;
-                    double mm = function(point);
-                    point[i] = oldI;
-                    point[j] = oldJ;
-                    double mixed = (pp - pm - mp + mm) / (4.0 * h * h);
-                    hessian[i, j] = mixed;
-                    hessian[j, i] = mixed;
-                }
+                for(int j = 0; j < M; j++)
+                    hessian[i, j] = hess[i, j];
             }
 
             return (evaluation, gradient, hessian);
