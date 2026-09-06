@@ -181,7 +181,11 @@ namespace BoSSS.Solution.Control {
 
                 case LinearSolverCode.direct_petsc_umfpack:
                     return new AdvancedSolvers.PETScDirectSolverConfig() {
-                        Backend = PETScDirectBackend.Umfpack
+                        Backend = PETScDirectBackend.Umfpack,
+                        // UMFPACK is sequential and requires PETSc MATSEQAIJ.
+                        // CopiedCsr lets PETSc select that matrix type for this
+                        // single-rank solver instead of forcing MPIAIJ.
+                        MatrixInput = PETScMatrixInput.CopiedCsr
                     };
 
                 case LinearSolverCode.direct_petsc_cholesky:

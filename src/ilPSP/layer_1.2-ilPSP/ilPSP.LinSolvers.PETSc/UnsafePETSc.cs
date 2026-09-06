@@ -86,19 +86,63 @@ namespace ilPSP.LinSolvers.PETSc {
         internal delegate int _BoSSS_PETSc_GetVersion(byte[] buffer, int bufferLength);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate int _bosss_petsc_create_ksp_solver(
+        internal delegate int _bosss_petsc_create_matrix_solver(
             int localRows,
             int globalRows,
             int globalRowStart,
             int[] rowPointers,
             int[] columnIndices,
             double[] values,
+            out IntPtr solver);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _bosss_petsc_create_split_csr_matrix_solver(
+            int localRows,
+            int globalRows,
+            int globalRowStart,
+            int[] diagonalRowPointers,
+            int[] diagonalColumnIndices,
+            double[] diagonalValues,
+            int[] offdiagonalRowPointers,
+            int[] offdiagonalColumnIndices,
+            double[] offdiagonalValues,
+            out IntPtr solver);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _bosss_petsc_apply(
+            IntPtr context,
+            IntPtr ownedInput,
+            int ownedLength,
+            IntPtr haloInput,
+            int haloLength,
+            IntPtr output);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _bosss_petsc_create_shell_solver(
+            int localRows,
+            int globalRows,
+            int globalRowStart,
+            int ghostCount,
+            int[] ghostGlobalIds,
+            [MarshalAs(UnmanagedType.LPStr)] string petscOptions,
+            _bosss_petsc_apply applyCallback,
+            IntPtr matrixMultContext,
+            out IntPtr solver);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _bosss_petsc_create_ksp_for_matrix(IntPtr solver);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _bosss_petsc_configure_ksp_solver(
+            IntPtr solver,
             [MarshalAs(UnmanagedType.LPStr)] string petscOptions,
             int firstFieldRowsCount,
             int[] firstFieldRowIndices,
             int secondFieldRowsCount,
-            int[] secondFieldRowIndices,
-            out IntPtr solver);
+            int[] secondFieldRowIndices);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _bosss_petsc_setup_ksp_solver(IntPtr solver);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate void _bosss_petsc_ksp_monitor(IntPtr context, int iteration, double residualNorm);
@@ -132,7 +176,12 @@ namespace ilPSP.LinSolvers.PETSc {
         _bosss_petsc_initialize bosss_petsc_initialize;
         _BoSSS_PETSc_Initialize BoSSS_PETSc_Initialize;
         _BoSSS_PETSc_GetVersion BoSSS_PETSc_GetVersion;
-        _bosss_petsc_create_ksp_solver bosss_petsc_create_ksp_solver;
+        _bosss_petsc_create_matrix_solver bosss_petsc_create_matrix_solver;
+        _bosss_petsc_create_split_csr_matrix_solver bosss_petsc_create_split_csr_matrix_solver;
+        _bosss_petsc_create_shell_solver bosss_petsc_create_shell_solver;
+        _bosss_petsc_create_ksp_for_matrix bosss_petsc_create_ksp_for_matrix;
+        _bosss_petsc_configure_ksp_solver bosss_petsc_configure_ksp_solver;
+        _bosss_petsc_setup_ksp_solver bosss_petsc_setup_ksp_solver;
         _bosss_petsc_set_ksp_monitor bosss_petsc_set_ksp_monitor;
         _bosss_petsc_solve bosss_petsc_solve;
         _bosss_petsc_destroy_solver bosss_petsc_destroy_solver;
@@ -184,7 +233,17 @@ namespace ilPSP.LinSolvers.PETSc {
             return $"Loaded PETSc Version {GetPETScVersion()} with capabilities {capabilities}.";
         }
 
-        internal _bosss_petsc_create_ksp_solver CreateKspSolver => bosss_petsc_create_ksp_solver;
+        internal _bosss_petsc_create_matrix_solver CreateMatrixSolver => bosss_petsc_create_matrix_solver;
+
+        internal _bosss_petsc_create_split_csr_matrix_solver CreateSplitCsrMatrixSolver => bosss_petsc_create_split_csr_matrix_solver;
+
+        internal _bosss_petsc_create_shell_solver CreateShellSolver => bosss_petsc_create_shell_solver;
+
+        internal _bosss_petsc_create_ksp_for_matrix CreateKspForMatrix => bosss_petsc_create_ksp_for_matrix;
+
+        internal _bosss_petsc_configure_ksp_solver ConfigureKspSolver => bosss_petsc_configure_ksp_solver;
+
+        internal _bosss_petsc_setup_ksp_solver SetupKspSolver => bosss_petsc_setup_ksp_solver;
 
         internal _bosss_petsc_set_ksp_monitor SetKspMonitor => bosss_petsc_set_ksp_monitor;
 

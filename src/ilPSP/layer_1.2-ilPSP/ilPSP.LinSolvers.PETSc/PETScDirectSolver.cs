@@ -148,6 +148,9 @@ namespace ilPSP.LinSolvers.PETSc {
         protected override string SolverOptions => BuildOptions(Factorization, Backend, AdditionalOptions);
 
         /// <inheritdoc/>
+        protected override bool SupportsMatrixShell => false;
+
+        /// <inheritdoc/>
         protected override void ValidateParallelConfiguration(int mpiSize, PETScNativeVariant effectiveNativeVariant) {
             if(Factorization == PETScDirectFactorization.Cholesky
                 && (Backend == PETScDirectBackend.Umfpack || Backend == PETScDirectBackend.SuperLuDist)) {
