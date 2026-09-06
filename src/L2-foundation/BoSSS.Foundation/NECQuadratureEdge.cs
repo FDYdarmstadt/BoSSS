@@ -799,6 +799,32 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                 this.ParametersAndNormals.Stop();
 
+                // DIAGNOSTIC (coordinator-requested boundary-quadrature-rule confirmation,
+                // this round): dump the RAW-EVALUATION engine's own quadrature rule
+                // (NECQuadratureEdge, used for Linearization=false / the nonlinear f(u0)
+                // path) for a target edge -- to directly confirm/refute whether this engine
+                // uses the SAME rule as LECEdgeQuadrature2 (used for the M/Jacobian path,
+                // already captured via DIAG_QUADRULE) for the SAME edge, and to get the
+                // actual rule for boundary edges (21/22/23), which DIAG_QUADRULE never
+                // captured (LECEdgeQuadrature2.EvaluateEx apparently never processes them).
+                if (System.Environment.GetEnvironmentVariable("DIAG_QUADRULE_NEC") == "1") {
+                    string qeStr = System.Environment.GetEnvironmentVariable("DIAG_QUADRULE_NEC_EDGE");
+                    if (qeStr != null && int.TryParse(qeStr, out int qEdge) && qEdge >= i0 && qEdge < i0 + Length) {
+                        try {
+                            int qLocal = qEdge - i0;
+                            for (int node = 0; node < qrNodes.NoOfNodes; node++) {
+                                var sbRef = new System.Text.StringBuilder();
+                                for (int dd = 0; dd < qrNodes.SpatialDimension; dd++) sbRef.Append(qrNodes[node, dd].ToString("0.################")).Append(dd < qrNodes.SpatialDimension - 1 ? "," : "");
+                                Console.WriteLine(string.Format(
+                                    "DIAG_QUADRULE_NEC: edge={0} node={1} refEdgeXi=[{2}] weight={3:0.################} scaling={4:0.################} affine={5}",
+                                    qEdge, node, sbRef.ToString(), QR.Weights[node], QuadScalings[qLocal, node], affine));
+                            }
+                        } catch (Exception ex) {
+                            Console.WriteLine("DIAG_QUADRULE_NEC: (threw) " + ex.Message);
+                        }
+                    }
+                }
+
 
                 this.Field_Eval.Start();
 
@@ -1203,6 +1229,28 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         OrthoTrf = grid.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(jCellMin, jCellMax - jCellMin + 1, MaxDegree); // sollte irgendwann sowieso
                                                                                                                                        //                                                                                                                f�r alle Zellen vorliegen, also kein Stress
                                                                                                                                        //                                                                                                                falls jCellMin und jCellMax weit auseinander
+
+                        // DIAGNOSTIC (coordinator-requested M-path-vs-f-path geometric-data
+                        // divergence check, this round): f-path EDGE analogue, same format as
+                        // NECQuadratureVolume.cs's DIAG_GEOM_COMPARE block, to bit-diff against
+                        // LECEdgeQuadrature2.cs's trafo for the same cell. Note MaxDegree here
+                        // (test/codomain-only) vs. the M-path's max(Test,TestGrad,Trial,TrialGrad).
+                        if (System.Environment.GetEnvironmentVariable("DIAG_GEOM_COMPARE") == "1") {
+                            string targetStr9 = System.Environment.GetEnvironmentVariable("DIAG_GEOM_COMPARE_CELL");
+                            if (targetStr9 != null && int.TryParse(targetStr9, out int targetCell9)
+                                && targetCell9 >= jCellMin && targetCell9 < jCellMax) {
+                                int jj9 = targetCell9 - jCellMin;
+                                int N9 = OrthoTrf.GetLength(1);
+                                var sb9 = new System.Text.StringBuilder();
+                                sb9.Append($"DIAG_GEOM_COMPARE[F-EDGE]: cell={targetCell9} jCellMin={jCellMin} jCellMax={jCellMax} MaxDegree={MaxDegree} N={N9}\n");
+                                for (int n9 = 0; n9 < N9; n9++) {
+                                    for (int m9 = 0; m9 < N9; m9++) {
+                                        sb9.Append($"  trafo[n={n9},m={m9}]={OrthoTrf[jj9, n9, m9]:G17}\n");
+                                    }
+                                }
+                                Console.WriteLine(sb9.ToString());
+                            }
+                        }
                     }
 
 
@@ -1402,7 +1450,26 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                             //(new CellMask(GridDat, Chunk.GetSingleElementChunk(GridDat.iLogicalEdges.CellIndices[iEdge, 1]))).SaveToTextFile("PerOtCell.csv", false);
 
 
-                            var Trafo = grid.Grid.PeriodicTrafo[eT - Grid.Classic.GridCommons.FIRST_PERIODIC_BC_TAG];
+                            // Use the orientation-normalized accessor, not the raw PeriodicTrafo
+                            // entry: different grid constructors (e.g. Grid2D.CurvedSquareGrid vs
+                            // Grid3D.CylinderGrid) pass the low-angle/high-angle periodic faces to
+                            // ConstructPeriodicEdgeTrafo in opposite argument order, so the raw
+                            // matrix for the SAME physical rotation can be mutually inverse
+                            // between grid constructors -- exactly the bug found and fixed for the
+                            // LINEAR evaluator in LECEdgeQuadrature2.GetPeriodicEdgesAndMatrices
+                            // (see its remarks). This method's fwd/bck convention was previously
+                            // validated only against BoSSS.Application.PeriodicRotationTest's 2D
+                            // Grid2D.CurvedSquareGrid, whose raw matrix happens to already be
+                            // IN-to-OUT -- masking this exact same orientation bug, which only
+                            // surfaces on CylinderGrid-based 3D grids (found via
+                            // BoSSS.Application.PeriodicRotationTest3D's
+                            // CheckJacobianSelfConsistency: the nonlinear evaluator's raw-matrix
+                            // reads disagreed with the (already-fixed) linear evaluator by 6+
+                            // orders of magnitude specifically at periodic edges).
+                            var gridDataConcrete = grid as BoSSS.Foundation.Grid.Classic.GridData;
+                            var Trafo = gridDataConcrete != null
+                                ? gridDataConcrete.Edges.GetPeriodicTrafo(iEdge, true)
+                                : grid.Grid.PeriodicTrafo[eT - Grid.Classic.GridCommons.FIRST_PERIODIC_BC_TAG];
 
 
                             void TransformVector(MultidimensionalArray Mtx, MultidimensionalArray[] Vals) {
@@ -1410,18 +1477,31 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                                 foreach (int[] VecPtr in VectorTuples) {
                                     Debug.Assert(VecPtr.Length == D);
 
-                                    for (int k = 0; k < NoOfNodes; k++) {
-                                        if (VecPtr[0] >= Vals.Length || Vals[VecPtr[0]] == null)
-                                            continue;
+                                    // a tuple member may be null if no equation component in the
+                                    // whole operator actually requires its value -- treat it as
+                                    // zero (there is genuinely no other value to use) rather than
+                                    // crashing, and skip entirely if none of the tuple's members
+                                    // are present at all. For realistic vector fluxes (which
+                                    // reference all their components together) this is a no-op
+                                    // safety net, not the primary mechanism.
+                                    bool anyPresent = false;
+                                    for (int d = 0; d < D; d++) {
+                                        if (VecPtr[d] < Vals.Length && Vals[VecPtr[d]] != null)
+                                            anyPresent = true;
+                                    }
+                                    if (!anyPresent)
+                                        continue;
 
+                                    for (int k = 0; k < NoOfNodes; k++) {
                                         for (int d = 0; d < D; d++) {
-                                            Uorg[d] = Vals[VecPtr[d]][i, k];
+                                            Uorg[d] = (VecPtr[d] < Vals.Length && Vals[VecPtr[d]] != null) ? Vals[VecPtr[d]][i, k] : 0.0;
                                         }
 
                                         Vector Udest = Mtx.MtxVecMul(Uorg);
 
                                         for (int d = 0; d < D; d++) {
-                                            Vals[VecPtr[d]][i, k] = Udest[d];
+                                            if (VecPtr[d] < Vals.Length && Vals[VecPtr[d]] != null)
+                                                Vals[VecPtr[d]][i, k] = Udest[d];
                                         }
                                     }
                                 }
@@ -1435,33 +1515,20 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                                 foreach (int[] VecPtr in VectorTuples) {
                                     Debug.Assert(VecPtr.Length == D);
 
-                                    /*
-                                    Vector Uorg = new Vector(D);
-                                    for(int k = 0; k < NoOfNodes; k++) {
-                                        if(VecPtr[0] >= Gradients.Length || Gradients[VecPtr[0]] == null)
-                                            continue;
-
-                                        for(int e = 0; e < D; e++) {
-                                            for(int d = 0; d < D; d++) {
-                                                Uorg[d] = Gradients[VecPtr[d]][i, k, e];
-                                            }
-
-                                            Vector Udest = Mtx.MtxVecMul(Uorg);
-
-                                            for(int d = 0; d < D; d++) {
-                                                Gradients[VecPtr[d]][i, k, e] = Udest[d];
-                                            }
-                                        }
+                                    // see remark in TransformVector: a tuple member's gradient
+                                    // may be null if no component requires it; treat as zero.
+                                    bool anyPresent = false;
+                                    for (int e = 0; e < D; e++) {
+                                        if (VecPtr[e] < Gradients.Length && Gradients[VecPtr[e]] != null)
+                                            anyPresent = true;
                                     }
-                                    */
+                                    if (!anyPresent)
+                                        continue;
 
                                     for (int k = 0; k < NoOfNodes; k++) {
-                                        if (VecPtr[0] >= Gradients.Length || Gradients[VecPtr[0]] == null)
-                                            continue;
-
                                         for (int e = 0; e < D; e++) {
                                             for (int d = 0; d < D; d++) {
-                                                GT[e, d] = Gradients[VecPtr[e]][i, k, d];
+                                                GT[e, d] = (VecPtr[e] < Gradients.Length && Gradients[VecPtr[e]] != null) ? Gradients[VecPtr[e]][i, k, d] : 0.0;
                                             }
                                         }
 
@@ -1469,6 +1536,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
 
                                         for (int e = 0; e < D; e++) {
+                                            if (VecPtr[e] >= Gradients.Length || Gradients[VecPtr[e]] == null)
+                                                continue;
                                             for (int d = 0; d < D; d++) {
                                                 Gradients[VecPtr[e]][i, k, d] = GTD[e, d];
                                             }

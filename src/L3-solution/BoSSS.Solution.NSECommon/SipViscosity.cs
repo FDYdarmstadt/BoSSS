@@ -534,6 +534,15 @@ namespace BoSSS.Solution.NSECommon {
 
       
         public override double VolumeForm(ref Foundation.CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+            // ABLATION TOGGLE (coordinator-requested bounded check, this round): fully disables
+            // this form's VolumeForm contribution for one target cell -- same pattern as elsewhere
+            // this session, used with the frozen-state-ablation mechanism to isolate the SipViscosity
+            // "grad_u" (this class) volume piece's contribution to a specific Jacobian row/column.
+            {
+                string disCellStr = System.Environment.GetEnvironmentVariable("XNSFE_REPRO_DISABLE_VOL_CELL_VISCGRADU");
+                if (disCellStr != null && int.TryParse(disCellStr, out int disCell) && cpv.jCell == disCell)
+                    return 0.0;
+            }
             double acc = 0;
             for(int d = 0; d < cpv.D; d++)
                 //acc -= GradU[0, d] * GradV[d] * Viscosity(cpv.Parameters) * base.m_alpha;
@@ -548,8 +557,24 @@ namespace BoSSS.Solution.NSECommon {
 
 
         public override double InnerEdgeForm(ref Foundation.CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
+            // ABLATION TOGGLE (coordinator-requested bounded check, this round)
+            {
+                string disPairStr = System.Environment.GetEnvironmentVariable("XNSFE_REPRO_DISABLE_EDGE_VISCGRADU_CELLPAIR");
+                if (disPairStr != null) {
+                    var parts = disPairStr.Split(',');
+                    if (parts.Length == 2 && int.TryParse(parts[0], out int pa) && int.TryParse(parts[1], out int pb)
+                        && ((inp.jCellIn == pa && inp.jCellOut == pb) || (inp.jCellIn == pb && inp.jCellOut == pa)))
+                        return 0.0;
+                }
+            }
             double Acc = 0.0;
             double pnlty = this.penalty(inp.GridDat, inp.jCellIn, inp.jCellOut, inp.iEdge);
+            {
+                string diagEdgeStr = System.Environment.GetEnvironmentVariable("DIAG_VISC_PENALTY_EDGE");
+                if (diagEdgeStr != null && int.TryParse(diagEdgeStr, out int diagEdge) && inp.iEdge == diagEdge) {
+                    Console.Error.WriteLine($"DIAG_VISC_PENALTY: edge={inp.iEdge} jIn={inp.jCellIn} jOt={inp.jCellOut} pnlty={pnlty:G17}");
+                }
+            }
             double muA = this.Viscosity(inp.Parameters_IN, _uA, _Grad_uA);
             double muB = this.Viscosity(inp.Parameters_OUT, _uB, _Grad_uB);
 
@@ -590,9 +615,15 @@ namespace BoSSS.Solution.NSECommon {
 
 
         public override double BoundaryEdgeForm(ref Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+            // ABLATION TOGGLE (coordinator-requested bounded check, this round)
+            {
+                string disCellStr = System.Environment.GetEnvironmentVariable("XNSFE_REPRO_DISABLE_BND_VISCGRADU_CELL");
+                if (disCellStr != null && int.TryParse(disCellStr, out int disCell) && inp.jCellIn == disCell)
+                    return 0.0;
+            }
             double Acc = 0.0;
             double pnlty = 2 * this.penalty(inp.GridDat, inp.jCellIn, -1, inp.iEdge);//, inp.GridDat.Cells.cj);
-            
+
             double muA = this.Viscosity(inp.Parameters_IN, _uA, _Grad_uA);
             IncompressibleBcType edgType = base.EdgeTag2Type[inp.EdgeTag];
 
@@ -753,9 +784,25 @@ namespace BoSSS.Solution.NSECommon {
             //int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
             //double[] Parameters = new double[_NOParams];
 
+            // ABLATION TOGGLE (coordinator-requested bounded check, this round): mirrors the
+            // XNSFE_REPRO_DISABLE_VOL_CELL_VISCGRADU toggle in the scalar VolumeForm override
+            // above. This vectorized fast-path (INonlinVolumeForm_GradV.Form) is a SEPARATE,
+            // hand-written re-implementation that does NOT call VolumeForm at all -- so the
+            // scalar-only toggle left this path un-ablated, causing BoSSS's own DEBUG-mode
+            // vectorized-vs-basic consistency assertion (NonlinFormVectorizer.cs) to correctly
+            // detect the resulting disagreement and abort. Mirroring the same toggle here keeps
+            // both paths consistent under ablation.
+            int disCellVol = -1;
+            {
+                string disCellStr = System.Environment.GetEnvironmentVariable("XNSFE_REPRO_DISABLE_VOL_CELL_VISCGRADU");
+                if (disCellStr != null) int.TryParse(disCellStr, out disCellVol);
+            }
+
             int D = prm.GridDat.SpatialDimension;
             for(int cell = 0; cell < NumofCells; cell++) { // loop over cells...
-                for(int node = 0; node < NumOfNodes; node++) { // loop over nodes... 
+                if (prm.j0 + cell == disCellVol)
+                    continue;
+                for(int node = 0; node < NumOfNodes; node++) { // loop over nodes...
                     //for(int np = 0; np < _NOParams; np++) {
                     //    Parameters[np] = prm.ParameterVars[np][cell, node];
                     //}
@@ -770,7 +817,7 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
-        
+
         void INonlinInnerEdgeForm_GradV.NonlinInternalEdge_GradV(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout, MultidimensionalArray fIN, MultidimensionalArray fOT) { // OK :)
             int NumOfEdges = efp.Len;
             Debug.Assert(fIN.GetLength(0) == NumOfEdges);
@@ -788,7 +835,27 @@ namespace BoSSS.Solution.NSECommon {
 
             int D = efp.GridDat.SpatialDimension;
 
+            // ABLATION TOGGLE (coordinator-requested bounded check, this round): mirrors the
+            // XNSFE_REPRO_DISABLE_EDGE_VISCGRADU_CELLPAIR toggle in the scalar InnerEdgeForm
+            // override, for the SAME reason as the volume toggle above -- this vectorized
+            // fast-path is a separate re-implementation bypassed by the scalar-only toggle.
+            int pairA = -1, pairB = -1;
+            {
+                string disPairStr = System.Environment.GetEnvironmentVariable("XNSFE_REPRO_DISABLE_EDGE_VISCGRADU_CELLPAIR");
+                if (disPairStr != null) {
+                    var parts = disPairStr.Split(',');
+                    if (parts.Length == 2) { int.TryParse(parts[0], out pairA); int.TryParse(parts[1], out pairB); }
+                }
+            }
+            var E2C_gu = efp.GridDat.iGeomEdges.CellIndices;
+
             for(int edges = 0; edges < NumOfEdges; edges++) { // loop over edges...
+                int globalEdge_gu = efp.e0 + edges;
+                if (pairA >= 0) {
+                    int cIn = E2C_gu[globalEdge_gu, 0], cOt = E2C_gu[globalEdge_gu, 1];
+                    if ((cIn == pairA && cOt == pairB) || (cIn == pairB && cOt == pairA))
+                        continue;
+                }
                 for(int node = 0; node < NumOfNodes; node++) { // loop over nodes...
                     double uJump = 0.5 * (Uin[m_iComp][edges, node] - Uout[m_iComp][edges, node]);
 
@@ -895,11 +962,28 @@ namespace BoSSS.Solution.NSECommon {
             int NumOfNodes = fin.GetLength(1); // no of nodes per cell
             int D = efp.GridDat.SpatialDimension;
 
+            // ABLATION TOGGLE (coordinator-requested bounded check, this round): mirrors
+            // XNSFE_REPRO_DISABLE_EDGE_VISCGRADU_CELLPAIR -- this is a THIRD vectorized
+            // re-implementation of the same physical edge term (INonlinInnerEdgeForm_V,
+            // dispatched separately from INonlinInnerEdgeForm_GradV, which was already patched
+            // above), so it also bypasses the scalar InnerEdgeForm's toggle and needs its own
+            // matching check to avoid NonlinFormVectorizer.cs's vectorized-vs-basic assertion.
+            int pairA_v = -1, pairB_v = -1;
+            {
+                string disPairStr = System.Environment.GetEnvironmentVariable("XNSFE_REPRO_DISABLE_EDGE_VISCGRADU_CELLPAIR");
+                if (disPairStr != null) {
+                    var parts = disPairStr.Split(',');
+                    if (parts.Length == 2) { int.TryParse(parts[0], out pairA_v); int.TryParse(parts[1], out pairB_v); }
+                }
+            }
+
             for(int i = 0; i < NumOfCells; i++) { // loop over cells...
                 int iEdge = efp.e0 + i;
 
                 int jCellIn = efp.GridDat.iGeomEdges.CellIndices[iEdge, 0];
                 int jCellOut = efp.GridDat.iGeomEdges.CellIndices[iEdge, 1];
+                if (pairA_v >= 0 && ((jCellIn == pairA_v && jCellOut == pairB_v) || (jCellIn == pairB_v && jCellOut == pairA_v)))
+                    continue;
                 double pnlty = penalty(efp.GridDat, jCellIn, jCellOut, iEdge);
 
                 //int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
@@ -925,7 +1009,7 @@ namespace BoSSS.Solution.NSECommon {
                         flux -= 0.5 * (viscosityIN * GradUin[m_iComp][i, node, d] + viscosityOT * GradUout[m_iComp][i, node, d]) * n * base.m_alpha;
                     }
                     flux += Math.Max(viscosityIN, viscosityOT) * (Uin[m_iComp][i, node] - Uout[m_iComp][i, node]) * pnlty;
-                
+
                     fin[i, node] += flux;
                     fot[i, node] -= flux;
                 }
@@ -1023,6 +1107,12 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         public override double VolumeForm(ref Foundation.CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+            // ABLATION TOGGLE (coordinator-requested bounded check, this round)
+            {
+                string disCellStr = System.Environment.GetEnvironmentVariable("XNSFE_REPRO_DISABLE_VOL_CELL_VISCGRADUT");
+                if (disCellStr != null && int.TryParse(disCellStr, out int disCell) && cpv.jCell == disCell)
+                    return 0.0;
+            }
             double acc = 0;
             double visc = Viscosity(cpv.Parameters, U, GradU);
             for(int d = 0; d < cpv.D; d++)
@@ -1034,6 +1124,16 @@ namespace BoSSS.Solution.NSECommon {
 
 
         public override double InnerEdgeForm(ref Foundation.CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
+            // ABLATION TOGGLE (coordinator-requested bounded check, this round)
+            {
+                string disPairStr = System.Environment.GetEnvironmentVariable("XNSFE_REPRO_DISABLE_EDGE_VISCGRADUT_CELLPAIR");
+                if (disPairStr != null) {
+                    var parts = disPairStr.Split(',');
+                    if (parts.Length == 2 && int.TryParse(parts[0], out int pa) && int.TryParse(parts[1], out int pb)
+                        && ((inp.jCellIn == pa && inp.jCellOut == pb) || (inp.jCellIn == pb && inp.jCellOut == pa)))
+                        return 0.0;
+                }
+            }
             double Acc = 0.0;
 
             double pnlty = this.penalty(inp.GridDat, inp.jCellIn, inp.jCellOut, inp.iEdge);//, inp.GridDat.Cells.cj);
@@ -1093,6 +1193,12 @@ namespace BoSSS.Solution.NSECommon {
 
 
         public override double BoundaryEdgeForm(ref Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+            // ABLATION TOGGLE (coordinator-requested bounded check, this round)
+            {
+                string disCellStr = System.Environment.GetEnvironmentVariable("XNSFE_REPRO_DISABLE_BND_VISCGRADUT_CELL");
+                if (disCellStr != null && int.TryParse(disCellStr, out int disCell) && inp.jCellIn == disCell)
+                    return 0.0;
+            }
             double Acc = 0.0;
 
             double pnlty = 2 * this.penalty(inp.GridDat, inp.jCellIn, -1, inp.iEdge);//, inp.GridDat.Cells.cj);
@@ -1229,8 +1335,21 @@ namespace BoSSS.Solution.NSECommon {
             //double[] Parameters = new double[_NOParams];
             int D = prm.GridDat.SpatialDimension;
 
+            // ABLATION TOGGLE (coordinator-requested bounded check, this round): see identical
+            // comment in SipViscosity_GradU's vectorized Form above -- mirrors the scalar
+            // VolumeForm's XNSFE_REPRO_DISABLE_VOL_CELL_VISCGRADUT toggle so the vectorized
+            // fast-path (bypassed by the scalar-only toggle) stays consistent under ablation,
+            // avoiding NonlinFormVectorizer.cs's DEBUG vectorized-vs-basic assertion.
+            int disCellVolT = -1;
+            {
+                string disCellStr = System.Environment.GetEnvironmentVariable("XNSFE_REPRO_DISABLE_VOL_CELL_VISCGRADUT");
+                if (disCellStr != null) int.TryParse(disCellStr, out disCellVolT);
+            }
+
             for(int cell = 0; cell < NumofCells; cell++) { // loop over cells...
-                for(int node = 0; node < NumOfNodes; node++) { // loop over nodes... 
+                if (prm.j0 + cell == disCellVolT)
+                    continue;
+                for(int node = 0; node < NumOfNodes; node++) { // loop over nodes...
 
                     //for(int np = 0; np < _NOParams; np++) {
                     //    Parameters[np] = prm.ParameterVars[np][cell, node];
@@ -1254,8 +1373,26 @@ namespace BoSSS.Solution.NSECommon {
             //double[] ParametersOT = new double[_NOParams];
             int D = efp.GridDat.SpatialDimension;
 
+            // ABLATION TOGGLE (coordinator-requested bounded check, this round): mirrors
+            // XNSFE_REPRO_DISABLE_EDGE_VISCGRADUT_CELLPAIR from the scalar InnerEdgeForm, for the
+            // same vectorized-fast-path-bypass reason as above.
+            int pairAT = -1, pairBT = -1;
+            {
+                string disPairStr = System.Environment.GetEnvironmentVariable("XNSFE_REPRO_DISABLE_EDGE_VISCGRADUT_CELLPAIR");
+                if (disPairStr != null) {
+                    var parts = disPairStr.Split(',');
+                    if (parts.Length == 2) { int.TryParse(parts[0], out pairAT); int.TryParse(parts[1], out pairBT); }
+                }
+            }
+            var E2C_gut = efp.GridDat.iGeomEdges.CellIndices;
 
             for(int edges = 0; edges < NumOfEdges; edges++) { // loop over edges...
+                int globalEdge_gut = efp.e0 + edges;
+                if (pairAT >= 0) {
+                    int cIn = E2C_gut[globalEdge_gut, 0], cOt = E2C_gut[globalEdge_gut, 1];
+                    if ((cIn == pairAT && cOt == pairBT) || (cIn == pairBT && cOt == pairAT))
+                        continue;
+                }
                 for(int node = 0; node < NumOfNodes; node++) { // loop over nodes...
 
                     //for(int np = 0; np < _NOParams; np++) {
@@ -1358,11 +1495,26 @@ namespace BoSSS.Solution.NSECommon {
             int NumOfNodes = fin.GetLength(1); // no of nodes per cell
             int D = efp.GridDat.SpatialDimension;
 
+            // ABLATION TOGGLE (coordinator-requested bounded check, this round): see identical
+            // comment in SipViscosity_GradU's INonlinInnerEdgeForm_V above -- mirrors
+            // XNSFE_REPRO_DISABLE_EDGE_VISCGRADUT_CELLPAIR for this third vectorized
+            // re-implementation of the edge term.
+            int pairAT_v = -1, pairBT_v = -1;
+            {
+                string disPairStr = System.Environment.GetEnvironmentVariable("XNSFE_REPRO_DISABLE_EDGE_VISCGRADUT_CELLPAIR");
+                if (disPairStr != null) {
+                    var parts = disPairStr.Split(',');
+                    if (parts.Length == 2) { int.TryParse(parts[0], out pairAT_v); int.TryParse(parts[1], out pairBT_v); }
+                }
+            }
+
             for(int cell = 0; cell < NumOfCells; cell++) { // loop over cells...
                 int iEdge = efp.e0 + cell;
 
                 int jCellIn = efp.GridDat.iGeomEdges.CellIndices[iEdge, 0];
                 int jCellOut = efp.GridDat.iGeomEdges.CellIndices[iEdge, 1];
+                if (pairAT_v >= 0 && ((jCellIn == pairAT_v && jCellOut == pairBT_v) || (jCellIn == pairBT_v && jCellOut == pairAT_v)))
+                    continue;
                 double pnlty = penalty(efp.GridDat, jCellIn, jCellOut, iEdge);
 
                 int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;

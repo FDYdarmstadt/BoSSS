@@ -154,18 +154,73 @@ namespace BoSSS.Solution.XheatCommon {
         }
 
 
+        private static int _diagCondVolCount = 0;
         public double VolumeForm(ref Foundation.CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+            // ABLATION TOGGLE (coordinator-requested per-piece ablation, this round): fully
+            // disables THIS form's VolumeForm contribution for one specific target cell.
+            // XNSFE_REPRO_DISABLE_VOL_CELL_COND is conduction-only (independent of the shared
+            // XNSFE_REPRO_DISABLE_VOL_CELL toggle that also affects convection), used to
+            // isolate conduction's own volume contribution via DIAG_FIXED_ABLATION.
+            {
+                string disCellStr = System.Environment.GetEnvironmentVariable("XNSFE_REPRO_DISABLE_VOL_CELL");
+                string disCellStrCond = System.Environment.GetEnvironmentVariable("XNSFE_REPRO_DISABLE_VOL_CELL_COND");
+                if ((disCellStr != null && int.TryParse(disCellStr, out int disCell) && cpv.jCell == disCell)
+                    || (disCellStrCond != null && int.TryParse(disCellStrCond, out int disCellC) && cpv.jCell == disCellC))
+                    return 0.0;
+                // GLOBAL ablation (coordinator-requested cheap-reproduction-scan, this round):
+                // unconditionally zero this form's contribution for EVERY cell, to check whether
+                // the periodicity-causal M!=f mismatch survives with conduction's own volume term
+                // completely removed from the operator (not just scaled down, and not just for one
+                // target cell) -- distinct from XNSFE_REPRO_CONDUCTION_SCALE, which still leaves
+                // conduction's stencil columns structurally present with a tiny nonzero value.
+                if (System.Environment.GetEnvironmentVariable("XNSFE_REPRO_DISABLE_COND_ALL") == "1"
+                    || System.Environment.GetEnvironmentVariable("XNSFE_REPRO_DISABLE_COND_VOL_ALL") == "1")
+                    return 0.0;
+            }
             double acc = 0;
             for(int d = 0; d < cpv.D; d++)
                 acc -= GradU[0, d] * GradV[d];
 
             if(acc != 0.0)
                 acc *= Conductivity(cpv.Parameters) * this.m_alpha;
-            return -acc;
+            double retVol = -acc;
+
+            // DIAGNOSTIC (env-gated, zero cost unless set): dump every VolumeForm call touching a
+            // target cell -- mirrors HeatConvectionInSpeciesBulk's DIAG_REALHEAT_VOL, for
+            // independently verifying conduction's own volume (Laplacian) contribution.
+            if (System.Environment.GetEnvironmentVariable("DIAG_REALCOND_VOL") == "1") {
+                string targetStr = System.Environment.GetEnvironmentVariable("DIAG_REALCOND_CELL");
+                int targetCell = targetStr != null ? int.Parse(targetStr) : -1;
+                if (targetCell < 0 || cpv.jCell == targetCell) {
+                    int c = System.Threading.Interlocked.Increment(ref _diagCondVolCount);
+                    if (c <= 2000000) {
+                        System.Console.Error.WriteLine(string.Format(
+                            "DIAG_REALCOND_VOL[{0}]: jCell={1} X=({2:0.######},{3:0.######},{4:0.######}) U={5:0.########} GradU=[{6:0.########},{7:0.########},{8:0.########}] V={9:0.########} GradV=[{10:0.########},{11:0.########},{12:0.########}] k={13:0.########} alpha={14:0.########} acc={15:0.##########} ret={16:0.##########}",
+                            c, cpv.jCell, cpv.Xglobal[0], cpv.Xglobal[1], cpv.Xglobal[2],
+                            U[0], GradU[0, 0], cpv.D > 1 ? GradU[0, 1] : double.NaN, cpv.D > 2 ? GradU[0, 2] : double.NaN,
+                            V, GradV[0], cpv.D > 1 ? GradV[1] : double.NaN, cpv.D > 2 ? GradV[2] : double.NaN,
+                            Conductivity(cpv.Parameters), this.m_alpha, acc, retVol));
+                    }
+                }
+            }
+
+            return retVol;
         }
 
 
         public double InnerEdgeForm(ref Foundation.CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
+            // ABLATION TOGGLE (coordinator-requested per-edge ablation, this round): fully
+            // disables THIS form's InnerEdgeForm contribution for one specific target edge.
+            {
+                string disEdgeStr = System.Environment.GetEnvironmentVariable("XNSFE_REPRO_DISABLE_EDGE_COND");
+                if (disEdgeStr != null && int.TryParse(disEdgeStr, out int disEdge) && inp.iEdge == disEdge)
+                    return 0.0;
+                // GLOBAL ablation (coordinator-requested cheap-reproduction-scan, this round): see
+                // matching comment in VolumeForm above.
+                if (System.Environment.GetEnvironmentVariable("XNSFE_REPRO_DISABLE_COND_ALL") == "1"
+                    || System.Environment.GetEnvironmentVariable("XNSFE_REPRO_DISABLE_COND_EDGE_ALL") == "1")
+                    return 0.0;
+            }
             double Acc = 0.0;
 
             double pnlty = this.penalty(inp.jCellIn, inp.jCellOut);//, inp.GridDat.Cells.cj);
@@ -182,10 +237,50 @@ namespace BoSSS.Solution.XheatCommon {
             double muMax = (Math.Abs(kA) > Math.Abs(kB)) ? kA : kB;
             Acc -= (_uA[0] - _uB[0]) * (_vA - _vB) * pnlty * muMax; // penalty term
 
-            return -Acc;
+            double retCond = -Acc;
+
+            // DIAGNOSTIC (env-gated, zero cost unless set): dump every InnerEdgeForm call
+            // touching a target cell/edge -- traces the real production SIP conduction flux's
+            // raw per-node/per-probe values, mirroring HeatConvectionInSpeciesBulk's
+            // DIAG_REALHEAT_EDGE, so the two forms contributing to the shared HeatEq row can be
+            // independently hand-verified and summed for a from-scratch check.
+            if (System.Environment.GetEnvironmentVariable("DIAG_REALCOND_EDGE") == "1") {
+                string targetStr = System.Environment.GetEnvironmentVariable("DIAG_REALCOND_CELL");
+                int targetCell = targetStr != null ? int.Parse(targetStr) : -1;
+                string targetEdgeStr = System.Environment.GetEnvironmentVariable("DIAG_REALCOND_EDGENO");
+                int targetEdgeNo = targetEdgeStr != null ? int.Parse(targetEdgeStr) : -1;
+                bool edgeMatch = targetEdgeNo < 0 || inp.iEdge == targetEdgeNo;
+                if (edgeMatch && (targetCell < 0 || inp.jCellIn == targetCell || inp.jCellOut == targetCell)) {
+                    int c = System.Threading.Interlocked.Increment(ref _diagCondEdgeCount);
+                    if (c <= 5000000) {
+                        System.Console.Error.WriteLine(string.Format(
+                            "DIAG_REALCOND_EDGE[{0}]: edge={1} jIn={2} jOt={3} X=({4:0.######},{5:0.######},{6:0.######}) N=({7:0.########},{8:0.########},{9:0.########}) uA={10:0.########} uB={11:0.########} GradUA=[{12:0.########},{13:0.########},{14:0.########}] GradUB=[{15:0.########},{16:0.########},{17:0.########}] vA={18:0.####} vB={19:0.####} GradVA=[{20:0.########},{21:0.########},{22:0.########}] GradVB=[{23:0.########},{24:0.########},{25:0.########}] kA={26:0.########} kB={27:0.########} pnlty={28:0.########} alpha={29:0.########} Acc={30:0.##########} ret={31:0.##########}",
+                            c, inp.iEdge, inp.jCellIn, inp.jCellOut,
+                            inp.X[0], inp.X[1], inp.X[2],
+                            inp.Normal[0], inp.Normal[1], inp.Normal[2],
+                            _uA[0], _uB[0],
+                            _Grad_uA[0, 0], inp.D > 1 ? _Grad_uA[0, 1] : double.NaN, inp.D > 2 ? _Grad_uA[0, 2] : double.NaN,
+                            _Grad_uB[0, 0], inp.D > 1 ? _Grad_uB[0, 1] : double.NaN, inp.D > 2 ? _Grad_uB[0, 2] : double.NaN,
+                            _vA, _vB,
+                            _Grad_vA[0], inp.D > 1 ? _Grad_vA[1] : double.NaN, inp.D > 2 ? _Grad_vA[2] : double.NaN,
+                            _Grad_vB[0], inp.D > 1 ? _Grad_vB[1] : double.NaN, inp.D > 2 ? _Grad_vB[2] : double.NaN,
+                            kA, kB, pnlty, this.m_alpha, Acc, retCond));
+                    }
+                }
+            }
+
+            return retCond;
         }
+        private static int _diagCondEdgeCount = 0;
 
         public double BoundaryEdgeForm(ref Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+            // GLOBAL ablation (coordinator-requested cheap-reproduction-scan, this round): see
+            // matching comment in VolumeForm above -- fully removes conduction's boundary
+            // (Dirichlet/Robin/etc.) contribution too, for every boundary face.
+            if (System.Environment.GetEnvironmentVariable("XNSFE_REPRO_DISABLE_COND_ALL") == "1"
+                || System.Environment.GetEnvironmentVariable("XNSFE_REPRO_DISABLE_COND_BND_ALL") == "1")
+                return 0.0;
+
             double Acc = 0.0;
 
             double pnlty = 2 * this.penalty(inp.jCellIn, -1);//, inp.GridDat.Cells.cj);

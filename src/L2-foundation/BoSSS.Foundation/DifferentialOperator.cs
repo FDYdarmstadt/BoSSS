@@ -1336,29 +1336,29 @@ namespace BoSSS.Foundation {
 
 
         internal bool RequiresComplicatedPeriodicity(IGridData gd) {
-            /*
-            var tags = gd.iGeomEdges.EdgeTags;
-            int E = gd.iGeomEdges.Count;
-            Debug.Assert(E == tags.Length);
-            
-            //for(int e = 0; e < E; e++) {
-            //    int tag = tags[e];
-            //    if(tag >= Grid.Classic.GridCommons.FIRST_PERIODIC_BC_TAG) {
-
-            //        return true;
-            //    }
-            //}
-
+            // true if this grid has at least one periodic boundary whose transformation is not
+            // a pure identity (translational periodicity needs no special treatment; a rotated
+            // pairing, e.g. a "pie slice" of a rotational domain, does).
+            //
+            // Re-enabled 2026-08-21 after validating the corresponding fix in the LINEAR
+            // evaluator (LECEdgeQuadrature2.ApplyPeriodicRotation) against an exact
+            // rigid-body-rotation test field, then re-deriving the NONLINEAR evaluator's
+            // existing (previously disabled) NECQuadratureEdge.PeriodicTransform from the same
+            // first principles and confirming its design -- the fwd/bck matrix choice, the
+            // normal-fix applying only to the "fwd" (OUT-cell's own equation) pass, and the
+            // two-sided (M * tensor * M^T) rotation of a vector field's own gradient -- is
+            // mathematically consistent with the validated linear-evaluator convention (raw
+            // ghost values transform by the *transpose* of how the linear evaluator's Jacobian
+            // blocks transform; see BoSSS.Application.PeriodicRotationTest for the check that
+            // established this relationship). The only concrete bugs found and fixed here are
+            // null-reference crashes in TransformVector/TransfromGradientTensor when a
+            // vector-tuple member isn't referenced by any single equation component.
             foreach(var Trafo in gd.Grid.PeriodicTrafo) {
                 var Mtx = Trafo.Matrix.CloneAs();
                 Mtx.AccEye(-1.0);
                 if(Mtx.InfNorm() >= 1e-8)
-                    throw new NotSupportedException("Non-parallel periodic edges are still not supported.");
+                    return true;
             }
-            */
-
-            // feature deactivated for now, because the implementation for linear components sucks so much
-
             return false;
         }
 
@@ -1659,7 +1659,26 @@ namespace BoSSS.Foundation {
 
                                 ne.m_outputBndEdge = outputBndEdge;
 
+                                // DIAGNOSTIC-ONLY (env-gated): trace the INCREMENTAL contribution
+                                // this specific pass makes to a target row of the nonlinear
+                                // evaluator's output -- used to isolate which "half" (m_NonlinearEdge,
+                                // PeriodicVectorTrafo.bck, all edges vs m_ComplicatedPeriodicEdge,
+                                // .fwd, periodic edges only) of a periodic edge's two-pass
+                                // contribution to F0/f(u0) is wrong, rather than inferring it from
+                                // the combined total.
+                                string traceIdxStr = System.Environment.GetEnvironmentVariable("DIAG_NONLIN_TRACE_IDX");
+                                int traceIdx = -1;
+                                bool doTrace = traceIdxStr != null && int.TryParse(traceIdxStr, out traceIdx) && traceIdx >= 0 && traceIdx < output.Count;
+                                double before = doTrace ? output[traceIdx] : 0.0;
+
                                 ne.Execute();
+
+                                if (doTrace) {
+                                    double after = output[traceIdx];
+                                    Console.WriteLine(string.Format(
+                                        "DIAG_NONLIN_TRACE: pass={0} PeriodicVectorTrafo={1} idx={2} before={3:0.########} after={4:0.########} delta={5:0.########}",
+                                        name, ne._PeriodicVectorTrafo, traceIdx, before, after, after - before));
+                                }
 
                                 ne.m_Output = null;
                                 ne.m_outputBndEdge = null;
@@ -2919,6 +2938,10 @@ namespace BoSSS.Foundation {
         /// An operator which computes the Jacobian matrix of this operator.
         /// All components in this operator need to implement the <see cref="ISupportsJacobianComponent"/> interface in order to support this operation.
         /// </summary>
+        // PERFORMANCE-INVESTIGATION DIAGNOSTIC (coordinator-requested, this round, temporary):
+        // one-shot guard for DIAG_QUADORDER_PRINT, see _GetJacobiOperator/JacobianQuadOrderFunction.
+        private static bool s_printedQuadOrder = false;
+
         public DifferentialOperator _GetJacobiOperator(int SpatialDimension) {
             if(!this.IsCommitted)
                 throw new InvalidOperationException("Invalid prior to calling Commit().");
@@ -2949,11 +2972,73 @@ namespace BoSSS.Foundation {
             // create derivative operator
             // ==========================
 
+            // Quadrature order: MUST evaluate to the exact same number as `this.QuadOrderFunction`
+            // would for `this` (the original, pre-Jacobian operator), NOT simply be re-invoked
+            // as-is against JacobianOp's own (longer) parameter list.
+            //
+            // `h.JacobianParameterVars` appends synthetic "_lin"/"_lin_d[d]" linearization-point
+            // parameters after the operator's original parameters (see JacobianParamUpdate);
+            // these are frozen, EXACT coefficient-level copies of the DOMAIN fields (same DG
+            // degree), used only to freeze u0 for the affine/matrix split. Their polynomial
+            // degree is therefore already fully reflected in DomainDegrees. A generic
+            // QuadOrderFunc (e.g. QuadOrderFunc.NonLinear/SumOfMaxDegrees), however, has no way
+            // to tell synthetic linearization parameters apart from genuine, independently-varying
+            // parameter fields (e.g. a density field) -- it just adds MaxOr0(ParameterDegrees) on
+            // top of the domain-field contribution, as it must for genuine parameters. Called
+            // naively with JacobianOp's inflated parameter list, this silently increases the
+            // Jacobian operator's declared quadrature order above the original operator's.
+            //
+            // On affine/flat cells this is invisible (any sufficiently high order integrates a
+            // polynomial integrand exactly, so both orders agree). On curved/isoparametric cells,
+            // where the metric-weighted integrand (via the inverse-Jacobian/Jacobian-determinant
+            // transform of GradV to physical space) is never exactly polynomial, NO finite
+            // quadrature order integrates it exactly -- so evaluating M(u0)*u0+b(u0) (via
+            // JacobianOp, at the inflated order) and f(u0) (via `this`, at the original order)
+            // uses two DIFFERENT numerical approximations of the same true integral, breaking the
+            // M(u0)*u0+b(u0)==f(u0) self-consistency identity by an amount that does NOT vanish
+            // as either order individually increases (since it's the GAP between the two orders,
+            // not the absolute order, that drives the error) -- exactly the curved-cell-only,
+            // quadrature-order-sweep-invariant defect diagnosed this session. Truncating the
+            // parameter-degree array back down to just the original parameters before delegating
+            // to `this.QuadOrderFunction` reproduces the original operator's order exactly,
+            // regardless of how many synthetic Jacobian parameters get added.
+            Func<int[], int[], int[], int> JacobianQuadOrderFunction = (DomDegs, ParamDegs, CoDomDegs) => {
+                // PERFORMANCE-INVESTIGATION TOGGLE (coordinator-requested, this round, temporary):
+                // DIAG_DISABLE_QUADORDER_FIX=1 reverts to the pre-fix/premaster behavior --
+                // `this.QuadOrderFunction` invoked directly against the FULL (untruncated,
+                // "inflated") ParamDegs -- purely to A/B the assembly-time cost of Section 3.7's
+                // fix against its absence, at the same code revision. Not a proposed shipped
+                // change; safe-by-default (unset/any value other than "1" keeps the fix active).
+                bool disableFix = System.Environment.GetEnvironmentVariable("DIAG_DISABLE_QUADORDER_FIX") == "1";
+
+                int[] origParamDegs;
+                if (!disableFix && h.NoOfOrgParams > 0 && ParamDegs != null && ParamDegs.Length >= h.NoOfOrgParams) {
+                    origParamDegs = ParamDegs.Take(h.NoOfOrgParams).ToArray();
+                } else if (!disableFix) {
+                    origParamDegs = new int[] { 0 }; // matches GetOrderFromQuadOrderFunction's convention for "no parameters"
+                } else {
+                    origParamDegs = ParamDegs; // pre-fix: pass the full, untruncated (inflated) parameter list straight through
+                }
+                int order = this.QuadOrderFunction(DomDegs, origParamDegs, CoDomDegs);
+
+                // PERFORMANCE-INVESTIGATION DIAGNOSTIC (coordinator-requested, this round,
+                // temporary): one-time print of the actually-selected order, fix active vs.
+                // disabled, to directly confirm (not assume) whether/how much Section 3.7's fix
+                // changes the selected quadrature order for this specific operator's own
+                // QuadOrderFunction -- independent of the timing measurement itself.
+                if (System.Environment.GetEnvironmentVariable("DIAG_QUADORDER_PRINT") == "1" && !s_printedQuadOrder) {
+                    s_printedQuadOrder = true;
+                    Console.Error.WriteLine($"DIAG_QUADORDER: disableFix={disableFix} NoOfOrgParams={h.NoOfOrgParams} ParamDegs.Length={(ParamDegs?.Length ?? -1)} origParamDegs.Length={origParamDegs.Length} order={order}");
+                }
+
+                return order;
+            };
+
             var JacobianOp = new DifferentialOperator(
                    this.DomainVar,
                    h.JacobianParameterVars,
                    this.CodomainVar,
-                   this.QuadOrderFunction);
+                   JacobianQuadOrderFunction);
 
             if (this.TemporalOperator != null)
                 JacobianOp.TemporalOperator = new TemporalOperatorContainer(JacobianOp, this.TemporalOperator);

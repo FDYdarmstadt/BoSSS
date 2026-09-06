@@ -1729,10 +1729,64 @@ namespace BoSSS.Foundation.Caching {
         private void NewMethod2(NodeSet NS, int Degree, MultidimensionalArray Value, int iTrafo, int N) {
 
             // values for node set 'NS' under edge-to-cell trafo #iKrefIN
-            MultidimensionalArray value_iTrafo = this.GridData.ChefBasis.BasisGradientValues.GetValues(NS.GetVolumeNodeSet(this.GridData, iTrafo, true), Degree);
+            NodeSet volNS_cached = NS.GetVolumeNodeSet(this.GridData, iTrafo, true);
+            MultidimensionalArray value_iTrafo = this.GridData.ChefBasis.BasisGradientValues.GetValues(volNS_cached, Degree);
             Debug.Assert(value_iTrafo.GetLength(1) >= N);
             int D = value_iTrafo.GetLength(2);
             Debug.Assert(D == this.GridData.SpatialDimension);
+
+            // DIAGNOSTIC (temporary, env-var gated): compare the CACHED trafo-indexed basis
+            // gradient evaluation (the actual production code path, used by edge-quadrature
+            // Jacobian assembly) against a FRESH, uncached evaluation at the exact same local
+            // coordinates -- for a single target trafo index. A mismatch here would prove a
+            // caching/indexing defect specific to that trafo (e.g. one newly-created and unique
+            // to a single rotated periodic pairing, as opposed to trafos shared/reused across
+            // many regular edges), independent of any per-node math being wrong.
+            if (System.Environment.GetEnvironmentVariable("DIAG_TRAFO_CACHE_CHECK") == "1") {
+                string targetStr = System.Environment.GetEnvironmentVariable("DIAG_TRAFO_CACHE_CHECK_TRAFO");
+                if (targetStr != null && int.TryParse(targetStr, out int targetTrafo) && iTrafo == targetTrafo) {
+                    NodeSet volNS_fresh = NS.GetVolumeNodeSet(this.GridData, iTrafo, false);
+                    MultidimensionalArray value_fresh = this.GridData.ChefBasis.BasisGradientValues.GetValues(volNS_fresh, Degree);
+
+                    // also compare the LOCAL COORDINATES themselves (cached vs fresh)
+                    double maxCoordDiff = 0;
+                    for (int nn = 0; nn < Math.Min(volNS_cached.NoOfNodes, volNS_fresh.NoOfNodes); nn++) {
+                        for (int dd = 0; dd < volNS_cached.GetLength(1); dd++) {
+                            maxCoordDiff = Math.Max(maxCoordDiff, Math.Abs(volNS_cached[nn, dd] - volNS_fresh[nn, dd]));
+                        }
+                    }
+
+                    double maxValDiff = 0;
+                    int worstNode = -1, worstMode = -1, worstDir = -1;
+                    for (int nn = 0; nn < Math.Min(value_iTrafo.GetLength(0), value_fresh.GetLength(0)); nn++) {
+                        for (int mm = 0; mm < Math.Min(N, value_fresh.GetLength(1)); mm++) {
+                            for (int dd = 0; dd < D; dd++) {
+                                double diff = Math.Abs(value_iTrafo[nn, mm, dd] - value_fresh[nn, mm, dd]);
+                                if (diff > maxValDiff) {
+                                    maxValDiff = diff; worstNode = nn; worstMode = mm; worstDir = dd;
+                                }
+                            }
+                        }
+                    }
+
+                    Console.WriteLine(string.Format(
+                        "DIAG_TRAFO_CACHE_CHECK: trafo={0} NoOfNodes={1} maxCoordDiff(cached vs fresh)={2:0.####E-00} maxGradValDiff={3:0.####E-00} (worst at node={4} mode={5} dir={6}: cached={7:0.########} fresh={8:0.########})",
+                        iTrafo, volNS_cached.NoOfNodes, maxCoordDiff, maxValDiff, worstNode, worstMode, worstDir,
+                        worstNode >= 0 ? value_iTrafo[worstNode, worstMode, worstDir] : double.NaN,
+                        worstNode >= 0 ? value_fresh[worstNode, worstMode, worstDir] : double.NaN));
+
+                    // also dump mode=1's gradient at node=0 specifically (a mode implicated in the
+                    // matrix corruption at cell 40)
+                    if (N > 1) {
+                        Console.WriteLine(string.Format(
+                            "DIAG_TRAFO_CACHE_CHECK: trafo={0} mode=1 node=0 cached=[{1:0.########},{2:0.########},{3:0.########}] fresh=[{4:0.########},{5:0.########},{6:0.########}]",
+                            iTrafo,
+                            value_iTrafo[0, 1, 0], value_iTrafo[0, 1, 1], value_iTrafo[0, 1, 2],
+                            value_fresh[0, 1, 0], value_fresh[0, 1, 1], value_fresh[0, 1, 2]));
+                    }
+                }
+            }
+
             if(value_iTrafo.GetLength(1) > N) {
                 value_iTrafo = value_iTrafo.ExtractSubArrayShallow([0, 0, 0], [NS.NoOfNodes - 1, N - 1, D - 1]);
             }

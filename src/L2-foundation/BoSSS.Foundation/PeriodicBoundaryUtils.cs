@@ -31,7 +31,7 @@ namespace BoSSS.Foundation.Quadrature {
 
                 foreach(string[] V in difference) {
                     if(V[d].Length == 1) {
-                        if(V[d] == c)
+                        if(DiffPosition >= 0 && DiffPosition < c.Length && c[DiffPosition] == V[d][0])
                             return true;
                     } else {
                         int subpos = c.IndexOf(V[d]);

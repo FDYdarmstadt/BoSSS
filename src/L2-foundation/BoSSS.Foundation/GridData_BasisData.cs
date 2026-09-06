@@ -186,6 +186,29 @@ namespace BoSSS.Foundation.Grid.Classic {
                 // return
                 // =========
 
+                // DIAGNOSTIC (coordinator-requested M-row reconstruction, final round):
+                // dump the actual per-cell OrthonormalizationTrafo matrix (NonlinOrtho[j,n,m])
+                // for a target cell -- this is the real ground-truth mode-mixing matrix that
+                // maps reference Cube_polynomials basis values to the TRUE physical-orthonormal
+                // basis on a curved cell (output = BasisValRef * Trafo, i.e.
+                // physical_phi_m(x) = sum_n p_n(ref(x)) * Trafo[n,m]), same mechanism as the
+                // original transpose-bug fix earlier this session.
+                if (System.Environment.GetEnvironmentVariable("DIAG_ORTHOTRAFO") == "1") {
+                    string targetStr = System.Environment.GetEnvironmentVariable("DIAG_ORTHOTRAFO_CELL");
+                    if (targetStr != null && int.TryParse(targetStr, out int targetCell)
+                        && targetCell >= j0 && targetCell < j0 + Len) {
+                        int jj = targetCell - j0;
+                        var sb = new System.Text.StringBuilder();
+                        sb.Append($"DIAG_ORTHOTRAFO: cell={targetCell} Degree={Degree} N={N}\n");
+                        for (int n = 0; n < N; n++) {
+                            for (int m = 0; m < N; m++) {
+                                sb.Append($"  Trafo[n={n},m={m}]={NonlinOrtho[jj, n, m]:G17}\n");
+                            }
+                        }
+                        Console.WriteLine(sb.ToString());
+                    }
+                }
+
                 return NonlinOrtho;
             }
 

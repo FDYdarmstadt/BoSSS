@@ -823,6 +823,30 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                         if ( bAffineRequired ) {
                             EvalNSumForm(ref vfp, m_VolumeSource_V, null, m_VSumBuffer, (C, M) => C.Form(ref vfp, M), true, this.m_VolumeSource_V_Watches, MustLock);
                             EvalNSumForm(ref vfp, m_VolumeSource_GradV, null, m_GradVSumBuffer, (C, M) => C.Form(ref vfp, M), true, this.m_VolumeSource_GradV_Watches, MustLock);
+
+                            // DIAGNOSTIC (env-gated, zero cost unless set): dump the RAW
+                            // m_GradVSumBuffer contents (immediately after population, BEFORE any
+                            // invJac/JacDet transform) for a target cell/codomain-variable, to
+                            // trace the exact chain from per-node extraction through final
+                            // accumulation and catch a buffer-reuse/staleness or indexing defect.
+                            if (System.Environment.GetEnvironmentVariable("DIAG_BUFFER_TRACE") == "1") {
+                                string targetStr = System.Environment.GetEnvironmentVariable("DIAG_BUFFER_TRACE_CELL");
+                                string targetCod = System.Environment.GetEnvironmentVariable("DIAG_BUFFER_TRACE_CODVAR") ?? "ConvY";
+                                int targetCell = targetStr != null ? int.Parse(targetStr) : -1;
+                                if (targetCell >= i0 && targetCell < i0 + Length) {
+                                    int ll = targetCell - i0;
+                                    for (int gg = 0; gg < GAMMA; gg++) {
+                                        if (m_owner.Operator.CodomainVar[gg] != targetCod) continue;
+                                        if (m_GradVSumBuffer[gg, 0] == null) continue;
+                                        int nNodes = m_GradVSumBuffer[gg, 0].GetLength(1);
+                                        int nDir = m_GradVSumBuffer[gg, 0].GetLength(2);
+                                        for (int k = 0; k < nNodes; k++) {
+                                            var vals = string.Join(",", Enumerable.Range(0, nDir).Select(d => m_GradVSumBuffer[gg, 0][ll, k, d].ToString("0.##########")));
+                                            Console.WriteLine($"DIAG_BUFFER[RAW_GradVSumBuffer]: cell={targetCell} cod={targetCod}(gamma={gg}) node={k} vals=[{vals}]");
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 } finally {
@@ -894,6 +918,24 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                         JacDet = metric.GetScalingsForNonlinElements(_GridDat, qr, i0, Length);
                     }
 
+                    // DIAGNOSTIC (env-gated, zero cost unless set): dump the raw invJac/JacDet
+                    // values computed by THIS (linear/matrix+affine-assembly) code path, for a
+                    // target cell, to diff directly against NECQuadratureVolume.cs's raw
+                    // nonlinear-evaluator path at matching quadrature nodes.
+                    if (System.Environment.GetEnvironmentVariable("DIAG_METRIC_DUMP") == "1") {
+                        string targetStr = System.Environment.GetEnvironmentVariable("DIAG_METRIC_DUMP_CELL");
+                        int targetCell = targetStr != null ? int.Parse(targetStr) : -1;
+                        if (targetCell >= i0 && targetCell < i0 + Length) {
+                            int ii = targetCell - i0;
+                            Console.WriteLine($"DIAG_METRIC[LEC]: cell={targetCell} isAffineLinearCell={isAffineLinearCell} NoOfNodes={qrNodes.NoOfNodes} qr.OrderOfPrecision={qr.OrderOfPrecision}");
+                            for (int k = 0; k < qrNodes.NoOfNodes; k++) {
+                                var nodeStr = string.Join(",", Enumerable.Range(0, D).Select(d => qrNodes[k, d].ToString("0.########")));
+                                double jd = JacDet != null ? JacDet[ii, k] : double.NaN;
+                                string invJacStr = invJac != null ? string.Join(";", Enumerable.Range(0, D).Select(r => string.Join(",", Enumerable.Range(0, D).Select(c => invJac[ii, k, r, c].ToString("0.########"))))) : "null";
+                                Console.WriteLine($"DIAG_METRIC[LEC]: cell={targetCell} node={k} refX=({nodeStr}) weight={qr.Weights[k]:0.################} JacDet={jd:0.##########} invJac=[{invJacStr}]");
+                            }
+                        }
+                    }
 
                     // linear forms
                     if(bLinearRequired) {
@@ -961,6 +1003,24 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                                 if (!isAffineLinearCell || metric.AlwaysUsePerNodeScaling)
                                     m_Trf_GradVSumBuffer[gamma, 0].Multiply(1.0, JacDet, m_Trf_GradVSumBuffer[gamma, 0], 0.0, "jkd", "jk", "jkd");
+
+                                // DIAGNOSTIC (env-gated, zero cost unless set): dump
+                                // m_Trf_GradVSumBuffer (post invJac+JacDet transform, pre final
+                                // GradV contraction) for the target cell/codomain-variable.
+                                if (System.Environment.GetEnvironmentVariable("DIAG_BUFFER_TRACE") == "1") {
+                                    string targetStr = System.Environment.GetEnvironmentVariable("DIAG_BUFFER_TRACE_CELL");
+                                    string targetCod = System.Environment.GetEnvironmentVariable("DIAG_BUFFER_TRACE_CODVAR") ?? "ConvY";
+                                    int targetCell = targetStr != null ? int.Parse(targetStr) : -1;
+                                    if (targetCell >= i0 && targetCell < i0 + Length && m_owner.Operator.CodomainVar[gamma] == targetCod) {
+                                        int ll = targetCell - i0;
+                                        int nNodes = m_Trf_GradVSumBuffer[gamma, 0].GetLength(1);
+                                        int nDir = m_Trf_GradVSumBuffer[gamma, 0].GetLength(2);
+                                        for (int k = 0; k < nNodes; k++) {
+                                            var vals = string.Join(",", Enumerable.Range(0, nDir).Select(d => m_Trf_GradVSumBuffer[gamma, 0][ll, k, d].ToString("0.##########")));
+                                            Console.WriteLine($"DIAG_BUFFER[TRF_GradVSumBuffer]: cell={targetCell} cod={targetCod}(gamma={gamma}) node={k} vals=[{vals}]");
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -1034,7 +1094,65 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                         }
                     }
 
+                    // DIAGNOSTIC (coordinator-requested M-path-vs-f-path geometric-data
+                    // divergence check, this round): dump maxDeg and the FULL trafo matrix for
+                    // a target cell, from the M-PATH's own call site, to bit-diff directly
+                    // against NECQuadratureVolume.cs's OrthoTrf/GetValue_Cell call for the same
+                    // cell -- tests whether the two paths' differing Degree-parameter formulas
+                    // (M-path: max(Test,TestGrad,Trial,TrialGrad); f-path: max(Test,TestGrad)
+                    // only) ever select a genuinely different cached array for the same cell.
+                    if (System.Environment.GetEnvironmentVariable("DIAG_GEOM_COMPARE") == "1") {
+                        string targetStr9 = System.Environment.GetEnvironmentVariable("DIAG_GEOM_COMPARE_CELL");
+                        if (targetStr9 != null && int.TryParse(targetStr9, out int targetCell9)
+                            && targetCell9 >= i0 && targetCell9 < i0 + Length && trafo != null) {
+                            int jj9 = targetCell9 - i0;
+                            int N9 = trafo.GetLength(1);
+                            var sb9 = new System.Text.StringBuilder();
+                            sb9.Append($"DIAG_GEOM_COMPARE[M-VOL]: cell={targetCell9} i0={i0} Length={Length} maxDeg={maxDeg} N={N9}\n");
+                            for (int n9 = 0; n9 < N9; n9++) {
+                                for (int m9 = 0; m9 < N9; m9++) {
+                                    sb9.Append($"  trafo[n={n9},m={m9}]={trafo[jj9, n9, m9]:G17}\n");
+                                }
+                            }
+                            Console.WriteLine(sb9.ToString());
+                        }
+                    }
 
+                    // DIAGNOSTIC (env-gated, zero cost unless set): dump the raw
+                    // OrthonormalizationTrafo matrix's column n=<target row> (all m) for the
+                    // target cell, to diff directly against NECQuadratureVolume.cs's OrthoTrf at
+                    // the same (cell, n).
+                    if (System.Environment.GetEnvironmentVariable("DIAG_ORTHO_DUMP") == "1" && trafo != null) {
+                        string targetStr = System.Environment.GetEnvironmentVariable("DIAG_ORTHO_DUMP_CELL");
+                        int targetCell = targetStr != null ? int.Parse(targetStr) : -1;
+                        if (targetCell >= i0 && targetCell < i0 + Length) {
+                            int ll = targetCell - i0;
+                            string targetRowStr = System.Environment.GetEnvironmentVariable("DIAG_ORTHO_DUMP_ROW");
+                            int targetRow = targetRowStr != null ? int.Parse(targetRowStr) : 8;
+                            int nM = trafo.GetLength(1);
+                            if (targetRow < trafo.GetLength(2)) {
+                                var vals = string.Join(",", Enumerable.Range(0, nM).Select(m => trafo[ll, m, targetRow].ToString("0.##########")));
+                                Console.WriteLine($"DIAG_ORTHO[LEC]: cell={targetCell} maxDeg={maxDeg} n={targetRow} trafo[:,{targetRow}]=[{vals}]");
+                            }
+                        }
+                    }
+
+                    // DIAGNOSTIC (env-gated, zero cost unless set): dump, once per Length-batch
+                    // containing the target cell, the per-codomain-variable (m_RowL[gamma]) and
+                    // per-domain-variable (m_ColL[delta]) mode counts (Np), together with their
+                    // variable names -- to directly confirm/refute (with hard numbers) whether
+                    // this real production run has heterogeneous per-field Np (e.g. Temperature
+                    // vs Velocity vs Pressure) at the exact cell/batch under investigation, for
+                    // the buffer-pooling/reuse staleness lead (GetZbuffer/GetQRbufferLinear).
+                    if (System.Environment.GetEnvironmentVariable("DIAG_MODECOUNT_DUMP") == "1") {
+                        string targetStr = System.Environment.GetEnvironmentVariable("DIAG_MODECOUNT_DUMP_CELL");
+                        int targetCell = targetStr != null ? int.Parse(targetStr) : -1;
+                        if (targetCell < 0 || (targetCell >= i0 && targetCell < i0 + Length)) {
+                            var rowInfo = string.Join(", ", Enumerable.Range(0, GAMMA).Select(g => $"{m_owner.Operator.CodomainVar[g]}:Np={m_owner.m_RowL[g]}"));
+                            var colInfo = string.Join(", ", Enumerable.Range(0, DELTA).Select(d => $"{m_owner.Operator.DomainVar[d]}:Np={m_owner.m_ColL[d]}"));
+                            System.Console.Error.WriteLine($"DIAG_MODECOUNT: i0={i0} Length={Length} ROW(gamma/codomain)=[{rowInfo}] COL(delta/domain)=[{colInfo}]");
+                        }
+                    }
 
                     int I0Row = 0;
                     for (int gamma = 0; gamma < GAMMA; gamma++) { // loop over codomain variables ...
@@ -1116,12 +1234,92 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                                     _R.Multiply(1.0, m_Trf_GradVSumBuffer[gamma, 0], GradV_XquadWgt[gamma], cF, "im", "ika", "kma");
                                 }
 
+                                // DIAGNOSTIC (env-gated, zero cost unless set): dump _R immediately
+                                // after the final GradV contraction (full quadrature-node + spatial
+                                // -direction summation), BEFORE the orthonormalization transform,
+                                // for the target cell/codomain-variable -- all rows "m".
+                                if (System.Environment.GetEnvironmentVariable("DIAG_BUFFER_TRACE") == "1") {
+                                    string targetStr0 = System.Environment.GetEnvironmentVariable("DIAG_BUFFER_TRACE_CELL");
+                                    string targetCod0 = System.Environment.GetEnvironmentVariable("DIAG_BUFFER_TRACE_CODVAR") ?? "ConvY";
+                                    int targetCell0 = targetStr0 != null ? int.Parse(targetStr0) : -1;
+                                    if (targetCell0 >= i0 && targetCell0 < i0 + Length && m_owner.Operator.CodomainVar[gamma] == targetCod0) {
+                                        int ll0 = targetCell0 - i0;
+                                        int nRows0 = _R.GetLength(1);
+                                        var vals0 = string.Join(",", Enumerable.Range(0, nRows0).Select(m => _R[ll0, m].ToString("0.##########")));
+                                        Console.WriteLine($"DIAG_BUFFER[_R_preOrtho]: cell={targetCell0} cod={targetCod0}(gamma={gamma}) allRows=[{vals0}]");
+
+                                        // Also dump GradV_XquadWgt[gamma] for the target ROW (e.g.
+                                        // row 8, matching "node 8" from CheckLowOrderModes), across
+                                        // ALL quadrature nodes and directions, so the final
+                                        // contraction sum _R[ll0,row] = Sum_{k,a} TRF[ll0,k,a] *
+                                        // GradV_XquadWgt[k,row,a] can be independently hand-verified
+                                        // against the already-dumped RAW/TRF_GradVSumBuffer values.
+                                        string targetRowStr = System.Environment.GetEnvironmentVariable("DIAG_BUFFER_TRACE_ROW");
+                                        int targetRow = targetRowStr != null ? int.Parse(targetRowStr) : 8;
+                                        if (targetRow < nRows0) {
+                                            var gv = GradV_XquadWgt[gamma];
+                                            int nNodesGv = gv.GetLength(0);
+                                            int nDirGv = gv.GetLength(2);
+                                            for (int k = 0; k < nNodesGv; k++) {
+                                                var gvvals = string.Join(",", Enumerable.Range(0, nDirGv).Select(a => gv[k, targetRow, a].ToString("0.##########")));
+                                                Console.WriteLine($"DIAG_BUFFER[GradV_XquadWgt]: cod={targetCod0}(gamma={gamma}) row={targetRow} node={k} vals=[{gvvals}]");
+                                            }
+                                        }
+                                    }
+                                }
+
                                 if((isAffineLinearCell && !metric.AlwaysUsePerNodeScaling) || (nonStdMetric != null)) {
                                     Debug.Assert(object.ReferenceEquals(QuadResult.Storage, _R.Storage));
                                     _R.Multiply(1.0, trafo, _R, 0.0, "im", "i", "im");
                                 } else {
                                     Debug.Assert(object.ReferenceEquals(QuadResult.Storage, _Q.Storage));
-                                    _Q.Multiply(1.0, ExtractTrafo(trafo, m_owner.m_RowL[gamma]), _R, 0.0, "im", "imn", "in");
+                                    // BUGFIX (root-caused this session): this multiply applies the
+                                    // curved-cell orthonormalization transform ("trafo", from
+                                    // ChefBasis.OrthonormalizationTrafo) to the pre-orthonormalized
+                                    // affine/source result _R. The index pattern here was
+                                    // "im","imn","in" -- i.e. output mode = trafo's SECOND index,
+                                    // contracted/input mode = trafo's THIRD index. This is
+                                    // TRANSPOSED relative to (a) the MATRIX-part's own application
+                                    // of the exact same trafo array a few lines above in this file
+                                    // (bLinearRequired's non-affine-linear branch: "_R.Multiply(1.0,
+                                    // ExtractTrafo(trafo, m_owner.m_RowL[gamma]), _Q, 0.0, "jmn",
+                                    // "jbm", "jbn")" -- output mode = trafo's THIRD index,
+                                    // contracted = SECOND), which is validated correct via
+                                    // finite-difference Jacobian checks, and (b) the nonlinear
+                                    // evaluator's identical application of the same trafo array in
+                                    // NECQuadratureVolume.cs ("trfQuadResult_e.Multiply(1.0,
+                                    // _OrthoTrf, QuadResult_e, 0.0, "jn","jmn","jm")" -- SAME
+                                    // convention as the matrix part). Since OrthonormalizationTrafo
+                                    // is NOT symmetric in general, applying it transposed silently
+                                    // computes a numerically-different (but not obviously wrong-
+                                    // looking) result: this was the exact source of the
+                                    // curved-cell-only, quadrature-order-independent
+                                    // M(u0)*u0+b(u0)!=f(u0) affine-term defect diagnosed this
+                                    // session (confirmed by hand-computing the contraction with the
+                                    // correct index convention, using independently-dumped
+                                    // intermediate buffer values: the corrected convention
+                                    // reproduces f(u0) to ~1e-6 relative, the buggy one is off by
+                                    // exactly the reported residual). Fixed by matching the SAME
+                                    // "output=trafo's-3rd-index, contracted=trafo's-2nd-index"
+                                    // convention used everywhere else this trafo array is applied.
+                                    _Q.Multiply(1.0, ExtractTrafo(trafo, m_owner.m_RowL[gamma]), _R, 0.0, "in", "imn", "im");
+                                }
+
+                                // DIAGNOSTIC (env-gated, zero cost unless set): dump the FINAL
+                                // orthonormalized affine result (what actually lands in
+                                // QuadResult/Aff downstream) for the target cell/codomain-variable.
+                                if (System.Environment.GetEnvironmentVariable("DIAG_BUFFER_TRACE") == "1") {
+                                    string targetStr1 = System.Environment.GetEnvironmentVariable("DIAG_BUFFER_TRACE_CELL");
+                                    string targetCod1 = System.Environment.GetEnvironmentVariable("DIAG_BUFFER_TRACE_CODVAR") ?? "ConvY";
+                                    int targetCell1 = targetStr1 != null ? int.Parse(targetStr1) : -1;
+                                    if (targetCell1 >= i0 && targetCell1 < i0 + Length && m_owner.Operator.CodomainVar[gamma] == targetCod1) {
+                                        int ll1 = targetCell1 - i0;
+                                        bool nonAffineBranch = !((isAffineLinearCell && !metric.AlwaysUsePerNodeScaling) || (nonStdMetric != null));
+                                        var finalBuf = nonAffineBranch ? _Q : _R;
+                                        int nRows1 = finalBuf.GetLength(1);
+                                        var vals1 = string.Join(",", Enumerable.Range(0, nRows1).Select(n => finalBuf[ll1, n].ToString("0.##########")));
+                                        Console.WriteLine($"DIAG_BUFFER[FINAL_postOrtho]: cell={targetCell1} cod={targetCod1}(gamma={gamma}) branch={(nonAffineBranch ? "Q(non-affine)" : "R(affine-linear)")} allRows=[{vals1}]");
+                                    }
                                 }
                             }
                             I0Col += 1;

@@ -610,6 +610,27 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                             GradUxV[l, k, 0, 1, c, d] = GetCoeffWithSourceProbe(ref Grad_uB[c, d], ref vA, ref cp, src_vA);
                             GradUxV[l, k, 1, 0, c, d] = GetCoeffWithSourceProbe(ref Grad_uA[c, d], ref vB, ref cp, src_vB);
                             GradUxV[l, k, 1, 1, c, d] = GetCoeffWithSourceProbe(ref Grad_uB[c, d], ref vB, ref cp, src_vB);
+
+                            // DIAGNOSTIC (temporary, env-var gated): dump the RAW coefficient
+                            // (before basis-value/mode multiplication) for a specific target edge,
+                            // to check whether the "leaked value" (a wrong-component's data
+                            // appearing in another component's diagonal slot) is already present
+                            // at THIS stage -- BEFORE any mode-specific basis values get
+                            // multiplied in -- or whether it's introduced later.
+                            if (System.Environment.GetEnvironmentVariable("DIAG_COEFF_DUMP") == "1") {
+                                string targetStr3 = System.Environment.GetEnvironmentVariable("DIAG_COEFF_DUMP_EDGE");
+                                string gammaFilterStr = System.Environment.GetEnvironmentVariable("DIAG_COEFF_DUMP_GAMMA");
+                                string cFilterStr = System.Environment.GetEnvironmentVariable("DIAG_COEFF_DUMP_C");
+                                bool gammaOk = gammaFilterStr == null || (int.TryParse(gammaFilterStr, out int gf) && BoSSS.Foundation.Quadrature.Linear.DiagDispatchTag.CurrentGamma == gf);
+                                bool cOk = cFilterStr == null || (int.TryParse(cFilterStr, out int cf) && c == cf);
+                                if (targetStr3 != null && int.TryParse(targetStr3, out int targetEdge3) && cp.iEdge == targetEdge3 && gammaOk && cOk) {
+                                    Console.WriteLine(string.Format(
+                                        "DIAG_COEFF: gamma={14} edge={0} jIn={1} jOt={2} l={3} k={4} c={5} d={6} X=({7:0.######},{8:0.######},{9:0.######}) GradUxV[cr=0,cc=0]={10:0.########} [0,1]={11:0.########} [1,0]={12:0.########} [1,1]={13:0.########}",
+                                        cp.iEdge, cp.jCellIn, cp.jCellOut, l, k, c, d, cp.X[0], cp.X[1], cp.X[2],
+                                        GradUxV[l, k, 0, 0, c, d], GradUxV[l, k, 0, 1, c, d], GradUxV[l, k, 1, 0, c, d], GradUxV[l, k, 1, 1, c, d],
+                                        BoSSS.Foundation.Quadrature.Linear.DiagDispatchTag.CurrentGamma));
+                                }
+                            }
                         }
                     }
                 }

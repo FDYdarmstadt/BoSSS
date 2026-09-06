@@ -95,7 +95,17 @@ namespace BoSSS.Foundation {
 
         //DelPartialParameterUpdate originalUpdate;
 
-        int NoOfOrgParams;
+        /// <summary>
+        /// Number of parameters belonging to the ORIGINAL (pre-Jacobian) operator, i.e. the
+        /// leading entries of <see cref="JacobianParameterVars"/> before the synthetic
+        /// "_lin"/"_lin_d[d]" linearization-point parameters get appended by
+        /// <see cref="FindJacobianParams"/>. Used by <see cref="DifferentialOperator._GetJacobiOperator"/>
+        /// to compute a quadrature order consistent with the original operator (see there for why).
+        /// </summary>
+        public int NoOfOrgParams {
+            get;
+            private set;
+        }
 
         List<IEquationComponent> Components = new List<IEquationComponent>();
 
