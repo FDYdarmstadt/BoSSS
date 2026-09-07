@@ -59,7 +59,11 @@ namespace AdvancedSolverTests.SolverChooser {
                 return false;
 
             return error is ApplicationException
-                && error.Message.Contains("PETSc matrix/KSP setup failed with PETSc error code 92");
+                // PETSC_ERR_SUP (92) is returned when an optional PETSc
+                // factorization package was not compiled into the selected
+                // native PETSc variant. The operation prefix is supplied by
+                // PETScSolverBase.Check and is not part of this contract.
+                && error.Message.Contains("PETSc error code 92");
         }
 
         [Test]
