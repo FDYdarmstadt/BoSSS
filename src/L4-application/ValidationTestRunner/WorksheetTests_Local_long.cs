@@ -1366,7 +1366,7 @@ namespace ValidationTestRunner {
         /// 3D Leidenfrost testcase using the HFSI solver.
         /// Section 4.2 Miao and Kummer (2026) https://www.doi.org/10.1140/epje/s10189-026-00606-7
         /// </summary>
-        [NUnitFileToCopyHack("HFSI/Leidenfrost/Leidenfrost_3d_HFSI_Fast_Paper.ipynb", "HFSI/Leidenfrost/Leidenfrost_3d_HFSI_Fast_Paper_Evaluation.ipynb")]
+        [NUnitFileToCopyHack("HFSI/Leidenfrost/Leidenfrost_3d_HFSI_Fast_Paper.ipynb", "HFSI/Leidenfrost/Leidenfrost_3d_HFSI_Fast_Paper_Evaluation.ipynb", "HFSI/Leidenfrost/Leidenfrost_3d_HFSI_Fast_Paper_reference_shape.txt")]
         [Test]
         static public void Run__Leidenfrost_3d_HFSI_Fast_Paper() {
             // --test=ValidationTestRunner.WorksheetTests_Local_long.Run__Leidenfrost_3d_HFSI_Fast_Paper
