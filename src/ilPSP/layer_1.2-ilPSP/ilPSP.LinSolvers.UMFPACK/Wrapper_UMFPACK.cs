@@ -65,60 +65,60 @@ namespace ilPSP.LinSolvers.UMFPACK {
         /// <summary>
         /// UMFPACK symbolic factorization.
         /// </summary>
-        public unsafe delegate int _umfpack_di_symbolic(int n_row, int n_col, int* Ap, int* Ai, double* Ax, void** Symbolic, double* Control, double* Info);
+        public unsafe delegate int _umfpack_dl_symbolic(long n_row, long n_col, long* Ap, long* Ai, double* Ax, void** Symbolic, double* Control, double* Info);
 
         /// <summary>
         /// UMFPACK numeric factorization.
         /// </summary>
-        public unsafe delegate int _umfpack_di_numeric(int* Ap, int* Ai, double* Ax, void* Symbolic, void** Numeric, double* Control, double* Info);
+        public unsafe delegate int _umfpack_dl_numeric(long* Ap, long* Ai, double* Ax, void* Symbolic, void** Numeric, double* Control, double* Info);
 
         /// <summary>
         /// UMFPACK solve.
         /// </summary>
-        public unsafe delegate int _umfpack_di_solve(int sys, int* Ap, int* Ai, double* Ax, double* X, double* B, void* Numeric, double* Control, double* Info);
+        public unsafe delegate int _umfpack_dl_solve(long sys, long* Ap, long* Ai, double* Ax, double* X, double* B, void* Numeric, double* Control, double* Info);
 
         /// <summary>
         /// Frees UMFPACK symbolic storage.
         /// </summary>
-        public unsafe delegate void _umfpack_di_free_symbolic(void** Symbolic);
+        public unsafe delegate void _umfpack_dl_free_symbolic(void** Symbolic);
 
         /// <summary>
         /// Frees UMFPACK numeric storage.
         /// </summary>
-        public unsafe delegate void _umfpack_di_free_numeric(void** Numeric);
+        public unsafe delegate void _umfpack_dl_free_numeric(void** Numeric);
 
 #pragma warning disable 649
-        _umfpack_di_symbolic umfpack_di_symbolic;
-        _umfpack_di_numeric umfpack_di_numeric;
-        _umfpack_di_solve umfpack_di_solve;
-        _umfpack_di_free_symbolic umfpack_di_free_symbolic;
-        _umfpack_di_free_numeric umfpack_di_free_numeric;
+        _umfpack_dl_symbolic umfpack_dl_symbolic;
+        _umfpack_dl_numeric umfpack_dl_numeric;
+        _umfpack_dl_solve umfpack_dl_solve;
+        _umfpack_dl_free_symbolic umfpack_dl_free_symbolic;
+        _umfpack_dl_free_numeric umfpack_dl_free_numeric;
 #pragma warning restore 649
 
         /// <summary>
         /// UMFPACK symbolic factorization.
         /// </summary>
-        public unsafe _umfpack_di_symbolic Symbolic { get { return umfpack_di_symbolic; } }
+        public unsafe _umfpack_dl_symbolic Symbolic { get { return umfpack_dl_symbolic; } }
 
         /// <summary>
         /// UMFPACK numeric factorization.
         /// </summary>
-        public unsafe _umfpack_di_numeric Numeric { get { return umfpack_di_numeric; } }
+        public unsafe _umfpack_dl_numeric Numeric { get { return umfpack_dl_numeric; } }
 
         /// <summary>
         /// UMFPACK solve.
         /// </summary>
-        public unsafe _umfpack_di_solve Solve { get { return umfpack_di_solve; } }
+        public unsafe _umfpack_dl_solve Solve { get { return umfpack_dl_solve; } }
 
         /// <summary>
         /// Frees UMFPACK symbolic storage.
         /// </summary>
-        public unsafe _umfpack_di_free_symbolic FreeSymbolic { get { return umfpack_di_free_symbolic; } }
+        public unsafe _umfpack_dl_free_symbolic FreeSymbolic { get { return umfpack_dl_free_symbolic; } }
 
         /// <summary>
         /// Frees UMFPACK numeric storage.
         /// </summary>
-        public unsafe _umfpack_di_free_numeric FreeNumeric { get { return umfpack_di_free_numeric; } }
+        public unsafe _umfpack_dl_free_numeric FreeNumeric { get { return umfpack_dl_free_numeric; } }
 
         /// <summary>
         /// Converts UMFPACK status codes to text.

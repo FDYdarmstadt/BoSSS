@@ -70,6 +70,7 @@ namespace ApplicationWithIDT {
         /// The Dg Degree of the Solution
         /// </summary>
         public int SolDegree { get; set; }
+
         /// <summary>
         /// indicates if the initialLevelSet is far from the exact position. So every hard-coded control can have to options 
         /// </summary>

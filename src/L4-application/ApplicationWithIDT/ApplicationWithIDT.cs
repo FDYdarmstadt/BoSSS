@@ -348,10 +348,16 @@ namespace ApplicationWithIDT {
         /// current value of the objective function
         /// </summary>
         public double f_phi { get; set; }
+        
         /// <summary>
         /// Current Agglomeration Threshold
         /// </summary>
-        public double CurrentAgglo { get; set; }
+        public double CurrentAgglo {
+            get {
+                return this.Control.AgglomerationThreshold;
+            }
+        }
+
         /// <summary>
         /// Current L2 Norm of constraint (L2 means that Residual is regarded as XDG field)
         /// </summary>
@@ -507,7 +513,6 @@ namespace ApplicationWithIDT {
             gamma = Control.Gamma_Start;
             CurMinIter = Control.minimalSQPIterations[0];
             ReiniTMaxIter = Control.ReiniTMaxIters[0];
-            CurrentAgglo = Control.AgglomerationThreshold;
             //chose the Merit Function used in Globalization
             ChooseMeritFunction();
             ChooseFphiType();
@@ -740,8 +745,8 @@ namespace ApplicationWithIDT {
                 createBackUp();
 
                 //just to be safe, project spline Level Set on PrimaryOptimizationLevelSet
-                foreach ( LevelSetOptimizationState s in this.LevelSetOptStates ) {
-                    if ( s.LevelSetOpti is SplineOptiLevelSet spliny ) {
+                foreach(LevelSetOptimizationState s in this.LevelSetOptStates) {
+                    if(s.LevelSetOpti is SplineOptiLevelSet spliny) {
                         s.LsTBO.Clear();
                         s.LsTBO.ProjectFromForeignGrid(1.0, spliny);
                     }
@@ -2581,7 +2586,7 @@ namespace ApplicationWithIDT {
                     }
                 }
                 gamma = Control.Gamma_Start;
-                CurrentAgglo = Control.AgglomerationThreshold;
+                
             }
 
 
@@ -3067,14 +3072,14 @@ namespace ApplicationWithIDT {
 
 
             // Level Set Update
-            for ( int iLS = 0; iLS < this.LevelSetOptStates.Length; iLS++ ) {
+            for(int iLS = 0; iLS < this.LevelSetOptStates.Length; iLS++) {
                 var state = this.LevelSetOptStates[iLS];
                 int Lstate = state.GetOptimizationDOFCount();
-                if ( Control.PartiallyFixLevelSetForSpaceTime && state.LevelSetOpti is SplineOptiLevelSet splineLS ) {
+                if(Control.PartiallyFixLevelSetForSpaceTime && state.LevelSetOpti is SplineOptiLevelSet splineLS) {
                     double yMin = splineLS.y.Min(); //lower boundary of space time domain
 
-                    for ( int localIndex = 0; localIndex < Lstate; localIndex++ ) {
-                        if ( Math.Abs(yMin - splineLS.y[localIndex]) > 1e-14 ) {
+                    for(int localIndex = 0; localIndex < Lstate; localIndex++) {
+                        if(localIndex < splineLS.y.Length && Math.Abs(yMin - splineLS.y[localIndex]) > 1e-14) {
                             // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                             // greater than initial time: allowed to move the node, 
                             // only accumulate if DOF if it is not on lower time boundary (here yMin=tMin)
@@ -3086,7 +3091,7 @@ namespace ApplicationWithIDT {
                     }
 
                 } else {
-                    for(int localIndex = 0; localIndex < Lstate; localIndex++ ) {
+                    for(int localIndex = 0; localIndex < Lstate; localIndex++) {
                         int i = LevelSetOptAggregator.MapLocalToGlobal(iLS, localIndex);
                         state.LevelSetOpti.AccToParam(localIndex, m_alpha * step_t[i + length_r]);
                     }
