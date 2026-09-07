@@ -715,26 +715,6 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         if (IntegralMetricVals == null && (!isAffineCell || metric.AlwaysUsePerNodeScaling))
                             IntegralMetricVals = metric.GetScalingsForNonlinElements(grid, QR, i0, Length);
 
-                        // DIAGNOSTIC (env-gated, zero cost unless set): dump the raw invJac/JacDet
-                        // values computed by THIS (nonlinear-evaluator, "flux" transform) code
-                        // path, for a target cell, to diff directly against
-                        // LECVolumeQuadrature2.cs's linear/matrix+affine-assembly path at matching
-                        // quadrature nodes.
-                        if (System.Environment.GetEnvironmentVariable("DIAG_METRIC_DUMP") == "1") {
-                            string targetStr = System.Environment.GetEnvironmentVariable("DIAG_METRIC_DUMP_CELL");
-                            int targetCell = targetStr != null ? int.Parse(targetStr) : -1;
-                            if (targetCell >= i0 && targetCell < i0 + Length) {
-                                int ii = targetCell - i0;
-                                Console.WriteLine($"DIAG_METRIC[NEC]: cell={targetCell} isAffineCell={isAffineCell} NoOfNodes={NodesUntransformed.NoOfNodes} QR.OrderOfPrecision={QR.OrderOfPrecision}");
-                                for (int k = 0; k < NodesUntransformed.NoOfNodes; k++) {
-                                    var nodeStr = string.Join(",", Enumerable.Range(0, D).Select(d => NodesUntransformed[k, d].ToString("G17")));
-                                    double jd = IntegralMetricVals != null ? IntegralMetricVals[ii, k] : double.NaN;
-                                    string invJacStr = !isAffineCell ? string.Join(";", Enumerable.Range(0, D).Select(r => string.Join(",", Enumerable.Range(0, D).Select(c => InverseJacobi[ii, k, r, c].ToString("G17"))))) : "affine(no-k)";
-                                    Console.WriteLine($"DIAG_METRIC[NEC]: cell={targetCell} node={k} refX=({nodeStr}) JacDet={jd:G17} invJac=[{invJacStr}]");
-                                }
-                            }
-                        }
-
                         if (isAffineCell) {
                             m_FluxValuesTrf[e].Multiply(1.0, m_FluxValues[e], InverseJacobi, 0.0, "jke", "jkd", "jed");
                             // for affine-linear cells the multiplication with Jacobi determinant is done AFTER quadrature, since it is constant per cell.
@@ -817,49 +797,6 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     int MaxDegree = Math.Max(m_owner.m_MaxCodBasis != null ? m_owner.m_MaxCodBasis.Degree : 0, m_owner.m_MaxCodBasis_Gradient != null ? m_owner.m_MaxCodBasis_Gradient.Degree : 0);
                     OrthoTrf = grid.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(i0, Length, MaxDegree);
                     iBufOrthoTrf = int.MinValue;
-
-                    // DIAGNOSTIC (coordinator-requested M-path-vs-f-path geometric-data
-                    // divergence check, this round): same format as LECVolumeQuadrature2.cs's
-                    // DIAG_GEOM_COMPARE block, for direct bit-diffing. f-path's Degree parameter
-                    // (MaxDegree, just above) uses ONLY the test/codomain basis degree, unlike
-                    // the M-path's max(Test,TestGrad,Trial,TrialGrad) -- if these two Degree
-                    // values ever differ for the same cell, GetValue_Cell's caching would select
-                    // two independently-computed (and, for curved cells, only approximately
-                    // equal) arrays.
-                    if (System.Environment.GetEnvironmentVariable("DIAG_GEOM_COMPARE") == "1") {
-                        string targetStr9 = System.Environment.GetEnvironmentVariable("DIAG_GEOM_COMPARE_CELL");
-                        if (targetStr9 != null && int.TryParse(targetStr9, out int targetCell9)
-                            && targetCell9 >= i0 && targetCell9 < i0 + Length) {
-                            int jj9 = targetCell9 - i0;
-                            int N9 = OrthoTrf.GetLength(1);
-                            var sb9 = new System.Text.StringBuilder();
-                            sb9.Append($"DIAG_GEOM_COMPARE[F-VOL]: cell={targetCell9} i0={i0} Length={Length} MaxDegree={MaxDegree} N={N9}\n");
-                            for (int n9 = 0; n9 < N9; n9++) {
-                                for (int m9 = 0; m9 < N9; m9++) {
-                                    sb9.Append($"  trafo[n={n9},m={m9}]={OrthoTrf[jj9, n9, m9]:G17}\n");
-                                }
-                            }
-                            Console.WriteLine(sb9.ToString());
-                        }
-                    }
-                }
-
-                // DIAGNOSTIC (env-gated, zero cost unless set): dump the raw OrthoTrf matrix's
-                // column n=<target row> (all m) for the target cell, to diff directly against
-                // LECVolumeQuadrature2.cs's trafo at the same (cell, n).
-                if (System.Environment.GetEnvironmentVariable("DIAG_ORTHO_DUMP") == "1" && !isAffineCell) {
-                    string targetStr = System.Environment.GetEnvironmentVariable("DIAG_ORTHO_DUMP_CELL");
-                    int targetCell = targetStr != null ? int.Parse(targetStr) : -1;
-                    if (targetCell >= i0 && targetCell < i0 + Length) {
-                        int ll = targetCell - i0;
-                        string targetRowStr = System.Environment.GetEnvironmentVariable("DIAG_ORTHO_DUMP_ROW");
-                        int targetRow = targetRowStr != null ? int.Parse(targetRowStr) : 8;
-                        int nM = OrthoTrf.GetLength(1);
-                        if (targetRow < OrthoTrf.GetLength(2)) {
-                            var vals = string.Join(",", Enumerable.Range(0, nM).Select(m => OrthoTrf[ll, m, targetRow].ToString("0.##########")));
-                            Console.WriteLine($"DIAG_ORTHO[NEC]: cell={targetCell} n={targetRow} OrthoTrf[:,{targetRow}]=[{vals}]");
-                        }
-                    }
                 }
 
                 this.Loops.Start();

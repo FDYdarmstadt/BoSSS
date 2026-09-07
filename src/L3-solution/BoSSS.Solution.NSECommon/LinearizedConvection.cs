@@ -560,10 +560,6 @@ namespace BoSSS.Solution.NSECommon {
 
     public class LinearizedConvectionJacobi : IVolumeForm, IEdgeForm, ISupportsJacobianComponent, IEquationComponentCoefficient {
 
-        // DIAGNOSTIC (coordinator-requested check-2, this round): shared output cap for
-        // DIAG_METRIC_CONSISTENCY[MOM-FORM] prints in InnerEdgeFlux_impl below.
-        private static int s_metricConsistencyCountMom = 0;
-
         /// <summary>
         /// Spatial dimension;
         /// </summary>
@@ -700,14 +696,6 @@ namespace BoSSS.Solution.NSECommon {
         /// flux at the boundary
         /// </summary>
         protected virtual double BorderEdgeFlux(ref CommonParamsBnd inp, double[] Uin) {
-            // ABLATION TOGGLE (coordinator-requested, this round): fully disables momentum's
-            // convective wall-boundary contribution (LinearizedConvectionJacobi.BorderEdgeFlux),
-            // to test on the REAL running solver whether it is implicated in the periodic
-            // "Mismatch" defect -- same pattern as XNSFE_REPRO_DISABLE_BNDCONV for HeatEq's
-            // boundary form. Env-gated, zero cost / identical to normal behavior unless set.
-            if (System.Environment.GetEnvironmentVariable("XNSFE_REPRO_DISABLE_BNDCONV_MOM") == "1")
-                return 0.0;
-
             IncompressibleBcType edgeType = m_bcmap.EdgeTag2Type[inp.EdgeTag];
 
             switch(edgeType) {
@@ -905,73 +893,6 @@ namespace BoSSS.Solution.NSECommon {
         protected double InnerEdgeFlux_impl(ref CommonParams inp, double[] Uin, double[] Uout) {
             double r = 0.0;
 
-            // ABLATION TOGGLE (coordinator-requested bounded check, this round): fully disables
-            // this form's InnerEdgeForm contribution for one target edge -- same pattern/purpose
-            // as the VolumeForm ablation above.
-            {
-                string disEdgeStr = System.Environment.GetEnvironmentVariable("XNSFE_REPRO_DISABLE_EDGE_MOMCONV");
-                if (disEdgeStr != null && int.TryParse(disEdgeStr, out int disEdge) && inp.iEdge == disEdge)
-                    return 0.0;
-                string disPairStr = System.Environment.GetEnvironmentVariable("XNSFE_REPRO_DISABLE_EDGE_MOMCONV_CELLPAIR");
-                if (disPairStr != null) {
-                    var parts = disPairStr.Split(',');
-                    if (parts.Length == 2 && int.TryParse(parts[0], out int pa) && int.TryParse(parts[1], out int pb)
-                        && ((inp.jCellIn == pa && inp.jCellOut == pb) || (inp.jCellIn == pb && inp.jCellOut == pa)))
-                        return 0.0;
-                }
-            }
-
-            // DIAGNOSTIC (coordinator-requested check-2, this round): this implementation is
-            // called from BOTH the M-path (EdgeFormDifferentiator wrapping it for f0/every f1
-            // probe -- see FormDifferentiator.cs's own DIAG_METRIC_CONSISTENCY dump) AND the
-            // F-path (NECQuadratureEdge.cs calling it directly, undifferentiated, for f(u0)) --
-            // dumping inp.Normal/inp.X HERE, at G17 precision, from every call touching the
-            // target cell, lets both paths' raw geometric input be compared by matching physical
-            // X, without needing separate instrumentation in the two orchestrator files.
-            if (System.Environment.GetEnvironmentVariable("DIAG_METRIC_CONSISTENCY") == "1") {
-                string mcCellStrM = System.Environment.GetEnvironmentVariable("DIAG_METRIC_CONSISTENCY_CELL");
-                string mcPairStrM = System.Environment.GetEnvironmentVariable("DIAG_METRIC_CONSISTENCY_CELLPAIR");
-                bool pairMatch = false;
-                if (mcPairStrM != null) {
-                    var partsM = mcPairStrM.Split(',');
-                    if (partsM.Length == 2 && int.TryParse(partsM[0], out int pma) && int.TryParse(partsM[1], out int pmb))
-                        pairMatch = (inp.jCellIn == pma && inp.jCellOut == pmb) || (inp.jCellIn == pmb && inp.jCellOut == pma);
-                }
-                if ((pairMatch || (mcCellStrM != null && int.TryParse(mcCellStrM, out int mcCellM)
-                    && (inp.jCellIn == mcCellM || inp.jCellOut == mcCellM)))
-                    && s_metricConsistencyCountMom < 400) {
-                    System.Threading.Interlocked.Increment(ref s_metricConsistencyCountMom);
-                    var xLocalMom = inp.X;
-                    Console.Error.WriteLine(string.Format(
-                        "DIAG_METRIC_CONSISTENCY[MOM-FORM]: edge={0} jIn={1} jOt={2} X=({3:G17}) Normal=({4:G17},{5:G17},{6:G17})",
-                        inp.iEdge, inp.jCellIn, inp.jCellOut,
-                        string.Join(",", Enumerable.Range(0, xLocalMom.Dim).Select(d => xLocalMom[d].ToString("G17"))),
-                        inp.Normal[0], inp.Normal[1], inp.Normal[2]));
-                }
-            }
-
-            // DIAGNOSTIC (coordinator-requested divergence trace, this round): dump EVERY raw
-            // call to this shared flux implementation for a target edge -- used to compare what
-            // the RAW NONLINEAR EVALUATOR (f(u0), via NECQuadratureEdge, calling this directly,
-            // Uin/Uout = actual field values, called once per node per iteration) sees for Uout
-            // at a periodic edge, against what EdgeFormDifferentiator's FD-based Jacobian path
-            // (calling this many times per node with perturbed/rotated Utmp) sees. If Uout here
-            // ever shows the NATIVE (un-rotated) OUT-cell value in a context that should be using
-            // the ROTATED value (or vice versa), that is the divergence point.
-            if (System.Environment.GetEnvironmentVariable("DIAG_FLUX_RAW") == "1") {
-                string targetStr = System.Environment.GetEnvironmentVariable("DIAG_FLUX_RAW_EDGE");
-                if (targetStr != null && int.TryParse(targetStr, out int targetEdge) && inp.iEdge == targetEdge) {
-                    Console.WriteLine(string.Format(
-                        "DIAG_FLUX_RAW: path={0} edge={1} jIn={2} jOt={3} comp={4} X=({5:0.######},{6:0.######},{7:0.######}) N=({8:0.####},{9:0.####},{10:0.####}) Uin=[{11}] Uout=[{12}]",
-                        System.Environment.GetEnvironmentVariable("DIAG_CURRENT_ASSEMBLY_PATH") ?? "unset",
-                        inp.iEdge, inp.jCellIn, inp.jCellOut, argumentIndex,
-                        inp.X[0], inp.X[1], inp.X[2],
-                        inp.Normal[0], inp.Normal[1], inp.Normal[2],
-                        string.Join(",", Uin.Select(v => v.ToString("0.########"))),
-                        string.Join(",", Uout.Select(v => v.ToString("0.########")))));
-                }
-            }
-
             // Calculate central part
             // ======================
 
@@ -1064,29 +985,6 @@ namespace BoSSS.Solution.NSECommon {
             double uJump = Uin[idx] - Uout[idx];
             r += Lambda * uJump * LaxFriedrichsSchemeSwitch;
 
-            // DIAGNOSTIC (coordinator-requested re-derivation of the ORIGINAL ret+f0 finding,
-            // this round): dump the dissipation-term ingredients (idx, Lambda, uJump, LFF switch)
-            // separately from DIAG_FLUX_RAW's Uin/Uout dump, so the analytically-correct
-            // (non-zero, mixed-homogeneity) expectation for DIAG_EULER_CHECK's "ret+f0" --
-            // 0.5*Lambda*uJump*LaxFriedrichsSchemeSwitch (the dissipation term ALONE, per Euler's
-            // theorem applied separately to the degree-2 central part and the degree-1
-            // dissipation part -- see EdgeFormDifferentiator's ret(Probe=0)=f0-sum(dU*Utmp)
-            // formula) -- can be computed and compared against the actual diagnostic output
-            // exactly, not hand-derived from rounded printed numbers.
-            if (System.Environment.GetEnvironmentVariable("DIAG_FLUX_RAW") == "1") {
-                string targetStr2 = System.Environment.GetEnvironmentVariable("DIAG_FLUX_RAW_EDGE");
-                if (targetStr2 != null && int.TryParse(targetStr2, out int targetEdge2) && inp.iEdge == targetEdge2) {
-                    double dissRaw = 0.5 * Lambda * uJump * LaxFriedrichsSchemeSwitch;
-                    Console.WriteLine(string.Format(
-                        "DIAG_FLUX_LAMBDA: path={0} edge={1} comp={2} Uin[idx]={3:0.########} Uout[idx]={4:0.########} VelMeanIn=[{5}] VelMeanOut=[{6}] LambdaIn={7:0.########} LambdaOut={8:0.########} Lambda={9:0.########} LFF={10:0.####} uJump={11:0.########} expectedRetPlusF0(=0.5*Lambda*uJump*LFF)={12:0.########}",
-                        System.Environment.GetEnvironmentVariable("DIAG_CURRENT_ASSEMBLY_PATH") ?? "unset",
-                        inp.iEdge, argumentIndex, Uin[idx], Uout[idx],
-                        string.Join(",", VelocityMeanIn.Select(v => v.ToString("0.##########"))),
-                        string.Join(",", VelocityMeanOut.Select(v => v.ToString("0.##########"))),
-                        LambdaIn, LambdaOut, Lambda, LaxFriedrichsSchemeSwitch, uJump, dissRaw));
-                }
-            }
-
             r *= 0.5;
             return r;
         }
@@ -1169,17 +1067,6 @@ namespace BoSSS.Solution.NSECommon {
 
         
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
-            // ABLATION TOGGLE (coordinator-requested bounded check, this round): fully disables
-            // this form's VolumeForm contribution for one specific target cell -- mirrors the same
-            // pattern already used by ConductivityInBulk.cs/HeatConvectionInSpeciesBulk.cs, so the
-            // existing DIAG_TARGET_MROW_ABLATE_VAR/VAL frozen-state-ablation mechanism
-            // (NonlinearSolver.cs) can isolate momentum's own convective-volume contribution to a
-            // Jacobian row without re-solving.
-            {
-                string disCellStr = System.Environment.GetEnvironmentVariable("XNSFE_REPRO_DISABLE_VOL_CELL_MOMCONV");
-                if (disCellStr != null && int.TryParse(disCellStr, out int disCell) && cpv.jCell == disCell)
-                    return 0.0;
-            }
             int D = GradV.Length;
             double acc = 0;
             double[] buf = new double[D];

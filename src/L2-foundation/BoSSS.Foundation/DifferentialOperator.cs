@@ -1659,26 +1659,7 @@ namespace BoSSS.Foundation {
 
                                 ne.m_outputBndEdge = outputBndEdge;
 
-                                // DIAGNOSTIC-ONLY (env-gated): trace the INCREMENTAL contribution
-                                // this specific pass makes to a target row of the nonlinear
-                                // evaluator's output -- used to isolate which "half" (m_NonlinearEdge,
-                                // PeriodicVectorTrafo.bck, all edges vs m_ComplicatedPeriodicEdge,
-                                // .fwd, periodic edges only) of a periodic edge's two-pass
-                                // contribution to F0/f(u0) is wrong, rather than inferring it from
-                                // the combined total.
-                                string traceIdxStr = System.Environment.GetEnvironmentVariable("DIAG_NONLIN_TRACE_IDX");
-                                int traceIdx = -1;
-                                bool doTrace = traceIdxStr != null && int.TryParse(traceIdxStr, out traceIdx) && traceIdx >= 0 && traceIdx < output.Count;
-                                double before = doTrace ? output[traceIdx] : 0.0;
-
                                 ne.Execute();
-
-                                if (doTrace) {
-                                    double after = output[traceIdx];
-                                    Console.WriteLine(string.Format(
-                                        "DIAG_NONLIN_TRACE: pass={0} PeriodicVectorTrafo={1} idx={2} before={3:0.########} after={4:0.########} delta={5:0.########}",
-                                        name, ne._PeriodicVectorTrafo, traceIdx, before, after, after - before));
-                                }
 
                                 ne.m_Output = null;
                                 ne.m_outputBndEdge = null;
@@ -2938,10 +2919,6 @@ namespace BoSSS.Foundation {
         /// An operator which computes the Jacobian matrix of this operator.
         /// All components in this operator need to implement the <see cref="ISupportsJacobianComponent"/> interface in order to support this operation.
         /// </summary>
-        // PERFORMANCE-INVESTIGATION DIAGNOSTIC (coordinator-requested, this round, temporary):
-        // one-shot guard for DIAG_QUADORDER_PRINT, see _GetJacobiOperator/JacobianQuadOrderFunction.
-        private static bool s_printedQuadOrder = false;
-
         public DifferentialOperator _GetJacobiOperator(int SpatialDimension) {
             if(!this.IsCommitted)
                 throw new InvalidOperationException("Invalid prior to calling Commit().");
@@ -3003,35 +2980,13 @@ namespace BoSSS.Foundation {
             // to `this.QuadOrderFunction` reproduces the original operator's order exactly,
             // regardless of how many synthetic Jacobian parameters get added.
             Func<int[], int[], int[], int> JacobianQuadOrderFunction = (DomDegs, ParamDegs, CoDomDegs) => {
-                // PERFORMANCE-INVESTIGATION TOGGLE (coordinator-requested, this round, temporary):
-                // DIAG_DISABLE_QUADORDER_FIX=1 reverts to the pre-fix/premaster behavior --
-                // `this.QuadOrderFunction` invoked directly against the FULL (untruncated,
-                // "inflated") ParamDegs -- purely to A/B the assembly-time cost of Section 3.7's
-                // fix against its absence, at the same code revision. Not a proposed shipped
-                // change; safe-by-default (unset/any value other than "1" keeps the fix active).
-                bool disableFix = System.Environment.GetEnvironmentVariable("DIAG_DISABLE_QUADORDER_FIX") == "1";
-
                 int[] origParamDegs;
-                if (!disableFix && h.NoOfOrgParams > 0 && ParamDegs != null && ParamDegs.Length >= h.NoOfOrgParams) {
+                if (h.NoOfOrgParams > 0 && ParamDegs != null && ParamDegs.Length >= h.NoOfOrgParams) {
                     origParamDegs = ParamDegs.Take(h.NoOfOrgParams).ToArray();
-                } else if (!disableFix) {
-                    origParamDegs = new int[] { 0 }; // matches GetOrderFromQuadOrderFunction's convention for "no parameters"
                 } else {
-                    origParamDegs = ParamDegs; // pre-fix: pass the full, untruncated (inflated) parameter list straight through
+                    origParamDegs = new int[] { 0 }; // matches GetOrderFromQuadOrderFunction's convention for "no parameters"
                 }
-                int order = this.QuadOrderFunction(DomDegs, origParamDegs, CoDomDegs);
-
-                // PERFORMANCE-INVESTIGATION DIAGNOSTIC (coordinator-requested, this round,
-                // temporary): one-time print of the actually-selected order, fix active vs.
-                // disabled, to directly confirm (not assume) whether/how much Section 3.7's fix
-                // changes the selected quadrature order for this specific operator's own
-                // QuadOrderFunction -- independent of the timing measurement itself.
-                if (System.Environment.GetEnvironmentVariable("DIAG_QUADORDER_PRINT") == "1" && !s_printedQuadOrder) {
-                    s_printedQuadOrder = true;
-                    Console.Error.WriteLine($"DIAG_QUADORDER: disableFix={disableFix} NoOfOrgParams={h.NoOfOrgParams} ParamDegs.Length={(ParamDegs?.Length ?? -1)} origParamDegs.Length={origParamDegs.Length} order={order}");
-                }
-
-                return order;
+                return this.QuadOrderFunction(DomDegs, origParamDegs, CoDomDegs);
             };
 
             var JacobianOp = new DifferentialOperator(

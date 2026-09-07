@@ -28,29 +28,6 @@ using System.Threading;
 
 namespace BoSSS.Foundation.Quadrature.Linear {
 
-    /// <summary>
-    /// DIAGNOSTIC-ONLY (temporary): exposes which of the 4 term-type dispatch passes (UxV,
-    /// GradUxV, UxGradV, GradUxGradV) is currently invoking <c>InternalEdge_*</c> on wrapped
-    /// forms, so that <c>EdgeFormDifferentiator.InnerEdgeForm</c> (a layer above, in
-    /// BoSSS.Foundation.XDG) can tag its own DIAG_DIAG_BLOCK dump with the active dispatch path
-    /// -- used to isolate which specific vectorizer method (in LinearFormVectorizer.cs) is
-    /// responsible for a component-crossover found in the linearization-point parameters read
-    /// during periodic-edge Jacobian assembly.
-    /// </summary>
-    public static class DiagDispatchTag {
-        [ThreadStatic]
-        public static string CurrentTermType;
-
-        /// <summary>
-        /// DIAGNOSTIC-ONLY: which codomain variable index (gamma, e.g. 0=ConvX,1=ConvY,2=ConvZ)
-        /// is currently being assembled -- lets LinearFormVectorizer's own coefficient dumps be
-        /// tagged by gamma, since the vectorizer itself has no notion of which gamma it belongs
-        /// to (it just wraps one wrapped form instance).
-        /// </summary>
-        [ThreadStatic]
-        public static int CurrentGamma;
-    }
-
     class LECEdgeQuadrature2<M, V>
         where M : IMutableMatrix
         where V : IList<double> {
@@ -495,42 +472,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 else
                     //sqrtGram = gDat.iGeomEdges.NormalsCache.GetIntegrationMetric(NS, i0, Length);
                     sqrtGram = metric.GetScalingsForNonlinElements(gDat, QR, i0, Length);
-
-                // DIAGNOSTIC (coordinator-requested full from-scratch DOF reconstruction, this
-                // round): dump the raw quadrature rule ingredients for a target edge -- reference
-                // edge-node coords (QR.Nodes), quadrature weights (QR.Weights), the metric scaling
-                // (sqrtGram), and both cells' own reference VOLUME coordinates for each edge node
-                // (via NodeSet.GetVolumeNodeSet, the same edge-to-cell reference mapping BoSSS's
-                // own basis evaluation uses) -- so an independent script can evaluate the real
-                // orthonormal basis polynomial (Cube_polynomials.cs) at the correct reference
-                // point and integrate by hand, with zero reliance on BoSSS's own
-                // assembly/evaluator machinery for the polynomial or the summation itself.
-                if (System.Environment.GetEnvironmentVariable("DIAG_QUADRULE") == "1") {
-                    string qeStr = System.Environment.GetEnvironmentVariable("DIAG_QUADRULE_EDGE");
-                    if (qeStr != null && int.TryParse(qeStr, out int qEdge) && qEdge >= i0 && qEdge < i0 + Length) {
-                        try {
-                            int qLocal = qEdge - i0;
-                            var volIN = NS.GetVolumeNodeSet(gDat, TrafoIndx[qEdge, 0], false);
-                            var volOT = NS.GetVolumeNodeSet(gDat, TrafoIndx[qEdge, 1], false);
-                            for (int node = 0; node < NS.NoOfNodes; node++) {
-                                var sbRef = new System.Text.StringBuilder();
-                                for (int dd = 0; dd < NS.SpatialDimension; dd++) sbRef.Append(NS[node, dd].ToString("0.################")).Append(dd < NS.SpatialDimension - 1 ? "," : "");
-                                var sbVolIn = new System.Text.StringBuilder();
-                                var sbVolOt = new System.Text.StringBuilder();
-                                for (int dd = 0; dd < D; dd++) {
-                                    sbVolIn.Append(volIN[node, dd].ToString("0.################")).Append(dd < D - 1 ? "," : "");
-                                    sbVolOt.Append(volOT[node, dd].ToString("0.################")).Append(dd < D - 1 ? "," : "");
-                                }
-                                Console.WriteLine(string.Format(
-                                    "DIAG_QUADRULE: edge={0} node={1} refEdgeXi=[{2}] weight={3:0.################} sqrtGram={4:0.################} volREF_IN=[{5}] volREF_OUT=[{6}]",
-                                    qEdge, node, sbRef.ToString(), QR.Weights[node], sqrtGram[qLocal, node], sbVolIn.ToString(), sbVolOt.ToString()));
-                            }
-                        } catch (Exception ex) {
-                            Console.WriteLine("DIAG_QUADRULE: (threw) " + ex.Message);
-                        }
-                    }
-                }
-
                 EvaluateParameters(i0, Length, NS);
                 this.ParametersAndNormals.Stop();
 
@@ -584,84 +525,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                         bLinearRequired = LinearRequired;
                         bAffineRequired = AffineRequired;
-                        // Diagnostic-only toggle to isolate "Bug A" (the affine-buffer
-                        // parameter-rotation restore-timing fix) from every OTHER periodic-rotation
-                        // fix already present in this file (matrix orientation fix,
-                        // GetLinDCrossComponentTuples, RotateGradientAxis, the clone-not-mutate
-                        // aliasing fix, etc.) -- set DIAG_DISABLE_BUGA_FIX=1 to reproduce the
-                        // EXACT pre-Bug-A-fix code path (rotate/restore window only around the
-                        // linear forms, no ApplyPeriodicRotationAffine) while leaving all other
-                        // fixes in this file untouched, for a true isolated-impact measurement.
-                        bool disableBugAFix = System.Environment.GetEnvironmentVariable("DIAG_DISABLE_BUGA_FIX") == "1";
-                        if (disableBugAFix) {
-                            if ( bLinearRequired ) {
-                                InvalidateStaleVectorTupleSlots(m_UxVSumBuffer, Length, NS.NoOfNodes);
-                                InvalidateStaleVectorTupleSlots(m_GradUxVSumBuffer, Length, NS.NoOfNodes);
-                                InvalidateStaleVectorTupleSlots(m_Trf_GradUxVSumBuffer, Length, NS.NoOfNodes);
-                                InvalidateStaleVectorTupleSlots(m_UxGradVSumBuffer, Length, NS.NoOfNodes);
-                                InvalidateStaleVectorTupleSlots(m_Trf_UxGradVSumBuffer, Length, NS.NoOfNodes);
-                                InvalidateStaleVectorTupleSlots(m_GradUxGradVSumBuffer, Length, NS.NoOfNodes);
-                                InvalidateStaleVectorTupleSlots(m_Trf_GradUxGradVSumBuffer, Length, NS.NoOfNodes);
-
-                                GetPeriodicEdgesAndMatrices(i0, Length, gDat, out var oldMainPeriodicIdx, out var oldMainPeriodicMtx);
-                                int[][] oldMainParamVectorTuples = oldMainPeriodicIdx.Count > 0 ? GetParameterVectorTuples(D) : new int[0][];
-                                var oldMainPeriodicMtxInv = oldMainPeriodicMtx.Select(M => { var Minv = M.CloneAs(); Minv.InvertInPlace(); return Minv; }).ToList();
-                                List<MultidimensionalArray[]> oldParamOutSnapshots = null;
-                                if (oldMainParamVectorTuples.Length > 0) {
-                                    oldParamOutSnapshots = new List<MultidimensionalArray[]>();
-                                    foreach (var tuple in oldMainParamVectorTuples) {
-                                        oldParamOutSnapshots.Add(SnapshotParamSlots(m_ParameterFieldsValues_OUT, tuple));
-                                        RotateParamSlotsOnPeriodicEdges(m_ParameterFieldsValues_OUT, tuple, oldMainPeriodicIdx, oldMainPeriodicMtxInv, NS.NoOfNodes);
-                                    }
-                                }
-
-                                EvalNSumForm(ref efp, i0, m_Edgeform_UxV, Edges, m_UxVComponentBuffer, m_UxVSumBuffer, false, NS.NoOfNodes, D, m_Edgeform_UxV_Watches, MustLock,
-                                    (E, mda) => E.InternalEdge_UxV(ref efp, mda),
-                                    (E, mda) => E.BoundaryEdge_UxV(ref efp, mda));
-                                EvalNSumForm(ref efp, i0, m_Edgeform_GradUxV, Edges, m_GradUxVComponentBuffer, m_GradUxVSumBuffer, false, NS.NoOfNodes, D, m_Edgeform_GradUxV_Watches, MustLock,
-                                    (E, mda) => E.InternalEdge_GradUxV(ref efp, mda),
-                                    (E, mda) => E.BoundaryEdge_GradUxV(ref efp, mda));
-                                EvalNSumForm(ref efp, i0, m_Edgeform_UxGradV, Edges, m_UxGradVComponentBuffer, m_UxGradVSumBuffer, false, NS.NoOfNodes, D, m_Edgeform_UxGradV_Watches, MustLock,
-                                    (E, mda) => E.InternalEdge_UxGradV(ref efp, mda),
-                                    (E, mda) => E.BoundaryEdge_UxGradV(ref efp, mda));
-                                EvalNSumForm(ref efp, i0, m_Edgeform_GradUxGradV, Edges, m_GradUxGradVComponentBuffer, m_GradUxGradVSumBuffer, false, NS.NoOfNodes, D, m_Edgeform_GradUxGradV_Watches, MustLock,
-                                    (E, mda) => E.InternalEdge_GradUxGradV(ref efp, mda),
-                                    (E, mda) => E.BoundaryEdge_GradUxGradV(ref efp, mda));
-
-                                if (oldParamOutSnapshots != null) {
-                                    // Restore in REVERSE (LIFO) order: later tuples (e.g. the
-                                    // direction-axis "cross" tuples from GetLinDCrossComponentTuples)
-                                    // share indices with earlier tuples (the component-axis "row"
-                                    // tuples from GetVectorFieldIndices), since a rank-2 tensor's
-                                    // rotation is composed of two overlapping-index passes. Each
-                                    // tuple's OWN snapshot was taken immediately before THAT tuple's
-                                    // rotation ran -- i.e. it reflects whatever EARLIER tuples had
-                                    // already written, not the true original value. Restoring
-                                    // forward (t=0..N-1) undoes tuple 0 correctly, but then tuple 1's
-                                    // restore (using a snapshot that already includes tuple 0's
-                                    // rotation) OVERWRITES tuple 0's just-restored slots with a
-                                    // stale intermediate value for any overlapping index -- silently
-                                    // leaving the buffer in a partially-rotated (neither original nor
-                                    // fully-rotated) state. Undoing in the exact reverse order the
-                                    // rotations were applied peels each layer off correctly, in LIFO
-                                    // order, like unwinding a stack.
-                                    foreach (int t in RestoreIndices(oldMainParamVectorTuples.Length))
-                                        RestoreParamSlots(m_ParameterFieldsValues_OUT, oldMainParamVectorTuples[t], oldParamOutSnapshots[t]);
-                                }
-
-                                ApplyPeriodicRotation(i0, Length, gDat, efp, Edges, MustLock, NS.NoOfNodes, D);
-                            }
-                            if ( bAffineRequired ) {
-                                EvalNSumForm(ref efp, i0, m_EdgeSourceV, Edges, m_VComponentBuffer, m_VSumBuffer, true, NS.NoOfNodes, D, m_EdgeSourceV_Watches, MustLock,
-                                    (E, mda) => E.InternalEdge_V(ref efp, mda),
-                                    (E, mda) => E.BoundaryEdge_V(ref efp, mda));
-                                EvalNSumForm(ref efp, i0, m_EdgeSourceGradV, Edges, m_GradVComponentBuffer, m_GradVSumBuffer, true, NS.NoOfNodes, D, m_EdgeSourceGradV_Watches, MustLock,
-                                    (E, mda) => E.InternalEdge_GradV(ref efp, mda),
-                                    (E, mda) => E.BoundaryEdge_GradV(ref efp, mda));
-                                // NOTE: no ApplyPeriodicRotationAffine call here -- this is the
-                                // pre-Bug-A-fix path.
-                            }
-                        } else {
+                        {
                             // NOTE: the OUT-side parameter rotation below (mainPeriodicMtxInv, cr=0
                             // pass) and its later restoral must bracket BOTH the linear (UxV etc.)
                             // AND the affine (EdgeSourceV etc.) native-normal evaluations. The
@@ -685,75 +549,11 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                             int[][] mainParamVectorTuples = mainPeriodicIdx.Count > 0 ? GetParameterVectorTuples(D) : new int[0][];
                             var mainPeriodicMtxInv = mainPeriodicMtx.Select(M => { var Minv = M.CloneAs(); Minv.InvertInPlace(); return Minv; }).ToList();
                             List<MultidimensionalArray[]> paramOutSnapshots = null;
-                            bool diag2t = System.Environment.GetEnvironmentVariable("DIAG_TWOTUPLE") == "1";
-                            string diag2tEdgeStr = System.Environment.GetEnvironmentVariable("DIAG_TWOTUPLE_EDGE");
-                            // BUGFIX (found via a first attempt this round): m_ParameterFieldsValues_OUT
-                            // buffers are indexed by the LOCAL EDGE INDEX itself (d2te-i0), exactly
-                            // like RotateParamSlotsOnPeriodicEdges's own "i = periodicIdx[k]" usage
-                            // -- NOT by the edge's POSITION within the periodicIdx list (what
-                            // List<int>.IndexOf returns). Using IndexOf's result as the buffer index
-                            // silently read/printed an unrelated (usually non-periodic, near-identity)
-                            // slot, making BEFORE/AFTER-ROTATE look identical for every tuple -- an
-                            // artifact of this diagnostic's own bug, not evidence about the real
-                            // rotation mechanism.
-                            int diag2tLocalIdx = diag2t && diag2tEdgeStr != null && int.TryParse(diag2tEdgeStr, out int d2te)
-                                    && mainPeriodicIdx.Contains(d2te - i0)
-                                ? d2te - i0 : -1;
                             if (mainParamVectorTuples.Length > 0) {
                                 paramOutSnapshots = new List<MultidimensionalArray[]>();
-                                bool traceRot = System.Environment.GetEnvironmentVariable("DIAG_TRACE_ROTATION") == "1";
-                                string traceEdgeStr = System.Environment.GetEnvironmentVariable("DIAG_TRACE_ROTATION_EDGE");
-                                int traceEdge = traceRot && traceEdgeStr != null && int.TryParse(traceEdgeStr, out int te) ? te : -1;
-                                int traceLocalIdx = traceEdge >= 0 ? mainPeriodicIdx.IndexOf(traceEdge - i0) : -1;
-                                var names0 = m_owner.Operator.ParameterVar;
-
-                                // DIAGNOSTIC (coordinator-requested two-tuple interaction check,
-                                // this round): for a target edge, dump EVERY vector tuple's
-                                // OUT-side values BEFORE rotation, AFTER rotation, and (in a
-                                // second block below) AFTER restore -- to directly check for
-                                // cross-contamination between the two DISJOINT tuples on the real
-                                // momentum convective term (Velocity0X/Y/Z_Mean, indices 0-2, and
-                                // VelocityX/Y/Z_lin, indices 3-5), and to confirm restore order
-                                // doesn't matter for them specifically (unlike the genuinely
-                                // overlapping GradU_lin_d row/cross tensor tuples, indices 8-16,
-                                // which RestoreIndices' LIFO order exists to fix).
-                                void Diag2tDump(int[] tuple, string when) {
-                                    if (diag2tLocalIdx < 0) return;
-                                    var vals = tuple.Select(idx => m_ParameterFieldsValues_OUT[idx][diag2tLocalIdx, 0]).ToArray();
-                                    Console.WriteLine(string.Format(
-                                        "DIAG_TWOTUPLE: {0} tuple=[{1}] OUT node0 = [{2}]",
-                                        when,
-                                        string.Join(",", tuple.Select(idx => idx + ":" + names0[idx])),
-                                        string.Join(",", vals.Select(v => v.ToString("0.########")))));
-                                }
                                 foreach (var tuple in mainParamVectorTuples) {
-                                    Diag2tDump(tuple, "BEFORE-ROTATE");
                                     paramOutSnapshots.Add(SnapshotParamSlots(m_ParameterFieldsValues_OUT, tuple));
                                     RotateParamSlotsOnPeriodicEdges(m_ParameterFieldsValues_OUT, tuple, mainPeriodicIdx, mainPeriodicMtxInv, NS.NoOfNodes);
-                                    Diag2tDump(tuple, "AFTER-ROTATE ");
-                                }
-                                if (traceRot && traceLocalIdx >= 0) {
-                                    // Dump the FINAL (post all-7-tuples) Y-row and Z-row across every
-                                    // quadrature node on this edge, to check whether the correct
-                                    // (invariant) result found at node 0 by hand-tracing holds for
-                                    // EVERY node, or breaks down for specific node indices.
-                                    int yIdx0 = Array.IndexOf(names0.ToArray(), "VelocityY_lin_d[0]");
-                                    int yIdx1 = Array.IndexOf(names0.ToArray(), "VelocityY_lin_d[1]");
-                                    int yIdx2 = Array.IndexOf(names0.ToArray(), "VelocityY_lin_d[2]");
-                                    int zIdx0 = Array.IndexOf(names0.ToArray(), "VelocityZ_lin_d[0]");
-                                    int zIdx1 = Array.IndexOf(names0.ToArray(), "VelocityZ_lin_d[1]");
-                                    int zIdx2 = Array.IndexOf(names0.ToArray(), "VelocityZ_lin_d[2]");
-                                    for (int node = 0; node < NS.NoOfNodes; node++) {
-                                        double y0 = m_ParameterFieldsValues_OUT[yIdx0][traceEdge - i0, node];
-                                        double y1 = m_ParameterFieldsValues_OUT[yIdx1][traceEdge - i0, node];
-                                        double y2 = m_ParameterFieldsValues_OUT[yIdx2][traceEdge - i0, node];
-                                        double z0 = m_ParameterFieldsValues_OUT[zIdx0][traceEdge - i0, node];
-                                        double z1 = m_ParameterFieldsValues_OUT[zIdx1][traceEdge - i0, node];
-                                        double z2 = m_ParameterFieldsValues_OUT[zIdx2][traceEdge - i0, node];
-                                        Console.WriteLine(string.Format(
-                                            "DIAG_TRACE_ROTATION: FINAL node={0}: Yrow=[{1:0.#####},{2:0.#####},{3:0.#####}] Zrow=[{4:0.#####},{5:0.#####},{6:0.#####}] (expect Yrow=[0,0,-1] Zrow=[0,1,0])",
-                                            node, y0, y1, y2, z0, z1, z2));
-                                    }
                                 }
                             }
 
@@ -816,23 +616,18 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                                 // after BOTH the linear AND the affine native-normal evaluations
                                 // below, so ApplyPeriodicRotation's own rerun (which needs the raw
                                 // OUT value, see below) sees the untouched values.
-                                DiagDispatchTag.CurrentTermType = "MAIN-UxV";
                                 EvalNSumForm(ref efp, i0, m_Edgeform_UxV, Edges, m_UxVComponentBuffer, m_UxVSumBuffer, false, NS.NoOfNodes, D, m_Edgeform_UxV_Watches, MustLock,
                                     (E, mda) => E.InternalEdge_UxV(ref efp, mda),
                                     (E, mda) => E.BoundaryEdge_UxV(ref efp, mda));
-                                DiagDispatchTag.CurrentTermType = "MAIN-GradUxV";
                                 EvalNSumForm(ref efp, i0, m_Edgeform_GradUxV, Edges, m_GradUxVComponentBuffer, m_GradUxVSumBuffer, false, NS.NoOfNodes, D, m_Edgeform_GradUxV_Watches, MustLock,
                                     (E, mda) => E.InternalEdge_GradUxV(ref efp, mda),
                                     (E, mda) => E.BoundaryEdge_GradUxV(ref efp, mda));
-                                DiagDispatchTag.CurrentTermType = "MAIN-UxGradV";
                                 EvalNSumForm(ref efp, i0, m_Edgeform_UxGradV, Edges, m_UxGradVComponentBuffer, m_UxGradVSumBuffer, false, NS.NoOfNodes, D, m_Edgeform_UxGradV_Watches, MustLock,
                                     (E, mda) => E.InternalEdge_UxGradV(ref efp, mda),
                                     (E, mda) => E.BoundaryEdge_UxGradV(ref efp, mda));
-                                DiagDispatchTag.CurrentTermType = "MAIN-GradUxGradV";
                                 EvalNSumForm(ref efp, i0, m_Edgeform_GradUxGradV, Edges, m_GradUxGradVComponentBuffer, m_GradUxGradVSumBuffer, false, NS.NoOfNodes, D, m_Edgeform_GradUxGradV_Watches, MustLock,
                                     (E, mda) => E.InternalEdge_GradUxGradV(ref efp, mda),
                                     (E, mda) => E.BoundaryEdge_GradUxGradV(ref efp, mda));
-                                DiagDispatchTag.CurrentTermType = null;
                             }
                             if ( bAffineRequired ) {
                                 // Same native-normal (cr=0) parameter-rotation window as the linear
@@ -840,44 +635,22 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                                 // run BEFORE the restore below, and uses the SAME mainPeriodicIdx/Inv
                                 // so that "b" and "M" are built from an identical Utmp/GradUtmp for
                                 // any given periodic edge.
-                                DiagDispatchTag.CurrentTermType = "MAIN-V";
                                 EvalNSumForm(ref efp, i0, m_EdgeSourceV, Edges, m_VComponentBuffer, m_VSumBuffer, true, NS.NoOfNodes, D, m_EdgeSourceV_Watches, MustLock,
                                     (E, mda) => E.InternalEdge_V(ref efp, mda),
                                     (E, mda) => E.BoundaryEdge_V(ref efp, mda));
-                                DiagDispatchTag.CurrentTermType = "MAIN-GradV";
                                 EvalNSumForm(ref efp, i0, m_EdgeSourceGradV, Edges, m_GradVComponentBuffer, m_GradVSumBuffer, true, NS.NoOfNodes, D, m_EdgeSourceGradV_Watches, MustLock,
                                     (E, mda) => E.InternalEdge_GradV(ref efp, mda),
                                     (E, mda) => E.BoundaryEdge_GradV(ref efp, mda));
-                                DiagDispatchTag.CurrentTermType = null;
                             }
 
                             if (paramOutSnapshots != null) {
-                                // Reverse (LIFO) restore order -- see the identical fix/remarks at
-                                // the disableBugAFix path's RestoreParamSlots call above. This is
-                                // THE root cause of the constant-GradU periodic-diagonal-block
-                                // residual: forward-order restore left m_ParameterFieldsValues_OUT's
-                                // overlapping row/column tensor-rotation tuples in a stale,
-                                // partially-rotated state (confirmed via DIAG_DIAG_BLOCK/DiagDispatchTag:
-                                // MAIN-* dispatch read the correct native value post-rotation, but
-                                // STEP1-* dispatch -- which runs AFTER this restore and expects the
-                                // OUT-side buffer back in its true native state -- read a
-                                // component-swapped value instead).
+                                // Reverse (LIFO) restore order -- overlapping row/column
+                                // tensor-rotation tuples must be restored in the exact reverse of
+                                // the order they were rotated in, or later restores overwrite
+                                // earlier ones' overlapping slots with a stale intermediate value.
                                 foreach (int t in RestoreIndices(mainParamVectorTuples.Length))
                                     RestoreParamSlots(m_ParameterFieldsValues_OUT, mainParamVectorTuples[t], paramOutSnapshots[t]);
-
-                                if (diag2tLocalIdx >= 0) {
-                                    var names1 = m_owner.Operator.ParameterVar;
-                                    foreach (var tuple in mainParamVectorTuples) {
-                                        var vals = tuple.Select(idx => m_ParameterFieldsValues_OUT[idx][diag2tLocalIdx, 0]).ToArray();
-                                        Console.WriteLine(string.Format(
-                                            "DIAG_TWOTUPLE: AFTER-RESTORE tuple=[{0}] OUT node0 = [{1}]",
-                                            string.Join(",", tuple.Select(idx => idx + ":" + names1[idx])),
-                                            string.Join(",", vals.Select(v => v.ToString("0.########")))));
-                                    }
-                                }
                             }
-
-                            DiagDumpCornerCell(gDat, i0, Length, "AFTER-MAIN-PASS, BEFORE ApplyPeriodicRotation");
 
                             if ( bLinearRequired ) {
                                 // Rotationally-periodic boundaries (e.g. a "pie slice" of a cylindrical/rotational
@@ -897,17 +670,11 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                                 FixOutSelfDiagonalBlock(i0, Length, gDat, efp, Edges, MustLock, NS.NoOfNodes, D);
                             }
 
-                            DiagDumpCornerCell(gDat, i0, Length, "AFTER ApplyPeriodicRotation (Step1+Step2)");
                             if ( bAffineRequired ) {
                                 // Analogous cr=1 ("OUT-cell's own equation") fix for the affine
                                 // (EdgeSourceV/EdgeSourceGradV) buffers -- see ApplyPeriodicRotation's
                                 // "Step 1" for the matrix-buffer equivalent this mirrors.
                                 ApplyPeriodicRotationAffine(i0, Length, gDat, efp, Edges, MustLock, NS.NoOfNodes, D);
-
-                                // Authoritative fix for the affine "OUT-cell's own equation" (cr=1)
-                                // slot -- same native-vs-rotated-OUT root cause as the matrix side
-                                // above, likely unifying with the previously-identified "Bug #2".
-                                FixOutSelfDiagonalBlockAffine(i0, Length, gDat, efp, Edges, MustLock, NS.NoOfNodes, D);
                             }
                         }
                     }
@@ -1070,45 +837,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                                                 }
                                                 if (m_UxGradVSumBuffer[gamma, delta, cr, cc] != null) {
 
-                                                    // DIAGNOSTIC (coordinator-requested step 8,
-                                                    // this round): dump the RAW (reference-cell)
-                                                    // UxGradV entry and the invJacobi_V matrix
-                                                    // BEFORE this transform, for a target
-                                                    // (gamma,delta) and edge, node 0.
-                                                    bool diagFT = System.Environment.GetEnvironmentVariable("DIAG_FLUXTRAFO") == "1";
-                                                    int diagFtGamma = -1, diagFtDelta = -1, diagFtEdgeLocal = -1;
-                                                    if (diagFT) {
-                                                        string fgs = System.Environment.GetEnvironmentVariable("DIAG_FLUXTRAFO_GAMMA");
-                                                        string fds = System.Environment.GetEnvironmentVariable("DIAG_FLUXTRAFO_DELTA");
-                                                        string fes = System.Environment.GetEnvironmentVariable("DIAG_FLUXTRAFO_EDGE");
-                                                        if (fgs != null && fds != null && fes != null
-                                                            && int.TryParse(fgs, out diagFtGamma) && int.TryParse(fds, out diagFtDelta) && int.TryParse(fes, out int fte))
-                                                            diagFtEdgeLocal = fte - i0;
-                                                        else
-                                                            diagFtGamma = -999;
-                                                    }
-                                                    bool diagFtMatch = diagFT && gamma == diagFtGamma && delta == diagFtDelta
-                                                        && diagFtEdgeLocal >= 0 && diagFtEdgeLocal < m_UxGradVSumBuffer[gamma, delta, cr, cc].GetLength(0);
-                                                    if (diagFtMatch) {
-                                                        try {
-                                                            var raw = m_UxGradVSumBuffer[gamma, delta, cr, cc];
-                                                            var ij = AffineLinearEdge ? null : invJacobi_V;
-                                                            var sbRaw = new System.Text.StringBuilder();
-                                                            for (int dd = 0; dd < D; dd++) sbRaw.Append(raw[diagFtEdgeLocal, 0, dd].ToString("0.##########")).Append(dd < D - 1 ? "," : "");
-                                                            string ijStr = "n/a(affine)";
-                                                            if (ij != null) {
-                                                                var sbIj = new System.Text.StringBuilder();
-                                                                for (int aa = 0; aa < D; aa++) {
-                                                                    for (int dd = 0; dd < D; dd++) sbIj.Append(ij[diagFtEdgeLocal, 0, aa, dd].ToString("0.######")).Append(dd < D - 1 ? "," : ";");
-                                                                }
-                                                                ijStr = sbIj.ToString();
-                                                            }
-                                                            Console.WriteLine(string.Format(
-                                                                "DIAG_FLUXTRAFO_PRE: edge={0} gamma={1} delta={2} cr={3} cc={4} curvedEdge={5} raw_UxGradV[node0,:]=[{6}] invJacobi_V[node0,a,d]=[{7}]",
-                                                                diagFtEdgeLocal + i0, gamma, delta, cr, cc, !AffineLinearEdge, sbRaw.ToString(), ijStr));
-                                                        } catch (Exception ex) { Console.WriteLine("DIAG_FLUXTRAFO_PRE: (threw) " + ex.Message); }
-                                                    }
-
                                                     // test function gradient ( \/V ) transform:
                                                     if (AffineLinearEdge) {
                                                         // linear edge
@@ -1124,80 +852,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                                                     if (!AffineLinearEdge || metric.AlwaysUsePerNodeScaling)
                                                         m_Trf_UxGradVSumBuffer[gamma, delta, cr, cc].Multiply(1.0, sqrtGram, m_Trf_UxGradVSumBuffer[gamma, delta, cr, cc], 0.0, "ikd", "ik", "ikd");
 
-                                                    if (diagFtMatch) {
-                                                        try {
-                                                            var trf = m_Trf_UxGradVSumBuffer[gamma, delta, cr, cc];
-                                                            var sbTrf = new System.Text.StringBuilder();
-                                                            for (int dd = 0; dd < D; dd++) sbTrf.Append(trf[diagFtEdgeLocal, 0, dd].ToString("0.##########")).Append(dd < D - 1 ? "," : "");
-                                                            double sg = sqrtGram != null ? sqrtGram[diagFtEdgeLocal, 0] : 1.0;
-                                                            Console.WriteLine(string.Format(
-                                                                "DIAG_FLUXTRAFO_POST: edge={0} gamma={1} delta={2} cr={3} cc={4} sqrtGram[node0]={5:0.##########} AFTER_UxGradV[node0,:]=[{6}]",
-                                                                diagFtEdgeLocal + i0, gamma, delta, cr, cc, sg, sbTrf.ToString()));
-                                                        } catch (Exception ex) { Console.WriteLine("DIAG_FLUXTRAFO_POST: (threw) " + ex.Message); }
-                                                    }
                                                 }
                                                 if (m_GradUxVSumBuffer[gamma, delta, cr, cc] != null) {
-
-                                                    // DIAGNOSTIC (coordinator-requested step 8,
-                                                    // this round): analogous check for the
-                                                    // GradUxV buffer (invJacobi_U-based transform,
-                                                    // conduction's "consistency term" slot).
-                                                    bool diagFtMatch2 = false;
-                                                    int diagFtEdgeLocal2 = -1;
-                                                    if (System.Environment.GetEnvironmentVariable("DIAG_FLUXTRAFO") == "1") {
-                                                        string fgs = System.Environment.GetEnvironmentVariable("DIAG_FLUXTRAFO_GAMMA");
-                                                        string fds = System.Environment.GetEnvironmentVariable("DIAG_FLUXTRAFO_DELTA");
-                                                        string fes = System.Environment.GetEnvironmentVariable("DIAG_FLUXTRAFO_EDGE");
-                                                        if (fgs != null && fds != null && fes != null
-                                                            && int.TryParse(fgs, out int fg2) && int.TryParse(fds, out int fd2) && int.TryParse(fes, out int fte2)
-                                                            && gamma == fg2 && delta == fd2) {
-                                                            diagFtEdgeLocal2 = fte2 - i0;
-                                                            diagFtMatch2 = diagFtEdgeLocal2 >= 0 && diagFtEdgeLocal2 < m_GradUxVSumBuffer[gamma, delta, cr, cc].GetLength(0);
-                                                        }
-                                                    }
-                                                    if (diagFtMatch2) {
-                                                        try {
-                                                            var raw = m_GradUxVSumBuffer[gamma, delta, cr, cc];
-                                                            var ij = AffineLinearEdge ? null : invJacobi_U;
-                                                            var sbRaw = new System.Text.StringBuilder();
-                                                            for (int dd = 0; dd < D; dd++) sbRaw.Append(raw[diagFtEdgeLocal2, 0, dd].ToString("0.##########")).Append(dd < D - 1 ? "," : "");
-                                                            string ijStr = "n/a(affine)";
-                                                            if (ij != null) {
-                                                                var sbIj = new System.Text.StringBuilder();
-                                                                for (int bb = 0; bb < D; bb++) {
-                                                                    for (int dd = 0; dd < D; dd++) sbIj.Append(ij[diagFtEdgeLocal2, 0, bb, dd].ToString("0.######")).Append(dd < D - 1 ? "," : ";");
-                                                                }
-                                                                ijStr = sbIj.ToString();
-                                                            }
-                                                            Console.WriteLine(string.Format(
-                                                                "DIAG_FLUXTRAFO_PRE: edge={0} gamma={1} delta={2} cr={3} cc={4} curvedEdge={5} raw_GradUxV[node0,:]=[{6}] invJacobi_U[node0,b,d]=[{7}]",
-                                                                diagFtEdgeLocal2 + i0, gamma, delta, cr, cc, !AffineLinearEdge, sbRaw.ToString(), ijStr));
-                                                        } catch (Exception ex) { Console.WriteLine("DIAG_FLUXTRAFO_PRE(GradUxV): (threw) " + ex.Message); }
-
-                                                        // DIAGNOSTIC (coordinator-requested full
-                                                        // M-row reconstruction, this round): dump
-                                                        // invJacobi_U for EVERY node (not just
-                                                        // node 0) at cc=1 (trial=OUT=cell8 side)
-                                                        // -- needed to transform cell 8's
-                                                        // Temperature-gradient DOF sensitivity
-                                                        // from reference to physical space on
-                                                        // edges 35/38, same quantity Step 8
-                                                        // already validated at node 0 for edge 37.
-                                                        if (cc == 1 && !AffineLinearEdge && invJacobi_U != null) {
-                                                            try {
-                                                                int NoOfNodesLocal = m_GradUxVSumBuffer[gamma, delta, cr, cc].GetLength(1);
-                                                                for (int nn = 0; nn < NoOfNodesLocal; nn++) {
-                                                                    var sbIj2 = new System.Text.StringBuilder();
-                                                                    for (int bb = 0; bb < D; bb++) {
-                                                                        for (int dd = 0; dd < D; dd++) sbIj2.Append(invJacobi_U[diagFtEdgeLocal2, nn, bb, dd].ToString("0.################")).Append(dd < D - 1 ? "," : ";");
-                                                                    }
-                                                                    Console.WriteLine(string.Format(
-                                                                        "DIAG_INVJACU_ALLNODES: edge={0} cr={1} cc={2} node={3} invJacobi_U[b,d]=[{4}]",
-                                                                        diagFtEdgeLocal2 + i0, cr, cc, nn, sbIj2.ToString()));
-                                                                }
-                                                            } catch (Exception ex) { Console.WriteLine("DIAG_INVJACU_ALLNODES: (threw) " + ex.Message); }
-                                                        }
-                                                    }
 
                                                     // trial function gradient ( \/U ) transform:
                                                     if (AffineLinearEdge) {
@@ -1211,17 +867,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                                                     if (!AffineLinearEdge || metric.AlwaysUsePerNodeScaling)
                                                         m_Trf_GradUxVSumBuffer[gamma, delta, cr, cc].Multiply(1.0, sqrtGram, m_Trf_GradUxVSumBuffer[gamma, delta, cr, cc], 0.0, "ikd", "ik", "ikd");
 
-                                                    if (diagFtMatch2) {
-                                                        try {
-                                                            var trf = m_Trf_GradUxVSumBuffer[gamma, delta, cr, cc];
-                                                            var sbTrf = new System.Text.StringBuilder();
-                                                            for (int dd = 0; dd < D; dd++) sbTrf.Append(trf[diagFtEdgeLocal2, 0, dd].ToString("0.##########")).Append(dd < D - 1 ? "," : "");
-                                                            double sg = sqrtGram != null ? sqrtGram[diagFtEdgeLocal2, 0] : 1.0;
-                                                            Console.WriteLine(string.Format(
-                                                                "DIAG_FLUXTRAFO_POST: edge={0} gamma={1} delta={2} cr={3} cc={4} sqrtGram[node0]={5:0.##########} AFTER_GradUxV[node0,:]=[{6}]",
-                                                                diagFtEdgeLocal2 + i0, gamma, delta, cr, cc, sg, sbTrf.ToString()));
-                                                        } catch (Exception ex) { Console.WriteLine("DIAG_FLUXTRAFO_POST(GradUxV): (threw) " + ex.Message); }
-                                                    }
                                                 }
                                                 if (m_GradUxGradVSumBuffer[gamma, delta, cr, cc] != null) {
 
@@ -1309,27 +954,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                         } else {
                             if (maxDeg >= 0)
                                 trafo = gDat.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(jCellMin, jCellMax - jCellMin + 1, maxDeg);
-                        }
-
-                        // DIAGNOSTIC (coordinator-requested M-path-vs-f-path geometric-data
-                        // divergence check, this round): EDGE-path analogue of the VOLUME-path
-                        // dump in LECVolumeQuadrature2.cs -- same format, to bit-diff against
-                        // NECQuadratureEdge.cs's OrthoTrf for the same cell.
-                        if (System.Environment.GetEnvironmentVariable("DIAG_GEOM_COMPARE") == "1" && trafo != null) {
-                            string targetStr9 = System.Environment.GetEnvironmentVariable("DIAG_GEOM_COMPARE_CELL");
-                            if (targetStr9 != null && int.TryParse(targetStr9, out int targetCell9)
-                                && targetCell9 >= jCellMin && targetCell9 < jCellMax) {
-                                int jj9 = targetCell9 - jCellMin;
-                                int N9 = trafo.GetLength(1);
-                                var sb9 = new System.Text.StringBuilder();
-                                sb9.Append($"DIAG_GEOM_COMPARE[M-EDGE]: cell={targetCell9} jCellMin={jCellMin} jCellMax={jCellMax} maxDeg={maxDeg} N={N9}\n");
-                                for (int n9 = 0; n9 < N9; n9++) {
-                                    for (int m9 = 0; m9 < N9; m9++) {
-                                        sb9.Append($"  trafo[n={n9},m={m9}]={trafo[jj9, n9, m9]:G17}\n");
-                                    }
-                                }
-                                Console.WriteLine(sb9.ToString());
-                            }
                         }
 
 
@@ -1628,8 +1252,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             /// <paramref name="periodicIdx"/>. This is the complement of <see cref="SpliceCr1Block"/>'s
             /// "everything except cc" (skipCc1) semantics: where SpliceCr1Block copies every cc
             /// slot except an excluded one, this copies ONE slot and touches nothing else --
-            /// used by <see cref="FixOutSelfDiagonalBlock"/>/<see cref="FixOutSelfDiagonalBlockAffine"/>
-            /// to splice a native (fully unrotated) rerun's (cr=1,cc=1)/(cr=1,cc=0) result without
+            /// used by <see cref="FixOutSelfDiagonalBlock"/>
+            /// to splice a native (fully unrotated) rerun's (cr=1,cc=1) result without
             /// disturbing whatever ApplyPeriodicRotation (Step1/Step2) already left in the other
             /// (cr,cc) slots.
             /// </summary>
@@ -1693,33 +1317,21 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             /// this native rerun into the real buffers -- (cr=0,*) and (cr=1,cc=0), already
             /// correctly computed by the main pass/Step 1/Step 2 above, are left untouched.
             ///
-            /// Gated by DIAG_ENABLE_OUT_SELFDIAG_FIX=1 (default: fix NOT applied) -- opt-in, not
-            /// opt-out, despite being mechanistically confirmed correct for the ONE targeted
-            /// (cr=1,cc=1) diagonal block (BoSSS.Application.PeriodicRotationTest3D's
+            /// Permanently applied (unconditional): mechanistically confirmed correct for the ONE
+            /// targeted (cr=1,cc=1) diagonal block (BoSSS.Application.PeriodicRotationTest3D's
             /// FlatRotatedPeriodicBoxMain, cell=40: every previously-wrong VelocityZ mode is fixed
-            /// and every previously-correct VelocityY/VelocityZ mode -- including the modes the old
-            /// DIAG_FORCE_SPLICE_CC1 experiment broke -- stays correct, PROVIDED
-            /// DIAG_REVERSE_RESTORE=1 is also set so the pre-existing restore-order bug isn't
-            /// feeding this fix a stale, partially-rotated "native" snapshot). Despite that clean
-            /// per-cell result, whole-suite validation on the same flat box found two things that
-            /// make shipping this as the default premature: (1) STEP-1/3's aggregate
-            /// ||err||_periodicOnly is unchanged (19.38%) because, once cell 40 is fixed, the
-            /// worst-error DOF (DIAG_FIND_WORST_ERR) moves to a DIFFERENT cell (27, VelocityY,
-            /// same 0.1397 magnitude) -- an analogous, still-unfixed instance of presumably the
-            /// same class of bug that this method does not reach; (2) STEP-3/3 (non-polynomial
-            /// GradU) regresses from 2.84% to 20.13%, identically under forward or reverse restore
-            /// order, i.e. a genuinely new problem this fix introduces for non-polynomial fields,
-            /// not a restore-order artifact. STEP-2/3 does improve substantially (42.44% -> 14.43%
-            /// under forward restore; 31.62% -> 14.43% under reverse), and this method supersedes
-            /// the old DIAG_FORCE_SPLICE_CC1 experiment (confirmed, via PeriodicRotationTest3D, to
-            /// be a whack-a-mole trade rather than a fix: it spliced Step 1's rerun --
-            /// rotated-normal + IN-rotated-by-M -- into (cr=1,cc=1), which is wrong whenever the
-            /// form's OUT-side coefficient does not itself depend on IN data). That toggle and the
-            /// isJacobianOperator/skipCc1 gate it overrode are left in place unchanged, since
-            /// skipCc1 continues to correctly protect (cr=1,cc=1) from Step 1's rotated-IN rerun
-            /// for Jacobian operators -- this method's splice, when enabled, simply runs after and
-            /// is authoritative for that one slot. Until the cell-27-class defect and the STEP-3
-            /// regression are understood, this stays off by default.
+            /// and every previously-correct VelocityY/VelocityZ mode stays correct, given the
+            /// reverse/LIFO restore order in <see cref="RestoreIndices"/>, which is likewise
+            /// permanent). This method supersedes the old "force splice cc=1" experiment (confirmed
+            /// via PeriodicRotationTest3D to be a whack-a-mole trade rather than a fix: it spliced
+            /// Step 1's rerun -- rotated-normal + IN-rotated-by-M -- into (cr=1,cc=1), which is
+            /// wrong whenever the form's OUT-side coefficient does not itself depend on IN data).
+            /// The isJacobianOperator/skipCc1 gate this supersedes is left in place unchanged,
+            /// since skipCc1 continues to correctly protect (cr=1,cc=1) from Step 1's rotated-IN
+            /// rerun for Jacobian operators -- this method's splice simply runs after and is
+            /// authoritative for that one slot. Note: an analogous, still-unfixed instance of
+            /// presumably the same class of bug, affecting a different cell, is tracked separately
+            /// (see SPEC.md Section 9) and is not addressed by this method.
             /// </remarks>
             private void FixOutSelfDiagonalBlock(int i0, int Length, IGridData grid, EdgeFormParams efp, List<MyChunk> Edges, bool MustLock, int NoOfNodes, int D) {
                 // Scoping guard: only Jacobian-differentiated operators have a (cr=1,cc=1) slot
@@ -1733,20 +1345,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 // Skipping entirely for non-Jacobian operators makes the Laplace/SIP/divergence
                 // recovery permanent-by-construction rather than by empirical (if exact) luck.
                 if (!IsJacobianOperator())
-                    return;
-
-                // PERFORMANCE-INVESTIGATION TOGGLE (coordinator-requested, this round,
-                // temporary): DIAG_ENABLE_OUT_SELFDIAG_FIX=0 (the method's EXISTING gate, further
-                // down) only skips the SPLICE of this method's rerun result into the main
-                // buffers -- the expensive rerun itself (the four EvalNSumForm calls below) still
-                // runs unconditionally either way, so that toggle alone cannot measure this
-                // method's actual assembly-time cost. This SEPARATE, new toggle skips the entire
-                // method -- rerun included -- purely to A/B its wall-clock cost; not a proposed
-                // shipped change (unlike DIAG_ENABLE_OUT_SELFDIAG_FIX, which does affect
-                // correctness and is documented/left in place unchanged). Safe-by-default: unset
-                // or any value other than "1" leaves current (correctness-relevant) behavior
-                // untouched.
-                if (System.Environment.GetEnvironmentVariable("DIAG_SKIP_SELFDIAG_RERUN") == "1")
                     return;
 
                 GetPeriodicEdgesAndMatrices(i0, Length, grid, out var periodicIdx, out var periodicMtx);
@@ -1781,199 +1379,29 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 var savedNormalBuffer = this.NormalBuffer;
                 this.NormalBuffer = RotatedNormalBuffer;
                 try {
-                    DiagDispatchTag.CurrentTermType = "NATIVEFIX-UxV";
                     EvalNSumForm(ref efp, i0, m_Edgeform_UxV, Edges, m_UxVComponentBuffer, scratchUxV, false, NoOfNodes, D, m_Edgeform_UxV_Watches, MustLock,
                         (E, mda) => E.InternalEdge_UxV(ref efp, mda),
                         (E, mda) => E.BoundaryEdge_UxV(ref efp, mda));
-                    DiagDispatchTag.CurrentTermType = "NATIVEFIX-GradUxV";
                     EvalNSumForm(ref efp, i0, m_Edgeform_GradUxV, Edges, m_GradUxVComponentBuffer, scratchGradUxV, false, NoOfNodes, D, m_Edgeform_GradUxV_Watches, MustLock,
                         (E, mda) => E.InternalEdge_GradUxV(ref efp, mda),
                         (E, mda) => E.BoundaryEdge_GradUxV(ref efp, mda));
-                    DiagDispatchTag.CurrentTermType = "NATIVEFIX-UxGradV";
                     EvalNSumForm(ref efp, i0, m_Edgeform_UxGradV, Edges, m_UxGradVComponentBuffer, scratchUxGradV, false, NoOfNodes, D, m_Edgeform_UxGradV_Watches, MustLock,
                         (E, mda) => E.InternalEdge_UxGradV(ref efp, mda),
                         (E, mda) => E.BoundaryEdge_UxGradV(ref efp, mda));
-                    DiagDispatchTag.CurrentTermType = "NATIVEFIX-GradUxGradV";
                     EvalNSumForm(ref efp, i0, m_Edgeform_GradUxGradV, Edges, m_GradUxGradVComponentBuffer, scratchGradUxGradV, false, NoOfNodes, D, m_Edgeform_GradUxGradV_Watches, MustLock,
                         (E, mda) => E.InternalEdge_GradUxGradV(ref efp, mda),
                         (E, mda) => E.BoundaryEdge_GradUxGradV(ref efp, mda));
-                    DiagDispatchTag.CurrentTermType = null;
                 } finally {
                     this.NormalBuffer = savedNormalBuffer;
                 }
 
-                // On by default as of this round: confirmed correct (FD-matched, per-cell survey
-                // fully clean on both components) and validated to bring flat-box/cylinder
-                // STEP1/2/3 down to ~machine precision with zero regression on the 16-check suite.
-                // Set DIAG_ENABLE_OUT_SELFDIAG_FIX=0 to opt back out (e.g. for A/B regression
-                // comparison against the old default-off behavior).
-                if (System.Environment.GetEnvironmentVariable("DIAG_ENABLE_OUT_SELFDIAG_FIX") != "0") {
-                    SpliceCr1SingleCc(scratchUxV, m_UxVSumBuffer, GAMMA, NoOfNodes, periodicIdx, 1);
-                    SpliceCr1SingleCc(scratchGradUxV, m_GradUxVSumBuffer, GAMMA, NoOfNodes, periodicIdx, 1);
-                    SpliceCr1SingleCc(scratchUxGradV, m_UxGradVSumBuffer, GAMMA, NoOfNodes, periodicIdx, 1);
-                    SpliceCr1SingleCc(scratchGradUxGradV, m_GradUxGradVSumBuffer, GAMMA, NoOfNodes, periodicIdx, 1);
-                }
-            }
-
-            /// <summary>
-            /// Affine counterpart of <see cref="FixOutSelfDiagonalBlock"/>: fixes the "OUT-cell's
-            /// own equation" (cr=1) affine (EdgeSourceV/EdgeSourceGradV) slot for periodic edges,
-            /// which suffers the same native-vs-rotated-OUT mismatch (this is very likely the same
-            /// root cause behind the previously-identified "Bug #2" affine residual). Unlike the
-            /// matrix buffers, the affine buffers have no "cc"/trial axis (CC=1, index 0 only), so
-            /// there is no cross-vs-diagonal distinction to preserve here: the ENTIRE cr=1 slot is
-            /// re-derived from a fully native (unrotated) rerun and spliced in.
-            /// </summary>
-            private void FixOutSelfDiagonalBlockAffine(int i0, int Length, IGridData grid, EdgeFormParams efp, List<MyChunk> Edges, bool MustLock, int NoOfNodes, int D) {
-                // PERMANENTLY DISABLED -- proven incorrect by hand-derivation (not just
-                // empirically ruled out), unlike its structurally-valid matrix-side counterpart
-                // FixOutSelfDiagonalBlock.
-                //
-                // The matrix-side (cr=1,cc=1) coefficient (d(residual_OUT)/d(Grad_uOUT)) is
-                // genuinely self-contained: for this form's convOUT = sum_j uOUT[j]*Grad_uOUT[gamma,j],
-                // differentiating w.r.t. Grad_uOUT never involves convIN/Utmp_IN at all, so using
-                // OUT's fully native data is correct there (confirmed via FD matching).
-                //
-                // The AFFINE (cr=1) contribution is a fundamentally different quantity, NOT
-                // analogous to the matrix coefficient. Deriving it via EdgeFormDifferentiator's
-                // "ret(U=0) = f0 - sum dU_iVar*Utmp[iVar]" formula: since
-                // F = 0.5*(convIN+convOUT)*(vIN-vOUT) is a homogeneous DEGREE-2 function of the
-                // joint (u,Grad_u) argument vector, Euler's theorem gives
-                // sum dU_iVar*Utmp[iVar] = 2*f0 exactly, so b = f0 - 2*f0 = -f0, and decomposing
-                // by test-function role: b_cr1 = +0.5*(convIN_tmp + convOUT_tmp) -- this GENUINELY
-                // requires BOTH convIN_tmp (using IN's own data, correctly rotated into OUT's
-                // frame) AND convOUT_tmp (OUT's own native data). There is no way to compute the
-                // correct b_cr1 using OUT-only data, so this method's entire "native OUT rerun"
-                // premise is inapplicable to the affine case, regardless of restore-order
-                // correctness.
-                //
-                // Verified numerically for cell 27's periodic edge (126, flat box,
-                // FlatRotatedPeriodicBoxMain): the hand-derived b_cr1(gamma=1,Y)=-y_node and
-                // b_cr1(gamma=2,Z)=-z_node exactly match ApplyPeriodicRotationAffine's OWN
-                // (pre-existing, unconditional) rerun output at node 0 (-0.24155869/+0.24155869)
-                // to full precision, GIVEN a correctly-restored (see RestoreIndices/
-                // DIAG_REVERSE_RESTORE) Parameters_IN baseline -- i.e. ApplyPeriodicRotationAffine
-                // was already correct all along; THIS method's splice was overwriting that correct
-                // value with a wrong one (observed: 0, vs the correct -0.24155869) by discarding
-                // the genuinely-needed Parameters_IN contribution. Keeping this method a permanent
-                // no-op rather than deleting it preserves the diagnostic infrastructure
-                // (DIAG_AFFINE_PARAM_SNAPSHOT_EDGE, DIAG_AFFRERUN_SNAPSHOT_EDGE) used to prove this,
-                // for any future investigation of the restore-order chain feeding
-                // ApplyPeriodicRotationAffine.
-                return;
-
-#pragma warning disable CS0162 // unreachable code -- see remark above, kept for reference/diagnostics
-                // Scoping guard -- see the identical remark in FixOutSelfDiagonalBlock: only
-                // Jacobian-differentiated operators need this rerun at all.
-                if (!IsJacobianOperator())
-                    return;
-
-                GetPeriodicEdgesAndMatrices(i0, Length, grid, out var periodicIdx, out var periodicMtx);
-                if (periodicIdx.Count <= 0)
-                    return;
-                int GAMMA = m_owner.GAMMA;
-
-                // DIAGNOSTIC-ONLY (env-gated): dump the raw m_ParameterFieldsValues_OUT state for
-                // every "_lin"/"_lin_d[d]" parameter, restricted to a target edge, right at entry
-                // -- i.e. exactly what the main pass's own rotate-then-restore window (using
-                // whatever RestoreIndices order is active) left behind for this method to treat
-                // as "native OUT". Used to determine whether the Y/Z field-swap symptom (found to
-                // correlate with DIAG_REVERSE_RESTORE, not with this method's own splice) already
-                // exists in this snapshot, i.e. whether the corruption happens upstream (main
-                // pass's restore) before this method ever runs.
-                {
-                    string snapEdgeStr = System.Environment.GetEnvironmentVariable("DIAG_AFFINE_PARAM_SNAPSHOT_EDGE");
-                    if (snapEdgeStr != null && int.TryParse(snapEdgeStr, out int snapEdgeGlobal)) {
-                        int snapLocal = snapEdgeGlobal - i0;
-                        if (periodicIdx.Contains(snapLocal)) {
-                            var names = m_owner.Operator.ParameterVar;
-                            for (int pi = 0; pi < names.Count; pi++) {
-                                string pn = names[pi];
-                                if (pn == null || !(pn.EndsWith("_lin", StringComparison.Ordinal) || pn.Contains("_lin_d[")))
-                                    continue;
-                                var arr = m_ParameterFieldsValues_OUT[pi];
-                                if (arr == null) continue;
-                                Console.WriteLine(string.Format(
-                                    "DIAG_AFFINE_PARAM_SNAPSHOT: edge={0} param={1} (idx={2}) node0={3:0.########} node9={4:0.########}",
-                                    snapEdgeGlobal, pn, pi, arr[snapLocal, 0], arr[snapLocal, 9]));
-                            }
-                        }
-                    }
-                }
-
-                var scratchV = CloneSumBufferStructure(m_VSumBuffer);
-                var scratchGradV = CloneSumBufferStructure(m_GradVSumBuffer);
-
-                // Step 0 fix -- see the identical remark in FixOutSelfDiagonalBlock: this rerun
-                // must use OUT's own true (rotated) outward normal, not the native/IN-anchored one.
-                var RotatedNormalBuffer = NormalBuffer.CloneAs();
-                for (int k = 0; k < periodicIdx.Count; k++) {
-                    int i = periodicIdx[k];
-                    var Mtx = periodicMtx[k];
-                    for (int node = 0; node < NoOfNodes; node++) {
-                        double n0 = NormalBuffer[i, node, 0], n1 = NormalBuffer[i, node, 1];
-                        RotatedNormalBuffer[i, node, 0] = Mtx[0, 0] * n0 + Mtx[0, 1] * n1;
-                        RotatedNormalBuffer[i, node, 1] = Mtx[1, 0] * n0 + Mtx[1, 1] * n1;
-                    }
-                }
-
-                var savedNormalBuffer = this.NormalBuffer;
-                this.NormalBuffer = RotatedNormalBuffer;
-                try {
-                    DiagDispatchTag.CurrentTermType = "NATIVEFIX-V";
-                    EvalNSumForm(ref efp, i0, m_EdgeSourceV, Edges, m_VComponentBuffer, scratchV, true, NoOfNodes, D, m_EdgeSourceV_Watches, MustLock,
-                        (E, mda) => E.InternalEdge_V(ref efp, mda),
-                        (E, mda) => E.BoundaryEdge_V(ref efp, mda));
-                    DiagDispatchTag.CurrentTermType = "NATIVEFIX-GradV";
-                    EvalNSumForm(ref efp, i0, m_EdgeSourceGradV, Edges, m_GradVComponentBuffer, scratchGradV, true, NoOfNodes, D, m_EdgeSourceGradV_Watches, MustLock,
-                        (E, mda) => E.InternalEdge_GradV(ref efp, mda),
-                        (E, mda) => E.BoundaryEdge_GradV(ref efp, mda));
-                    DiagDispatchTag.CurrentTermType = null;
-                } finally {
-                    this.NormalBuffer = savedNormalBuffer;
-                }
-
-                // DIAGNOSTIC-ONLY (env-gated): dump the affine (cr=1,cc=0) slot's BEFORE
-                // (whatever the main pass/ApplyPeriodicRotationAffine left there) vs AFTER
-                // (this method's native-normal-preserving rerun) values for a target edge, to
-                // check whether this splice is actually changing anything for a given
-                // (edge,gamma) -- and if so, whether it moves toward or away from correct.
-                string traceEdgeStr = System.Environment.GetEnvironmentVariable("DIAG_AFFINE_FIX_TRACE_EDGE");
-                if (traceEdgeStr != null && int.TryParse(traceEdgeStr, out int traceEdgeGlobal)) {
-                    int traceLocal = traceEdgeGlobal - i0;
-                    if (periodicIdx.Contains(traceLocal)) {
-                        for (int gamma = 0; gamma < GAMMA; gamma++) {
-                            var before = m_VSumBuffer[gamma, 0, 1, 0];
-                            var after = scratchV[gamma, 0, 1, 0];
-                            if (before == null || after == null) continue;
-                            for (int node = 0; node < NoOfNodes; node++) {
-                                double b = before[traceLocal, node], a = after[traceLocal, node];
-                                if (Math.Abs(b - a) > 1e-12)
-                                    Console.WriteLine(string.Format(
-                                        "DIAG_AFFINE_FIX_TRACE: edge={0} gamma={1} node={2} V: before(main/Step1)={3:0.########} after(native rerun)={4:0.########} diff={5:0.########}",
-                                        traceEdgeGlobal, gamma, node, b, a, a - b));
-                            }
-                            var beforeG = m_GradVSumBuffer[gamma, 0, 1, 0];
-                            var afterG = scratchGradV[gamma, 0, 1, 0];
-                            if (beforeG == null || afterG == null) continue;
-                            for (int node = 0; node < NoOfNodes; node++) {
-                                for (int d = 0; d < D; d++) {
-                                    double b = beforeG[traceLocal, node, d], a = afterG[traceLocal, node, d];
-                                    if (Math.Abs(b - a) > 1e-12)
-                                        Console.WriteLine(string.Format(
-                                            "DIAG_AFFINE_FIX_TRACE: edge={0} gamma={1} node={2} d={3} GradV: before(main/Step1)={4:0.########} after(native rerun)={5:0.########} diff={6:0.########}",
-                                            traceEdgeGlobal, gamma, node, d, b, a, a - b));
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (System.Environment.GetEnvironmentVariable("DIAG_ENABLE_OUT_SELFDIAG_FIX") == "1") {
-                    SpliceCr1SingleCc(scratchV, m_VSumBuffer, GAMMA, NoOfNodes, periodicIdx, 0);
-                    SpliceCr1SingleCc(scratchGradV, m_GradVSumBuffer, GAMMA, NoOfNodes, periodicIdx, 0);
-                }
-#pragma warning restore CS0162
+                // Confirmed correct (FD-matched, per-cell survey fully clean on both components)
+                // and validated to bring flat-box/cylinder STEP1/2/3 down to ~machine precision
+                // with zero regression on the 16-check suite.
+                SpliceCr1SingleCc(scratchUxV, m_UxVSumBuffer, GAMMA, NoOfNodes, periodicIdx, 1);
+                SpliceCr1SingleCc(scratchGradUxV, m_GradUxVSumBuffer, GAMMA, NoOfNodes, periodicIdx, 1);
+                SpliceCr1SingleCc(scratchUxGradV, m_UxGradVSumBuffer, GAMMA, NoOfNodes, periodicIdx, 1);
+                SpliceCr1SingleCc(scratchGradUxGradV, m_GradUxGradVSumBuffer, GAMMA, NoOfNodes, periodicIdx, 1);
             }
 
             /// <summary>
@@ -2049,7 +1477,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             /// (including the one used for extra (D-sized) axis shape info) against the
             /// caller-supplied Length/NoOfNodes.
             /// </summary>
-            private void RotateCrossBlock(MultidimensionalArray[, , ,] SumBuffer, MultidimensionalArray[, , ,] TrfBuffer, int[][] VectorTuples, int GAMMA, int Length, int NoOfNodes, MultidimensionalArray Mtx, int i, int cr, int cc, string diagLabel = null) {
+            private void RotateCrossBlock(MultidimensionalArray[, , ,] SumBuffer, MultidimensionalArray[, , ,] TrfBuffer, int[][] VectorTuples, int GAMMA, int Length, int NoOfNodes, MultidimensionalArray Mtx, int i, int cr, int cc) {
                 bool aliased = object.ReferenceEquals(SumBuffer, TrfBuffer);
 
                 foreach (int[] tuple in VectorTuples) {
@@ -2120,23 +1548,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                                             acc += Mtx[d, e] * vOld[e];
                                         bufs[d][idx] = acc;
                                     }
-
-                                    // DIAGNOSTIC (coordinator-requested cross-block check, this
-                                    // round): dump the actual matrix cross-block values this
-                                    // function rotates -- BEFORE (vOld) and AFTER (bufs[d][idx],
-                                    // already written above) -- for a target edge, node 0, first
-                                    // extra-axis slot, and every gamma (codomain row), to
-                                    // hand-verify against the SAME rotation matrix already
-                                    // confirmed correct for the parameter tuples last round.
-                                    if (diagLabel != null && i == s_diagCrossBlockEdge && k == 0 && e1 == 0 && e2 == 0 && Dloc == 3) {
-                                        var after = new double[Dloc];
-                                        for (int d = 0; d < Dloc; d++) after[d] = bufs[d][idx];
-                                        Console.WriteLine(string.Format(
-                                            "DIAG_CROSSBLOCK: label={0} gamma={1} cr={2} cc={3} BEFORE=[{4:0.########},{5:0.########},{6:0.########}] AFTER=[{7:0.########},{8:0.########},{9:0.########}]",
-                                            diagLabel, gamma, cr, cc,
-                                            vOld[0], vOld[1], vOld[2],
-                                            after[0], after[1], after[2]));
-                                    }
                                 }
                             }
                         }
@@ -2163,7 +1574,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             /// <see cref="m_UxGradVSumBuffer"/>'s "GradV"-direction axis, since that axis belongs
             /// to a fixed test function that is never substituted/rotated at all.
             /// </summary>
-            private void RotateGradientAxis(MultidimensionalArray[, , ,] SumBuffer, int GammaCount, int DeltaCount, int NoOfNodes, int gradAxisPos, MultidimensionalArray Mtx, int i, int cr, int cc, string diagLabel = null) {
+            private void RotateGradientAxis(MultidimensionalArray[, , ,] SumBuffer, int GammaCount, int DeltaCount, int NoOfNodes, int gradAxisPos, MultidimensionalArray Mtx, int i, int cr, int cc) {
                 for (int gamma = 0; gamma < GammaCount; gamma++) {
                     for (int delta = 0; delta < DeltaCount; delta++) {
                         var b = SumBuffer[gamma, delta, cr, cc];
@@ -2193,25 +1604,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                                         acc += Mtx[bIdx, e] * vOld[e];
                                     idx[gradAxisPos] = bIdx;
                                     b[idx] = acc;
-                                }
-
-                                // DIAGNOSTIC (coordinator-requested conduction/RotateGradientAxis
-                                // check, this round): dump the GradU-direction-axis rotation this
-                                // function applies -- BEFORE (vOld) and AFTER -- for a target edge,
-                                // node 0, first extra-axis slot, every (gamma,delta) with a
-                                // non-null entry (including conduction's own (HeatEq,Temperature)
-                                // slot, which -- unlike momentum/HeatEq-convection's vector-tuple
-                                // component axis -- is a SCALAR domain var and so is invisible to
-                                // RotateCrossBlock's VectorTuples loop; this is its ONLY periodic
-                                // rotation treatment).
-                                if (diagLabel != null && i == s_diagCrossBlockEdge && k == 0 && eo == 0 && Dloc == 3) {
-                                    var after = new double[Dloc];
-                                    for (int bIdx = 0; bIdx < Dloc; bIdx++) { idx[gradAxisPos] = bIdx; after[bIdx] = b[idx]; }
-                                    Console.WriteLine(string.Format(
-                                        "DIAG_GRADAXIS: label={0} gamma={1} delta={2} cr={3} cc={4} BEFORE=[{5:0.########},{6:0.########},{7:0.########}] AFTER=[{8:0.########},{9:0.########},{10:0.########}]",
-                                        diagLabel, gamma, delta, cr, cc,
-                                        vOld[0], vOld[1], vOld[2],
-                                        after[0], after[1], after[2]));
                                 }
                             }
                         }
@@ -2297,57 +1689,30 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 return result.ToArray();
             }
 
-            private static bool s_dumpedParamVectorTuples = false;
-            private static readonly HashSet<int> s_dumpedAllToSubGammas = new HashSet<int>();
-            private static readonly HashSet<int> s_dumpedAllToSubArgGammas = new HashSet<int>();
-
             /// <summary>
             /// Yields restore-loop indices for the 4 RestoreParamSlots call sites.
             /// </summary>
             /// <remarks>
-            /// DEFAULT is now REVERSE (LIFO) order, as of this round -- previously forward order
-            /// (t=0..n-1) was kept as the default despite reverse being independently verified as
-            /// the mathematically-correct fix for a genuine bug (forward-order restore leaves
+            /// Permanently REVERSE (LIFO) order: forward order (t=0..n-1) leaves
             /// m_ParameterFieldsValues_OUT/_IN's overlapping row/cross tensor-rotation tuples in a
-            /// stale, partially-rotated state -- confirmed by exact matrix arithmetic this round:
-            /// for a native gradient tensor T that happens to equal the edge's own rotation matrix
-            /// M, forward restore leaves T*M^T (direction/column axis still rotated) instead of T,
-            /// while reverse restore correctly recovers T exactly).
-            ///
-            /// The reason reverse was NOT shipped as default earlier despite being provably
-            /// correct: FixOutSelfDiagonalBlockAffine (see its remarks) was ALSO active and was
-            /// independently wrong for a different, unrelated reason (it assumed the affine cr=1
-            /// contribution is self-contained w.r.t. OUT-only data, which Euler's-theorem
-            /// hand-derivation disproves -- see FixOutSelfDiagonalBlockAffine's remarks). With
-            /// that method now permanently disabled, reverse restore order combined with
-            /// FixOutSelfDiagonalBlock (matrix side) drives flat-box AND cylinder STEP1/2/3 all the
-            /// way to ~machine precision (flat: 19.38%/42.44%/2.84% -> ~0%/0%/0%; cylinder:
+            /// stale, partially-rotated state (confirmed by exact matrix arithmetic: for a native
+            /// gradient tensor T that happens to equal the edge's own rotation matrix M, forward
+            /// restore leaves T*M^T -- direction/column axis still rotated -- instead of T, while
+            /// reverse restore correctly recovers T exactly). Combined with
+            /// FixOutSelfDiagonalBlock (matrix side), this drives flat-box AND cylinder STEP1/2/3 all the way to ~machine
+            /// precision (flat: 19.38%/42.44%/2.84% -> ~0%/0%/0%; cylinder:
             /// 0.47%/0.48%/2.98% -> ~0.01%/0.01%/0.01%), with zero regression on the 16-check
             /// suite or the per-cell survey (all 8 periodic cells clean on both VelocityY and
-            /// VelocityZ). Set DIAG_REVERSE_RESTORE=0 to opt back out to the old forward-order
-            /// default (e.g. for A/B regression comparison).
+            /// VelocityZ).
             /// </remarks>
             private static IEnumerable<int> RestoreIndices(int n) {
-                if (System.Environment.GetEnvironmentVariable("DIAG_REVERSE_RESTORE") != "0") {
-                    for (int t = n - 1; t >= 0; t--) yield return t;
-                } else {
-                    for (int t = 0; t < n; t++) yield return t;
-                }
+                for (int t = n - 1; t >= 0; t--) yield return t;
             }
             private int[][] GetParameterVectorTuples(int D) {
                 var tuples = BoSSS.Foundation.Quadrature.PeriodicBoundaryUtils.GetVectorFieldIndices(m_owner.Operator.ParameterVar, D).ToArray();
                 var crossTuples = GetLinDCrossComponentTuples(D);
                 if (crossTuples.Length > 0)
                     tuples = tuples.Concat(crossTuples).ToArray();
-
-                if (System.Environment.GetEnvironmentVariable("DIAG_DUMP_TUPLES") == "1" && !s_dumpedParamVectorTuples) {
-                    s_dumpedParamVectorTuples = true;
-                    var names = m_owner.Operator.ParameterVar;
-                    Console.WriteLine("DIAG_DUMP_TUPLES: ParameterVar = [" + string.Join(", ", names.Select((n, i) => i + ":" + n)) + "]");
-                    foreach (var t in tuples) {
-                        Console.WriteLine("DIAG_DUMP_TUPLES: tuple = [" + string.Join(", ", t.Select(i => i + ":" + names[i])) + "]");
-                    }
-                }
                 return tuples;
             }
 
@@ -2445,9 +1810,9 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             /// RotatedDerivFlx3D) -- detected the same way <see cref="ApplyPeriodicRotation"/>'s
             /// skipCc1 gate always has, by checking for the synthetic "_lin"/"_lin_d[" parameter
             /// names JacobianParamUpdate creates for a Jacobian's linearization point. Shared here
-            /// so <see cref="FixOutSelfDiagonalBlock"/>/<see cref="FixOutSelfDiagonalBlockAffine"/>
-            /// can use the IDENTICAL condition to scope themselves to Jacobian operators only --
-            /// see their remarks for why running at all (regardless of what they compute) is
+            /// so <see cref="FixOutSelfDiagonalBlock"/>
+            /// can use the IDENTICAL condition to scope itself to Jacobian operators only --
+            /// see its remarks for why running at all (regardless of what it computes) is
             /// unsafe for hand-coded linear operators, whose (cr=1,cc=1) slot Step 1 already
             /// computes correctly.
             /// </summary>
@@ -2473,51 +1838,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 }
             }
 
-            /// <summary>
-            /// Diagnostic-only: dumps the m_UxVSumBuffer/m_GradUxVSumBuffer entries for
-            /// gamma=1 (2nd codomain var, e.g. "ConvY"), delta=1 (2nd domain var, e.g.
-            /// "VelocityY") for every edge in [i0,i0+Length) touching the cell index named by
-            /// env var DIAG_CORNER_CELL_ID, when env var DIAG_CORNER_CELL=1. Node 0 only, all
-            /// (cr,cc) combos that are non-null. Used to trace exactly which stage of
-            /// ApplyPeriodicRotation introduces a spurious value at "corner" cells (touching
-            /// both a rotational and a translational periodic pairing at once).
-            /// </summary>
-            private void DiagDumpCornerCell(IGridData grid, int i0, int Length, string stageLabel) {
-                if (System.Environment.GetEnvironmentVariable("DIAG_CORNER_CELL") != "1")
-                    return;
-                string targetStr = System.Environment.GetEnvironmentVariable("DIAG_CORNER_CELL_ID");
-                if (targetStr == null || !int.TryParse(targetStr, out int targetCell))
-                    return;
-
-                if (m_UxVSumBuffer.GetLength(0) < 2 || m_UxVSumBuffer.GetLength(1) < 2)
-                    return; // this operator doesn't have >=2 codomain/domain vars -- not our target
-
-                var Edge2Cell = grid.iGeomEdges.CellIndices;
-                var tags = grid.iGeomEdges.EdgeTags;
-                for (int e = 0; e < Length; e++) {
-                    int iEdge = e + i0;
-                    int jIn = Edge2Cell[iEdge, 0], jOt = Edge2Cell[iEdge, 1];
-                    if (jIn != targetCell && jOt != targetCell)
-                        continue;
-
-                    string tagInfo = tags[iEdge] >= BoSSS.Foundation.Grid.Classic.GridCommons.FIRST_PERIODIC_BC_TAG ? ("periodicTag=" + tags[iEdge]) : "non-periodic";
-                    Console.WriteLine($"DIAG_CORNER[{stageLabel}]: edge={iEdge} jIn={jIn} jOt={jOt} ({tagInfo}) cell={targetCell} is {(jIn == targetCell ? "IN" : "OUT")}");
-
-                    for (int cr = 0; cr < 2; cr++) {
-                        for (int cc = 0; cc < 2; cc++) {
-                            var b = m_UxVSumBuffer[1, 1, cr, cc];
-                            if (b != null && b.GetLength(0) > e)
-                                Console.WriteLine($"    UxV[gamma=1,delta=1,cr={cr},cc={cc}][edge_local={e},node=0] = {b[e, 0]:0.########}");
-                            var g = m_GradUxVSumBuffer[1, 1, cr, cc];
-                            if (g != null && g.GetLength(0) > e)
-                                Console.WriteLine($"    GradUxV[gamma=1,delta=1,cr={cr},cc={cc}][edge_local={e},node=0,:] = [{g[e, 0, 0]:0.########},{g[e, 0, 1]:0.########},{g[e, 0, 2]:0.########}]");
-                        }
-                    }
-                }
-            }
-
-            private static int s_diagCrossBlockEdge = -1;
-
             private void ApplyPeriodicRotation(int i0, int Length, IGridData grid, EdgeFormParams efp, List<MyChunk> Edges, bool MustLock, int NoOfNodes, int D) {
                 int GAMMA = m_owner.GAMMA;
 
@@ -2525,27 +1845,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 if (periodicIdx.Count <= 0)
                     return;
                 int[][] ParamVectorTuples = GetParameterVectorTuples(D);
-
-                // DIAGNOSTIC (coordinator-requested cross-block check, this round): resolve the
-                // target edge (env var DIAG_CROSSBLOCK_EDGE, global edge number) to this chunk's
-                // LOCAL edge index once, for RotateCrossBlock's own dump below. Same fix as last
-                // round's DIAG_TWOTUPLE bug: must be the local index itself (i0-relative), not
-                // its position within periodicIdx.
-                {
-                    string ceStr = System.Environment.GetEnvironmentVariable("DIAG_CROSSBLOCK_EDGE");
-                    if (ceStr != null && int.TryParse(ceStr, out int ceGlobal) && periodicIdx.Contains(ceGlobal - i0))
-                        s_diagCrossBlockEdge = ceGlobal - i0;
-                    else
-                        s_diagCrossBlockEdge = -1;
-                }
-
-                // DIAGNOSTIC-ONLY experiment toggles (env-var gated, default off / normal
-                // behavior): isolate Step 1 (normal+IN-param rerun, spliced into cr=1 for ALL cc
-                // including the (cr=1,cc=1) diagonal block) from Step 2 (RotateCrossBlock/
-                // RotateGradientAxis, cross-blocks only) to determine which one is responsible
-                // for a wrong DIAGONAL Jacobian entry.
-                bool skipStep1 = System.Environment.GetEnvironmentVariable("DIAG_SKIP_STEP1") == "1";
-                bool skipStep2 = System.Environment.GetEnvironmentVariable("DIAG_SKIP_STEP2") == "1";
 
                 // Whether this operator's components are Jacobian-differentiated
                 // (EdgeFormDifferentiator, see FormDifferentiator.cs) rather than hand-coded
@@ -2563,19 +1862,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 // NOT Jacobian-differentiated] when the skip was applied unconditionally.
                 bool isJacobianOperator = IsJacobianOperator();
 
-                // DIAGNOSTIC-ONLY (env-gated, default off): force-override the skipCc1 gate below,
-                // to test whether Step 1's rerun+splice -- which is structurally the mathematically
-                // correct computation for the (cr=1,cc=1) "OUT-cell's own equation, own trial value"
-                // diagonal block (OUT-native normal/value + IN-rotated-into-OUT parameter) -- fixes
-                // the constant-GradU diagonal-block self-consistency residual found on
-                // FlatRotatedPeriodicBoxMain, without regressing whatever originally motivated the
-                // isJacobianOperator skip.
-                string forceSplice = System.Environment.GetEnvironmentVariable("DIAG_FORCE_SPLICE_CC1");
-                if (forceSplice == "1")
-                    isJacobianOperator = false;
-                else if (forceSplice == "0")
-                    isJacobianOperator = true;
-
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // Step 1: fix the edge normal used for the OUT-cell's ("cr=1") own equation,
                 // for all four term flavors (UxV, UxGradV, GradUxV, GradUxGradV) -- the
@@ -2591,7 +1877,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 // splice the result's cr=1 blocks into the main buffer (cr=0, computed with the
                 // correct native normal already, is left untouched).
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                if (!skipStep1) {
+                {
                     var RotatedNormalBuffer = NormalBuffer.CloneAs();
                     for (int k = 0; k < periodicIdx.Count; k++) {
                         int i = periodicIdx[k];
@@ -2628,23 +1914,18 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                     var savedNormalBuffer = this.NormalBuffer;
                     this.NormalBuffer = RotatedNormalBuffer;
                     try {
-                        DiagDispatchTag.CurrentTermType = "STEP1-UxV";
                         EvalNSumForm(ref efp, i0, m_Edgeform_UxV, Edges, m_UxVComponentBuffer, scratchUxV, false, NoOfNodes, D, m_Edgeform_UxV_Watches, MustLock,
                             (E, mda) => E.InternalEdge_UxV(ref efp, mda),
                             (E, mda) => E.BoundaryEdge_UxV(ref efp, mda));
-                        DiagDispatchTag.CurrentTermType = "STEP1-GradUxV";
                         EvalNSumForm(ref efp, i0, m_Edgeform_GradUxV, Edges, m_GradUxVComponentBuffer, scratchGradUxV, false, NoOfNodes, D, m_Edgeform_GradUxV_Watches, MustLock,
                             (E, mda) => E.InternalEdge_GradUxV(ref efp, mda),
                             (E, mda) => E.BoundaryEdge_GradUxV(ref efp, mda));
-                        DiagDispatchTag.CurrentTermType = "STEP1-UxGradV";
                         EvalNSumForm(ref efp, i0, m_Edgeform_UxGradV, Edges, m_UxGradVComponentBuffer, scratchUxGradV, false, NoOfNodes, D, m_Edgeform_UxGradV_Watches, MustLock,
                             (E, mda) => E.InternalEdge_UxGradV(ref efp, mda),
                             (E, mda) => E.BoundaryEdge_UxGradV(ref efp, mda));
-                        DiagDispatchTag.CurrentTermType = "STEP1-GradUxGradV";
                         EvalNSumForm(ref efp, i0, m_Edgeform_GradUxGradV, Edges, m_GradUxGradVComponentBuffer, scratchGradUxGradV, false, NoOfNodes, D, m_Edgeform_GradUxGradV_Watches, MustLock,
                             (E, mda) => E.InternalEdge_GradUxGradV(ref efp, mda),
                             (E, mda) => E.BoundaryEdge_GradUxGradV(ref efp, mda));
-                        DiagDispatchTag.CurrentTermType = null;
                     } finally {
                         this.NormalBuffer = savedNormalBuffer;
                         if (paramInSnapshots != null) {
@@ -2654,38 +1935,10 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                         }
                     }
 
-                    // DIAGNOSTIC-ONLY (env-gated): dump m_ParameterFieldsValues_IN's "_lin"/
-                    // "_lin_d[d]" state for a target edge right after THIS (Step 1's) OWN restore
-                    // completes -- checks whether Step1's restore of Parameters_IN (independent
-                    // from the main pass's restore of Parameters_OUT) leaves a similar leftover
-                    // rotation, which would then feed a corrupted "native" baseline into
-                    // ApplyPeriodicRotationAffine's own subsequent rotation of the same array.
-                    {
-                        string snapEdgeStr = System.Environment.GetEnvironmentVariable("DIAG_STEP1_PARAMIN_SNAPSHOT_EDGE");
-                        if (snapEdgeStr != null && int.TryParse(snapEdgeStr, out int snapEdgeGlobal)) {
-                            int snapLocal = snapEdgeGlobal - i0;
-                            if (periodicIdx.Contains(snapLocal)) {
-                                var names = m_owner.Operator.ParameterVar;
-                                for (int pi = 0; pi < names.Count; pi++) {
-                                    string pn = names[pi];
-                                    if (pn == null || !(pn.EndsWith("_lin", StringComparison.Ordinal) || pn.Contains("_lin_d[")))
-                                        continue;
-                                    var arr = m_ParameterFieldsValues_IN[pi];
-                                    if (arr == null) continue;
-                                    Console.WriteLine(string.Format(
-                                        "DIAG_STEP1_PARAMIN_SNAPSHOT: edge={0} param={1} (idx={2}) node0={3:0.########} node9={4:0.########}",
-                                        snapEdgeGlobal, pn, pi, arr[snapLocal, 0], arr[snapLocal, 9]));
-                                }
-                            }
-                        }
-                    }
-
                     SpliceCr1Block(scratchUxV, m_UxVSumBuffer, GAMMA, NoOfNodes, periodicIdx, skipCc1: isJacobianOperator);
                     SpliceCr1Block(scratchGradUxV, m_GradUxVSumBuffer, GAMMA, NoOfNodes, periodicIdx, skipCc1: isJacobianOperator);
                     SpliceCr1Block(scratchUxGradV, m_UxGradVSumBuffer, GAMMA, NoOfNodes, periodicIdx, skipCc1: isJacobianOperator);
                     SpliceCr1Block(scratchGradUxGradV, m_GradUxGradVSumBuffer, GAMMA, NoOfNodes, periodicIdx, skipCc1: isJacobianOperator);
-
-                    DiagDumpCornerCell(grid, i0, Length, "AFTER Step1 splice (before Step2)");
                 }
 
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -2728,8 +1981,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 int[][] VectorTuples = m_owner.Operator.VectorFieldIndices.ToArray();
                 if (VectorTuples.Length <= 0)
                     return;
-                if (skipStep2)
-                    return;
 
                 for (int k = 0; k < periodicIdx.Count; k++) {
                     int i = periodicIdx[k];
@@ -2737,30 +1988,29 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                     var Minv = M.CloneAs();
                     Minv.InvertInPlace();
 
-                    RotateCrossBlock(m_UxVSumBuffer, m_Trf_UxVSumBuffer, VectorTuples, GAMMA, Length, NoOfNodes, M, i, 0, 1, "UxV");
-                    RotateCrossBlock(m_UxVSumBuffer, m_Trf_UxVSumBuffer, VectorTuples, GAMMA, Length, NoOfNodes, Minv, i, 1, 0, "UxV");
+                    RotateCrossBlock(m_UxVSumBuffer, m_Trf_UxVSumBuffer, VectorTuples, GAMMA, Length, NoOfNodes, M, i, 0, 1);
+                    RotateCrossBlock(m_UxVSumBuffer, m_Trf_UxVSumBuffer, VectorTuples, GAMMA, Length, NoOfNodes, Minv, i, 1, 0);
 
-                    RotateCrossBlock(m_GradUxVSumBuffer, m_Trf_GradUxVSumBuffer, VectorTuples, GAMMA, Length, NoOfNodes, M, i, 0, 1, "GradUxV");
-                    RotateCrossBlock(m_GradUxVSumBuffer, m_Trf_GradUxVSumBuffer, VectorTuples, GAMMA, Length, NoOfNodes, Minv, i, 1, 0, "GradUxV");
+                    RotateCrossBlock(m_GradUxVSumBuffer, m_Trf_GradUxVSumBuffer, VectorTuples, GAMMA, Length, NoOfNodes, M, i, 0, 1);
+                    RotateCrossBlock(m_GradUxVSumBuffer, m_Trf_GradUxVSumBuffer, VectorTuples, GAMMA, Length, NoOfNodes, Minv, i, 1, 0);
                     // "GradU direction" axis (position 2) also needs rotating, see RotateGradientAxis.
                     // This is the buffer conduction's (ConductivityInSpeciesBulk/swipConductivity)
                     // "consistency term" (kA*Grad_uA[0,d]+kB*Grad_uB[0,d])*(vA-vB)*Normal[d] lives
                     // in -- swipConductivity.InnerEdgeTerms = UxV|UxGradV|GradUxV, NOT
-                    // GradUxGradV (that's VolTerms-only) -- found via a first attempt this round
-                    // that watched the wrong buffer and never saw non-null conduction data.
-                    RotateGradientAxis(m_GradUxVSumBuffer, GAMMA, m_owner.DELTA, NoOfNodes, 2, M, i, 0, 1, "GradUxV");
-                    RotateGradientAxis(m_GradUxVSumBuffer, GAMMA, m_owner.DELTA, NoOfNodes, 2, Minv, i, 1, 0, "GradUxV");
+                    // GradUxGradV (that's VolTerms-only).
+                    RotateGradientAxis(m_GradUxVSumBuffer, GAMMA, m_owner.DELTA, NoOfNodes, 2, M, i, 0, 1);
+                    RotateGradientAxis(m_GradUxVSumBuffer, GAMMA, m_owner.DELTA, NoOfNodes, 2, Minv, i, 1, 0);
 
-                    RotateCrossBlock(m_UxGradVSumBuffer, m_Trf_UxGradVSumBuffer, VectorTuples, GAMMA, Length, NoOfNodes, M, i, 0, 1, "UxGradV");
-                    RotateCrossBlock(m_UxGradVSumBuffer, m_Trf_UxGradVSumBuffer, VectorTuples, GAMMA, Length, NoOfNodes, Minv, i, 1, 0, "UxGradV");
+                    RotateCrossBlock(m_UxGradVSumBuffer, m_Trf_UxGradVSumBuffer, VectorTuples, GAMMA, Length, NoOfNodes, M, i, 0, 1);
+                    RotateCrossBlock(m_UxGradVSumBuffer, m_Trf_UxGradVSumBuffer, VectorTuples, GAMMA, Length, NoOfNodes, Minv, i, 1, 0);
                     // NOTE: no RotateGradientAxis here -- m_UxGradVSumBuffer's extra axis is
                     // GradV's direction (a fixed, never-substituted test function), not GradU's.
 
-                    RotateCrossBlock(m_GradUxGradVSumBuffer, m_Trf_GradUxGradVSumBuffer, VectorTuples, GAMMA, Length, NoOfNodes, M, i, 0, 1, "GradUxGradV");
-                    RotateCrossBlock(m_GradUxGradVSumBuffer, m_Trf_GradUxGradVSumBuffer, VectorTuples, GAMMA, Length, NoOfNodes, Minv, i, 1, 0, "GradUxGradV");
+                    RotateCrossBlock(m_GradUxGradVSumBuffer, m_Trf_GradUxGradVSumBuffer, VectorTuples, GAMMA, Length, NoOfNodes, M, i, 0, 1);
+                    RotateCrossBlock(m_GradUxGradVSumBuffer, m_Trf_GradUxGradVSumBuffer, VectorTuples, GAMMA, Length, NoOfNodes, Minv, i, 1, 0);
                     // "GradU direction" axis (position 3; position 2 is GradV's, untouched) also needs rotating.
-                    RotateGradientAxis(m_GradUxGradVSumBuffer, GAMMA, m_owner.DELTA, NoOfNodes, 3, M, i, 0, 1, "GradUxGradV");
-                    RotateGradientAxis(m_GradUxGradVSumBuffer, GAMMA, m_owner.DELTA, NoOfNodes, 3, Minv, i, 1, 0, "GradUxGradV");
+                    RotateGradientAxis(m_GradUxGradVSumBuffer, GAMMA, m_owner.DELTA, NoOfNodes, 3, M, i, 0, 1);
+                    RotateGradientAxis(m_GradUxGradVSumBuffer, GAMMA, m_owner.DELTA, NoOfNodes, 3, Minv, i, 1, 0);
                 }
             }
 
@@ -2823,15 +2073,12 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 var savedNormalBuffer = this.NormalBuffer;
                 this.NormalBuffer = RotatedNormalBuffer;
                 try {
-                    DiagDispatchTag.CurrentTermType = "AFFRERUN-V";
                     EvalNSumForm(ref efp, i0, m_EdgeSourceV, Edges, m_VComponentBuffer, scratchV, true, NoOfNodes, D, m_EdgeSourceV_Watches, MustLock,
                         (E, mda) => E.InternalEdge_V(ref efp, mda),
                         (E, mda) => E.BoundaryEdge_V(ref efp, mda));
-                    DiagDispatchTag.CurrentTermType = "AFFRERUN-GradV";
                     EvalNSumForm(ref efp, i0, m_EdgeSourceGradV, Edges, m_GradVComponentBuffer, scratchGradV, true, NoOfNodes, D, m_EdgeSourceGradV_Watches, MustLock,
                         (E, mda) => E.InternalEdge_GradV(ref efp, mda),
                         (E, mda) => E.BoundaryEdge_GradV(ref efp, mda));
-                    DiagDispatchTag.CurrentTermType = null;
                 } finally {
                     this.NormalBuffer = savedNormalBuffer;
                     if (paramInSnapshots != null) {
@@ -2841,38 +2088,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                     }
                 }
 
-                // DIAGNOSTIC-ONLY (env-gated): dump THIS method's OWN rerun result (scratchV/
-                // scratchGradV, before splicing) for gamma=1(Y)/gamma=2(Z) at a target edge --
-                // isolates whether the Y/Z field-swap symptom originates in THIS rerun's own
-                // rotation-application step (given a now-confirmed-correct native Parameters_IN
-                // baseline feeding into it), as opposed to further upstream.
-                {
-                    string rrEdgeStr = System.Environment.GetEnvironmentVariable("DIAG_AFFRERUN_SNAPSHOT_EDGE");
-                    if (rrEdgeStr != null && int.TryParse(rrEdgeStr, out int rrEdgeGlobal)) {
-                        int rrLocal = rrEdgeGlobal - i0;
-                        if (periodicIdx.Contains(rrLocal)) {
-                            foreach (int gamma in new[] { 1, 2 }) {
-                                var v = scratchV[gamma, 0, 1, 0];
-                                if (v != null)
-                                    Console.WriteLine(string.Format("DIAG_AFFRERUN_SNAPSHOT: edge={0} gamma={1} V[cr=1] node0={2:0.########} node9={3:0.########}",
-                                        rrEdgeGlobal, gamma, v[rrLocal, 0], v[rrLocal, 9]));
-                                var g = scratchGradV[gamma, 0, 1, 0];
-                                if (g != null)
-                                    Console.WriteLine(string.Format("DIAG_AFFRERUN_SNAPSHOT: edge={0} gamma={1} GradV[cr=1] node0=[{2:0.#####},{3:0.#####},{4:0.#####}] node9=[{5:0.#####},{6:0.#####},{7:0.#####}]",
-                                        rrEdgeGlobal, gamma, g[rrLocal, 0, 0], g[rrLocal, 0, 1], g[rrLocal, 0, 2], g[rrLocal, 9, 0], g[rrLocal, 9, 1], g[rrLocal, 9, 2]));
-                            }
-                        }
-                    }
-                }
-
-                // DIAGNOSTIC-ONLY (env-gated, default off): test whether this splice has the
-                // SAME bug pattern confirmed for the matrix's (cr=1,cc=1) diagonal slot -- i.e.
-                // whether the "OUT-cell's own equation" affine/source contribution should also be
-                // left as computed by the native-normal main pass, not overwritten by this rerun.
-                if (System.Environment.GetEnvironmentVariable("DIAG_SKIP_AFFINE_SPLICE") != "1") {
-                    SpliceCr1Block(scratchV, m_VSumBuffer, GAMMA, NoOfNodes, periodicIdx);
-                    SpliceCr1Block(scratchGradV, m_GradVSumBuffer, GAMMA, NoOfNodes, periodicIdx);
-                }
+                SpliceCr1Block(scratchV, m_VSumBuffer, GAMMA, NoOfNodes, periodicIdx);
+                SpliceCr1Block(scratchGradV, m_GradVSumBuffer, GAMMA, NoOfNodes, periodicIdx);
             }
 
             private MultidimensionalArray ExtractTrafo(MultidimensionalArray trafo, int N) {
@@ -2964,7 +2181,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                 for (int __gamma = m_owner.GAMMA - 1; __gamma >= 0; __gamma--) {
                     int gamma = (__gamma + this.m_iThread) % m_owner.GAMMA; // run through loop differently in each thread to reduce locking
-                    DiagDispatchTag.CurrentGamma = gamma;
 
                     var ecq = Comps[gamma];
 
@@ -3014,14 +2230,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                             for (int c = 0; c < NoOfParams; c++) {
                                 int targ = ecq.AllToSub[i, c + NoOfArgs] - DELTA;
                                 Debug.Assert(targ >= 0);
-                                if (System.Environment.GetEnvironmentVariable("DIAG_ALLTOSUB") == "1" && !s_dumpedAllToSubGammas.Contains(gamma * 1000 + i)) {
-                                    string localName = (comp.ParameterOrdering != null && c < comp.ParameterOrdering.Count) ? comp.ParameterOrdering[c] : "?";
-                                    string globalName = (m_owner.Operator.ParameterVar != null && targ >= 0 && targ < m_owner.Operator.ParameterVar.Count) ? m_owner.Operator.ParameterVar[targ] : "?";
-                                    Console.WriteLine(string.Format("DIAG_ALLTOSUB: gamma={0} compIdx={1} c={2} localName={3} -> targ={4} globalName={5} MATCH={6}",
-                                        gamma, i, c, localName, targ, globalName, localName == globalName));
-                                    if (c == NoOfParams - 1)
-                                        s_dumpedAllToSubGammas.Add(gamma * 1000 + i);
-                                }
                                 efp.ParameterVars_IN[c] = m_ParameterFieldsValues_IN[targ].ExtractSubArrayShallow(new int[] { I0[0], I0[1] }, new int[] { IE[0], IE[1] });
                                 efp.ParameterVars_OUT[c] = m_ParameterFieldsValues_OUT[targ].ExtractSubArrayShallow(new int[] { I0[0], I0[1] }, new int[] { IE[0], IE[1] });
                             }
@@ -3082,57 +2290,12 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                             for (int c = 0; c < NoOfArgs; c++) {
                                 int targ = ecq.AllToSub[i, c];
-                                if (System.Environment.GetEnvironmentVariable("DIAG_ALLTOSUB_ARG") == "1" && !s_dumpedAllToSubArgGammas.Contains(gamma * 1000 + i)) {
-                                    string localName = (comp.ArgumentOrdering != null && c < comp.ArgumentOrdering.Count) ? comp.ArgumentOrdering[c] : "?";
-                                    string globalName = (m_owner.Operator.DomainVar != null && targ >= 0 && targ < m_owner.Operator.DomainVar.Count) ? m_owner.Operator.DomainVar[targ] : "?";
-                                    Console.WriteLine(string.Format("DIAG_ALLTOSUB_ARG: gamma={0} compIdx={1} c={2} localName={3} -> targ={4} globalName={5} MATCH={6}",
-                                        gamma, i, c, localName, targ, globalName, localName == globalName));
-                                    if (c == NoOfArgs - 1)
-                                        s_dumpedAllToSubArgGammas.Add(gamma * 1000 + i);
-                                }
                                 for (int cr = 0; cr < 2; cr++) {
                                     for (int cc = 0; cc < 2; cc++) {
                                         Sel[2] = cr;
                                         Sel[3] = cc;
                                         Sel[4] = c;
-                                        var contribBuf = CompBuffer[gamma][i].ExtractSubArrayShallow(Sel);
-                                        SumBuffer[gamma, targ, cr, cc].Acc(1.0, contribBuf);
-
-                                        // DIAGNOSTIC (coordinator-requested step 7, this round):
-                                        // dump EACH equation component's OWN contribution
-                                        // (contribBuf, freshly evaluated this component/chunk,
-                                        // BEFORE the .Acc() above folds it in) alongside the
-                                        // RUNNING TOTAL in SumBuffer immediately AFTER .Acc(), for
-                                        // a target (gamma,targ) slot and edge, node 0 -- to
-                                        // directly verify SumBuffer's accumulation is a genuine
-                                        // sum of every contributing component's own piece, not a
-                                        // silent overwrite/drop/double-count.
-                                        if (System.Environment.GetEnvironmentVariable("DIAG_SUMCHECK") == "1") {
-                                            try {
-                                                string tgStr = System.Environment.GetEnvironmentVariable("DIAG_SUMCHECK_GAMMA");
-                                                string tdStr = System.Environment.GetEnvironmentVariable("DIAG_SUMCHECK_DELTA");
-                                                string teStr = System.Environment.GetEnvironmentVariable("DIAG_SUMCHECK_EDGE");
-                                                if (tgStr != null && tdStr != null && teStr != null
-                                                    && int.TryParse(tgStr, out int tg) && tg == gamma
-                                                    && int.TryParse(tdStr, out int td) && td == targ
-                                                    && int.TryParse(teStr, out int te)) {
-                                                    int localE = te - i0;
-                                                    var sumSlot = SumBuffer[gamma, targ, cr, cc];
-                                                    if (contribBuf.Dimension == 2 && sumSlot != null && sumSlot.Dimension == 2
-                                                        && localE >= 0 && localE < contribBuf.GetLength(0) && contribBuf.GetLength(1) > 0
-                                                        && localE < sumSlot.GetLength(0) && sumSlot.GetLength(1) > 0) {
-                                                        double ownPiece = contribBuf[localE, 0];
-                                                        double runningTotal = sumSlot[localE, 0];
-                                                        Console.WriteLine(string.Format(
-                                                            "DIAG_SUMCHECK: edge={0} gamma={1} targ={2} cr={3} cc={4} compIdx={5} comp={6} ownPiece={7:0.##########} runningTotalAfterAcc={8:0.##########}",
-                                                            te, gamma, targ, cr, cc, i, comp.GetType().Name, ownPiece, runningTotal));
-                                                    }
-                                                }
-                                            } catch (Exception diagEx) {
-                                                // diagnostic-only: never let this destabilize the actual solve
-                                                Console.WriteLine("DIAG_SUMCHECK: (diagnostic itself threw, ignoring) " + diagEx.Message);
-                                            }
-                                        }
+                                        SumBuffer[gamma, targ, cr, cc].Acc(1.0, CompBuffer[gamma][i].ExtractSubArrayShallow(Sel));
                                     }
                                 }
                             }
@@ -3390,7 +2553,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
         void TestFunctionRequired(bool[] Req, MultidimensionalArray[, , ,] SumBuf, ref int maxDeg, ref int maxN) {
             Debug.Assert(Req.Length == SumBuf.GetLength(0));
-
+            
                 for(int i = SumBuf.GetLength(0) - 1; i >= 0; i--) {
                     for(int j = SumBuf.GetLength(1) - 1; j >= 0; j--) {
                         if(AnyBlockNonNull(SumBuf, i, j)) {
@@ -3401,7 +2564,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                         }
                     }
                 }
-
+            
         }
 
         void TrialFunctionRequired(bool[] Req, MultidimensionalArray[, , ,] SumBuf, bool bLinreq, ref int maxDeg, ref int maxN) {
@@ -3464,36 +2627,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                             var BlockRes = ResultsOfIntegration.ExtractSubArrayShallow(
                                 new int[] { i, cr, cc, 0, 0 },
                                 new int[] { i - 1, cr - 1, cc - 1, M - 1, N - 1 });
-
-                            // DIAGNOSTIC (temporary, env-var gated): dump the exact global row/col
-                            // DOF-block mapping used to scatter this (cr,cc) block into the sparse
-                            // matrix, for one specific target edge -- to directly verify jCell_cr/
-                            // jCell_cc and the resulting m0/n0 offsets are correct and distinct per
-                            // (cr,cc), and to dump the block content itself for nodes 1/4/6/7/8 (the
-                            // implicated modes) right at the point of the global scatter.
-                            if (System.Environment.GetEnvironmentVariable("DIAG_SCATTER") == "1") {
-                                string targetStr4 = System.Environment.GetEnvironmentVariable("DIAG_SCATTER_EDGE");
-                                string targetCellStr = System.Environment.GetEnvironmentVariable("DIAG_SCATTER_CELL");
-                                bool edgeMatch = targetStr4 != null && int.TryParse(targetStr4, out int targetEdge4) && jEdge == targetEdge4;
-                                bool cellMatch = targetCellStr != null && int.TryParse(targetCellStr, out int targetCell4) && jCell_cr == targetCell4 && jCell_cc == targetCell4;
-                                if (edgeMatch || cellMatch) {
-                                    // Combined per-cell DOF numbering: field-major concatenation,
-                                    // VelocityZ (field index 2, 10 modes/field) occupies rows/cols
-                                    // 20-29 within the M=N=30 block -- residual row=29 (ConvZ node
-                                    // 9), trial columns 21/24/26/27/28 (VelocityZ nodes 1/4/6/7/8).
-                                    int targetRow = 2 * 10 + 9;
-                                    var sb = new System.Text.StringBuilder();
-                                    sb.Append(string.Format("DIAG_SCATTER: edge={0} cr={1} cc={2} jCell_cr={3} jCell_cc={4} m0={5} n0={6} M={7} N={8} block[row={9},col=Zmodes1/4/6/7/8]=[",
-                                        jEdge, cr, cc, jCell_cr, jCell_cc, m0, n0, M, N, targetRow));
-                                    foreach (int mode in new[] { 1, 4, 6, 7, 8 }) {
-                                        int col = 2 * 10 + mode;
-                                        if (col < N && targetRow < M)
-                                            sb.Append(string.Format("Zn{0}(col{1})={2:0.########} ", mode, col, BlockRes[targetRow, col]));
-                                    }
-                                    sb.Append("]");
-                                    Console.WriteLine(sb.ToString());
-                                }
-                            }
 
                             //for (int m = 0; m < M; m++) {
                             //    for (int n = 0; n < N; n++) {

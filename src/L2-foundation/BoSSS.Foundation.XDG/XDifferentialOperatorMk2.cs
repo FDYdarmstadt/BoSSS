@@ -1425,10 +1425,6 @@ namespace BoSSS.Foundation.XDG {
         /// An operator which computes the Jacobian matrix of this operator.
         /// All components in this operator need to implement the <see cref="ISupportsJacobianComponent"/> interface in order to support this operation.
         /// </summary>
-        // PERFORMANCE-INVESTIGATION DIAGNOSTIC (coordinator-requested, this round, temporary):
-        // one-shot guard for DIAG_QUADORDER_PRINT, see _GetJacobiOperator below.
-        private static bool s_printedQuadOrderXdg = false;
-
         public XDifferentialOperatorMk2 _GetJacobiOperator(int SpatialDimension) {
             if (!this.IsCommitted)
                 throw new InvalidOperationException("Invalid prior to calling Commit().");
@@ -1460,43 +1456,12 @@ namespace BoSSS.Foundation.XDG {
             }
 
             var h = new JacobianParamUpdate(this.DomainVar, this.ParameterVar, allcomps, extractTaf, SpatialDimension);
-
-            // PERFORMANCE-INVESTIGATION DIAGNOSTIC + TOGGLE (coordinator-requested, this round,
-            // temporary): unlike the plain (non-XDG) DifferentialOperator._GetJacobiOperator
-            // (see DifferentialOperator.cs, Section 3.7/9 of SPEC.md), THIS class's
-            // _GetJacobiOperator passes `this.QuadOrderFunction` straight through, unwrapped,
-            // against JacobianOp's own (longer, "_lin"/"_lin_d[d]"-inflated) parameter list --
-            // i.e. it does not have Section 3.7's fix applied at all. Since XNSFE/XNSE actually
-            // route through THIS class (XDifferentialOperatorMk2), not the plain operator, this
-            // is the code path that matters for the coordinator's performance question. Added
-            // here, mirroring Section 3.7's own truncate-back-to-original-parameters logic, ONLY
-            // to A/B whether an analogous "fix" would change the selected order/assembly cost
-            // for this operator -- gated by DIAG_APPLY_XDG_QUADORDER_TRUNC=1, default off (i.e.
-            // default behavior is UNCHANGED from what ships today: straight pass-through). Not a
-            // proposed shipped change.
-            Func<int[], int[], int[], int> jacobianQuadOrderFunctionXdg = (DomDegs, ParamDegs, CoDomDegs) => {
-                bool applyTrunc = System.Environment.GetEnvironmentVariable("DIAG_APPLY_XDG_QUADORDER_TRUNC") == "1";
-                int[] origParamDegs = ParamDegs;
-                if (applyTrunc) {
-                    if (h.NoOfOrgParams > 0 && ParamDegs != null && ParamDegs.Length >= h.NoOfOrgParams) {
-                        origParamDegs = ParamDegs.Take(h.NoOfOrgParams).ToArray();
-                    } else {
-                        origParamDegs = new int[] { 0 };
-                    }
-                }
-                int order = this.QuadOrderFunction(DomDegs, origParamDegs, CoDomDegs);
-                if (System.Environment.GetEnvironmentVariable("DIAG_QUADORDER_PRINT") == "1" && !s_printedQuadOrderXdg) {
-                    s_printedQuadOrderXdg = true;
-                    Console.Error.WriteLine($"DIAG_QUADORDER_XDG: applyTrunc={applyTrunc} NoOfOrgParams={h.NoOfOrgParams} ParamDegs.Length={(ParamDegs?.Length ?? -1)} origParamDegs.Length={origParamDegs.Length} order={order}");
-                }
-                return order;
-            };
-
+                       
             var JacobianOp = new XDifferentialOperatorMk2(
                    this.DomainVar,
                    h.JacobianParameterVars,
                    this.CodomainVar,
-                   jacobianQuadOrderFunctionXdg,
+                   this.QuadOrderFunction,
                    this.Species.ToArray());
 
             JacobianOp.AgglomerationThreshold = this.AgglomerationThreshold;

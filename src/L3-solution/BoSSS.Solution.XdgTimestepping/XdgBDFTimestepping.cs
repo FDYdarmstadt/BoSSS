@@ -1143,37 +1143,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                 } else {
                     System = null;
                 }
-                // DIAGNOSTIC (coordinator-requested mass/time-derivative term investigation,
-                // this round): confirm which of the two code branches is ACTUALLY active for
-                // this configuration (identity-shortcut AccEyeSp/AccV, vs an explicit
-                // mass-matrix SpMV/Acc), and if explicit, dump the mass matrix's row for a
-                // target DOF (diagonal entry plus any off-diagonal entries -- confirms whether
-                // it is truly diagonal/identity-valued for a non-cut curved cell, or requires a
-                // genuine overlap-integral that could differ from 1.0).
-                if (global::System.Environment.GetEnvironmentVariable("DIAG_MASSMATRIX") == "1") {
-                    string targetStr = global::System.Environment.GetEnvironmentVariable("DIAG_MASSMATRIX_DOF");
-                    Console.Error.WriteLine($"    -> DIAG_MASSMATRIX: Config_MassMatrixShapeandDependence={Config_MassMatrixShapeandDependence} CurrentMassMatrix_isNull={(CurrentMassMatrix == null)} dt={dt:G17} Linearization={Linearization}");
-                    if (CurrentMassMatrix != null && targetStr != null && int.TryParse(targetStr, out int targetDof)) {
-                        try {
-                            long[] mmCols = null;
-                            double[] mmVals = null;
-                            int mmNnz = CurrentMassMatrix.GetRow(targetDof, ref mmCols, ref mmVals);
-                            var sb2 = new global::System.Text.StringBuilder();
-                            sb2.Append($"    -> DIAG_MASSMATRIX: row {targetDof} nnz={mmNnz}: ");
-                            for (int k = 0; k < mmNnz; k++) {
-                                if (mmVals[k] != 0.0)
-                                    sb2.Append($"col={mmCols[k]} val={mmVals[k]:G17}  ");
-                            }
-                            Console.Error.WriteLine(sb2.ToString());
-                        } catch (Exception mmEx) {
-                            Console.Error.WriteLine($"    -> DIAG_MASSMATRIX: (threw) {mmEx.Message}");
-                        }
-                    }
-                }
-
                 if (CurrentMassMatrix != null) {
                     if(Linearization) {
-                        System.Acc(1.0 / dt, CurrentMassMatrix);
+                        System.Acc(1.0 / dt, CurrentMassMatrix);  
                     } else {
                         CurrentMassMatrix.SpMV(1.0 / dt, new CoordinateVector(CurrentStateMapping), 1.0, Affine);
                     }

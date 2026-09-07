@@ -328,16 +328,8 @@ namespace BoSSS.Solution.XheatCommon {
 
         public TermActivationFlags InnerEdgeTerms => TermActivationFlags.UxV;
 
-        public static int _diagCoeffUpdateCount = 0;
         public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
             Scale = cs.HomotopyValue;
-            // DIAGNOSTIC (env-gated, zero cost unless set): dump every CoefficientUpdate call's
-            // HomotopyValue, to check whether it's ever non-1 or updated inconsistently between
-            // the evaluate-mode and linearize-mode m_AssembleMatrix calls in NonlinearSolver.cs.
-            if (System.Environment.GetEnvironmentVariable("DIAG_HOMOTOPY_DUMP") == "1") {
-                int c = System.Threading.Interlocked.Increment(ref _diagCoeffUpdateCount);
-                System.Console.Error.WriteLine($"DIAG_HOMOTOPY[HeatConvectionInSpeciesBulk_Hamiltonian_Newton]: call#{c} species={ValidSpecies} HomotopyValue={cs.HomotopyValue:0.################} Scale={Scale:0.################}");
-            }
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
@@ -346,85 +338,16 @@ namespace BoSSS.Solution.XheatCommon {
             return new IEquationComponent[] { DivergenceDerivVol, DivergenceDerivEdg };
         }
 
-        public static int _diagVolCount = 0;
-        // DIAGNOSTIC (coordinator-requested check-2, this round): shared output cap for
-        // DIAG_METRIC_CONSISTENCY[HEAT-FORM] prints in InnerEdgeForm below.
-        private static int s_metricConsistencyCountHeat = 0;
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
-            // ABLATION TOGGLE (coordinator-requested per-piece ablation, this round): fully
-            // disables THIS form's VolumeForm contribution for one specific target cell.
-            {
-                string disCellStr = System.Environment.GetEnvironmentVariable("XNSFE_REPRO_DISABLE_VOL_CELL");
-                if (disCellStr != null && int.TryParse(disCellStr, out int disCell) && cpv.jCell == disCell)
-                    return 0.0;
-            }
             double acc = 0;
             for (int d = 0; d < m_D; d++) {
                 // starke Form
                 acc += U[1 + d] * GradU[0, d] * V;
             }
-            double ret = Scale * cap * acc;
-
-            // DIAGNOSTIC (env-gated, zero cost unless set): dump every VolumeForm call touching a
-            // target cell -- traces the REAL production convective term's raw per-node/per-probe
-            // values (U/GradU/V, Scale, cap, species) directly, distinguishing the
-            // linearize-mode/differentiator-driven calls (small perturbation deltas around Utmp)
-            // from the raw nonlinear-evaluator calls (actual field values), by call-count and
-            // magnitude, on an ACTUAL XnsfeReproTest.cs production run rather than an isolated
-            // analog.
-            if (System.Environment.GetEnvironmentVariable("DIAG_REALHEAT_VOL") == "1") {
-                string targetStr = System.Environment.GetEnvironmentVariable("DIAG_REALHEAT_CELL");
-                int targetCell = targetStr != null ? int.Parse(targetStr) : -1;
-                if (targetCell < 0 || cpv.jCell == targetCell) {
-                    int c = System.Threading.Interlocked.Increment(ref _diagVolCount);
-                    if (c <= 200000000) {
-                        System.Console.Error.WriteLine(string.Format(
-                            "DIAG_REALHEAT_VOL[{0}]: species={1} jCell={2} X=({3:0.######},{4:0.######},{5:0.######}) U=[{6}] GradU[0,:]=[{7:0.########},{8:0.########},{9:0.########}] V={10:0.########} Scale={11:0.####} cap={12:0.####} acc={13:0.##########} ret={14:0.##########}",
-                            c, ValidSpecies, cpv.jCell, cpv.Xglobal[0], cpv.Xglobal[1], cpv.Xglobal[2],
-                            string.Join(",", U.Select(v => v.ToString("0.########"))),
-                            GradU[0, 0], m_D > 1 ? GradU[0, 1] : double.NaN, m_D > 2 ? GradU[0, 2] : double.NaN,
-                            V, Scale, cap, acc, ret));
-                    }
-                }
-            }
-
-            return ret;
+            return Scale * cap * acc;
         }
 
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
-            // ABLATION TOGGLE (coordinator-requested per-edge ablation, this round): fully
-            // disables THIS form's InnerEdgeForm contribution for one specific target edge,
-            // same env-gated pattern used for the boundary-form ablations. Used to test edges
-            // 35/38 individually.
-            {
-                string disEdgeStr = System.Environment.GetEnvironmentVariable("XNSFE_REPRO_DISABLE_EDGE");
-                if (disEdgeStr != null && int.TryParse(disEdgeStr, out int disEdge) && inp.iEdge == disEdge)
-                    return 0.0;
-            }
-
-            // DIAGNOSTIC (coordinator-requested check-2, this round): this InnerEdgeForm
-            // implementation is called from BOTH the M-path (EdgeFormDifferentiator wrapping
-            // it for f0/every f1 probe -- see FormDifferentiator.cs's own DIAG_METRIC_CONSISTENCY
-            // dump) AND the F-path (NECQuadratureEdge.cs calling it directly, undifferentiated,
-            // for f(u0)) -- so dumping inp.Normal/inp.X HERE, at G17 precision, from every call
-            // touching the target cell, lets both paths' raw geometric input be compared by
-            // matching physical X, without needing separate instrumentation in the two
-            // orchestrator files.
-            if (System.Environment.GetEnvironmentVariable("DIAG_METRIC_CONSISTENCY") == "1") {
-                string mcCellStrH = System.Environment.GetEnvironmentVariable("DIAG_METRIC_CONSISTENCY_CELL");
-                if (mcCellStrH != null && int.TryParse(mcCellStrH, out int mcCellH)
-                    && (inp.jCellIn == mcCellH || inp.jCellOut == mcCellH)
-                    && s_metricConsistencyCountHeat < 400) {
-                    System.Threading.Interlocked.Increment(ref s_metricConsistencyCountHeat);
-                    var xLocalHeat = inp.X;
-                    Console.Error.WriteLine(string.Format(
-                        "DIAG_METRIC_CONSISTENCY[HEAT-FORM]: edge={0} jIn={1} jOt={2} X=({3:G17}) Normal=({4:G17},{5:G17},{6:G17})",
-                        inp.iEdge, inp.jCellIn, inp.jCellOut,
-                        string.Join(",", Enumerable.Range(0, xLocalHeat.Dim).Select(d => xLocalHeat[d].ToString("G17"))),
-                        inp.Normal[0], inp.Normal[1], inp.Normal[2]));
-                }
-            }
-
             double flx = 0.0;
 
             //===========================================================================================================
@@ -462,56 +385,17 @@ namespace BoSSS.Solution.XheatCommon {
                 vOUTxN += VelocityMeanOut[d] * inp.Normal[d];
             }
             
-            double uJump = _uIN[0] - _uOUT[0];
+            double uJump = _uIN[0] - _uOUT[0];           
 
             flx = 0.5 * (Math.Min(vINxN, vOUTxN) - Math.Abs(Math.Min(vINxN, vOUTxN))) * -uJump * _vIN;
             flx += 0.5 * (Math.Max(vINxN, vOUTxN) + Math.Abs(Math.Max(vINxN, vOUTxN))) * -uJump * _vOUT;
             //===========================================================================================================
             //===========================================================================================================
 
-            double ret = Scale * cap * flx;
-
-            // DIAGNOSTIC (env-gated, zero cost unless set): dump every InnerEdgeForm call
-            // touching a target cell -- traces the real production Roe-type flux's raw
-            // per-node/per-probe values (including the Math.Min/Max/Abs kink-sensitive
-            // vINxN/vOUTxN), on an ACTUAL XnsfeReproTest.cs production run.
-            if (System.Environment.GetEnvironmentVariable("DIAG_REALHEAT_EDGE") == "1") {
-                string targetStr = System.Environment.GetEnvironmentVariable("DIAG_REALHEAT_CELL");
-                int targetCell = targetStr != null ? int.Parse(targetStr) : -1;
-                string targetEdgeStr = System.Environment.GetEnvironmentVariable("DIAG_REALHEAT_EDGENO");
-                int targetEdgeNo = targetEdgeStr != null ? int.Parse(targetEdgeStr) : -1;
-                bool edgeMatch = targetEdgeNo < 0 || inp.iEdge == targetEdgeNo;
-                bool speciesFilterOk = ValidSpecies == (System.Environment.GetEnvironmentVariable("DIAG_REALHEAT_SPECIES") ?? ValidSpecies);
-                if (edgeMatch && speciesFilterOk && (targetCell < 0 || inp.jCellIn == targetCell || inp.jCellOut == targetCell)) {
-                    int c = System.Threading.Interlocked.Increment(ref _diagEdgeCount);
-                    if (c <= 5000000) {
-                        System.Console.Error.WriteLine(string.Format(
-                            "DIAG_REALHEAT_EDGE[{0}]: species={1} edge={2} jIn={3} jOt={4} X=({5:0.######},{6:0.######},{7:0.######}) N=({8:0.########},{9:0.########},{10:0.########}) uIN=[{11}] uOT=[{12}] vIN={13:0.####} vOT={14:0.####} vINxN={15:0.########} vOUTxN={16:0.########} uJump={17:0.########} flx={18:0.##########} Scale={19:0.####} cap={20:0.####} ret={21:0.##########}",
-                            c, ValidSpecies, inp.iEdge, inp.jCellIn, inp.jCellOut,
-                            inp.X[0], inp.X[1], inp.X[2],
-                            inp.Normal[0], inp.Normal[1], inp.Normal[2],
-                            string.Join(",", _uIN.Select(v => v.ToString("0.####"))),
-                            string.Join(",", _uOUT.Select(v => v.ToString("0.####"))),
-                            _vIN, _vOUT, vINxN, vOUTxN, uJump, flx, Scale, cap, ret));
-                    }
-                }
-            }
-
-            return ret;
+            return Scale * cap * flx;
         }
 
-        static int _diagEdgeCount = 0;
-        static int _diagBndCount = 0;
-
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN) {
-            // ABLATION TOGGLE (coordinator-requested, this round): fully disables this form's
-            // ConstantTemperature-wall contribution, to test on the REAL running solver whether
-            // this newly-discovered contributor (never checked before this round) is implicated
-            // in the periodic "Mismatch" defect. Env-gated, zero cost / identical to normal
-            // behavior unless set.
-            if (System.Environment.GetEnvironmentVariable("XNSFE_REPRO_DISABLE_BNDCONV") == "1")
-                return 0.0;
-
             ThermalBcType edgeType = m_bcmap.EdgeTag2Type[inp.EdgeTag];
 
             switch (edgeType) {
@@ -566,33 +450,7 @@ namespace BoSSS.Solution.XheatCommon {
                     //===========================================================================================================
                     //===========================================================================================================
 
-                    double retBnd = Scale * cap * flx;
-
-                    // DIAGNOSTIC (env-gated, zero cost unless set): dump every BoundaryEdgeForm
-                    // call touching a target cell -- coordinator-requested full M-row
-                    // reconstruction found cell 8 has 3 wall (ConstantTemperature) boundary
-                    // faces that were previously omitted from the interior-edges+volume-only
-                    // reconstruction, and this form's velocity dependence (via vINxN) means
-                    // they can contribute to Velocity-Temperature Jacobian columns too.
-                    if (System.Environment.GetEnvironmentVariable("DIAG_REALHEAT_BND") == "1") {
-                        string targetStr = System.Environment.GetEnvironmentVariable("DIAG_REALHEAT_CELL");
-                        int targetCell = targetStr != null ? int.Parse(targetStr) : -1;
-                        if (targetCell < 0 || inp.jCellIn == targetCell) {
-                            int c = System.Threading.Interlocked.Increment(ref _diagBndCount);
-                            if (c <= 2000000) {
-                                System.Console.Error.WriteLine(string.Format(
-                                    "DIAG_REALHEAT_BND[{0}]: edge={1} jCellIn={2} EdgeTag={3} X=({4:0.######},{5:0.######},{6:0.######}) N=({7:0.########},{8:0.########},{9:0.########}) uIN=[{10}] uOUT_Dirichlet=[{11}] vIN={12:0.####} vINxN={13:0.########} uJump={14:0.########} flx={15:0.##########} ret={16:0.##########}",
-                                    c, inp.iEdge, inp.jCellIn, inp.EdgeTag,
-                                    inp.X[0], inp.X[1], inp.X[2],
-                                    inp.Normal[0], inp.Normal[1], inp.Normal[2],
-                                    string.Join(",", _uIN.Select(v => v.ToString("0.########"))),
-                                    string.Join(",", _uOUT.Select(v => v.ToString("0.########"))),
-                                    _vIN, vINxN, uJump, flx, retBnd));
-                            }
-                        }
-                    }
-
-                    return retBnd;
+                    return Scale * cap * flx;
                 }
                 case ThermalBcType.ZeroGradient:
                 case ThermalBcType.ConstantHeatFlux: { 
