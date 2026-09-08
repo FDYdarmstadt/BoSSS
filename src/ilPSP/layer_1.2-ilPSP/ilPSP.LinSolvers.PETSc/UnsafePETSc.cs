@@ -109,27 +109,6 @@ namespace ilPSP.LinSolvers.PETSc {
             out IntPtr solver);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate int _bosss_petsc_apply(
-            IntPtr context,
-            IntPtr ownedInput,
-            int ownedLength,
-            IntPtr haloInput,
-            int haloLength,
-            IntPtr output);
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate int _bosss_petsc_create_shell_solver(
-            int localRows,
-            int globalRows,
-            int globalRowStart,
-            int ghostCount,
-            int[] ghostGlobalIds,
-            [MarshalAs(UnmanagedType.LPStr)] string petscOptions,
-            _bosss_petsc_apply applyCallback,
-            IntPtr matrixMultContext,
-            out IntPtr solver);
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate int _bosss_petsc_create_ksp_for_matrix(IntPtr solver);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
@@ -178,7 +157,6 @@ namespace ilPSP.LinSolvers.PETSc {
         _BoSSS_PETSc_GetVersion BoSSS_PETSc_GetVersion;
         _bosss_petsc_create_matrix_solver bosss_petsc_create_matrix_solver;
         _bosss_petsc_create_split_csr_matrix_solver bosss_petsc_create_split_csr_matrix_solver;
-        _bosss_petsc_create_shell_solver bosss_petsc_create_shell_solver;
         _bosss_petsc_create_ksp_for_matrix bosss_petsc_create_ksp_for_matrix;
         _bosss_petsc_configure_ksp_solver bosss_petsc_configure_ksp_solver;
         _bosss_petsc_setup_ksp_solver bosss_petsc_setup_ksp_solver;
@@ -236,8 +214,6 @@ namespace ilPSP.LinSolvers.PETSc {
         internal _bosss_petsc_create_matrix_solver CreateMatrixSolver => bosss_petsc_create_matrix_solver;
 
         internal _bosss_petsc_create_split_csr_matrix_solver CreateSplitCsrMatrixSolver => bosss_petsc_create_split_csr_matrix_solver;
-
-        internal _bosss_petsc_create_shell_solver CreateShellSolver => bosss_petsc_create_shell_solver;
 
         internal _bosss_petsc_create_ksp_for_matrix CreateKspForMatrix => bosss_petsc_create_ksp_for_matrix;
 

@@ -176,7 +176,17 @@ namespace BoSSS.Solution.Control {
 
                 case LinearSolverCode.direct_petsc_superlu_dist:
                     return new AdvancedSolvers.PETScDirectSolverConfig() {
-                        Backend = PETScDirectBackend.SuperLuDist
+                        Backend = PETScDirectBackend.SuperLuDist,
+                        // The portable SuperLU_DIST package is validated with the
+                        // MPI-only PETSc runtime. Its MPI+OpenMP build can stall
+                        // during distributed factor setup on nontrivial matrices.
+                        // Keep the surrounding BoSSS OpenMP configuration intact;
+                        // this selection applies only to the PETSc direct backend.
+                        NativeVariant = PETScNativeVariant.Mpi,
+                        // SuperLU_DIST uses PETSc's assembled matrix path. This
+                        // copies the local BoSSS CSR data and lets PETSc perform
+                        // its normal distributed matrix assembly.
+                        MatrixInput = PETScMatrixInput.CopiedCsr
                     };
 
                 case LinearSolverCode.direct_petsc_umfpack:
