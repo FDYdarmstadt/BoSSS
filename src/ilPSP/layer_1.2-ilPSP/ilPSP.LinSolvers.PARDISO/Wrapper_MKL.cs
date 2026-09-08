@@ -52,7 +52,7 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// </summary>
         public Wrapper_MKL(Parallelism par) : base(
             ilPSP.Utils.BLAS_LAPACK_IntelMKL_Libstuff.GetLibname(SelectPar(par)),
-            ilPSP.Utils.BLAS_LAPACK_IntelMKL_Libstuff.GetPrequesiteLibraries(SelectPar(par)),
+            ilPSP.Utils.BLAS_LAPACK_IntelMKL_Libstuff.GetPrerequesiteLibraries(SelectPar(par)),
             ilPSP.Utils.BLAS_LAPACK_IntelMKL_Libstuff.GetGetNameMangling(SelectPar(par)),
             ilPSP.Utils.BLAS_LAPACK_IntelMKL_Libstuff.GetPlatformID(SelectPar(par)),
             ilPSP.Utils.BLAS_LAPACK_IntelMKL_Libstuff.GetPointerSizeFilter(SelectPar(par))) { }
