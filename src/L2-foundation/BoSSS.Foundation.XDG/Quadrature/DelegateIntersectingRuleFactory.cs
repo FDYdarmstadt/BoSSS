@@ -13,7 +13,8 @@ using ilPSP;
 using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
-    public sealed class IntersectingSubcell {
+    /*
+    public sealed class SubCell {
         public double[] Center;
         public double[] Diameters;
         public Func<double[], double> LevelSet0;
@@ -27,12 +28,12 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
 
     class DelegateIntersectingRuleFactory : IQuadRuleFactory<QuadRule> {
         readonly RefElement Kref;
-        readonly Func<int, IEnumerable<IntersectingSubcell>> subcellProvider;
+        readonly Func<int, IEnumerable<SubCell>> subcellProvider;
         readonly Symbol sign0;
         readonly Symbol sign1;
         readonly IQuadrater finder;
 
-        public DelegateIntersectingRuleFactory(RefElement Kref, Func<int, IEnumerable<IntersectingSubcell>> subcellProvider, Symbol sign0, Symbol sign1) {
+        public DelegateIntersectingRuleFactory(RefElement Kref, Func<int, IEnumerable<SubCell>> subcellProvider, Symbol sign0, Symbol sign1) {
             this.Kref = Kref;
             this.subcellProvider = subcellProvider;
             this.sign0 = sign0;
@@ -63,7 +64,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             var weights = new List<double>();
             (int nodeCount, int subdivisions) = Convert(order);
 
-            foreach(var subcell in subcellProvider(jCell)) {
+            var subCells = subcellProvider(jCell);
+            foreach(var subcell in subCells) {
                 if(subcell == null)
                     continue;
                 if(IsDegenerate(subcell))
@@ -112,7 +114,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             return rule;
         }
 
-        static bool IsDegenerate(IntersectingSubcell subcell) {
+        static bool IsDegenerate(SubCell subcell) {
             if(subcell.Center == null || subcell.Diameters == null
                 || subcell.LevelSet0 == null || subcell.LevelSet0Gradient == null || subcell.LevelSet0Hessian == null
                 || subcell.LevelSet1 == null || subcell.LevelSet1Gradient == null || subcell.LevelSet1Hessian == null)
@@ -125,6 +127,10 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
         }
     }
 
+
+    /// <summary>
+    /// just a fucking wrapper around another wrapper
+    /// </summary>
     class DelegateScalarFunction : IScalarFunction {
         readonly Func<double[], double> function;
         readonly Func<double[], double[]> gradientFunction;
@@ -189,5 +195,5 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
     }
 
 
-
+    */
 }

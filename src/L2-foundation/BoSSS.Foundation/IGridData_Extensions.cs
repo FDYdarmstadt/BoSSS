@@ -1466,6 +1466,34 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
+        /// Easy-to-use routine (version with memory allocation):
+        /// transform nodes in global/physical coordinates to local/reference coordinates for cell <paramref name="jCell"/> 
+        /// </summary>
+        /// <param name="g"></param>
+        /// <param name="globalNodes">
+        /// 2D-array:
+        /// - 1st dimension: node index
+        /// - 2nd dimension: spatial direction
+        /// </param>
+        /// <param name="jCell">
+        /// geometrical cell index
+        /// </param>
+        /// <returns>
+        /// 2D-array, <paramref name="localNodes"/> transformed to global coordinates
+        /// - 1st dimension: node index
+        /// - 2nd dimension: spatial direction
+        /// </returns>
+        static public MultidimensionalArray TransformGlobal2Local(this IGridData g, MultidimensionalArray globalNodes, int jCell) {
+            if(globalNodes.Dimension != 2) {
+                throw new ArgumentException("expecting a 2D-array as input");
+            }
+            var ret = MultidimensionalArray.Create(1, globalNodes.GetLength(0), globalNodes.GetLength(1));
+            g.TransformGlobal2Local(globalNodes, ret, jCell, 1, 0);
+            return ret.ExtractSubArrayShallow(0, -1, -1);
+        }
+
+
+        /// <summary>
         /// Easy-to-use routine (for a single point):
         /// transform nodes in local coordinate to a global coordinate for cell <paramref name="jCell"/> 
         /// </summary>
@@ -1487,6 +1515,30 @@ namespace BoSSS.Foundation.Grid {
             localNodesW.SetRow(0, localNode);
             var globalNodesW = g.TransformLocal2Global(localNodesW, jCell);
             return globalNodesW.GetRowPt(0);
+        }
+
+        /// <summary>
+        /// Easy-to-use routine (for a single point):
+        /// transform nodes in global/physical coordinate to a local/reference coordinate for cell <paramref name="jCell"/> 
+        /// </summary>
+        /// <param name="g"></param>
+        /// <param name="globalNode">
+        /// point in global/physical coordinates
+        /// </param>
+        /// <param name="jCell">
+        /// geometrical cell index
+        /// </param>
+        /// <returns>
+        /// point in global coordinates
+        /// </returns>
+        static public Vector TransformGlobal2Local(this IGridData g, Vector globalNode, int jCell) {
+            if(globalNode.Dim != g.SpatialDimension) {
+                throw new ArgumentException("spatial dimension mismatch");
+            }
+            var _globalNodesW = MultidimensionalArray.Create(1, globalNode.Dim);
+            _globalNodesW.SetRow(0, globalNode);
+            var localNodesW = g.TransformGlobal2Local(_globalNodesW, jCell);
+            return localNodesW.GetRowPt(0);
         }
 
 

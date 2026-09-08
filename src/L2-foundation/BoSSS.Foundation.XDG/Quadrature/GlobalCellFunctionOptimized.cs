@@ -14,14 +14,14 @@ using System.Numerics;
 
 namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
 
-
+//#define DEBUG_EXTENDED
 
     /// <summary>
     /// Fast in-cell function using our own Chebyshev tensor polynomial.
     /// One-time: sample BoSSS at a tensor Chebyshev–Lobatto grid, compute coefficients by separable DCT-I.
     /// Runtime: evaluate by separable Clenshaw-style contractions, incl. gradient and Hessian.
     /// </summary>
-    class GlobalCellFunctionOptimized : IScalarFunction {
+    public class GlobalCellFunctionOptimized : IScalarFunction {
 
         readonly RefElement Kref;
         // Polynomial sizes per axis (n = degree+1)
@@ -54,7 +54,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
 
 
 
-        /// <summary></summary>
+        /// <summary> </summary>
         public GlobalCellFunctionOptimized(RefElement Kref, IScalarFunction other, int degree) : this(Kref, Kref.SpatialDimension.ForLoop(d => degree + 1)) {
 #if DEBUG_EXTENDED
             reference = other;
@@ -73,18 +73,13 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
 #if DEBUG_EXTENDED
             // check if we recover the nodal values
             {
-
                 MultidimensionalArray val_this = MultidimensionalArray.Create(1, xk.Length);
                 for(int k = 0; k < xk.Length; k++) {
-                    
-
                     val_this[0, k] = Evaluate(xk[k]);
-
                 }
 
                 if(val_this.L2Dist(V) > 1.0e-10)
                     throw new ArithmeticException("mismatch between nodal values and interpolation");
-
             }
 #endif
         }
