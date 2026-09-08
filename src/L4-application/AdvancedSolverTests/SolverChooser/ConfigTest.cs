@@ -40,11 +40,16 @@ namespace AdvancedSolverTests.SolverChooser {
                 for(int i = 0; i < lincodes.Length; i++) {
                     LinearSolverCode code = lincodes[i];
                     CollectiveCheckpoint($"before {code}", 900000 + 2 * i);
-                    var config = code.GetConfig();
+                    ISolverFactory config = null;
                     ISolverSmootherTemplate solver = null;
                     try {
-                        if(code == LinearSolverCode.SchurPrecond || code == LinearSolverCode.SchurComplementForStokes) {
-                            Console.WriteLine($"Skipping {LinearSolverCode.SchurPrecond}: the Schur Complement requires a (D+1)x(D+1) - system, an the test system here is only 2x2.");
+                        if(code == LinearSolverCode.SchurPrecond) {
+                            Console.WriteLine("Skipping SchurPrecond: this solver code is not implemented.");
+                            continue;
+                        }
+
+                        if(code == LinearSolverCode.SchurComplementForStokes) {
+                            Console.WriteLine("Skipping SchurComplementForStokes: it requires a (D+1)x(D+1) system, while this test system is only 2x2.");
                             continue;
                         }
 
@@ -53,6 +58,7 @@ namespace AdvancedSolverTests.SolverChooser {
                             continue;
                         }
 
+                        config = code.GetConfig();
                         Console.WriteLine($"[ConfigTest] [{i + 1}/{lincodes.Length}] Initializing {code}...");
                         solver = config.CreateInstance(O.MGOp);
                         Assert.IsNotNull(solver);
