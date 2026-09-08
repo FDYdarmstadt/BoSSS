@@ -73,7 +73,7 @@ namespace ilPSP.Utils {
         /// </summary>
         public LAPACK(Parallelism par) :
             base(BLAS_LAPACK_IntelMKL_Libstuff.GetLibname(par),
-                 BLAS_LAPACK_IntelMKL_Libstuff.GetPrequesiteLibraries(par),
+                 BLAS_LAPACK_IntelMKL_Libstuff.GetPrerequesiteLibraries(par),
                  BLAS_LAPACK_IntelMKL_Libstuff.GetGetNameMangling(par),
                  BLAS_LAPACK_IntelMKL_Libstuff.GetPlatformID(par),
                  BLAS_LAPACK_IntelMKL_Libstuff.GetPointerSizeFilter(par)) {
