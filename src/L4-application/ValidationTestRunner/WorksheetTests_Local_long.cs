@@ -1366,7 +1366,7 @@ namespace ValidationTestRunner {
         /// 3D Leidenfrost testcase using the HFSI solver.
         /// Section 4.2 Miao and Kummer (2026) https://www.doi.org/10.1140/epje/s10189-026-00606-7
         /// </summary>
-        [NUnitFileToCopyHack("HFSI/Leidenfrost/Leidenfrost_3d_HFSI_Fast_Paper.ipynb", "HFSI/Leidenfrost/Leidenfrost_3d_HFSI_Fast_Paper_Evaluation.ipynb")]
+        [NUnitFileToCopyHack("HFSI/Leidenfrost/Leidenfrost_3d_HFSI_Fast_Paper.ipynb", "HFSI/Leidenfrost/Leidenfrost_3d_HFSI_Fast_Paper_Evaluation.ipynb", "HFSI/Leidenfrost/Leidenfrost_3d_HFSI_Fast_Paper_reference_shape.txt")]
         [Test]
         static public void Run__Leidenfrost_3d_HFSI_Fast_Paper() {
             // --test=ValidationTestRunner.WorksheetTests_Local_long.Run__Leidenfrost_3d_HFSI_Fast_Paper
@@ -1381,7 +1381,7 @@ namespace ValidationTestRunner {
         /// 3D Leidenfrost testcase using the HFSI solver, soft material variant.
         /// Section 4.3 Miao and Kummer (2026) https://www.doi.org/10.1140/epje/s10189-026-00606-7
         /// </summary>
-        [NUnitFileToCopyHack("HFSI/Leidenfrost/Leidenfrost_3d_HFSI_Fast_Paper_Soft.ipynb", "HFSI/Leidenfrost/Leidenfrost_3d_HFSI_Fast_Paper_Soft_Evaluation.ipynb")]
+        [NUnitFileToCopyHack("HFSI/Leidenfrost/Leidenfrost_3d_HFSI_Fast_Paper_Soft.ipynb", "HFSI/Leidenfrost/Leidenfrost_3d_HFSI_Fast_Paper_Soft_Evaluation.ipynb", "HFSI/Leidenfrost/Leidenfrost_3d_HFSI_Fast_Paper_Soft_reference_shape.txt")]
         [Test]
         static public void Run__Leidenfrost_3d_HFSI_Fast_Paper_Soft() {
             // --test=ValidationTestRunner.WorksheetTests_Local_long.Run__Leidenfrost_3d_HFSI_Fast_Paper_Soft
@@ -1396,7 +1396,7 @@ namespace ValidationTestRunner {
         /// 3D Leidenfrost testcase using the HFSI solver, inclined wall variant.
         /// Section 4.4 Miao and Kummer (2026) https://www.doi.org/10.1140/epje/s10189-026-00606-7
         /// </summary>
-        [NUnitFileToCopyHack("HFSI/Leidenfrost/Leidenfrost_HFSI_angle_3d_fast_paper.ipynb", "HFSI/Leidenfrost/Leidenfrost_HFSI_angle_3d_fast_paper_Evaluation.ipynb")]
+        [NUnitFileToCopyHack("HFSI/Leidenfrost/Leidenfrost_HFSI_angle_3d_fast_paper.ipynb", "HFSI/Leidenfrost/Leidenfrost_HFSI_angle_3d_fast_paper_Evaluation.ipynb", "HFSI/Leidenfrost/Leidenfrost_HFSI_angle_3d_fast_paper_reference_shape.txt")]
         [Test]
         static public void Run__Leidenfrost_HFSI_angle_3d_fast_paper() {
             // --test=ValidationTestRunner.WorksheetTests_Local_long.Run__Leidenfrost_HFSI_angle_3d_fast_paper
