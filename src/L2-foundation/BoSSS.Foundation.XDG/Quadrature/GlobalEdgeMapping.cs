@@ -10,7 +10,7 @@ using System;
 using static BoSSS.Foundation.XDG.LevelSetTracker;
 
 namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
-    class GlobalEdgeMapping : IFunctionMap {
+    public class GlobalEdgeMapping : IFunctionMap {
 
         class Selection {
 
@@ -29,13 +29,13 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             }
         }
 
-        GridData grid;
+        readonly IGridData grid;
 
         public RefElement Domain { get; private set; }
 
-        RefElement CellDomain;
+        readonly protected RefElement CellDomain;
 
-        public GlobalEdgeMapping(GridData grid) {
+        public GlobalEdgeMapping(IGridData grid) {
             this.grid = grid;
             int dim = grid.SpatialDimension;
 
@@ -108,7 +108,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             return q;
         }
 
-        int GetInOrOutCell(int jEdge) {
+        protected virtual int GetInOrOutCell(int jEdge) {
             if(grid.iGeomEdges.IsEdgeConformalWithCell1(jEdge))
                 return 0;
             if(grid.iGeomEdges.IsEdgeConformalWithCell2(jEdge))
@@ -116,16 +116,14 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             throw new NotSupportedException($"Unfortunately, edge {jEdge} is neither conformal with IN- or OUT-edge, i.e., has hanging nodes on both sides of the edge - unable to generate cut-edge-quadrature rule");
         }
 
-
-
         AffineTrafo FromCodomainToDomain(int jEdge) {
             int inot = GetInOrOutCell(jEdge);
-            byte iFace = grid.Edges.FaceIndices[jEdge, inot];
+            byte iFace = grid.iGeomEdges.FaceIndices[jEdge, inot];
             NodeSet faceCenter = CellDomain.GetFaceCenter(iFace);
             int emptyDim = EmptyDim(faceCenter);
             Selection edgeToCell = new Selection(emptyDim);
 
-            AffineTrafo T = grid.Edges.Edge2CellTrafos[grid.Edges.Edge2CellTrafoIndex[jEdge, inot]];
+            AffineTrafo T = grid.iGeomEdges.Edge2CellTrafos[grid.iGeomEdges.Edge2CellTrafoIndex[jEdge, inot]];
             AffineTrafo t = new AffineTrafo(Domain.SpatialDimension);
             HyperRectangle codomain = Codomain(jEdge);
 
@@ -139,7 +137,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             return t;
         }
 
-        public IScalarFunction MapFromDomainToCodomain(LevelSetData levelSet, int jEdge) {
+        virtual public IScalarFunction MapFromDomainToCodomain(LevelSetData levelSet, int jEdge) {
             IVectorFunction T = FromCodomainToEmbeddedCodomain(jEdge, out int jCell);
             IScalarFunction globalLevelSet = new GlobalCellFunction(levelSet, jCell);
             IScalarFunction alpha = new ScalarComposition(globalLevelSet, T);
@@ -152,10 +150,10 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             }
         }
 
-        IVectorFunction FromCodomainToEmbeddedCodomain(int jEdge, out int jCell) {
+        protected IVectorFunction FromCodomainToEmbeddedCodomain(int jEdge, out int jCell) {
             int inot = GetInOrOutCell(jEdge);
-            jCell = grid.Edges.CellIndices[jEdge, inot];
-            byte iFace = grid.Edges.FaceIndices[jEdge, inot];
+            jCell = grid.iGeomEdges.CellIndices[jEdge, inot];
+            byte iFace = grid.iGeomEdges.FaceIndices[jEdge, inot];
             NodeSet faceCenter = CellDomain.GetFaceCenter(iFace);
             int emptyDim = EmptyDim(faceCenter);
 

@@ -5,7 +5,7 @@ using IntersectingQuadrature.Tensor;
 using static BoSSS.Foundation.XDG.LevelSetTracker;
 
 namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
-    interface IFunctionMap {
+    public interface IFunctionMap {
 
         RefElement Domain { get; }
 
