@@ -1,5 +1,7 @@
-# Renders the Phi=0 isosurface (droplet interface) of the exported terminal
-# timestep as a 3D contour and saves a screenshot.
+# Renders the Phi=0 (droplet interface) and Phi2=0 (solid interface) isosurfaces
+# of the exported terminal timestep as 3D contours, mirrors them across the
+# x=0 and z=0 symmetry planes to reconstruct the full droplet (the simulated
+# domain only covers x, z in [-L, 0]), and saves a screenshot.
 #
 # Usage: pvpython leidenfrost_contour.py <export_dir> <output_png>
 #   <export_dir>  directory containing the BoSSS TecPlot export (state_*.plt)
@@ -35,14 +37,33 @@ reader.PointArrayStatus = list(reader.PointArrayStatus.Available)
 renderView1 = GetActiveViewOrCreate('RenderView')
 renderView1.Background = [1.0, 1.0, 1.0]
 
-contour1 = Contour(registrationName='PhiContour', Input=reader)
-contour1.ContourBy = ['POINTS', 'Phi']
-contour1.Isosurfaces = [0.0]
-contour1.PointMergeMethod = 'Uniform Binning'
 
-contourDisplay = Show(contour1, renderView1, 'GeometryRepresentation')
-contourDisplay.Representation = 'Surface'
-contourDisplay.DiffuseColor = [0.85, 0.1, 0.1]
+def mirrored_contour(fieldName, registrationPrefix, color, opacity=1.0):
+    """Contour(fieldName == 0), then mirror across x=0 and z=0 (the domain's own
+    x/z maximum, since the simulated quarter-domain is x, z in [-L, 0]) so the
+    full droplet is reconstructed from the simulated quarter."""
+    contour = Contour(registrationName=f'{registrationPrefix}Contour', Input=reader)
+    contour.ContourBy = ['POINTS', fieldName]
+    contour.Isosurfaces = [0.0]
+    contour.PointMergeMethod = 'Uniform Binning'
+
+    reflectX = Reflect(registrationName=f'{registrationPrefix}ReflectX', Input=contour)
+    reflectX.Plane = 'X Max'
+    reflectX.CopyInput = 1
+
+    reflectZ = Reflect(registrationName=f'{registrationPrefix}ReflectZ', Input=reflectX)
+    reflectZ.Plane = 'Z Max'
+    reflectZ.CopyInput = 1
+
+    display = Show(reflectZ, renderView1, 'GeometryRepresentation')
+    display.Representation = 'Surface'
+    display.DiffuseColor = color
+    display.Opacity = opacity
+    return reflectZ
+
+
+mirrored_contour('Phi', 'Phi', [0.65, 0.85, 1.0], opacity=0.5)     # droplet interface, light blue, translucent
+mirrored_contour('Phi2', 'Phi2', [0.65, 0.9, 0.65])                # solid interface, light green
 
 renderView1.ResetCamera(True)
 renderView1.Update()
