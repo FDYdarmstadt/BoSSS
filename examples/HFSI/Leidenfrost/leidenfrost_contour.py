@@ -1,15 +1,19 @@
 # Renders the Phi=0 (droplet interface) and Phi2=0 (solid interface) isosurfaces
 # of the exported terminal timestep as 3D contours, mirrors them across the
-# x=0 and z=0 symmetry planes to reconstruct the full droplet (the simulated
-# domain only covers x, z in [-L, 0]), and saves a screenshot.
+# z=0 symmetry plane (and, if requested, also across x=0) to reconstruct the
+# full droplet, and saves a screenshot.
 #
-# Usage: pvpython leidenfrost_contour.py <export_dir> <output_png>
+# Usage: pvpython leidenfrost_contour.py <export_dir> <output_png> [mirror]
 #   <export_dir>  directory containing the BoSSS TecPlot export (state_*.plt)
 #   <output_png>  path to write the screenshot to
+#   [mirror]      'xz' (default) mirrors across both x=0 and z=0 (the two cases
+#                 whose domain only covers x, z in [-L, 0]); 'z' mirrors only
+#                 across z=0 (the inclined-gravity/sliding case, which is not
+#                 symmetric across x=0)
 #
-# If no arguments are given, defaults to ./ParaViewLeidenfrost and
-# ./ParaViewLeidenfrost/leidenfrost_contour.png (relative to the current
-# working directory the script is invoked from).
+# If no arguments are given, defaults to ./ParaViewLeidenfrost,
+# ./ParaViewLeidenfrost/leidenfrost_contour.png and 'xz' (relative to the
+# current working directory the script is invoked from).
 
 import glob
 import os
@@ -21,6 +25,7 @@ paraview.simple._DisableFirstRenderCameraReset()
 
 exportDir = sys.argv[1] if len(sys.argv) > 1 else os.path.join(".", "ParaViewLeidenfrost")
 outputPng = sys.argv[2] if len(sys.argv) > 2 else os.path.join(exportDir, "leidenfrost_contour.png")
+mirror = sys.argv[3] if len(sys.argv) > 3 else "xz"
 
 pltFiles = sorted(glob.glob(os.path.join(exportDir, "state_*.plt")))
 if not pltFiles:
@@ -39,25 +44,31 @@ renderView1.Background = [1.0, 1.0, 1.0]
 
 
 def mirrored_contour(fieldName, registrationPrefix, color, opacity=1.0):
-    """Contour(fieldName == 0), then mirror across x=0 and z=0 (the domain's own
-    x/z maximum, since the simulated quarter-domain is x, z in [-L, 0]) so the
-    full droplet is reconstructed from the simulated quarter."""
+    """Contour(fieldName == 0), then mirror across z=0 (and, if `mirror` == 'xz',
+    also across x=0 -- the domain's own x/z maximum, since that quarter/half-domain
+    is simulated over x, z in [-L, 0]) so the full droplet is reconstructed from the
+    simulated portion."""
     contour = Contour(registrationName=f'{registrationPrefix}Contour', Input=reader)
     contour.ContourBy = ['POINTS', fieldName]
     contour.Isosurfaces = [0.0]
     contour.PointMergeMethod = 'Uniform Binning'
 
-    reflectX = Reflect(registrationName=f'{registrationPrefix}ReflectX', Input=contour)
-    reflectX.Plane = 'X Max'
-    reflectX.CopyInput = 1
+    last = contour
+    if "x" in mirror:
+        reflectX = Reflect(registrationName=f'{registrationPrefix}ReflectX', Input=last)
+        reflectX.Plane = 'X Max'
+        reflectX.CopyInput = 1
+        last = reflectX
 
-    reflectZ = Reflect(registrationName=f'{registrationPrefix}ReflectZ', Input=reflectX)
+    reflectZ = Reflect(registrationName=f'{registrationPrefix}ReflectZ', Input=last)
     reflectZ.Plane = 'Z Max'
     reflectZ.CopyInput = 1
 
     display = Show(reflectZ, renderView1, 'GeometryRepresentation')
     display.Representation = 'Surface'
+    ColorBy(display, None)  # disable scalar coloring, otherwise DiffuseColor is ignored
     display.DiffuseColor = color
+    display.AmbientColor = color
     display.Opacity = opacity
     return reflectZ
 
@@ -67,6 +78,7 @@ mirrored_contour('Phi2', 'Phi2', [0.65, 0.9, 0.65])                # solid inter
 
 renderView1.ResetCamera(True)
 renderView1.Update()
+GetActiveCamera().Zoom(1.4)
 
 SaveScreenshot(outputPng, renderView1, ImageResolution=[1024, 1024])
 print(f"Wrote {outputPng}")
