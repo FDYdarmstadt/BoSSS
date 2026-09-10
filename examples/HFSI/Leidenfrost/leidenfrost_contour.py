@@ -10,9 +10,13 @@
 #                 whose domain only covers x, z in [-L, 0]); 'z' mirrors only
 #                 across z=0 (the inclined-gravity/sliding case, which is not
 #                 symmetric across x=0). For 'z', the camera is framed on the
-#                 droplet's own bounding box (it may have slid off to one side
-#                 of the much larger solid plate) instead of the whole scene.
-#   [zoom]        extra camera zoom factor on top of the initial fit (default 1.4)
+#                 droplet's own bounding box, padded by 1/zoom on each side
+#                 (it may have slid off to one side of the much larger solid
+#                 plate, so fitting the whole scene leaves it tiny/off-center).
+#   [zoom]        for 'xz': extra camera zoom factor on top of the whole-scene
+#                 fit (default 1.4). For 'z': divides the droplet's own extent
+#                 to get the padding margin around it -- bigger = tighter crop
+#                 (e.g. zoom=2 pads by half the droplet size on each side).
 #
 # If no arguments are given, defaults to ./ParaViewLeidenfrost,
 # ./ParaViewLeidenfrost/leidenfrost_contour.png, 'xz' and 1.4 (relative to the
@@ -82,15 +86,25 @@ mirrored_contour('Phi2', 'Phi2', [0.65, 0.9, 0.65])                             
 
 if mirror == "z":
     # the droplet may have slid off to one side of the (much larger) solid plate,
-    # so fitting the camera on the whole scene leaves it small and off-center;
-    # frame on the droplet's own bounding box instead
+    # so fitting the camera on the whole scene leaves it tiny and off-center;
+    # frame directly on the droplet's own (padded) bounding box instead. Padding
+    # the bounds themselves, rather than fitting tight and then calling Zoom(),
+    # gives a predictable result independent of the camera's projection/clipping
+    # behavior (a large Zoom() factor on an already-tight fit can push the near
+    # clip plane through the geometry and make it disappear).
     dropletContour.UpdatePipeline()
-    renderView1.ResetCamera(*dropletContour.GetDataInformation().GetBounds())
+    xmin, xmax, ymin, ymax, zmin, zmax = dropletContour.GetDataInformation().GetBounds()
+    marginX = (xmax - xmin) / zoom
+    marginY = (ymax - ymin) / zoom
+    marginZ = (zmax - zmin) / zoom
+    renderView1.ResetCamera(xmin - marginX, xmax + marginX, ymin - marginY, ymax + marginY, zmin - marginZ, zmax + marginZ)
 else:
     renderView1.ResetCamera(True)
+    renderView1.Update()
+    GetActiveCamera().Zoom(zoom)
 
 renderView1.Update()
-GetActiveCamera().Zoom(zoom)
+renderView1.ResetCameraClippingRange()
 
 SaveScreenshot(outputPng, renderView1, ImageResolution=[1024, 1024])
 print(f"Wrote {outputPng}")
