@@ -1220,8 +1220,21 @@ namespace ilPSP.Utils {
             }
         }
 
-        public static string[][][] GetPrequesiteLibraries(Parallelism par) {
-            return new string[GetLibname(par).Length][][];
+        public static string[][][] GetPrerequesiteLibraries(Parallelism par) {
+            var ret = new string[GetLibname(par).Length][][];
+            ret[0] = new string[][] {
+                new string[] {
+                    "libfakeintel.dll",  // 1st try: load library which fakes an intel processor 
+                    ""  //                  2nd try: no fake-intel - run just without it, intel MKL might run non-optimized
+                }
+            };
+            ret[1] = new string[][] { 
+                new string[] {
+                    "libfakeintel.so",   // 1st try: load library which fakes an intel processor 
+                    ""  //                  2nd try: no fake-intel - run just without it, intel MKL might run non-optimized
+                }
+            };
+            return ret;
         }
 
         public static int[] GetPointerSizeFilter(Parallelism par) {
@@ -1246,7 +1259,7 @@ namespace ilPSP.Utils {
         /// </summary>
         public UnsafeDBLAS(Parallelism par) :
             base(BLAS_LAPACK_IntelMKL_Libstuff.GetLibname(par),
-                 BLAS_LAPACK_IntelMKL_Libstuff.GetPrequesiteLibraries(par),
+                 BLAS_LAPACK_IntelMKL_Libstuff.GetPrerequesiteLibraries(par),
                  BLAS_LAPACK_IntelMKL_Libstuff.GetGetNameMangling(par),
                  BLAS_LAPACK_IntelMKL_Libstuff.GetPlatformID(par),
                  BLAS_LAPACK_IntelMKL_Libstuff.GetPointerSizeFilter(par)) { }

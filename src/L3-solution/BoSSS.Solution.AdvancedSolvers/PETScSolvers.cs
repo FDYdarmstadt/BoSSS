@@ -20,6 +20,7 @@ using System.Globalization;
 using System.Linq;
 using System.Runtime.Serialization;
 using ilPSP.LinSolvers.PETSc;
+using MPI.Wrappers;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -42,6 +43,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public PETScNativeVariant NativeVariant = PETScNativeVariant.Auto;
 
         /// <summary>
+        /// PETSc matrix representation. Direct PETSc solvers require the default
+        /// assembled copied CSR representation.
+        /// </summary>
+        [DataMember]
+        public PETScMatrixInput MatrixInput = PETScMatrixInput.BorrowedCsr;
+
+        /// <summary>
         /// LU or Cholesky factorization.
         /// </summary>
         [DataMember]
@@ -62,7 +70,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Human-readable solver name.
         /// </summary>
-        public string Name => "PETSc direct " + Factorization + " (" + Backend + ")";
+        public string Name => $"PETSc direct {Factorization} ({Backend}; {PETScKrylovSolverConfig.DescribeNativeVariant(NativeVariant)}; {MatrixInput})";
 
         /// <summary>
         /// Compact solver name.
@@ -73,12 +81,50 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Creates and initializes a direct PETSc solver for a multigrid level.
         /// </summary>
         public ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
+            ValidateConfiguration(level);
+
             var solver = new PETScMultigridSolver {
                 Options = PETScDirectSolver.BuildOptions(Factorization, Backend, AdditionalOptions),
-                NativeVariant = NativeVariant
+                NativeVariant = NativeVariant,
+                MatrixInput = MatrixInput
             };
             solver.Init(level);
             return solver;
+        }
+
+        /// <summary>
+        /// Validates combinations whose support is determined by the selected PETSc
+        /// package and parallel runtime, before PETSc starts KSP setup.
+        /// </summary>
+        void ValidateConfiguration(MultigridOperator level) {
+            if(level == null)
+                throw new ArgumentNullException(nameof(level));
+
+            if(MatrixInput != PETScMatrixInput.CopiedCsr && MatrixInput != PETScMatrixInput.BorrowedCsr)
+                throw new NotSupportedException("PETSc direct solvers require an assembled CSR matrix; use CopiedCsr or BorrowedCsr.");
+
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int mpiSize);
+            PETScNativeVariant effectiveVariant = PETScSolverBase.ResolveNativeVariant(NativeVariant, mpiSize, ilPSP.Environment.NumThreads);
+
+            if(effectiveVariant == PETScNativeVariant.OpenMp && mpiSize > 1)
+                throw new NotSupportedException(
+                    "The OpenMP-only PETSc variant uses MPIUNI and requires exactly one MPI rank. "
+                    + "Select the MPI or MPI+OpenMP variant for a multi-rank job.");
+
+            if(Backend == PETScDirectBackend.Umfpack && mpiSize > 1)
+                throw new NotSupportedException(
+                    "PETSc direct UMFPACK is a sequential factorization and requires exactly one MPI rank. "
+                    + "Use PETSc direct MUMPS or SuperLU_DIST for a distributed direct solve, "
+                    + "or use ASM with UMFPACK local subdomain factorizations.");
+
+            if(Factorization == PETScDirectFactorization.Cholesky
+                && (Backend == PETScDirectBackend.Umfpack || Backend == PETScDirectBackend.SuperLuDist))
+                throw new NotSupportedException($"PETSc direct {Backend} supports LU factorization only.");
+
+            if(Backend == PETScDirectBackend.SuperLuDist && effectiveVariant == PETScNativeVariant.OpenMp)
+                throw new NotSupportedException(
+                    "PETSc direct SuperLU_DIST requires an MPI-enabled PETSc variant. "
+                    + "Select the MPI or MPI+OpenMP variant, or run with more than one MPI rank when using Auto.");
         }
 
         /// <summary>
@@ -95,6 +141,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             var other = obj as PETScDirectSolverConfig;
             return other != null
                 && NativeVariant == other.NativeVariant
+                && MatrixInput == other.MatrixInput
                 && Factorization == other.Factorization
                 && Backend == other.Backend
                 && string.Equals(AdditionalOptions, other.AdditionalOptions, StringComparison.Ordinal);
@@ -106,6 +153,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public override int GetHashCode() {
             unchecked {
                 int hash = (int)NativeVariant;
+                hash = hash * 397 ^ (int)MatrixInput;
                 hash = hash * 397 ^ (int)Factorization;
                 hash = hash * 397 ^ (int)Backend;
                 hash = hash * 397 ^ (AdditionalOptions?.GetHashCode() ?? 0);
@@ -139,6 +187,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public PETScNativeVariant NativeVariant = PETScNativeVariant.Auto;
 
         /// <summary>
+        /// PETSc matrix representation used by this Krylov solver.
+        /// </summary>
+        [DataMember]
+        public PETScMatrixInput MatrixInput = PETScMatrixInput.BorrowedCsr;
+
+        /// <summary>
         /// Optional BoSSS variable indices that form PETSc field split 0. Both split arrays
         /// must be non-empty when <c>-pc_type fieldsplit</c> is used.
         /// </summary>
@@ -151,7 +205,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         [DataMember]
         public int[] SecondFieldVariables;
 
-        public override string Name => "PETSc Krylov solver (options-driven)";
+        public override string Name => $"PETSc Krylov solver ({DescribeNativeVariant(NativeVariant)}; {MatrixInput}; {ComposeOptions()})";
 
         public override string Shortname => "PETSc-Krylov";
 
@@ -159,6 +213,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             var solver = new PETScMultigridSolver {
                 Options = ComposeOptions(),
                 NativeVariant = NativeVariant,
+                MatrixInput = MatrixInput,
                 FirstFieldVariables = FirstFieldVariables == null ? null : (int[])FirstFieldVariables.Clone(),
                 SecondFieldVariables = SecondFieldVariables == null ? null : (int[])SecondFieldVariables.Clone()
             };
@@ -206,6 +261,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
             return false;
         }
+
+        internal static string DescribeNativeVariant(PETScNativeVariant variant) {
+            switch(variant) {
+                case PETScNativeVariant.Auto:
+                    return "native Auto";
+                case PETScNativeVariant.OpenMp:
+                    return "OMP";
+                case PETScNativeVariant.Mpi:
+                    return "MPI";
+                case PETScNativeVariant.MpiOpenMp:
+                    return "MPI+OMP";
+                default:
+                    return "native " + variant;
+            }
+        }
     }
 
     /// <summary>
@@ -227,6 +297,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Native PETSc parallel runtime.
         /// </summary>
         public PETScNativeVariant NativeVariant { get; set; } = PETScNativeVariant.Auto;
+
+        /// <summary>
+        /// PETSc matrix representation used for the multigrid operator matrix.
+        /// </summary>
+        public PETScMatrixInput MatrixInput { get; set; } = PETScMatrixInput.BorrowedCsr;
 
         /// <summary>
         /// Optional BoSSS variable indices for PETSc field split 0.
@@ -282,7 +357,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             var solver = new PETScKrylovSolver {
                 Options = Options ?? string.Empty,
-                NativeVariant = NativeVariant
+                NativeVariant = NativeVariant,
+                MatrixInput = MatrixInput
             };
 
             try {
@@ -324,6 +400,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return new PETScMultigridSolver {
                 Options = Options,
                 NativeVariant = NativeVariant,
+                MatrixInput = MatrixInput,
                 FirstFieldVariables = FirstFieldVariables == null ? null : (int[])FirstFieldVariables.Clone(),
                 SecondFieldVariables = SecondFieldVariables == null ? null : (int[])SecondFieldVariables.Clone()
             };
