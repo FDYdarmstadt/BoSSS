@@ -3,16 +3,19 @@
 # z=0 symmetry plane (and, if requested, also across x=0) to reconstruct the
 # full droplet, and saves a screenshot.
 #
-# Usage: pvpython leidenfrost_contour.py <export_dir> <output_png> [mirror]
+# Usage: pvpython leidenfrost_contour.py <export_dir> <output_png> [mirror] [zoom]
 #   <export_dir>  directory containing the BoSSS TecPlot export (state_*.plt)
 #   <output_png>  path to write the screenshot to
 #   [mirror]      'xz' (default) mirrors across both x=0 and z=0 (the two cases
 #                 whose domain only covers x, z in [-L, 0]); 'z' mirrors only
 #                 across z=0 (the inclined-gravity/sliding case, which is not
-#                 symmetric across x=0)
+#                 symmetric across x=0). For 'z', the camera is framed on the
+#                 droplet's own bounding box (it may have slid off to one side
+#                 of the much larger solid plate) instead of the whole scene.
+#   [zoom]        extra camera zoom factor on top of the initial fit (default 1.4)
 #
 # If no arguments are given, defaults to ./ParaViewLeidenfrost,
-# ./ParaViewLeidenfrost/leidenfrost_contour.png and 'xz' (relative to the
+# ./ParaViewLeidenfrost/leidenfrost_contour.png, 'xz' and 1.4 (relative to the
 # current working directory the script is invoked from).
 
 import glob
@@ -26,6 +29,7 @@ paraview.simple._DisableFirstRenderCameraReset()
 exportDir = sys.argv[1] if len(sys.argv) > 1 else os.path.join(".", "ParaViewLeidenfrost")
 outputPng = sys.argv[2] if len(sys.argv) > 2 else os.path.join(exportDir, "leidenfrost_contour.png")
 mirror = sys.argv[3] if len(sys.argv) > 3 else "xz"
+zoom = float(sys.argv[4]) if len(sys.argv) > 4 else 1.4
 
 pltFiles = sorted(glob.glob(os.path.join(exportDir, "state_*.plt")))
 if not pltFiles:
@@ -73,12 +77,20 @@ def mirrored_contour(fieldName, registrationPrefix, color, opacity=1.0):
     return reflectZ
 
 
-mirrored_contour('Phi', 'Phi', [0.65, 0.85, 1.0], opacity=0.5)     # droplet interface, light blue, translucent
-mirrored_contour('Phi2', 'Phi2', [0.65, 0.9, 0.65])                # solid interface, light green
+dropletContour = mirrored_contour('Phi', 'Phi', [0.65, 0.85, 1.0], opacity=0.5)    # droplet interface, light blue, translucent
+mirrored_contour('Phi2', 'Phi2', [0.65, 0.9, 0.65])                                # solid interface, light green
 
-renderView1.ResetCamera(True)
+if mirror == "z":
+    # the droplet may have slid off to one side of the (much larger) solid plate,
+    # so fitting the camera on the whole scene leaves it small and off-center;
+    # frame on the droplet's own bounding box instead
+    dropletContour.UpdatePipeline()
+    renderView1.ResetCamera(*dropletContour.GetDataInformation().GetBounds())
+else:
+    renderView1.ResetCamera(True)
+
 renderView1.Update()
-GetActiveCamera().Zoom(1.4)
+GetActiveCamera().Zoom(zoom)
 
 SaveScreenshot(outputPng, renderView1, ImageResolution=[1024, 1024])
 print(f"Wrote {outputPng}")
