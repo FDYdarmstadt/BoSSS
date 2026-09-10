@@ -104,7 +104,6 @@ else:
     GetActiveCamera().Zoom(zoom)
 
 renderView1.Update()
-renderView1.ResetCameraClippingRange()
 
 SaveScreenshot(outputPng, renderView1, ImageResolution=[1024, 1024])
 print(f"Wrote {outputPng}")
