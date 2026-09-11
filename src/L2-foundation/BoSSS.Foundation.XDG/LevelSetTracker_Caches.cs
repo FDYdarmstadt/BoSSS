@@ -346,7 +346,19 @@ namespace BoSSS.Foundation.XDG {
                                 }
                             }
                         } else {
-                            throw new NotImplementedException("todo: nonlinear cell");
+                            var JacobainPerNode = m_owner.m_owner.GridDat.Jacobian.GetValue_Cell(NS, jCell, 1);
+
+                            for(int k = 0; k < noOfNodes; k++) {
+                                for(int d = 0; d < D; d++) {
+                                    double r = 0.0;
+                                    for(int dd = 0; dd < D; dd++) {
+                                        r += JacobainPerNode[0, k, dd, d] * physGradient[i, k, dd];
+                                    }
+
+                                    output[i, k, d] = r;
+                                }
+                            }
+
                         }
                     }
                 }
@@ -575,8 +587,8 @@ namespace BoSSS.Foundation.XDG {
                 protected override void ComputeValues(NodeSet N, int j0, int Len, MultidimensionalArray output) {
                     LevelSet levelSetField = m_owner.GetLevSet() as LevelSet;
                     if(levelSetField == null || levelSetField.DeactivateOptimizedComputationOfGradientAndHessians) {
-                        //ComputeValuesNonField(m_owner.GetLevSet(), N, j0, Len, output);
-                        throw new NotImplementedException();
+                        ComputeValuesNonField(m_owner.GetLevSet(), N, j0, Len, output);
+                        //throw new NotImplementedException();
                     } else {
                         ComputeValuesField(levelSetField, N, j0, Len, output);
                     }
@@ -627,36 +639,35 @@ namespace BoSSS.Foundation.XDG {
                     }
                 }
 
-                /*
+                
                 private void ComputeValuesNonField(ILevelSet levelSet, NodeSet NS, int j0, int Len, MultidimensionalArray output) {
                     int noOfNodes = NS.NoOfNodes;
                     int D = NS.SpatialDimension;
                     var R = m_owner.m_owner.GridDat.Cells.Transformation;
-                    var JacDet = m_owner.m_owner.GridDat.ChefBasis.Scaling;
                     var Cells = m_owner.m_owner.GridDat.Cells;
 
-                    MultidimensionalArray physGradient = m_owner.GetLevelSetGradients(NS, j0, Len);
+                    //MultidimensionalArray physGradient = m_owner.Get(NS, j0, Len);
+                    MultidimensionalArray physicalHessian = MultidimensionalArray.Create(1, NS.NoOfNodes, D, D);
                     for(int i = 0; i < Len; i++) {
                         int jCell = j0 + i;
                         if(Cells.IsCellAffineLinear(jCell)) {
-                            double det = JacDet[j0 + i];
+                            var Jac = R.ExtractSubArrayShallow(jCell, -1, -1);
 
-                            for(int j = 0; j < noOfNodes; j++) {
-                                for(int d = 0; d < D; d++) {
-                                    double r = 0.0;
-                                    for(int dd = 0; dd < D; dd++) {
-                                        r += R[i + j0, dd, d] * physGradient[i, j, dd];
-                                    }
+                            levelSet.EvaluateHessian(jCell, 1, NS, physicalHessian);
 
-                                    output[i, j, d] = r / det;
-                                }
-                            }
+                            // output = Jacobian^T * Physical Hessian * Jacobain
+                            output.ExtractSubArrayShallow(i, -1, -1, -1).Multiply(1.0,
+                                Jac, physicalHessian.ExtractSubArrayShallow(i, -1, -1, -1), Jac,
+                                0.0,
+                                "kde", "hd", "khf", "fe");
+
                         } else {
-                            throw new NotImplementedException("todo: nonlinear cell");
+                            throw new NotImplementedException();
+
                         }
                     }
                 }
-                */
+                
 
 
 

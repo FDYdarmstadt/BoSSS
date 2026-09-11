@@ -221,6 +221,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
         /// Assemble a level set Tracker
         /// </summary>
         void AssembleTracker();
+
         /// <summary>
         /// Calc level-set specific norm
         /// </summary>
