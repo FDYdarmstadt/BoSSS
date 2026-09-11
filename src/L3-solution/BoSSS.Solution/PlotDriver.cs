@@ -1132,16 +1132,18 @@ namespace BoSSS.Solution {
 
             this.OpenFile(this.GenerateFileName(fileNameBase), fieldsToPlot.Select(x => x.Item1));
 
-            for (int i = 0; i < this.ZoneDrivers.Length; i++) {
-                if (ZoneDrivers[i] != null) {
-                    ZoneDrivers[i].PlotZone(
-                        "Zone_" + ZoneDrivers[i].Zone_Element.GetType().Name,
-                        time,
-                        fieldsToPlot);
+            try {
+                for (int i = 0; i < this.ZoneDrivers.Length; i++) {
+                    if (ZoneDrivers[i] != null) {
+                        ZoneDrivers[i].PlotZone(
+                            "Zone_" + ZoneDrivers[i].Zone_Element.GetType().Name,
+                            time,
+                            fieldsToPlot);
+                    }
                 }
+            } finally {
+                this.CloseFile();
             }
-
-            this.CloseFile();
         }
 
         /// <summary>
