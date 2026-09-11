@@ -4,6 +4,7 @@ using BoSSS.Foundation.XDG;
 using ApplicationWithIDT.OptiLevelSets;
 using System.Collections.Generic;
 using ilPSP.Utils;
+using System;
 
 namespace ApplicationWithIDT {
     /// <summary>
@@ -14,9 +15,18 @@ namespace ApplicationWithIDT {
     public class LevelSetOptimizationState {
         
         /// <summary>
-        /// The level-set(s) to be optimized - currently singular but extensible to multiple
+        /// The level-set(s) to be optimized
         /// </summary>
-        public LevelSet LsTBO { get; set; }
+        public LevelSet LsTBO { 
+            get {
+                return GetLsTBO();
+            }
+        }
+
+        /// <summary>
+        /// should either return the object <see cref="ApplicationWithIDT{T}.LevelSet"/> or <see cref="ApplicationWithIDT{T}.LevelSetTwo"/>
+        /// </summary>
+        internal Func<LevelSet> GetLsTBO;
 
         /// <summary>
         /// The optimizer object for the level-set
