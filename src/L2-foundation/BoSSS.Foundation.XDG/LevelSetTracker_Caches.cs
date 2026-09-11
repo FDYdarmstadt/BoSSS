@@ -248,8 +248,14 @@ namespace BoSSS.Foundation.XDG {
 
                 protected override void ComputeValues(NodeSet N, int j0, int Len, MultidimensionalArray output) {
                     LevelSet levelSetField = m_owner.GetLevSet() as LevelSet;
-                    if(levelSetField == null) {
+                    levelSetField = null;
+                    if(levelSetField == null || levelSetField.DeactivateOptimizedComputationOfGradientAndHessians) {
                         ComputeValuesNonField(m_owner.GetLevSet(), N, j0, Len, output);
+
+                        //var output2 = MultidimensionalArray.Create(output.Lengths);
+                        //ComputeValuesField(m_owner.GetLevSet() as LevelSet, N, j0, Len, output2);
+
+                        //Console.Write("hjhkhkk");
                     } else {
                         ComputeValuesField(levelSetField, N, j0, Len, output);
                     }
@@ -312,27 +318,31 @@ namespace BoSSS.Foundation.XDG {
                     }
                 }
 
+                /// <summary>
+                /// Let $ \varphi(\vec{x}) $ be <paramref name="levelSet"/>.
+                /// Then, this computes the gradient $ \nabla_{\vec{\xi}} \varphi $ with respect to reference coordinates,
+                /// from the gradient $ \nabla_{\vec{x}} \varphi $ in physical coordinates, 
+                /// where physical coordinates $\vec{x} $ and reference coordinates $ \vec{xi} $ 
+                /// are related by $ \vec{x} = T \vec{\xi} + \vec{o} $.
+                /// </summary>
                 private void ComputeValuesNonField(ILevelSet levelSet, NodeSet NS, int j0, int Len, MultidimensionalArray output) {
                     int noOfNodes = NS.NoOfNodes;
                     int D = NS.SpatialDimension;
                     var R = m_owner.m_owner.GridDat.Cells.Transformation;
-                    var JacDet = m_owner.m_owner.GridDat.ChefBasis.Scaling;
                     var Cells = m_owner.m_owner.GridDat.Cells;
 
                     MultidimensionalArray physGradient = m_owner.GetLevelSetGradients(NS, j0, Len);
                     for(int i = 0; i < Len; i++) {
                         int jCell = j0 + i;
                         if(Cells.IsCellAffineLinear(jCell)) {
-                            double det = JacDet[j0 + i];
-
                             for(int j = 0; j < noOfNodes; j++) {
                                 for(int d = 0; d < D; d++) {
                                     double r = 0.0;
                                     for(int dd = 0; dd < D; dd++) {
-                                        r += R[i + j0, dd, d] * physGradient[i, j, dd];
+                                        r += R[jCell, dd, d] * physGradient[i, j, dd];
                                     }
 
-                                    output[i, j, d] = r / det;
+                                    output[i, j, d] = r;
                                 }
                             }
                         } else {
@@ -564,7 +574,7 @@ namespace BoSSS.Foundation.XDG {
 
                 protected override void ComputeValues(NodeSet N, int j0, int Len, MultidimensionalArray output) {
                     LevelSet levelSetField = m_owner.GetLevSet() as LevelSet;
-                    if(levelSetField == null) {
+                    if(levelSetField == null || levelSetField.DeactivateOptimizedComputationOfGradientAndHessians) {
                         //ComputeValuesNonField(m_owner.GetLevSet(), N, j0, Len, output);
                         throw new NotImplementedException();
                     } else {
