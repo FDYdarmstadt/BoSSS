@@ -411,7 +411,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
         /// Algorithm to find an inflection point along a curve in the direction of the gradient
         /// </summary>
         /// <param name="gridData">The corresponding grid</param>
-        /// <param name="field">The DG field, which shall be evalauted</param>
+        /// <param name="field">The DG field, which shall be evaluated</param>
         /// <param name="results">
         /// The points along the curve (first point has to be user defined)
         /// Lenghts --> [0]: maxIterations + 1, [1]: 5
@@ -478,7 +478,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
                 nodeSet = null;
 
                 // Check if new point is still in the same cell or has moved to one of its neighbours
-                if (!gridData.Cells.IsInCell(currentPoint, jLocal)) {
+                if (!gridData.IsInCell(currentPoint, jLocal)) {
                     // Get indices of cell neighbours
                     gridData.GetCellNeighbours(jLocal, GetCellNeighbours_Mode.ViaVertices, out int[] cellNeighbours, out int[] connectingEntities);
 
@@ -486,7 +486,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
                     bool found = false;
                     // Find neighbour
                     foreach (int neighbour in cellNeighbours) {
-                        if (gridData.Cells.IsInCell(currentPoint, neighbour, newLocalCoord)) {
+                        if (gridData.IsInCell(currentPoint, neighbour, newLocalCoord)) {
                             // If neighbour has been found, update
                             jLocal = neighbour;
                             nodeSet = ShockFindingExtensions.GetLocalNodeSet(gridData, currentPoint, jLocal + j0Grd);

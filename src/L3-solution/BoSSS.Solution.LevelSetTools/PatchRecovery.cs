@@ -842,7 +842,7 @@ namespace BoSSS.Solution.LevelSetTools {
                         NodeSets_global[f][k, 0] = xNodes[i];
                         NodeSets_global[f][k, 1] = yNodes[j];
 
-                        Debug.Assert(GridData.Cells.IsInCell(new double[] { xNodes[i], yNodes[j] }, JS[f], null));
+                        Debug.Assert(GridData.IsInCell(new double[] { xNodes[i], yNodes[j] }, JS[f], null));
 
                         k++;
                     }

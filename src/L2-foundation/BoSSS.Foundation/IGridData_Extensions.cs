@@ -746,6 +746,98 @@ namespace BoSSS.Foundation.Grid {
 
         }
 
+        /// <summary>
+        /// Helper for safely allocating a wrapped double array.
+        /// </summary>
+        /// <param name="pt_Loc"></param>
+        /// <param name="D"></param>
+        /// <returns></returns>
+        private static MultidimensionalArray AllocHelper(ref double[] pt_Loc, int D) {
+            if(pt_Loc != null) {
+                if(pt_Loc.Length != D)
+                    throw new ArgumentException();
+            } else {
+                pt_Loc = new double[D];
+            }
+            MultidimensionalArray _pt_local = MultidimensionalArray.CreateWrapper(
+                pt_Loc, 1, D); // .. in cell-local coordinate
+            return _pt_local;
+        }
+
+        /// <summary>
+        /// Computes, for point <paramref name="pt"/>, the closest point on
+        /// the boundary of cell <paramref name="j"/>.
+        /// </summary>
+        /// <param name="gdat"></param>
+        /// <param name="j">local cell index</param>
+        /// <param name="pt">
+        /// input; some point in global coordinates.
+        /// </param>
+        /// <param name="pt_Loc">
+        /// output, if unequal null: <paramref name="pt"/> in local
+        /// coordinates of cell <paramref name="j"/>.
+        /// </param>
+        /// <param name="closestPoint_global">
+        /// output, if unequal null: within the boundary of cell
+        /// <paramref name="j"/>, the closest point to
+        /// <paramref name="pt"/>.
+        /// </param>
+        /// <param name="closestPoint_local">
+        /// output, if unequal null: <paramref name="closestPoint_global"/>
+        /// in global coordinates.
+        /// </param>
+        /// <returns>
+        /// the distance.
+        /// </returns>
+        static public double ClosestPointInCell(this IGridData gdat, double[] pt, int j, double[] pt_Loc = null, double[] closestPoint_global = null, double[] closestPoint_local = null) {
+            int D = gdat.SpatialDimension;
+            if(pt.Length != D)
+                throw new ArgumentException("length must be equal to spatial dimension", "pt");
+
+            // point to search for
+            MultidimensionalArray _pt = MultidimensionalArray.CreateWrapper(pt, 1, D);
+
+            MultidimensionalArray _pt_local = AllocHelper(ref pt_Loc, D);
+            //MultidimensionalArray _closestPoint_local = AllocHelper(ref closestPoint_local, D);
+
+            gdat.TransformGlobal2Local(_pt, _pt_local, j, null);
+
+            gdat.iGeomCells.GetRefElement(j).ClosestPoint(pt_Loc, closestPoint_local);
+
+            MultidimensionalArray _closestPoint_global = AllocHelper(ref closestPoint_global, D);
+            gdat.TransformLocal2Global(new NodeSet(gdat.iGeomCells.GetRefElement(j), closestPoint_local, false), _closestPoint_global, j);
+
+            return GenericBlas.L2Dist(closestPoint_global, pt);
+        }
+
+
+        /// <summary>
+        /// true if point <paramref name="pt"/> is inside cell <paramref name="j"/>
+        /// </summary>
+        static  public bool IsInCell(this IGridData gdat, double[] pt, int j, double[] pt_Loc = null) {
+           
+            
+            int D = gdat.SpatialDimension;
+            if(pt.Length != D)
+                throw new ArgumentException("length must be equal to spatial dimension", "pt");
+
+            MultidimensionalArray _pt = MultidimensionalArray.CreateWrapper(pt, 1, D);          // point to search for
+            MultidimensionalArray _pt_local = AllocHelper(ref pt_Loc, D);  // .. in cell-local coordinate
+
+            bool[] bb = new bool[1];
+            gdat.TransformGlobal2Local(_pt, _pt_local, j, bb);
+
+            if(bb[0] == false)
+                return false;
+
+            for(int d = 0; d < D; d++) {
+                if(double.IsInfinity(pt_Loc[d]) || double.IsNaN(pt_Loc[d]))
+                    return false;
+            }
+
+            return gdat.iGeomCells.GetRefElement(j).IsWithin(pt_Loc);
+        }
+
 
         /// <summary>
         /// Find the cell which contains some point <paramref name="pt"/>;

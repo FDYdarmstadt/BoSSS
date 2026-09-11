@@ -1018,7 +1018,7 @@ namespace BoSSS.Solution.LevelSetTools {
                                             int trial_jSub = jCell_to_jSub[trial_jCell];
 
 
-                                            if(_GridData.Cells.IsInCell(_X0_G, trial_jCell, _X0_L)) {
+                                            if(_GridData.IsInCell(_X0_G, trial_jCell, _X0_L)) {
 
                                                 if(trial_jSub >= 0) {
                                                     // neighbour is in subgrid -> we are ok with that
@@ -1051,7 +1051,7 @@ namespace BoSSS.Solution.LevelSetTools {
                                                     // neighbour is not in subgrid -> continue
                                                     continue;
 
-                                                double dist_to_trialCell = _GridData.Cells.ClosestPointInCell(_X0_G, trial_jCell, _X0_L2, dummyPt1, dummyPt2);
+                                                double dist_to_trialCell = _GridData.ClosestPointInCell(_X0_G, trial_jCell, _X0_L2, dummyPt1, dummyPt2);
 
                                                 if(dist_to_trialCell < dist) {
                                                     new_jCell = trial_jCell;
@@ -1067,9 +1067,9 @@ namespace BoSSS.Solution.LevelSetTools {
                                         for(int d = 0; d < D; d++)
                                             X0_loc[nn, d] = _X0_L[d];
 
-                                        Debug.Assert(Kref.IsWithin(_X0_L) == _GridData.Cells.IsInCell(_X0_G, new_jCell));
+                                        Debug.Assert(Kref.IsWithin(_X0_L) == _GridData.IsInCell(_X0_G, new_jCell));
                                         Debug.Assert(Kref.IsWithin(_X0_L) ^ OutsiderMarker[I0 + nn]);
-                                        Debug.Assert(_GridData.Cells.IsInCell(_X0_G, new_jCell) ^ OutsiderMarker[I0 + nn]);
+                                        Debug.Assert(_GridData.IsInCell(_X0_G, new_jCell) ^ OutsiderMarker[I0 + nn]);
                                     } else {
                                         OutsiderMarker[I0 + nn] = true;
                                         outsiders++;
@@ -1251,7 +1251,7 @@ namespace BoSSS.Solution.LevelSetTools {
                                 var splx = RefElms[_GridData.Cells.GetRefElementIndex(jCell)];
 
                                 Debug.Assert(splx.IsWithin(_pt) ^ OutsiderMarker[i]);
-                                Debug.Assert(_GridData.Cells.IsInCell(_ptG, jCell) ^ OutsiderMarker[i]);
+                                Debug.Assert(_GridData.IsInCell(_ptG, jCell) ^ OutsiderMarker[i]);
                             }
 #endif
                         }
@@ -1392,7 +1392,7 @@ namespace BoSSS.Solution.LevelSetTools {
                                     }
 
                                     Debug.Assert(splx.IsWithin(pt) ^ OutsiderMarker[I0 + nn]);
-                                    Debug.Assert(_GridData.Cells.IsInCell(ptG, jCell) ^ OutsiderMarker[I0 + nn]);
+                                    Debug.Assert(_GridData.IsInCell(ptG, jCell) ^ OutsiderMarker[I0 + nn]);
                                 }
 
                             }
@@ -1555,12 +1555,12 @@ namespace BoSSS.Solution.LevelSetTools {
         }
 
         
-        private static bool LocatePoint(GridData _Context, int[] jCell_to_jSub, int[] ActualjSub, int I0, MultidimensionalArray X0_loc, double[] _X0_G, double[] _X0_L, int[] Neighs, int nn) {
+        private static bool LocatePoint(IGridData _Context, int[] jCell_to_jSub, int[] ActualjSub, int I0, MultidimensionalArray X0_loc, double[] _X0_G, double[] _X0_L, int[] Neighs, int nn) {
             bool found = false;
             int D = _Context.SpatialDimension;
 
             foreach (int jNeigh in Neighs) {
-                if (_Context.Cells.IsInCell(_X0_G, jNeigh, _X0_L)) {
+                if (_Context.IsInCell(_X0_G, jNeigh, _X0_L)) {
                     //newAss++;
                     found = true;
 
@@ -1589,7 +1589,7 @@ namespace BoSSS.Solution.LevelSetTools {
                 int L = this.X0_global.GetLength(0);
                 int D = this.X0_global.GetLength(1);
 
-                GridData grdDat = (GridData)(sgrd.GridData);
+                IGridData grdDat = sgrd.GridData;
 
                 int JSUB = sgrd.LocalNoOfCells;
                 int[] jSub_2_jCell = sgrd.SubgridIndex2LocalCellIndex;
@@ -1614,7 +1614,7 @@ namespace BoSSS.Solution.LevelSetTools {
                         
                         // inside the assigned cell ? 
                         var X0 = X0_global.GetRow(l);
-                        bool inside = grdDat.Cells.IsInCell(X0, jCell);
+                        bool inside = grdDat.IsInCell(X0, jCell);
                         stw.Write((inside ? 1.0 : 0.0));
                         stw.Write(" ");
                         //stw.Write(inside);

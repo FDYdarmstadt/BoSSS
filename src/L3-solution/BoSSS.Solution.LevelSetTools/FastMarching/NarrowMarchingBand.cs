@@ -1811,7 +1811,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             if(JSUB != sgrd.LocalNoOfCells)
                 throw new ArgumentException();
             int NoOfPts = X0_global.GetLength(0);
-            GridData _GridData = (GridData)(sgrd.GridData);
+            IGridData _GridData = sgrd.GridData;
             int D = _GridData.SpatialDimension;
             //int[] CellIndexMap = _CellIndexMap;
             //int[] NodeIndexMap = _NodeIndexMap;
@@ -1846,7 +1846,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             BitArray sgrdMask = sgrd.VolumeMask.GetBitMask().CloneAs();
 #endif
 
-            BitArray newSgrdMask = new BitArray(_GridData.Cells.NoOfLocalUpdatedCells);
+            BitArray newSgrdMask = new BitArray(_GridData.iLogicalCells.NoOfLocalUpdatedCells);
             int[] Point2CellIndex = new int[NoOfPts];
             int newNoOfPts = 0;
 
@@ -1862,7 +1862,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 int IE = I[jsub + 1]; // ......................................... index of last point in next cell + 1
                 int K = IE - I0; // .............................................. number of points in cell
                 int jCell = jSub_2_jCell[jsub]; // ............................... cell index
-                RefElement Kref = _GridData.Cells.GetRefElement(jCell); // ....... reference element
+                RefElement Kref = _GridData.iGeomCells.GetRefElement(jCell); // .. reference element
 
 #if DEBUG
                 Debug.Assert(sgrdMask[jCell] == true);
@@ -1893,7 +1893,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                     }
 
 #if DEBUG
-                    Debug.Assert(Kref.IsWithin(_X0) == _GridData.Cells.IsInCell(_X0_G, jCell));
+                    Debug.Assert(Kref.IsWithin(_X0) == _GridData.IsInCell(_X0_G, jCell));
 #endif
 
                     if(!Kref.IsWithin(_X0)) {
@@ -1917,7 +1917,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                         for(int nc = 0; nc < Neighs.Length; nc++) { // search all cell neighbours, whether they contain the point...
                             int trial_jCell = Neighs[nc];
 
-                            if(_GridData.Cells.IsInCell(_X0_G, trial_jCell, _X0_L)) {
+                            if(_GridData.IsInCell(_X0_G, trial_jCell, _X0_L)) {
                                 new_jCell = trial_jCell;
                                 dist = 0.0;
                                 break;
@@ -1946,7 +1946,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                                     trial_jCell = Neighs[nc];
 
 
-                                double dist_to_trialCell = _GridData.Cells.ClosestPointInCell(_X0_G, trial_jCell, _X0_L2, dummyPt1, dummyPt2);
+                                double dist_to_trialCell = _GridData.ClosestPointInCell(_X0_G, trial_jCell, _X0_L2, dummyPt1, dummyPt2);
 
                                 if(dist_to_trialCell < dist) {
                                     new_jCell = trial_jCell;
