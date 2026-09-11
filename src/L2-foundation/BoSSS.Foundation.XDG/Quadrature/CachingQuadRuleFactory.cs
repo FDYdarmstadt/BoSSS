@@ -104,6 +104,11 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                     {
                         int prevIE = -1;
                         foreach(var CRP in newQuadRules[iPart]) {
+                            if(CRP.Rule.OrderOfPrecision < __Order) {
+                                //OriginalRuleFactory[iPart].GetQuadRuleSet(Domain_i, __Order);
+                                throw new ArithmeticException($"Requested quadrature rule of degree {__Order}, but rule reports order {CRP.Rule.OrderOfPrecision}.");
+                            }
+                            
                             if(prevIE >= 0) {
                                 if(CRP.Chunk.i0 < prevIE) {
                                     // debuuger entry: OriginalRuleFactory[iPart].GetQuadRuleSet(Domain_i, __Order);
