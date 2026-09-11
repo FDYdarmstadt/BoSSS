@@ -19,7 +19,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
     public static class Droplet3D {
 
         public static ZLS_Control Aland( int p = 2, int AMRlvl = 0) {
-            BoSSS.Solution.Application.DeleteOldPlotFiles();
+            //BoSSS.Solution.Application.DeleteOldPlotFiles();
             ZLS_Control C = new ZLS_Control(p);
             C.ImmediatePlotPeriod = 1;
             C.SuperSampling = 3;
