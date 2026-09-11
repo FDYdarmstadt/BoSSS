@@ -73,26 +73,55 @@ namespace BoSSS.Application.CDG_ProjectionTest {
         }
 
         /// <summary>
-        /// case 1
+        /// case 1, degree 2;
+        /// split off from the former monolithic `AllUp_patchwiseOnly_case1` (which took
+        /// almost two hours in Release, running all degrees in a single job) so that the
+        /// per-degree buckets can be run/scheduled as separate, parallel jobs.
         /// </summary>
         [Test]
-        static public void AllUp_patchwiseOnly_case1(
+        static public void AllUp_patchwiseOnly_case1_p2(
 #if DEBUG
             [Values(2)] int dimension,
-            [Values(2)] int degree,
             [Values(2, 4)] int gridResolution,
             [Values(0, 1)] int AMRlevel,
             [Values(true, false)] bool projectOnSameBasis
 #else
             [Values(2, 3)] int dimension,
-            [Values(2, 3, 4)] int degree,
             [Values(2, 4, 8)] int gridResolution,
             [Values(0, 2)] int AMRlevel,
             [Values(true, false)] bool projectOnSameBasis
 #endif
             ) {
-            AllUp(1, dimension, degree, gridResolution, AMRlevel, projectOnSameBasis, ProjectionStrategy.patchwiseOnly);
+            AllUp(1, dimension, 2, gridResolution, AMRlevel, projectOnSameBasis, ProjectionStrategy.patchwiseOnly);
         }
+
+#if !DEBUG
+        /// <summary>
+        /// case 1, degree 3; see <see cref="AllUp_patchwiseOnly_case1_p2"/>.
+        /// </summary>
+        [Test]
+        static public void AllUp_patchwiseOnly_case1_p3(
+            [Values(2, 3)] int dimension,
+            [Values(2, 4, 8)] int gridResolution,
+            [Values(0, 2)] int AMRlevel,
+            [Values(true, false)] bool projectOnSameBasis
+            ) {
+            AllUp(1, dimension, 3, gridResolution, AMRlevel, projectOnSameBasis, ProjectionStrategy.patchwiseOnly);
+        }
+
+        /// <summary>
+        /// case 1, degree 4; see <see cref="AllUp_patchwiseOnly_case1_p2"/>.
+        /// </summary>
+        [Test]
+        static public void AllUp_patchwiseOnly_case1_p4(
+            [Values(2, 3)] int dimension,
+            [Values(2, 4, 8)] int gridResolution,
+            [Values(0, 2)] int AMRlevel,
+            [Values(true, false)] bool projectOnSameBasis
+            ) {
+            AllUp(1, dimension, 4, gridResolution, AMRlevel, projectOnSameBasis, ProjectionStrategy.patchwiseOnly);
+        }
+#endif
 
         /// <summary>
         /// case 2

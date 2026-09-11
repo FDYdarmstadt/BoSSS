@@ -3083,12 +3083,6 @@
     "dueMargin": 1080.0,
     "lastupdate": "2026-02-25T23:15:13.2456251+01:00"
   },
-  "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case1": {
-    "name": "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case1",
-    "avgSeconds": 6437.7145217,
-    "dueMargin": 1320.0,
-    "lastupdate": "2026-02-25T23:17:38.6546096+01:00"
-  },
   "REL-ZwoLevelSetSolver#FluidSolidTaylorCouette_Exact_P3": {
     "name": "REL-ZwoLevelSetSolver#FluidSolidTaylorCouette_Exact_P3",
     "avgSeconds": 5162.6008896,
@@ -3647,8 +3641,8 @@
     "dueMargin": 300.0,
     "lastupdate": "2026-02-25T21:36:33.6319973+01:00"
   },
-  "DBG-CDG_ProjectionTest#AllUp_patchwiseOnly_case1": {
-    "name": "DBG-CDG_ProjectionTest#AllUp_patchwiseOnly_case1",
+  "DBG-CDG_ProjectionTest#AllUp_patchwiseOnly_case1_p2": {
+    "name": "DBG-CDG_ProjectionTest#AllUp_patchwiseOnly_case1_p2",
     "avgSeconds": 263.3137375,
     "dueMargin": 300.0,
     "lastupdate": "2026-02-25T21:36:36.2935539+01:00"
