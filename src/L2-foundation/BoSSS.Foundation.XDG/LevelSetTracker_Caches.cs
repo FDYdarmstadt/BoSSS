@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
 using log4net.Core;
@@ -588,7 +589,12 @@ namespace BoSSS.Foundation.XDG {
                     LevelSet levelSetField = m_owner.GetLevSet() as LevelSet;
                     if(levelSetField == null || levelSetField.DeactivateOptimizedComputationOfGradientAndHessians) {
                         ComputeValuesNonField(m_owner.GetLevSet(), N, j0, Len, output);
-                        //throw new NotImplementedException();
+                        //if(output.L2Norm() > 1.0e-5) {
+                        //    var output2 = MultidimensionalArray.Create(output.Lengths);
+                        //    ComputeValuesField(levelSetField, N, j0, Len, output2);
+                        //    var dist = output2.L2Dist(output);
+                        //    Console.WriteLine("dist = " + dist);
+                        //}
                     } else {
                         ComputeValuesField(levelSetField, N, j0, Len, output);
                     }
@@ -639,41 +645,47 @@ namespace BoSSS.Foundation.XDG {
                     }
                 }
 
-                
-                private void ComputeValuesNonField(ILevelSet levelSet, NodeSet NS, int j0, int Len, MultidimensionalArray output) {
+
+                private void ComputeValuesNonField(ILevelSet levelSet, NodeSet NS, int __j0, int __Len, MultidimensionalArray output) {
                     int noOfNodes = NS.NoOfNodes;
                     int D = NS.SpatialDimension;
                     var R = m_owner.m_owner.GridDat.Cells.Transformation;
                     var Cells = m_owner.m_owner.GridDat.Cells;
 
-                    //MultidimensionalArray physGradient = m_owner.Get(NS, j0, Len);
-                    MultidimensionalArray physicalHessian = MultidimensionalArray.Create(1, NS.NoOfNodes, D, D);
-                    for(int i = 0; i < Len; i++) {
-                        int jCell = j0 + i;
-                        if(Cells.IsCellAffineLinear(jCell)) {
-                            var Jac = R.ExtractSubArrayShallow(jCell, -1, -1);
+                    int out_offset = 0;
+                    foreach(var ttt in m_owner.GridDat.SplitUpLinearAndNonlinear(__j0, __Len)) {
+                        int j0 = ttt.i0;
+                        int Len = ttt.Len;
+#if DEBUG
+                        for(int l = j0; l < Len + j0; l++) {
+                            Debug.Assert(ttt.IsLinear == Cells.IsCellAffineLinear(j0));
+                        }
+#endif
+                        //MultidimensionalArray physGradient = m_owner.Get(NS, j0, Len);
+                        MultidimensionalArray physicalHessian = MultidimensionalArray.Create(Len, NS.NoOfNodes, D, D);
+                        levelSet.EvaluateHessian(j0, Len, NS, physicalHessian);
 
-                            levelSet.EvaluateHessian(jCell, 1, NS, physicalHessian);
+                        //for(int i = 0; i < Len; i++) 
+                        {
+                            //int jCell = j0 + i;
+                            if(ttt.IsLinear) {
+                                var Jac = R.ExtractSubArrayShallow([j0, 0, 0], [j0 + Len - 1, D - 1, D - 1]);
+                                
 
-                            // output = Jacobian^T * Physical Hessian * Jacobain
-                            output.ExtractSubArrayShallow(i, -1, -1, -1).Multiply(1.0,
-                                Jac, physicalHessian.ExtractSubArrayShallow(i, -1, -1, -1), Jac,
-                                0.0,
-                                "kde", "hd", "khf", "fe");
+                                // output = Jacobian^T * Physical Hessian * Jacobian
+                                output.ExtractSubArrayShallow([out_offset, 0, 0, 0], [out_offset + Len - 1, noOfNodes -1, D - 1, D - 1]).Multiply(
+                                    1.0,
+                                    Jac, physicalHessian, Jac,
+                                    0.0,
+                                    "jkde", "jhd", "jkhf", "jfe");
 
-                        } else {
-                            throw new NotImplementedException();
-
+                            } else {
+                                throw new NotImplementedException();
+                            }
                         }
                     }
                 }
-                
-
-
-
-
-
-
+             
                 protected override MultidimensionalArray Allocate(int j0, int Len, NodeSet N) {
                     return MultidimensionalArray.Create(Len, N.NoOfNodes, N.SpatialDimension, N.SpatialDimension);
                 }

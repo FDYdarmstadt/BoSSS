@@ -323,15 +323,6 @@ namespace BoSSS.Foundation.Grid {
             return g.iLogicalCells.AggregateCellToParts[jLog].IndexWhere(_jG => _jG == jG);
         }
 
-
-
-
-
-//        class Mask2GeomChunks_Enum : IEnumerator<Tuple<int, int>> {
-//=======
-
-
-
         class Mask2GeomChunks_Enum : IEnumerator<(int i0, int Length)> {
 
 
@@ -514,8 +505,6 @@ namespace BoSSS.Foundation.Grid {
                 return new Mask2GeomChunks_Enum() { CM = CM, MaxVecLen = MaxVecLen, ConsecutiveMask = ConsecutiveMask };
             }
         }
-
-
 
         /// <summary>
         /// Returns an enumeration of geometrical cell chunks (first index an length) for a given cell mask.
@@ -744,6 +733,65 @@ namespace BoSSS.Foundation.Grid {
 
 
 
+        }
+
+
+        /// <summary>
+        /// splits up the (geometric) cell range of <paramref name="Len"/> cells, starting at cell <paramref name="j0"/> 
+        /// into chunks in which are affine-linear and such that are not.
+        /// </summary>
+        /// <param name="g"></param>
+        /// <param name="j0">geometric cell index to start at</param>
+        /// <param name="Len">number of cells to look at</param>
+        /// <returns></returns>
+        public static IEnumerable<(int i0, int Len, bool IsLinear)> SplitUpLinearAndNonlinear(this IGridData g, int j0, int Len) {
+            return g.SplitUp(j0, Len, CellInfo.CellIsAffineLinear);
+        }
+
+        /// <summary>
+        /// splits up the (geometric) cell range of <paramref name="Len"/> cells, starting at cell <paramref name="j0"/> 
+        /// into chunks in which <paramref name="info"/> is fulfilled and such where it is not.
+        /// </summary>
+        /// <param name="g"></param>
+        /// <param name="j0">geometric cell index to start at</param>
+        /// <param name="Len">number of cells to look at</param>
+        /// <param name="info"></param>
+        /// <returns></returns>
+        public static IEnumerable<(int i0, int Len, bool infoFulfilled)> SplitUp(this IGridData g, int j0, int Len, CellInfo info) {
+            var InfoFlags = g.iGeomCells.InfoFlags;
+
+            var ret = new List<(int i0, int Len, bool infoFulfilled)>();
+            int j = j0;
+            int JE = j0 + Len;
+            while(j < JE) {
+                int RestLen = JE - j;
+                int Lnext = g.iGeomCells.GetNoOfSimilarConsecutiveCells(info, j, RestLen);
+                bool state_j = (((uint)InfoFlags[j0]) & (uint)info) != 0;
+
+                ret.Add((j, RestLen, state_j));
+                j += Lnext;
+            }
+
+#if DEBUG
+            bool[] check = new bool[Len];
+            foreach(var ttt in ret) {
+                var info0 = (((uint)InfoFlags[ttt.i0]) & (uint)info);
+                for(int i = 0; i < ttt.Len; i++) {
+                    int _j = i + ttt.i0;
+                    int idx = _j - j0;
+                    var info_j = (((uint)InfoFlags[_j]) & (uint)info);
+                    Debug.Assert(info0 == info_j, "info flag changes within return chunk");
+                    Debug.Assert(!check[idx], "some item appears twice");
+                    check[idx] = true;
+                }
+            }
+            for(int i = 0; i < check.Length; i++) {
+                Debug.Assert(check[i], "some item in the range is missing");
+            }
+#endif
+
+
+            return ret.ToArray();
         }
 
         /// <summary>
