@@ -1668,7 +1668,7 @@ namespace BoSSS.Foundation.Grid {
         /// geometrical cell index
         /// </param>
         /// <returns>
-        /// 2D-array, <paramref name="localNodes"/> transformed to global coordinates
+        /// 2D-array, <paramref name="globalNodes"/> transformed to global coordinates
         /// - 1st dimension: node index
         /// - 2nd dimension: spatial direction
         /// </returns>

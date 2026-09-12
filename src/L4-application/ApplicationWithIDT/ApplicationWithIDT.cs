@@ -872,6 +872,7 @@ namespace ApplicationWithIDT {
             }
         }
         #endregion
+        
         #region Utility Methods
         /// <summary>
         /// A helper routine one can use in jupyter notebooks to obtain a Main object 
@@ -884,6 +885,7 @@ namespace ApplicationWithIDT {
             this.CreateEquationsAndSolvers(null);
             PlotCurrentState(0.0, 0, Control.SuperSampling);
         }
+        
         /// <summary>
         /// Function that Initializes LevelSets and Tracker
         /// </summary>

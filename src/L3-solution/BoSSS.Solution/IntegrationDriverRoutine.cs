@@ -71,7 +71,7 @@ namespace BoSSS.Solution.Utils {
         /// - $ u_i $ are the DG fields provided by <paramref name="U"/>
         /// - $ f(\vec{x}, u_1(\vec{x}), ... , u_n(\vec{x}) ) $ is the function <paramref name="func"/>
         /// <param name="lsTrk">
-        /// required XDG tracker <see cref="LevelSetTracker.GetXDGSpaceMetrics"/>
+        /// required XDG tracker <see cref="LevelSetTracker.GetXDGSpaceMetrics(int, int)"/>
         /// </param>
         /// </summary>
         /// <param name="Spc">
@@ -196,7 +196,7 @@ namespace BoSSS.Solution.Utils {
         /// - Note: the dependence of $ f $ on $ \vec{n} $ must be linear, i.e., $ f(\vec{x}, -\vec{n}, \ldots ) =  -f(\vec{x}, \vec{n}, \ldots ) $
         /// </summary>
         /// <param name="lsTrk">
-        /// required XDG tracker <see cref="LevelSetTracker.GetXDGSpaceMetrics"/>
+        /// required XDG tracker <see cref="LevelSetTracker.GetXDGSpaceMetrics(int, int)"/>
         /// </param>
         /// <param name="Spc">
         /// species index
@@ -322,7 +322,8 @@ namespace BoSSS.Solution.Utils {
         ///   I_j = \oint_{\mathfrak{I} \cap \overline{S_1} \cap \overline{S_2}} f(\vec{x}, \vec{n}, u_1(\vec{x}), ... , u_n(\vec{x}) ) dV 
         /// \]
         /// where:
-        /// - $ S $ is the domain of the species <paramref name="Spc"/>
+        /// - $ S_1 $ is the domain of the negative/first species <paramref name="SpcA"/>
+        /// - $ S_2 $ is the domain of the positive/second species <paramref name="SpcB"/>
         /// - the position $ \vec{x} $
         /// - the level-set/interface normal $ \vec{n} $, pointing from species <paramref name="SpcA"/> to <paramref name="SpcB"/>
         /// - $ u_i $ are the DG fields provided by <paramref name="U"/>
@@ -330,7 +331,7 @@ namespace BoSSS.Solution.Utils {
         /// - Note: the dependence of $ f $ on $ \vec{n} $ must be linear, i.e., $ f(\vec{x}, -\vec{n}, \ldots ) =  -f(\vec{x}, \vec{n}, \ldots ) $
         /// </summary>
         /// <param name="lsTrk">
-        /// required XDG tracker <see cref="LevelSetTracker.GetXDGSpaceMetrics"/>
+        /// required XDG tracker <see cref="LevelSetTracker.GetXDGSpaceMetrics(int, int)"/>
         /// </param>
         /// <param name="iLevSet">
         /// level-set/interface index
