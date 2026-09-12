@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
 using log4net.Core;
@@ -248,8 +249,14 @@ namespace BoSSS.Foundation.XDG {
 
                 protected override void ComputeValues(NodeSet N, int j0, int Len, MultidimensionalArray output) {
                     LevelSet levelSetField = m_owner.GetLevSet() as LevelSet;
-                    if(levelSetField == null) {
+                    levelSetField = null;
+                    if(levelSetField == null || levelSetField.DeactivateOptimizedComputationOfGradientAndHessians) {
                         ComputeValuesNonField(m_owner.GetLevSet(), N, j0, Len, output);
+
+                        //var output2 = MultidimensionalArray.Create(output.Lengths);
+                        //ComputeValuesField(m_owner.GetLevSet() as LevelSet, N, j0, Len, output2);
+
+                        //Console.Write("hjhkhkk");
                     } else {
                         ComputeValuesField(levelSetField, N, j0, Len, output);
                     }
@@ -312,31 +319,47 @@ namespace BoSSS.Foundation.XDG {
                     }
                 }
 
+                /// <summary>
+                /// Let $ \varphi(\vec{x}) $ be <paramref name="levelSet"/>.
+                /// Then, this computes the gradient $ \nabla_{\vec{\xi}} \varphi $ with respect to reference coordinates,
+                /// from the gradient $ \nabla_{\vec{x}} \varphi $ in physical coordinates, 
+                /// where physical coordinates $\vec{x} $ and reference coordinates $ \vec{xi} $ 
+                /// are related by $ \vec{x} = T \vec{\xi} + \vec{o} $.
+                /// </summary>
                 private void ComputeValuesNonField(ILevelSet levelSet, NodeSet NS, int j0, int Len, MultidimensionalArray output) {
                     int noOfNodes = NS.NoOfNodes;
                     int D = NS.SpatialDimension;
                     var R = m_owner.m_owner.GridDat.Cells.Transformation;
-                    var JacDet = m_owner.m_owner.GridDat.ChefBasis.Scaling;
                     var Cells = m_owner.m_owner.GridDat.Cells;
 
                     MultidimensionalArray physGradient = m_owner.GetLevelSetGradients(NS, j0, Len);
                     for(int i = 0; i < Len; i++) {
                         int jCell = j0 + i;
                         if(Cells.IsCellAffineLinear(jCell)) {
-                            double det = JacDet[j0 + i];
-
                             for(int j = 0; j < noOfNodes; j++) {
                                 for(int d = 0; d < D; d++) {
                                     double r = 0.0;
                                     for(int dd = 0; dd < D; dd++) {
-                                        r += R[i + j0, dd, d] * physGradient[i, j, dd];
+                                        r += R[jCell, dd, d] * physGradient[i, j, dd];
                                     }
 
-                                    output[i, j, d] = r / det;
+                                    output[i, j, d] = r;
                                 }
                             }
                         } else {
-                            throw new NotImplementedException("todo: nonlinear cell");
+                            var JacobainPerNode = m_owner.m_owner.GridDat.Jacobian.GetValue_Cell(NS, jCell, 1);
+
+                            for(int k = 0; k < noOfNodes; k++) {
+                                for(int d = 0; d < D; d++) {
+                                    double r = 0.0;
+                                    for(int dd = 0; dd < D; dd++) {
+                                        r += JacobainPerNode[0, k, dd, d] * physGradient[i, k, dd];
+                                    }
+
+                                    output[i, k, d] = r;
+                                }
+                            }
+
                         }
                     }
                 }
@@ -564,9 +587,14 @@ namespace BoSSS.Foundation.XDG {
 
                 protected override void ComputeValues(NodeSet N, int j0, int Len, MultidimensionalArray output) {
                     LevelSet levelSetField = m_owner.GetLevSet() as LevelSet;
-                    if(levelSetField == null) {
-                        //ComputeValuesNonField(m_owner.GetLevSet(), N, j0, Len, output);
-                        throw new NotImplementedException();
+                    if(levelSetField == null || levelSetField.DeactivateOptimizedComputationOfGradientAndHessians) {
+                        ComputeValuesNonField(m_owner.GetLevSet(), N, j0, Len, output);
+                        //if(output.L2Norm() > 1.0e-5) {
+                        //    var output2 = MultidimensionalArray.Create(output.Lengths);
+                        //    ComputeValuesField(levelSetField, N, j0, Len, output2);
+                        //    var dist = output2.L2Dist(output);
+                        //    Console.WriteLine("dist = " + dist);
+                        //}
                     } else {
                         ComputeValuesField(levelSetField, N, j0, Len, output);
                     }
@@ -617,42 +645,47 @@ namespace BoSSS.Foundation.XDG {
                     }
                 }
 
-                /*
-                private void ComputeValuesNonField(ILevelSet levelSet, NodeSet NS, int j0, int Len, MultidimensionalArray output) {
+
+                private void ComputeValuesNonField(ILevelSet levelSet, NodeSet NS, int __j0, int __Len, MultidimensionalArray output) {
                     int noOfNodes = NS.NoOfNodes;
                     int D = NS.SpatialDimension;
                     var R = m_owner.m_owner.GridDat.Cells.Transformation;
-                    var JacDet = m_owner.m_owner.GridDat.ChefBasis.Scaling;
                     var Cells = m_owner.m_owner.GridDat.Cells;
 
-                    MultidimensionalArray physGradient = m_owner.GetLevelSetGradients(NS, j0, Len);
-                    for(int i = 0; i < Len; i++) {
-                        int jCell = j0 + i;
-                        if(Cells.IsCellAffineLinear(jCell)) {
-                            double det = JacDet[j0 + i];
+                    int out_offset = 0;
+                    foreach(var ttt in m_owner.GridDat.SplitUpLinearAndNonlinear(__j0, __Len)) {
+                        int j0 = ttt.i0;
+                        int Len = ttt.Len;
+#if DEBUG
+                        for(int l = j0; l < Len + j0; l++) {
+                            Debug.Assert(ttt.IsLinear == Cells.IsCellAffineLinear(j0));
+                        }
+#endif
+                        //MultidimensionalArray physGradient = m_owner.Get(NS, j0, Len);
+                        MultidimensionalArray physicalHessian = MultidimensionalArray.Create(Len, NS.NoOfNodes, D, D);
+                        levelSet.EvaluateHessian(j0, Len, NS, physicalHessian);
 
-                            for(int j = 0; j < noOfNodes; j++) {
-                                for(int d = 0; d < D; d++) {
-                                    double r = 0.0;
-                                    for(int dd = 0; dd < D; dd++) {
-                                        r += R[i + j0, dd, d] * physGradient[i, j, dd];
-                                    }
+                        //for(int i = 0; i < Len; i++) 
+                        {
+                            //int jCell = j0 + i;
+                            if(ttt.IsLinear) {
+                                var Jac = R.ExtractSubArrayShallow([j0, 0, 0], [j0 + Len - 1, D - 1, D - 1]);
+                                
 
-                                    output[i, j, d] = r / det;
-                                }
+                                // output = Jacobian^T * Physical Hessian * Jacobian
+                                output.ExtractSubArrayShallow([out_offset, 0, 0, 0], [out_offset + Len - 1, noOfNodes -1, D - 1, D - 1]).Multiply(
+                                    1.0,
+                                    Jac, physicalHessian, Jac,
+                                    0.0,
+                                    "jkde", "jhd", "jkhf", "jfe");
+
+                            } else {
+                                throw new NotImplementedException();
                             }
-                        } else {
-                            throw new NotImplementedException("todo: nonlinear cell");
                         }
                     }
                 }
-                */
-
-
-
-
-
-
+             
                 protected override MultidimensionalArray Allocate(int j0, int Len, NodeSet N) {
                     return MultidimensionalArray.Create(Len, N.NoOfNodes, N.SpatialDimension, N.SpatialDimension);
                 }

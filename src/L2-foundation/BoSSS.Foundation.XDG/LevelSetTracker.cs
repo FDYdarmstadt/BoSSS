@@ -402,7 +402,7 @@ namespace BoSSS.Foundation.XDG {
         public Func<LevelSetData[], XQuadFactoryHelperBase> CustomXQuadFactoryHelper {
             get;
             set;
-        }
+        } = null;
 
         /// <summary>
         /// used by <see cref="ContainesSpecies"/>;

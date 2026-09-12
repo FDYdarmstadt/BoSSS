@@ -16,6 +16,7 @@ limitations under the License.
 
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
 
 namespace MPI.Wrappers.Utils {
@@ -172,6 +173,11 @@ namespace MPI.Wrappers.Utils {
         [DllImportAttribute("kernel32.dll")]
         public static extern IntPtr LoadLibrary([InAttribute()] [MarshalAsAttribute(UnmanagedType.LPStr)] string lpFileName);
 
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hFile, uint dwFlags);
+
+        const uint LOAD_WITH_ALTERED_SEARCH_PATH = 0x00000008;
+
         /// <summary>
         /// Controls whether the system will handle the specified types of
         /// serious errors, or whether this process will handle them.
@@ -267,7 +273,9 @@ namespace MPI.Wrappers.Utils {
                 case PlatformID.Win32NT:
                     // Try to load but suppress ugly dialog box error
                     ErrorModes originalMode = SetErrorMode(ErrorModes.SEM_FAILCRITICALERRORS);
-                    ret.val = LoadLibrary(LibName);
+                    ret.val = Path.IsPathRooted(LibName)
+                        ? LoadLibraryEx(LibName, IntPtr.Zero, LOAD_WITH_ALTERED_SEARCH_PATH)
+                        : LoadLibrary(LibName);
                     SetErrorMode(originalMode);
 
                     if (ret.val == IntPtr.Zero)

@@ -35,17 +35,17 @@ namespace ilPSP.LinSolvers.UMFPACK {
         /// <summary>
         /// Matrix dimension.
         /// </summary>
-        public int n;
+        public long n;
 
         /// <summary>
         /// Column pointers for UMFPACK. This stores CSR row pointers of A, interpreted as CSC column pointers of A'.
         /// </summary>
-        public int[] Ap;
+        public long[] Ap;
 
         /// <summary>
         /// Row indices for UMFPACK. This stores CSR column indices of A, interpreted as CSC row indices of A'.
         /// </summary>
-        public int[] Ai;
+        public long[] Ai;
 
         /// <summary>
         /// Matrix entries. Only initialized on MPI processor rank 0.
@@ -77,25 +77,25 @@ namespace ilPSP.LinSolvers.UMFPACK {
 
                 if(size == 1) {
                     using(new BlockTrace("serial init", tr)) {
-                        n = checked((int)M.RowPartitioning.TotalLength);
-                        int len = checked((int)M.GetTotalNoOfNonZerosPerProcess());
+                        n = M.RowPartitioning.TotalLength;
+                        long len = M.GetTotalNoOfNonZerosPerProcess();
                         int Nrows = M.RowPartitioning.LocalLength;
 
-                        Ap = new int[n + 1];
-                        Ai = new int[len];
-                        AxPtr = Marshal.AllocHGlobal((IntPtr)(((long)len) * sizeof(double)));
+                        Ap = new long[n + 1];
+                        Ai = new long[len];
+                        AxPtr = Marshal.AllocHGlobal((IntPtr)(len * sizeof(double)));
 
                         unsafe {
                             double* Ax = (double*)AxPtr;
-                            int cnt = 0;
+                            long cnt = 0;
                             for(int i = 0; i < Nrows; i++) {
                                 Ap[i] = cnt;
-                                int iRow = checked((int)(M.RowPartitioning.i0 + i));
+                                long iRow = M.RowPartitioning.i0 + i;
                                 int LR = M.GetRow(iRow, ref col, ref val);
 
                                 for(int j = 0; j < LR; j++) {
                                     if(val[j] != 0.0) {
-                                        Ai[cnt] = checked((int)col[j]);
+                                        Ai[cnt] = col[j];
                                         Ax[cnt] = val[j];
                                         cnt++;
                                     }
@@ -110,26 +110,24 @@ namespace ilPSP.LinSolvers.UMFPACK {
                     using(new BlockTrace("Collect matrix on proc 0", tr)) {
                         int len_loc = checked((int)M.GetTotalNoOfNonZerosPerProcess());
                         Partitioning part = new Partitioning(len_loc, m_comm);
-                        if(part.TotalLength > int.MaxValue)
-                            throw new ApplicationException("too many matrix entries for UMFPACK - more than maximum 32-bit signed integer");
 
                         int n_loc = M.RowPartitioning.LocalLength;
-                        int[] Ap_loc = new int[n_loc];
-                        int[] Ai_loc = new int[len_loc];
+                        long[] Ap_loc = new long[n_loc];
+                        long[] Ai_loc = new long[len_loc];
                         double[] Ax_loc = new double[len_loc];
 
                         using(new BlockTrace("local matrix assembly", tr)) {
                             int cnt = 0;
-                            int i0 = checked((int)part.i0);
+                            long i0 = part.i0;
 
                             for(int i = 0; i < n_loc; i++) {
                                 Ap_loc[i] = cnt + i0;
-                                int iRow = i + checked((int)M.RowPartitioning.i0);
+                                long iRow = i + M.RowPartitioning.i0;
                                 int LR = M.GetRow(iRow, ref col, ref val);
 
                                 for(int j = 0; j < LR; j++) {
                                     if(val[j] != 0.0) {
-                                        Ai_loc[cnt] = checked((int)col[j]);
+                                        Ai_loc[cnt] = col[j];
                                         Ax_loc[cnt] = val[j];
                                         cnt++;
                                     }
@@ -141,9 +139,9 @@ namespace ilPSP.LinSolvers.UMFPACK {
                         }
 
                         if(rank == 0) {
-                            n = checked((int)M.RowPartitioning.TotalLength);
-                            Ap = new int[n + 1];
-                            Ai = new int[checked((int)part.TotalLength)];
+                            n = M.RowPartitioning.TotalLength;
+                            Ap = new long[n + 1];
+                            Ai = new long[part.TotalLength];
                             AxPtr = Marshal.AllocHGlobal((IntPtr)(part.TotalLength * sizeof(double)));
                         } else {
                             AxPtr = IntPtr.Zero;
@@ -163,9 +161,9 @@ namespace ilPSP.LinSolvers.UMFPACK {
                                     (IntPtr)pAx, (IntPtr)recvcounts, (IntPtr)displs, csMPI.Raw._DATATYPE.DOUBLE, 0, m_comm);
                             }
 
-                            fixed(int* pAi_loc = Ai_loc, pAi = Ai) {
-                                csMPI.Raw.Gatherv((IntPtr)pAi_loc, Ai_loc.Length, csMPI.Raw._DATATYPE.INT,
-                                    (IntPtr)pAi, (IntPtr)recvcounts, (IntPtr)displs, csMPI.Raw._DATATYPE.INT, 0, m_comm);
+                            fixed(long* pAi_loc = Ai_loc, pAi = Ai) {
+                                csMPI.Raw.Gatherv((IntPtr)pAi_loc, Ai_loc.Length, csMPI.Raw._DATATYPE.LONG_LONG,
+                                    (IntPtr)pAi, (IntPtr)recvcounts, (IntPtr)displs, csMPI.Raw._DATATYPE.LONG_LONG, 0, m_comm);
                             }
 
                             for(int i = 0; i < size; i++) {
@@ -173,14 +171,14 @@ namespace ilPSP.LinSolvers.UMFPACK {
                                 recvcounts[i] = M.RowPartitioning.GetLocalLength(i);
                             }
 
-                            fixed(int* pAp_loc = Ap_loc, pAp = Ap) {
-                                csMPI.Raw.Gatherv((IntPtr)pAp_loc, Ap_loc.Length, csMPI.Raw._DATATYPE.INT,
-                                    (IntPtr)pAp, (IntPtr)recvcounts, (IntPtr)displs, csMPI.Raw._DATATYPE.INT, 0, m_comm);
+                            fixed(long* pAp_loc = Ap_loc, pAp = Ap) {
+                                csMPI.Raw.Gatherv((IntPtr)pAp_loc, Ap_loc.Length, csMPI.Raw._DATATYPE.LONG_LONG,
+                                    (IntPtr)pAp, (IntPtr)recvcounts, (IntPtr)displs, csMPI.Raw._DATATYPE.LONG_LONG, 0, m_comm);
                             }
                         }
 
                         if(rank == 0)
-                            Ap[M.RowPartitioning.TotalLength] = checked((int)part.TotalLength);
+                            Ap[M.RowPartitioning.TotalLength] = part.TotalLength;
                     }
                 }
             }

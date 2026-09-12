@@ -323,15 +323,6 @@ namespace BoSSS.Foundation.Grid {
             return g.iLogicalCells.AggregateCellToParts[jLog].IndexWhere(_jG => _jG == jG);
         }
 
-
-
-
-
-//        class Mask2GeomChunks_Enum : IEnumerator<Tuple<int, int>> {
-//=======
-
-
-
         class Mask2GeomChunks_Enum : IEnumerator<(int i0, int Length)> {
 
 
@@ -514,8 +505,6 @@ namespace BoSSS.Foundation.Grid {
                 return new Mask2GeomChunks_Enum() { CM = CM, MaxVecLen = MaxVecLen, ConsecutiveMask = ConsecutiveMask };
             }
         }
-
-
 
         /// <summary>
         /// Returns an enumeration of geometrical cell chunks (first index an length) for a given cell mask.
@@ -748,7 +737,159 @@ namespace BoSSS.Foundation.Grid {
 
 
         /// <summary>
-        /// Find the cell which contains some point <paramref name="pt"/>;
+        /// splits up the (geometric) cell range of <paramref name="Len"/> cells, starting at cell <paramref name="j0"/> 
+        /// into chunks in which are affine-linear and such that are not.
+        /// </summary>
+        /// <param name="g"></param>
+        /// <param name="j0">geometric cell index to start at</param>
+        /// <param name="Len">number of cells to look at</param>
+        /// <returns></returns>
+        public static IEnumerable<(int i0, int Len, bool IsLinear)> SplitUpLinearAndNonlinear(this IGridData g, int j0, int Len) {
+            return g.SplitUp(j0, Len, CellInfo.CellIsAffineLinear);
+        }
+
+        /// <summary>
+        /// splits up the (geometric) cell range of <paramref name="Len"/> cells, starting at cell <paramref name="j0"/> 
+        /// into chunks in which <paramref name="info"/> is fulfilled and such where it is not.
+        /// </summary>
+        /// <param name="g"></param>
+        /// <param name="j0">geometric cell index to start at</param>
+        /// <param name="Len">number of cells to look at</param>
+        /// <param name="info"></param>
+        /// <returns></returns>
+        public static IEnumerable<(int i0, int Len, bool infoFulfilled)> SplitUp(this IGridData g, int j0, int Len, CellInfo info) {
+            var InfoFlags = g.iGeomCells.InfoFlags;
+
+            var ret = new List<(int i0, int Len, bool infoFulfilled)>();
+            int j = j0;
+            int JE = j0 + Len;
+            while(j < JE) {
+                int RestLen = JE - j;
+                int Lnext = g.iGeomCells.GetNoOfSimilarConsecutiveCells(info, j, RestLen);
+                bool state_j = (((uint)InfoFlags[j0]) & (uint)info) != 0;
+
+                ret.Add((j, RestLen, state_j));
+                j += Lnext;
+            }
+
+#if DEBUG
+            bool[] check = new bool[Len];
+            foreach(var ttt in ret) {
+                var info0 = (((uint)InfoFlags[ttt.i0]) & (uint)info);
+                for(int i = 0; i < ttt.Len; i++) {
+                    int _j = i + ttt.i0;
+                    int idx = _j - j0;
+                    var info_j = (((uint)InfoFlags[_j]) & (uint)info);
+                    Debug.Assert(info0 == info_j, "info flag changes within return chunk");
+                    Debug.Assert(!check[idx], "some item appears twice");
+                    check[idx] = true;
+                }
+            }
+            for(int i = 0; i < check.Length; i++) {
+                Debug.Assert(check[i], "some item in the range is missing");
+            }
+#endif
+
+
+            return ret.ToArray();
+        }
+
+        /// <summary>
+        /// Helper for safely allocating a wrapped double array.
+        /// </summary>
+        /// <param name="pt_Loc"></param>
+        /// <param name="D"></param>
+        /// <returns></returns>
+        private static MultidimensionalArray AllocHelper(ref double[] pt_Loc, int D) {
+            if(pt_Loc != null) {
+                if(pt_Loc.Length != D)
+                    throw new ArgumentException();
+            } else {
+                pt_Loc = new double[D];
+            }
+            MultidimensionalArray _pt_local = MultidimensionalArray.CreateWrapper(
+                pt_Loc, 1, D); // .. in cell-local coordinate
+            return _pt_local;
+        }
+
+        /// <summary>
+        /// Computes, for point <paramref name="pt"/>, the closest point on
+        /// the boundary of cell <paramref name="j"/>.
+        /// </summary>
+        /// <param name="gdat"></param>
+        /// <param name="j">local cell index</param>
+        /// <param name="pt">
+        /// input; some point in global coordinates.
+        /// </param>
+        /// <param name="pt_Loc">
+        /// output, if unequal null: <paramref name="pt"/> in local
+        /// coordinates of cell <paramref name="j"/>.
+        /// </param>
+        /// <param name="closestPoint_global">
+        /// output, if unequal null: within the boundary of cell
+        /// <paramref name="j"/>, the closest point to
+        /// <paramref name="pt"/>.
+        /// </param>
+        /// <param name="closestPoint_local">
+        /// output, if unequal null: <paramref name="closestPoint_global"/>
+        /// in global coordinates.
+        /// </param>
+        /// <returns>
+        /// the distance.
+        /// </returns>
+        static public double ClosestPointInCell(this IGridData gdat, double[] pt, int j, double[] pt_Loc = null, double[] closestPoint_global = null, double[] closestPoint_local = null) {
+            int D = gdat.SpatialDimension;
+            if(pt.Length != D)
+                throw new ArgumentException("length must be equal to spatial dimension", "pt");
+
+            // point to search for
+            MultidimensionalArray _pt = MultidimensionalArray.CreateWrapper(pt, 1, D);
+
+            MultidimensionalArray _pt_local = AllocHelper(ref pt_Loc, D);
+            //MultidimensionalArray _closestPoint_local = AllocHelper(ref closestPoint_local, D);
+
+            gdat.TransformGlobal2Local(_pt, _pt_local, j, null);
+
+            gdat.iGeomCells.GetRefElement(j).ClosestPoint(pt_Loc, closestPoint_local);
+
+            MultidimensionalArray _closestPoint_global = AllocHelper(ref closestPoint_global, D);
+            gdat.TransformLocal2Global(new NodeSet(gdat.iGeomCells.GetRefElement(j), closestPoint_local, false), _closestPoint_global, j);
+
+            return GenericBlas.L2Dist(closestPoint_global, pt);
+        }
+
+
+        /// <summary>
+        /// true if point <paramref name="pt"/> is inside cell <paramref name="j"/>
+        /// </summary>
+        static  public bool IsInCell(this IGridData gdat, double[] pt, int j, double[] pt_Loc = null) {
+           
+            
+            int D = gdat.SpatialDimension;
+            if(pt.Length != D)
+                throw new ArgumentException("length must be equal to spatial dimension", "pt");
+
+            MultidimensionalArray _pt = MultidimensionalArray.CreateWrapper(pt, 1, D);          // point to search for
+            MultidimensionalArray _pt_local = AllocHelper(ref pt_Loc, D);  // .. in cell-local coordinate
+
+            bool[] bb = new bool[1];
+            gdat.TransformGlobal2Local(_pt, _pt_local, j, bb);
+
+            if(bb[0] == false)
+                return false;
+
+            for(int d = 0; d < D; d++) {
+                if(double.IsInfinity(pt_Loc[d]) || double.IsNaN(pt_Loc[d]))
+                    return false;
+            }
+
+            return gdat.iGeomCells.GetRefElement(j).IsWithin(pt_Loc);
+        }
+
+
+        /// <summary>
+        /// Find the cell (globally, across all MPI processors) which contains some point <paramref name="pt"/>;
+        /// 
         /// If <paramref name="pt"/> is not within any cell, the cell with its
         /// center nearest to <paramref name="pt"/> is returned and in this
         /// case, <paramref name="IsInside"/> is false.
@@ -775,84 +916,20 @@ namespace BoSSS.Foundation.Grid {
         /// This operation is relatively costly, as it needs to perform a sweep
         /// over all cells, it should not be used for performance-critical
         /// tasks.<br/>
-        /// This operation is MPI-collective, the output-values are equal on
-        /// all MPI-processors.
+        /// This operation is MPI-collective, the output-values are equal on all MPI-processors.
         /// </remarks>
         /// <param name="gdat">~</param>
-        static public void LocatePoint(this IGridData gdat, double[] pt, out long GlobalId, out long GlobalIndex, out bool IsInside, out bool OnThisProcess, CellMask CM = null) {
+        /// <returns>
+        /// the minimum distance of <paramref name="pt"/> to cell <paramref name="GlobalId"/>; if <paramref name="IsInside"/> is true, this is 0
+        /// </returns>
+        static public double LocatePoint(this IGridData gdat, double[] pt, out long GlobalId, out long GlobalIndex, out bool IsInside, out bool OnThisProcess, CellMask CM = null) {
             using (new FuncTrace()) {
-                if (pt.Length != gdat.SpatialDimension)
-                    throw new ArgumentException("length must be equal to spatial dimension", "pt");
-                ilPSP.MPICollectiveWatchDog.Watch(MPI.Wrappers.csMPI.Raw._COMM.WORLD);
+                
+                double locMinDist = LocatePointLocal(gdat, pt, out _, out int jL_MinDistCel, out bool locIsInside, CM);
+                int j_Within = locIsInside ? jL_MinDistCel : -1234;
 
                 int MpiRank = gdat.CellPartitioning.MpiRank;
                 int MpiSize = gdat.CellPartitioning.MpiSize;
-
-                int J = gdat.iLogicalCells.NoOfLocalUpdatedCells;
-                int D = gdat.SpatialDimension;
-
-                MultidimensionalArray center = MultidimensionalArray.Create(1, 1, D);  // cell center in global coordinates
-
-                MultidimensionalArray _pt = MultidimensionalArray.Create(1, D);          // point to search for
-                for (int d = 0; d < D; d++)
-                    _pt[0, d] = pt[d];
-                MultidimensionalArray _pt_local = MultidimensionalArray.Create(1, 1, D); // .. in cell-local coordinate
-                double[] pt_local = new double[D];
-
-
-                // sweep over locally updated cells ...
-                // ====================================
-
-                int jL_MinDistCel = 0; // logical cell with minimum distance
-                int jG_MinDistCel = 0; // geometrical cell with minimum distance
-                double MinDist = double.MaxValue;
-
-                int j_Within = -1;
-                if (CM == null)
-                    CM = CellMask.GetFullMask(gdat);
-
-                foreach (int jL in CM.ItemEnum) {
-                    foreach (int j in gdat.GetGeometricCellIndices(jL)) {
-                        // compute distance
-                        // ================
-                        {
-                            var smplx = gdat.iGeomCells.GetRefElement(j);
-                            gdat.TransformLocal2Global(smplx.Center, j, 1, center, 0);
-
-                            double dist = 0;
-                            for (int d = 0; d < D; d++) {
-                                double del = pt[d] - center[0, 0, d];
-                                dist += del * del;
-                            }
-
-                            dist = Math.Sqrt(dist);
-
-                            if (dist < MinDist) {
-                                MinDist = dist;
-                                jL_MinDistCel = jL;
-                                jG_MinDistCel = j;
-                            }
-                        }
-
-                        // transform back into cell
-                        // ========================
-                        {
-                            try {
-                                gdat.TransformGlobal2Local(_pt, _pt_local, j, 1, 0);
-                                for (int d = 0; d < D; d++)
-                                    pt_local[d] = _pt_local[0, 0, d];
-
-                                var smplx = gdat.iGeomCells.GetRefElement(j);
-
-                                if (smplx.IsWithin(pt_local))
-                                    j_Within = j;
-                            } catch (ArithmeticException) {
-                                // probably outside...
-
-                            }
-                        }
-                    }
-                }
 
                 // ========================================
                 // First case: point is inside of some cell
@@ -860,12 +937,13 @@ namespace BoSSS.Foundation.Grid {
 
                 int lowestWithinRank = j_Within >= 0 ? MpiRank : int.MaxValue;
                 lowestWithinRank = lowestWithinRank.MPIMin(); // lowest rank which found a cell that contains the point:
+                double MinDistGlobal = locMinDist.MPIMin();
                 //                                               this rank will be the official finder!
 
-                if (lowestWithinRank < MpiSize) {
+                if(lowestWithinRank < MpiSize) {
                     LocatPointHelper(gdat, lowestWithinRank, j_Within, out GlobalId, out GlobalIndex, out OnThisProcess);
                     IsInside = true;
-                    return;
+                    return MinDistGlobal;
                 }
 
 
@@ -873,17 +951,128 @@ namespace BoSSS.Foundation.Grid {
                 // Second case: point is outside of all cells
                 // ========================================
 
-                double MinDistGlobal = MinDist.MPIMin();
-                int lowestMinimumRank = MinDistGlobal == MinDist ? MpiRank : int.MaxValue;
+                int lowestMinimumRank = MinDistGlobal == locMinDist ? MpiRank : int.MaxValue;
                 lowestMinimumRank = lowestMinimumRank.MPIMin(); // find minimum rank on which the global minimum was reached.
-                if (lowestMinimumRank < 0 || lowestMinimumRank >= MpiSize)
+                if(lowestMinimumRank < 0 || lowestMinimumRank >= MpiSize)
                     throw new ApplicationException();
 
                 LocatPointHelper(gdat, lowestMinimumRank, jL_MinDistCel, out GlobalId, out GlobalIndex, out OnThisProcess);
                 IsInside = false;
-                return;
-
+                return MinDistGlobal;
             }
+        }
+
+
+        /// <summary>
+        /// Find the cell (locally, only on the current MPI processor) which contains some point <paramref name="pt"/>;
+        /// 
+        /// If <paramref name="pt"/> is not within any cell, the cell with its
+        /// center nearest to <paramref name="pt"/> is returned and in this
+        /// case, <paramref name="IsInside"/> is false.
+        /// </summary>
+        /// <param name="pt"></param>
+        /// <param name="GlobalId">
+        /// the Global ID of the found cell;
+        /// </param>
+        /// <param name="jL_MinDistCel">
+        /// the local index of the found cell;
+        /// </param>
+        /// <param name="IsInside">
+        /// true, if <paramref name="pt"/> is within the cell identified by
+        /// <paramref name="GlobalId"/>;
+        /// otherwise, false;
+        /// </param>
+        /// <param name="CM">
+        /// optional cell mask to restrict the search region
+        /// </param>
+        /// <remarks>
+        /// This operation is relatively costly, as it needs to perform a sweep
+        /// over all cells, it should not be used for performance-critical
+        /// tasks.<br/>
+        /// This operation is MPI-collective, the output-values are equal on all MPI-processors.
+        /// </remarks>
+        /// <param name="gdat">~</param>
+        /// <returns>
+        /// the minimum distance of <paramref name="pt"/> to cell <paramref name="GlobalId"/>; if <paramref name="IsInside"/> is true, this is 0
+        /// </returns>
+        public static double LocatePointLocal(this IGridData gdat, double[] pt, out long GlobalId, out int jL_MinDistCel, out bool IsInside, CellMask CM = null) {
+        //                   void LocatePoint(this IGridData gdat, double[] pt, out long GlobalId, out long GlobalIndex, out bool IsInside, out bool OnThisProcess, CellMask CM = null)
+            if(pt.Length != gdat.SpatialDimension)
+                throw new ArgumentException("length must be equal to spatial dimension", "pt");
+            ilPSP.MPICollectiveWatchDog.Watch(MPI.Wrappers.csMPI.Raw._COMM.WORLD);
+
+
+            int J = gdat.iLogicalCells.NoOfLocalUpdatedCells;
+            int D = gdat.SpatialDimension;
+
+            MultidimensionalArray center = MultidimensionalArray.Create(1, 1, D);  // cell center in global coordinates
+
+            MultidimensionalArray _pt = MultidimensionalArray.Create(1, D);          // point to search for
+            for(int d = 0; d < D; d++)
+                _pt[0, d] = pt[d];
+            MultidimensionalArray _pt_local = MultidimensionalArray.Create(1, 1, D); // .. in cell-local coordinate
+            double[] pt_local = new double[D];
+
+
+            // sweep over locally updated cells ...
+            // ====================================
+
+            jL_MinDistCel = 0;
+            int jG_MinDistCel = 0; // geometrical cell with minimum distance
+            double MinDist = double.MaxValue;
+            int j_Within = -1;
+            if(CM == null)
+                CM = CellMask.GetFullMask(gdat);
+
+            foreach(int jL in CM.ItemEnum) {
+                foreach(int j in gdat.GetGeometricCellIndices(jL)) {
+                    // compute distance
+                    // ================
+                    {
+                        var smplx = gdat.iGeomCells.GetRefElement(j);
+                        gdat.TransformLocal2Global(smplx.Center, j, 1, center, 0);
+
+                        double dist = 0;
+                        for(int d = 0; d < D; d++) {
+                            double del = pt[d] - center[0, 0, d];
+                            dist += del * del;
+                        }
+
+                        dist = Math.Sqrt(dist);
+
+                        if(dist < MinDist) {
+                            MinDist = dist;
+                            jL_MinDistCel = jL;
+                            jG_MinDistCel = j;
+                        }
+                    }
+
+                    // transform back into cell
+                    // ========================
+                    {
+                        try {
+                            gdat.TransformGlobal2Local(_pt, _pt_local, j, 1, 0);
+                            for(int d = 0; d < D; d++)
+                                pt_local[d] = _pt_local[0, 0, d];
+
+                            var smplx = gdat.iGeomCells.GetRefElement(j);
+
+                            if(smplx.IsWithin(pt_local))
+                                j_Within = j;
+                        } catch(ArithmeticException) {
+                            // probably outside...
+
+                        }
+                    }
+                }
+            }
+
+            IsInside = j_Within >= 0;
+            if(IsInside)
+                MinDist = 0.0;
+            GlobalId = gdat.iLogicalCells.GetGlobalID(jL_MinDistCel);
+
+            return MinDist;
         }
 
         static void LocatPointHelper(IGridData gdat, int RootRank, int jL_MinDistCel, out long GlobalId, out long GlobalIndex, out bool OnThisProcess) {
@@ -1466,6 +1655,34 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
+        /// Easy-to-use routine (version with memory allocation):
+        /// transform nodes in global/physical coordinates to local/reference coordinates for cell <paramref name="jCell"/> 
+        /// </summary>
+        /// <param name="g"></param>
+        /// <param name="globalNodes">
+        /// 2D-array:
+        /// - 1st dimension: node index
+        /// - 2nd dimension: spatial direction
+        /// </param>
+        /// <param name="jCell">
+        /// geometrical cell index
+        /// </param>
+        /// <returns>
+        /// 2D-array, <paramref name="globalNodes"/> transformed to global coordinates
+        /// - 1st dimension: node index
+        /// - 2nd dimension: spatial direction
+        /// </returns>
+        static public MultidimensionalArray TransformGlobal2Local(this IGridData g, MultidimensionalArray globalNodes, int jCell) {
+            if(globalNodes.Dimension != 2) {
+                throw new ArgumentException("expecting a 2D-array as input");
+            }
+            var ret = MultidimensionalArray.Create(1, globalNodes.GetLength(0), globalNodes.GetLength(1));
+            g.TransformGlobal2Local(globalNodes, ret, jCell, 1, 0);
+            return ret.ExtractSubArrayShallow(0, -1, -1);
+        }
+
+
+        /// <summary>
         /// Easy-to-use routine (for a single point):
         /// transform nodes in local coordinate to a global coordinate for cell <paramref name="jCell"/> 
         /// </summary>
@@ -1487,6 +1704,30 @@ namespace BoSSS.Foundation.Grid {
             localNodesW.SetRow(0, localNode);
             var globalNodesW = g.TransformLocal2Global(localNodesW, jCell);
             return globalNodesW.GetRowPt(0);
+        }
+
+        /// <summary>
+        /// Easy-to-use routine (for a single point):
+        /// transform nodes in global/physical coordinate to a local/reference coordinate for cell <paramref name="jCell"/> 
+        /// </summary>
+        /// <param name="g"></param>
+        /// <param name="globalNode">
+        /// point in global/physical coordinates
+        /// </param>
+        /// <param name="jCell">
+        /// geometrical cell index
+        /// </param>
+        /// <returns>
+        /// point in global coordinates
+        /// </returns>
+        static public Vector TransformGlobal2Local(this IGridData g, Vector globalNode, int jCell) {
+            if(globalNode.Dim != g.SpatialDimension) {
+                throw new ArgumentException("spatial dimension mismatch");
+            }
+            var _globalNodesW = MultidimensionalArray.Create(1, globalNode.Dim);
+            _globalNodesW.SetRow(0, globalNode);
+            var localNodesW = g.TransformGlobal2Local(_globalNodesW, jCell);
+            return localNodesW.GetRowPt(0);
         }
 
 

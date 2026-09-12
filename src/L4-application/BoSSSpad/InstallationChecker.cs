@@ -17,10 +17,12 @@ limitations under the License.
 using BoSSS.Solution.Gnuplot;
 using BoSSS.Solution.GridImport;
 using ilPSP;
+using ilPSP.LinSolvers;
 using ilPSP.Utils;
 using ilPSP.Kraypis;
 using BoSSS.Solution.Tecplot;
 using ilPSP.LinSolvers.MUMPS;
+using ilPSP.LinSolvers.PETSc;
 using MPI.Wrappers;
 using MPI.Wrappers.Utils;
 using System;
@@ -34,13 +36,16 @@ namespace BoSSS.Application.BoSSSpad {
     /// </summary>
     public class InstallationChecker {
 
+        // Only rank 0 writes user-facing status and the shared diagnostic log.
+        private static bool isReportingRank;
+
         /// <summary>
         /// Performs a check for
         /// - MPI
         /// - Required libraries
         /// - Optional libraries
         /// </summary>
-        public static void CheckSetup() {
+        public static void CheckSetup(bool runDetailedChecks = false) {
             Console.WriteLine(
                 "Congratulations! Your basic BoSSS installation seems to be working");
 
@@ -59,6 +64,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
+            isReportingRank = rank == 0;
 
             Console.Out.Flush();
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
@@ -94,9 +100,11 @@ namespace BoSSS.Application.BoSSSpad {
                     string file = Path.GetFileName(path);
                     path = Path.GetDirectoryName(path);
 
-                    ReportSuccess("gnuplot", file, path);
+                    if(isReportingRank)
+                        ReportSuccess("gnuplot", file, path);
                 } catch (Exception e) {
-                    ReportError("gnuplot", isOptional: true, detailedMessage: e.Message);
+                    if(isReportingRank)
+                        ReportError("gnuplot", isOptional: true, detailedMessage: e.Message);
                 }
 
                 CheckDynamicLibrary("METIS", () => new UnsafeMETIS(), isOptional: true);
@@ -109,6 +117,21 @@ namespace BoSSS.Application.BoSSSpad {
 
                 CheckDynamicLibrary("MUMPS (sequential)", () => new UnsafeMUMPS(ilPSP.Parallelism.SEQ), isOptional: true);
                 CheckDynamicLibrary("MUMPS (MPI)", () => new UnsafeMUMPS(ilPSP.Parallelism.MPI), isOptional: true);
+
+                // PETSc variants cannot be exchanged safely within one process.
+                // Check only the variant selected for this MPI/thread configuration;
+                // the other variants are intentionally not loaded.
+                PETScNativeVariant petscVariant = PETScSolverBase.ResolveNativeVariant(
+                    PETScNativeVariant.Auto, size, ilPSP.Environment.NumThreads);
+                bool petscLoaded = CheckDynamicLibrary($"PETSc {GetPETScVariantDescription(petscVariant)}",
+                    () => new UnsafePETSc(petscVariant), isOptional: true);
+                if(isReportingRank && petscLoaded)
+                    ReportPETScLoadCoverage(petscVariant);
+                foreach(PETScNativeVariant variant in new[] { PETScNativeVariant.OpenMp, PETScNativeVariant.Mpi, PETScNativeVariant.MpiOpenMp }) {
+                    if(variant != petscVariant)
+                        ReportSkipped($"PETSc {GetPETScVariantDescription(variant)}",
+                            $"not selected ({size} rank(s), {ilPSP.Environment.NumThreads} thread(s))");
+                }
 
                 CheckDynamicLibrary("PARDISO (Intel MKL, sequential)", () => new ilPSP.LinSolvers.PARDISO.Wrapper_MKL(ilPSP.Parallelism.SEQ), isOptional: true);
                 CheckDynamicLibrary("PARDISO (Intel MKL, OMP)", () => new ilPSP.LinSolvers.PARDISO.Wrapper_MKL(ilPSP.Parallelism.OMP), isOptional: true);
@@ -126,9 +149,21 @@ namespace BoSSS.Application.BoSSSpad {
                 log.Close();
             }
 
-            // if wanted perform a more detailed check of the BoSSS installation
+            // Detailed checks use an interactive prompt and include single-rank direct solvers.
             Console.WriteLine();
             Console.WriteLine("Basic setup check completed!");
+            if(runDetailedChecks) {
+                Console.WriteLine("Starting detailed solver checks.");
+                DetailCheckSetup();
+                return;
+            }
+            if(size > 1) {
+                return;
+            }
+            if(Console.IsInputRedirected) {
+                Console.WriteLine("Detailed checks require an interactive console.");
+                return;
+            }
             Console.WriteLine("Do you wish to perform a detailed check of functionality? y/n");
             char performCheck = Console.ReadKey().KeyChar;
             if (performCheck == 'y')
@@ -146,7 +181,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="libraryName"></param>
         /// <param name="libraryFactory"></param>
         /// <param name="isOptional"></param>
-        private static void CheckDynamicLibrary(string libraryName, Func<DynLibLoader> libraryFactory, bool isOptional = false) {
+        private static bool CheckDynamicLibrary(string libraryName, Func<DynLibLoader> libraryFactory, bool isOptional = false) {
             try {
                 DynLibLoader library = libraryFactory();
                 string file = Path.GetFileName(library.CurrentLibraryName);
@@ -156,9 +191,13 @@ namespace BoSSS.Application.BoSSSpad {
                     path = "local search path";
                 }
 
-                ReportSuccess(libraryName, file, path);
+                if(isReportingRank)
+                    ReportSuccess(libraryName, file, path);
+                return true;
             } catch (Exception e) {
-                ReportError(libraryName, isOptional, e.Message);
+                if(isReportingRank)
+                    ReportError(libraryName, isOptional, e.Message);
+                return false;
             }
         }
         
@@ -169,7 +208,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="fileName"></param>
         /// <param name="path"></param>
         private static void ReportSuccess(string libraryName, string fileName, string path) {
-            string prepend = String.Format("- {0}:", libraryName).PadRight(23);
+            string prepend = String.Format("- {0}:", libraryName).PadRight(38);
             Console.Write(prepend);
 
             //Console.ForegroundColor = ConsoleColor.Green;
@@ -177,6 +216,32 @@ namespace BoSSS.Application.BoSSSpad {
             //Console.ResetColor();
 
             Console.WriteLine(" (using {0} from {1})", fileName, path);
+        }
+
+        /// <summary>
+        /// Reports an optional component which is deliberately not applicable to
+        /// the current execution configuration.
+        /// </summary>
+        private static void ReportSkipped(string libraryName, string reason) {
+            string prepend = String.Format("- {0}:", libraryName).PadRight(38);
+            Console.WriteLine(prepend + "Skipped (" + reason + ")");
+        }
+
+        private static void ReportPETScLoadCoverage(PETScNativeVariant variant) {
+            Console.WriteLine($"  PETSc load check ({GetPETScVariantDescription(variant)}): native bridge, PETSc runtime, and its compiler/OpenMP runtime DLLs.");
+        }
+
+        private static string GetPETScVariantDescription(PETScNativeVariant variant) {
+            switch(variant) {
+                case PETScNativeVariant.OpenMp:
+                    return "OMP";
+                case PETScNativeVariant.Mpi:
+                    return "MPI";
+                case PETScNativeVariant.MpiOpenMp:
+                    return "MPI+OMP";
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(variant), variant, "Unknown PETSc native variant.");
+            }
         }
 
         /// <summary>
@@ -189,7 +254,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="isOptional"></param>
         /// <param name="detailedMessage"></param>
         private static void ReportError(string libraryName, bool isOptional, string detailedMessage) {
-            string prepend = String.Format("- {0}:", libraryName).PadRight(23);
+            string prepend = String.Format("- {0}:", libraryName).PadRight(38);
             Console.Write(prepend);
 
             //Console.ForegroundColor = isOptional ? ConsoleColor.Yellow : ConsoleColor.Red;
@@ -216,6 +281,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="libraryName"></param>
         /// <param name="message"></param>
         private static void WriteToErrorLog(string libraryName, string message) {
+            if(!isReportingRank)
+                return;
             if (log == null) {
                 log = new StreamWriter(LOG_FILE_NAME);
             }
@@ -226,8 +293,7 @@ namespace BoSSS.Application.BoSSSpad {
             log.Flush();
         }
 
-        private static void DetailCheckSetup()
-        {
+        private static void DetailCheckSetup() {
             int n = 50;
             int spacing = 1;
             double[] x = new double[n];
@@ -243,37 +309,87 @@ namespace BoSSS.Application.BoSSSpad {
                 }
             }
 
-            try
-            {
-                Console.Write("Starting with a test of LAPACK Function DGETRF\n");
+            RunDetailedCheck("LAPACK Function DGETRF", () => {
                 M.Solve(x, b);
-                Console.Write("Succesfully called DGETRF\n\n");
+            });
 
-                Console.Write("Starting with a test of BLAS Function DDOT\n");
+            RunDetailedCheck("BLAS Function DDOT", () => {
                 BLAS.DDOT(ref n, x, ref spacing, b,ref spacing);
-                Console.Write("Succesfully called DDOT\n\n");
+            });
 
-                Console.Write("Starting with a test of Tecplot Function tecnod110\n");
-                Console.Write("This test is not yet implemented\n");
-                Console.Write("Succesfully called Tecplot Function tecnod110\n\n");
+            bool singleMpiRank = IsSingleMpiRank();
+            RunDetailedCheck(singleMpiRank ? "MUMPS sequential solver" : "MUMPS MPI solver", () => {
+                using(var solver = new MUMPSSolver { Parallelism = singleMpiRank ? Parallelism.SEQ : Parallelism.MPI }) {
+                    SolveAndVerify(solver);
+                }
+            });
 
-                Console.Write("Starting with a test of METIS Function \n");
-                Console.Write("This test is not yet implemented\n");
-                Console.Write("Succesfully called METIS \n\n");
+            RunDetailedCheck(singleMpiRank ? "PARDISO OpenMP solver" : "PARDISO OpenMP solver (per rank)", () => {
+                using(var solver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver { Parallelism = Parallelism.OMP }) {
+                    SolveAndVerify(solver, csMPI.Raw._COMM.SELF);
+                }
+            });
 
-                Console.Write("Starting with a test of the MUMPS Solver\n");
-                Console.Write("This test is not yet implemented\n");
-                Console.Write("Succesfully called the MUMPS Solver\n\n");
+            RunDetailedCheck(singleMpiRank ? "UMFPACK OpenMP solver" : "UMFPACK OpenMP solver (per rank)", () => {
+                using(var solver = new ilPSP.LinSolvers.UMFPACK.UMFPACKSolver { Parallelism = Parallelism.OMP }) {
+                    SolveAndVerify(solver, csMPI.Raw._COMM.SELF);
+                }
+            });
 
-                Console.Write("Starting with a test of the PARDISO Solver\n");
-                Console.Write("This test is not yet implemented\n");
-                Console.Write("Succesfully called the PARDISO Solver\n\n");
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int mpiSize);
+            PETScNativeVariant petscVariant = PETScSolverBase.ResolveNativeVariant(
+                PETScNativeVariant.Auto, mpiSize, ilPSP.Environment.NumThreads);
+            RunDetailedCheck($"PETSc {GetPETScVariantDescription(petscVariant)} Krylov solver", () => {
+                Console.WriteLine("  Components: PETSc Mat/Vec/KSP; KSP=CG; PC=Jacobi; 3-by-3 diagonal solve.");
+                using(var solver = new PETScKrylovSolver {
+                    NativeVariant = PETScNativeVariant.Auto,
+                    Options = "-ksp_type cg -pc_type jacobi -ksp_rtol 1e-12 -ksp_atol 1e-50 -ksp_max_it 100"
+                }) {
+                    SolveAndVerify(solver);
+                }
+            });
+        }
+
+        private static bool IsSingleMpiRank() {
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
+            return size == 1;
+        }
+
+        private static void RunDetailedCheck(string name, Action test) {
+            Console.Write("Starting detailed test of " + name + "\n");
+            try {
+                test();
+                Console.Write("Successfully completed " + name + "\n\n");
+            } catch(Exception exception) {
+                Console.Write("FAILED " + name + ": " + exception.Message + "\n\n");
             }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
+        }
+
+        private static void SolveAndVerify(ISparseSolver solver) {
+            SolveAndVerify(solver, csMPI.Raw._COMM.WORLD);
+        }
+
+        private static void SolveAndVerify(ISparseSolver solver, MPI_Comm mpiComm) {
+            var partitioning = new Partitioning(3, mpiComm);
+            var matrix = new MsrMatrix(partitioning);
+            for(int i = 0; i < partitioning.LocalLength; i++) {
+                long row = partitioning.i0 + i;
+                matrix[row, row] = 2.0;
             }
 
+            var solution = new double[partitioning.LocalLength];
+            var rightHandSide = new double[partitioning.LocalLength];
+            for(int i = 0; i < rightHandSide.Length; i++)
+                rightHandSide[i] = 2.0;
+
+            solver.DefineMatrix(matrix);
+            SolverResult result = solver.Solve(solution, rightHandSide);
+            if(!result.Converged)
+                throw new ArithmeticException("solver reported non-convergence.");
+            for(int i = 0; i < solution.Length; i++) {
+                if(Math.Abs(solution[i] - 1.0) > 1.0e-10)
+                    throw new ArithmeticException($"incorrect solution at local index {i}: {solution[i]:R}.");
+            }
         }
 
 

@@ -143,19 +143,7 @@ namespace ApplicationWithIDT {
         /// </summary>
         public IGrid LevelSetOptiGrid { get; private set; }
 
-        /// <summary>
-        /// Number of optimization state blocks required for the configured optimization mode.
-        /// </summary>
-        private int RequiredLevelSetOptStateCount() {
-            switch(Control.LevelSetOptimizationMode) {
-                default:
-                case LevelSetOptMode.TwoLevelSets_OptimizeBoth:
-                return 2;
-                case LevelSetOptMode.TwoLevelSets_OptimizeSecond:
-                case LevelSetOptMode.SingleLevelSet:
-                return 1;
-            }
-        }
+       
 
         /// <summary>
         /// Index used by scalar optimization routines.
@@ -177,8 +165,21 @@ namespace ApplicationWithIDT {
         /// Ensures the optimization state array exists and has the expected length.
         /// </summary>
         private LevelSetOptimizationState[] EnsureLevelSetOptStates() {
+
+            int RequiredLevelSetOptStateCount() {
+                switch(Control.LevelSetOptimizationMode) {
+                    default:
+                    case LevelSetOptMode.TwoLevelSets_OptimizeBoth:
+                    return 2;
+                    case LevelSetOptMode.TwoLevelSets_OptimizeSecond:
+                    case LevelSetOptMode.SingleLevelSet:
+                    return 1;
+                }
+            }
+
             int required = RequiredLevelSetOptStateCount();
             if(LevelSetOptStates == null || LevelSetOptStates.Length != required) {
+
                 LevelSetOptStates = Enumerable.Range(0, required).Select(i => new LevelSetOptimizationState()).ToArray();
             } else {
                 for(int i = 0; i < LevelSetOptStates.Length; i++) {
@@ -521,10 +522,10 @@ namespace ApplicationWithIDT {
             //Register them (also registers other fields)
             RegisterFields();
         }
+
         /// <summary>
         /// Chooses the Optimization Problem that will be solved
         /// </summary>
-        /// <exception cref="Exception"></exception>
         public void ChooseOptProblem() {
             switch(Control.optProblemType) {
                 case OptProblemType.FullEnRes:
@@ -543,7 +544,6 @@ namespace ApplicationWithIDT {
                 default:
                 throw new Exception("This OptProblem is not implemented yet");
             }
-
         }
 
         /// <summary>
@@ -694,9 +694,6 @@ namespace ApplicationWithIDT {
             this.m_RegisteredFields.AddRange(obj_f_fields);
             this.m_RegisteredFields.AddRange(LagMult);
             this.m_RegisteredFields.Add(personField);
-
-
-
         }
 
         /// <summary>
@@ -875,6 +872,7 @@ namespace ApplicationWithIDT {
             }
         }
         #endregion
+        
         #region Utility Methods
         /// <summary>
         /// A helper routine one can use in jupyter notebooks to obtain a Main object 
@@ -882,12 +880,12 @@ namespace ApplicationWithIDT {
         /// It is mainly used for testing.
         /// </summary>
         public void InitializeEverything() {
-            this.SetUpEnvironment();
-            this.CreateFields();
+            this.SetUpEnvironment(); // already creates the tracker and fields (via `CreateFields()`) -- do not call `CreateFields()` again here, it would create a second, stale generation of fields/tracker
             this.SetInitial(0);
             this.CreateEquationsAndSolvers(null);
             PlotCurrentState(0.0, 0, Control.SuperSampling);
         }
+        
         /// <summary>
         /// Function that Initializes LevelSets and Tracker
         /// </summary>
@@ -918,36 +916,24 @@ namespace ApplicationWithIDT {
             }
 
             // Level set one (usually the geometry)
-            this.LevelSet = new LevelSet(new Basis(this.GridData, this.Control.LevelSetDegree), "levelSet");
+            InitializeLevelSetAndTrackers();
 
             switch(Control.LevelSetOptimizationMode) {
                 default:
                 case LevelSetOptMode.TwoLevelSets_OptimizeBoth:
-                case LevelSetOptMode.TwoLevelSets_OptimizeSecond:
-                this.LevelSetTwo = new LevelSet(new Basis(this.GridData, this.Control.LevelSetTwoDegree), "levelSetTwo");
-                base.LsTrk = new LevelSetTracker((GridData)this.GridData, Control.CutCellQuadratureType, 1, Control.SpeciesTable, this.LevelSet, this.LevelSetTwo);
-                break;
-                case LevelSetOptMode.SingleLevelSet:
-                base.LsTrk = new LevelSetTracker((GridData)this.GridData, Control.CutCellQuadratureType, 1, new string[] { Control.LsOne_NegSpecies, Control.LsOne_PosSpecies }, this.LevelSet);
-                break;
-            }
-
-            switch(Control.LevelSetOptimizationMode) {
-                default:
-                case LevelSetOptMode.TwoLevelSets_OptimizeBoth:
-                GetLevelSetOptState(0).LsTBO = LevelSet;
+                GetLevelSetOptState(0).GetLsTBO = () => LevelSet;
                 GetLevelSetOptState(0).LevelSetStep = new LevelSet(new Basis(this.GridData, this.Control.LevelSetDegree), "levelSet_Step");
-                GetLevelSetOptState(1).LsTBO = LevelSetTwo;
+                GetLevelSetOptState(1).GetLsTBO = () => LevelSetTwo;
                 GetLevelSetOptState(1).LevelSetStep = new LevelSet(new Basis(this.GridData, this.Control.LevelSetTwoDegree), "levelSetTwo_Step");
                 this.LsTrkStep = new LevelSetTracker((GridData)this.GridData, Control.CutCellQuadratureType, 6, Control.SpeciesTable, this.LevelSet, GetLevelSetOptState(1).LevelSetStep);
                 break;
                 case LevelSetOptMode.TwoLevelSets_OptimizeSecond:
-                GetLevelSetOptState(0).LsTBO = LevelSetTwo;
+                GetLevelSetOptState(0).GetLsTBO = () => LevelSetTwo;
                 GetLevelSetOptState(0).LevelSetStep = new LevelSet(new Basis(this.GridData, this.Control.LevelSetTwoDegree), "levelSetTwo_Step");
                 this.LsTrkStep = new LevelSetTracker((GridData)this.GridData, Control.CutCellQuadratureType, 6, Control.SpeciesTable, this.LevelSet, GetLevelSetOptState(0).LevelSetStep);
                 break;
                 case LevelSetOptMode.SingleLevelSet:
-                GetLevelSetOptState(0).LsTBO = LevelSet;
+                GetLevelSetOptState(0).GetLsTBO = () => LevelSet;
                 GetLevelSetOptState(0).LevelSetStep = new LevelSet(new Basis(this.GridData, this.Control.LevelSetDegree), "levelSet_Step");
                 this.LsTrkStep = new LevelSetTracker((GridData)this.GridData, Control.CutCellQuadratureType, 6, new string[] { Control.LsOne_NegSpecies, Control.LsOne_PosSpecies }, GetLevelSetOptState(0).LevelSetStep);
                 break;
@@ -976,8 +962,31 @@ namespace ApplicationWithIDT {
                 break;
             }
 
+            // opt-in seam: null (the default, for every application that does not override
+            // GetCustomXQuadFactoryHelperFactory) leaves LsTrk/LsTrkStep's CustomXQuadFactoryHelper
+            // unset, exactly today's behavior.
+            base.LsTrk.CustomXQuadFactoryHelper = GetCustomXQuadFactoryHelperFactory(base.LsTrk);
+            if(this.LsTrkStep != null)
+                this.LsTrkStep.CustomXQuadFactoryHelper = GetCustomXQuadFactoryHelperFactory(this.LsTrkStep);
+
             NormalizingConstant = LevelSetOptStates[0].LevelSetOpti.GetParam(0);
             #endregion
+        }
+
+        virtual protected void InitializeLevelSetAndTrackers() {
+            this.LevelSet = new LevelSet(new Basis(this.GridData, this.Control.LevelSetDegree), "levelSet");
+
+            switch(Control.LevelSetOptimizationMode) {
+                default:
+                case LevelSetOptMode.TwoLevelSets_OptimizeBoth:
+                case LevelSetOptMode.TwoLevelSets_OptimizeSecond:
+                this.LevelSetTwo = new LevelSet(new Basis(this.GridData, this.Control.LevelSetTwoDegree), "levelSetTwo");
+                base.LsTrk = new LevelSetTracker((GridData)this.GridData, Control.CutCellQuadratureType, 1, Control.SpeciesTable, this.LevelSet, this.LevelSetTwo);
+                break;
+                case LevelSetOptMode.SingleLevelSet:
+                base.LsTrk = new LevelSetTracker((GridData)this.GridData, Control.CutCellQuadratureType, 1, new string[] { Control.LsOne_NegSpecies, Control.LsOne_PosSpecies }, this.LevelSet);
+                break;
+            }
         }
 
         private void CreateOptimizerForState(LevelSetOptimizationState targetState, Basis levelSetOptiBasis, int lsNumber) {
@@ -1010,9 +1019,34 @@ namespace ApplicationWithIDT {
                 case OptiLevelSetType.SplineLevelSet:
                 targetState.LevelSetOpti = new SplineOptiLevelSet(levelSetOptiBasis, targetState.LsTBO, LsTrk, lsNumber);
                 break;
+                case OptiLevelSetType.Custom:
+                targetState.LevelSetOpti = CreateCustomOptiLevelSet(targetState, levelSetOptiBasis, lsNumber);
+                break;
                 default:
                 throw new NotImplementedException();
             }
+        }
+
+        /// <summary>
+        /// Opt-in extension point for <see cref="OptiLevelSetType.Custom"/>: override in a derived
+        /// application class to construct an <see cref="IOptiLevelSet"/> implementation that lives
+        /// outside this shared project (e.g. a solver-specific kinked-spline representation).
+        /// Default implementation throws -- selecting <see cref="OptiLevelSetType.Custom"/> without
+        /// overriding this method is a configuration error, not a silently-inert no-op.
+        /// </summary>
+        protected virtual IOptiLevelSet CreateCustomOptiLevelSet(LevelSetOptimizationState targetState, Basis levelSetOptiBasis, int lsNumber) {
+            throw new NotImplementedException($"{nameof(OptiLevelSetType.Custom)} was selected but {nameof(CreateCustomOptiLevelSet)} was not overridden.");
+        }
+
+        /// <summary>
+        /// Opt-in extension point letting a derived application class supply its own
+        /// <see cref="LevelSetTracker.CustomXQuadFactoryHelper"/> delegate for <paramref name="forTracker"/>
+        /// (e.g. <c>LsTrk</c> or <c>LsTrkStep</c>). Default implementation returns <c>null</c>, which
+        /// leaves <see cref="LevelSetTracker.CustomXQuadFactoryHelper"/> unset -- i.e. exactly today's
+        /// behavior for every application that does not override this.
+        /// </summary>
+        protected virtual Func<LevelSetTracker.LevelSetData[], XQuadFactoryHelperBase> GetCustomXQuadFactoryHelperFactory(LevelSetTracker forTracker) {
+            return null;
         }
         /// <summary>
         /// This method needs to be implemented by deriving classes and initialize the multi grid-operator config
@@ -2331,19 +2365,19 @@ namespace ApplicationWithIDT {
         }
         public double[] PerssonSensorFphi(CellMask mask) {
             double[] _fphi = null;
-            foreach ( var s in this.LevelSetOptStates ) {
+            foreach(var s in this.LevelSetOptStates) {
                 var LsTBO = s.LsTBO;
 
                 double[] fphi = new double[mask.ItemEnum.Count()];
                 var deg = LsTBO.Basis.Degree;
-                if ( LsTBO.Basis.Degree > 0 ) {
+                if(LsTBO.Basis.Degree > 0) {
                     var ba = new BitArray(Grid.NumberOfCells); //empty array
                     int count = 0;
-                    foreach ( int iCell in mask.ItemEnum ) { // loop over all cells we consider
+                    foreach(int iCell in mask.ItemEnum) { // loop over all cells we consider
                         ba[iCell] = true; //set corresponding entry
                         var tmpmsk = new CellMask(GridData, ba);
                         // Copy only the coordinates that belong to the highest modes 
-                        foreach ( int coordinate in LsTBO.Basis.GetPolynomialIndicesForDegree(iCell, deg) ) {
+                        foreach(int coordinate in LsTBO.Basis.GetPolynomialIndicesForDegree(iCell, deg)) {
                             fphi[count] = fphi[count] + Math.Pow(LsTBO.Coordinates[iCell, coordinate], 2);
                         }
                         fphi[count] = fphi[count] / Math.Pow(LsTBO.L2Norm(tmpmsk), 2);
@@ -2352,7 +2386,7 @@ namespace ApplicationWithIDT {
                     }
                 }
 
-                if ( _fphi == null )
+                if(_fphi == null)
                     _fphi = fphi;
                 else
                     _fphi.AccV(1.0, fphi);
@@ -2361,18 +2395,18 @@ namespace ApplicationWithIDT {
         }
         public double[] GradFphi(CellMask mask) {
             double[] _fphi = null;
-            foreach ( var s in this.LevelSetOptStates ) {
+            foreach(var s in this.LevelSetOptStates) {
                 var LsTBO = s.LsTBO;
 
                 double[] fphi = new double[mask.ItemEnum.Count()];
-                if ( LsTBO.Basis.Degree > 0 ) {
+                if(LsTBO.Basis.Degree > 0) {
                     Basis basisForGrad = new Basis(Grid, LsTBO.Basis.Degree - 1);
                     SinglePhaseField grad;
                     LsTBO.GradientNorm(out grad, mask);
 
                     var ba = new BitArray(Grid.NumberOfCells); //empty array
                     int count = 0;
-                    foreach ( int iCell in mask.ItemEnum ) { // loop over all cells we consider
+                    foreach(int iCell in mask.ItemEnum) { // loop over all cells we consider
                         ba[iCell] = true; //set corresponding entry
                         var tmpmsk = new CellMask(GridData, ba);
                         fphi[count] = grad.L2Norm(tmpmsk);
@@ -2381,7 +2415,7 @@ namespace ApplicationWithIDT {
                     }
                 }
                 fphi.ScaleV(kappa);
-                
+
                 if(_fphi == null)
                     _fphi = fphi;
                 else
@@ -2392,11 +2426,11 @@ namespace ApplicationWithIDT {
 
         public double[] CurvFphi(CellMask mask) {
             double[] _fphi = null;
-            foreach ( var s in this.LevelSetOptStates ) {
+            foreach(var s in this.LevelSetOptStates) {
                 var LsTBO = s.LsTBO;
 
                 double[] fphi = new double[mask.ItemEnum.Count()];
-                if ( LsTBO.Basis.Degree > 1 ) {
+                if(LsTBO.Basis.Degree > 1) {
                     Basis basisForCurvature = new Basis(Grid, LsTBO.Basis.Degree - 2);
                     SinglePhaseField totCurv = new SinglePhaseField(basisForCurvature);
 
@@ -2406,7 +2440,7 @@ namespace ApplicationWithIDT {
 
                     var ba = new BitArray(Grid.NumberOfCells); //empty array
                     int count = 0;
-                    foreach ( int iCell in mask.ItemEnum ) { // loop over all cells we consider
+                    foreach(int iCell in mask.ItemEnum) { // loop over all cells we consider
                         ba[iCell] = true; //set corresponding entry
                         var tmpmsk = new CellMask(GridData, ba);
                         fphi[count] = totCurv.L2Norm(tmpmsk);
@@ -2416,7 +2450,7 @@ namespace ApplicationWithIDT {
                 }
                 fphi.ScaleV(kappa);
 
-                if ( _fphi == null )
+                if(_fphi == null)
                     _fphi = fphi;
                 else
                     _fphi.AccV(1.0, fphi);
@@ -2451,6 +2485,7 @@ namespace ApplicationWithIDT {
                 AgglomeratedUBackup[i].CoordinateVector.SetV(ConservativeFields[i].CoordinateVector);
             }
         }
+
         /// <summary>
         /// this method resets the actual state to the backup
         /// </summary>

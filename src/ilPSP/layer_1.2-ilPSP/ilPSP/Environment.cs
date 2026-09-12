@@ -304,8 +304,8 @@ namespace ilPSP {
 
         /// <summary>
         /// Parallel for-loop, the signature of <see cref="body"/> is: `i` (loop run variable in the range from <paramref name="fromInclusive"/> to <paramref name="toExclusive"/>)
-        /// **Note**: the balancing is the performend by this function,
-        /// i.e., calls to <paramref name="body"/> my have different runtimes dependiung on `i`.
+        /// **Note**: the balancing is the performed by this function,
+        /// i.e., calls to <paramref name="body"/> my have different run-times depending on `i`.
         /// If some call to <paramref name="body"/> is more expensive, the other threads continue.
         /// </summary>
         public static void ParallelFor(int fromInclusive, int toExclusive, Action<int> body, bool enablePar = true) {
@@ -314,8 +314,8 @@ namespace ilPSP {
 
         /// <summary>
         /// Parallel for-loop, the signature of <see cref="body"/> is: `ithread, i` (loop run variable in the range from <paramref name="fromInclusive"/> to <paramref name="toExclusive"/>)
-        /// **Note**: the balancing is the performend by this function,
-        /// i.e., calls to <paramref name="body"/> my have different runtimes dependiung on `i`.
+        /// **Note**: the balancing is the performed by this function,
+        /// i.e., calls to <paramref name="body"/> my have different run-times depending on `i`.
         /// If some call to <paramref name="body"/> is more expensive, the other threads continue.
         /// </summary>
         /// </summary>
@@ -864,9 +864,10 @@ namespace ilPSP {
 
                 }
                 if(NumThreads > DedicatedCPUsForThisRank.Count()) {
+                    int requestedNumThreads = NumThreads;
                     NumThreads = Math.Max(1, DedicatedCPUsForThisRank.Count());
                     MaxNumOpenMPthreads = NumThreads;
-                    tr.Error($"R{MPIEnv.MPI_Rank}: Insufficient number of CPUs: NumThreads = {NumThreads}, but got affinity to {DedicatedCPUsForThisRank.ToConcatString("[", ",", "]")}; reducing to {MaxNumOpenMPthreads} threads");
+                    tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity provides {NumThreads} core(s) {DedicatedCPUsForThisRank.ToConcatString("[", ",", "]")}; limiting the requested {requestedNumThreads} OpenMP threads accordingly.");
                 }
 
 

@@ -12,7 +12,7 @@ using ilPSP;
 using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
-    internal static class IntersectingQuadratureFactories {
+    static class IntersectingQuadratureFactories {
 
         static Symbol ToSymbol(JumpTypes sign) {
             switch (sign) {
@@ -35,6 +35,16 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
             );
             return factory;
         }
+
+        /*
+        public static IQuadRuleFactory<QuadRule> Volume(
+            RefElement Kref,
+            Func<int, IEnumerable<SubCell>> subcellProvider,
+            JumpTypes jmp0,
+            JumpTypes jmp1) {
+            return new DelegateIntersectingRuleFactory(Kref, subcellProvider, ToSymbol(jmp0), ToSymbol(jmp1));
+        }
+        */
 
         public static IQuadRuleFactory<QuadRule> Surface(LevelSetData levSet0, LevelSetData levSet1, JumpTypes jmp1) {
             IntersectingRuleFactory factory = new IntersectingRuleFactory(
