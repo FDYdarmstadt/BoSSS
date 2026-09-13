@@ -314,6 +314,70 @@ namespace BoSSS.Solution.Utils {
         }
 
 
+        static double DetermineInterfaceSign(Array SpeciesTable, int iLevSet, string A, string B) {
+            if(SpeciesTable == null)
+                throw new ArgumentNullException(nameof(SpeciesTable));
+            if(A == null)
+                throw new ArgumentNullException(nameof(A));
+            if(B == null)
+                throw new ArgumentNullException(nameof(B));
+            if(A == B)
+                throw new ArgumentException("The two interface species must be different.", nameof(B));
+
+            int NoOfLevelSets = SpeciesTable.Rank;
+            if(NoOfLevelSets < 1)
+                throw new ArgumentException("The species table must have at least one level-set dimension.", nameof(SpeciesTable));
+            if(iLevSet < 0 || iLevSet >= NoOfLevelSets)
+                throw new ArgumentException("Illegal level-set index: " + iLevSet, nameof(iLevSet));
+            if(SpeciesTable.GetType().GetElementType() != typeof(string))
+                throw new ArgumentException("The species table must contain strings.", nameof(SpeciesTable));
+
+            for(int d = 0; d < NoOfLevelSets; d++) {
+                if(SpeciesTable.GetLength(d) != 2 || SpeciesTable.GetLowerBound(d) != 0)
+                    throw new ArgumentException("Every species-table dimension must have length 2 and lower bound 0.", nameof(SpeciesTable));
+            }
+
+            return DetermineInterfaceSignGeneric(SpeciesTable, iLevSet, A, B);
+        }
+
+        static double DetermineInterfaceSignGeneric(Array speciesTable, int iLevSet, string A, string B) {
+            int rank = speciesTable.Rank;
+            int[] indexA = new int[rank];
+            bool foundPositive = false;
+            bool foundNegative = false;
+
+            for(int linearIndex = 0; linearIndex < speciesTable.Length; linearIndex++) {
+                int remainder = linearIndex;
+                for(int d = rank - 1; d >= 0; d--) {
+                    indexA[d] = remainder % 2;
+                    remainder /= 2;
+                }
+
+                if((string)speciesTable.GetValue(indexA) != A)
+                    continue;
+
+                int originalSign = indexA[iLevSet];
+                indexA[iLevSet] = 1 - originalSign;
+                bool isMatchingPair = (string)speciesTable.GetValue(indexA) == B;
+                indexA[iLevSet] = originalSign;
+
+                if(!isMatchingPair)
+                    continue;
+
+                if(originalSign == 0)
+                    foundPositive = true;
+                else
+                    foundNegative = true;
+            }
+
+            if(foundPositive == foundNegative)
+                throw new ArgumentException($"Unable to identify a unique species pair {A}-{B} for level set {iLevSet}.");
+
+            return foundPositive ? 1.0 : -1.0;
+        }
+
+
+
         /// <summary>
         /// Driver interface for numerical integration;
         /// 
@@ -383,6 +447,10 @@ namespace BoSSS.Solution.Utils {
 
             var result = MultidimensionalArray.Create(J, nComp);
 
+            string SpcNmnA = lsTrk.GetSpeciesName(SpcA);
+            string SpcNmnB = lsTrk.GetSpeciesName(SpcB);
+            double sign = DetermineInterfaceSign(lsTrk.SpeciesTable, iLevSet, SpcNmnA, SpcNmnB);
+
             BoSSS.Foundation.Quadrature.CellQuadrature.GetQuadrature(
                 new int[] { nComp }, gd,
                 surfRule,
@@ -422,7 +490,7 @@ namespace BoSSS.Solution.Utils {
                     for(int i = 0; i < Length; i++) {
                         int jCell = i + i0;
                         for(int c = 0; c < nComp; c++)
-                            result[jCell, c] += ResultsOfIntegration[i, c];
+                            result[jCell, c] += ResultsOfIntegration[i, c]*sign;
                     }
                 }).Execute();
 

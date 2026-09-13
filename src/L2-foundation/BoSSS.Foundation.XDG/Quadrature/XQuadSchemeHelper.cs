@@ -934,7 +934,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Quadrature scheme for the integration over the level-set <paramref name="iLevSet"/>, i.e. for each cut background-cell $ K_j $ a quadrature to approximate
         /// \[
-        ///    \oint_{K_j \cap \mathfrak{I} \cap \partial \mathfrak{A} \cap \partial \mathfrak{b} } \ldots \mathrm{dS} ,
+        ///    \oint_{K_j \cap \mathfrak{I} \cap \partial \mathfrak{A} \cap \partial \mathfrak{B} } \ldots \mathrm{dS} ,
         /// \]
         /// where $ \mathfrak{A} $ and $ \mathfrak{B} $  are the domains of species <paramref name="spA"/> and <paramref name="spB"/>, respectively.
         /// </summary>
