@@ -90,47 +90,32 @@ namespace BoSSS.Application.CDG_ProjectionTest {
         }
 #else
         /// <summary>
-        /// case 1, degree 2, gridResolution 2 and 4;
-        /// the skip condition in <see cref="AllUp"/> only excludes the expensive
-        /// dimension==3/gridResolution==8 combination for degree &gt; 2, so at degree 2 that
-        /// combination is NOT skipped and dominates the runtime of the old, unsplit
-        /// AllUp_patchwiseOnly_case1_p2 (~89 min for 24 cases, vs. ~30s for the same 24 cases
-        /// at degree 3). Isolating gridResolution==8 into its own job (mirroring the existing
-        /// case2_..._p4_grd2n4 / _grd8 split below) keeps this bucket fast.
+        /// case 1, degree 2, everything except the dimension==3/gridResolution==8 combination.
+        /// The skip condition in <see cref="AllUp"/> only excludes that combination for
+        /// degree &gt; 2, so at degree 2 it is NOT skipped there and dominated the runtime of
+        /// the old, unsplit AllUp_patchwiseOnly_case1_p2 (~89 min for 24 cases, vs. ~30s for
+        /// the same 24 cases at degree 3, since the base 3D grid at gridResolution 8 already has
+        /// ~4096 cells). That single expensive combination is skipped here (a plain early
+        /// return, same style as the skip condition in <see cref="AllUp"/>) and instead run,
+        /// split one job per case, as AllUp_patchwiseOnly_case1_p2_grd8_dim3_amr*.
         /// </summary>
         [Test]
-        static public void AllUp_patchwiseOnly_case1_p2_grd2n4(
+        static public void AllUp_patchwiseOnly_case1_p2(
             [Values(2, 3)] int dimension,
-            [Values(2, 4)] int gridResolution,
+            [Values(2, 4, 8)] int gridResolution,
             [Values(0, 2)] int AMRlevel,
             [Values(true, false)] bool projectOnSameBasis
             ) {
+            if (dimension == 3 && gridResolution == 8)
+                return; // handled separately, see AllUp_patchwiseOnly_case1_p2_grd8_dim3_*
             AllUp(1, dimension, 2, gridResolution, AMRlevel, projectOnSameBasis, ProjectionStrategy.patchwiseOnly);
         }
 
         /// <summary>
-        /// case 1, degree 2, gridResolution 8, dimension 2;
-        /// see <see cref="AllUp_patchwiseOnly_case1_p2_grd2n4"/>. Unlike the dimension==3
-        /// counterpart below, dimension==2 at gridResolution==8 is cheap (only a few hundred
-        /// cells), so it is split off into its own fast job rather than sharing a job with the
-        /// expensive dimension==3 cases.
-        /// </summary>
-        [Test]
-        static public void AllUp_patchwiseOnly_case1_p2_grd8_dim2(
-            [Values(0, 2)] int AMRlevel,
-            [Values(true, false)] bool projectOnSameBasis
-            ) {
-            AllUp(1, 2, 2, 8, AMRlevel, projectOnSameBasis, ProjectionStrategy.patchwiseOnly);
-        }
-
-        /// <summary>
-        /// case 1, degree 2, gridResolution 8, dimension 3;
-        /// this is the actual bottleneck bucket. Unlike the other buckets here, the base grid
-        /// alone already has ~4096 cells at gridResolution 8 in 3D (AMRlevel just adds a
-        /// handful more), so all four combinations are similarly expensive and none of them
-        /// piggy-backs cheaply on another — split down to one job per combination so they run
-        /// fully in parallel instead of queued behind each other in a single job.
-        /// See <see cref="AllUp_patchwiseOnly_case1_p2_grd2n4"/>.
+        /// case 1, degree 2, gridResolution 8, dimension 3 -- the actual bottleneck bucket
+        /// excluded above; see <see cref="AllUp_patchwiseOnly_case1_p2"/>. All four combinations
+        /// are similarly expensive, so each gets its own job to run fully in parallel instead
+        /// of queued behind each other in a single job.
         /// </summary>
         [Test]
         static public void AllUp_patchwiseOnly_case1_p2_grd8_dim3_amr0_sameDegree() {
@@ -207,37 +192,29 @@ namespace BoSSS.Application.CDG_ProjectionTest {
         }
 #else
         /// <summary>
-        /// case 2, degree 2, gridResolution 2 and 4;
-        /// the skip condition in <see cref="AllUp"/> does not apply to case 2 at all (it only
-        /// triggers for caseNo==0 or degree&gt;2), so at degree 2 the expensive
-        /// dimension==3/gridResolution==8 combination runs unconditionally and dominated the
-        /// runtime of the old, unsplit case2_sameDegree_p2/case2_higherDegree_p2
-        /// (~44 min / ~55 min for 12 cases each) -- the same issue found and fixed for
-        /// <see cref="AllUp_patchwiseOnly_case1_p2_grd2n4"/>, split here the same way.
+        /// case 2, degree 2, everything except the dimension==3/gridResolution==8 combination.
+        /// The skip condition in <see cref="AllUp"/> does not apply to case 2 at all (it only
+        /// triggers for caseNo==0 or degree&gt;2), so at degree 2 that combination ran
+        /// unconditionally and dominated the runtime of the old, unsplit
+        /// case2_sameDegree_p2/case2_higherDegree_p2 (~44 min / ~55 min for 12 cases each) --
+        /// the same issue found and fixed for <see cref="AllUp_patchwiseOnly_case1_p2"/>, split
+        /// here the same way: skip that one combination (early return) and run it separately,
+        /// one job per case, as AllUp_patchwiseOnly_case2_sameDegree_p2_grd8_dim3_amr*.
         /// </summary>
         [Test]
-        static public void AllUp_patchwiseOnly_case2_sameDegree_p2_grd2n4(
+        static public void AllUp_patchwiseOnly_case2_sameDegree_p2(
             [Values(2, 3)] int dimension,
-            [Values(2, 4)] int gridResolution,
+            [Values(2, 4, 8)] int gridResolution,
             [Values(0, 2)] int AMRlevel
             ) {
+            if (dimension == 3 && gridResolution == 8)
+                return; // handled separately, see AllUp_patchwiseOnly_case2_sameDegree_p2_grd8_dim3_*
             AllUp(2, dimension, 2, gridResolution, AMRlevel, true, ProjectionStrategy.patchwiseOnly);
         }
 
         /// <summary>
-        /// case 2, degree 2, gridResolution 8, dimension 2; see
-        /// <see cref="AllUp_patchwiseOnly_case2_sameDegree_p2_grd2n4"/>.
-        /// </summary>
-        [Test]
-        static public void AllUp_patchwiseOnly_case2_sameDegree_p2_grd8_dim2(
-            [Values(0, 2)] int AMRlevel
-            ) {
-            AllUp(2, 2, 2, 8, AMRlevel, true, ProjectionStrategy.patchwiseOnly);
-        }
-
-        /// <summary>
-        /// case 2, degree 2, gridResolution 8, dimension 3 -- the actual bottleneck, split down
-        /// to one job per AMR level as for <see cref="AllUp_patchwiseOnly_case1_p2_grd8_dim3_amr0_sameDegree"/>.
+        /// case 2, degree 2, gridResolution 8, dimension 3 -- the actual bottleneck bucket
+        /// excluded above; see <see cref="AllUp_patchwiseOnly_case2_sameDegree_p2"/>.
         /// </summary>
         [Test]
         static public void AllUp_patchwiseOnly_case2_sameDegree_p2_grd8_dim3_amr0() {
@@ -250,32 +227,23 @@ namespace BoSSS.Application.CDG_ProjectionTest {
         }
 
         /// <summary>
-        /// case 2, degree 2, gridResolution 2 and 4; see
-        /// <see cref="AllUp_patchwiseOnly_case2_sameDegree_p2_grd2n4"/>.
+        /// case 2, degree 2, everything except the dimension==3/gridResolution==8 combination;
+        /// see <see cref="AllUp_patchwiseOnly_case2_sameDegree_p2"/>.
         /// </summary>
         [Test]
-        static public void AllUp_patchwiseOnly_case2_higherDegree_p2_grd2n4(
+        static public void AllUp_patchwiseOnly_case2_higherDegree_p2(
             [Values(2, 3)] int dimension,
-            [Values(2, 4)] int gridResolution,
+            [Values(2, 4, 8)] int gridResolution,
             [Values(0, 2)] int AMRlevel
             ) {
+            if (dimension == 3 && gridResolution == 8)
+                return; // handled separately, see AllUp_patchwiseOnly_case2_higherDegree_p2_grd8_dim3_*
             AllUp(2, dimension, 2, gridResolution, AMRlevel, false, ProjectionStrategy.patchwiseOnly);
         }
 
         /// <summary>
-        /// case 2, degree 2, gridResolution 8, dimension 2; see
-        /// <see cref="AllUp_patchwiseOnly_case2_sameDegree_p2_grd2n4"/>.
-        /// </summary>
-        [Test]
-        static public void AllUp_patchwiseOnly_case2_higherDegree_p2_grd8_dim2(
-            [Values(0, 2)] int AMRlevel
-            ) {
-            AllUp(2, 2, 2, 8, AMRlevel, false, ProjectionStrategy.patchwiseOnly);
-        }
-
-        /// <summary>
-        /// case 2, degree 2, gridResolution 8, dimension 3 -- the actual bottleneck; see
-        /// <see cref="AllUp_patchwiseOnly_case2_sameDegree_p2_grd8_dim3_amr0"/>.
+        /// case 2, degree 2, gridResolution 8, dimension 3 -- the actual bottleneck bucket
+        /// excluded above; see <see cref="AllUp_patchwiseOnly_case2_sameDegree_p2_grd8_dim3_amr0"/>.
         /// </summary>
         [Test]
         static public void AllUp_patchwiseOnly_case2_higherDegree_p2_grd8_dim3_amr0() {
