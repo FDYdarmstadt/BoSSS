@@ -17,6 +17,7 @@ limitations under the License.
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Platform;
+using BoSSS.Platform.Utils.Geom;
 using ilPSP;
 using ilPSP.Tracing;
 using ilPSP.Utils;
@@ -26,11 +27,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Security.Permissions;
 using System.Runtime.CompilerServices;
+using System.Security.Permissions;
 using System.Text;
-using System.Threading.Tasks;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace BoSSS.Foundation.Grid {
 
@@ -1870,6 +1871,27 @@ namespace BoSSS.Foundation.Grid {
             return new EdgeMask(g, bm, MaskType.Geometrical);
         }
 
+        /// <summary>
+        /// driver routine for <see cref="IGeometricalCellsData.GetCellBoundingBox"/>
+        /// </summary>
+        static public BoundingBox GetCellBoundingBox(this IGeometricalCellsData cl, int jCellGeom) {
+            int D = cl.RefElements.First().SpatialDimension; // hack to obtain the spatial dimension
+
+            var bb = new BoundingBox(D);
+            cl.GetCellBoundingBox(jCellGeom, bb);
+            
+            return bb;  
+        }
+
+        /// <summary>
+        /// driver routine for <see cref="ILogicalCellData.GetCellBoundingBox"/>
+        /// </summary>
+        static public BoundingBox GetCellBoundingBox(this ILogicalCellData cl, int jCellLog) {
+            int D = cl.GetCenter(jCellLog).Dim; // hack to obtain the spatial dimension
+            var bb = new BoundingBox(D);
+            cl.GetCellBoundingBox(jCellLog, bb);
+            return bb;
+        }
 
     }
         
