@@ -32,19 +32,23 @@ namespace ilPSP.LinSolvers.PETSc {
     /// and is therefore restricted to one BoSSS MPI rank. Derived classes only
     /// supply their PETSc options and optional field decomposition.
     /// </remarks>
-    public abstract class PETScSolverBase : ISparseSolver {
+    public abstract partial class PETScSolverBase : ISparseSolver {
 
         UnsafePETSc m_Native;
         IntPtr m_Solver;
         int m_LocalRows = -1;
         bool m_Disposed;
-        int[] m_PinnedRowPointers;
-        int[] m_PinnedColumnIndices;
-        double[] m_PinnedValues;
-        GCHandle m_RowPointersHandle;
-        GCHandle m_ColumnIndicesHandle;
-        GCHandle m_ValuesHandle;
         UnsafePETSc._bosss_petsc_ksp_monitor m_KspMonitor;
+        /// <summary>
+        /// Selects the assembled CSR transfer path. The default is the split,
+        /// borrowed CSR path.
+        /// </summary>
+        public PETScMatrixInput MatrixInput { get; set; } = PETScMatrixInput.BorrowedCsr;
+
+        /// <summary>
+        /// Matrix input path actually used by the most recent <see cref="DefineMatrix"/> call.
+        /// </summary>
+        public PETScMatrixInput? EffectiveMatrixInput { get; private set; }
 
         /// <summary>
         /// Diagnostic option which keeps the managed CSR buffers pinned until
@@ -146,7 +150,8 @@ namespace ilPSP.LinSolvers.PETSc {
         /// Defines and uploads a distributed square matrix to PETSc.
         /// </summary>
         public void DefineMatrix(IMutableMatrixEx matrix) {
-            using(new FuncTrace("PETSC_DefineMatrix")) {
+            using(var tr = new FuncTrace("PETSC_DefineMatrix")) {
+            // 1. Validate the BoSSS matrix and choose the matching PETSc DLL.
             if(matrix == null)
                 throw new ArgumentNullException(nameof(matrix));
             ThrowIfDisposed();
@@ -158,10 +163,7 @@ namespace ilPSP.LinSolvers.PETSc {
                 throw new NotSupportedException("The current PETSc native ABI supports MPI_COMM_WORLD only.");
 
             csMPI.Raw.Comm_Size(matrix.MPI_Comm, out int mpiSize);
-            PETScNativeVariant effectiveNativeVariant = ResolveNativeVariant(
-                NativeVariant,
-                mpiSize,
-                ilPSP.Environment.NumThreads);
+            PETScNativeVariant effectiveNativeVariant = ResolveNativeVariant(NativeVariant, mpiSize, ilPSP.Environment.NumThreads);
             EffectiveNativeVariant = effectiveNativeVariant;
             if(effectiveNativeVariant == PETScNativeVariant.OpenMp && mpiSize != 1)
                 throw new NotSupportedException("The PETSc OpenMP variant uses MPIUNI and requires exactly one BoSSS MPI rank. Use MpiOpenMp for multiple ranks.");
@@ -169,6 +171,7 @@ namespace ilPSP.LinSolvers.PETSc {
 
             MPICollectiveWatchDog.Watch(matrix.MPI_Comm);
 
+            // 2. Validate the PETSc 32-bit global partition and optional field split.
             long globalRows = matrix.RowPartitioning.TotalLength;
             long globalRowStart = matrix.RowPartitioning.i0;
             if(globalRows > int.MaxValue || globalRowStart > int.MaxValue)
@@ -177,55 +180,88 @@ namespace ilPSP.LinSolvers.PETSc {
             ValidateFieldRows(SolverFirstFieldRows, SolverSecondFieldRows, globalRows);
 
             m_LocalRows = matrix.RowPartitioning.LocalLength;
-            int[] rowPointers = new int[m_LocalRows + 1];
-            var columns = new List<int>();
-            var values = new List<double>();
-            long[] rowColumns = null;
-            double[] rowValues = null;
-
-            for(int localRow = 0; localRow < m_LocalRows; localRow++) {
-                long globalRow = globalRowStart + localRow;
-                int rowLength = matrix.GetRow(globalRow, ref rowColumns, ref rowValues);
-                for(int entry = 0; entry < rowLength; entry++) {
-                    long column = rowColumns[entry];
-                    if(column < 0 || column >= globalRows || column > int.MaxValue)
-                        throw new NotSupportedException($"PETSc column index {column} is outside the supported 32-bit matrix range.");
-                    columns.Add((int)column);
-                    values.Add(rowValues[entry]);
+            // 3. Convert once to either copied CSR or PETSc's split borrowed CSR.
+            // MatCreateMPIAIJWithSplitArrays deliberately creates MATMPIAIJ even
+            // for one rank. Top-level ILU/ICC and the UMFPACK factor package are
+            // sequential and require MATSEQAIJ. MatCreateAIJ in the copied path
+            // selects SEQAIJ for a one-rank communicator, so use it only for this
+            // combination. MPI runs with more than one rank retain their requested
+            // input path; PETScDirectSolver rejects top-level UMFPACK for such a run.
+            bool requiresSequentialFactorMatrix = mpiSize == 1 && RequestsSequentialFactorMatrix(SolverOptions);
+            bool splitCsr = MatrixInput == PETScMatrixInput.BorrowedCsr && !requiresSequentialFactorMatrix;
+            CsrArrays copiedCsr = null;
+            SplitCsrArrays borrowedCsr = null;
+            using(new BlockTrace("PETSC_CsrExport", tr)) {
+                if(splitCsr) {
+                    borrowedCsr = ExportSplitCsr(matrix, globalRows, globalRowStart);
+                    PinSplitCsrBuffers(borrowedCsr);
+                } else {
+                    copiedCsr = ExportCsr(matrix, globalRows, globalRowStart);
+                    if(PinManagedCsrBuffers)
+                        PinCsrBuffers(copiedCsr.RowPointers, copiedCsr.ColumnIndices, copiedCsr.Values);
                 }
-                rowPointers[localRow + 1] = columns.Count;
             }
-
-            m_Native = new UnsafePETSc(effectiveNativeVariant);
-            int[] columnArray = columns.Count > 0 ? columns.ToArray() : new int[1];
-            double[] valueArray = values.Count > 0 ? values.ToArray() : new double[1];
-            if(PinManagedCsrBuffers)
-                PinCsrBuffers(rowPointers, columnArray, valueArray);
+            EffectiveMatrixInput = splitCsr ? PETScMatrixInput.BorrowedCsr : PETScMatrixInput.CopiedCsr;
             try {
-                // This records that BoSSS initialized PETSc, allowing application
-                // shutdown to finalize PETSc before MPI is finalized.
-                Check(m_Native.InitializeRuntime(), "PETSc initialization");
-                Check(
-                    m_Native.CreateKspSolver(
-                        m_LocalRows,
-                        (int)globalRows,
-                        (int)globalRowStart,
-                        rowPointers,
-                        columnArray,
-                        valueArray,
+                using(new BlockTrace("PETSC_NativeMatrixCreate", tr)) {
+                    // 4. Load the selected native PETSc DLL and create its Mat object.
+                    m_Native = new UnsafePETSc(effectiveNativeVariant);
+                    // This records that BoSSS initialized PETSc, allowing application
+                    // shutdown to finalize PETSc before MPI is finalized.
+                    Check(m_Native.InitializeRuntime(), "PETSc initialization");
+                    if(splitCsr) {
+                        Check(m_Native.CreateSplitCsrMatrixSolver(
+                            m_LocalRows,
+                            (int)globalRows,
+                            (int)globalRowStart,
+                            borrowedCsr.DiagonalRowPointers,
+                            borrowedCsr.DiagonalColumnIndices,
+                            borrowedCsr.DiagonalValues,
+                            borrowedCsr.OffdiagonalRowPointers,
+                            borrowedCsr.OffdiagonalColumnIndices,
+                            borrowedCsr.OffdiagonalValues,
+                            out m_Solver), "PETSc split CSR matrix creation");
+                    } else {
+                        Check(m_Native.CreateMatrixSolver(
+                            m_LocalRows,
+                            (int)globalRows,
+                            (int)globalRowStart,
+                            copiedCsr.RowPointers,
+                            copiedCsr.ColumnIndices,
+                            copiedCsr.Values,
+                            out m_Solver), "PETSc matrix creation");
+                    }
+                }
+                using(new BlockTrace("PETSC_NativeKspCreate", tr)) {
+                    // 5. Create the KSP object for that matrix.
+                    Check(m_Native.CreateKspForMatrix(m_Solver), "PETSc KSP creation");
+                }
+                using(new BlockTrace("PETSC_NativeOptions", tr)) {
+                    // 6. Apply KSP/PC options and optional field-split indices.
+                    Check(m_Native.ConfigureKspSolver(
+                        m_Solver,
                         SolverOptions ?? string.Empty,
                         SolverFirstFieldRows?.Length ?? 0,
                         SolverFirstFieldRows,
                         SolverSecondFieldRows?.Length ?? 0,
-                        SolverSecondFieldRows,
-                        out m_Solver),
-                    "PETSc matrix/KSP setup");
-                if(RequestsKspMonitor(SolverOptions)) {
-                    m_KspMonitor = WriteKspMonitor;
-                    Check(m_Native.SetKspMonitor(m_Solver, m_KspMonitor, IntPtr.Zero), "PETSc KSP monitor setup");
+                        SolverSecondFieldRows), "PETSc KSP option configuration");
+                }
+                using(new BlockTrace("PETSC_KspSetup", tr)) {
+                    // 7. Force PETSc to allocate/setup the selected solver now.
+                    Check(m_Native.SetupKspSolver(m_Solver), "PETSc KSP setup");
+                    if(RequestsKspMonitor(SolverOptions)) {
+                        m_KspMonitor = WriteKspMonitor;
+                        Check(m_Native.SetKspMonitor(m_Solver, m_KspMonitor, IntPtr.Zero), "PETSc KSP monitor setup");
+                    }
                 }
             } catch(Exception error) {
-                m_Native.Dispose();
+                if(m_Solver != IntPtr.Zero && m_Native != null) {
+                    // The staged constructor can have created a native solver before
+                    // KSPSetUp reports an error. Release it before unloading delegates.
+                    m_Native.DestroySolver(m_Solver);
+                    m_Solver = IntPtr.Zero;
+                }
+                m_Native?.Dispose();
                 m_Native = null;
                 m_LocalRows = -1;
                 ReleasePinnedCsrBuffers();
@@ -237,13 +273,39 @@ namespace ilPSP.LinSolvers.PETSc {
             }
         }
 
+        // This remains part of the assembled-CSR path: PETSc's sequential
+        // ILU/ICC and UMFPACK require MATSEQAIJ for one MPI rank.
+        static bool RequestsSequentialFactorMatrix(string options) {
+            if(string.IsNullOrWhiteSpace(options))
+                return false;
+
+            string pcType = null;
+            string factorBackend = null;
+            string[] tokens = options.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+            for(int index = 0; index < tokens.Length; index++) {
+                string token = tokens[index];
+                if(token.StartsWith("-pc_type=", StringComparison.Ordinal))
+                    pcType = token.Substring("-pc_type=".Length);
+                else if(token.Equals("-pc_type", StringComparison.Ordinal) && index + 1 < tokens.Length)
+                    pcType = tokens[++index];
+                else if(token.StartsWith("-pc_factor_mat_solver_type=", StringComparison.Ordinal))
+                    factorBackend = token.Substring("-pc_factor_mat_solver_type=".Length);
+                else if(token.Equals("-pc_factor_mat_solver_type", StringComparison.Ordinal) && index + 1 < tokens.Length)
+                    factorBackend = tokens[++index];
+            }
+            return string.Equals(pcType, "ilu", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(pcType, "icc", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(factorBackend, "umfpack", StringComparison.OrdinalIgnoreCase);
+        }
+
         /// <summary>
         /// Solves the matrix defined by <see cref="DefineMatrix"/>.
         /// </summary>
         public SolverResult Solve<Tunknowns, Trhs>(Tunknowns x, Trhs rhs)
             where Tunknowns : IList<double>
             where Trhs : IList<double> {
-            using(new FuncTrace("PETSC_Solve")) {
+            using(var tr = new FuncTrace("PETSC_Solve")) {
+            //tr.InfoToConsole = true;
             ThrowIfDisposed();
             if(m_Solver == IntPtr.Zero)
                 throw new InvalidOperationException("DefineMatrix must be called before Solve.");
@@ -400,7 +462,7 @@ namespace ilPSP.LinSolvers.PETSc {
         /// This is collective on MPI_COMM_WORLD when a matrix was defined.
         /// </summary>
         public void Dispose() {
-            using(new FuncTrace("PETSC_Dispose")) {
+            using(var tr = new FuncTrace("PETSC_Dispose")) {
             if(m_Disposed)
                 return;
 
@@ -426,26 +488,6 @@ namespace ilPSP.LinSolvers.PETSc {
             }
         }
 
-        void PinCsrBuffers(int[] rowPointers, int[] columnIndices, double[] values) {
-            m_PinnedRowPointers = rowPointers;
-            m_PinnedColumnIndices = columnIndices;
-            m_PinnedValues = values;
-            m_RowPointersHandle = GCHandle.Alloc(m_PinnedRowPointers, GCHandleType.Pinned);
-            m_ColumnIndicesHandle = GCHandle.Alloc(m_PinnedColumnIndices, GCHandleType.Pinned);
-            m_ValuesHandle = GCHandle.Alloc(m_PinnedValues, GCHandleType.Pinned);
-        }
-
-        void ReleasePinnedCsrBuffers() {
-            if(m_RowPointersHandle.IsAllocated)
-                m_RowPointersHandle.Free();
-            if(m_ColumnIndicesHandle.IsAllocated)
-                m_ColumnIndicesHandle.Free();
-            if(m_ValuesHandle.IsAllocated)
-                m_ValuesHandle.Free();
-            m_PinnedRowPointers = null;
-            m_PinnedColumnIndices = null;
-            m_PinnedValues = null;
-        }
     }
 
     /// <summary>
