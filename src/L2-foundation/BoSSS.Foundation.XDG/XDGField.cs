@@ -14,20 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using System.Linq;
-using System.Collections;
-using System.Collections.Generic;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
+using BoSSS.Foundation.Voronoi;
 using BoSSS.Platform;
 using BoSSS.Platform.LinAlg;
-using System.Diagnostics;
+using ilPSP;
 using ilPSP.Tracing;
 using ilPSP.Utils;
-using ilPSP;
 using MPI.Wrappers;
-using BoSSS.Foundation.Voronoi;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Security.Cryptography;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace BoSSS.Foundation.XDG {
@@ -945,6 +946,9 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// performs the projection of <paramref name="func"/> for each species.
+        /// 
+        /// Note: per default, this does not employ a cut-cell quadrature scheme and mass matrix inversion;
+        /// thus it is a projection on species-shadow-fields (<see cref="GetSpeciesShadowField(string)"/>)
         /// </summary>
         override public void ProjectField(double alpha, ScalarFunction func, CellQuadratureScheme scheme = null) {
             using (new FuncTrace()) {
@@ -966,6 +970,51 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
         }
+
+        /// <summary>
+        /// performs the projection of <paramref name="func"/> for each species.
+        ///
+        ///  In contrast to <see cref="ProjectField(double, ScalarFunction, CellQuadratureScheme)"/>,
+        ///  this performs an actual XDG projection, involving cut-cell-quadrature and mass matrix inversion.
+        /// </summary>
+        public void ProjectFieldXDG(double alpha, ScalarFunction func, CellMask domain = null) {
+            using(new FuncTrace()) {
+                var lsTrk = this.Basis.Tracker;
+
+                //choose a quadOrder
+                var LsTrk = this.Basis.Tracker;
+                int deg = this.Basis.Degree;
+                var AvailOrders = LsTrk.GetCachedOrders().Where(order => order >= 2 * deg);
+                int order2Pick = AvailOrders.Any() ? AvailOrders.Min() : 2 * deg;
+                var xdgMetrics = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS, order2Pick);
+
+                var cv_bkup = this.CoordinateVector.ToArray();
+                this.Clear();
+
+                // project each species:
+                foreach(var spc in lsTrk.SpeciesIdS) {
+                    var spc_domain = lsTrk.Regions.GetSpeciesMask(spc);
+                    if(domain != null)
+                        spc_domain = domain.Intersect(spc_domain);
+
+                    var _scheme = xdgMetrics.XQuadSchemeHelper.GetVolumeQuadScheme(spc, IntegrationDomain:spc_domain);
+                    var _rule = _scheme.Compile(this.GridDat, order2Pick);
+
+                    this.GetSpeciesShadowField(spc).ProjectField(alpha, func, _rule);
+                }
+
+                // perform mass matrix inversion:
+                var MMF = xdgMetrics.MassMatrixFactory;
+                var MM = MMF.GetMassMatrix(this.Mapping, inverse: true);
+
+                var tmp = new double[cv_bkup.Length];
+                MM.SpMV(1.0, this.CoordinateVector, 0.0, tmp);
+
+                this.CoordinateVector.SetV(tmp);
+                this.CoordinateVector.Acc(1.0, cv_bkup);
+            }
+        }
+
 
         /// <summary>
         /// performs the projection of <paramref name="f"/> for each species.

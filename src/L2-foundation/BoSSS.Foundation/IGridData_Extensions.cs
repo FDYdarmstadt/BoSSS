@@ -32,6 +32,7 @@ using System.Security.Permissions;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using static BoSSS.Foundation.Grid.Classic.GridData;
 
 namespace BoSSS.Foundation.Grid {
 
@@ -1347,6 +1348,31 @@ namespace BoSSS.Foundation.Grid {
         static public bool IsEdgeConformalWithCell2(this IGeometricalEdgeData ge, int e) {
             return ((ge.Info[e] & EdgeInfo.Cell2_Nonconformal) == 0);
         }
+
+        /// <summary>
+        /// minimal cell size (minimum over <see cref="IGeometricalCellsData.h_min"/> on all processors)
+        /// </summary>
+        static public double h_minGlobal(this IGeometricalCellsData ge) {
+            if(ge is CellData cd) {
+                return cd.h_minGlobal;
+            } else {
+                ilPSP.MPICollectiveWatchDog.Watch();
+                return ge.h_min.Min().MPIMin();
+            }
+        }
+
+        /// <summary>
+        /// maximum cell size (maximum over <see cref="IGeometricalCellsData.h_max"/> on all processors)
+        /// </summary>
+        static public double h_maxGlobal(this IGeometricalCellsData ge) {
+            if(ge is CellData cd) {
+                return cd.h_maxGlobal;
+            } else {
+                ilPSP.MPICollectiveWatchDog.Watch();
+                return ge.h_max.Max().MPIMax();
+            }
+        }
+
 
         /// <summary>
         /// For edge number <paramref name="e"/>, whether it is between to MPI processes.

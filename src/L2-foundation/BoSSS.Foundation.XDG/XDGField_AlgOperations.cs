@@ -35,10 +35,10 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="alpha"></param>
         /// <param name="f"></param>
         /// <param name="U"></param>
-        virtual public void ProjectFunctionXDG(double alpha, Func<Vector, double[], int, double> f, params XDGField[] U)
-        {
+        virtual public void ProjectFunctionXDG(double alpha, Func<Vector, double[], int, double> f, params XDGField[] U) {
             ProjectFunctionXDG(alpha, f, this.Basis.Tracker.SpeciesIdS, U);
         }
+
         /// <summary>
         /// Projects a function onto an XDG Field, only on some prescribed species
         /// </summary>

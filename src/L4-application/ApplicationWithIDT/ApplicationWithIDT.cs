@@ -1483,19 +1483,19 @@ namespace ApplicationWithIDT {
             }
         }
 
-        
+
 
         /// <summary>
         /// Solves the Linear System
         /// </summary>
         public void SolveSystem() {
-            using ( new FuncTrace() ) {
+            using(new FuncTrace()) {
 
                 //Adds ones on the diagonal to ghost rows (rows coincing with empty or agglomerated phase-cells) of the left hand side
-                for ( int rows = 0; rows < LHS.NoOfRows; rows++ ) {
-                    if ( LHS.GetNoOfNonZerosPerRow(rows) == 0 ) {
+                for(int rows = 0; rows < LHS.NoOfRows; rows++) {
+                    if(LHS.GetNoOfNonZerosPerRow(rows) == 0) {
                         LHS[rows, rows] = 1;
-                        if ( Math.Abs(RHS[rows]) > 1e-32 ) {
+                        if(Math.Abs(RHS[rows]) > 1e-32) {
                             Console.WriteLine("Nonzero Entry in ghost RHS row " + rows + "!!!!!! FIX Please");
                             RHS[rows] = 0;
                             Jobj_U.CheckForNanOrInfM();
@@ -1507,7 +1507,7 @@ namespace ApplicationWithIDT {
                     //save mat files 
 
                     SimpleSolversInterface.Solve_Direct(LHS, stepIN, RHS);
-                } catch ( Exception e ) {
+                } catch(Exception e) {
                     Console.WriteLine("Exception: " + e.ToString() + " From DirectSOlver Thrown, but we continue...");
                 }
                 CmpLineSearchResidualWeight();
@@ -1516,6 +1516,8 @@ namespace ApplicationWithIDT {
 
             }
         }
+
+
         /// <summary>
         /// Computes the weight kappa associated with fphi (such that f=f_err+kappa*fphi)
         /// </summary>
