@@ -721,7 +721,7 @@ namespace ApplicationWithIDT {
                     }
                     Kappas.Add(kappa);
 
-                    Console.WriteLine($"Initial Value : l2: |r|= {string.Format("{0:#.#######E+00}", res_l2)}, |f_err|={string.Format("{0:#.#######E+00}", obj_f)}, | f_phi |={string.Format("{0:#.#######E+00}", f_phi)},");
+                    Console.WriteLine($"Initial Value: Residual: l2 |r|= {res_l2:#.####E+00}, L2 |r|= {res_L2:#.####E+00}; obj func l2: f_err = {obj_f:#.####E+00}, f_phi={f_phi_vec.InnerProd(f_phi_vec):#.####E+00}");
                     UpdateAgglomerator();
                 }
 
@@ -1440,7 +1440,7 @@ namespace ApplicationWithIDT {
             kappa = 1;
             var f_phi_vec = ComputeFphi();
             kappa = kappa_copy;
-            Console.Write($"l2: ||R0||= {string.Format("{0:#.#######E+00}", res_l2)}, f_err={string.Format("{0:#.######E+00}", obj_f)}, f_phi={string.Format("{0:#.######E+00}", f_phi_vec.InnerProd(f_phi_vec))},");
+            Console.Write($"Residual: l2 |r|= {res_l2:#.####E+00}, L2 |r|= {res_L2:#.####E+00}; obj func l2: f_err = {obj_f:#.####E+00}, f_phi={f_phi_vec.InnerProd(f_phi_vec):#.####E+00}, ");
 
         }
         /// <summary>
