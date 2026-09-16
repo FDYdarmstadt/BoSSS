@@ -55,9 +55,9 @@ namespace MPI.Wrappers.Utils {
         private DynamicLibraries.DynLibHandle[] m_PreqLibHandle;
 
         /// <summary>
-        /// 'dll'/'so'--handles of prerequisite libraries onderlyuing this wrapper
+        /// 'dll'/'so'--handles of prerequisite libraries underlying this wrapper
         /// </summary>
-        public IEnumerable<DynamicLibraries.DynLibHandle> PreqLibHandle {
+        public IEnumerable<DynamicLibraries.DynLibHandle> PreReqLibHandles {
             get {
                 return m_PreqLibHandle.ToList().AsReadOnly();
             }
@@ -203,8 +203,8 @@ namespace MPI.Wrappers.Utils {
                     Info("FILERS PASSED");
                 }
 
-                // load prequesite library
-                // =======================
+                // load pre-requesite libraries
+                // ============================
                 bool PreqSuccess = true;
                 if (PrequesiteLibraries[k] != null) {
                     Info("prerequisite libraries required; trying to load these...");
@@ -214,6 +214,10 @@ namespace MPI.Wrappers.Utils {
                     int cnt = 0;
                     foreach (string[] PreqAlt in PreqChain) {
                         foreach (var LibName in GetLibraryFiles(PreqAlt, LibrarySearchPath)) {
+                            if(IsEmptyOrWhite(LibName)) {
+                                Info("Empty prerequisite -- seems to be only optional, not necessary ... ");
+                                break;
+                            }
                             Info("trying to load '" + LibName + "' (prerequisite) ... ");
                             string errstr;
                             m_PreqLibHandle[cnt] = DynamicLibraries.LoadDynLib(LibName, out errstr, true);
@@ -224,7 +228,7 @@ namespace MPI.Wrappers.Utils {
                                 break;
                             }
                         }
-                        if (m_PreqLibHandle[cnt].val == IntPtr.Zero) {
+                        if (m_PreqLibHandle[cnt].val == IntPtr.Zero && !PreqAlt.Any(libName => IsEmptyOrWhite(libName))) {
                             Info("FAILED on loading any of the prerequisite libraries " + CatStrings(PreqAlt) + ".");
                             for (int i = 0; i < cnt; i++) {
                                 DynamicLibraries.UnloadDynLib(m_PreqLibHandle[i]);
@@ -296,6 +300,19 @@ namespace MPI.Wrappers.Utils {
                     + "------------------------------------------------------------------------" + System.Environment.NewLine);
             }
             
+        }
+
+        static bool IsEmptyOrWhite(string s) {
+            if(s == null)
+                return true;
+
+            int L = s.Length;
+            for(int l = 0; l < L; l++) {
+                if(!char.IsWhiteSpace(s[l]))
+                    return false;
+            }
+
+            return true;
         }
 
         static private string CatStrings(IEnumerable<string> s) {
