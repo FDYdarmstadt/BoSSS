@@ -25,7 +25,6 @@ using BoSSS.Foundation.IO;
 using BoSSS.Solution.Utils;
 using ilPSP;
 using ilPSP.Utils;
-using ilPSP.Tracing;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation;
@@ -583,82 +582,86 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             return ctrl;
         }
 
-        [Test]
-        public static void RollingSaveTest(
-            [Values(true)] bool amr,
-            [Values(TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3, TimeSteppingScheme.BDF4)] TimeSteppingScheme timeStepScheme,
-            [Values(5)] int savePeriod) {
-            // AMReveryWhere refines the whole domain down to level 3 on every timestep;
-            // combined with the test-runner's full-namespace FuncTrace instrumentation
-            // (see PublicTestRunnerMain.RunNUnit3, NamespacesToLog_EverythingOverrideTestRunner),
-            // the resulting huge number of traced calls made this test disproportionately
-            // slow (~10x) in Debug builds compared to Release. Disable instrumentation for
-            // the duration of this test only.
-            bool oldInstrumentationSwitch = Tracer.InstrumentationSwitch;
-            Tracer.InstrumentationSwitch = false;
-            try {
-                string TestDbDir = "testdb_" + DateTime.Now.ToString("MMMdd_HHmm");
-                string TestDbFullPath = Path.Combine(Directory.GetCurrentDirectory(), TestDbDir);
+        /// <summary>
+        /// runs a single <see cref="RollingSaveTest_BDF2"/>/<see cref="RollingSaveTest_BDF3"/>/<see cref="RollingSaveTest_BDF4"/>
+        /// case; split by timestepping scheme so the three cases run in parallel jobs instead
+        /// of being queued behind each other in a single job.
+        /// </summary>
+        static void RollingSaveTestImpl(bool amr, TimeSteppingScheme timeStepScheme, int savePeriod) {
+            string TestDbDir = "testdb_" + DateTime.Now.ToString("MMMdd_HHmm");
+            string TestDbFullPath = Path.Combine(Directory.GetCurrentDirectory(), TestDbDir);
 
-                {
-                    var TestDb = DatabaseInfo.CreateOrOpen(TestDbFullPath);
-                    DatabaseInfo.Close(TestDb);
-                }
-                /*
-                Guid gridGuid;
-                {
-                    var xNodes = GenericBlas.Linspace(-1.0/3.0, 10.0/3.0, 11*3 + 1);
-                    var yNodes = GenericBlas.Linspace(-1, 1, 6 * 2 + 1);
-                    var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
-
-                    Guid GridGuid = TestDb.Controller.DBDriver.SaveGrid(grd, TestDb);
-                };
-                */
-
-                var ctrl1 = RollingSaveTest_Control(TestDbFullPath, timeStepScheme, savePeriod, out var ExpectedTs1stRun);
-                if (amr) {
-                    ctrl1.AdaptiveMeshRefinement = true;
-                    ctrl1.activeAMRlevelIndicators.Add(new AMReveryWhere() { maxRefinementLevel = 3 });
-                    ctrl1.AMR_startUpSweeps = 0;
-                }
-                using (var FirstRun = new XNSE()) {
-
-                    FirstRun.Init(ctrl1);
-                    FirstRun.RunSolverMode();
-                }
-
-
-                Guid RestartSession;
-                {
-                    var TestDb2 = DatabaseInfo.CreateOrOpen(TestDbFullPath);
-                    Assert.IsTrue(TestDb2.Grids.Count() == (amr ? 4 : 1), "Number of grids seems to be wrong.");
-                    Assert.IsTrue(TestDb2.Sessions.Count() == 1, "Number of sessions seems to be wrong.");
-
-
-                    var si = TestDb2.Sessions.Single();
-                    int[] tsiNumbers = si.Timesteps.Skip(amr ? 1 : 0).Select(tsi => tsi.TimeStepNumber.MajorNumber).ToArray();
-                    if(!ExpectedTs1stRun.ListEquals(tsiNumbers)) {
-                        Console.WriteLine("Expected: " + string.Join(", ", ExpectedTs1stRun));
-                        Console.WriteLine("Actual: " + string.Join(", ", tsiNumbers));
-                    }
-                    Assert.IsTrue(ExpectedTs1stRun.ListEquals(tsiNumbers), "mismatch between saved time-steps in test database and expected saves.");
-
-                    //var tend = si.Timesteps.Last();
-                    RestartSession = si.ID;
-
-                    DatabaseInfo.Close(TestDb2);
-                }
-
-                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
-                if (rank == 0) {
-                    Console.WriteLine($"Deleting test database at {TestDbFullPath} ...");
-                    Directory.Delete(TestDbFullPath, true);
-                    Console.WriteLine("done.");
-                }
-                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-            } finally {
-                Tracer.InstrumentationSwitch = oldInstrumentationSwitch;
+            {
+                var TestDb = DatabaseInfo.CreateOrOpen(TestDbFullPath);
+                DatabaseInfo.Close(TestDb);
             }
+            /*
+            Guid gridGuid;
+            {
+                var xNodes = GenericBlas.Linspace(-1.0/3.0, 10.0/3.0, 11*3 + 1);
+                var yNodes = GenericBlas.Linspace(-1, 1, 6 * 2 + 1);
+                var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
+
+                Guid GridGuid = TestDb.Controller.DBDriver.SaveGrid(grd, TestDb);
+            };
+            */
+
+            var ctrl1 = RollingSaveTest_Control(TestDbFullPath, timeStepScheme, savePeriod, out var ExpectedTs1stRun);
+            if (amr) {
+                ctrl1.AdaptiveMeshRefinement = true;
+                ctrl1.activeAMRlevelIndicators.Add(new AMReveryWhere() { maxRefinementLevel = 3 });
+                ctrl1.AMR_startUpSweeps = 0;
+            }
+            using (var FirstRun = new XNSE()) {
+
+                FirstRun.Init(ctrl1);
+                FirstRun.RunSolverMode();
+            }
+
+
+            Guid RestartSession;
+            {
+                var TestDb2 = DatabaseInfo.CreateOrOpen(TestDbFullPath);
+                Assert.IsTrue(TestDb2.Grids.Count() == (amr ? 4 : 1), "Number of grids seems to be wrong.");
+                Assert.IsTrue(TestDb2.Sessions.Count() == 1, "Number of sessions seems to be wrong.");
+
+
+                var si = TestDb2.Sessions.Single();
+                int[] tsiNumbers = si.Timesteps.Skip(amr ? 1 : 0).Select(tsi => tsi.TimeStepNumber.MajorNumber).ToArray();
+                if(!ExpectedTs1stRun.ListEquals(tsiNumbers)) {
+                    Console.WriteLine("Expected: " + string.Join(", ", ExpectedTs1stRun));
+                    Console.WriteLine("Actual: " + string.Join(", ", tsiNumbers));
+                }
+                Assert.IsTrue(ExpectedTs1stRun.ListEquals(tsiNumbers), "mismatch between saved time-steps in test database and expected saves.");
+
+                //var tend = si.Timesteps.Last();
+                RestartSession = si.ID;
+
+                DatabaseInfo.Close(TestDb2);
+            }
+
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
+            if (rank == 0) {
+                Console.WriteLine($"Deleting test database at {TestDbFullPath} ...");
+                Directory.Delete(TestDbFullPath, true);
+                Console.WriteLine("done.");
+            }
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+        }
+
+        [Test]
+        public static void RollingSaveTest_BDF2([Values(true)] bool amr, [Values(5)] int savePeriod) {
+            RollingSaveTestImpl(amr, TimeSteppingScheme.BDF2, savePeriod);
+        }
+
+        [Test]
+        public static void RollingSaveTest_BDF3([Values(true)] bool amr, [Values(5)] int savePeriod) {
+            RollingSaveTestImpl(amr, TimeSteppingScheme.BDF3, savePeriod);
+        }
+
+        [Test]
+        public static void RollingSaveTest_BDF4([Values(true)] bool amr, [Values(5)] int savePeriod) {
+            RollingSaveTestImpl(amr, TimeSteppingScheme.BDF4, savePeriod);
         }
 
     }
