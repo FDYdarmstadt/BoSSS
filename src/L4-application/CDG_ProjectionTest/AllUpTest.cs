@@ -373,33 +373,15 @@ namespace BoSSS.Application.CDG_ProjectionTest {
         }
 
         /// <summary>
-        /// LegendrePolynomial: case 3, 4, 5
+        /// runs a single <see cref="AllUp_LegendrePolynomial"/> case; shared by all
+        /// degree-split variants below. Mirrors the skip condition in <see cref="AllUp"/>:
+        /// the dimension==3/gridResolution==8 combination is only skipped for degree &gt; 2.
         /// </summary>
-        [Test]
-        static public void AllUp_LegendrePolynomial(
-#if DEBUG
-            [Values(3, 4, 5)] int caseNo,
-            [Values(2)] int dimension,
-            [Values(2)] int degree,
-            [Values(0, 1)] int AMRlevel,
-            [Values(4)] int gridResolution,
-            [Values(true, false)] bool projectOnSameBasis,
-            [Values(ProjectionStrategy.globalOnly, ProjectionStrategy.patchwiseOnly)] ProjectionStrategy projectStrategy
-#else
-            [Values(3, 4, 5)] int caseNo,
-            [Values(2, 3)] int dimension,
-            [Values(2, 3, 4)] int degree,
-            [Values(0, 2)] int AMRlevel,
-            [Values(4, 8)] int gridResolution,
-            [Values(true, false)] bool projectOnSameBasis,
-            [Values(ProjectionStrategy.globalOnly, ProjectionStrategy.patchwiseOnly)] ProjectionStrategy projectStrategy
-#endif
-            ) {
-
-            CDGprojectionMain p = null;
+        static void LegendrePolynomialRun(int caseNo, int dimension, int degree, int gridResolution, int AMRlevel, bool projectOnSameBasis, ProjectionStrategy projectStrategy) {
             if (dimension == 3 && degree > 2 && gridResolution == 8)
                 return;
 
+            CDGprojectionMain p = null;
             BoSSS.Solution.Application._Main(new string[0], true, delegate () {
                 p = new CDGprojectionMain();
                 p.projectionCase = caseNo;
@@ -414,6 +396,109 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
             Assert.IsTrue(p.passed);
         }
+
+#if DEBUG
+        /// <summary>
+        /// LegendrePolynomial: case 3, 4, 5
+        /// </summary>
+        [Test]
+        static public void AllUp_LegendrePolynomial(
+            [Values(3, 4, 5)] int caseNo,
+            [Values(2)] int dimension,
+            [Values(2)] int degree,
+            [Values(0, 1)] int AMRlevel,
+            [Values(4)] int gridResolution,
+            [Values(true, false)] bool projectOnSameBasis,
+            [Values(ProjectionStrategy.globalOnly, ProjectionStrategy.patchwiseOnly)] ProjectionStrategy projectStrategy
+            ) {
+            LegendrePolynomialRun(caseNo, dimension, degree, gridResolution, AMRlevel, projectOnSameBasis, projectStrategy);
+        }
+#else
+        /// <summary>
+        /// LegendrePolynomial: case 3, 4, 5; degree 2, everything except the
+        /// dimension==3/gridResolution==8 combination. As with
+        /// <see cref="AllUp_patchwiseOnly_case1_p2"/>, that combination is not skipped by
+        /// <see cref="LegendrePolynomialRun"/> at degree 2, and dominated the runtime of the
+        /// old, unsplit AllUp_LegendrePolynomial (~55 min for 240 cases). It is skipped here
+        /// and instead run, split by caseNo, as AllUp_LegendrePolynomial_p2_grd8_dim3_case*.
+        /// </summary>
+        [Test]
+        static public void AllUp_LegendrePolynomial_p2(
+            [Values(3, 4, 5)] int caseNo,
+            [Values(2, 3)] int dimension,
+            [Values(0, 2)] int AMRlevel,
+            [Values(4, 8)] int gridResolution,
+            [Values(true, false)] bool projectOnSameBasis,
+            [Values(ProjectionStrategy.globalOnly, ProjectionStrategy.patchwiseOnly)] ProjectionStrategy projectStrategy
+            ) {
+            if (dimension == 3 && gridResolution == 8)
+                return; // handled separately, see AllUp_LegendrePolynomial_p2_grd8_dim3_case*
+            LegendrePolynomialRun(caseNo, dimension, 2, gridResolution, AMRlevel, projectOnSameBasis, projectStrategy);
+        }
+
+        /// <summary>
+        /// LegendrePolynomial, degree 2, gridResolution 8, dimension 3 -- the bottleneck bucket
+        /// excluded above; see <see cref="AllUp_LegendrePolynomial_p2"/>. Split by caseNo so the
+        /// three cases run in parallel instead of queued behind each other in a single job.
+        /// </summary>
+        [Test]
+        static public void AllUp_LegendrePolynomial_p2_grd8_dim3_case3(
+            [Values(0, 2)] int AMRlevel,
+            [Values(true, false)] bool projectOnSameBasis,
+            [Values(ProjectionStrategy.globalOnly, ProjectionStrategy.patchwiseOnly)] ProjectionStrategy projectStrategy
+            ) {
+            LegendrePolynomialRun(3, 3, 2, 8, AMRlevel, projectOnSameBasis, projectStrategy);
+        }
+
+        [Test]
+        static public void AllUp_LegendrePolynomial_p2_grd8_dim3_case4(
+            [Values(0, 2)] int AMRlevel,
+            [Values(true, false)] bool projectOnSameBasis,
+            [Values(ProjectionStrategy.globalOnly, ProjectionStrategy.patchwiseOnly)] ProjectionStrategy projectStrategy
+            ) {
+            LegendrePolynomialRun(4, 3, 2, 8, AMRlevel, projectOnSameBasis, projectStrategy);
+        }
+
+        [Test]
+        static public void AllUp_LegendrePolynomial_p2_grd8_dim3_case5(
+            [Values(0, 2)] int AMRlevel,
+            [Values(true, false)] bool projectOnSameBasis,
+            [Values(ProjectionStrategy.globalOnly, ProjectionStrategy.patchwiseOnly)] ProjectionStrategy projectStrategy
+            ) {
+            LegendrePolynomialRun(5, 3, 2, 8, AMRlevel, projectOnSameBasis, projectStrategy);
+        }
+
+        /// <summary>
+        /// LegendrePolynomial: case 3, 4, 5; degree 3. The dimension==3/gridResolution==8
+        /// combination is already skipped by <see cref="LegendrePolynomialRun"/> (degree &gt; 2).
+        /// </summary>
+        [Test]
+        static public void AllUp_LegendrePolynomial_p3(
+            [Values(3, 4, 5)] int caseNo,
+            [Values(2, 3)] int dimension,
+            [Values(0, 2)] int AMRlevel,
+            [Values(4, 8)] int gridResolution,
+            [Values(true, false)] bool projectOnSameBasis,
+            [Values(ProjectionStrategy.globalOnly, ProjectionStrategy.patchwiseOnly)] ProjectionStrategy projectStrategy
+            ) {
+            LegendrePolynomialRun(caseNo, dimension, 3, gridResolution, AMRlevel, projectOnSameBasis, projectStrategy);
+        }
+
+        /// <summary>
+        /// LegendrePolynomial: case 3, 4, 5; degree 4; see <see cref="AllUp_LegendrePolynomial_p3"/>.
+        /// </summary>
+        [Test]
+        static public void AllUp_LegendrePolynomial_p4(
+            [Values(3, 4, 5)] int caseNo,
+            [Values(2, 3)] int dimension,
+            [Values(0, 2)] int AMRlevel,
+            [Values(4, 8)] int gridResolution,
+            [Values(true, false)] bool projectOnSameBasis,
+            [Values(ProjectionStrategy.globalOnly, ProjectionStrategy.patchwiseOnly)] ProjectionStrategy projectStrategy
+            ) {
+            LegendrePolynomialRun(caseNo, dimension, 4, gridResolution, AMRlevel, projectOnSameBasis, projectStrategy);
+        }
+#endif
 
         /// <summary>
         /// Cube: case 6
