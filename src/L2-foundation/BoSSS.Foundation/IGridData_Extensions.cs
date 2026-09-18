@@ -926,6 +926,7 @@ namespace BoSSS.Foundation.Grid {
         /// </returns>
         static public double LocatePoint(this IGridData gdat, double[] pt, out long GlobalId, out long GlobalIndex, out bool IsInside, out bool OnThisProcess, CellMask CM = null) {
             using (new FuncTrace()) {
+                MPICollectiveWatchDog.Watch();
                 
                 double locMinDist = LocatePointLocal(gdat, pt, out _, out int jL_MinDistCel, out bool locIsInside, CM);
                 int j_Within = locIsInside ? jL_MinDistCel : -1234;
