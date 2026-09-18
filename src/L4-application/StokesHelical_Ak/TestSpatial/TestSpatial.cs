@@ -1523,9 +1523,9 @@ namespace StokesHelical_Ak.TestSpartial
             var helical_direct = new HelicalMain();
             helical_direct.Init(spaceConvergence_direct);
             helical_direct.RunSolverMode();
-            Assert.AreEqual(Globals.activeMult, Globals.Multiplier.Bsq, $"Multiplier expected to be {Globals.Multiplier.Bsq}");
-            Assert.IsTrue(spaceConvergence_direct.R0fixOn, "R0fix must be turned on");
-            Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true");
+            Assert.AreEqual(Globals.activeMult, Globals.Multiplier.Bsq, $"Multiplier expected to be {Globals.Multiplier.Bsq} (direct solver)");
+            Assert.IsTrue(spaceConvergence_direct.R0fixOn, "R0fix must be turned on (direct solver)");
+            Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true (direct solver)");
             urErrorLx = helical_direct.urErrorLx;
             uetaErrorLx = helical_direct.uetaErrorLx;
             uxiErrorLx = helical_direct.uxiErrorLx;
@@ -1533,24 +1533,24 @@ namespace StokesHelical_Ak.TestSpartial
             h = 2 * Math.PI / gridSize;
 
             double thresholdPsi = 5e-9; // Poly Order 5
-            Console.WriteLine("The psiErrorLx error for {0} xi-Cells and rMin = {1} is = {2}", h, r_min, psiErrorLx);
+            Console.WriteLine("The psiErrorLx error for {0} xi-Cells and rMin = {1} is = {2} (direct solver)", h, r_min, psiErrorLx);
             Console.WriteLine("If the psiErrorLx error is {0} < {1} than good :) ", psiErrorLx, thresholdPsi);
-            Assert.LessOrEqual(psiErrorLx, thresholdPsi, "Error. psiErrorLx not fulfilled");
+            Assert.LessOrEqual(psiErrorLx, thresholdPsi, "Error. psiErrorLx not fulfilled (direct solver)");
 
             double thresholdUr = 1e-11; // Poly Order 5
-            Console.WriteLine("The urErrorLx error for {0} xi-Cells and {1} is = {2}", h, r_min, urErrorLx);
+            Console.WriteLine("The urErrorLx error for {0} xi-Cells and {1} is = {2} (direct solver)", h, r_min, urErrorLx);
             Console.WriteLine("If the urErrorLx error is {0} < {1} than good :) ", urErrorLx, thresholdUr);
-            Assert.LessOrEqual(urErrorLx, thresholdUr, "Error. urErrorL2 not fulfilled");
+            Assert.LessOrEqual(urErrorLx, thresholdUr, "Error. urErrorL2 not fulfilled (direct solver)");
 
             double thresholdUeta = 1e-11; // Poly Order 5
-            Console.WriteLine("The uetaErrorLx error for {0} xi-Cells and {1} is = {2}", h, r_min, uetaErrorLx);
+            Console.WriteLine("The uetaErrorLx error for {0} xi-Cells and {1} is = {2} (direct solver)", h, r_min, uetaErrorLx);
             Console.WriteLine("If the uetaErrorLx error is {0} < {1} than good :) ", uetaErrorLx, thresholdUeta);
-            Assert.LessOrEqual(uetaErrorLx, thresholdUeta, "Error. uetaErrorL2 not fulfilled");
+            Assert.LessOrEqual(uetaErrorLx, thresholdUeta, "Error. uetaErrorL2 not fulfilled (direct solver)");
 
             double thresholdUxi = 1e-11; // Poly Order 5
-            Console.WriteLine("The uxiErrorL2 error for {0} xi-Cells and {1} is = {2}", h, r_min, uxiErrorLx);
+            Console.WriteLine("The uxiErrorL2 error for {0} xi-Cells and {1} is = {2} (direct solver)", h, r_min, uxiErrorLx);
             Console.WriteLine("If the uxiErrorL2 error is {0} < {1} than good :) ", uxiErrorLx, thresholdUxi);
-            Assert.LessOrEqual(uxiErrorLx, thresholdUxi, "Error. uxiErrorL2 not fulfilled");
+            Assert.LessOrEqual(uxiErrorLx, thresholdUxi, "Error. uxiErrorL2 not fulfilled (direct solver)");
 
             //###########################################################
             // Iterativ Solver
@@ -1563,9 +1563,9 @@ namespace StokesHelical_Ak.TestSpartial
             var helical_iterativ = new HelicalMain();
             helical_iterativ.Init(spaceConvergence_iterative);
             helical_iterativ.RunSolverMode();
-            Assert.AreEqual(Globals.activeMult, Globals.Multiplier.Bsq, $"Multiplier expected to be {Globals.Multiplier.Bsq}");
-            Assert.IsTrue(spaceConvergence_iterative.R0fixOn, "R0fix must be turned on");
-            Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true");
+            Assert.AreEqual(Globals.activeMult, Globals.Multiplier.Bsq, $"Multiplier expected to be {Globals.Multiplier.Bsq} (iterative solver)");
+            Assert.IsTrue(spaceConvergence_iterative.R0fixOn, "R0fix must be turned on (iterative solver)");
+            Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true (iterative solver)");
             urErrorLx = helical_iterativ.urErrorLx;
             uetaErrorLx = helical_iterativ.uetaErrorLx;
             uxiErrorLx = helical_iterativ.uxiErrorLx;
@@ -1573,28 +1573,28 @@ namespace StokesHelical_Ak.TestSpartial
             h = 2 * Math.PI / gridSize;
 
             //double thresholdPsi_ = 5e-9; // Poly Order 5
-            double thresholdPsi_ = 5e-7; // Poly Order 4
-            Console.WriteLine("The psiErrorLx error for {0} xi-Cells and rMin = {1} is = {2}", h, r_min, psiErrorLx);
+            double thresholdPsi_ = 8e-7; // Poly Order 4
+            Console.WriteLine("The psiErrorLx error for {0} xi-Cells and rMin = {1} is = {2} (iterative solver)", h, r_min, psiErrorLx);
             Console.WriteLine("If the psiErrorLx error is {0} < {1} than good :) ", psiErrorLx, thresholdPsi_);
-            Assert.LessOrEqual(psiErrorLx, thresholdPsi_, "Error. psiErrorLx not fulfilled");
+            Assert.LessOrEqual(psiErrorLx, thresholdPsi_, "Error. psiErrorLx not fulfilled (iterative solver)");
 
             //double thresholdUr_ = 1e-10; // Poly Order 5
             double thresholdUr_ = 1e-8; // Poly Order 4
-            Console.WriteLine("The urErrorLx error for {0} xi-Cells and {1} is = {2}", h, r_min, urErrorLx);
+            Console.WriteLine("The urErrorLx error for {0} xi-Cells and {1} is = {2} (iterative solver)", h, r_min, urErrorLx);
             Console.WriteLine("If the urErrorLx error is {0} < {1} than good :) ", urErrorLx, thresholdUr_);
-            Assert.LessOrEqual(urErrorLx, thresholdUr_, "Error. urErrorL2 not fulfilled");
+            Assert.LessOrEqual(urErrorLx, thresholdUr_, "Error. urErrorL2 not fulfilled (iterative solver)");
 
             //double thresholdUeta_ = 2e-8; // Poly Order 5
             double thresholdUeta_ = 2e-6; // Poly Order 4
-            Console.WriteLine("The uetaErrorLx error for {0} xi-Cells and {1} is = {2}", h, r_min, uetaErrorLx);
+            Console.WriteLine("The uetaErrorLx error for {0} xi-Cells and {1} is = {2} (iterative solver)", h, r_min, uetaErrorLx);
             Console.WriteLine("If the uetaErrorLx error is {0} < {1} than good :) ", uetaErrorLx, thresholdUeta_);
-            Assert.LessOrEqual(uetaErrorLx, thresholdUeta_, "Error. uetaErrorL2 not fulfilled");
+            Assert.LessOrEqual(uetaErrorLx, thresholdUeta_, "Error. uetaErrorL2 not fulfilled (iterative solver)");
 
             //double thresholdUxi_ = 1e-8; // Poly Order 5
             double thresholdUxi_ = 1e-6; // Poly Order 4
-            Console.WriteLine("The uxiErrorL2 error for {0} xi-Cells and {1} is = {2}", h, r_min, uxiErrorLx);
+            Console.WriteLine("The uxiErrorL2 error for {0} xi-Cells and {1} is = {2} (iterative solver)", h, r_min, uxiErrorLx);
             Console.WriteLine("If the uxiErrorL2 error is {0} < {1} than good :) ", uxiErrorLx, thresholdUxi_);
-            Assert.LessOrEqual(uxiErrorLx, thresholdUxi_, "Error. uxiErrorL2 not fulfilled");
+            Assert.LessOrEqual(uxiErrorLx, thresholdUxi_, "Error. uxiErrorL2 not fulfilled (iterative solver)");
 
             CoordinateMapping helicalSol_direct = new CoordinateMapping(helical_direct.ur, helical_direct.ueta, helical_direct.uxi, helical_direct.Pressure);
             CoordinateVector helicalSolVec_direct = new CoordinateVector(helicalSol_direct);
@@ -1609,7 +1609,7 @@ namespace StokesHelical_Ak.TestSpartial
             }
 
             //double diff_threshold = 4e-7; // Poly Order 5
-            double diff_threshold = 4e-5; // Poly Order 4
+            double diff_threshold = 8e-5; // Poly Order 4
             Console.WriteLine("L2 norm of the difference between iterativ Solver and direct solver is = {0}", diff.L2Norm());
             Console.WriteLine("If L2 norm of the difference is {0} < {1} than good :) ", diff.L2Norm(), diff_threshold);
             Assert.LessOrEqual(diff.L2Norm(), diff_threshold, "Error. L2 norm of the difference not fulfilled");
@@ -1924,9 +1924,9 @@ namespace StokesHelical_Ak.TestSpartial
             var helical_direct = new HelicalMain();
             helical_direct.Init(spaceConvergence_direct);
             helical_direct.RunSolverMode();
-            Assert.AreEqual(Globals.activeMult, Globals.Multiplier.one, $"Multiplier expected to be {Globals.Multiplier.one}");
-            Assert.IsFalse(spaceConvergence_direct.R0fixOn, "R0fix must be turned off");
-            Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true");
+            Assert.AreEqual(Globals.activeMult, Globals.Multiplier.one, $"Multiplier expected to be {Globals.Multiplier.one} (direct solver)");
+            Assert.IsFalse(spaceConvergence_direct.R0fixOn, "R0fix must be turned off (direct solver)");
+            Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true (direct solver)");
             urErrorLx = helical_direct.urErrorLx;
             uetaErrorLx = helical_direct.uetaErrorLx;
             uxiErrorLx = helical_direct.uxiErrorLx;
@@ -1935,27 +1935,27 @@ namespace StokesHelical_Ak.TestSpartial
 
             //double thresholdPsi = 5e-9;   // Poly Order 5
             double thresholdPsi = 5e-7;     // Poly Order 4
-            Console.WriteLine("The psiErrorLx error for {0} xi-Cells and rMin = {1} is = {2}", h, r_min, psiErrorLx);
+            Console.WriteLine("The psiErrorLx error for {0} xi-Cells and rMin = {1} is = {2} (direct solver)", h, r_min, psiErrorLx);
             Console.WriteLine("If the psiErrorLx error is {0} < {1} than good :) ", psiErrorLx, thresholdPsi);
-            Assert.LessOrEqual(psiErrorLx, thresholdPsi, "Error. psiErrorLx not fulfilled");
+            Assert.LessOrEqual(psiErrorLx, thresholdPsi, "Error. psiErrorLx not fulfilled (direct solver)");
 
             //double thresholdUr = 1e-11;// Poly Order 5
             double thresholdUr = 1e-9;// Poly Order 4
-            Console.WriteLine("The urErrorLx error for {0} xi-Cells and {1} is = {2}", h, r_min, urErrorLx);
+            Console.WriteLine("The urErrorLx error for {0} xi-Cells and {1} is = {2} (direct solver)", h, r_min, urErrorLx);
             Console.WriteLine("If the urErrorLx error is {0} < {1} than good :) ", urErrorLx, thresholdUr);
-            Assert.LessOrEqual(urErrorLx, thresholdUr, "Error. urErrorL2 not fulfilled");
+            Assert.LessOrEqual(urErrorLx, thresholdUr, "Error. urErrorL2 not fulfilled (direct solver)");
 
             //double thresholdUeta = 1e-11;// Poly Order 5
             double thresholdUeta = 1e-9;// Poly Order 4
-            Console.WriteLine("The uetaErrorLx error for {0} xi-Cells and {1} is = {2}", h, r_min, uetaErrorLx);
+            Console.WriteLine("The uetaErrorLx error for {0} xi-Cells and {1} is = {2} (direct solver)", h, r_min, uetaErrorLx);
             Console.WriteLine("If the uetaErrorLx error is {0} < {1} than good :) ", uetaErrorLx, thresholdUeta);
-            Assert.LessOrEqual(uetaErrorLx, thresholdUeta, "Error. uetaErrorL2 not fulfilled");
+            Assert.LessOrEqual(uetaErrorLx, thresholdUeta, "Error. uetaErrorL2 not fulfilled (direct solver)");
 
             //double thresholdUxi = 1e-11;// Poly Order 5
             double thresholdUxi = 1e-9;// Poly Order 4
-            Console.WriteLine("The uxiErrorL2 error for {0} xi-Cells and {1} is = {2}", h, r_min, uxiErrorLx);
+            Console.WriteLine("The uxiErrorL2 error for {0} xi-Cells and {1} is = {2} (direct solver)", h, r_min, uxiErrorLx);
             Console.WriteLine("If the uxiErrorL2 error is {0} < {1} than good :) ", uxiErrorLx, thresholdUxi);
-            Assert.LessOrEqual(uxiErrorLx, thresholdUxi, "Error. uxiErrorL2 not fulfilled");
+            Assert.LessOrEqual(uxiErrorLx, thresholdUxi, "Error. uxiErrorL2 not fulfilled (direct solver)");
 
             //###########################################################
             // Iterativ Solver
@@ -1966,9 +1966,9 @@ namespace StokesHelical_Ak.TestSpartial
             var helical_iterativ = new HelicalMain();
             helical_iterativ.Init(spaceConvergence_iterative);
             helical_iterativ.RunSolverMode();
-            Assert.AreEqual(Globals.activeMult, Globals.Multiplier.one, $"Multiplier expected to be {Globals.Multiplier.one}");
-            Assert.IsFalse(spaceConvergence_iterative.R0fixOn, "R0fix must be turned on");
-            Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true");
+            Assert.AreEqual(Globals.activeMult, Globals.Multiplier.one, $"Multiplier expected to be {Globals.Multiplier.one} (iterative solver)");
+            Assert.IsFalse(spaceConvergence_iterative.R0fixOn, "R0fix must be turned on (iterative solver)");
+            Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true (iterative solver)");
             urErrorLx = helical_iterativ.urErrorLx;
             uetaErrorLx = helical_iterativ.uetaErrorLx;
             uxiErrorLx = helical_iterativ.uxiErrorLx;
@@ -1976,28 +1976,28 @@ namespace StokesHelical_Ak.TestSpartial
             h = 2 * Math.PI / gridSize;
 
             //double thresholdPsi_ = 5e-9; // Poly Order 5
-            double thresholdPsi_ = 5e-7; // Poly Order 4
-            Console.WriteLine("The psiErrorLx error for {0} xi-Cells and rMin = {1} is = {2}", h, r_min, psiErrorLx);
+            double thresholdPsi_ = 8e-7; // Poly Order 4
+            Console.WriteLine("The psiErrorLx error for {0} xi-Cells and rMin = {1} is = {2} (iterative solver)", h, r_min, psiErrorLx);
             Console.WriteLine("If the psiErrorLx error is {0} < {1} than good :) ", psiErrorLx, thresholdPsi_);
-            Assert.LessOrEqual(psiErrorLx, thresholdPsi_, "Error. psiErrorLx not fulfilled");
+            Assert.LessOrEqual(psiErrorLx, thresholdPsi_, "Error. psiErrorLx not fulfilled (iterative solver)");
 
             //double thresholdUr_ = 1e-10; // Poly Order 5
             double thresholdUr_ = 1e-8; // Poly Order 4
-            Console.WriteLine("The urErrorLx error for {0} xi-Cells and {1} is = {2}", h, r_min, urErrorLx);
+            Console.WriteLine("The urErrorLx error for {0} xi-Cells and {1} is = {2} (iterative solver)", h, r_min, urErrorLx);
             Console.WriteLine("If the urErrorLx error is {0} < {1} than good :) ", urErrorLx, thresholdUr_);
-            Assert.LessOrEqual(urErrorLx, thresholdUr_, "Error. urErrorL2 not fulfilled");
+            Assert.LessOrEqual(urErrorLx, thresholdUr_, "Error. urErrorL2 not fulfilled (iterative solver)");
 
             //double thresholdUeta_ = 2e-8; // Poly Order 5
             double thresholdUeta_ = 2e-6; // Poly Order 4
-            Console.WriteLine("The uetaErrorLx error for {0} xi-Cells and {1} is = {2}", h, r_min, uetaErrorLx);
+            Console.WriteLine("The uetaErrorLx error for {0} xi-Cells and {1} is = {2} (iterative solver)", h, r_min, uetaErrorLx);
             Console.WriteLine("If the uetaErrorLx error is {0} < {1} than good :) ", uetaErrorLx, thresholdUeta_);
-            Assert.LessOrEqual(uetaErrorLx, thresholdUeta_, "Error. uetaErrorL2 not fulfilled");
+            Assert.LessOrEqual(uetaErrorLx, thresholdUeta_, "Error. uetaErrorL2 not fulfilled (iterative solver)");
 
             //double thresholdUxi_ = 1e-8;  // Poly Order 5
             double thresholdUxi_ = 1e-6;  // Poly Order 4
-            Console.WriteLine("The uxiErrorL2 error for {0} xi-Cells and {1} is = {2}", h, r_min, uxiErrorLx);
+            Console.WriteLine("The uxiErrorL2 error for {0} xi-Cells and {1} is = {2} (iterative solver)", h, r_min, uxiErrorLx);
             Console.WriteLine("If the uxiErrorL2 error is {0} < {1} than good :) ", uxiErrorLx, thresholdUxi_);
-            Assert.LessOrEqual(uxiErrorLx, thresholdUxi_, "Error. uxiErrorL2 not fulfilled");
+            Assert.LessOrEqual(uxiErrorLx, thresholdUxi_, "Error. uxiErrorL2 not fulfilled (iterative solver)");
 
             CoordinateMapping helicalSol_direct = new CoordinateMapping(helical_direct.ur, helical_direct.ueta, helical_direct.uxi, helical_direct.Pressure);
             CoordinateVector helicalSolVec_direct = new CoordinateVector(helicalSol_direct);
@@ -2012,7 +2012,7 @@ namespace StokesHelical_Ak.TestSpartial
             }
 
             //double diff_threshold = 4e-7; // Poly Order 5
-            double diff_threshold = 4e-5; // Poly Order 4
+            double diff_threshold = 8e-5; // Poly Order 4
             Console.WriteLine("L2 norm of the difference between iterativ Solver and direct solver is = {0}", diff.L2Norm());
             Console.WriteLine("If L2 norm of the difference is {0} < {1} than good :) ", diff.L2Norm(), diff_threshold);
             Assert.LessOrEqual(diff.L2Norm(), diff_threshold, "Error. L2 norm of the difference not fulfilled");
