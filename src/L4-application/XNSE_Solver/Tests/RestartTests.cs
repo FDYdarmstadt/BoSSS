@@ -582,11 +582,12 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             return ctrl;
         }
 
-        [Test]
-        public static void RollingSaveTest(
-            [Values(true)] bool amr,
-            [Values(TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3, TimeSteppingScheme.BDF4)] TimeSteppingScheme timeStepScheme,
-            [Values(5)] int savePeriod) {
+        /// <summary>
+        /// runs a single <see cref="RollingSaveTest_BDF2"/>/<see cref="RollingSaveTest_BDF3"/>/<see cref="RollingSaveTest_BDF4"/>
+        /// case; split by timestepping scheme so the three cases run in parallel jobs instead
+        /// of being queued behind each other in a single job.
+        /// </summary>
+        static void RollingSaveTestImpl(bool amr, TimeSteppingScheme timeStepScheme, int savePeriod) {
             string TestDbDir = "testdb_" + DateTime.Now.ToString("MMMdd_HHmm");
             string TestDbFullPath = Path.Combine(Directory.GetCurrentDirectory(), TestDbDir);
 
@@ -646,6 +647,21 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 Console.WriteLine("done.");
             }
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+        }
+
+        [Test]
+        public static void RollingSaveTest_BDF2([Values(true)] bool amr, [Values(5)] int savePeriod) {
+            RollingSaveTestImpl(amr, TimeSteppingScheme.BDF2, savePeriod);
+        }
+
+        [Test]
+        public static void RollingSaveTest_BDF3([Values(true)] bool amr, [Values(5)] int savePeriod) {
+            RollingSaveTestImpl(amr, TimeSteppingScheme.BDF3, savePeriod);
+        }
+
+        [Test]
+        public static void RollingSaveTest_BDF4([Values(true)] bool amr, [Values(5)] int savePeriod) {
+            RollingSaveTestImpl(amr, TimeSteppingScheme.BDF4, savePeriod);
         }
 
     }

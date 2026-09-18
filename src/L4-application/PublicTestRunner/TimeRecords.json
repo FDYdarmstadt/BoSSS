@@ -1865,12 +1865,6 @@
     "dueMargin": 540.0,
     "lastupdate": "2026-02-25T22:01:42.4079613+01:00"
   },
-  "REL-XNSE_Solver#RollingSaveTest": {
-    "name": "REL-XNSE_Solver#RollingSaveTest",
-    "avgSeconds": 442.7491592,
-    "dueMargin": 360.0,
-    "lastupdate": "2026-02-25T22:01:45.0837738+01:00"
-  },
   "REL-CutCellQuadratureScaling#OneLevelSet_2D": {
     "name": "REL-CutCellQuadratureScaling#OneLevelSet_2D",
     "avgSeconds": 311.2476182,
@@ -3083,12 +3077,6 @@
     "dueMargin": 1080.0,
     "lastupdate": "2026-02-25T23:15:13.2456251+01:00"
   },
-  "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case1": {
-    "name": "REL-CDG_ProjectionTest#AllUp_patchwiseOnly_case1",
-    "avgSeconds": 6437.7145217,
-    "dueMargin": 1320.0,
-    "lastupdate": "2026-02-25T23:17:38.6546096+01:00"
-  },
   "REL-ZwoLevelSetSolver#FluidSolidTaylorCouette_Exact_P3": {
     "name": "REL-ZwoLevelSetSolver#FluidSolidTaylorCouette_Exact_P3",
     "avgSeconds": 5162.6008896,
@@ -3647,8 +3635,8 @@
     "dueMargin": 300.0,
     "lastupdate": "2026-02-25T21:36:33.6319973+01:00"
   },
-  "DBG-CDG_ProjectionTest#AllUp_patchwiseOnly_case1": {
-    "name": "DBG-CDG_ProjectionTest#AllUp_patchwiseOnly_case1",
+  "DBG-CDG_ProjectionTest#AllUp_patchwiseOnly_case1_p2": {
+    "name": "DBG-CDG_ProjectionTest#AllUp_patchwiseOnly_case1_p2",
     "avgSeconds": 263.3137375,
     "dueMargin": 300.0,
     "lastupdate": "2026-02-25T21:36:36.2935539+01:00"
@@ -4222,12 +4210,6 @@
     "avgSeconds": 7200.0,
     "dueMargin": 1440.0,
     "lastupdate": "2026-02-26T00:15:51.1102675+01:00"
-  },
-  "DBG-XNSE_Solver#RollingSaveTest": {
-    "name": "DBG-XNSE_Solver#RollingSaveTest",
-    "avgSeconds": 7200.0,
-    "dueMargin": 1440.0,
-    "lastupdate": "2026-02-26T03:16:23.8448303+01:00"
   },
   "DBG-XNSE_Solver#Run_RestartTests": {
     "name": "DBG-XNSE_Solver#Run_RestartTests",
