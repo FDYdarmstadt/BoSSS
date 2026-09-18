@@ -8,7 +8,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Intersecting {
 
 
 
-    class GlobalCellFunction : IScalarFunction {
+    public class GlobalCellFunction : IScalarFunction {
 
         readonly LevelSetData levelSet;
         readonly RefElement Kref;

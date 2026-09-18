@@ -100,6 +100,25 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                         newQuadRules[iPart] = OriginalRuleFactory[iPart].GetQuadRuleSet(Domain_i, __Order);
                     else 
                         newQuadRules[iPart] = [ ];
+
+                    {
+                        int prevIE = -1;
+                        foreach(var CRP in newQuadRules[iPart]) {
+                            if(CRP.Rule.OrderOfPrecision < __Order) {
+                                //OriginalRuleFactory[iPart].GetQuadRuleSet(Domain_i, __Order);
+                                throw new ArithmeticException($"Requested quadrature rule of degree {__Order}, but rule reports order {CRP.Rule.OrderOfPrecision}.");
+                            }
+                            
+                            if(prevIE >= 0) {
+                                if(CRP.Chunk.i0 < prevIE) {
+                                    // debuuger entry: OriginalRuleFactory[iPart].GetQuadRuleSet(Domain_i, __Order);
+                                    throw new ApplicationException("Quadrature rule factory " + OriginalRuleFactory[iPart].GetType().Name + " produced an un-sorted quadrature rule!");
+                                }
+                            }
+                            prevIE = CRP.Chunk.JE;
+                        }
+                    }
+
                 }, enablePar: true);
                 ilPSP.Environment.StdOut.surpressStream0 = restore;
                 newQuadRuleCombined = newQuadRules[0].ToArray();

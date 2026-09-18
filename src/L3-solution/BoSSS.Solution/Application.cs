@@ -680,21 +680,6 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
-        /// On process rank 0, deletes all text and csv files in the current directory
-        /// </summary>
-        public static void DeleteOldTxtFiles() {
-            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
-                var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
-                Console.Write("rm");
-                foreach (var pltFile in dir.GetFiles("*.txt").Concat(dir.GetFiles("*.csv"))) {
-                    Console.Write(" " + pltFile.Name);
-                    pltFile.Delete();
-                }
-                Console.WriteLine(";");
-            }
-        }
-
-        /// <summary>
         /// On process rank 0, deletes all image files in the current directory
         /// </summary>
         public static void DeleteOldImageFiles() {

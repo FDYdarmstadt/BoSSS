@@ -25,6 +25,7 @@ using ilPSP;
 using BoSSS.Foundation.Grid.RefElements;
 using System.Collections;
 using BoSSS.Foundation.XDG.Quadrature;
+using System.Data;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -49,6 +50,19 @@ namespace BoSSS.Foundation.XDG {
                     + " constant within one cell", "b");
             }
         }
+
+
+        /// <summary>
+        /// This is a hack; if the, the gradient and reference w.r.t. to reference coordinates
+        /// (see <see cref="LevelSetTracker.LevelSetData.GetLevelSetReferenceGradients"/>, <see cref="LevelSetTracker.LevelSetData.GetLevelSetReferenceHessian"/>)
+        /// are computed by transforming the gradient/hessian in physical space back to the reference space.
+        /// </summary>
+        internal protected virtual bool DeactivateOptimizedComputationOfGradientAndHessians {
+            get {
+                return false;
+            }
+        }
+
 
         #region ILevelSet Members
 
