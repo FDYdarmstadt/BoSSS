@@ -30,8 +30,6 @@ namespace BoSSS.Solution.XdgTimestepping {
     abstract public class ApplicationWithSolver<T> : Application<T>
         where T : AppControlSolver, new() {
 
-
-
         /// <summary>
         /// Mapping for fields defined by <see cref="InstantiateSolutionFields"/>
         /// </summary>
