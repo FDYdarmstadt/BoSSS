@@ -2523,16 +2523,28 @@ namespace ApplicationWithIDT {
 
             LevelSetOptAggregator.RestoreAllLevelSetsFromBackup();
             LevelSetOptAggregator.RestoreAllOptimizersFromBackup();
+            // The two calls above restore, independently, (a) the tracked DG level-set field
+            // (LsTBO)'s raw coefficient snapshot, and (b) the optimizer object (LevelSetOpti)'s own
+            // parameters. For optimizer types where LevelSetOpti and LsTBO are separate instances
+            // (e.g. KinkedSplineOptiLevelSet -- see its ProjectOntoLevelSet, which is the only place
+            // that otherwise bridges the two), neither restore call re-syncs LsTBO's own
+            // optimizer-specific state (e.g. the shared kink point X0/T0) from the just-restored
+            // LevelSetOpti -- LsTBO's DG coefficients end up correct, but its own live parameters
+            // stay at whatever the discarded bad trial step left them at, corrupting
+            // LsTrk.UpdateTracker's cut-cell topology right at that level-set's special cell. Re-run
+            // the same projection used after every real step to keep both instances consistent here.
+            LevelSetOptAggregator.ProjectAllOptimizerOntoLevelSets();
 
             LsTrk.UpdateTracker(CurrentStepNo);
             UpdateAgglomerator();
+
             for(int i = 0; i < ConservativeFields.Length; i++) {
                 ConservativeFields[i].CopyFrom(AgglomeratedUBackup[i]);
             }
-            
+
         }
         /// <summary>
-        /// this method computes a custom norm (basically the L2-Norm of the  coordinates ) where one can choose which entries in the double[] x are committed. 
+        /// this method computes a custom norm (basically the L2-Norm of the  coordinates ) where one can choose which entries in the double[] x are committed.
         /// This is used here as the step in our method also contains DOFs corresponding to the Lagrange multiplier lambda which shall be omitted.
         /// </summary>
         /// <param name="x"> array containing the unknowns </param>
@@ -3164,8 +3176,6 @@ namespace ApplicationWithIDT {
                 }
             }
 
-
-
         }
         public void TransformStepFromAggToSourceSpace(double[] vector) {
 
@@ -3357,8 +3367,17 @@ namespace ApplicationWithIDT {
                     //m_alpha = Control.Alpha_Start;
                     while(m_alpha > alpha_min) {
 
-                        last_ared = actualMerit(stepIN, m_alpha);
-                        last_pred = predictedMerit(m_alpha, stepIN, beta);
+                        // An invalid trial state (e.g. a non-finite/non-physical flux at this
+                        // alpha) is exactly the situation this backtracking loop exists to recover
+                        // from by shrinking alpha -- treat it as an (arbitrarily bad) merit value
+                        // instead of letting the exception escape, mirroring the DogLeg branch above.
+                        try {
+                            last_ared = actualMerit(stepIN, m_alpha);
+                            last_pred = predictedMerit(m_alpha, stepIN, beta);
+                        } catch {
+                            last_ared = 1e6;
+                            last_pred = -1;
+                        }
                         Console.WriteLine("alpha, M, predM  " + m_alpha + ", " + last_ared + ", " + last_pred);
                         if(last_ared > double.MaxValue) {
                             Console.Write("");
@@ -3423,8 +3442,15 @@ namespace ApplicationWithIDT {
                         //Compute Step
                         step.SetV(stepIN);
                         ZickZack(step, m_alpha, biggerAlphaU);
-                        last_ared = actualMerit(step, 1.0);
-                        last_pred = predictedMerit(1.0, step, beta);
+                        // Same rationale as the LineSearch branch above: an invalid trial state
+                        // should shrink alpha and retry, not crash.
+                        try {
+                            last_ared = actualMerit(step, 1.0);
+                            last_pred = predictedMerit(1.0, step, beta);
+                        } catch {
+                            last_ared = 1e6;
+                            last_pred = -1;
+                        }
 
                         if(last_ared < last_pred) {
                             succes = AccumulateStep(step, 1.0);
