@@ -1920,9 +1920,62 @@ namespace BoSSS.Foundation.Grid {
             return bb;
         }
 
+        /// <summary>
+        /// The bounding box of this part of the grid, which is stored on the local MPI process.
+        /// </summary>
+        static public BoundingBox GetLocalBoundingBox(this IGridData g) {
+            if(g is GridData gd) {
+                return gd.LocalBoundingBox;
+            } else {
+                var LocalBoundingBox = new BoundingBox(g.SpatialDimension);
+                int J = g.iGeomCells.NoOfLocalUpdatedCells;
+                var CellBB = new BoundingBox(g.SpatialDimension);
+
+                for(int j = 0; j < J; j++) {
+                    g.iGeomCells.GetCellBoundingBox(j, CellBB);
+                    LocalBoundingBox.AddBB(CellBB);
+                }
+                return LocalBoundingBox;
+            }
+        }
+
+        /// <summary>
+        /// the bounding box of the entire grid, over all MPI processors
+        /// </summary>
+        static public BoundingBox GetGlobalBoundingBox(this IGridData g) {
+            if(g is GridData gd) {
+                return gd.GlobalBoundingBox;
+            } else {
+                int D = g.SpatialDimension;
+                var BoundingBox = new BoundingBox(D);
+                int J = g.iGeomCells.NoOfLocalUpdatedCells;
+                var CellBB = new BoundingBox(D);
+
+                for(int j = 0; j < J; j++) {
+                    g.iGeomCells.GetCellBoundingBox(j, CellBB);
+                    BoundingBox.AddBB(CellBB);
+                }
+
+                double[] MinMax = new double[2 * D];
+                for(int d = 0; d < D; d++) {
+                    MinMax[d] = BoundingBox.Min[d];
+                    MinMax[d + D] = - BoundingBox.Max[d];
+                }
+                MinMax = MinMax.MPIMin(); // save collective MPI calls by min/max trick
+
+                for(int d = 0; d < D; d++) {
+                    BoundingBox.Min[d] = MinMax[d];
+                    BoundingBox.Max[d] = -MinMax[d + D];
+                }
+
+
+                return BoundingBox;
+            }
+        }
+
     }
-        
-        
+
+
     /// <summary>
     /// used by <see cref="IGridData_Extensions.GetCellNeighbours(IGridData, int, GetCellNeighbours_Mode, out int[], out int[])"/>.
     /// </summary>
