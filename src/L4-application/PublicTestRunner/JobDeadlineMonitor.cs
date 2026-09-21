@@ -142,7 +142,8 @@ namespace PublicTestRunner {
             //Console.ForegroundColor = ConsoleColor.White;
             File.WriteAllText(filepath, content);
             try {
-                File.Copy(filepath, @"C:\tmp\TimeRecordings\TimeRecords-" + DateTime.Now.ToFileTimeUtc() + ".json");
+                if(System.Environment.MachineName.ToLowerInvariant().Contains("fdygitrunner"))
+                    File.Copy(filepath, @"C:\tmp\TimeRecordings\TimeRecords-" + DateTime.Now.ToFileTimeUtc() + ".json");
             } catch (Exception e) {
                 Console.Error.WriteLine("Creating side-copy of TimeRecords: " + e);
             }
