@@ -89,7 +89,11 @@ RUN mkdir -p /home/${USERNAME}/BoSSS-Install \
 
 RUN cat <<'EOF' > /usr/local/bin/bosss-entrypoint.sh
 #!/usr/bin/env bash
-set -euo pipefail
+set -uo pipefail
+
+warn() {
+	echo "[bosss-entrypoint] WARNING: $*" >&2
+}
 
 export BOSSS_INSTALL="${BOSSS_INSTALL:-${HOME}/BoSSS-Install}"
 SYNC_MARKER="${HOME}/.BoSSS/.host-sync-done"
@@ -97,18 +101,26 @@ SYNC_MARKER="${HOME}/.BoSSS/.host-sync-done"
 # If host BoSSS install is mounted to /host-bosss-install, copy it into user home.
 # Copy is done once by default; set BOSSS_FORCE_SYNC=1 to overwrite on every start.
 if [[ -d /host-bosss-install ]]; then
-	mkdir -p "$BOSSS_INSTALL"
-	mkdir -p "$(dirname "$SYNC_MARKER")"
+	mkdir -p "$BOSSS_INSTALL" || warn "Could not create BOSSS_INSTALL directory: $BOSSS_INSTALL"
+	mkdir -p "$(dirname "$SYNC_MARKER")" || warn "Could not create sync-marker directory"
 	if [[ "${BOSSS_FORCE_SYNC:-0}" == "1" || ! -f "$SYNC_MARKER" ]]; then
-		rm -rf "$BOSSS_INSTALL"
-		mkdir -p "$BOSSS_INSTALL"
-		cp -r /host-bosss-install/. "$BOSSS_INSTALL"/
-		chown -R "$(id -u)":"$(id -g)" "$BOSSS_INSTALL"
-		date -u +"%Y-%m-%dT%H:%M:%SZ" > "$SYNC_MARKER"
+		rm -rf "$BOSSS_INSTALL" || warn "Could not remove existing BOSSS_INSTALL directory"
+		mkdir -p "$BOSSS_INSTALL" || warn "Could not recreate BOSSS_INSTALL directory"
+		if ! cp -r /host-bosss-install/. "$BOSSS_INSTALL"/; then
+			warn "Failed to copy /host-bosss-install into $BOSSS_INSTALL; continuing without sync"
+		else
+			chown -R "$(id -u)":"$(id -g)" "$BOSSS_INSTALL" || warn "Could not normalize ownership in $BOSSS_INSTALL"
+			date -u +"%Y-%m-%dT%H:%M:%SZ" > "$SYNC_MARKER" || warn "Could not update sync marker: $SYNC_MARKER"
+		fi
 	fi
 fi
 
-export LD_LIBRARY_PATH="$BOSSS_INSTALL/bin/native/linux/amd64-openmpi:${LD_LIBRARY_PATH:-}"
+if [[ -d "$BOSSS_INSTALL/bin/native/linux/amd64-openmpi" ]]; then
+	export LD_LIBRARY_PATH="$BOSSS_INSTALL/bin/native/linux/amd64-openmpi:${LD_LIBRARY_PATH:-}"
+else
+	warn "Native library path not found: $BOSSS_INSTALL/bin/native/linux/amd64-openmpi"
+	export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}"
+fi
 
 exec "$@"
 EOF
