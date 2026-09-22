@@ -1,0 +1,106 @@
+FROM ubuntu:26.04
+
+ARG DEBIAN_FRONTEND=noninteractive
+ARG USERNAME=bosss
+ARG UID=1000
+ARG GID=1000
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends \
+		ca-certificates \
+		curl \
+		git \
+		gnupg \
+		libgssapi-krb5-2 \
+		libicu-dev \
+		libopenmpi-dev \
+		libssl-dev \
+		libstdc++6 \
+		libpmix-bin \
+		openmpi-bin \
+		openmpi-common \
+		octave \
+		gnuplot \
+		openssh-client \
+		sudo \
+		wget \
+		zlib1g \
+	&& rm -rf /var/lib/apt/lists/*
+
+# Install .NET SDK 8 and 10 without relying on Ubuntu-specific packages.
+RUN curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh \
+	&& chmod +x /tmp/dotnet-install.sh \
+	&& /tmp/dotnet-install.sh --channel 8.0 --install-dir /usr/share/dotnet --no-path \
+	&& /tmp/dotnet-install.sh --channel 10.0 --install-dir /usr/share/dotnet --no-path \
+	&& ln -sfn /usr/share/dotnet/dotnet /usr/bin/dotnet \
+	&& rm /tmp/dotnet-install.sh
+
+ENV DOTNET_ROOT=/usr/share/dotnet
+ENV PATH=/usr/share/dotnet:${PATH}
+
+# Install Node.js (for CLI tools) from NodeSource.
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+	&& apt-get update \
+	&& apt-get install -y --no-install-recommends nodejs \
+	&& rm -rf /var/lib/apt/lists/*
+
+# Try to install Claude and Codex CLIs.
+# Build does not fail if upstream package names or availability change.
+RUN npm install -g @anthropic-ai/claude-code || true
+RUN npm install -g @openai/codex || true
+
+# Non-root user by default (recommended for OpenMPI usage and safer dev workflows).
+RUN groupadd --gid ${GID} ${USERNAME} \
+	&& useradd --uid ${UID} --gid ${GID} -m -s /bin/bash ${USERNAME} \
+	&& usermod -aG sudo ${USERNAME} \
+	&& echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USERNAME} \
+	&& chmod 0440 /etc/sudoers.d/${USERNAME}
+
+RUN install -d -o ${USERNAME} -g ${USERNAME} /home/${USERNAME}/.BoSSS/etc \
+	&& cat > /home/${USERNAME}/.BoSSS/etc/MatlabConnectorConfig.json <<'EOF'
+{
+  "Flav": "Octave"
+}
+EOF
+
+RUN chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.BoSSS/
+
+# Runtime location for full BoSSS host install copied from host-mounted folder.
+RUN mkdir -p /home/${USERNAME}/BoSSS-Install \
+	&& chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/BoSSS-Install
+
+RUN cat <<'EOF' > /usr/local/bin/bosss-entrypoint.sh
+#!/usr/bin/env bash
+set -euo pipefail
+
+export BOSSS_INSTALL="${BOSSS_INSTALL:-${HOME}/BoSSS-Install}"
+
+# If host BoSSS install is mounted to /host-bosss-install, copy it into user home.
+# Copy is done once by default; set BOSSS_FORCE_SYNC=1 to overwrite on every start.
+if [[ -d /host-bosss-install ]]; then
+	mkdir -p "$BOSSS_INSTALL"
+	if [[ "${BOSSS_FORCE_SYNC:-0}" == "1" || ! -f "$BOSSS_INSTALL/.host-sync-done" ]]; then
+		rm -rf "$BOSSS_INSTALL"
+		mkdir -p "$BOSSS_INSTALL"
+		cp -a /host-bosss-install/. "$BOSSS_INSTALL"/
+		date -u +"%Y-%m-%dT%H:%M:%SZ" > "$BOSSS_INSTALL/.host-sync-done"
+	fi
+fi
+
+export LD_LIBRARY_PATH="$BOSSS_INSTALL/bin/native/linux/amd64-openmpi:${LD_LIBRARY_PATH:-}"
+
+exec "$@"
+EOF
+
+RUN chmod +x /usr/local/bin/bosss-entrypoint.sh
+
+ENV BOSSS_INSTALL=/home/${USERNAME}/BoSSS-Install
+ENV LD_LIBRARY_PATH=/home/${USERNAME}/BoSSS-Install/bin/native/linux/amd64-openmpi
+
+WORKDIR /workspace
+USER ${USERNAME}
+
+ENTRYPOINT ["/usr/local/bin/bosss-entrypoint.sh"]
+CMD ["bash"]
