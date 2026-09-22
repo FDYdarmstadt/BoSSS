@@ -8,6 +8,7 @@ ARG GID=1000
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 RUN apt-get update \
+	&& echo "path-include=/usr/share/doc/libprrte-dev/help-*" >> /etc/dpkg/dpkg.cfg.d/excludes \
 	&& apt-get install -y --no-install-recommends \
 		ca-certificates \
 		curl \
@@ -16,6 +17,7 @@ RUN apt-get update \
 		libgssapi-krb5-2 \
 		libicu-dev \
 		libopenmpi-dev \
+		libprrte-dev \
 		libssl-dev \
 		libstdc++6 \
 		libpmix-bin \
@@ -27,7 +29,21 @@ RUN apt-get update \
 		sudo \
 		wget \
 		zlib1g \
+	&& MULTIARCH="$(dpkg -L libprrte3 2>/dev/null | sed -n 's|^/usr/lib/\([^/]*\)/libprrte\.so.*|\1|p' | head -n1)" \
+	&& [ -n "$MULTIARCH" ] || MULTIARCH="$(uname -m)-linux-gnu" \
+	&& PRTE_HELP_DIR="/usr/lib/$MULTIARCH/prrte3/share/prte" \
+	&& if [ ! -f "$PRTE_HELP_DIR/help-prun.txt" ]; then \
+		if ! ls /usr/share/doc/libprrte-dev/help-*.txt* >/dev/null 2>&1; then \
+			echo "ERROR: PRRTE help files not found in libprrte-dev; check dpkg path-include and LP#2155666" >&2; \
+			exit 1; \
+		fi; \
+		mkdir -p "$PRTE_HELP_DIR" \
+		&& cp /usr/share/doc/libprrte-dev/help-*.txt* "$PRTE_HELP_DIR/" \
+		&& gzip -df "$PRTE_HELP_DIR"/*.gz ; \
+	fi \
 	&& rm -rf /var/lib/apt/lists/*
+
+RUN mpiexec --version
 
 # Install .NET SDK 8 and 10 without relying on Ubuntu-specific packages.
 RUN curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh \
