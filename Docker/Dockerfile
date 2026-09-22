@@ -68,16 +68,19 @@ RUN cat <<'EOF' > /usr/local/bin/bosss-entrypoint.sh
 set -euo pipefail
 
 export BOSSS_INSTALL="${BOSSS_INSTALL:-${HOME}/BoSSS-Install}"
+SYNC_MARKER="${HOME}/.BoSSS/.host-sync-done"
 
 # If host BoSSS install is mounted to /host-bosss-install, copy it into user home.
 # Copy is done once by default; set BOSSS_FORCE_SYNC=1 to overwrite on every start.
 if [[ -d /host-bosss-install ]]; then
 	mkdir -p "$BOSSS_INSTALL"
-	if [[ "${BOSSS_FORCE_SYNC:-0}" == "1" || ! -f "$BOSSS_INSTALL/.host-sync-done" ]]; then
+	mkdir -p "$(dirname "$SYNC_MARKER")"
+	if [[ "${BOSSS_FORCE_SYNC:-0}" == "1" || ! -f "$SYNC_MARKER" ]]; then
 		rm -rf "$BOSSS_INSTALL"
 		mkdir -p "$BOSSS_INSTALL"
-		cp -a /host-bosss-install/. "$BOSSS_INSTALL"/
-		date -u +"%Y-%m-%dT%H:%M:%SZ" > "$BOSSS_INSTALL/.host-sync-done"
+		cp -r /host-bosss-install/. "$BOSSS_INSTALL"/
+		chown -R "$(id -u)":"$(id -g)" "$BOSSS_INSTALL"
+		date -u +"%Y-%m-%dT%H:%M:%SZ" > "$SYNC_MARKER"
 	fi
 fi
 
@@ -87,6 +90,7 @@ exec "$@"
 EOF
 
 RUN chmod +x /usr/local/bin/bosss-entrypoint.sh
+RUN sed -i 's/\r$//' /usr/local/bin/bosss-entrypoint.sh
 
 ENV BOSSS_INSTALL=/home/${USERNAME}/BoSSS-Install
 ENV LD_LIBRARY_PATH=/home/${USERNAME}/BoSSS-Install/bin/native/linux/amd64-openmpi
