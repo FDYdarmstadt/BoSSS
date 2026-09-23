@@ -159,6 +159,14 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         [DataMember]
         public string StokesExtensionPetscOptions = null;
 
+        /// <summary>
+        /// If true, the Stokes-extension velocity solve (<see cref="LevelSetEvolution.StokesExtension"/>)
+        /// is warm-started from the previous time step's converged extension velocity. False (the default)
+        /// always starts the solve from zero, matching the original behavior.
+        /// </summary>
+        [DataMember]
+        public bool StokesExtensionWarmStart = false;
+
 
         #endregion
 

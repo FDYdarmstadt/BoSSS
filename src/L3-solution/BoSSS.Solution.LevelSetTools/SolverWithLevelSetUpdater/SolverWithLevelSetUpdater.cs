@@ -288,13 +288,15 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         if(LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
                             stokesExtEvo = new StokesExtensionEvolver(LevelSetCG, QuadOrder(), D,
                             GetBcMap(),
-                            this.Control.AgglomerationThreshold, this.GridData);
+                            this.Control.AgglomerationThreshold, this.GridData,
+                            warmStart: this.Control.StokesExtensionWarmStart);
                         } else {
                             stokesExtEvo = new StokesExtensionEvolver(LevelSetCG, QuadOrder(), D,
                             GetBcMap(),
                             this.Control.AgglomerationThreshold, this.GridData, useBCmap: this.Control.StokesExtentionUseBCmap, 
                             ReInitControl: this.Control.ReInitControl, ReInitPeriod: this.Control.ReInitPeriod,
-                            petscOptions: this.Control.StokesExtensionPetscOptions);
+                            petscOptions: this.Control.StokesExtensionPetscOptions,
+                            warmStart: this.Control.StokesExtensionWarmStart);
                         }
                         lsUpdater.AddEvolver(LevelSetCG, stokesExtEvo);
                         break;

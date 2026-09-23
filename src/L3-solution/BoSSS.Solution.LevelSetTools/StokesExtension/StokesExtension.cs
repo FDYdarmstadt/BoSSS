@@ -62,6 +62,16 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         public string PetscOptions = null;
 
         /// <summary>
+        /// If true, <see cref="SolveExtension"/> uses whatever is already in
+        /// <c>ExtensionVelocity</c> on entry (typically the previous time step's converged
+        /// extension velocity, since callers no longer clear it beforehand) as the initial guess
+        /// for the iterative solve, transformed into the solver's equilibrated basis via
+        /// <see cref="BoSSS.Solution.AdvancedSolvers.MultigridOperator.TransformSolInto{T1, T2}"/>.
+        /// If false (the default), the solve always starts from zero, matching the original behavior.
+        /// </summary>
+        public bool WarmStart = false;
+
+        /// <summary>
         /// Bulk of the artificial Stokes extension equation;
         /// 
         /// Note that it would also be possible to integrate this operator with <see cref="GetInterfaceOperator(int)"/>:
@@ -327,9 +337,17 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                 Exception e;
                 try {
                     var Pre_RHS = RHS.CloneAs();
-                    var Pre_Sol = ExtenstionSolVec.CloneAs();
+                    double[] Pre_Sol = new double[mgOp.Mapping.LocalLength];
                     tr.Info("StokesExtension.SolveExtension trying with Multigridoperator");
                     mgOp.TransformRhsInto(RHS, Pre_RHS, true);
+                    // Warm start: 'ExtenstionSolVec' may already carry the previous time step's
+                    // extension velocity (see callers of SolveExtension); it must be moved into
+                    // the same equilibrated basis as 'Pre_RHS'/'OperatorMatrix', otherwise a nonzero
+                    // initial guess would be handed to the solver in the wrong scaling. 'Pre_Sol' is
+                    // zero-initialized above, so leaving this out when WarmStart is false reproduces
+                    // the original cold-start behavior.
+                    if(WarmStart)
+                        mgOp.TransformSolInto(ExtenstionSolVec, Pre_Sol);
                     if(!string.IsNullOrWhiteSpace(PetscOptions)) {
                         var petscSolver = new PetscGMRESConfig() { PetscOptions = PetscOptions }.CreateInstance(mgOp);
                         petscSolver.Solve(Pre_Sol, Pre_RHS);
