@@ -72,6 +72,19 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         public bool WarmStart = false;
 
         /// <summary>
+        /// Only relevant if <see cref="PetscOptions"/> is set: forwarded to
+        /// <see cref="BoSSS.Solution.AdvancedSolvers.PetscGMRESConfig.UseGeometricMultigrid"/>.
+        /// False (the default) preserves the original flat-matrix behavior.
+        /// </summary>
+        public bool UseGeometricMultigrid = false;
+
+        /// <summary>
+        /// Only relevant if <see cref="UseGeometricMultigrid"/> is true: forwarded to
+        /// <see cref="BoSSS.Solution.AdvancedSolvers.PetscGMRESConfig.CoarseKickIn"/>.
+        /// </summary>
+        public int CoarseKickIn = 90000;
+
+        /// <summary>
         /// Bulk of the artificial Stokes extension equation;
         /// 
         /// Note that it would also be possible to integrate this operator with <see cref="GetInterfaceOperator(int)"/>:
@@ -349,7 +362,11 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                     if(WarmStart)
                         mgOp.TransformSolInto(ExtenstionSolVec, Pre_Sol);
                     if(!string.IsNullOrWhiteSpace(PetscOptions)) {
-                        var petscSolver = new PetscGMRESConfig() { PetscOptions = PetscOptions }.CreateInstance(mgOp);
+                        var petscSolver = new PetscGMRESConfig() {
+                            PetscOptions = PetscOptions,
+                            UseGeometricMultigrid = UseGeometricMultigrid,
+                            CoarseKickIn = CoarseKickIn
+                        }.CreateInstance(mgOp);
                         petscSolver.Solve(Pre_Sol, Pre_RHS);
                         petscSolver.Dispose();
                     } else {

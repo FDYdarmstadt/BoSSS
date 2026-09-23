@@ -167,6 +167,22 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         [DataMember]
         public bool StokesExtensionWarmStart = false;
 
+        /// <summary>
+        /// Only relevant if <see cref="StokesExtensionPetscOptions"/> is set: forwarded to
+        /// <see cref="BoSSS.Solution.AdvancedSolvers.PetscGMRESConfig.UseGeometricMultigrid"/> for
+        /// the Stokes-extension velocity solve. False (the default) preserves the original
+        /// flat-matrix behavior.
+        /// </summary>
+        [DataMember]
+        public bool StokesExtensionUseGeometricMultigrid = false;
+
+        /// <summary>
+        /// Only relevant if <see cref="StokesExtensionUseGeometricMultigrid"/> is true: forwarded
+        /// to <see cref="BoSSS.Solution.AdvancedSolvers.PetscGMRESConfig.CoarseKickIn"/>.
+        /// </summary>
+        [DataMember]
+        public int StokesExtensionCoarseKickIn = 90000;
+
 
         #endregion
 

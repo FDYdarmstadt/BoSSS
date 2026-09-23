@@ -296,7 +296,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                             this.Control.AgglomerationThreshold, this.GridData, useBCmap: this.Control.StokesExtentionUseBCmap, 
                             ReInitControl: this.Control.ReInitControl, ReInitPeriod: this.Control.ReInitPeriod,
                             petscOptions: this.Control.StokesExtensionPetscOptions,
-                            warmStart: this.Control.StokesExtensionWarmStart);
+                            warmStart: this.Control.StokesExtensionWarmStart,
+                            useGeometricMultigrid: this.Control.StokesExtensionUseGeometricMultigrid,
+                            coarseKickIn: this.Control.StokesExtensionCoarseKickIn);
                         }
                         lsUpdater.AddEvolver(LevelSetCG, stokesExtEvo);
                         break;

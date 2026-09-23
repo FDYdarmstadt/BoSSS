@@ -49,7 +49,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         public StokesExtensionEvolver(string levelSetName, int hMForder, int D, IncompressibleBoundaryCondMap bcMap, double AgglomThreshold, IGridData grd,
             bool fullStokes = true, StokesExtentionBoundaryOption useBCmap = StokesExtentionBoundaryOption.FreeSlipAtWall, EllipticReInitAlgoControl ReInitControl = null, int ReInitPeriod = 0,
-            string petscOptions = null, bool warmStart = false) {
+            string petscOptions = null, bool warmStart = false, bool useGeometricMultigrid = false, int coarseKickIn = 90000) {
             for(int d = 0; d < D; d++) {
                 if(!bcMap.bndFunction.ContainsKey(NSECommon.VariableNames.Velocity_d(d)))
                     throw new ArgumentException($"Missing boundary condition for variable {NSECommon.VariableNames.Velocity_d(d)}.");
@@ -72,6 +72,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             this.ReInit_Period = ReInitPeriod;
             this.petscOptions = petscOptions;
             this.warmStart = warmStart;
+            this.useGeometricMultigrid = useGeometricMultigrid;
+            this.coarseKickIn = coarseKickIn;
 
         }
 
@@ -87,6 +89,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         IncompressibleBoundaryCondMap bcmap;
         string petscOptions;
         bool warmStart;
+        bool useGeometricMultigrid;
+        int coarseKickIn;
 
         /// <summary>
         /// should only be the interface velocity vector; typically, a phase-averaged velocity.
@@ -197,7 +201,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
                 var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold, fullStokes, useBCMap: useBCmap) {
                     PetscOptions = this.petscOptions,
-                    WarmStart = this.warmStart
+                    WarmStart = this.warmStart,
+                    UseGeometricMultigrid = this.useGeometricMultigrid,
+                    CoarseKickIn = this.coarseKickIn
                 };
                 ExtVelBuilder.SolveExtension(levelSet.LevelSetIndex, levelSet.Tracker, meanVelocity, extensionVelocity);
                 //dgPltList.AddRange(extensionVelocity);
