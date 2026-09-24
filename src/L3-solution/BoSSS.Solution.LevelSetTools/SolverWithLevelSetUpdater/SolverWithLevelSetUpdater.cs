@@ -289,7 +289,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                             stokesExtEvo = new StokesExtensionEvolver(LevelSetCG, QuadOrder(), D,
                             GetBcMap(),
                             this.Control.AgglomerationThreshold, this.GridData,
-                            warmStart: this.Control.StokesExtensionWarmStart);
+                            warmStart: this.Control.StokesExtensionWarmStart,
+                            useSchurBlockPrec: this.Control.StokesExtensionUseSchurBlockPrec);
                         } else {
                             stokesExtEvo = new StokesExtensionEvolver(LevelSetCG, QuadOrder(), D,
                             GetBcMap(),
@@ -298,7 +299,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                             petscOptions: this.Control.StokesExtensionPetscOptions,
                             warmStart: this.Control.StokesExtensionWarmStart,
                             useGeometricMultigrid: this.Control.StokesExtensionUseGeometricMultigrid,
-                            coarseKickIn: this.Control.StokesExtensionCoarseKickIn);
+                            coarseKickIn: this.Control.StokesExtensionCoarseKickIn,
+                            useSchurBlockPrec: this.Control.StokesExtensionUseSchurBlockPrec);
                         }
                         lsUpdater.AddEvolver(LevelSetCG, stokesExtEvo);
                         break;

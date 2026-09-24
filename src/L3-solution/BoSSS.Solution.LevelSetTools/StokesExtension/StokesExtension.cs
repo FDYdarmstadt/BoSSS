@@ -72,6 +72,21 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         public bool WarmStart = false;
 
         /// <summary>
+        /// Only relevant if <see cref="fullStokes"/> is set (via the constructor). If true, the
+        /// velocity and pressure <see cref="BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig"/>
+        /// are combined into a single block using
+        /// <see cref="BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.SchurComplement"/>, mirroring
+        /// <c>XNSE_Control.UseSchurBlockPrec</c> (see <c>XNSE.cs</c>'s <c>AddMultigridConfigLevel</c>).
+        /// If false (the default), velocity and pressure keep their separate
+        /// <see cref="BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite"/>/
+        /// <see cref="BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.IdMass_DropIndefinite"/> configs, matching
+        /// the original behavior. Best paired with a field-split-aware <see cref="PetscOptions"/> string; combining it
+        /// with the internal <see cref="BoSSS.Solution.AdvancedSolvers.SchurComplementForStokes"/> fallback solver
+        /// applies Schur-complement structure twice.
+        /// </summary>
+        public bool UseSchurBlockPrec = false;
+
+        /// <summary>
         /// Only relevant if <see cref="PetscOptions"/> is set: forwarded to
         /// <see cref="BoSSS.Solution.AdvancedSolvers.PetscGMRESConfig.UseGeometricMultigrid"/>.
         /// False (the default) preserves the original flat-matrix behavior.
@@ -315,35 +330,40 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                 //RHSdg.SetV(RHS, 1.0);
                 //double[] RHSL2norm = RHSdg.Fields.Select(f => f.L2Norm()).ToArray();
 
+                if (this.UseSchurBlockPrec && !this.fullStokes)
+                    throw new InvalidOperationException($"{nameof(UseSchurBlockPrec)} requires {nameof(fullStokes)} (no pressure to combine with otherwise).");
+
                 var AggGrid = CoarseningAlgorithms.CreateSequence(ExtenstionSolVec.Mapping.GridDat, -1);
                 var AggBasis = AggregationGridBasis.CreateSequence(AggGrid, ExtenstionSolVec.Mapping.BasisS);
-                var MultigridOperatorConfig = new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig[1][];
-                MultigridOperatorConfig[0] = new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig[ExtenstionSolVec.Mapping.Fields.Count];
-                if (this.fullStokes) {
+                var configsLevel = new List<BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig>();
+                if (this.fullStokes && this.UseSchurBlockPrec) {
+                    // single combined block for velocity + pressure, mirroring XNSE.cs's UseSchurBlockPrec
+                    configsLevel.Add(new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig() {
+                        mode = BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.SchurComplement,
+                        VarIndex = Enumerable.Range(0, ExtenstionSolVec.Mapping.Fields.Count).ToArray(),
+                        DegreeS = ExtenstionSolVec.Mapping.Fields.Select(f => f.Basis.Degree).ToArray()
+                    });
+                } else if (this.fullStokes) {
                     for (int i = 0; i < ExtenstionSolVec.Mapping.Fields.Count; i++) {
-                        if( i == ExtenstionSolVec.Mapping.Fields.Count - 1) {
-                            MultigridOperatorConfig[0][i] = new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig() {
-                                mode = BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.IdMass_DropIndefinite,
-                                VarIndex = new int[] { i },
-                                DegreeS = new int[] { ExtenstionSolVec.Mapping.Fields[i].Basis.Degree }
-                            };
-                        } else {
-                            MultigridOperatorConfig[0][i] = new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig() {
-                                mode = BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
-                                VarIndex = new int[] { i },
-                                DegreeS = new int[] { ExtenstionSolVec.Mapping.Fields[i].Basis.Degree }
-                            };
-                        }
+                        bool isPressure = i == ExtenstionSolVec.Mapping.Fields.Count - 1;
+                        configsLevel.Add(new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig() {
+                            mode = isPressure
+                                ? BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.IdMass_DropIndefinite
+                                : BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
+                            VarIndex = new int[] { i },
+                            DegreeS = new int[] { ExtenstionSolVec.Mapping.Fields[i].Basis.Degree }
+                        });
                     }
                 } else {
                     for (int i = 0; i < ExtenstionSolVec.Mapping.Fields.Count; i++) {
-                        MultigridOperatorConfig[0][i] = new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig() {
+                        configsLevel.Add(new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig() {
                             mode = BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
                             VarIndex = new int[] { i },
                             DegreeS = new int[] { ExtenstionSolVec.Mapping.Fields[i].Basis.Degree }
-                        };
+                        });
                     }
                 }
+                var MultigridOperatorConfig = new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig[1][] { configsLevel.ToArray() };
                 MultigridOperator mgOp = new MultigridOperator(AggBasis, ExtenstionSolVec.Mapping, OpMtx, null, MultigridOperatorConfig, GetBulkOperator());
 
                 var bkup_RHS = RHS.CloneAs();

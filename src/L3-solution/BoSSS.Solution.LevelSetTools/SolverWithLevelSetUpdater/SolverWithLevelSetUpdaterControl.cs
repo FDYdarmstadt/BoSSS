@@ -183,6 +183,17 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         [DataMember]
         public int StokesExtensionCoarseKickIn = 90000;
 
+        /// <summary>
+        /// If true, the Stokes-extension velocity solve's (<see cref="LevelSetEvolution.StokesExtension"/>)
+        /// velocity and pressure <see cref="BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig"/>
+        /// are combined into a single <see cref="BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.SchurComplement"/>
+        /// block, mirroring the <c>UseSchurBlockPrec</c> option used for the main flow solve (e.g.
+        /// <c>XNSE_Control.UseSchurBlockPrec</c>). False (the default) preserves the original per-field
+        /// configuration.
+        /// </summary>
+        [DataMember]
+        public bool StokesExtensionUseSchurBlockPrec = false;
+
 
         #endregion
 
