@@ -308,7 +308,7 @@ namespace ApplicationWithIDT {
         /// </summary>
         public double IG_dt_Start { get; set; } = 1e-03;
         public double IG_beta { get; set; } = 0.2;
-        public double IG_nu_Min { get; set; } =0.05;
+        public double IG_nu_Min { get; set; } = 0.05;
         public double IG_nu_Max { get; set; } = 0.1;
         public double IG_alpha { get; set; } = 2;
         public double ConvCrit { get; set; } = 0;
@@ -324,7 +324,7 @@ namespace ApplicationWithIDT {
         /// <summary>
         /// Prescribes minimum amount of iteration for every p-contiuation level
         /// </summary>
-        public int[] minimalSQPIterations { get; set; } = new int[] { 30, 30, 10, 10, 10 ,10,10,10, 10 };
+        public int[] minimalSQPIterations { get; set; } = new int[] { 30, 30, 10, 10, 10, 10, 10, 10, 10 };
         /// <summary>
         /// Maximum number of total SQP Iterations
         /// </summary>
@@ -332,12 +332,12 @@ namespace ApplicationWithIDT {
         /// <summary>
         /// maximum number of iterations for each p-continuation level which allow for reinitialization
         /// </summary>
-        public int[] ReiniTMaxIters { get; set; } = new int[] { 30, 20, 5, 5, 5 ,5,5,5,5};
+        public int[] ReiniTMaxIters { get; set; } = new int[] { 30, 20, 5, 5, 5, 5, 5, 5, 5 };
 
         /// <summary>
         /// params needed for termination
         /// </summary>
-        public int[] TerminationMinNs { get; set; } = new int[] { 8, 8, 8, 8, 8 ,8,8,8,8};
+        public int[] TerminationMinNs { get; set; } = new int[] { 8, 8, 8, 8, 8, 8, 8, 8, 8 };
         public double[] tALNRs { get; set; } = new double[] { 1.005, 1.005, 1.001, 1.01, 1.01, 1.01, 1.01, 1.01, 1.01 };
         public bool PartiallyFixLevelSetForSpaceTime { get; set; } = false;
         public bool SaveMatrices { get; set; } = false;
