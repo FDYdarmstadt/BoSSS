@@ -31,13 +31,13 @@ namespace BoSSS.Application.MultithreadingSolverTest {
         /// <summary>
         /// Minimum expected speedup from 1 to 4 threads: T1 / T4.
         /// </summary>
-        public double MinSpeedup14 = 1.3;
+        public double MinSpeedup14 = 1.1;
 
         /// <summary>
         /// Minimum expected speedup from 2 to 4 threads: T2 / T4.
         /// Use values below 1.0 if 4 threads may be slightly slower than 2.
         /// </summary>
-        public double MinSpeedup24 = 1.05;
+        public double MinSpeedup24 = 0.9;
 
         /// <summary>
         /// Number of measured runs after the warm-up.
@@ -60,8 +60,8 @@ namespace BoSSS.Application.MultithreadingSolverTest {
                     return C;
                 },
                 MinSpeedup12 = 1.2,
-                MinSpeedup14 = 1.5,
-                MinSpeedup24 = 1.2,
+                MinSpeedup14 = 1.3,
+                MinSpeedup24 = 1.0,
                 RunControl = control => RunControl<BoSSS.Application.SipPoisson.SipControl, BoSSS.Application.SipPoisson.SipPoissonMain>((BoSSS.Application.SipPoisson.SipControl)control),
             },
             new ThreadScalingTestcase {

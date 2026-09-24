@@ -230,9 +230,11 @@ namespace BoSSS.Solution {
             m_Logger.Info("Bootstrapping.");
             m_Logger.Info("Git commit: " + GitCommitHash);
 
+            string nativeLibDir = GetNativeLibraryDir();
+
             ilPSP.Environment.Bootstrap(
                 args,
-                GetNativeLibraryDir(),
+                nativeLibDir,
                 out bool _MustFinalizeMPI);
 
             //ilPSP.Utils.CPUAffinityWindows.SetOMP_PLACESfromCCPVar(1);
@@ -277,6 +279,7 @@ namespace BoSSS.Solution {
 
                     Console.WriteLine($"Working path: {Directory.GetCurrentDirectory()}");
                     Console.WriteLine($"Binary path: {Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)}");
+                    Console.WriteLine($"Native library path: {nativeLibDir}");
                     Console.WriteLine($"Current commit hash: {GitCommitHash}");
 
 
