@@ -253,6 +253,8 @@ namespace BoSSS.Foundation {
                     _ch[0].Len = J;
                     all_chunks = _ch;
                 } else {
+                    if(cm.MaskType == MaskType.Logical)
+                        cm = cm.ToGeometicalMask();
                     all_chunks = cm;
                 }
 
