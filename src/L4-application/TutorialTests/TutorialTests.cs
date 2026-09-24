@@ -42,7 +42,7 @@ namespace BoSSS.Application.TutorialTests {
             AllUpTest.DirectoryOffset = Path.Combine("..", "..", "..", ".." ,"..", ".." , "doc", "handbook");
             
             if(!Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(), AllUpTest.DirectoryOffset)))
-                throw new IOException("not running in nexpected directory");
+                throw new IOException("not running in expected directory");
 
             // if we enter Main, it seems we are executing the tutorial tests locally...
             // so delete any local tex files since we want to run the scripts from doc/handbook
