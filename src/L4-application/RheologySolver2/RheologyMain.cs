@@ -1181,7 +1181,7 @@ namespace BoSSS.Application.Rheology {
         /// </summary>
         public int HMForder {
             get {
-                int VelDeg = this.Velocity.Current.Max(field => field.Basis.Degree);
+                int VelDeg = this.Velocity.Current.Max(__field => __field.Basis.Degree);
                 int Order = (VelDeg * (!this.Control.Stokes ? 3 : 2));
                 Order += 2; // safety factor
                 return Order;
