@@ -1448,7 +1448,27 @@ namespace BoSSS.Solution.Control {
         }
 
         public virtual object Clone() {
-            return Deserialize(this.Serialize());
+            AppControl obj = Deserialize(this.Serialize());
+
+            obj.m_Grid = this.m_Grid;
+            obj.GridFunc = this.GridFunc;
+            foreach(var kv in this.Queries)
+                obj.Queries.Add(kv.Key, kv.Value);
+            foreach(var kv in this.m_ExactSolutions_Evaluators)
+                if(!obj.m_ExactSolutions_Evaluators.ContainsKey(kv.Key))
+                    obj.m_ExactSolutions_Evaluators.Add(kv.Key, kv.Value);
+            foreach(var kv in this.m_InitialValues_Evaluators)
+                if(!obj.m_InitialValues_Evaluators.ContainsKey(kv.Key))
+                    obj.m_InitialValues_Evaluators.Add(kv.Key, kv.Value);
+            
+            obj.BoundaryValues.Clear();
+            foreach(var bv in this.BoundaryValues) {
+                var bvc = bv.Value.CloneAs();
+                obj.BoundaryValues.Add(bv.Key, bvc);
+            }
+
+
+            return obj;
         }
 
         class KnownTypesBinder : Newtonsoft.Json.Serialization.DefaultSerializationBinder {
