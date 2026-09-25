@@ -17,6 +17,7 @@ build:
   tags:
     - C#7.0
     - big_server
+    - windows
   artifacts:
     paths:
 #      - src/L4-application/TutorialTests/bin/Release/net8.0
@@ -33,7 +34,8 @@ TutorialTests:
 #    - bash -c "chmod +x PublicTestRunner.exe"
   tags:
     - C#7.0
-    - big_server    
+    - big_server
+    - windows    
   variables:
     OMP_NUM_THREADS: 1
   script:
@@ -125,3 +127,4 @@ pages:
   tags:
     - C#7.0
     - big_server
+    - windows
