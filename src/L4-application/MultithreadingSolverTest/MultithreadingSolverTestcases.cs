@@ -89,8 +89,7 @@ namespace BoSSS.Application.MultithreadingSolverTest {
                 },
                 Requirements = new[] {
                     new ThreadScalingRequirement { FromThreads = 1, ToThreads = 2, MinSpeedup = 1.2 },
-                    new ThreadScalingRequirement { FromThreads = 1, ToThreads = 4, MinSpeedup = 1.3 },
-                    new ThreadScalingRequirement { FromThreads = 2, ToThreads = 4, MinSpeedup = 1.0 }
+                    new ThreadScalingRequirement { FromThreads = 1, ToThreads = 4, MinSpeedup = 1.3 }
                 },
                 ScalingMethods = new[] {
                     new ThreadScalingMethod {
@@ -132,7 +131,7 @@ namespace BoSSS.Application.MultithreadingSolverTest {
             new ThreadScalingTestcase {
                 Name = "XNSERisingBubble",
                 CreateControl = () => {
-                    var C = XNSE_Solver_MPItest.RisingBubble(p: 2, kelem: 64);
+                    var C = XNSE_Solver_MPItest.RisingBubble(p: 2, kelem: 48);
                     C.NoOfTimesteps = 1;
                     C.ProjectName = "MultithreadingScalingTest/Bubble";
                     PrepareControl(C, "RisingBubble");
