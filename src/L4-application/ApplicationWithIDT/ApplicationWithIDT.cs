@@ -331,7 +331,7 @@ namespace ApplicationWithIDT {
         Func<double, double[], double, double> predictedMerit { get; set; }
         Func<double[], double, double> actualMerit { get; set; }
         public int CurMinIter { get; private set; }
-        bool IncreaseDegreeNextTS { get; set; } = false;
+        protected bool IncreaseDegreeNextTS { get; set; } = false;
         double NormalizingConstant { get; set; }
         /// <summary>
         /// Just the Current step number
