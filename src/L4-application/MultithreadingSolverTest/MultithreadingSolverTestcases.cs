@@ -10,6 +10,38 @@ using static ilPSP.Tracing.Tracer;
 
 namespace BoSSS.Application.MultithreadingSolverTest {
 
+    internal sealed class ThreadScalingRequirement {
+        /// <summary>
+        /// Thread count used for the baseline measurement.
+        /// </summary>
+        public int FromThreads;
+
+        /// <summary>
+        /// Thread count used for the scaled measurement.
+        /// </summary>
+        public int ToThreads;
+
+        /// <summary>
+        /// Minimum required speedup: T(FromThreads) / T(ToThreads).
+        /// Zero or a negative value disables this requirement.
+        /// </summary>
+        public double MinSpeedup;
+    }
+
+    internal sealed class ThreadScalingMethod {
+        /// <summary>
+        /// Extra-P method-name suffix or full region name. All matching invocation
+        /// paths are aggregated before calculating the speedup.
+        /// </summary>
+        public string Name;
+
+        /// <summary>
+        /// Explicit thread-pair requirements for this method. An empty list disables
+        /// all method checks.
+        /// </summary>
+        public ThreadScalingRequirement[] Requirements = Array.Empty<ThreadScalingRequirement>();
+    }
+
     internal sealed class ThreadScalingTestcase {
         public string Name;
 
@@ -24,20 +56,16 @@ namespace BoSSS.Application.MultithreadingSolverTest {
         public Func<AppControl, double> RunControl;
 
         /// <summary>
-        /// Minimum expected speedup from 1 to 2 threads: T1 / T2.
+        /// Explicit thread-pair requirements for total runtime. An empty list disables
+        /// all total-runtime checks.
         /// </summary>
-        public double MinSpeedup12 = 1.1;
+        public ThreadScalingRequirement[] Requirements = Array.Empty<ThreadScalingRequirement>();
 
         /// <summary>
-        /// Minimum expected speedup from 1 to 4 threads: T1 / T4.
+        /// Extra-P methods to validate in addition to total runtime. Each method has
+        /// independent speedup requirements.
         /// </summary>
-        public double MinSpeedup14 = 1.1;
-
-        /// <summary>
-        /// Minimum expected speedup from 2 to 4 threads: T2 / T4.
-        /// Use values below 1.0 if 4 threads may be slightly slower than 2.
-        /// </summary>
-        public double MinSpeedup24 = 0.9;
+        public ThreadScalingMethod[] ScalingMethods = Array.Empty<ThreadScalingMethod>();
 
         /// <summary>
         /// Number of measured runs after the warm-up.
@@ -59,9 +87,26 @@ namespace BoSSS.Application.MultithreadingSolverTest {
                     
                     return C;
                 },
-                MinSpeedup12 = 1.2,
-                MinSpeedup14 = 1.3,
-                MinSpeedup24 = 1.0,
+                Requirements = new[] {
+                    new ThreadScalingRequirement { FromThreads = 1, ToThreads = 2, MinSpeedup = 1.2 },
+                    new ThreadScalingRequirement { FromThreads = 1, ToThreads = 4, MinSpeedup = 1.3 },
+                    new ThreadScalingRequirement { FromThreads = 2, ToThreads = 4, MinSpeedup = 1.0 }
+                },
+                ScalingMethods = new[] {
+                    new ThreadScalingMethod {
+                        Name = "AssembleMatrix",
+                        Requirements = new[] {
+                            new ThreadScalingRequirement { FromThreads = 1, ToThreads = 2, MinSpeedup = 1.4 },
+                            new ThreadScalingRequirement { FromThreads = 1, ToThreads = 4, MinSpeedup = 1.3 }
+                        }
+                    },
+                    new ThreadScalingMethod {
+                        Name = "BoSSS.Foundation.DifferentialOperator+EvaluatorNonLin.Evaluate",
+                        Requirements = new[] {
+                            new ThreadScalingRequirement { FromThreads = 1, ToThreads = 2, MinSpeedup = 1.3 }
+                        }
+                    }
+                },
                 RunControl = control => RunControl<BoSSS.Application.SipPoisson.SipControl, BoSSS.Application.SipPoisson.SipPoissonMain>((BoSSS.Application.SipPoisson.SipControl)control),
             },
             new ThreadScalingTestcase {
@@ -74,6 +119,14 @@ namespace BoSSS.Application.MultithreadingSolverTest {
                     PrepareControl(C, "XdgPoisson3");
                     return C;
                 },
+                ScalingMethods = new[] {
+                    new ThreadScalingMethod {
+                        Name = "AssembleMatrix",
+                        Requirements = new[] {
+                            new ThreadScalingRequirement { FromThreads = 1, ToThreads = 2, MinSpeedup = 1.1 }
+                        }
+                    }
+                },
                 RunControl = control => RunControl<BoSSS.Application.XdgPoisson3.XdgPoisson3Control, BoSSS.Application.XdgPoisson3.XdgPoisson3Main>((BoSSS.Application.XdgPoisson3.XdgPoisson3Control)control),
             },
             new ThreadScalingTestcase {
@@ -84,6 +137,22 @@ namespace BoSSS.Application.MultithreadingSolverTest {
                     C.ProjectName = "MultithreadingScalingTest/Bubble";
                     PrepareControl(C, "RisingBubble");
                     return C;
+                },
+                ScalingMethods = new[] {
+                    new ThreadScalingMethod {
+                        Name = "AssembleMatrixCallback",
+                        Requirements = new[] {
+                            new ThreadScalingRequirement { FromThreads = 1, ToThreads = 2, MinSpeedup = 1.3 },
+                            new ThreadScalingRequirement { FromThreads = 1, ToThreads = 4, MinSpeedup = 1.4 }
+                        }
+                    },
+                    new ThreadScalingMethod {
+                        Name = "EvaluateOperator",
+                        Requirements = new[] {
+                            new ThreadScalingRequirement { FromThreads = 1, ToThreads = 2, MinSpeedup = 1.3 },
+                            new ThreadScalingRequirement { FromThreads = 1, ToThreads = 4, MinSpeedup = 1.4 }
+                        }
+                    }
                 },
                 RunControl = control => RunControl<XNSE_Control, XNSE_Solver.XNSE>((XNSE_Control)control),
             },
