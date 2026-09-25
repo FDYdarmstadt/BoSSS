@@ -113,7 +113,7 @@ namespace BoSSS.Application.MultithreadingSolverTest {
                 // this is not really good now
                 Name = "XdgPoisson3",
                 CreateControl = () => {
-                    var C = BoSSS.Application.XdgPoisson3.HardCodedControl.Circle(Resolution: 128, p: 4);
+                    var C = BoSSS.Application.XdgPoisson3.HardCodedControl.Circle(Resolution: 192, p: 4);
                     C.ProjectName = "MultithreadingScalingTest/XdgPoisson3";
                     C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
                     PrepareControl(C, "XdgPoisson3");
@@ -132,7 +132,7 @@ namespace BoSSS.Application.MultithreadingSolverTest {
             new ThreadScalingTestcase {
                 Name = "XNSERisingBubble",
                 CreateControl = () => {
-                    var C = XNSE_Solver_MPItest.RisingBubble(p: 2, kelem: 32);
+                    var C = XNSE_Solver_MPItest.RisingBubble(p: 2, kelem: 64);
                     C.NoOfTimesteps = 1;
                     C.ProjectName = "MultithreadingScalingTest/Bubble";
                     PrepareControl(C, "RisingBubble");
