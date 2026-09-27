@@ -283,10 +283,18 @@ namespace ApplicationWithIDT {
         /// <param name="obj_out"></param>
         /// <param name="ConservativeFields"></param>
         public override void EvalObjective<V>(V obj_out, XDGField[] ConservativeFields) {
-            base.EvalObjective(obj_out, ConservativeFields);
             var tracker = ConservativeFields[0].Basis.Tracker;
             var objFields = CreateObjField(ConservativeFields);
-            var obj_map = new CoordinateMapping(objFields);
+            var obj_out_tmp = new CoordinateVector(objFields);
+            base.EvalObjective(obj_out_tmp, ConservativeFields);
+
+            var notNB = tracker.Regions.GetNearFieldMask(1).Complement();
+            foreach(var f in objFields)
+                f.Clear(notNB);
+
+            obj_out.SetV(obj_out_tmp);
+
+            /*
             var NB = tracker.Regions.GetNearFieldMask(1);
             //very ugly, because of contains method
             for(int iRow = 0; iRow < (int)obj_map.TotalLength; iRow++) {
@@ -297,6 +305,7 @@ namespace ApplicationWithIDT {
                     obj_out[iRow] = 0; //set unneeded entries to zero
                 }
             }
+            */
         }
         /// <summary>
         /// Computes the full enriched residual Jacobian and sets all entries to zero which are not on the near band
