@@ -2933,7 +2933,8 @@ namespace ApplicationWithIDT {
                     } else if(e is TimeoutException) {
                         Console.WriteLine($"alpha, ||R1||  {m_alpha}, TimeOut ");
                     } else {
-                        Console.WriteLine($"alpha, ||R1||  {m_alpha}, Error ");
+                        string origin = e.StackTrace.Split(System.Environment.NewLine).FirstOrDefault() ?? "UNKNOWN ORIGIN";
+                        Console.WriteLine($"alpha, ||R1||  {m_alpha}, Error (" + e.GetType().Name + ", " + origin + ")");
                     }
                     resetStepAgglomerated();
                     counter2++;

@@ -658,10 +658,10 @@ namespace BoSSS.Foundation.XDG {
         protected virtual void FindAgglomerationTargets(
             List<int> AgglomCellsList, BitArray AgglomCellsBitmask, BitArray AggCandidates
             ) {
-            using (new FuncTrace()) {
+            using (var tr = new FuncTrace()) {
 
 
-                Console.WriteLine("Count of AgglomCellsList:" + AgglomCellsList.Count + " AgglomCellsBitmask: " + AgglomCellsBitmask.Count + " AggCandidates: " + AggCandidates.Count);
+                tr.Info("Count of AgglomCellsList:" + AgglomCellsList.Count + " AgglomCellsBitmask: " + AgglomCellsBitmask.Count + " AggCandidates: " + AggCandidates.Count);
 
                 var Cell2Edge = grdDat.Cells.Cells2Edges;
                 int[,] Edge2Cell = grdDat.Edges.CellIndices;
@@ -2352,20 +2352,6 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// plot failure as tecplot
         /// </summary>
-        /// <param name="ExceptionOnFailedAgglomeration"></param>
-        /// <param name="CellVolumes"></param>
-        /// <param name="oldCellVolumes"></param>
-        /// <param name="AgglomCellsList"></param>
-        /// <param name="failCells"></param>
-        /// <param name="aggCandidates"></param>
-        /// <param name="aggTargets"></param>
-        /// <param name="pairIdentification"></param>
-        /// <param name="pairColor"></param>
-        /// <param name="aggDirection"></param>
-        /// <param name="volFrac"></param>
-        /// <param name="Tag"></param>
-        /// <exception cref="ArgumentOutOfRangeException"></exception>
-        /// <exception cref="Exception"></exception>
         private void PlotFail(bool ExceptionOnFailedAgglomeration, MultidimensionalArray CellVolumes, MultidimensionalArray[] oldCellVolumes, List<int> AgglomCellsList, List<int> failCells, BitArray aggCandidates, int[] aggTargets, int[] pairIdentification, int[] pairColor, Vector[] aggDirection, double[] volFrac, string Tag = "") {
             // ++++++++++++++++++++++++++
             // Error handling / reporting
@@ -2518,8 +2504,28 @@ namespace BoSSS.Foundation.XDG {
                 Katastrophenplot(CellVolumesViz.Cat(MPIRank,AgglomCellsViz, AggCandidates, AggTargets, FailedViz, LevelSets, LvSetDist, CellNumbers, CellNumbersGlob, GlobalID, PairIdentification, PairColor, VolFrac),Tag);
             }
 
-            if (failCells.Count.MPISum() > 0) { 
-               string message = ($"!!! Warning: Agglomeration failed - no candidate for agglomeration found for {failCells.Count.MPISum()} cells. ");
+           
+
+            if (failCells.Count.MPISum() > 0) {
+                string message = "";
+                try {
+                    var spcNmn = Tracker.GetSpeciesName(spId);
+                    message = ($"!!! Warning: Agglomeration failed for species {spcNmn} - no candidate for agglomeration found for {failCells.Count.MPISum()} cells. ");
+                    var FailMask = new BitArray(Jup);
+                    foreach(int jFail in failCells) {
+                        if(jFail < Jup)
+                            FailMask[jFail] = true;
+                    }
+                    string MpiSuffix;
+                    if(this.grdDat.MpiSize > 1)
+                        MpiSuffix = "." + this.grdDat.MpiRank + "of" + this.grdDat.MpiSize;
+                    else
+                        MpiSuffix = "";
+                    (new CellMask(grdDat, FailMask, MaskType.Geometrical)).SaveToTextFile($"aggFail{spcNmn}{MpiSuffix}.csv");
+                } catch {
+
+                }
+
                 if (ExceptionOnFailedAgglomeration)
                     throw new Exception(message);
                 else
