@@ -1436,13 +1436,22 @@ namespace ApplicationWithIDT {
             (res_l2, obj_f, res_L2) = ComputeResiduals();
             AgglomerateOnlyResiduals();
 
+            ResidualHistory.Add((
+                0,
+                this.ConservativeFields.Select(f => f.Basis.Degree).ToArray(),
+                res_l2, obj_f, res_l2
+                ));
+
             var kappa_copy = kappa;
             kappa = 1;
             var f_phi_vec = ComputeFphi();
             kappa = kappa_copy;
             Console.Write($"Residual: l2 |r|= {res_l2:#.####E+00}, L2 |r|= {res_L2:#.####E+00}; obj func l2: f_err = {obj_f:#.####E+00}, f_phi={f_phi_vec.InnerProd(f_phi_vec):#.####E+00}, ");
-
         }
+
+        public List<(int TimeSlabIndex, int[] Degrees, double res_l2, double obj_f, double res_L2)> ResidualHistory = new List<(int, int[], double, double, double)>();
+
+
         /// <summary>
         /// evaluates both residuals
         /// </summary>
