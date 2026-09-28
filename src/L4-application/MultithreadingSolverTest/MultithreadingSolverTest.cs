@@ -53,14 +53,16 @@ namespace BoSSS.Application.MultithreadingSolverTest {
 
         [Test]
         public static void Check() {
-            var t1 = ReadTimings(1);
-            var t2 = ReadTimings(2);
-            var t4 = ReadTimings(4);
+            var timingsByThreads = ReadTimingsForAllThreadCounts();
+            Assert.That(timingsByThreads.Count, Is.GreaterThanOrEqualTo(2),
+                "At least two thread timing files are required for a scaling check.");
 
-            string[] commonTestcases = t1
-                .Select(r => r.Testcase)
-                .Intersect(t2.Select(r => r.Testcase))
-                .Intersect(t4.Select(r => r.Testcase))
+            Console.WriteLine("AVAILABLE_THREAD_COUNTS: " +
+                string.Join(", ", timingsByThreads.Keys.OrderBy(threads => threads)));
+
+            string[] commonTestcases = timingsByThreads.Values
+                .Select(rows => rows.Select(r => r.Testcase).Distinct())
+                .Aggregate((common, names) => common.Intersect(names))
                 .Distinct()
                 .OrderBy(s => s)
                 .ToArray();
@@ -76,7 +78,7 @@ namespace BoSSS.Application.MultithreadingSolverTest {
                 "No common testcases found in timing files."
             );
 
-            CreateExtraPFilesForAllTestcases();
+            var profilingDatapoints = CreateExtraPFilesForAllTestcases();
 
             var selectedTestcases = GetTestCasesFromEnvironment()
                 .Where(tc => commonTestcases.Contains(tc.Name))
@@ -97,41 +99,62 @@ namespace BoSSS.Application.MultithreadingSolverTest {
             var failures = new List<string>();
 
             foreach(var testcase in selectedTestcases) {
-                double T1 = GetAveragePhaseTime(t1, testcase.Name, "");
-                double T2 = GetAveragePhaseTime(t2, testcase.Name, "");
-                double T4 = GetAveragePhaseTime(t4, testcase.Name, "");
+                var scalingChecks = new[] {
+                    new {
+                        Name = (string)null,
+                        Requirements = testcase.Requirements ?? Array.Empty<ThreadScalingRequirement>()
+                    }
+                }.Concat((testcase.ScalingMethods ?? Array.Empty<ThreadScalingMethod>())
+                    .Select(method => new {
+                        method.Name,
+                        Requirements = method.Requirements ?? Array.Empty<ThreadScalingRequirement>()
+                    }));
 
-                double speedup12 = T1 / T2;
-                double speedup14 = T1 / T4;
-                double speedup24 = T2 / T4;
+                foreach(var scalingCheck in scalingChecks) {
+                    if(scalingCheck.Requirements.Length == 0)
+                        continue;
 
-                Console.WriteLine($"THREAD_SCALING_SUMMARY testcase={testcase.Name}");
-                Console.WriteLine($"  t1 avg       = {T1:g6} s");
-                Console.WriteLine($"  t2 avg       = {T2:g6} s");
-                Console.WriteLine($"  t4 avg       = {T4:g6} s");
-                Console.WriteLine($"  speedup 1->2 = {speedup12:g6}, expected >= {testcase.MinSpeedup12:g6}");
-                Console.WriteLine($"  speedup 1->4 = {speedup14:g6}, expected >= {testcase.MinSpeedup14:g6}");
-                Console.WriteLine($"  speedup 2->4 = {speedup24:g6}, expected >= {testcase.MinSpeedup24:g6}");
+                    string scalingTarget = scalingCheck.Name == null
+                        ? testcase.Name
+                        : $"{testcase.Name}, method '{scalingCheck.Name}'";
 
-                if(speedup12 < testcase.MinSpeedup12) {
-                    failures.Add(
-                        $"Expected stronger 1->2 thread speedup for testcase '{testcase.Name}'. " +
-                        $"T1={T1:g6}, T2={T2:g6}, speedup={speedup12:g6}, expected >= {testcase.MinSpeedup12:g6}"
-                    );
-                }
+                    string[] regions = null;
+                    if(scalingCheck.Name != null) {
+                        Assert.That(profilingDatapoints.ContainsKey(testcase.Name), Is.True,
+                            $"No Extra-P profiling data for testcase '{testcase.Name}'.");
 
-                if(speedup14 < testcase.MinSpeedup14) {
-                    failures.Add(
-                        $"Expected stronger 1->4 thread speedup for testcase '{testcase.Name}'. " +
-                        $"T1={T1:g6}, T4={T4:g6}, speedup={speedup14:g6}, expected >= {testcase.MinSpeedup14:g6}"
-                    );
-                }
+                        regions = ResolveProfilingRegions(profilingDatapoints[testcase.Name], scalingCheck.Name);
+                    }
 
-                if(speedup24 < testcase.MinSpeedup24) {
-                    failures.Add(
-                        $"Expected stronger 2->4 thread speedup for testcase '{testcase.Name}'. " +
-                        $"T2={T2:g6}, T4={T4:g6}, speedup={speedup24:g6}, expected >= {testcase.MinSpeedup24:g6}"
-                    );
+                    foreach(ThreadScalingRequirement requirement in scalingCheck.Requirements) {
+                        Assert.That(requirement.FromThreads, Is.GreaterThan(0),
+                            $"Invalid source thread count for {scalingTarget}.");
+                        Assert.That(requirement.ToThreads, Is.GreaterThan(0),
+                            $"Invalid target thread count for {scalingTarget}.");
+                        Assert.That(requirement.FromThreads, Is.Not.EqualTo(requirement.ToThreads),
+                            $"Thread counts must differ for {scalingTarget}.");
+
+                        double fromTime = scalingCheck.Name == null
+                            ? GetAveragePhaseTime(GetTimingRows(timingsByThreads, requirement.FromThreads), testcase.Name, "")
+                            : GetAverageRegionTime(profilingDatapoints[testcase.Name], requirement.FromThreads, regions);
+                        double toTime = scalingCheck.Name == null
+                            ? GetAveragePhaseTime(GetTimingRows(timingsByThreads, requirement.ToThreads), testcase.Name, "")
+                            : GetAverageRegionTime(profilingDatapoints[testcase.Name], requirement.ToThreads, regions);
+                        double speedup = fromTime / toTime;
+
+                        Console.WriteLine($"THREAD_SCALING_SUMMARY testcase={scalingTarget}, threads={requirement.FromThreads}->{requirement.ToThreads}");
+                        Console.WriteLine($"  t{requirement.FromThreads} avg = {fromTime:g6} s");
+                        Console.WriteLine($"  t{requirement.ToThreads} avg = {toTime:g6} s");
+                        PrintSpeedup($"{requirement.FromThreads}->{requirement.ToThreads}", speedup, requirement.MinSpeedup);
+
+                        if(requirement.MinSpeedup > 0 && speedup < requirement.MinSpeedup) {
+                            failures.Add(
+                                $"Expected stronger {requirement.FromThreads}->{requirement.ToThreads} thread speedup for {scalingTarget}. " +
+                                $"T{requirement.FromThreads}={fromTime:g6}, T{requirement.ToThreads}={toTime:g6}, " +
+                                $"speedup={speedup:g6}, expected >= {requirement.MinSpeedup:g6}"
+                            );
+                        }
+                    }
                 }
             }
 
@@ -151,8 +174,8 @@ namespace BoSSS.Application.MultithreadingSolverTest {
             if(!int.TryParse(omp, out int threads))
                 Assert.Fail($"Unable to parse OMP_NUM_THREADS='{omp}'.");
 
-            if(threads != 1 && threads != 2 && threads != 4)
-                Assert.Fail($"Unexpected OMP_NUM_THREADS={threads}. Expected 1, 2, or 4.");
+            if(threads <= 0)
+                Assert.Fail($"OMP_NUM_THREADS must be positive, but was {threads}.");
 
             return threads;
         }
@@ -181,6 +204,15 @@ namespace BoSSS.Application.MultithreadingSolverTest {
                 Assert.Fail("Unknown thread performance testcase(s): " + string.Join(", ", missing));
 
             return selected;
+        }
+
+        private static void PrintSpeedup(string transition, double speedup, double minimum) {
+            if(minimum <= 0) {
+                Console.WriteLine($"  speedup {transition} = {speedup:g6}, check disabled");
+            } else {
+                string result = speedup >= minimum ? "OK" : "FAIL";
+                Console.WriteLine($"  speedup {transition} = {speedup:g6}, expected >= {minimum:g6}: {result}");
+            }
         }
 
         private static void ResetTimingFile(string file) {
@@ -216,17 +248,44 @@ namespace BoSSS.Application.MultithreadingSolverTest {
             public double Seconds;
         }
 
-        private static TimingRow[] ReadTimings(int threads) {
-            string file = $"thread-{threads}.time";
+        private static Dictionary<int, TimingRow[]> ReadTimingsForAllThreadCounts() {
+            var filenamePattern = new System.Text.RegularExpressions.Regex(
+                @"^thread-(?<threads>\d+)\.time$",
+                System.Text.RegularExpressions.RegexOptions.Compiled
+            );
 
-            Assert.That(File.Exists(file), Is.True,
-                $"Missing timing file '{file}'.");
-
-            return File.ReadAllLines(file)
-                .Skip(1)
-                .Where(line => !string.IsNullOrWhiteSpace(line))
-                .Select(ParseTimingRow)
+            var timingFiles = Directory
+                .GetFiles(Directory.GetCurrentDirectory(), "thread-*.time")
+                .Select(file => new { File = file, Match = filenamePattern.Match(Path.GetFileName(file)) })
+                .Where(x => x.Match.Success)
+                .Select(x => new {
+                    Threads = int.Parse(x.Match.Groups["threads"].Value, CultureInfo.InvariantCulture),
+                    x.File
+                })
                 .ToArray();
+
+            Assert.That(timingFiles.Length, Is.GreaterThan(0), "No thread timing files found.");
+            Assert.That(timingFiles.Select(x => x.Threads).Distinct().Count(), Is.EqualTo(timingFiles.Length),
+                "Multiple timing files found for the same thread count.");
+
+            return timingFiles.ToDictionary(
+                x => x.Threads,
+                x => File.ReadAllLines(x.File)
+                    .Skip(1)
+                    .Where(line => !string.IsNullOrWhiteSpace(line))
+                    .Select(ParseTimingRow)
+                    .ToArray()
+            );
+        }
+
+        private static TimingRow[] GetTimingRows(
+            IReadOnlyDictionary<int, TimingRow[]> timingsByThreads,
+            int threads
+        ) {
+            Assert.That(timingsByThreads.ContainsKey(threads), Is.True,
+                $"Missing timing file for {threads} threads.");
+
+            return timingsByThreads[threads];
         }
 
         private static TimingRow ParseTimingRow(string line) {
@@ -252,6 +311,64 @@ namespace BoSSS.Application.MultithreadingSolverTest {
 
             Assert.That(values.Length, Is.GreaterThan(0),
                 $"No timing data for testcase '{testcase}', phase '{phase}'.");
+
+            return values.Average();
+        }
+
+        private static string[] ResolveProfilingRegions(
+            IEnumerable<ExtraPDatapoint> datapoints,
+            string methodSelector
+        ) {
+            string[] matches = datapoints
+                .SelectMany(dp => dp.Records?.Keys ?? Enumerable.Empty<string>())
+                .Distinct()
+                .Where(region =>
+                    region.Equals(methodSelector, StringComparison.Ordinal) ||
+                    region.EndsWith("->" + methodSelector, StringComparison.Ordinal) ||
+                    region.EndsWith("." + methodSelector, StringComparison.Ordinal)
+                )
+                .ToArray();
+
+            Assert.That(
+                matches.Length,
+                Is.GreaterThan(0),
+                $"Method selector '{methodSelector}' did not match an Extra-P region."
+            );
+
+            Console.WriteLine(
+                $"THREAD_SCALING_METHOD selector='{methodSelector}', regions={matches.Length}"
+            );
+
+            return matches;
+        }
+
+        private static double GetAverageRegionTime(
+            IEnumerable<ExtraPDatapoint> datapoints,
+            int threads,
+            IEnumerable<string> regions
+        ) {
+            string[] selectedRegions = regions.ToArray();
+            double[] values = datapoints
+                .Where(dp => dp.ThreadSize == threads)
+                .Select(dp => {
+                    Assert.That(dp.Records, Is.Not.Null,
+                        "Profiling records are unavailable.");
+
+                    string[] missingRegions = selectedRegions
+                        .Where(region => !dp.Records.ContainsKey(region))
+                        .ToArray();
+                    Assert.That(missingRegions, Is.Empty,
+                        $"Extra-P region(s) missing for {threads} threads in session '{dp.SessionName}': " +
+                        string.Join(", ", missingRegions));
+
+                    return selectedRegions.Sum(region =>
+                        dp.Records[region].Sum(ExtraPAnalysis.GetInclusiveSeconds)
+                    );
+                })
+                .ToArray();
+
+            Assert.That(values.Length, Is.GreaterThan(0),
+                $"No Extra-P profiling data for selected regions with {threads} threads.");
 
             return values.Average();
         }
@@ -318,8 +435,9 @@ namespace BoSSS.Application.MultithreadingSolverTest {
             }
         }
 
-        private static void CreateExtraPFilesForAllTestcases(bool exclusive = false) {
+        private static Dictionary<string, List<ExtraPDatapoint>> CreateExtraPFilesForAllTestcases(bool exclusive = false) {
             string cwd = Directory.GetCurrentDirectory();
+            var result = new Dictionary<string, List<ExtraPDatapoint>>();
 
             var folderRegex = new System.Text.RegularExpressions.Regex(
                 @"^profiling_(?<testcase>.+)_threads(?<threads>\d+)_run(?<run>\d+)$",
@@ -385,10 +503,14 @@ namespace BoSSS.Application.MultithreadingSolverTest {
                     exclusive: exclusive
                 );
 
+                result.Add(testcase, datapoints);
+
                 Console.WriteLine(
                     $"Created Extra-P file '{outputFile}' with {datapoints.Count} datapoints."
                 );
             }
+
+            return result;
         }
     }
 }

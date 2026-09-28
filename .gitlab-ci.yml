@@ -20,8 +20,8 @@ build:
     - windows
   artifacts:
     paths:
-#      - src/L4-application/TutorialTests/bin/Release/net8.0
-      - src/L4-application/PublicTestRunner/bin/Release/net8.0
+#      - src/L4-application/TutorialTests/bin/Release/net10.0
+      - src/L4-application/PublicTestRunner/bin/Release/net10.0
     expire_in: 2 days
     
 TutorialTests:
@@ -29,8 +29,8 @@ TutorialTests:
   before_script:
     - cd src/L4-application/PublicTestRunner
     - dir 
-    - cd bin/Release/net8.0
-#    - cd src/L4-application/PublicTestRunner/bin/Release/net8.0
+    - cd bin/Release/net10.0
+#    - cd src/L4-application/PublicTestRunner/bin/Release/net10.0
 #    - bash -c "chmod +x PublicTestRunner.exe"
   tags:
     - C#7.0
@@ -47,9 +47,9 @@ TutorialTests:
     - build  
   artifacts:
     reports:
-      junit: public/src/L4-application/PublicTestRunner/bin/Release/net8.0/result.xml
+      junit: public/src/L4-application/PublicTestRunner/bin/Release/net10.0/result.xml
     paths:
-      - src/L4-application/PublicTestRunner/bin/Release/net8.0/*.html
+      - src/L4-application/PublicTestRunner/bin/Release/net10.0/*.html
     expire_in: 2 days
    
 ValidationTestsLocal:
@@ -57,7 +57,7 @@ ValidationTestsLocal:
   variables:
     OMP_NUM_THREADS: 1  
   script:
-      - cd public/src/L4-application/ValidationTestRunner/bin/Release/net8.0
+      - cd public/src/L4-application/ValidationTestRunner/bin/Release/net10.0
       - dir ValidationTestRunner*
       - $Env:BOSSS_RUNTESTFROMBACKUP = "yesofcourse"
       - ./ValidationTestRunner.exe runjobmanager ValidationTestRunner\\*WorksheetTests_Local* queue#0
@@ -69,9 +69,9 @@ ValidationTestsLocal:
     - build  
   artifacts:
     reports:
-      junit: public/src/L4-application/ValidationTestRunner/bin/Release/net8.0/result*.xml
+      junit: public/src/L4-application/ValidationTestRunner/bin/Release/net10.0/result*.xml
     paths:
-      - src/L4-application/ValidationTestRunner/bin/Release/net8.0/*.html
+      - src/L4-application/ValidationTestRunner/bin/Release/net10.0/*.html
     expire_in: 2 days
 
 ValidationTestsLichtenberg:
@@ -79,7 +79,7 @@ ValidationTestsLichtenberg:
   variables:
     OMP_NUM_THREADS: 1  
   script: 
-      - cd public/src/L4-application/ValidationTestRunner/bin/Release/net8.0
+      - cd public/src/L4-application/ValidationTestRunner/bin/Release/net10.0
       - export BOSSS_RUNTESTFROMBACKUP=yesofcourse
       - dotnet ValidationTestRunner.dll runjobmanager ValidationTestRunner\\WorksheetTests_Lichtenberg.* queue#2
       - ls result*.xml
@@ -90,9 +90,9 @@ ValidationTestsLichtenberg:
     - build  
   artifacts:
     reports:
-      junit: public/src/L4-application/ValidationTestRunner/bin/Release/net8.0/result*.xml
+      junit: public/src/L4-application/ValidationTestRunner/bin/Release/net10.0/result*.xml
     paths:
-      - src/L4-application/ValidationTestRunner/bin/Release/net8.0/*.html
+      - src/L4-application/ValidationTestRunner/bin/Release/net10.0/*.html
     expire_in: 2 days
 
     
@@ -112,7 +112,7 @@ pages:
     - build
     - test
   script:
-    - dir src/L4-application/PublicTestRunner/bin/Release/net8.0/*.html
+    - dir src/L4-application/PublicTestRunner/bin/Release/net10.0/*.html
     - ./downloadValidationTestsWrapper.bat
     - cd public  
     - dir
