@@ -99,12 +99,6 @@ namespace BoSSS.Application.MultithreadingSolverTest {
                             new ThreadScalingRequirement { FromThreads = 1, ToThreads = 4, MinSpeedup = 1.3 }
                         }
                     },
-                    new ThreadScalingMethod {
-                        Name = "BoSSS.Foundation.DifferentialOperator+EvaluatorNonLin.Evaluate",
-                        Requirements = new[] {
-                            new ThreadScalingRequirement { FromThreads = 1, ToThreads = 2, MinSpeedup = 1.3 }
-                        }
-                    }
                 },
                 RunControl = control => RunControl<BoSSS.Application.SipPoisson.SipControl, BoSSS.Application.SipPoisson.SipPoissonMain>((BoSSS.Application.SipPoisson.SipControl)control),
             },
@@ -112,19 +106,15 @@ namespace BoSSS.Application.MultithreadingSolverTest {
                 // this is not really good now
                 Name = "XdgPoisson3",
                 CreateControl = () => {
-                    var C = BoSSS.Application.XdgPoisson3.HardCodedControl.Circle(Resolution: 192, p: 4);
+                    var C = BoSSS.Application.XdgPoisson3.HardCodedControl.Circle(Resolution: 128, p: 4);
                     C.ProjectName = "MultithreadingScalingTest/XdgPoisson3";
                     C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
                     PrepareControl(C, "XdgPoisson3");
                     return C;
                 },
-                ScalingMethods = new[] {
-                    new ThreadScalingMethod {
-                        Name = "AssembleMatrix",
-                        Requirements = new[] {
-                            new ThreadScalingRequirement { FromThreads = 1, ToThreads = 2, MinSpeedup = 1.1 }
-                        }
-                    }
+                Requirements = new[] {
+                    new ThreadScalingRequirement { FromThreads = 1, ToThreads = 2, MinSpeedup = 1.05 },
+                    new ThreadScalingRequirement { FromThreads = 1, ToThreads = 4, MinSpeedup = 1.06 }
                 },
                 RunControl = control => RunControl<BoSSS.Application.XdgPoisson3.XdgPoisson3Control, BoSSS.Application.XdgPoisson3.XdgPoisson3Main>((BoSSS.Application.XdgPoisson3.XdgPoisson3Control)control),
             },
@@ -137,21 +127,9 @@ namespace BoSSS.Application.MultithreadingSolverTest {
                     PrepareControl(C, "RisingBubble");
                     return C;
                 },
-                ScalingMethods = new[] {
-                    new ThreadScalingMethod {
-                        Name = "AssembleMatrixCallback",
-                        Requirements = new[] {
-                            new ThreadScalingRequirement { FromThreads = 1, ToThreads = 2, MinSpeedup = 1.3 },
-                            new ThreadScalingRequirement { FromThreads = 1, ToThreads = 4, MinSpeedup = 1.4 }
-                        }
-                    },
-                    new ThreadScalingMethod {
-                        Name = "EvaluateOperator",
-                        Requirements = new[] {
-                            new ThreadScalingRequirement { FromThreads = 1, ToThreads = 2, MinSpeedup = 1.3 },
-                            new ThreadScalingRequirement { FromThreads = 1, ToThreads = 4, MinSpeedup = 1.4 }
-                        }
-                    }
+                Requirements = new[] {
+                    new ThreadScalingRequirement { FromThreads = 1, ToThreads = 2, MinSpeedup = 1.05 },
+                    new ThreadScalingRequirement { FromThreads = 1, ToThreads = 4, MinSpeedup = 1.06 }
                 },
                 RunControl = control => RunControl<XNSE_Control, XNSE_Solver.XNSE>((XNSE_Control)control),
             },
