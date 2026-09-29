@@ -1071,6 +1071,14 @@ namespace ilPSP {
                         // Multiplication WITOUT index-transformation
                         // ++++++++++++++++++++++++++++++++++++++++++
 
+                        // Shallow views can alias even when the array objects differ.
+                        // Retain the original execution order for all shared storage.
+                        if(!ReferenceEquals(this.m_Storage, A.m_Storage)
+                            && !ReferenceEquals(this.m_Storage, B.m_Storage)
+                            && TryMultiplyBlas(DT, mp.NoOfSumCycles, pT, pA, pB,
+                                lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale))
+                            return;
+
                         Multiply_Dispatch(DT, mp.NoOfSumCycles, pT, pA, pB, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale);
                     }
                 }
