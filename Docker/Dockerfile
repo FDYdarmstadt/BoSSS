@@ -68,6 +68,7 @@ sandbox_mode = "danger-full-access"
 
 model = "gpt-5.6-luna"
 model_reasoning_effort = "medium"
+service_tier = "default"
 
 [projects."/workspace"]
 trust_level = "trusted"
