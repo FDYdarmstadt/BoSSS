@@ -1058,6 +1058,16 @@ namespace ilPSP {
                         if(IndexTrafo_T == null)
                             throw new ArgumentException("Index transformation required.");
                         {
+                            if(TryMultiplyWTrafoGemm(
+                                DT, mp.NoOfSumCycles, pT, pA, pB, lenRun, cycRunT, cycRunA, cycRunB,
+                                lenSum, cycSumA, cycSumB, scale, thisscale,
+                                IndexTrafo_T, IndexTrafo_A, IndexTrafo_B,
+                                mp.TrfT0Sw, mp.TrfA0Sw, mp.TrfB0Sw,
+                                trfPreOffset_A, trfCycle_A, trfPostOffset_A,
+                                trfPreOffset_B, trfCycle_B, trfPostOffset_B,
+                                !ReferenceEquals(this.m_Storage, A.m_Storage)
+                                && !ReferenceEquals(this.m_Storage, B.m_Storage)))
+                                return;
                             //Debug.Assert(mp.NoOfSumCycles == 1); Debug.Assert(DT == 2); __MultiplyWTrafo_Sum1_FOR2( 
                             MultiplyWTrafo_Dispatch(
                                 DT, mp.NoOfSumCycles, pT, pA, pB, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale,
@@ -1073,10 +1083,10 @@ namespace ilPSP {
 
                         // Shallow views can alias even when the array objects differ.
                         // Retain the original execution order for all shared storage.
-                        if(!ReferenceEquals(this.m_Storage, A.m_Storage)
-                            && !ReferenceEquals(this.m_Storage, B.m_Storage)
-                            && TryMultiplyBlas(DT, mp.NoOfSumCycles, pT, pA, pB,
-                                lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale))
+                        if(TryMultiplyBlas(DT, mp.NoOfSumCycles, pT, pA, pB,
+                                lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale,
+                                !ReferenceEquals(this.m_Storage, A.m_Storage)
+                                && !ReferenceEquals(this.m_Storage, B.m_Storage)))
                             return;
 
                         Multiply_Dispatch(DT, mp.NoOfSumCycles, pT, pA, pB, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale);

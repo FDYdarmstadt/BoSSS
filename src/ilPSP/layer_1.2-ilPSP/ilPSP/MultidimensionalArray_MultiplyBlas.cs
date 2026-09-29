@@ -1,68 +1,241 @@
 using System;
+using System.Numerics;
 using ilPSP.Utils;
+using SimdVector = System.Numerics.Vector<double>;
 
 namespace ilPSP {
     public partial class MultidimensionalArray {
-        /// <summary>
-        /// Recognizes a matrix product (optionally batched over the first running
-        /// index) from actual strides, not from symbolic index names. No packing.
-        /// The caller excludes transformed indices and shared output/input storage.
-        /// </summary>
+        // Selection order: direct GEMM, direct GEMV, packed GEMM, SIMD, fallback.
         static unsafe bool TryMultiplyBlas(int runDim, int sumDim,
             double* t, double* a, double* b, int* lengths,
             int* ct, int* ca, int* cb, int* sums, int* sa, int* sb,
-            double alpha, double beta) {
-            if(sumDim != 1 || (runDim != 2 && runDim != 3))
+            double alpha, double beta, bool directAllowed) {
+            // In-place Multiply has established traversal semantics when a
+            // shallow view aliases the destination. Preserve that reference
+            // behavior instead of silently changing it to snapshot semantics.
+            if(!directAllowed)
                 return false;
+            if(sumDim != 1)
+                return TryMultiplySimd(runDim, sumDim, t, a, b, lengths, ct, ca, cb, sums, sa, sb, alpha, beta);
+            if(sums[0] <= 0 || alpha == 0.0)
+                return false;
+            if(TryDirectGemmRank4(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) return true;
+            if(directAllowed && TryDirectGemm(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) return true;
+            if(directAllowed && TryDirectGemv(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) return true;
+            if(TryPackedGemm(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) return true;
+            return TryMultiplySimd(runDim, sumDim, t, a, b, lengths, ct, ca, cb, sums, sa, sb, alpha, beta);
+        }
 
-            int row = runDim - 2, col = row + 1;
-            int m = lengths[row], n = lengths[col], k = sums[0];
-            // Single-thread measurements: native-call overhead dominates tiny
-            // products. Keep short DG coordinate reductions on the unrolled path.
-            // Require at least a 16^3 product's work, with no extent below eight.
-            if(m < 8 || n < 8 || k < 8 || (long)m * n * k < 4096 || alpha == 0.0)
-                return false;
-            if(ca[col] != 0 || cb[row] != 0 || ct[col] != 1 || ct[row] < n)
-                return false;
-
-            // Row-major C is column-major C^T = B^T A^T. Either input may
-            // already be transposed; padded leading dimensions are allowed.
-            int transB, ldb;
-            if(sa[0] == 1 && ca[row] >= k) {
-                transB = 'n'; ldb = ca[row];
-            } else if(ca[row] == 1 && sa[0] >= m) {
-                transB = 't'; ldb = sa[0];
-            } else {
-                return false;
+        // Handles contractions such as T[i,k,n,a] = sum_b A[i,k,a,b] B[k,n,b].
+        // The two operand-exclusive axes form the GEMM dimensions; all other
+        // running axes are independent batches.  The strict stride checks keep
+        // this path limited to the row/column-major layouts BLAS can consume
+        // without packing.
+        static unsafe bool TryDirectGemmRank4(int runDim, double* t, double* a, double* b,
+            int* lengths, int* ct, int* ca, int* cb, int k, int* sa, int* sb, double alpha, double beta) {
+            if(runDim != 4 || k < 8) return false;
+            int p = -1, q = -1;
+            for(int d = 0; d < runDim; d++) {
+                if(ca[d] == 0 && cb[d] != 0) { if(p >= 0) return false; p = d; }
+                if(ca[d] != 0 && cb[d] == 0) { if(q >= 0) return false; q = d; }
             }
-            int transA, lda;
-            if(cb[col] == 1 && sb[0] >= n) {
-                transA = 'n'; lda = sb[0];
-            } else if(sb[0] == 1 && cb[col] >= k) {
-                transA = 't'; lda = cb[col];
-            } else {
-                return false;
-            }
+            if(p < 0 || q < 0 || p == q) return false;
+            int m = lengths[p], n = lengths[q];
+            if(m < 4 || n < 4 || (long)m * n * k < 4096) return false;
+            if(ct[q] != 1 || ct[p] < n || sa[0] != 1 || sb[0] != 1) return false;
+            if(ca[q] < k || cb[p] < k) return false;
 
-            int batches = row == 0 ? 1 : lengths[0];
-            if(row != 0 && (ct[0] < (long)(m - 1) * ct[row] + n || ca[0] < 0 || cb[0] < 0))
-                return false;
-            int ldc = ct[row];
-            for(int batch = 0; batch < batches; batch++) {
+            int* batch = stackalloc int[2];
+            int batchCount = 1;
+            int batchDimCount = 0;
+            for(int d = 0; d < runDim; d++) {
+                if(d == p || d == q) continue;
+                if(ca[d] == 0 || cb[d] == 0 || ct[d] == 0) return false;
+                batch[batchDimCount++] = d;
+                batchCount *= lengths[d];
+            }
+            int ta = 't', tb = 'n', M = n, N = m, K = k;
+            int lda = ca[q], ldb = cb[p], ldc = ct[p];
+            for(int z = 0; z < batchCount; z++) {
+                int rem = z;
+                int ot = 0, oa = 0, ob = 0;
+                for(int j = 0; j < batchDimCount; j++) {
+                    int d = batch[j], idx = rem % lengths[d]; rem /= lengths[d];
+                    ot += idx * ct[d]; oa += idx * ca[d]; ob += idx * cb[d];
+                }
+                double* tp = t + ot, ap = a + oa, bp = b + ob;
                 double nativeBeta = beta;
                 if(beta == 0.0) {
-                    // Unlike DGEMM, Multiply evaluates beta*C even for beta=0.
-                    // Preserve NaN/Infinity propagation in the old destination.
-                    for(int i = 0; i < m; i++)
-                        for(int j = 0; j < n; j++)
-                            t[i * ldc + j] *= beta;
+                    for(int i = 0; i < m; i++) for(int j = 0; j < n; j++) tp[i * ldc + j] *= beta;
                     nativeBeta = 1.0;
                 }
-                BLAS.m_seq_BLAS.DGEMM(ref transA, ref transB,
-                    ref n, ref m, ref k, ref alpha, b, ref lda, a, ref ldb,
-                    ref nativeBeta, t, ref ldc);
-                if(row != 0) {
-                    t += ct[0]; a += ca[0]; b += cb[0];
+                BLAS.m_seq_BLAS.DGEMM(ref ta, ref tb, ref M, ref N, ref K,
+                    ref alpha, ap, ref lda, bp, ref ldb, ref nativeBeta, tp, ref ldc);
+            }
+            return true;
+        }
+
+        // Fast path for the common transformed layout: the transformed index is
+        // the outer run index and each mapped slice is an ordinary matrix
+        // product.  The generated transformed kernels currently bypass the
+        // selector above, so handle this case before dispatching to them.
+        static unsafe bool TryMultiplyWTrafoGemm(int runDim, int sumDim,
+            double* t, double* a, double* b, int* lengths,
+            int* ct, int* ca, int* cb, int* sums, int* sa, int* sb,
+            double alpha, double beta, int* trfT, int* trfA, int* trfB,
+            int trfT0Sw, int trfASw, int trfBSw,
+            int preA, int cycleA, int postA, int preB, int cycleB, int postB,
+            bool directAllowed) {
+            if(!directAllowed || runDim < 3 || sumDim != 1 || lengths[0] < 1 || sums[0] < 8)
+                return false;
+            int innerRun = runDim - 1;
+            if(innerRun != 2) return false;
+            // Validate every mapped slice before modifying the destination.
+            for(int i = 0; i < lengths[0]; i++) {
+                int ti = (trfT[i] + 0) * trfT0Sw;
+                int ai = (trfA[i * cycleA + preA] + postA) * trfASw;
+                int bi = (trfB[i * cycleB + preB] + postB) * trfBSw;
+                if(ti < 0 || ai < 0 || bi < 0) return false;
+                double* ts = t + ct[0] * (i * (1 - trfT0Sw) + ti);
+                double* ap = a + ca[0] * (i * (1 - trfASw) + ai);
+                double* bp = b + cb[0] * (i * (1 - trfBSw) + bi);
+                if(!CanDirectGemm(innerRun, ap, bp, lengths + 1, ct + 1, ca + 1, cb + 1, sums[0], sa, sb))
+                    return false;
+            }
+            for(int i = 0; i < lengths[0]; i++) {
+                int ti = trfT[i] * trfT0Sw;
+                int ai = (trfA[i * cycleA + preA] + postA) * trfASw;
+                int bi = (trfB[i * cycleB + preB] + postB) * trfBSw;
+                double* ts = t + ct[0] * (i * (1 - trfT0Sw) + ti);
+                double* ap = a + ca[0] * (i * (1 - trfASw) + ai);
+                double* bp = b + cb[0] * (i * (1 - trfBSw) + bi);
+                TryDirectGemm(innerRun, ts, ap, bp, lengths + 1, ct + 1, ca + 1, cb + 1, sums[0], sa, sb, alpha, beta);
+            }
+            return true;
+        }
+
+        static unsafe bool CanDirectGemm(int runDim, double* a, double* b,
+            int* lengths, int* ct, int* ca, int* cb, int k, int* sa, int* sb) {
+            if(runDim != 2) return false;
+            int m = lengths[0], n = lengths[1];
+            if(m < 8 || n < 8 || k < 8 || (long)m * n * k < 4096) return false;
+            if(ca[1] != 0 || cb[0] != 0 || ct[1] != 1 || ct[0] < n) return false;
+            if(!((sa[0] == 1 && ca[0] >= k) || (ca[0] == 1 && sa[0] >= m))) return false;
+            if(!((cb[1] == 1 && sb[0] >= n) || (sb[0] == 1 && cb[1] >= k))) return false;
+            return true;
+        }
+
+        static unsafe bool TryDirectGemm(int runDim, double* t, double* a, double* b,
+            int* lengths, int* ct, int* ca, int* cb, int k, int* sa, int* sb, double alpha, double beta) {
+            if(runDim != 2 && runDim != 3) return false;
+            int row = runDim - 2, col = row + 1;
+            int m = lengths[row], n = lengths[col];
+            if(m < 8 || n < 8 || k < 8 || (long)m * n * k < 4096) return false;
+            if(ca[col] != 0 || cb[row] != 0 || ct[col] != 1 || ct[row] < n) return false;
+            int transB, ldb;
+            if(sa[0] == 1 && ca[row] >= k) { transB = 'n'; ldb = ca[row]; }
+            else if(ca[row] == 1 && sa[0] >= m) { transB = 't'; ldb = sa[0]; }
+            else return false;
+            int transA, lda;
+            if(cb[col] == 1 && sb[0] >= n) { transA = 'n'; lda = sb[0]; }
+            else if(sb[0] == 1 && cb[col] >= k) { transA = 't'; lda = cb[col]; }
+            else return false;
+            int batches = row == 0 ? 1 : lengths[0], ldc = ct[row];
+            for(int q = 0; q < batches; q++) {
+                double nativeBeta = beta;
+                if(beta == 0.0) {
+                    for(int i = 0; i < m; i++) for(int j = 0; j < n; j++) t[i * ldc + j] *= beta;
+                    nativeBeta = 1.0;
+                }
+                BLAS.m_seq_BLAS.DGEMM(ref transA, ref transB, ref n, ref m, ref k,
+                    ref alpha, b, ref lda, a, ref ldb, ref nativeBeta, t, ref ldc);
+                if(row != 0) { t += ct[0]; a += ca[0]; b += cb[0]; }
+            }
+            return true;
+        }
+
+        // Pack arbitrary leading dimensions. The caller excludes aliases so the
+        // established in-place traversal semantics remain unchanged.
+        static unsafe bool TryPackedGemm(int runDim, double* t, double* a, double* b,
+            int* lengths, int* ct, int* ca, int* cb, int k, int* sa, int* sb, double alpha, double beta) {
+            if(runDim != 2 && runDim != 3) return false;
+            int row = runDim - 2, col = row + 1, m = lengths[row], n = lengths[col];
+            if(k < 1 || m < 4 || n < 4 || (long)m * n * k < 4096 || ca[col] != 0 || cb[row] != 0) return false;
+            int batches = row == 0 ? 1 : lengths[0];
+            double[] aa = new double[m * k], bb = new double[k * n], cc = new double[m * n];
+            fixed(double* pa = aa, pb = bb, pc = cc) {
+                for(int q = 0; q < batches; q++) {
+                    for(int i = 0; i < m; i++) for(int l = 0; l < k; l++) aa[i * k + l] = a[i * ca[row] + l * sa[0]];
+                    for(int l = 0; l < k; l++) for(int j = 0; j < n; j++) bb[l * n + j] = b[l * sb[0] + j * cb[col]];
+                    for(int i = 0; i < m; i++) for(int j = 0; j < n; j++) cc[i * n + j] = t[i * ct[row] + j * ct[col]];
+                    int ta = 'n', tb = 'n', M = n, N = m, K = k, lda = n, ldb = k, ldc = n;
+                    double nativeBeta = beta;
+                    if(beta == 0.0) { for(int i = 0; i < m * n; i++) cc[i] *= beta; nativeBeta = 1.0; }
+                    BLAS.m_seq_BLAS.DGEMM(ref ta, ref tb, ref M, ref N, ref K, ref alpha,
+                        pb, ref lda, pa, ref ldb, ref nativeBeta, pc, ref ldc);
+                    for(int i = 0; i < m; i++) for(int j = 0; j < n; j++) t[i * ct[row] + j * ct[col]] = cc[i * n + j];
+                    if(row != 0) { t += ct[0]; a += ca[0]; b += cb[0]; }
+                }
+            }
+            return true;
+        }
+
+        static unsafe bool TryDirectGemv(int runDim, double* t, double* a, double* b,
+            int* lengths, int* ct, int* ca, int* cb, int k, int* sa, int* sb, double alpha, double beta) {
+            if(runDim != 1) return false;
+            int m = lengths[0];
+            if(m < 8 || k < 8 || (long)m * k < 512) return false;
+            bool left = ca[0] != 0 && cb[0] == 0, right = cb[0] != 0 && ca[0] == 0;
+            if(!left && !right) return false;
+            if(ct[0] != 1) return false;
+            // BoSSS is row-major while BLAS is column-major: a row-major
+            // m-by-k matrix is presented as its k-by-m transpose.
+            int trans = 't', M = k, N = m, lda = left ? ca[0] : cb[0], inc = 1;
+            double nativeBeta = beta;
+            if(beta == 0.0) {
+                for(int i = 0; i < m; i++) t[i] *= beta;
+                nativeBeta = 1.0;
+            }
+            if(left && sa[0] == 1 && sb[0] == 1) {
+                BLAS.m_seq_BLAS.DGEMV(ref trans, ref M, ref N, ref alpha, a, ref lda, b, ref inc, ref nativeBeta, t, ref inc); return true;
+            }
+            if(right && sb[0] == 1 && sa[0] == 1) {
+                BLAS.m_seq_BLAS.DGEMV(ref trans, ref M, ref N, ref alpha, b, ref lda, a, ref inc, ref nativeBeta, t, ref inc); return true;
+            }
+            return false;
+        }
+
+        // Vectorize across adjacent output entries. This targets short (2/3/4)
+        // reductions where vectorizing the reduction itself has too few terms.
+        static unsafe bool TryMultiplySimd(int runDim, int sumDim, double* t, double* a, double* b,
+            int* lengths, int* ct, int* ca, int* cb, int* sums, int* sa, int* sb, double alpha, double beta) {
+            if(sumDim != 1 || runDim < 1 || runDim > 4 || sums[0] > 4) return false;
+            int lanes = SimdVector.Count, last = runDim - 1, count = lengths[last];
+            if(count < lanes || ct[last] != 1 || ca[last] != 1 || (cb[last] != 0 && cb[last] != 1)) return false;
+            int outer = 1; for(int d = 0; d < last; d++) outer *= lengths[d];
+            int k = sums[0];
+            double[] avStorage = new double[lanes];
+            double[] bvStorage = new double[lanes];
+            double[] result = new double[lanes];
+            for(int q = 0; q < outer; q++) {
+                double* tq = t + q * (last > 0 ? ct[last - 1] : 0);
+                double* aq = a + q * (last > 0 ? ca[last - 1] : 0);
+                double* bq = b + (cb[last] == 0 ? 0 : q * (last > 0 ? cb[last - 1] : 0));
+                for(int i = 0; i + lanes <= count; i += lanes) {
+                    SimdVector acc = SimdVector.Zero;
+                    for(int l = 0; l < k; l++) {
+                        for(int lane = 0; lane < lanes; lane++) {
+                            avStorage[lane] = aq[i + lane + l * sa[0]];
+                            bvStorage[lane] = cb[last] == 0 ? bq[l * sb[0]] : bq[i + lane + l * sb[0]];
+                        }
+                        SimdVector av = new SimdVector(avStorage);
+                        SimdVector bv = new SimdVector(bvStorage);
+                        acc += av * bv;
+                    }
+                    for(int lane = 0; lane < lanes; lane++) result[lane] = tq[i + lane];
+                    acc = acc * new SimdVector(alpha) + new SimdVector(result) * new SimdVector(beta);
+                    acc.CopyTo(result);
+                    for(int lane = 0; lane < lanes; lane++) tq[i + lane] = result[lane];
                 }
             }
             return true;
