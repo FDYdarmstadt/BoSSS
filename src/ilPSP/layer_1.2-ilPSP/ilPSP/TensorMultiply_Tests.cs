@@ -94,5 +94,28 @@ namespace ilPSP {
             Check(16,16,16,0,false,false,true,false,0,0,0,true);
             Check(17,19,23,3,true,true,true,false,.75,.25,0,false,true);
         }
+
+        [Test]
+        public static void ShortReductionSimdTailAndOuterStride() {
+            const int outer = 2, count = 10, sum = 3;
+            var t = MultidimensionalArray.Create(outer, count);
+            var a = MultidimensionalArray.Create(outer, sum, count);
+            var b = MultidimensionalArray.Create(outer, sum);
+            var rng = new Random(2718);
+            for(int i = 0; i < t.Storage.Length; i++) t.Storage[i] = rng.NextDouble() - .5;
+            for(int i = 0; i < a.Storage.Length; i++) a.Storage[i] = rng.NextDouble() - .5;
+            for(int i = 0; i < b.Storage.Length; i++) b.Storage[i] = rng.NextDouble() - .5;
+
+            double[] expected = (double[])t.Storage.Clone();
+            for(int o = 0; o < outer; o++) for(int i = 0; i < count; i++) {
+                double dot = 0.0;
+                for(int l = 0; l < sum; l++)
+                    dot += a.Storage[a.Index(o,l,i)] * b.Storage[b.Index(o,l)];
+                expected[t.Index(o,i)] = .75 * dot + .25 * expected[t.Index(o,i)];
+            }
+            t.Multiply(.75, a, b, .25, "ij", "ilj", "il");
+            for(int i = 0; i < expected.Length; i++)
+                Assert.That(t.Storage[i], Is.EqualTo(expected[i]).Within(2e-14), "Storage entry " + i);
+        }
     }
 }

@@ -218,10 +218,22 @@ namespace ilPSP {
             double[] bvStorage = new double[lanes];
             double[] result = new double[lanes];
             for(int q = 0; q < outer; q++) {
-                double* tq = t + q * (last > 0 ? ct[last - 1] : 0);
-                double* aq = a + q * (last > 0 ? ca[last - 1] : 0);
-                double* bq = b + (cb[last] == 0 ? 0 : q * (last > 0 ? cb[last - 1] : 0));
-                for(int i = 0; i + lanes <= count; i += lanes) {
+                // Flattening the outer dimensions into one stride is only valid
+                // for contiguous arrays.  Multiply also accepts padded views;
+                // derive each operand's actual outer offset instead.
+                int rem = q, ot = 0, oa = 0, ob = 0;
+                for(int d = 0; d < last; d++) {
+                    int idx = rem % lengths[d];
+                    rem /= lengths[d];
+                    ot += idx * ct[d];
+                    oa += idx * ca[d];
+                    ob += idx * cb[d];
+                }
+                double* tq = t + ot;
+                double* aq = a + oa;
+                double* bq = b + ob;
+                int vectorEnd = count - count % lanes;
+                for(int i = 0; i < vectorEnd; i += lanes) {
                     SimdVector acc = SimdVector.Zero;
                     for(int l = 0; l < k; l++) {
                         for(int lane = 0; lane < lanes; lane++) {
@@ -236,6 +248,18 @@ namespace ilPSP {
                     acc = acc * new SimdVector(alpha) + new SimdVector(result) * new SimdVector(beta);
                     acc.CopyTo(result);
                     for(int lane = 0; lane < lanes; lane++) tq[i + lane] = result[lane];
+                }
+                // SIMD covers only complete vectors.  The scalar tail is part
+                // of the same selected kernel; returning success without it
+                // silently left valid output entries unchanged.
+                for(int i = vectorEnd; i < count; i++) {
+                    double sum = 0.0;
+                    for(int l = 0; l < k; l++) {
+                        double av = aq[i + l * sa[0]];
+                        double bv = cb[last] == 0 ? bq[l * sb[0]] : bq[i + l * sb[0]];
+                        sum += av * bv;
+                    }
+                    tq[i] = alpha * sum + beta * tq[i];
                 }
             }
             return true;
