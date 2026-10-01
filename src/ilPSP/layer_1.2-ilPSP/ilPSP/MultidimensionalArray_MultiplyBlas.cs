@@ -255,20 +255,26 @@ namespace ilPSP {
             int row = runDim - 2, col = row + 1, m = lengths[row], n = lengths[col];
             if(k < 1 || m < 4 || n < 4 || (long)m * n * k < 4096 || ca[col] != 0 || cb[row] != 0) return false;
             int batches = row == 0 ? 1 : lengths[0];
-            double[] aa = new double[m * k], bb = new double[k * n], cc = new double[m * n];
-            fixed(double* pa = aa, pb = bb, pc = cc) {
-                for(int q = 0; q < batches; q++) {
-                    for(int i = 0; i < m; i++) for(int l = 0; l < k; l++) aa[i * k + l] = a[i * ca[row] + l * sa[0]];
-                    for(int l = 0; l < k; l++) for(int j = 0; j < n; j++) bb[l * n + j] = b[l * sb[0] + j * cb[col]];
-                    for(int i = 0; i < m; i++) for(int j = 0; j < n; j++) cc[i * n + j] = t[i * ct[row] + j * ct[col]];
-                    int ta = 'n', tb = 'n', M = n, N = m, K = k, lda = n, ldb = k, ldc = n;
-                    double nativeBeta = beta;
-                    if(beta == 0.0) { for(int i = 0; i < m * n; i++) cc[i] *= beta; nativeBeta = 1.0; }
-                    BLAS.m_seq_BLAS.DGEMM(ref ta, ref tb, ref M, ref N, ref K, ref alpha,
-                        pb, ref lda, pa, ref ldb, ref nativeBeta, pc, ref ldc);
-                    for(int i = 0; i < m; i++) for(int j = 0; j < n; j++) t[i * ct[row] + j * ct[col]] = cc[i * n + j];
-                    if(row != 0) { t += ct[0]; a += ca[0]; b += cb[0]; }
+            // one temporary buffer for the packed A (m x k), B (k x n) and T (m x n) blocks
+            double[] scratch = TempBuffer.GetTempBuffer(out int iScratch, m * k + k * n + m * n);
+            try {
+                fixed(double* pScratch = scratch) {
+                    double* pa = pScratch, pb = pa + m * k, pc = pb + k * n;
+                    for(int q = 0; q < batches; q++) {
+                        for(int i = 0; i < m; i++) for(int l = 0; l < k; l++) pa[i * k + l] = a[i * ca[row] + l * sa[0]];
+                        for(int l = 0; l < k; l++) for(int j = 0; j < n; j++) pb[l * n + j] = b[l * sb[0] + j * cb[col]];
+                        for(int i = 0; i < m; i++) for(int j = 0; j < n; j++) pc[i * n + j] = t[i * ct[row] + j * ct[col]];
+                        int ta = 'n', tb = 'n', M = n, N = m, K = k, lda = n, ldb = k, ldc = n;
+                        double nativeBeta = beta;
+                        if(beta == 0.0) { for(int i = 0; i < m * n; i++) pc[i] *= beta; nativeBeta = 1.0; }
+                        BLAS.m_seq_BLAS.DGEMM(ref ta, ref tb, ref M, ref N, ref K, ref alpha,
+                            pb, ref lda, pa, ref ldb, ref nativeBeta, pc, ref ldc);
+                        for(int i = 0; i < m; i++) for(int j = 0; j < n; j++) t[i * ct[row] + j * ct[col]] = pc[i * n + j];
+                        if(row != 0) { t += ct[0]; a += ca[0]; b += cb[0]; }
+                    }
                 }
+            } finally {
+                TempBuffer.FreeTempBuffer(iScratch);
             }
             return true;
         }
