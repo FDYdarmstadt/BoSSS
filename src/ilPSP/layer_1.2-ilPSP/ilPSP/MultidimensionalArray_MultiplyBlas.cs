@@ -5,8 +5,23 @@ using SimdVector = System.Numerics.Vector<double>;
 
 namespace ilPSP {
     public partial class MultidimensionalArray {
-        // DIAGNOSTIC (temporary): BOSSS_MULTIPLY_FASTPATH=0 disables all fast paths,
-        // =gemm keeps only the direct (non-packing) DGEMM/DGEMV paths.
+        // ==========================================================================================
+        // DIAGNOSTIC SWITCH (inactive by default; kept on purpose, owner decision 2026-10-01)
+        // ------------------------------------------------------------------------------------------
+        // To activate, define the compilation symbol MULTIPLY_FASTPATH_DIAGNOSTICS for the ilPSP
+        // project (e.g. <DefineConstants>$(DefineConstants);MULTIPLY_FASTPATH_DIAGNOSTICS</DefineConstants>
+        // in ilPSP.csproj). Then, the environment variable BOSSS_MULTIPLY_FASTPATH selects:
+        //   - "0":     all fast paths below are disabled, i.e. the generated kernels are used
+        //              (behaviour before the tensor-product optimization);
+        //   - "gemm":  only the direct (non-packing) DGEMM/DGEMV paths are used;
+        //   - "check": every fast-path call is additionally computed by the generated reference
+        //              kernel into a copy of the destination storage and compared (slow!);
+        //              mismatches are printed as FASTPATH-MISMATCH lines, and a summary per path
+        //              is written at process exit to stderr and to FASTPATH-SUMMARY.txt;
+        //   - unset:   all fast paths active (same as without the compilation symbol).
+        // Used for the analysis in .agent/kummer/tensorproductoptimization/FINDINGS.md (2026-10-01).
+        // ==========================================================================================
+#if MULTIPLY_FASTPATH_DIAGNOSTICS
         static readonly string s_FastPathMode = (System.Environment.GetEnvironmentVariable("BOSSS_MULTIPLY_FASTPATH") ?? "all").ToLowerInvariant();
         static readonly bool s_FastPathOff = s_FastPathMode == "0";
         static readonly bool s_FastPathGemmOnly = s_FastPathMode == "gemm";
@@ -59,7 +74,21 @@ namespace ilPSP {
                 Console.Error.WriteLine($"FASTPATH-CHECK {n} calls compared, {s_CheckFail} mismatches");
         }
 
-        // Selection order: direct GEMM, direct GEMV, packed GEMM, SIMD, fallback.
+#endif
+
+        /// <summary>
+        /// Records which fast path was selected (only in diagnostic builds) and returns true.
+        /// </summary>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        static bool FastPathSelected(string path) {
+#if MULTIPLY_FASTPATH_DIAGNOSTICS
+            s_LastPath = path;
+#endif
+            return true;
+        }
+
+        // Selection order: direct GEMM (rank 4, rank 2/3), direct GEMV, packed GEMM, fallback.
+        // The short-reduction SIMD path (TryMultiplySimd) is currently disabled, see there.
         static unsafe bool TryMultiplyBlas(int runDim, int sumDim,
             double* t, double* a, double* b, int* lengths,
             int* ct, int* ca, int* cb, int* sums, int* sa, int* sb,
@@ -67,18 +96,23 @@ namespace ilPSP {
             // In-place Multiply has established traversal semantics when a
             // shallow view aliases the destination. Preserve that reference
             // behavior instead of silently changing it to snapshot semantics.
-            if(!directAllowed || s_FastPathOff)
+            if(!directAllowed)
                 return false;
-            if(sumDim != 1)
-                { bool ok = TryMultiplySimd(runDim, sumDim, t, a, b, lengths, ct, ca, cb, sums, sa, sb, alpha, beta); if(ok) s_LastPath = "Simd"; return ok; }
-            if(sums[0] <= 0 || alpha == 0.0)
+#if MULTIPLY_FASTPATH_DIAGNOSTICS
+            if(s_FastPathOff)
                 return false;
-            if(TryDirectGemmRank4(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) { s_LastPath = "TryDirectGemmRank4"; return true; }
-            if(directAllowed && TryDirectGemm(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) { s_LastPath = "TryDirectGemm"; return true; }
-            if(directAllowed && TryDirectGemv(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) { s_LastPath = "TryDirectGemv"; return true; }
-            if(s_FastPathGemmOnly) return false;
-            if(TryPackedGemm(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) { s_LastPath = "TryPackedGemm"; return true; }
-            { bool ok = TryMultiplySimd(runDim, sumDim, t, a, b, lengths, ct, ca, cb, sums, sa, sb, alpha, beta); if(ok) s_LastPath = "Simd"; return ok; }
+#endif
+            if(sumDim != 1 || sums[0] <= 0 || alpha == 0.0)
+                return false;
+            if(TryDirectGemmRank4(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) return FastPathSelected("TryDirectGemmRank4");
+            if(TryDirectGemm(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) return FastPathSelected("TryDirectGemm");
+            if(TryDirectGemv(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) return FastPathSelected("TryDirectGemv");
+#if MULTIPLY_FASTPATH_DIAGNOSTICS
+            if(s_FastPathGemmOnly)
+                return false;
+#endif
+            if(TryPackedGemm(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) return FastPathSelected("TryPackedGemm");
+            return false;
         }
 
         // Handles contractions such as T[i,k,n,a] = sum_b A[i,k,a,b] B[k,n,b].
@@ -141,13 +175,17 @@ namespace ilPSP {
             int trfT0Sw, int trfASw, int trfBSw,
             int preA, int cycleA, int postA, int preB, int cycleB, int postB,
             bool directAllowed) {
-            if(!directAllowed || s_FastPathOff || runDim < 3 || sumDim != 1 || lengths[0] < 1 || sums[0] < 8)
+            if(!directAllowed || runDim < 3 || sumDim != 1 || lengths[0] < 1 || sums[0] < 8)
                 return false;
+#if MULTIPLY_FASTPATH_DIAGNOSTICS
+            if(s_FastPathOff)
+                return false;
+#endif
             int innerRun = runDim - 1;
             if(innerRun != 2) return false;
             // Validate every mapped slice before modifying the destination.
             for(int i = 0; i < lengths[0]; i++) {
-                int ti = (trfT[i] + 0) * trfT0Sw;
+                int ti = trfT[i] * trfT0Sw;
                 int ai = (trfA[i * cycleA + preA] + postA) * trfASw;
                 int bi = (trfB[i * cycleB + preB] + postB) * trfBSw;
                 if(ti < 0 || ai < 0 || bi < 0) return false;
@@ -243,25 +281,35 @@ namespace ilPSP {
             bool left = ca[0] != 0 && cb[0] == 0, right = cb[0] != 0 && ca[0] == 0;
             if(!left && !right) return false;
             if(ct[0] != 1) return false;
+            if(sa[0] != 1 || sb[0] != 1) return false;
             // BoSSS is row-major while BLAS is column-major: a row-major
             // m-by-k matrix is presented as its k-by-m transpose.
             int trans = 't', M = k, N = m, lda = left ? ca[0] : cb[0], inc = 1;
+            // BLAS requires lda >= max(1, M); otherwise, DGEMV rejects the call (parameter error)
+            // and leaves T unchanged, although this path would report success.
+            if(lda < k) return false;
+            // all eligibility checks done; only now, the destination may be modified
             double nativeBeta = beta;
             if(beta == 0.0) {
                 for(int i = 0; i < m; i++) t[i] *= beta;
                 nativeBeta = 1.0;
             }
-            if(left && sa[0] == 1 && sb[0] == 1) {
-                BLAS.m_seq_BLAS.DGEMV(ref trans, ref M, ref N, ref alpha, a, ref lda, b, ref inc, ref nativeBeta, t, ref inc); return true;
-            }
-            if(right && sb[0] == 1 && sa[0] == 1) {
-                BLAS.m_seq_BLAS.DGEMV(ref trans, ref M, ref N, ref alpha, b, ref lda, a, ref inc, ref nativeBeta, t, ref inc); return true;
-            }
-            return false;
+            double* mtx = left ? a : b;
+            double* vec = left ? b : a;
+            BLAS.m_seq_BLAS.DGEMV(ref trans, ref M, ref N, ref alpha, mtx, ref lda, vec, ref inc, ref nativeBeta, t, ref inc);
+            return true;
         }
 
         // Vectorize across adjacent output entries. This targets short (2/3/4)
         // reductions where vectorizing the reduction itself has too few terms.
+        //
+        // CURRENTLY NOT USED (disabled 2026-10-01, PLAN-3 A3): benchmarked against the generated
+        // kernels for all accepted shapes (T[j,n] = sum_d A[j,d,n]*B[j,d] resp. *B[j,d,n],
+        // J=64, D=2..4, N=4..64), this implementation was 3x to 7x SLOWER, because of the
+        // element-wise copies through managed arrays (see
+        // .agent/kummer/tensorproductoptimization/benchmarks/simd-a3/results.csv).
+        // A prototype with direct vector loads was 1.1x-2.4x faster for N >= 16, but slower
+        // for N = 7, 10 (scalar tail). A redesign is part of PLAN-4 (Phase F).
         static unsafe bool TryMultiplySimd(int runDim, int sumDim, double* t, double* a, double* b,
             int* lengths, int* ct, int* ca, int* cb, int* sums, int* sa, int* sb, double alpha, double beta) {
             if(sumDim != 1 || runDim < 1 || runDim > 4 || sums[0] > 4) return false;

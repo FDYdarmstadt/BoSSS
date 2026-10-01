@@ -1060,6 +1060,8 @@ namespace ilPSP {
                         {
                             bool trfDirect = !ReferenceEquals(this.m_Storage, A.m_Storage)
                                 && !ReferenceEquals(this.m_Storage, B.m_Storage);
+#if MULTIPLY_FASTPATH_DIAGNOSTICS
+                            // diagnostic check mode, see MultidimensionalArray_MultiplyBlas.cs
                             double[] chkRef = null;
                             if(s_FastPathCheck && trfDirect) {
                                 // DIAGNOSTIC: reference result into a copy of the destination storage
@@ -1072,6 +1074,7 @@ namespace ilPSP {
                                         0, 1, 0, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B);
                                 }
                             }
+#endif
                             if(TryMultiplyWTrafoGemm(
                                 DT, mp.NoOfSumCycles, pT, pA, pB, lenRun, cycRunT, cycRunA, cycRunB,
                                 lenSum, cycSumA, cycSumB, scale, thisscale,
@@ -1080,8 +1083,10 @@ namespace ilPSP {
                                 trfPreOffset_A, trfCycle_A, trfPostOffset_A,
                                 trfPreOffset_B, trfCycle_B, trfPostOffset_B,
                                 trfDirect)) {
+#if MULTIPLY_FASTPATH_DIAGNOSTICS
                                 if(chkRef != null)
                                     FastPathCompare(chkRef, this.m_Storage, "WTrafoGemm", DT, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale);
+#endif
                                 return;
                             }
                             //Debug.Assert(mp.NoOfSumCycles == 1); Debug.Assert(DT == 2); __MultiplyWTrafo_Sum1_FOR2( 
@@ -1101,6 +1106,8 @@ namespace ilPSP {
                         // Retain the original execution order for all shared storage.
                         bool blasDirect = !ReferenceEquals(this.m_Storage, A.m_Storage)
                                 && !ReferenceEquals(this.m_Storage, B.m_Storage);
+#if MULTIPLY_FASTPATH_DIAGNOSTICS
+                        // diagnostic check mode, see MultidimensionalArray_MultiplyBlas.cs
                         double[] chkRef = null;
                         if(s_FastPathCheck && blasDirect) {
                             // DIAGNOSTIC: reference result into a copy of the destination storage
@@ -1109,11 +1116,14 @@ namespace ilPSP {
                                 Multiply_Dispatch(DT, mp.NoOfSumCycles, pR + this.m_Offset, pA, pB, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale);
                             }
                         }
+#endif
                         if(TryMultiplyBlas(DT, mp.NoOfSumCycles, pT, pA, pB,
                                 lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale,
                                 blasDirect)) {
+#if MULTIPLY_FASTPATH_DIAGNOSTICS
                             if(chkRef != null)
                                 FastPathCompare(chkRef, this.m_Storage, s_LastPath, DT, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale);
+#endif
                             return;
                         }
 

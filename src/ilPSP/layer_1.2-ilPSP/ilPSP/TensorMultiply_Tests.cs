@@ -97,6 +97,8 @@ namespace ilPSP {
 
         [Test]
         public static void ShortReductionSimdTailAndOuterStride() {
+            // Note: since 2026-10-01, TryMultiplySimd is disabled, so this exercises the generated kernels;
+            // keep it as regression test for a future SIMD short-reduction path (PLAN-4, Phase F).
             const int outer = 2, count = 10, sum = 3;
             var t = MultidimensionalArray.Create(outer, count);
             var a = MultidimensionalArray.Create(outer, sum, count);
@@ -116,6 +118,50 @@ namespace ilPSP {
             t.Multiply(.75, a, b, .25, "ij", "ilj", "il");
             for(int i = 0; i < expected.Length; i++)
                 Assert.That(t.Storage[i], Is.EqualTo(expected[i]).Within(2e-14), "Storage entry " + i);
+        }
+
+        delegate bool TryKernel(int r, double* t, double* a, double* b,
+            int* lr, int* ct, int* ca, int* cb, int k, int* sa, int* sb, double alpha, double beta);
+
+        /// <summary>
+        /// The direct DGEMV path must reject matrix layouts with a leading dimension smaller than the
+        /// reduction length (overlapping rows; BLAS would reject the call and leave T unchanged), and it
+        /// must not touch the destination before all eligibility checks are passed (beta == 0 pre-scaling).
+        /// Such layouts cannot be created via the public API, so the selector is called directly.
+        /// </summary>
+        [Test]
+        public static void GemvLeadingDimensionGuard() {
+            var tryGemv = (TryKernel)typeof(MultidimensionalArray).GetMethod("TryDirectGemv",
+                BindingFlags.NonPublic | BindingFlags.Static).CreateDelegate(typeof(TryKernel));
+            const int m = 32, k = 24; // m*k >= 512, so that only the leading dimension can lead to rejection
+            var rng = new Random(31337);
+            double[] aStor = new double[m * k + k], bStor = new double[k], tStor = new double[m];
+            for(int i = 0; i < aStor.Length; i++) aStor[i] = rng.NextDouble() - .5;
+            for(int i = 0; i < bStor.Length; i++) bStor[i] = rng.NextDouble() - .5;
+            for(int i = 0; i < tStor.Length; i++) tStor[i] = rng.NextDouble() - .5;
+
+            int* lr = stackalloc int[1]; int* ct = stackalloc int[1]; int* ca = stackalloc int[1]; int* cb = stackalloc int[1];
+            int* ls = stackalloc int[1]; int* sa = stackalloc int[1]; int* sb = stackalloc int[1];
+            lr[0] = m; ct[0] = 1; cb[0] = 0; ls[0] = k; sa[0] = 1; sb[0] = 1;
+
+            fixed(double* pa = aStor, pb = bStor, pt = tStor) {
+                // invalid: row stride k-2 < k
+                ca[0] = k - 2;
+                double[] before = (double[])tStor.Clone();
+                bool taken = tryGemv(1, pt, pa, pb, lr, ct, ca, cb, k, sa, sb, .75, 0.0);
+                Assert.IsFalse(taken, "DGEMV path must reject lda < k");
+                for(int i = 0; i < m; i++)
+                    Assert.AreEqual(BitConverter.DoubleToInt64Bits(before[i]), BitConverter.DoubleToInt64Bits(tStor[i]), "destination modified by rejected path, entry " + i);
+
+                // positive control: valid row stride k; must be taken and agree with the reference kernel
+                ca[0] = k;
+                double[] expected = (double[])tStor.Clone();
+                fixed(double* pe = expected)
+                    Reference(1, 1, pe, pa, pb, lr, ct, ca, cb, ls, sa, sb, .75, .25);
+                Assert.IsTrue(tryGemv(1, pt, pa, pb, lr, ct, ca, cb, k, sa, sb, .75, .25), "DGEMV path expected for a valid layout");
+                for(int i = 0; i < m; i++)
+                    Assert.That(tStor[i], Is.EqualTo(expected[i]).Within(2e-14), "entry " + i);
+            }
         }
     }
 }
