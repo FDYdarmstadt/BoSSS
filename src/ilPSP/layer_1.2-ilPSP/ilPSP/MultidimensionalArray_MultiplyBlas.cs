@@ -5,6 +5,60 @@ using SimdVector = System.Numerics.Vector<double>;
 
 namespace ilPSP {
     public partial class MultidimensionalArray {
+        // DIAGNOSTIC (temporary): BOSSS_MULTIPLY_FASTPATH=0 disables all fast paths,
+        // =gemm keeps only the direct (non-packing) DGEMM/DGEMV paths.
+        static readonly string s_FastPathMode = (System.Environment.GetEnvironmentVariable("BOSSS_MULTIPLY_FASTPATH") ?? "all").ToLowerInvariant();
+        static readonly bool s_FastPathOff = s_FastPathMode == "0";
+        static readonly bool s_FastPathGemmOnly = s_FastPathMode == "gemm";
+        // =check: run reference kernel into a copy and compare (slow!)
+        static readonly bool s_FastPathCheck = s_FastPathMode == "check";
+        [ThreadStatic] static string s_LastPath;
+        static long s_CheckCount, s_CheckFail;
+        static int s_ExitHooked;
+        static readonly System.Collections.Concurrent.ConcurrentDictionary<string, long[]> s_PathStats = new System.Collections.Concurrent.ConcurrentDictionary<string, long[]>();
+
+        static unsafe void FastPathCompare(double[] r, double[] t, string path, int DT,
+            int* lenRun, int* ct, int* ca, int* cb, int* lenSum, int* sa, int* sb, double alpha, double beta) {
+            double maxDiff = 0, maxRef = 0; int iMax = -1;
+            for(int i = 0; i < r.Length; i++) {
+                double ri = r[i], ti = t[i];
+                if(double.IsNaN(ri) && double.IsNaN(ti)) continue;
+                maxRef = Math.Max(maxRef, Math.Abs(ri));
+                if(ri == ti) continue;
+                double d = Math.Abs(ri - ti);
+                if(!(d <= maxDiff)) { maxDiff = double.IsNaN(d) ? double.PositiveInfinity : d; iMax = i; }
+            }
+            if(System.Threading.Interlocked.Exchange(ref s_ExitHooked, 1) == 0)
+                AppDomain.CurrentDomain.ProcessExit += (o, e) => {
+                    var sb2 = new System.Text.StringBuilder($"FASTPATH-SUMMARY compared={s_CheckCount} mismatches={s_CheckFail}:");
+                    foreach(var kv in s_PathStats) sb2.Append($" {kv.Key}={kv.Value[0]} (maxRel={BitConverter.Int64BitsToDouble(kv.Value[1]):g3})");
+                    Console.Error.WriteLine(sb2.ToString());
+                    try { System.IO.File.AppendAllText("FASTPATH-SUMMARY.txt", sb2.ToString() + System.Environment.NewLine); } catch(Exception) { }
+                };
+            {
+                var st = s_PathStats.GetOrAdd(path ?? "?", _ => new long[2]);
+                System.Threading.Interlocked.Increment(ref st[0]);
+                double rel = maxDiff / Math.Max(maxRef, 1e-300);
+                lock(st) { if(rel > BitConverter.Int64BitsToDouble(st[1])) st[1] = BitConverter.DoubleToInt64Bits(rel); }
+            }
+            long n = System.Threading.Interlocked.Increment(ref s_CheckCount);
+            if(maxDiff > 1e-11 * Math.Max(maxRef, 1e-300)) {
+                long f = System.Threading.Interlocked.Increment(ref s_CheckFail);
+                if(f <= 200) {
+                    var sw = new System.Text.StringBuilder();
+                    sw.Append($"FASTPATH-MISMATCH #{f}/{n} path={path} maxDiff={maxDiff:g4} maxRef={maxRef:g4} at {iMax} ref={(iMax>=0?r[iMax]:0):g6} got={(iMax>=0?t[iMax]:0):g6} alpha={alpha} beta={beta} len=[");
+                    for(int d = 0; d < DT; d++) sw.Append(lenRun[d] + " ");
+                    sw.Append("] ct=["); for(int d = 0; d < DT; d++) sw.Append(ct[d] + " ");
+                    sw.Append("] ca=["); for(int d = 0; d < DT; d++) sw.Append(ca[d] + " ");
+                    sw.Append("] cb=["); for(int d = 0; d < DT; d++) sw.Append(cb[d] + " ");
+                    sw.Append($"] K={lenSum[0]} sa={sa[0]} sb={sb[0]}");
+                    Console.Error.WriteLine(sw.ToString());
+                }
+            }
+            if((n & ((1 << 18) - 1)) == 0)
+                Console.Error.WriteLine($"FASTPATH-CHECK {n} calls compared, {s_CheckFail} mismatches");
+        }
+
         // Selection order: direct GEMM, direct GEMV, packed GEMM, SIMD, fallback.
         static unsafe bool TryMultiplyBlas(int runDim, int sumDim,
             double* t, double* a, double* b, int* lengths,
@@ -13,17 +67,18 @@ namespace ilPSP {
             // In-place Multiply has established traversal semantics when a
             // shallow view aliases the destination. Preserve that reference
             // behavior instead of silently changing it to snapshot semantics.
-            if(!directAllowed)
+            if(!directAllowed || s_FastPathOff)
                 return false;
             if(sumDim != 1)
-                return TryMultiplySimd(runDim, sumDim, t, a, b, lengths, ct, ca, cb, sums, sa, sb, alpha, beta);
+                { bool ok = TryMultiplySimd(runDim, sumDim, t, a, b, lengths, ct, ca, cb, sums, sa, sb, alpha, beta); if(ok) s_LastPath = "Simd"; return ok; }
             if(sums[0] <= 0 || alpha == 0.0)
                 return false;
-            if(TryDirectGemmRank4(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) return true;
-            if(directAllowed && TryDirectGemm(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) return true;
-            if(directAllowed && TryDirectGemv(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) return true;
-            if(TryPackedGemm(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) return true;
-            return TryMultiplySimd(runDim, sumDim, t, a, b, lengths, ct, ca, cb, sums, sa, sb, alpha, beta);
+            if(TryDirectGemmRank4(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) { s_LastPath = "TryDirectGemmRank4"; return true; }
+            if(directAllowed && TryDirectGemm(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) { s_LastPath = "TryDirectGemm"; return true; }
+            if(directAllowed && TryDirectGemv(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) { s_LastPath = "TryDirectGemv"; return true; }
+            if(s_FastPathGemmOnly) return false;
+            if(TryPackedGemm(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) { s_LastPath = "TryPackedGemm"; return true; }
+            { bool ok = TryMultiplySimd(runDim, sumDim, t, a, b, lengths, ct, ca, cb, sums, sa, sb, alpha, beta); if(ok) s_LastPath = "Simd"; return ok; }
         }
 
         // Handles contractions such as T[i,k,n,a] = sum_b A[i,k,a,b] B[k,n,b].
@@ -86,7 +141,7 @@ namespace ilPSP {
             int trfT0Sw, int trfASw, int trfBSw,
             int preA, int cycleA, int postA, int preB, int cycleB, int postB,
             bool directAllowed) {
-            if(!directAllowed || runDim < 3 || sumDim != 1 || lengths[0] < 1 || sums[0] < 8)
+            if(!directAllowed || s_FastPathOff || runDim < 3 || sumDim != 1 || lengths[0] < 1 || sums[0] < 8)
                 return false;
             int innerRun = runDim - 1;
             if(innerRun != 2) return false;

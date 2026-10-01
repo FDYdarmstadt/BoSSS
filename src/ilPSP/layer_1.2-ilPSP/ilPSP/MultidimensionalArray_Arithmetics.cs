@@ -1058,6 +1058,20 @@ namespace ilPSP {
                         if(IndexTrafo_T == null)
                             throw new ArgumentException("Index transformation required.");
                         {
+                            bool trfDirect = !ReferenceEquals(this.m_Storage, A.m_Storage)
+                                && !ReferenceEquals(this.m_Storage, B.m_Storage);
+                            double[] chkRef = null;
+                            if(s_FastPathCheck && trfDirect) {
+                                // DIAGNOSTIC: reference result into a copy of the destination storage
+                                chkRef = (double[])this.m_Storage.Clone();
+                                fixed(double* pR = chkRef) {
+                                    MultiplyWTrafo_Dispatch(
+                                        DT, mp.NoOfSumCycles, pR + this.m_Offset, pA, pB, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale,
+                                        IndexTrafo_T, IndexTrafo_A, IndexTrafo_B,
+                                        mp.TrfT0Sw, mp.TrfA0Sw, mp.TrfB0Sw,
+                                        0, 1, 0, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B);
+                                }
+                            }
                             if(TryMultiplyWTrafoGemm(
                                 DT, mp.NoOfSumCycles, pT, pA, pB, lenRun, cycRunT, cycRunA, cycRunB,
                                 lenSum, cycSumA, cycSumB, scale, thisscale,
@@ -1065,9 +1079,11 @@ namespace ilPSP {
                                 mp.TrfT0Sw, mp.TrfA0Sw, mp.TrfB0Sw,
                                 trfPreOffset_A, trfCycle_A, trfPostOffset_A,
                                 trfPreOffset_B, trfCycle_B, trfPostOffset_B,
-                                !ReferenceEquals(this.m_Storage, A.m_Storage)
-                                && !ReferenceEquals(this.m_Storage, B.m_Storage)))
+                                trfDirect)) {
+                                if(chkRef != null)
+                                    FastPathCompare(chkRef, this.m_Storage, "WTrafoGemm", DT, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale);
                                 return;
+                            }
                             //Debug.Assert(mp.NoOfSumCycles == 1); Debug.Assert(DT == 2); __MultiplyWTrafo_Sum1_FOR2( 
                             MultiplyWTrafo_Dispatch(
                                 DT, mp.NoOfSumCycles, pT, pA, pB, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale,
@@ -1083,11 +1099,23 @@ namespace ilPSP {
 
                         // Shallow views can alias even when the array objects differ.
                         // Retain the original execution order for all shared storage.
+                        bool blasDirect = !ReferenceEquals(this.m_Storage, A.m_Storage)
+                                && !ReferenceEquals(this.m_Storage, B.m_Storage);
+                        double[] chkRef = null;
+                        if(s_FastPathCheck && blasDirect) {
+                            // DIAGNOSTIC: reference result into a copy of the destination storage
+                            chkRef = (double[])this.m_Storage.Clone();
+                            fixed(double* pR = chkRef) {
+                                Multiply_Dispatch(DT, mp.NoOfSumCycles, pR + this.m_Offset, pA, pB, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale);
+                            }
+                        }
                         if(TryMultiplyBlas(DT, mp.NoOfSumCycles, pT, pA, pB,
                                 lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale,
-                                !ReferenceEquals(this.m_Storage, A.m_Storage)
-                                && !ReferenceEquals(this.m_Storage, B.m_Storage)))
+                                blasDirect)) {
+                            if(chkRef != null)
+                                FastPathCompare(chkRef, this.m_Storage, s_LastPath, DT, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale);
                             return;
+                        }
 
                         Multiply_Dispatch(DT, mp.NoOfSumCycles, pT, pA, pB, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale);
                     }

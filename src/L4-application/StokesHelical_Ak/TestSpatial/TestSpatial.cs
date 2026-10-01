@@ -1487,18 +1487,10 @@ namespace StokesHelical_Ak.TestSpartial
                 Assert.LessOrEqual(uxiErrorLx.First(), thresholdUxi, "Error. uxiErrorL2 not fulfilled");
             }
         }
+        
         /// <summary>
-        /// Text
-        /// Text
-        /// Text
-        /// Text
-        /// Text
-        /// Text
+        /// 
         /// </summary>
-        /// <remarks>
-        /// 
-        /// 
-        /// </remarks>
         [Test]
         static public void Direct_vs_Iterativ_DDD_Paper_with_R0fix([Values(5)] int pOrder) {
             // Polynomorder 5 take too long for our test runners!
