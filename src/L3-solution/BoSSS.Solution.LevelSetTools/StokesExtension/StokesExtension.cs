@@ -50,7 +50,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
 
         const double penalty_safety = 4.0;
 
-        const double viscosity = 1.0;
+        const double viscosity = 1000.0;
 
         /// <summary>
         /// If set, the extension's linear system is solved through PETSc
@@ -87,6 +87,20 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         public bool UseSchurBlockPrec = false;
 
         /// <summary>
+        /// If true, skips BoSSS's own local (per-cell) preconditioning transform entirely -- neither
+        /// <see cref="UseSchurBlockPrec"/>'s combined block nor the "standard"
+        /// <see cref="BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite"/>/
+        /// <see cref="BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.IdMass_DropIndefinite"/> configs are
+        /// used -- instead every field gets <see cref="BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.Eye"/>
+        /// (identity: no change of basis at all), handing PETSc/the fallback solver the raw <c>OpMtx</c>
+        /// unmodified. Takes precedence over <see cref="UseSchurBlockPrec"/> if both are set. Note: without
+        /// <see cref="UsePseudoTimestepping"/> also regularizing the raw matrix, the pressure-pressure
+        /// diagonal block stays structurally exactly zero here (see remarks on <see cref="UseSchurBlockPrec"/>),
+        /// which a plain ILU factorization cannot handle. False (the default) preserves the original behavior.
+        /// </summary>
+        public bool DisableLocalPreconditioning = false;
+
+        /// <summary>
         /// Only relevant if <see cref="PetscOptions"/> is set: forwarded to
         /// <see cref="BoSSS.Solution.AdvancedSolvers.PetscGMRESConfig.UseGeometricMultigrid"/>.
         /// False (the default) preserves the original flat-matrix behavior.
@@ -98,6 +112,42 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         /// <see cref="BoSSS.Solution.AdvancedSolvers.PetscGMRESConfig.CoarseKickIn"/>.
         /// </summary>
         public int CoarseKickIn = 90000;
+
+        /// <summary>
+        /// If true, <see cref="SolveExtension"/> solves via pseudo-transient continuation instead of a
+        /// single solve: repeatedly solves <c>(OpMtx + I/dtau)*u = RHS + u/dtau</c> for a growing
+        /// <c>dtau</c> (switched-evolution-relaxation between <see cref="PseudoDtau0"/> and
+        /// <see cref="PseudoDtauMax"/>), until the TRUE (un-regularized) residual <c>RHS - OpMtx*u</c>,
+        /// relative to <c>‖RHS‖</c>, falls below <see cref="PseudoTimeConvergenceCriterion"/> or
+        /// <see cref="MaxPseudoTimeSteps"/> is reached. False (the default) preserves the original
+        /// single-solve behavior.
+        /// </summary>
+        public bool UsePseudoTimestepping = false;
+
+        /// <summary>
+        /// Initial pseudo-time step size. Only relevant if <see cref="UsePseudoTimestepping"/> is set.
+        /// </summary>
+        public double PseudoDtau0 = 1.0;
+
+        /// <summary>
+        /// Upper bound for the pseudo-time step size's growth (switched-evolution-relaxation).
+        /// Only relevant if <see cref="UsePseudoTimestepping"/> is set.
+        /// </summary>
+        public double PseudoDtauMax = 1.0e8;
+
+        /// <summary>
+        /// Maximum number of pseudo-time steps. Only relevant if <see cref="UsePseudoTimestepping"/> is set.
+        /// </summary>
+        public int MaxPseudoTimeSteps = 20;
+
+        /// <summary>
+        /// Convergence criterion on the true (un-regularized) residual norm, RELATIVE to <c>‖RHS‖</c>
+        /// (i.e. stops once <c>‖RHS - OpMtx*u‖ / ‖RHS‖</c> falls below this value) -- an absolute
+        /// criterion would be meaningless here, since ‖RHS‖ itself can vary by many orders of magnitude
+        /// depending on the problem's physical scale. Only relevant if <see cref="UsePseudoTimestepping"/>
+        /// is set.
+        /// </summary>
+        public double PseudoTimeConvergenceCriterion = 1.0e-10;
 
         /// <summary>
         /// Bulk of the artificial Stokes extension equation;
@@ -336,7 +386,17 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                 var AggGrid = CoarseningAlgorithms.CreateSequence(ExtenstionSolVec.Mapping.GridDat, -1);
                 var AggBasis = AggregationGridBasis.CreateSequence(AggGrid, ExtenstionSolVec.Mapping.BasisS);
                 var configsLevel = new List<BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig>();
-                if (this.fullStokes && this.UseSchurBlockPrec) {
+                if (this.DisableLocalPreconditioning) {
+                    // no local preconditioning transform at all -- every field gets Mode.Eye (identity),
+                    // handing PETSc/the fallback solver the raw OpMtx unmodified.
+                    for (int i = 0; i < ExtenstionSolVec.Mapping.Fields.Count; i++) {
+                        configsLevel.Add(new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig() {
+                            mode = BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.Eye,
+                            VarIndex = new int[] { i },
+                            DegreeS = new int[] { ExtenstionSolVec.Mapping.Fields[i].Basis.Degree }
+                        });
+                    }
+                } else if (this.fullStokes && this.UseSchurBlockPrec) {
                     // single combined block for velocity + pressure, mirroring XNSE.cs's UseSchurBlockPrec
                     configsLevel.Add(new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig() {
                         mode = BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.SchurComplement,
@@ -364,43 +424,96 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                     }
                 }
                 var MultigridOperatorConfig = new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig[1][] { configsLevel.ToArray() };
-                MultigridOperator mgOp = new MultigridOperator(AggBasis, ExtenstionSolVec.Mapping, OpMtx, null, MultigridOperatorConfig, GetBulkOperator());
 
                 var bkup_RHS = RHS.CloneAs();
                 Exception e;
                 try {
-                    var Pre_RHS = RHS.CloneAs();
-                    double[] Pre_Sol = new double[mgOp.Mapping.LocalLength];
-                    tr.Info("StokesExtension.SolveExtension trying with Multigridoperator");
-                    mgOp.TransformRhsInto(RHS, Pre_RHS, true);
-                    // Warm start: 'ExtenstionSolVec' may already carry the previous time step's
-                    // extension velocity (see callers of SolveExtension); it must be moved into
-                    // the same equilibrated basis as 'Pre_RHS'/'OperatorMatrix', otherwise a nonzero
-                    // initial guess would be handed to the solver in the wrong scaling. 'Pre_Sol' is
-                    // zero-initialized above, so leaving this out when WarmStart is false reproduces
-                    // the original cold-start behavior.
-                    if(WarmStart)
-                        mgOp.TransformSolInto(ExtenstionSolVec, Pre_Sol);
-                    if(!string.IsNullOrWhiteSpace(PetscOptions)) {
-                        var petscSolver = new PetscGMRESConfig() {
-                            PetscOptions = PetscOptions,
-                            UseGeometricMultigrid = UseGeometricMultigrid,
-                            CoarseKickIn = CoarseKickIn
-                        }.CreateInstance(mgOp);
-                        petscSolver.Solve(Pre_Sol, Pre_RHS);
-                        petscSolver.Dispose();
-                    } else {
-                        // mgOp.OperatorMatrix.Solve_Direct(Pre_Sol, Pre_RHS);
-                        var schurSolver = new SchurComplementForStokes.Config() {
-                            ConvergenceCriterion = 1e-10,
-                            MaxSolverIterations = 50,
-                            WriteDebugInfoLevel = 0
-                        }.CreateInstance(mgOp);
-                        schurSolver.Solve(Pre_Sol, Pre_RHS);
-                        schurSolver.Dispose();
-                        // mgOp.OperatorMatrix.Solve_Direct(Pre_Sol, Pre_RHS);
+                    // Solves one (possibly pseudo-time-regularized) linearization, dispatching to PETSc
+                    // or the internal Schur-complement fallback exactly as before.
+                    void SolveOnce(MultigridOperator mgOp_, double[] Pre_Sol_, double[] Pre_RHS_) {
+                        if(!string.IsNullOrWhiteSpace(PetscOptions)) {
+                            var petscSolver = new PetscGMRESConfig() {
+                                PetscOptions = PetscOptions,
+                                UseGeometricMultigrid = UseGeometricMultigrid,
+                                CoarseKickIn = CoarseKickIn
+                            }.CreateInstance(mgOp_);
+                            petscSolver.Solve(Pre_Sol_, Pre_RHS_);
+                            petscSolver.Dispose();
+                        } else {
+                            var schurSolver = new SchurComplementForStokes.Config() {
+                                ConvergenceCriterion = 1e-10,
+                                MaxSolverIterations = 50,
+                                WriteDebugInfoLevel = 0
+                            }.CreateInstance(mgOp_);
+                            schurSolver.Solve(Pre_Sol_, Pre_RHS_);
+                            schurSolver.Dispose();
+                        }
                     }
-                    mgOp.TransformSolFrom(ExtenstionSolVec, Pre_Sol);
+
+                    if(UsePseudoTimestepping) {
+                        // Pseudo-transient continuation: repeatedly solve (OpMtx + I/dtau)*u = RHS + u/dtau
+                        // for a growing dtau (switched-evolution-relaxation), until the TRUE (un-regularized)
+                        // residual RHS - OpMtx*u is small, or MaxPseudoTimeSteps is reached. dtau/I are added
+                        // to the whole system (velocity and pressure alike), not just the momentum rows.
+                        tr.Info("StokesExtension.SolveExtension trying with pseudo-timestepping");
+                        double dtau = PseudoDtau0;
+                        double[] u = WarmStart ? ExtenstionSolVec.ToArray() : new double[ExtenstionSolVec.Mapping.LocalLength];
+                        double resNorm_prev = RHS.MPI_L2Norm();
+
+                        for(int k = 0; k < MaxPseudoTimeSteps; k++) {
+                            var OpMtx_k = OpMtx.CloneAs();
+                            OpMtx_k.AccEyeSp(1.0 / dtau);
+
+                            var RHS_k = RHS.CloneAs();
+                            RHS_k.AccV(1.0 / dtau, u);
+
+                            var mgOp_k = new MultigridOperator(AggBasis, ExtenstionSolVec.Mapping, OpMtx_k, null, MultigridOperatorConfig, GetBulkOperator());
+
+                            var Pre_RHS_k = new double[mgOp_k.Mapping.LocalLength];
+                            mgOp_k.TransformRhsInto(RHS_k, Pre_RHS_k, true);
+                            var Pre_Sol_k = new double[mgOp_k.Mapping.LocalLength];
+                            mgOp_k.TransformSolInto(u, Pre_Sol_k);
+
+                            SolveOnce(mgOp_k, Pre_Sol_k, Pre_RHS_k);
+
+                            mgOp_k.TransformSolFrom(u, Pre_Sol_k);
+
+                            var Res = RHS.CloneAs();
+                            OpMtx.SpMV(-1.0, u, 1.0, Res);
+                            double resNorm = Res.MPI_L2Norm();
+                            double rhsNorm = RHS.MPI_L2Norm();
+                            double relResNorm = resNorm / Math.Max(rhsNorm, 1.0e-300);
+                            Console.WriteLine($"pseudo-time step {k}: dtau={dtau:0.###E-00}, |RHS|={rhsNorm:0.###E-00}, "
+                                + $"true residual={resNorm:0.###E-00} (relative: {relResNorm:0.###E-00}), |u|={u.MPI_L2Norm():0.###E-00}");
+
+                            if(relResNorm < PseudoTimeConvergenceCriterion)
+                                break;
+
+                            dtau = Math.Min(dtau * resNorm_prev / resNorm, PseudoDtauMax);
+                            resNorm_prev = resNorm;
+                        }
+
+                        ExtenstionSolVec.SetV(u, 1.0);
+                    } else {
+                        MultigridOperator mgOp = new MultigridOperator(AggBasis, ExtenstionSolVec.Mapping, OpMtx, null, MultigridOperatorConfig, GetBulkOperator());
+
+                        var Pre_RHS = RHS.CloneAs();
+                        double[] Pre_Sol = new double[mgOp.Mapping.LocalLength];
+                        tr.Info("StokesExtension.SolveExtension trying with Multigridoperator");
+                        mgOp.TransformRhsInto(RHS, Pre_RHS, true);
+                        // Warm start: 'ExtenstionSolVec' may already carry the previous time step's
+                        // extension velocity (see callers of SolveExtension); it must be moved into
+                        // the same equilibrated basis as 'Pre_RHS'/'OperatorMatrix', otherwise a nonzero
+                        // initial guess would be handed to the solver in the wrong scaling. 'Pre_Sol' is
+                        // zero-initialized above, so leaving this out when WarmStart is false reproduces
+                        // the original cold-start behavior.
+                        if(WarmStart)
+                            mgOp.TransformSolInto(ExtenstionSolVec, Pre_Sol);
+
+                        SolveOnce(mgOp, Pre_Sol, Pre_RHS);
+
+                        mgOp.TransformSolFrom(ExtenstionSolVec, Pre_Sol);
+                    }
                     e = null;
                 } catch(Exception ee) {
                     e = ee;

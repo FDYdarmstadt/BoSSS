@@ -194,6 +194,54 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         [DataMember]
         public bool StokesExtensionUseSchurBlockPrec = false;
 
+        /// <summary>
+        /// If true, the Stokes-extension velocity solve (<see cref="LevelSetEvolution.StokesExtension"/>) is
+        /// solved via pseudo-transient continuation (repeated solves of a progressively less-regularized
+        /// system, switched-evolution-relaxation) instead of a single solve. False (the default) preserves
+        /// the original single-solve behavior. See <c>StokesExtension.UsePseudoTimestepping</c>.
+        /// </summary>
+        [DataMember]
+        public bool StokesExtensionUsePseudoTimestepping = false;
+
+        /// <summary>
+        /// Only relevant if <see cref="StokesExtensionUsePseudoTimestepping"/> is set: initial pseudo-time
+        /// step size.
+        /// </summary>
+        [DataMember]
+        public double StokesExtensionPseudoDtau0 = 1.0;
+
+        /// <summary>
+        /// Only relevant if <see cref="StokesExtensionUsePseudoTimestepping"/> is set: upper bound for the
+        /// pseudo-time step size's growth.
+        /// </summary>
+        [DataMember]
+        public double StokesExtensionPseudoDtauMax = 1.0e8;
+
+        /// <summary>
+        /// Only relevant if <see cref="StokesExtensionUsePseudoTimestepping"/> is set: maximum number of
+        /// pseudo-time steps.
+        /// </summary>
+        [DataMember]
+        public int StokesExtensionMaxPseudoTimeSteps = 20;
+
+        /// <summary>
+        /// Only relevant if <see cref="StokesExtensionUsePseudoTimestepping"/> is set: convergence criterion
+        /// on the true (un-regularized) residual norm, RELATIVE to ‖RHS‖.
+        /// </summary>
+        [DataMember]
+        public double StokesExtensionPseudoTimeConvergenceCriterion = 1.0e-10;
+
+        /// <summary>
+        /// If true, the Stokes-extension velocity solve (<see cref="LevelSetEvolution.StokesExtension"/>) skips
+        /// BoSSS's own local preconditioning transform entirely (neither <see cref="StokesExtensionUseSchurBlockPrec"/>'s
+        /// combined block nor the standard per-field configs are used) -- every field gets
+        /// <see cref="BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.Eye"/> (identity), handing the raw
+        /// system matrix directly to PETSc/the fallback solver. See <c>StokesExtension.DisableLocalPreconditioning</c>.
+        /// Default (false) preserves the original behavior.
+        /// </summary>
+        [DataMember]
+        public bool StokesExtensionDisableLocalPreconditioning = false;
+
 
         #endregion
 
