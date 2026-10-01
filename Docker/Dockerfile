@@ -77,6 +77,35 @@ EOF
 
 RUN chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.codex
 
+
+RUN install -d -o ${USERNAME} -g ${USERNAME} /home/${USERNAME}/.claude \
+	&& cat > /home/${USERNAME}/.claude/settings.json <<'EOF'
+{
+  "permissions": {
+    "defaultMode": "bypassPermissions",
+    "deny": [
+      "Bash(rm *)",
+      "Bash(rmdir *)",
+      "Bash(unlink *)",
+      "Bash(shred *)",
+      "Bash(find * -delete*)",
+      "Bash(find * -exec rm*)",
+      "Bash(git commit*)",
+      "Bash(git * commit*)",
+      "Bash(git clean*)",
+      "Bash(git rm*)"
+    ]
+  },
+  "skipDangerousModePermissionPrompt": true,
+  "model": "opus",
+  "effortLevel": "high"
+}
+
+EOF
+
+RUN chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.claude
+
+
 # Runtime location for full BoSSS host install copied from host-mounted folder.
 RUN mkdir -p /home/${USERNAME}/BoSSS-Install \
 	&& chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/BoSSS-Install
