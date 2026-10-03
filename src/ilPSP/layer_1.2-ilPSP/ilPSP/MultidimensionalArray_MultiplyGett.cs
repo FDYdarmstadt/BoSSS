@@ -38,6 +38,22 @@ namespace ilPSP {
         /// </summary>
         internal static bool s_GettStageShortVector = false;
 
+        /// <summary>
+        /// true on AMD CPUs: gathered operands and staged T blocks are not used there (see <see cref="GettProfitable"/>).
+        /// Measured on AMD EPYC 7F52 (Zen 2; PLAN-4, FINDINGS.md 2026-10-03): vs. the generated kernels, gathered
+        /// cases 1.42x geomean but down to 0.55x, staged T 1.06x but down to 0.42x (Intel i7-6700: 2.87x for
+        /// gathered); unit-stride cases 2.75x. Per-machine calibration instead of this vendor rule: PLAN-5.
+        /// </summary>
+        internal static bool s_GettSlowGather = IsAmdCpu();
+
+        static bool IsAmdCpu() {
+            if(!X86Base.IsSupported)
+                return false;
+            var (_, ebx, ecx, edx) = X86Base.CpuId(0, 0);
+            // vendor string: EBX, EDX, ECX = "Auth" "enti" "cAMD"
+            return ebx == 0x68747541 && edx == 0x69746e65 && ecx == 0x444d4163;
+        }
+
         /// <summary> execution plan of the blocked SIMD path for one call </summary>
         unsafe struct GettPlan {
             public int lenV, lenR;
@@ -153,6 +169,8 @@ namespace ilPSP {
             long K = (p.NS > 0 ? p.K0 : 1) * (long)(p.NS > 1 ? p.K1 : 1);
             if(p.lenV <= 3 && p.NS > 0 && K <= 4) return false;   // half-empty vectors vs. unrolled scalar reference kernels
             if(p.pat == 3 && K <= 2) return false;                // gathered X without re-use and very short reduction
+            if(s_GettSlowGather && (p.stage || p.pat == 2 || p.pat == 3 || p.pat == 5 || p.pat == 6))
+                return false;                                     // AMD (Zen 2): gathers / staging not profitable
             long work = (long)p.lenV * p.lenR * K * nBatch;
             for(int i = 0; i < p.nOuter; i++) work *= p.oLen[i];
             if(work < 64) return false;                           // tiny: set-up overhead dominates
