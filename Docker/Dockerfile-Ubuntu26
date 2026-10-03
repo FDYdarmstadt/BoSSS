@@ -87,7 +87,6 @@ RUN chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.BoSSS/
 RUN install -d -o ${USERNAME} -g ${USERNAME} /home/${USERNAME}/.codex \
 	&& cat > /home/${USERNAME}/.codex/config.toml <<'EOF'
 approval_policy = "never"
-default_permissions = "danger-full-access"
 sandbox_mode = "danger-full-access"
 
 model = "gpt-5.6-luna"
