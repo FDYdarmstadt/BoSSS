@@ -14,6 +14,9 @@ namespace ilPSP {
         //   - "0":     all fast paths below are disabled, i.e. the generated kernels are used
         //              (behaviour before the tensor-product optimization);
         //   - "gemm":  only the direct (non-packing) DGEMM/DGEMV paths are used;
+        //   - "nogett": the blocked SIMD path (MultidimensionalArray_MultiplyGett.cs) is disabled;
+        //   - "census": all fast paths active; per (program, extents, strides, path) call counts and
+        //              times are recorded and written at exit (see CensusRecord below);
         //   - "check": every fast-path call is additionally computed by the generated reference
         //              kernel into a copy of the destination storage and compared (slow!);
         //              mismatches are printed as FASTPATH-MISMATCH lines, and a summary per path
@@ -25,6 +28,8 @@ namespace ilPSP {
         static readonly string s_FastPathMode = (System.Environment.GetEnvironmentVariable("BOSSS_MULTIPLY_FASTPATH") ?? "all").ToLowerInvariant();
         static readonly bool s_FastPathOff = s_FastPathMode == "0";
         static readonly bool s_FastPathGemmOnly = s_FastPathMode == "gemm";
+        // =nogett: blocked SIMD path (MultidimensionalArray_MultiplyGett.cs) off, all other fast paths on
+        static readonly bool s_GettOff = s_FastPathMode == "nogett" || s_FastPathGemmOnly;
         // =check: run reference kernel into a copy and compare (slow!)
         static readonly bool s_FastPathCheck = s_FastPathMode == "check";
         [ThreadStatic] static string s_LastPath;
@@ -74,6 +79,111 @@ namespace ilPSP {
                 Console.Error.WriteLine($"FASTPATH-CHECK {n} calls compared, {s_CheckFail} mismatches");
         }
 
+        // ------------------------------------------------------------------------------------------
+        // census mode (BOSSS_MULTIPLY_FASTPATH=census; PLAN-4 Phase C): per (program, extents,
+        // strides, trafo, alpha/beta class, aliasing, selected path) record the number of calls and
+        // the accumulated time of the core Multiply (after program compilation). Callers are sampled
+        // (stack trace on the 1st and every 4096th call of an entry). Fast paths stay active.
+        // Written at process exit to the file given by BOSSS_MULTIPLY_CENSUS_FILE
+        // (default MULTIPLY-CENSUS.tsv), one line per entry.
+        // ------------------------------------------------------------------------------------------
+        static readonly bool s_Census = s_FastPathMode == "census";
+
+        sealed class CensusEntry {
+            public long Count;
+            public long Ticks;
+            public string Desc;
+            public readonly System.Collections.Concurrent.ConcurrentDictionary<string, int> Callers = new System.Collections.Concurrent.ConcurrentDictionary<string, int>();
+        }
+
+        static readonly System.Collections.Concurrent.ConcurrentDictionary<ulong, CensusEntry> s_CensusEntries = new System.Collections.Concurrent.ConcurrentDictionary<ulong, CensusEntry>();
+        static int s_CensusExitHooked;
+
+        static ulong CensusMix(ulong h, long v) {
+            h ^= (ulong)v;
+            h *= 0x100000001b3UL;
+            return h;
+        }
+
+        static unsafe string CensusList(int* v, int n) {
+            var sb = new System.Text.StringBuilder();
+            for(int i = 0; i < n; i++) { if(i > 0) sb.Append(' '); sb.Append(v[i]); }
+            return sb.ToString();
+        }
+
+        static string CensusCaller() {
+            var st = new System.Diagnostics.StackTrace(2, false);
+            var sb = new System.Text.StringBuilder();
+            int found = 0;
+            for(int i = 0; i < st.FrameCount && found < 3; i++) {
+                var m = st.GetFrame(i).GetMethod();
+                if(m == null || m.DeclaringType == typeof(MultidimensionalArray))
+                    continue;
+                if(found > 0) sb.Append(" < ");
+                sb.Append((m.DeclaringType?.FullName ?? "?") + "." + m.Name);
+                found++;
+            }
+            return sb.ToString();
+        }
+
+        static unsafe void CensusRecord(long t0, ref MultiplyProgram mp, int* lenRun, int* ct, int* ca, int* cb,
+            int* lenSum, int* sa, int* sb, double alpha, double beta, bool noAlias) {
+            long dt = System.Diagnostics.Stopwatch.GetTimestamp() - t0;
+            int DT = mp.DT, NS = mp.NoOfSumCycles;
+            int ab = (alpha == 1.0 ? 0 : alpha == 0.0 ? 1 : 2) + 3 * (beta == 0.0 ? 0 : beta == 1.0 ? 1 : 2);
+            string path = s_LastPath ?? "?";
+
+            // the transformed loop has been swapped to position 0 by the driver; report original order
+            int k = mp.iTrafoIdx;
+            int* l = stackalloc int[4 * DT];
+            int* t_ = l + DT, a_ = t_ + DT, b_ = a_ + DT;
+            for(int d = 0; d < DT; d++) {
+                int s = (k > 0 && d == 0) ? k : (k > 0 && d == k) ? 0 : d;
+                l[d] = lenRun[s]; t_[d] = ct[s]; a_[d] = ca[s]; b_[d] = cb[s];
+            }
+
+            ulong h = 0xcbf29ce484222325UL;
+            h = CensusMix(h, mp.DT); h = CensusMix(h, mp.DA); h = CensusMix(h, mp.DB); h = CensusMix(h, NS);
+            h = CensusMix(h, mp.iTrafoIdx); h = CensusMix(h, mp.TrfA0Sw); h = CensusMix(h, mp.TrfB0Sw);
+            h = CensusMix(h, ab); h = CensusMix(h, noAlias ? 1 : 0); h = CensusMix(h, path.GetHashCode());
+            for(int d = 0; d < DT; d++) { h = CensusMix(h, l[d]); h = CensusMix(h, t_[d]); h = CensusMix(h, a_[d]); h = CensusMix(h, b_[d]); }
+            for(int d = 0; d < NS; d++) { h = CensusMix(h, lenSum[d]); h = CensusMix(h, sa[d]); h = CensusMix(h, sb[d]); }
+
+            if(!s_CensusEntries.TryGetValue(h, out var e)) {
+                var mpLoc = mp;
+                string desc = string.Join("\t", mpLoc.Describe(), path, mp.iTrafoIdx >= 0 ? "1" : "0", ab.ToString(), noAlias ? "1" : "0",
+                    CensusList(l, DT), CensusList(t_, DT), CensusList(a_, DT), CensusList(b_, DT),
+                    CensusList(lenSum, NS), CensusList(sa, NS), CensusList(sb, NS));
+                e = s_CensusEntries.GetOrAdd(h, _ => new CensusEntry() { Desc = desc });
+                if(System.Threading.Interlocked.Exchange(ref s_CensusExitHooked, 1) == 0)
+                    AppDomain.CurrentDomain.ProcessExit += (o, ea) => CensusWrite();
+            }
+            long cnt = System.Threading.Interlocked.Increment(ref e.Count);
+            System.Threading.Interlocked.Add(ref e.Ticks, dt);
+            if((cnt & 4095) == 1)
+                e.Callers.AddOrUpdate(CensusCaller(), 1, (_, c) => c + 1);
+        }
+
+        static void CensusWrite() {
+            string file = System.Environment.GetEnvironmentVariable("BOSSS_MULTIPLY_CENSUS_FILE");
+            if(string.IsNullOrWhiteSpace(file)) file = "MULTIPLY-CENSUS.tsv";
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("seconds\tcalls\tprogram\tpath\ttrafo\talphabeta\tnoalias\tlenRun\tcycT\tcycA\tcycB\tlenSum\tsumA\tsumB\tcallers");
+            double f = 1.0 / System.Diagnostics.Stopwatch.Frequency;
+            long totCalls = 0; double totSec = 0;
+            var all = new System.Collections.Generic.List<CensusEntry>(s_CensusEntries.Values);
+            all.Sort((x, y) => y.Ticks.CompareTo(x.Ticks));
+            foreach(var e in all) {
+                totCalls += e.Count; totSec += e.Ticks * f;
+                var callers = new System.Collections.Generic.List<string>();
+                foreach(var kv in e.Callers) callers.Add(kv.Value + "x " + kv.Key);
+                sb.Append((e.Ticks * f).ToString("g6", System.Globalization.CultureInfo.InvariantCulture)).Append('\t')
+                  .Append(e.Count).Append('\t').Append(e.Desc).Append('\t').Append(string.Join(" | ", callers)).AppendLine();
+            }
+            Console.Error.WriteLine($"MULTIPLY-CENSUS: {all.Count} entries, {totCalls} calls, {totSec:g4} s -> {file}");
+            try { System.IO.File.WriteAllText(file, sb.ToString()); } catch(Exception ex) { Console.Error.WriteLine("MULTIPLY-CENSUS: write failed: " + ex.Message); }
+        }
+
 #endif
 
         /// <summary>
@@ -89,6 +199,17 @@ namespace ilPSP {
 
         // Selection order: direct GEMM (rank 4, rank 2/3), direct GEMV, packed GEMM, fallback.
         // The short-reduction SIMD path (TryMultiplySimd) is currently disabled, see there.
+        //
+        // BLAS vs. blocked SIMD path (MultidimensionalArray_MultiplyGett.cs, net10.0 only): if the latter is
+        // applicable, DGEMM is only used for GEMMs with m*n*k above the following limits. Measured on pcmit36
+        // (i7-6700, MKL, 1 thread; PLAN-4 Phase E, benchmarks/gett-f/results-crossover.csv): the SIMD path
+        // runs at ~20-25 GFlop/s; direct DGEMM is 0-17% faster up to 20^3, 1.4x at 24^3, 1.6-2.4x for
+        // 32^3...128^3. Below the limit, the SIMD path is preferred: comparable speed, and its results are
+        // bitwise identical to the generated kernels. Packed DGEMM additionally copies all operands
+        // (4.7x slower than the SIMD path for a census shape 20x49/6), hence the higher limit.
+        // Keep the limits in one place, for re-tuning per machine/library (PLAN-5).
+        internal const long GETT_PREFERRED_BELOW_MNK = 12000;
+        internal const long GETT_PREFERRED_BELOW_MNK_PACKED = 64 * 64 * 64;
         static unsafe bool TryMultiplyBlas(int runDim, int sumDim,
             double* t, double* a, double* b, int* lengths,
             int* ct, int* ca, int* cb, int* sums, int* sa, int* sb,
@@ -104,14 +225,26 @@ namespace ilPSP {
 #endif
             if(sumDim != 1 || sums[0] <= 0 || alpha == 0.0)
                 return false;
-            if(TryDirectGemmRank4(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) return FastPathSelected("TryDirectGemmRank4");
-            if(TryDirectGemm(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) return FastPathSelected("TryDirectGemm");
+            long gettBelow = 0, gettBelowPacked = 0;
+#if NET
+            {
+                // every BLAS path needs m*n*k >= 4096 per matrix; only then, the SIMD path plan is evaluated
+                long work = sums[0];
+                for(int d = 0; d < runDim; d++) work *= lengths[d];
+                if(work >= 4096 && GettWouldRun(runDim, sumDim, lengths, ct, ca, cb, sums, sa, sb, 1)) {
+                    gettBelow = GETT_PREFERRED_BELOW_MNK;
+                    gettBelowPacked = GETT_PREFERRED_BELOW_MNK_PACKED;
+                }
+            }
+#endif
+            if(TryDirectGemmRank4(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta, gettBelow)) return FastPathSelected("TryDirectGemmRank4");
+            if(TryDirectGemm(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta, gettBelow)) return FastPathSelected("TryDirectGemm");
             if(TryDirectGemv(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) return FastPathSelected("TryDirectGemv");
 #if MULTIPLY_FASTPATH_DIAGNOSTICS
             if(s_FastPathGemmOnly)
                 return false;
 #endif
-            if(TryPackedGemm(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) return FastPathSelected("TryPackedGemm");
+            if(TryPackedGemm(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta, gettBelowPacked)) return FastPathSelected("TryPackedGemm");
             return false;
         }
 
@@ -121,7 +254,7 @@ namespace ilPSP {
         // this path limited to the row/column-major layouts BLAS can consume
         // without packing.
         static unsafe bool TryDirectGemmRank4(int runDim, double* t, double* a, double* b,
-            int* lengths, int* ct, int* ca, int* cb, int k, int* sa, int* sb, double alpha, double beta) {
+            int* lengths, int* ct, int* ca, int* cb, int k, int* sa, int* sb, double alpha, double beta, long gettBelow) {
             if(runDim != 4 || k < 8) return false;
             int p = -1, q = -1;
             for(int d = 0; d < runDim; d++) {
@@ -130,7 +263,7 @@ namespace ilPSP {
             }
             if(p < 0 || q < 0 || p == q) return false;
             int m = lengths[p], n = lengths[q];
-            if(m < 4 || n < 4 || (long)m * n * k < 4096) return false;
+            if(m < 4 || n < 4 || (long)m * n * k < 4096 || (long)m * n * k < gettBelow) return false;
             if(ct[q] != 1 || ct[p] < n || sa[0] != 1 || sb[0] != 1) return false;
             if(ca[q] < k || cb[p] < k) return false;
 
@@ -183,6 +316,13 @@ namespace ilPSP {
 #endif
             int innerRun = runDim - 1;
             if(innerRun != 2) return false;
+#if NET
+            // the blocked SIMD path is preferred for small GEMMs, see GETT_PREFERRED_BELOW_MNK
+            if((long)lengths[1] * lengths[2] * sums[0] < GETT_PREFERRED_BELOW_MNK
+                && GettWouldRun(innerRun, sumDim, lengths + 1, ct + 1, ca + 1, cb + 1, sums, sa, sb, lengths[0])
+                && GettTNonOverlapping(runDim, lengths, ct))
+                return false;
+#endif
             // Validate every mapped slice before modifying the destination.
             for(int i = 0; i < lengths[0]; i++) {
                 int ti = trfT[i] * trfT0Sw;
@@ -202,7 +342,7 @@ namespace ilPSP {
                 double* ts = t + ct[0] * (i * (1 - trfT0Sw) + ti);
                 double* ap = a + ca[0] * (i * (1 - trfASw) + ai);
                 double* bp = b + cb[0] * (i * (1 - trfBSw) + bi);
-                TryDirectGemm(innerRun, ts, ap, bp, lengths + 1, ct + 1, ca + 1, cb + 1, sums[0], sa, sb, alpha, beta);
+                TryDirectGemm(innerRun, ts, ap, bp, lengths + 1, ct + 1, ca + 1, cb + 1, sums[0], sa, sb, alpha, beta, 0);
             }
             return true;
         }
@@ -219,11 +359,11 @@ namespace ilPSP {
         }
 
         static unsafe bool TryDirectGemm(int runDim, double* t, double* a, double* b,
-            int* lengths, int* ct, int* ca, int* cb, int k, int* sa, int* sb, double alpha, double beta) {
+            int* lengths, int* ct, int* ca, int* cb, int k, int* sa, int* sb, double alpha, double beta, long gettBelow) {
             if(runDim != 2 && runDim != 3) return false;
             int row = runDim - 2, col = row + 1;
             int m = lengths[row], n = lengths[col];
-            if(m < 8 || n < 8 || k < 8 || (long)m * n * k < 4096) return false;
+            if(m < 8 || n < 8 || k < 8 || (long)m * n * k < 4096 || (long)m * n * k < gettBelow) return false;
             if(ca[col] != 0 || cb[row] != 0 || ct[col] != 1 || ct[row] < n) return false;
             int transB, ldb;
             if(sa[0] == 1 && ca[row] >= k) { transB = 'n'; ldb = ca[row]; }
@@ -250,10 +390,10 @@ namespace ilPSP {
         // Pack arbitrary leading dimensions. The caller excludes aliases so the
         // established in-place traversal semantics remain unchanged.
         static unsafe bool TryPackedGemm(int runDim, double* t, double* a, double* b,
-            int* lengths, int* ct, int* ca, int* cb, int k, int* sa, int* sb, double alpha, double beta) {
+            int* lengths, int* ct, int* ca, int* cb, int k, int* sa, int* sb, double alpha, double beta, long gettBelow) {
             if(runDim != 2 && runDim != 3) return false;
             int row = runDim - 2, col = row + 1, m = lengths[row], n = lengths[col];
-            if(k < 1 || m < 4 || n < 4 || (long)m * n * k < 4096 || ca[col] != 0 || cb[row] != 0) return false;
+            if(k < 1 || m < 4 || n < 4 || (long)m * n * k < 4096 || (long)m * n * k < gettBelow || ca[col] != 0 || cb[row] != 0) return false;
             int batches = row == 0 ? 1 : lengths[0];
             // one temporary buffer for the packed A (m x k), B (k x n) and T (m x n) blocks
             double[] scratch = TempBuffer.GetTempBuffer(out int iScratch, m * k + k * n + m * n);

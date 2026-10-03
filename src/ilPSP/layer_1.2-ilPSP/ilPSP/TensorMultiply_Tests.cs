@@ -82,6 +82,19 @@ namespace ilPSP {
                 Check(17,19,23,batches,ta,tb,padded,false,alpha,beta);
         }
 
+        /// <summary>
+        /// As <see cref="MatrixLayouts"/>, but above the size limit below which the blocked SIMD path is
+        /// preferred to direct DGEMM (MultidimensionalArray.GETT_PREFERRED_BELOW_MNK), i.e. on the BLAS paths.
+        /// </summary>
+        [Test]
+        public static void MatrixLayoutsBlasSize() {
+            Assert.Greater(29L * 31 * 37, MultidimensionalArray.GETT_PREFERRED_BELOW_MNK);
+            foreach(bool ta in new[] { false,true }) foreach(bool tb in new[] { false,true })
+            foreach(bool padded in new[] { false,true }) foreach(int batches in new[] { 0,3 })
+            foreach(double alpha in new[] { -.75,1.0 }) foreach(double beta in new[] { 0.0,.25 })
+                Check(29,31,37,batches,ta,tb,padded,false,alpha,beta);
+        }
+
         /// <summary>Fallback for small, strided and aliasing layouts, plus broadcast batches.</summary>
         [Test]
         public static void FallbackAndScaling() {

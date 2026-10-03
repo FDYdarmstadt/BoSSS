@@ -11,8 +11,23 @@ namespace MltdimAryMultiply_CodeGen {
         delegate void D();
         
         static void Main(string[] args) {
+            if(args.Length >= 1 && args[0] == "--simd") {
+                // AVX2 micro-kernels of the GETT-style path, see SimdKernelGen.cs
+                if(args.Length > 2) {
+                    Console.Error.WriteLine("Usage: MltdimAryMultiply_CodeGen --simd [output-file]");
+                    System.Environment.ExitCode = 1;
+                    return;
+                }
+                string simdPath = args.Length == 2 ? Path.GetFullPath(args[1]) :
+                    Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
+                        "..", "..", "..", "..", "ilPSP", "MultidimensionalArray_CodeGenMultiplySimd.cs"));
+                using var simdWriter = new StreamWriter(simdPath, false, new UTF8Encoding(false));
+                simdWriter.NewLine = "\r\n";
+                SimdKernelGen.Generate(simdWriter);
+                return;
+            }
             if(args.Length > 1) {
-                Console.Error.WriteLine("Usage: MltdimAryMultiply_CodeGen [output-file]");
+                Console.Error.WriteLine("Usage: MltdimAryMultiply_CodeGen [output-file] | --simd [output-file]");
                 System.Environment.ExitCode = 1;
                 return;
             }
