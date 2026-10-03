@@ -214,7 +214,7 @@ namespace ilPSP.LinSolvers.ILU {
                     //Marshal.FreeHGlobal((IntPtr)bilu);
                 }
             }
-            Debug.Assert(ILUfactorization.aPtr != null);
+            Debug.Assert(ILUfactorization.aPtr != IntPtr.Zero);
         }
 
         /// <summary>

@@ -1,4 +1,3 @@
-#if NET
 using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
@@ -13,7 +12,9 @@ namespace ilPSP {
         // Works on the same raw loop description as the generated dispatchers (running loops: lengths
         // and cycles of T, A, B; summation loops: lengths and cycles of A, B):
         //  - vector axis v: the running loop along which T has unit stride; vectorized over 4 doubles,
-        //    tails by masked loads/stores;
+        //    tails by masked loads/stores; if T has no unit-stride loop (strided views), the T block of
+        //    vector and row axis is "staged", i.e. copied into a contiguous stack buffer, computed there by
+        //    the same kernels, and copied back (no change of the arithmetic);
         //  - row axis r: a second running loop, register-blocked in blocks of up to 4 rows; preferably
         //    one along which the vectorized operand is constant (outer-product kernel, i.e. its vector
         //    loads are re-used for all rows of the block);
@@ -28,13 +29,24 @@ namespace ilPSP {
 
         const int GETT_MAXD = 8;
 
+        /// <summary> max. size (doubles) of the stack buffer for a staged T block </summary>
+        const int GETT_STAGE_MAX = 2048;
+
+        /// <summary>
+        /// if true, a unit-stride T loop of length &lt;= 3 (e.g. the spatial direction) may be replaced by a
+        /// longer, staged vector axis (internal switch for measurements, see PLAN-4/RESULTS-4.md)
+        /// </summary>
+        internal static bool s_GettStageShortVector = false;
+
         /// <summary> execution plan of the blocked SIMD path for one call </summary>
         unsafe struct GettPlan {
             public int lenV, lenR;
             public bool swap;           // X = B, Y = A (otherwise X = A, Y = B)
             public int pat;             // kernel pattern index, see MultidimensionalArray_CodeGenMultiplySimd.cs
             public int gx, gy;          // strides of X, Y along the vector axis
-            public int tr, xr, yr;      // strides along the row axis
+            public int tr, xr, yr;      // strides along the row axis (tr: in the staging buffer, if staged)
+            public bool stage;          // T block staged in a contiguous buffer (row stride lenV)
+            public int tvS, trS;        // strides of T along vector and row axis, if staged
             public int NS, K0, sx0, sy0, K1, sx1, sy1;
             public int nOuter;
             public fixed int oLen[GETT_MAXD];
@@ -73,6 +85,17 @@ namespace ilPSP {
                 if(len[d] <= 0) return false;
                 if(len[d] > 1 && ct[d] == 1 && v < 0) v = d;
             }
+            bool stage = false;
+            if(v < 0 || (s_GettStageShortVector && len[v] <= 3)) {
+                // staged vector axis: longest loop along which an operand varies, preferably with unit stride
+                int vs = -1, bestS = -1;
+                for(int d = 0; d < DT; d++) {
+                    if(len[d] < 4 || (ca[d] == 0 && cb[d] == 0)) continue;
+                    int score = len[d] + ((ca[d] == 1 || cb[d] == 1) ? (1 << 20) : 0);
+                    if(score > bestS) { bestS = score; vs = d; }
+                }
+                if(vs >= 0 && len[vs] <= GETT_STAGE_MAX) { v = vs; stage = ct[vs] != 1; }
+            }
             if(v < 0) return false;
             if(ca[v] == 0 && cb[v] == 0) return false;
 
@@ -92,6 +115,7 @@ namespace ilPSP {
             int r = -1, best = -1;
             for(int d = 0; d < DT; d++) {
                 if(d == v || len[d] <= 1) continue;
+                if(stage && (long)len[d] * len[v] > GETT_STAGE_MAX) continue;
                 int score = len[d];
                 if(YM == 'B' && cx[d] == 0 && cy[d] != 0) score += 1 << 20;
                 if(score > best) { best = score; r = d; }
@@ -106,6 +130,9 @@ namespace ilPSP {
             p.lenV = len[v]; p.swap = swap; p.pat = pat;
             p.gx = cx[v]; p.gy = cy[v];
             if(r >= 0) { p.lenR = len[r]; p.tr = ct[r]; p.xr = cx[r]; p.yr = cy[r]; } else { p.lenR = 1; }
+            if(stage) {
+                p.stage = true; p.tvS = ct[v]; p.trS = p.tr; p.tr = p.lenV;
+            }
             p.NS = NS;
             if(NS >= 1) { p.K0 = lenSum[0]; p.sx0 = sx[0]; p.sy0 = sy[0]; }
             if(NS >= 2) { p.K1 = lenSum[1]; p.sx1 = sx[1]; p.sy1 = sy[1]; }
@@ -155,16 +182,17 @@ namespace ilPSP {
         unsafe static void GettExecute(ref GettPlan p, double* t, double* a, double* b, double alpha, double beta) {
             double* x = p.swap ? b : a;
             double* y = p.swap ? a : b;
+            double* buf = stackalloc double[p.stage ? p.lenV * p.lenR : 0];
             int nO = p.nOuter;
             if(nO == 0) {
-                GettBlock(ref p, t, x, y, alpha, beta);
+                GettBlockStaged(ref p, t, x, y, alpha, beta, buf);
                 return;
             }
             int* idx = stackalloc int[GETT_MAXD];
             for(int i = 0; i < nO; i++) idx[i] = 0;
             fixed(int* oLen = p.oLen, oT = p.oT, oX = p.oX, oY = p.oY) {
                 while(true) {
-                    GettBlock(ref p, t, x, y, alpha, beta);
+                    GettBlockStaged(ref p, t, x, y, alpha, beta, buf);
                     // odometer over the outer loops, innermost = last
                     int j = nO - 1;
                     while(true) {
@@ -178,6 +206,21 @@ namespace ilPSP {
                     }
                 }
             }
+        }
+
+        unsafe static void GettBlockStaged(ref GettPlan p, double* t, double* x, double* y, double alpha, double beta, double* buf) {
+            if(!p.stage) {
+                GettBlock(ref p, t, x, y, alpha, beta);
+                return;
+            }
+            int lenV = p.lenV, lenR = p.lenR, tvS = p.tvS, trS = p.trS;
+            for(int i = 0; i < lenR; i++)
+                for(int j = 0; j < lenV; j++)
+                    buf[i * lenV + j] = t[i * trS + j * tvS];
+            GettBlock(ref p, buf, x, y, alpha, beta);
+            for(int i = 0; i < lenR; i++)
+                for(int j = 0; j < lenV; j++)
+                    t[i * trS + j * tvS] = buf[i * lenV + j];
         }
 
         unsafe static void GettBlock(ref GettPlan p, double* t, double* x, double* y, double alpha, double beta) {
@@ -299,4 +342,3 @@ namespace ilPSP {
         }
     }
 }
-#endif

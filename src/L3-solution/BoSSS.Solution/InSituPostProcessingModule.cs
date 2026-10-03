@@ -60,7 +60,7 @@ namespace BoSSS.Solution {
             this.SolverMain = solverMain;
             if (solverMain.MPIRank == 0) {
                 if (LogFileName != null) {
-                    if (solverMain.CurrentSessionInfo.ID != null && !solverMain.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
+                    if (!solverMain.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
                         if (solverMain.MPIRank == 0) {
                             this.Log = SolverMain.DatabaseDriver.FsDriver.GetNewLog(LogFileName, solverMain.CurrentSessionInfo.ID);
                         } else {

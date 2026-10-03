@@ -1,4 +1,3 @@
-#if NET
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -45,12 +44,12 @@ namespace ilPSP {
         }
 
         // assigns strides to an operand which has the given running loops (and all summation loops)
-        static int AssignStrides(Random rnd, Layout L, bool[] runMember, int[] cRun, int[] cSum, int trfExtent0) {
+        static int AssignStrides(Random rnd, Layout L, bool[] runMember, int[] cRun, int[] cSum, int trfExtent0, int innerStride = 1) {
             var dims = new List<int>(); // >= 0: running loop d, < 0: summation loop -1-s
             for(int d = 0; d < L.DT; d++) if(runMember[d]) dims.Add(d);
             for(int s = 0; s < L.NS; s++) dims.Add(-1 - s);
             dims = dims.OrderBy(_ => rnd.Next()).ToList(); // innermost first
-            int stride = 1;
+            int stride = innerStride;
             foreach(int d in dims) {
                 int l = d >= 0 ? (d == 0 && trfExtent0 > 0 ? trfExtent0 : L.len[d]) : L.lenSum[-1 - d];
                 if(d >= 0) cRun[d] = stride; else cSum[-1 - d] = stride;
@@ -71,7 +70,8 @@ namespace ilPSP {
 
             // T: all running loops, random order (the innermost one has unit stride)
             var tMember = Enumerable.Repeat(true, L.DT).ToArray();
-            L.sizeT = AssignStrides(rnd, L, tMember, L.ct, new int[L.NS], 0);
+            // in 30% of the cases, T has no unit-stride loop (strided view; staged T blocks)
+            L.sizeT = AssignStrides(rnd, L, tMember, L.ct, new int[L.NS], 0, rnd.NextDouble() < 0.3 ? rnd.Next(2, 4) : 1);
 
             // A, B: random subsets of the running loops
             var aMember = new bool[L.DT];
@@ -165,6 +165,22 @@ namespace ilPSP {
         [Test]
         public static void RandomLayouts() {
             RandomCases(false, 4711, 4000);
+        }
+
+        /// <summary>
+        /// random layouts, with the staged replacement of short (length &lt;= 3) unit-stride vector axes switched on
+        /// </summary>
+        [Test]
+        public static void RandomLayoutsStageShortVector() {
+            var fld = typeof(MultidimensionalArray).GetField("s_GettStageShortVector", BindingFlags.NonPublic | BindingFlags.Static);
+            bool old = (bool)fld.GetValue(null);
+            try {
+                fld.SetValue(null, true);
+                RandomCases(false, 2024, 3000);
+                RandomCases(true, 2025, 2000);
+            } finally {
+                fld.SetValue(null, old);
+            }
         }
 
         /// <summary> random layouts with index transformation (incl. skipped entries) </summary>
@@ -265,4 +281,3 @@ namespace ilPSP {
         }
     }
 }
-#endif

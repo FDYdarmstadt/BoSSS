@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <!-- netstandard2.0 for the (netstandard2.0) libraries referencing ilPSP; net10.0 for applications (SIMD kernels, System.Runtime.Intrinsics) -->
-    <TargetFrameworks>netstandard2.0;net10.0</TargetFrameworks>
+    <TargetFramework>net10.0</TargetFramework>
     <OutputType>Library</OutputType>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
@@ -24,15 +23,10 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="log4net" Version="3.3.0" />
-    <PackageReference Include="System.Numerics.Vectors" Version="4.4.0" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj" />
   </ItemGroup>
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net10.0' ">
-    <!-- analyzers enabled by default only for net5+ targets; pre-existing code (Environment.cs, IMatrixExtensions.cs) -->
-    <NoWarn>$(NoWarn);CA1416;CA2200</NoWarn>
-  </PropertyGroup>
   <PropertyGroup>
     <EnablePackageVulnerabilityChecks>false</EnablePackageVulnerabilityChecks>
   </PropertyGroup>  

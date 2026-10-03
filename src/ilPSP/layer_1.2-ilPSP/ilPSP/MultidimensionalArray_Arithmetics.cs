@@ -1120,7 +1120,6 @@ namespace ilPSP {
                                 s_LastPath = "WTrafoGemm";
 #endif
                             } else
-#if NET
                             if(TryMultiplyGettWTrafo(
                                 DT, mp.NoOfSumCycles, pT, pA, pB, lenRun, cycRunT, cycRunA, cycRunB,
                                 lenSum, cycSumA, cycSumB, scale, thisscale,
@@ -1133,7 +1132,6 @@ namespace ilPSP {
                                     FastPathCompare(chkRef, this.m_Storage, "GettWTrafo", DT, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale);
 #endif
                             } else
-#endif
                             {
                                 //Debug.Assert(mp.NoOfSumCycles == 1); Debug.Assert(DT == 2); __MultiplyWTrafo_Sum1_FOR2( 
                                 MultiplyWTrafo_Dispatch(
@@ -1175,7 +1173,6 @@ namespace ilPSP {
                                 FastPathCompare(chkRef, this.m_Storage, s_LastPath, DT, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale);
 #endif
                         } else
-#if NET
                         if(TryMultiplyGett(DT, mp.NoOfSumCycles, pT, pA, pB,
                                 lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale,
                                 blasDirect)) {
@@ -1184,7 +1181,6 @@ namespace ilPSP {
                                 FastPathCompare(chkRef, this.m_Storage, "Gett", DT, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale);
 #endif
                         } else
-#endif
                         {
                             Multiply_Dispatch(DT, mp.NoOfSumCycles, pT, pA, pB, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale);
 #if MULTIPLY_FASTPATH_DIAGNOSTICS

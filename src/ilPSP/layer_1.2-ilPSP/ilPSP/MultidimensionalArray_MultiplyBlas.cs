@@ -200,7 +200,7 @@ namespace ilPSP {
         // Selection order: direct GEMM (rank 4, rank 2/3), direct GEMV, packed GEMM, fallback.
         // The short-reduction SIMD path (TryMultiplySimd) is currently disabled, see there.
         //
-        // BLAS vs. blocked SIMD path (MultidimensionalArray_MultiplyGett.cs, net10.0 only): if the latter is
+        // BLAS vs. blocked SIMD path (MultidimensionalArray_MultiplyGett.cs): if the latter is
         // applicable, DGEMM is only used for GEMMs with m*n*k above the following limits. Measured on pcmit36
         // (i7-6700, MKL, 1 thread; PLAN-4 Phase E, benchmarks/gett-f/results-crossover.csv): the SIMD path
         // runs at ~20-25 GFlop/s; direct DGEMM is 0-17% faster up to 20^3, 1.4x at 24^3, 1.6-2.4x for
@@ -223,20 +223,24 @@ namespace ilPSP {
             if(s_FastPathOff)
                 return false;
 #endif
-            if(sumDim != 1 || sums[0] <= 0 || alpha == 0.0)
+            if(sumDim < 1 || sumDim > 2 || alpha == 0.0)
                 return false;
+            for(int s = 0; s < sumDim; s++)
+                if(sums[s] <= 0) return false;
             long gettBelow = 0, gettBelowPacked = 0;
-#if NET
             {
                 // every BLAS path needs m*n*k >= 4096 per matrix; only then, the SIMD path plan is evaluated
-                long work = sums[0];
+                long work = sums[0] * (sumDim > 1 ? (long)sums[1] : 1);
                 for(int d = 0; d < runDim; d++) work *= lengths[d];
-                if(work >= 4096 && GettWouldRun(runDim, sumDim, lengths, ct, ca, cb, sums, sa, sb, 1)) {
+                if(work < 4096)
+                    return false;
+                if(GettWouldRun(runDim, sumDim, lengths, ct, ca, cb, sums, sa, sb, 1)) {
                     gettBelow = GETT_PREFERRED_BELOW_MNK;
                     gettBelowPacked = GETT_PREFERRED_BELOW_MNK_PACKED;
                 }
             }
-#endif
+            if(sumDim != 1)
+                goto general;
             if(TryDirectGemmRank4(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta, gettBelow)) return FastPathSelected("TryDirectGemmRank4");
             if(TryDirectGemm(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta, gettBelow)) return FastPathSelected("TryDirectGemm");
             if(TryDirectGemv(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) return FastPathSelected("TryDirectGemv");
@@ -245,7 +249,114 @@ namespace ilPSP {
                 return false;
 #endif
             if(TryPackedGemm(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta, gettBelowPacked)) return FastPathSelected("TryPackedGemm");
+        general:
+#if MULTIPLY_FASTPATH_DIAGNOSTICS
+            if(s_FastPathGemmOnly)
+                return false;
+#endif
+            if(TryPackedGemmGeneral(runDim, sumDim, t, a, b, lengths, ct, ca, cb, sums, sa, sb, alpha, beta, gettBelowPacked)) return FastPathSelected("TryPackedGemmGeneral");
             return false;
+        }
+
+        /// <summary>
+        /// Packed DGEMM for general contractions (PLAN-4 Phase E): the running loops are classified as
+        /// M (varies in A only), N (B only) or batch (A and B); M, N and the summation loops (K) may each
+        /// consist of several loops with arbitrary strides (e.g. T[i,j,k] = sum_{p,q} A[p,j,q] B[i,p,k,q]:
+        /// M = j, N = (i,k), K = (p,q)). A, B and the T block are packed into contiguous buffers (offset
+        /// tables, TempBuffer), one DGEMM per batch entry, T copied back.
+        /// </summary>
+        static unsafe bool TryPackedGemmGeneral(int runDim, int sumDim, double* t, double* a, double* b,
+            int* lengths, int* ct, int* ca, int* cb, int* sums, int* sa, int* sb, double alpha, double beta, long gettBelow) {
+            const int MAXD = 8;
+            if(!s_PackedGemmGeneral || runDim > MAXD || sumDim < 1 || sumDim > 2) return false;
+            int* dM = stackalloc int[MAXD]; int* dN = stackalloc int[MAXD]; int* dB = stackalloc int[MAXD];
+            int nM = 0, nN = 0, nB = 0;
+            long m = 1, n = 1, nb = 1, k = 1;
+            for(int d = 0; d < runDim; d++) {
+                if(lengths[d] <= 0) return false;
+                if(lengths[d] == 1) continue;
+                if(ca[d] != 0 && cb[d] == 0) { dM[nM++] = d; m *= lengths[d]; }
+                else if(ca[d] == 0 && cb[d] != 0) { dN[nN++] = d; n *= lengths[d]; }
+                else if(ca[d] != 0 && cb[d] != 0) { dB[nB++] = d; nb *= lengths[d]; }
+                else return false; // T-only (broadcast) loop
+            }
+            for(int s = 0; s < sumDim; s++) k *= sums[s];
+            if(m < 8 || n < 8 || k < 8) return false;
+            long mnk = m * n * k;
+            if(mnk < GEMM_PACKED_GENERAL_MIN_MNK || mnk < gettBelow) return false;
+            if(m * k + k * n + m * n > int.MaxValue / 2 || m + n + 2 * k > (1 << 24)) return false;
+            if(!GettTNonOverlapping(runDim, lengths, ct)) return false; // T entries pairwise distinct
+
+            int M = (int)m, N = (int)n, K = (int)k;
+            // offset tables: A over M and K, B over K and N, T over M and N
+            int[] offs = new int[2 * M + 2 * N + 2 * K];
+            fixed(int* pOffs = offs) {
+                int* oAM = pOffs, oTM = oAM + M, oBN = oTM + M, oTN = oBN + N, oAK = oTN + N, oBK = oAK + K;
+                FillOffsets(nM, dM, lengths, ca, ct, oAM, oTM);
+                FillOffsets(nN, dN, lengths, cb, ct, oBN, oTN);
+                for(int l0 = 0, l = 0; l0 < sums[0]; l0++)
+                    for(int l1 = 0; l1 < (sumDim > 1 ? sums[1] : 1); l1++, l++) {
+                        oAK[l] = l0 * sa[0] + (sumDim > 1 ? l1 * sa[1] : 0);
+                        oBK[l] = l0 * sb[0] + (sumDim > 1 ? l1 * sb[1] : 0);
+                    }
+
+                double[] scratch = TempBuffer.GetTempBuffer(out int iScratch, M * K + K * N + M * N);
+                try {
+                    fixed(double* pScratch = scratch) {
+                        double* pa = pScratch, pb = pa + M * K, pc = pb + K * N;
+                        int* idx = stackalloc int[MAXD];
+                        for(int j = 0; j < nB; j++) idx[j] = 0;
+                        for(long q = 0; q < nb; q++) {
+                            int ot = 0, oa = 0, ob = 0;
+                            for(int j = 0; j < nB; j++) { int d = dB[j]; ot += idx[j] * ct[d]; oa += idx[j] * ca[d]; ob += idx[j] * cb[d]; }
+                            double* tq = t + ot, aq = a + oa, bq = b + ob;
+                            for(int i = 0; i < M; i++) { double* ai = aq + oAM[i]; double* pai = pa + i * K; for(int l = 0; l < K; l++) pai[l] = ai[oAK[l]]; }
+                            for(int l = 0; l < K; l++) { double* bl = bq + oBK[l]; double* pbl = pb + l * N; for(int j = 0; j < N; j++) pbl[j] = bl[oBN[j]]; }
+                            for(int i = 0; i < M; i++) { double* ti = tq + oTM[i]; double* pci = pc + i * N; for(int j = 0; j < N; j++) pci[j] = ti[oTN[j]]; }
+                            int ta = 'n', tb = 'n', lda = N, ldb = K, ldc = N;
+                            double nativeBeta = beta;
+                            if(beta == 0.0) { for(int i = 0; i < M * N; i++) pc[i] *= beta; nativeBeta = 1.0; } // keeps NaN/Inf propagation
+                            BLAS.m_seq_BLAS.DGEMM(ref ta, ref tb, ref N, ref M, ref K, ref alpha,
+                                pb, ref lda, pa, ref ldb, ref nativeBeta, pc, ref ldc);
+                            for(int i = 0; i < M; i++) { double* ti = tq + oTM[i]; double* pci = pc + i * N; for(int j = 0; j < N; j++) ti[oTN[j]] = pci[j]; }
+                            // next batch entry (odometer, innermost = last)
+                            for(int j = nB - 1; j >= 0; j--) { if(++idx[j] < lengths[dB[j]]) break; idx[j] = 0; }
+                        }
+                    }
+                } finally {
+                    TempBuffer.FreeTempBuffer(iScratch);
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// minimal GEMM size (m*n*k per batch entry) for <see cref="TryPackedGemmGeneral"/>; below, the
+        /// packing costs dominate (it is additionally subject to GETT_PREFERRED_BELOW_MNK_PACKED)
+        /// </summary>
+        internal const long GEMM_PACKED_GENERAL_MIN_MNK = 64 * 64 * 64;
+
+        /// <summary>
+        /// Switch for <see cref="TryPackedGemmGeneral"/>; ON (owner decision 2026-10-03): 1.7x-2.2x faster
+        /// than the blocked SIMD path for the large multi-index contractions of the volume quadratures
+        /// (e.g. `ijk,pjq,ipkq`, 3D p4); it changes the summation order (results differ at round-off level).
+        /// </summary>
+        internal static bool s_PackedGemmGeneral = true;
+
+        /// <summary> offsets of all multi-indices over the loops dims[0..nd-1] (last loop fastest), for two operands </summary>
+        static unsafe void FillOffsets(int nd, int* dims, int* lengths, int* c1, int* c2, int* o1, int* o2) {
+            int cnt = 1;
+            o1[0] = 0; o2[0] = 0;
+            for(int jj = nd - 1; jj >= 0; jj--) {
+                // prepend loop dims[jj] as the slower index of the ones already processed
+                int d = dims[jj], L = lengths[d];
+                for(int i = L - 1; i >= 0; i--)
+                    for(int r = 0; r < cnt; r++) {
+                        o1[i * cnt + r] = o1[r] + i * c1[d];
+                        o2[i * cnt + r] = o2[r] + i * c2[d];
+                    }
+                cnt *= L;
+            }
         }
 
         // Handles contractions such as T[i,k,n,a] = sum_b A[i,k,a,b] B[k,n,b].
@@ -316,13 +427,11 @@ namespace ilPSP {
 #endif
             int innerRun = runDim - 1;
             if(innerRun != 2) return false;
-#if NET
             // the blocked SIMD path is preferred for small GEMMs, see GETT_PREFERRED_BELOW_MNK
             if((long)lengths[1] * lengths[2] * sums[0] < GETT_PREFERRED_BELOW_MNK
                 && GettWouldRun(innerRun, sumDim, lengths + 1, ct + 1, ca + 1, cb + 1, sums, sa, sb, lengths[0])
                 && GettTNonOverlapping(runDim, lengths, ct))
                 return false;
-#endif
             // Validate every mapped slice before modifying the destination.
             for(int i = 0; i < lengths[0]; i++) {
                 int ti = trfT[i] * trfT0Sw;
