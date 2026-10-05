@@ -89,8 +89,6 @@ RUN install -d -o ${USERNAME} -g ${USERNAME} /home/${USERNAME}/.claude \
       "Bash(shred *)",
       "Bash(find * -delete*)",
       "Bash(find * -exec rm*)",
-      "Bash(git commit*)",
-      "Bash(git * commit*)",
       "Bash(git clean*)",
       "Bash(git rm*)"
     ]
