@@ -26,7 +26,7 @@ namespace BoSSS.Solution.Statistic {
         /// Projects a DG field <paramref name="source"/>, which may be defined on some different mesh, onto the DG field <paramref name="target"/>. (Non-XDG version.)
         /// </summary>
         static public void ProjectFromForeignGrid(this ConventionalDGField target, double alpha, ConventionalDGField source, CellQuadratureScheme scheme = null) {
-            using(new FuncTrace()) {
+            using(var tr = new FuncTrace()) {
                 //Console.WriteLine(string.Format("Projecting {0} onto {1}... ", source.Identification, target.Identification));
                 int maxDeg = Math.Max(target.Basis.Degree, source.Basis.Degree);
                 var CompQuadRule = scheme.SaveCompile(target.GridDat, maxDeg * 3 + 3); // use over-integration
@@ -105,7 +105,7 @@ namespace BoSSS.Solution.Statistic {
 
                     int TotalNumberOfUnlocated = NoOfUnlocated.MPISum();
                     if(TotalNumberOfUnlocated > 0) {
-                        Console.Error.WriteLine($"WARNING: {TotalNumberOfUnlocated} unlocalized points in 'ProjectFromForeignGrid(...)'");
+                        tr.Warning($"WARNING: {TotalNumberOfUnlocated} un-localized points in 'ProjectFromForeignGrid(...)'");
                     }
 
                     // perform the real projection
