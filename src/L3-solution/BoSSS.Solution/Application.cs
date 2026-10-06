@@ -1504,11 +1504,6 @@ namespace BoSSS.Solution {
             private set;
         }
 
-        ///// <summary>
-        ///// Provisional alternative grid;
-        ///// </summary>
-        //protected AggregationGrid AggGrid;
-
 
         /// <summary>
         /// <see cref="DatabaseDriver"/>
@@ -2981,26 +2976,7 @@ namespace BoSSS.Solution {
 
                     // re-set Level-Set tracker
                     this.CreateTracker();
-
-                    //void FuckYouLog() {
-                    //    Console.WriteLine(" ------ tracker version: " + this.LsTrk?.VersionCnt);
-                    //    foreach(var f in m_RegisteredFields) {
-                    //        string white = " ";
-                    //        for(int i = f?.Identification?.Length ?? 0; i < 25; i++)
-                    //            white += " ";
-
-                    //        if(f is XDGField xf) {
-                    //            Console.WriteLine("         " + f.Identification + ":" + white + xf.m_TrackerVersion + "\t" + xf.UpdateBehaviour);
-                    //        }
-                    //        if(f is TraceDGField tf) {
-                    //            Console.WriteLine("         " + f.Identification + ":" + white + tf.m_TrackerVersion + "\t" + tf.UpdateBehaviour);
-                    //        }
-                    //    }
-                    //    Console.WriteLine(" ~~~~~~~ ");
-                    //    Console.WriteLine();
-                    //}
-
-                    
+                                        
                     // re-create fields
                     if (this.Control != null) {
                         InitFromAttributes.CreateFieldsAuto(
