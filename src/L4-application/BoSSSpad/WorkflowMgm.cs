@@ -509,13 +509,19 @@ namespace BoSSS.Application.BoSSSpad {
                                     try {
                                         g = si.ID;
 
-                                        if(si.ProjectName == null) {
+                                        string projectName = si.ProjectName;
+                                        if(projectName == null) {
                                             if(si is SessionProxy sip) {
                                                 sip.TriggerReload = true;
+                                                projectName = si.ProjectName;
                                             }
                                         }
 
-                                        return si.ProjectName.Equals(this.CurrentProject);
+                                        // A session directory may already be visible on a shared
+                                        // filesystem while its initial Session.info is still being
+                                        // written. Do not turn this transient missing metadata into
+                                        // a warning (or reject the workflow operation with an NRE).
+                                        return String.Equals(projectName, this.CurrentProject, StringComparison.Ordinal);
                                     } catch (Exception e) {
                                         string sessionString;
                                         try {
