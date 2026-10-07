@@ -373,6 +373,9 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
             ctrl.NonLinearSolver.SolverCode = Solution.Control.NonLinearSolverCode.Picard;
             ctrl.NonLinearSolver.ConvergenceCriterion = 1.0e-8; // note: strangely, the test fails for **lower** thresholds; something is weired here.
+            // UMFPACK instead of the default PARDISO (2026-10-02): the p=3/BDF4 case occasionally diverged
+            // on the AMD cluster nodes (NaN in time step 8), see .agent/kummer/tensorproductoptimization/FINDINGS.md
+            ctrl.LinearSolver = LinearSolverCode.direct_umfpack.GetConfig();
 
             // run
             // ------------------------------------------

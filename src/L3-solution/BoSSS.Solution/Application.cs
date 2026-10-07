@@ -393,8 +393,7 @@ namespace BoSSS.Solution {
         /// Output, list where all dependent assemblies are collected.
         /// </param>
         static void GetAllAssembliesRecursive(Assembly a, List<Assembly> assiList) {
-            if (a.GlobalAssemblyCache)
-                return;
+            // (formerly: return for assemblies from the Global Assembly Cache; there is no GAC on .NET)
 
 
             if (assiList.Contains(a))
@@ -412,8 +411,6 @@ namespace BoSSS.Solution {
                     continue;
                 }
 
-                if (b.GlobalAssemblyCache)
-                    continue;
                 GetAllAssembliesRecursive(b, assiList);
             }
         }
@@ -1575,7 +1572,7 @@ namespace BoSSS.Solution {
                             }
                         }
 
-                        if (this.Control.GridGuid != null && this.Control.GridGuid != default(Guid) && this.Control.GridGuid != Guid.Empty) {
+                        if (this.Control.GridGuid != default(Guid) && this.Control.GridGuid != Guid.Empty) {
                             if (this.Control.GridGuid != tsi_toLoad.GridID)
                                 throw new ArgumentException($"Grid Guid mismatch for restart: 'Control.GridGuid' is set to {this.Control.GridGuid}, but grid for restart-timestep has id {tsi_toLoad.GridID}.");
                         }
@@ -1597,7 +1594,7 @@ namespace BoSSS.Solution {
 
                         ht.LogMemoryStat();
                         return _Grid;
-                    } else if (this.Control.GridGuid != null && this.Control.GridGuid != default(Guid)) {
+                    } else if (this.Control.GridGuid != default(Guid)) {
                         // ++++++++++++++++++++
                         // load grid by GridID
                         // ++++++++++++++++++++
@@ -2925,7 +2922,7 @@ namespace BoSSS.Solution {
 
                     if (!passiveIo) {
 
-                        if (newGrid.ID == null || newGrid.ID.Equals(Guid.Empty))
+                        if (newGrid.ID.Equals(Guid.Empty))
                             throw new ApplicationException();
                         if (newGrid.ID.Equals(oldGridId))
                             throw new ApplicationException();

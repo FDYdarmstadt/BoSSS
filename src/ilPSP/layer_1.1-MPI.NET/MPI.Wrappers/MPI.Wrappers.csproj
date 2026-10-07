@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <OutputType>Library</OutputType>
   </PropertyGroup>
   
@@ -12,7 +12,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>MPI.Wrappers</RootNamespace>
     <AssemblyName>MPI.Wrappers</AssemblyName>
-    <TargetFrameworkVersion>netstandard2.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>net10.0</TargetFrameworkVersion>
     <TargetFrameworkProfile />
     <WarningLevel>5</WarningLevel>
 	  <TreatWarningsAsErrors>true</TreatWarningsAsErrors>

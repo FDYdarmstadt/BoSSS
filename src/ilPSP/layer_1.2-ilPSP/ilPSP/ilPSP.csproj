@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <OutputType>Library</OutputType>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
@@ -23,7 +23,6 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="log4net" Version="3.3.0" />
-    <PackageReference Include="System.Numerics.Vectors" Version="4.4.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj" />
