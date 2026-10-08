@@ -483,8 +483,19 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                             double resNorm = Res.MPI_L2Norm();
                             double rhsNorm = RHS.MPI_L2Norm();
                             double relResNorm = resNorm / Math.Max(rhsNorm, 1.0e-300);
+
+                            ExtenstionSolVec.SetV(u, 1.0);
+                            var cutCells_k = lsTrk.Regions.GetCutCellMask4LevSet(levelSetIndex);
+                            double ifaceDiffNorm = 0.0;
+                            for(int d = 0; d < D; d++) {
+                                double err_d = ExtensionVelocity[d].L2Error(VelocityAtInterface[d], cutCells_k);
+                                ifaceDiffNorm += err_d * err_d;
+                            }
+                            ifaceDiffNorm = Math.Sqrt(ifaceDiffNorm);
+
                             Console.WriteLine($"pseudo-time step {k}: dtau={dtau:0.###E-00}, |RHS|={rhsNorm:0.###E-00}, "
-                                + $"true residual={resNorm:0.###E-00} (relative: {relResNorm:0.###E-00}), |u|={u.MPI_L2Norm():0.###E-00}");
+                                + $"true residual={resNorm:0.###E-00} (relative: {relResNorm:0.###E-00}), |u|={u.MPI_L2Norm():0.###E-00}, "
+                                + $"|div(u_ext)|={ExtensionVelocity.Divergence().L2Norm():0.###E-00}, |u_ext - u_iface| on interface={ifaceDiffNorm:0.###E-00}");
 
                             if(relResNorm < PseudoTimeConvergenceCriterion)
                                 break;
@@ -513,6 +524,14 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                         SolveOnce(mgOp, Pre_Sol, Pre_RHS);
 
                         mgOp.TransformSolFrom(ExtenstionSolVec, Pre_Sol);
+                        var cutCells_k = lsTrk.Regions.GetCutCellMask4LevSet(levelSetIndex);
+                        double ifaceDiffNorm = 0.0;
+                        for(int d = 0; d < D; d++) {
+                            double err_d = ExtensionVelocity[d].L2Error(VelocityAtInterface[d], cutCells_k);
+                            ifaceDiffNorm += err_d * err_d;
+                        }
+                        ifaceDiffNorm = Math.Sqrt(ifaceDiffNorm);
+                        Console.WriteLine($"|div(u_ext)|={ExtensionVelocity.Divergence().L2Norm():0.###E-00}, |u_ext - u_iface| on interface={ifaceDiffNorm:0.###E-00}");
                     }
                     e = null;
                 } catch(Exception ee) {
