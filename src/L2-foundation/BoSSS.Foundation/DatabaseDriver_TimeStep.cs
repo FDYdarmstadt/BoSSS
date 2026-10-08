@@ -67,7 +67,7 @@ namespace BoSSS.Foundation.IO {
 
                         if(!fields.Contains(f, (a, b) => object.ReferenceEquals(a, b))) {
                             // here, we ensure that the 'fields' -- list is complete, i.e.
-                            // that the flatten hierarchy contains no field which is not already a memeber of 'fields'.
+                            // that the flatten hierarchy contains no field which is not already a member of 'fields'.
                             // The purpose is e.g. to prevent saving an XDG field without the required level-set field.
                             throw new ArgumentException(
                                 "Unable to save timestep: field '" + f.Identification
