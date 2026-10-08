@@ -71,8 +71,43 @@ warn() {
 	echo "[bosss-entrypoint] WARNING: $*" >&2
 }
 
+configure_git_identity_from_host() {
+	local host_gitconfig="${HOST_GITCONFIG:-}"
+	local candidate
+	local host_name=""
+	local host_email=""
+
+	if [[ -z "$host_gitconfig" ]]; then
+		for candidate in \
+			"/host-home/.gitconfig" \
+			"/host/.gitconfig" \
+			"/mnt/host-home/.gitconfig" \
+			"/run/host-home/.gitconfig"; do
+			if [[ -f "$candidate" ]]; then
+				host_gitconfig="$candidate"
+				break
+			fi
+		done
+	fi
+
+	if [[ -n "$host_gitconfig" && -f "$host_gitconfig" ]]; then
+		host_name="$(git config --file "$host_gitconfig" --get user.name || true)"
+		host_email="$(git config --file "$host_gitconfig" --get user.email || true)"
+
+		if [[ -n "$host_name" ]]; then
+			git config --global user.name "$host_name" || warn "Failed to set git user.name from host config"
+		fi
+
+		if [[ -n "$host_email" ]]; then
+			git config --global user.email "$host_email" || warn "Failed to set git user.email from host config"
+		fi
+	fi
+}
+
 export BOSSS_INSTALL="${BOSSS_INSTALL:-${HOME}/BoSSS-Install}"
 SYNC_MARKER="${HOME}/.BoSSS/.host-sync-done"
+
+configure_git_identity_from_host
 
 # If host BoSSS install is mounted to /host-bosss-install, copy it into user home.
 # Copy is done once by default; set BOSSS_FORCE_SYNC=1 to overwrite on every start.
