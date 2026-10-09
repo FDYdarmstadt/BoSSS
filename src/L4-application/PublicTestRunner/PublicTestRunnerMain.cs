@@ -1531,8 +1531,33 @@ namespace PublicTestRunner {
 
         const string TelemetryFolder = "c:\\telemetry";
 
+
         /// <summary>
-        /// Runs all tests serially
+        /// The `NUnitLite.TextRunner` always gets an entire assembly; the tests to run are selected by its command line arguments.
+        /// If the filter <paramref name="AssemblyFilter"/> contains a method part (e.g. `XNSE_Solver\*ViscosityJump*`, see <see cref="FilterTestMethod"/>),
+        /// the matching tests of assembly <paramref name="a"/> are passed to NUnit as `--test=...` (full names, comma-separated;
+        /// a parameterized test is selected with all of its cases);
+        /// unless the user specified a selection for NUnit already (`--test`, `--where`, `--testlist`), which then takes precedence.
+        /// Without a method part, <paramref name="NUnitArgs"/> are returned unchanged, i.e. all tests of the assembly are run.
+        /// </summary>
+        static string[] NUnitArgsWithMethodFilter(Assembly a, string AssemblyFilter, string[] NUnitArgs) {
+            using var tr = new FuncTrace();
+            if(AssemblyFilter.IsEmptyOrWhite() || !AssemblyFilter.Contains("\\"))
+                return NUnitArgs;
+            if(NUnitArgs.Any(arg => arg.StartsWith("--test") || arg.StartsWith("--where"))) {
+                Console.WriteLine("Note: test selection by NUnit arguments (--test, --where, --testlist); the method part of the filter '" + AssemblyFilter + "' is not used for the selection.");
+                return NUnitArgs;
+            }
+
+            string[] tests = GetTestsInAssembly(a, AssemblyFilter).tests;
+            Console.WriteLine($"Filter '{AssemblyFilter}' selects {tests.Length} test(s) in {Path.GetFileNameWithoutExtension(a.Location)}: {tests.ToConcatString("", ", ", "")}");
+            tr.Info($"Filter '{AssemblyFilter}' selects tests: {tests.ToConcatString("", ", ", "")}");
+            return NUnitArgs.Append("--test=" + tests.ToConcatString("", ",", "")).ToArray();
+        }
+
+
+        /// <summary>
+        /// Runs all tests serially on the current machine
         /// </summary>
         static int RunNunit3Tests(string AssemblyFilter, string[] args) {
 
@@ -1637,7 +1662,7 @@ namespace PublicTestRunner {
                 int r;
                 using(var bt = new BlockTrace("RUNNING_TEST", ftr)) {
                     var tr = new TextRunner(a);
-                    r = tr.Execute(args);
+                    r = tr.Execute(NUnitArgsWithMethodFilter(a, AssemblyFilter, args));
                     //var summary = tr.Summary;
                     //File.WriteAllText("a.txt", summary.ToString());
                     //ftr.Info("Test summary: " + summary.ToString());
