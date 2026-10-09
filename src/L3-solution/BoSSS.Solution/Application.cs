@@ -757,6 +757,13 @@ namespace BoSSS.Solution {
                     ctrlV2.ProjectName = opt.ProjectName;
                 if (opt.SessionName != null && ctrlV2.SessionName.IsEmptyOrWhite())
                     ctrlV2.SessionName = opt.SessionName;
+                if (!opt.DatabaseGuid.IsEmptyOrWhite()) {
+                    if (!Guid.TryParse(opt.DatabaseGuid, out Guid dbGuid))
+                        throw new ArgumentException($"Unable to parse command line argument '--dbguid {opt.DatabaseGuid}' as a GUID.");
+                    ctrlV2.DbID = dbGuid;
+                }
+                if (opt.SaveToDb != null)
+                    ctrlV2.savetodb = opt.SaveToDb.Value;
 
                 if (opt.ImmediatePlotPeriod != null) {
                     ctrlV2.ImmediatePlotPeriod = opt.ImmediatePlotPeriod.Value;
@@ -1452,7 +1459,8 @@ namespace BoSSS.Solution {
         /// </summary>
         /// <returns></returns>
         protected virtual IDatabaseInfo GetDatabase() {
-            if (this.Control == null || (this.Control.DbPath.IsNullOrEmpty() && (this.Control.AlternateDbPaths == null || this.Control.AlternateDbPaths.Length <= 0 || this.Control.AlternateDbPaths.All(tt => tt.DbPath.IsEmptyOrWhite())))) {
+            bool noPath = this.Control == null || (this.Control.DbPath.IsNullOrEmpty() && (this.Control.AlternateDbPaths == null || this.Control.AlternateDbPaths.Length <= 0 || this.Control.AlternateDbPaths.All(tt => tt.DbPath.IsEmptyOrWhite())));
+            if (this.Control == null || (noPath && this.Control.DbID == Guid.Empty)) {
                 return NullDatabaseInfo.Instance;
             } else {
 
@@ -1463,6 +1471,12 @@ namespace BoSSS.Solution {
                     if(this.Control.DbID == Guid.Empty || this.Control.DbID == kv.Key) {
                         altPaths.AddRange(kv.Value);
                     }
+                }
+
+                if (noPath && altPaths.Count <= 0) {
+                    // the database is identified by its ID only (e.g., `--dbguid`), but the file `DatabasePaths.json` does not contain this ID.
+                    throw new IOException($"Unable to find a path for the database with ID {this.Control.DbID}: no entry for this ID in the file '{DatabasePaths.filename}' " 
+                        + $"(searched in the working directory '{Directory.GetCurrentDirectory()}' and in the user settings directory); the file contains {allPaths.Count} database(s): {allPaths.Keys.ToConcatString("[", ", ", "]")}.");
                 }
 
                 return DatabaseInfo.Open(this.Control.DbPath, altPaths);

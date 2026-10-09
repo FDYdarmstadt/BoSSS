@@ -105,5 +105,20 @@ namespace BoSSS.Solution {
         /// </summary>
         [Option('F', "fulltracing", HelpText = "Mainly for debugging purpose, turns tracing of all namespaces on, trace-files will be created.")]
         public bool fullTracing { get; set; }
+
+
+        /// <summary>
+        /// Override for <see cref="Control.AppControl.DbID"/>, i.e., the database is identified by its ID (<see cref="BoSSS.Foundation.IO.IDatabaseInfo.ID"/>) 
+        /// and the file system path is obtained from the file `DatabasePaths.json` (<see cref="BoSSS.Foundation.IO.DatabasePaths"/>), 
+        /// which avoids passing machine-specific paths (and their escaping) through the command line.
+        /// </summary>
+        [Option("dbguid", HelpText = "ID (GUID) of the database; the path is looked up in the file 'DatabasePaths.json'.")]
+        public string DatabaseGuid { get; set; }
+
+        /// <summary>
+        /// Override for <see cref="Control.AppControl.savetodb"/>.
+        /// </summary>
+        [Option("savetodb", HelpText = "overrides the 'savetodb' setting of the control object (true/false).")]
+        public bool? SaveToDb { get; set; }
     }
 }

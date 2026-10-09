@@ -618,7 +618,10 @@ namespace BoSSS.Application.BoSSSpad {
                         throw new NotSupportedException("Unable to handle environment variable with whitespace: " + envvar.Key);
 
                     string envValue = envvar.Value;
-                    if(envValue.ContainsWhite() || envValue.Contains("'")) {
+                    // quote everything that contains shell-special characters (e.g., parentheses or double quotes in `cs:`-control statements),
+                    // not only values with whitespace or single quotes
+                    bool NeedsQuoting = envValue.Length == 0 || envValue.Any(ch => !(char.IsAsciiLetterOrDigit(ch) || "_-+=:,.@%/".Contains(ch)));
+                    if(NeedsQuoting) {
                         envValue = envValue.Replace("'", "'\"'\"'"); // see: https://stackoverflow.com/questions/1250079/how-to-escape-single-quotes-within-single-quoted-strings
                         envValue = "'" + envValue + "'";
                     }
