@@ -15,7 +15,6 @@ build:
   script: 
     - dotnet build ./src/Public.sln -c Release -v q # build the project
   tags:
-    - C#7.0
     - big_server
     - windows
   artifacts:
@@ -33,7 +32,6 @@ TutorialTests:
 #    - cd src/L4-application/PublicTestRunner/bin/Release/net10.0
 #    - bash -c "chmod +x PublicTestRunner.exe"
   tags:
-    - C#7.0
     - big_server
     - windows    
   variables:
@@ -125,6 +123,5 @@ pages:
 # replace by master  
     - master
   tags:
-    - C#7.0
     - big_server
     - windows
