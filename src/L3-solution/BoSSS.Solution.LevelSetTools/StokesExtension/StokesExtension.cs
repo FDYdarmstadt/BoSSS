@@ -459,13 +459,50 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                             petscSolver.Solve(Pre_Sol_, Pre_RHS_);
                             petscSolver.Dispose();
                         } else {
-                            var schurSolver = new SchurComplementForStokes.Config() {
-                                ConvergenceCriterion = 1e-10,
-                                MaxSolverIterations = 50,
-                                WriteDebugInfoLevel = 0
+                            // HARDCODED FOR TESTING: GMRESChebyshevMGConfig instead of the usual
+                            // SchurComplementForStokes fallback -- a plain outer GMRES wrapping a
+                            // non-accelerating classic V-/W-cycle multigrid (NOT
+                            // OrthonormalizationMultigrid's self-accelerating K-cycle), which is
+                            // the literal structural analog of the PETSc setup it mirrors as
+                            // closely as possible:
+                            //   "-ksp_type gmres -ksp_atol 1e-6 -ksp_rtol 1e-10
+                            //    -ksp_gmres_restart 500 -ksp_max_it 1000
+                            //    -pc_type mg -pc_mg_cycle_type w -mg_levels_ksp_type chebyshev
+                            //    -mg_levels_ksp_max_it 5 -mg_levels_pc_type jacobi
+                            //    -mg_coarse_ksp_type preonly -mg_coarse_pc_type lu
+                            //    -mg_coarse_pc_factor_mat_solver_type mumps -mat_mumps_icntl_24 1"
+                            //
+                            // Known gaps (no BoSSS-native equivalent currently exposed):
+                            //  - "-mat_mumps_icntl_24 1" (null-pivot detection): ilPSP's
+                            //    MUMPSSolver wrapper doesn't expose MUMPS's ICNTL array at all.
+                            //  - UsePointJacobi = true is a LITERAL match to "-mg_levels_pc_type
+                            //    jacobi", but this is a saddle-point system (velocity+pressure)
+                            //    with exactly-zero-diagonal continuity rows -- ChebyshevSmoother.Init
+                            //    will throw immediately if it hits one, the same failure mode that
+                            //    made plain SOR/Jacobi unusable for XNSFE earlier. If this throws,
+                            //    switch back to UsePointJacobi = false (BlockJacobi).
+                            var mgSolver = new GMRESChebyshevMGConfig() {
+                                GMRESRestart = 500,                                    // -ksp_gmres_restart 500
+                                MaxSolverIterations = 1000,                            // -ksp_max_it 1000
+                                ConvergenceCriterion = 1e-10,                          // -ksp_rtol 1e-10
+                                AbsoluteTolerance = 1e-6,                              // -ksp_atol 1e-6
+                                TargetBlockSize = 10000,
+                                UseWCycle = true,                                      // -pc_mg_cycle_type w
+                                ChebyshevDegree = 5,                                   // -mg_levels_ksp_max_it 5
+                                UsePointJacobi = true,                                 // -mg_levels_pc_type jacobi
+                                CoarseDirectSolver = DirectSolver._whichSolver.MUMPS,  // -mg_coarse_pc_factor_mat_solver_type mumps
                             }.CreateInstance(mgOp_);
-                            schurSolver.Solve(Pre_Sol_, Pre_RHS_);
-                            schurSolver.Dispose();
+
+                            mgSolver.Solve(Pre_Sol_, Pre_RHS_);
+                            mgSolver.Dispose();
+
+                            //var schurSolver = new SchurComplementForStokes.Config() {
+                            //    ConvergenceCriterion = 1e-10,
+                            //    MaxSolverIterations = 50,
+                            //    WriteDebugInfoLevel = 0
+                            //}.CreateInstance(mgOp_);
+                            //schurSolver.Solve(Pre_Sol_, Pre_RHS_);
+                            //schurSolver.Dispose();
                         }
                     }
 
