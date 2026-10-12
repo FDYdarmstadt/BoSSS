@@ -152,12 +152,13 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public StokesExtentionBoundaryOption StokesExtentionUseBCmap = StokesExtentionBoundaryOption.FreeSlipAtWall;
 
         /// <summary>
-        /// If set, the Stokes-extension velocity solve (<see cref="LevelSetEvolution.StokesExtension"/>) is
-        /// performed through PETSc using this options string, instead of the default direct-solver fallback
-        /// chain. Null/empty (the default) preserves the original behavior.
+        /// If set, overrides the Stokes-extension velocity solve's (<see cref="LevelSetEvolution.StokesExtension"/>)
+        /// solver dispatch entirely (<see cref="LevelSetEvolution.StokesExtension.LinearSolver"/>) -- e.g. a
+        /// <see cref="BoSSS.Solution.AdvancedSolvers.PetscGMRESConfig"/> to solve through PETSc. Null (the
+        /// default) falls back to a plain direct solve, matching the original behavior.
         /// </summary>
         [DataMember]
-        public string StokesExtensionPetscOptions = null;
+        public BoSSS.Solution.AdvancedSolvers.ISolverFactory StokesExtensionLinearSolver = null;
 
         /// <summary>
         /// If true, the Stokes-extension velocity solve (<see cref="LevelSetEvolution.StokesExtension"/>)
@@ -166,22 +167,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         [DataMember]
         public bool StokesExtensionWarmStart = false;
-
-        /// <summary>
-        /// Only relevant if <see cref="StokesExtensionPetscOptions"/> is set: forwarded to
-        /// <see cref="BoSSS.Solution.AdvancedSolvers.PetscGMRESConfig.UseGeometricMultigrid"/> for
-        /// the Stokes-extension velocity solve. False (the default) preserves the original
-        /// flat-matrix behavior.
-        /// </summary>
-        [DataMember]
-        public bool StokesExtensionUseGeometricMultigrid = false;
-
-        /// <summary>
-        /// Only relevant if <see cref="StokesExtensionUseGeometricMultigrid"/> is true: forwarded
-        /// to <see cref="BoSSS.Solution.AdvancedSolvers.PetscGMRESConfig.CoarseKickIn"/>.
-        /// </summary>
-        [DataMember]
-        public int StokesExtensionCoarseKickIn = 90000;
 
         /// <summary>
         /// If true, the Stokes-extension velocity solve's (<see cref="LevelSetEvolution.StokesExtension"/>)

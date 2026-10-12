@@ -49,7 +49,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         public StokesExtensionEvolver(string levelSetName, int hMForder, int D, IncompressibleBoundaryCondMap bcMap, double AgglomThreshold, IGridData grd,
             bool fullStokes = true, StokesExtentionBoundaryOption useBCmap = StokesExtentionBoundaryOption.FreeSlipAtWall, EllipticReInitAlgoControl ReInitControl = null, int ReInitPeriod = 0,
-            string petscOptions = null, bool warmStart = false, bool useGeometricMultigrid = false, int coarseKickIn = 90000, bool useSchurBlockPrec = false,
+            BoSSS.Solution.AdvancedSolvers.ISolverFactory linearSolver = null, bool warmStart = false, bool useSchurBlockPrec = false,
             bool usePseudoTimestepping = false, double pseudoDtau0 = 1.0, double pseudoDtauMax = 1.0e8, int maxPseudoTimeSteps = 20, double pseudoTimeConvergenceCriterion = 1.0e-10,
             bool disableLocalPreconditioning = false) {
             for(int d = 0; d < D; d++) {
@@ -72,10 +72,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
             ReInit_Control = ReInitControl != null ? ReInitControl : new EllipticReInitAlgoControl();
             this.ReInit_Period = ReInitPeriod;
-            this.petscOptions = petscOptions;
+            this.linearSolver = linearSolver;
             this.warmStart = warmStart;
-            this.useGeometricMultigrid = useGeometricMultigrid;
-            this.coarseKickIn = coarseKickIn;
             this.useSchurBlockPrec = useSchurBlockPrec;
             this.usePseudoTimestepping = usePseudoTimestepping;
             this.pseudoDtau0 = pseudoDtau0;
@@ -96,10 +94,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         bool fullStokes;
         StokesExtentionBoundaryOption useBCmap;
         IncompressibleBoundaryCondMap bcmap;
-        string petscOptions;
+        BoSSS.Solution.AdvancedSolvers.ISolverFactory linearSolver;
         bool warmStart;
-        bool useGeometricMultigrid;
-        int coarseKickIn;
         bool useSchurBlockPrec;
         bool usePseudoTimestepping;
         double pseudoDtau0;
@@ -216,10 +212,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 //dgPltList.AddRange(meanVelocity);
 
                 var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold, fullStokes, useBCMap: useBCmap) {
-                    PetscOptions = this.petscOptions,
+                    LinearSolver = this.linearSolver,
                     WarmStart = this.warmStart,
-                    UseGeometricMultigrid = this.useGeometricMultigrid,
-                    CoarseKickIn = this.coarseKickIn,
                     UseSchurBlockPrec = this.useSchurBlockPrec,
                     UsePseudoTimestepping = this.usePseudoTimestepping,
                     PseudoDtau0 = this.pseudoDtau0,

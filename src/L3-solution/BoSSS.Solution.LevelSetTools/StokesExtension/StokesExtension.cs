@@ -53,15 +53,6 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         const double viscosity = 1000.0;
 
         /// <summary>
-        /// If set, the extension's linear system is solved through PETSc
-        /// (<see cref="BoSSS.Solution.AdvancedSolvers.PetscGMRESConfig"/>) using this options string,
-        /// instead of the default direct-solver fallback chain (<see cref="ilPSP.LinSolvers.SimpleSolversInterface.Solve_Direct"/>).
-        /// If the PETSc solve throws, the existing direct-solver fallback in <see cref="SolveExtension"/> still applies.
-        /// Null/empty (the default) preserves the original behavior.
-        /// </summary>
-        public string PetscOptions = null;
-
-        /// <summary>
         /// If true, <see cref="SolveExtension"/> uses whatever is already in
         /// <c>ExtensionVelocity</c> on entry (typically the previous time step's converged
         /// extension velocity, since callers no longer clear it beforehand) as the initial guess
@@ -72,6 +63,17 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         public bool WarmStart = false;
 
         /// <summary>
+        /// If set, overrides the solver dispatch in <see cref="SolveExtension"/> entirely: this
+        /// factory is used directly (<see cref="BoSSS.Solution.AdvancedSolvers.ISolverFactory.CreateInstance(BoSSS.Solution.AdvancedSolvers.MultigridOperator)"/>)
+        /// to solve the extension's linear system (e.g. a <see cref="BoSSS.Solution.AdvancedSolvers.PetscGMRESConfig"/>
+        /// to solve through PETSc). Mirrors the <c>LinearSolver</c> property on the main application
+        /// control objects (e.g. <see cref="BoSSS.Solution.XdgTimestepping.AppControlSolver.LinearSolver"/>).
+        /// Null (the default) falls back to a plain direct solve
+        /// (<see cref="ilPSP.LinSolvers.SimpleSolversInterface.Solve_Direct"/>), matching the original behavior.
+        /// </summary>
+        public BoSSS.Solution.AdvancedSolvers.ISolverFactory LinearSolver = null;
+
+        /// <summary>
         /// Only relevant if <see cref="fullStokes"/> is set (via the constructor). If true, the
         /// velocity and pressure <see cref="BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig"/>
         /// are combined into a single block using
@@ -80,9 +82,10 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         /// If false (the default), velocity and pressure keep their separate
         /// <see cref="BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite"/>/
         /// <see cref="BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.IdMass_DropIndefinite"/> configs, matching
-        /// the original behavior. Best paired with a field-split-aware <see cref="PetscOptions"/> string; combining it
-        /// with the internal <see cref="BoSSS.Solution.AdvancedSolvers.SchurComplementForStokes"/> fallback solver
-        /// applies Schur-complement structure twice.
+        /// the original behavior. Best paired with a field-split-aware <see cref="LinearSolver"/> (e.g. a
+        /// <see cref="BoSSS.Solution.AdvancedSolvers.PetscGMRESConfig"/> with a field-split PETSc options string);
+        /// combining it with the internal <see cref="BoSSS.Solution.AdvancedSolvers.SchurComplementForStokes"/>
+        /// fallback solver applies Schur-complement structure twice.
         /// </summary>
         public bool UseSchurBlockPrec = false;
 
@@ -99,19 +102,6 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         /// which a plain ILU factorization cannot handle. False (the default) preserves the original behavior.
         /// </summary>
         public bool DisableLocalPreconditioning = false;
-
-        /// <summary>
-        /// Only relevant if <see cref="PetscOptions"/> is set: forwarded to
-        /// <see cref="BoSSS.Solution.AdvancedSolvers.PetscGMRESConfig.UseGeometricMultigrid"/>.
-        /// False (the default) preserves the original flat-matrix behavior.
-        /// </summary>
-        public bool UseGeometricMultigrid = false;
-
-        /// <summary>
-        /// Only relevant if <see cref="UseGeometricMultigrid"/> is true: forwarded to
-        /// <see cref="BoSSS.Solution.AdvancedSolvers.PetscGMRESConfig.CoarseKickIn"/>.
-        /// </summary>
-        public int CoarseKickIn = 90000;
 
         /// <summary>
         /// If true, <see cref="SolveExtension"/> solves via pseudo-transient continuation instead of a
@@ -447,62 +437,15 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                 var bkup_RHS = RHS.CloneAs();
                 Exception e;
                 try {
-                    // Solves one (possibly pseudo-time-regularized) linearization, dispatching to PETSc
-                    // or the internal Schur-complement fallback exactly as before.
+                    // Solves one (possibly pseudo-time-regularized) linearization, dispatching to
+                    // LinearSolver if set, or the original direct-solver behavior otherwise.
                     void SolveOnce(MultigridOperator mgOp_, double[] Pre_Sol_, double[] Pre_RHS_) {
-                        if(!string.IsNullOrWhiteSpace(PetscOptions)) {
-                            var petscSolver = new PetscGMRESConfig() {
-                                PetscOptions = PetscOptions,
-                                UseGeometricMultigrid = UseGeometricMultigrid,
-                                CoarseKickIn = CoarseKickIn
-                            }.CreateInstance(mgOp_);
-                            petscSolver.Solve(Pre_Sol_, Pre_RHS_);
-                            petscSolver.Dispose();
+                        if(LinearSolver != null) {
+                            var customSolver = LinearSolver.CreateInstance(mgOp_);
+                            customSolver.Solve(Pre_Sol_, Pre_RHS_);
+                            customSolver.Dispose();
                         } else {
-                            // HARDCODED FOR TESTING: GMRESChebyshevMGConfig instead of the usual
-                            // SchurComplementForStokes fallback -- a plain outer GMRES wrapping a
-                            // non-accelerating classic V-/W-cycle multigrid (NOT
-                            // OrthonormalizationMultigrid's self-accelerating K-cycle), which is
-                            // the literal structural analog of the PETSc setup it mirrors as
-                            // closely as possible:
-                            //   "-ksp_type gmres -ksp_atol 1e-6 -ksp_rtol 1e-10
-                            //    -ksp_gmres_restart 500 -ksp_max_it 1000
-                            //    -pc_type mg -pc_mg_cycle_type w -mg_levels_ksp_type chebyshev
-                            //    -mg_levels_ksp_max_it 5 -mg_levels_pc_type jacobi
-                            //    -mg_coarse_ksp_type preonly -mg_coarse_pc_type lu
-                            //    -mg_coarse_pc_factor_mat_solver_type mumps -mat_mumps_icntl_24 1"
-                            //
-                            // Known gaps (no BoSSS-native equivalent currently exposed):
-                            //  - "-mat_mumps_icntl_24 1" (null-pivot detection): ilPSP's
-                            //    MUMPSSolver wrapper doesn't expose MUMPS's ICNTL array at all.
-                            //  - UsePointJacobi = true is a LITERAL match to "-mg_levels_pc_type
-                            //    jacobi", but this is a saddle-point system (velocity+pressure)
-                            //    with exactly-zero-diagonal continuity rows -- ChebyshevSmoother.Init
-                            //    will throw immediately if it hits one, the same failure mode that
-                            //    made plain SOR/Jacobi unusable for XNSFE earlier. If this throws,
-                            //    switch back to UsePointJacobi = false (BlockJacobi).
-                            var mgSolver = new GMRESChebyshevMGConfig() {
-                                GMRESRestart = 500,                                    // -ksp_gmres_restart 500
-                                MaxSolverIterations = 1000,                            // -ksp_max_it 1000
-                                ConvergenceCriterion = 1e-10,                          // -ksp_rtol 1e-10
-                                AbsoluteTolerance = 1e-6,                              // -ksp_atol 1e-6
-                                TargetBlockSize = 10000,
-                                UseWCycle = true,                                      // -pc_mg_cycle_type w
-                                ChebyshevDegree = 5,                                   // -mg_levels_ksp_max_it 5
-                                UsePointJacobi = true,                                 // -mg_levels_pc_type jacobi
-                                CoarseDirectSolver = DirectSolver._whichSolver.MUMPS,  // -mg_coarse_pc_factor_mat_solver_type mumps
-                            }.CreateInstance(mgOp_);
-
-                            mgSolver.Solve(Pre_Sol_, Pre_RHS_);
-                            mgSolver.Dispose();
-
-                            //var schurSolver = new SchurComplementForStokes.Config() {
-                            //    ConvergenceCriterion = 1e-10,
-                            //    MaxSolverIterations = 50,
-                            //    WriteDebugInfoLevel = 0
-                            //}.CreateInstance(mgOp_);
-                            //schurSolver.Solve(Pre_Sol_, Pre_RHS_);
-                            //schurSolver.Dispose();
+                            mgOp_.OperatorMatrix.Solve_Direct(Pre_Sol_, Pre_RHS_);
                         }
                     }
 
