@@ -376,6 +376,25 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
 
                 (BlockMsrMatrix OpMtx, double[] RHS) = ComputeMatrix(levelSetIndex, lsTrk, ExtenstionSolVec.Mapping, VelocityAtInterface);
 
+                // Level-set-restricted (surface) quadrature for the interface-velocity-mismatch
+                // diagnostic below: a plain CellMask-based L2Error would integrate over the FULL
+                // volume of each cut cell, not just the interface itself. GetLevelSetQuadScheme
+                // gives the same kind of surface quadrature that InteriorVelocityBoundary (an
+                // ILevelSetForm) is actually integrated with when the interface condition is
+                // assembled into OpMtx/RHS, so this measures compliance with exactly what's enforced.
+                var ifaceSchemeHelper = lsTrk.GetXDGSpaceMetrics(lsTrk.SpeciesIdS.ToArray(), this.m_CutCellQuadOrder, 1).XQuadSchemeHelper;
+                var ifaceQuadRule = ifaceSchemeHelper.GetLevelSetQuadScheme(levelSetIndex, lsTrk.Regions.GetCutCellMask4LevSet(levelSetIndex))
+                    .Compile(gDat, this.m_CutCellQuadOrder);
+
+                double InterfaceVelocityMismatchNorm() {
+                    double acc = 0.0;
+                    for(int d = 0; d < D; d++) {
+                        double err_d = ExtensionVelocity[d].LxError(VelocityAtInterface[d].Evaluate, null, ifaceQuadRule).Sqrt();
+                        acc += err_d * err_d;
+                    }
+                    return Math.Sqrt(acc);
+                }
+
                 //var RHSdg = new CoordinateVector(DummySolFields.Select(dd => dd.CloneAs()));
                 //RHSdg.SetV(RHS, 1.0);
                 //double[] RHSL2norm = RHSdg.Fields.Select(f => f.L2Norm()).ToArray();
@@ -461,6 +480,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                         double resNorm_prev = RHS.MPI_L2Norm();
 
                         for(int k = 0; k < MaxPseudoTimeSteps; k++) {
+                            var stw_k = Stopwatch.StartNew();
                             var OpMtx_k = OpMtx.CloneAs();
                             OpMtx_k.AccEyeSp(1.0 / dtau);
 
@@ -485,17 +505,13 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                             double relResNorm = resNorm / Math.Max(rhsNorm, 1.0e-300);
 
                             ExtenstionSolVec.SetV(u, 1.0);
-                            var cutCells_k = lsTrk.Regions.GetCutCellMask4LevSet(levelSetIndex);
-                            double ifaceDiffNorm = 0.0;
-                            for(int d = 0; d < D; d++) {
-                                double err_d = ExtensionVelocity[d].L2Error(VelocityAtInterface[d], cutCells_k);
-                                ifaceDiffNorm += err_d * err_d;
-                            }
-                            ifaceDiffNorm = Math.Sqrt(ifaceDiffNorm);
+                            double ifaceDiffNorm = InterfaceVelocityMismatchNorm();
 
+                            stw_k.Stop();
                             Console.WriteLine($"pseudo-time step {k}: dtau={dtau:0.###E-00}, |RHS|={rhsNorm:0.###E-00}, "
                                 + $"true residual={resNorm:0.###E-00} (relative: {relResNorm:0.###E-00}), |u|={u.MPI_L2Norm():0.###E-00}, "
-                                + $"|div(u_ext)|={ExtensionVelocity.Divergence().L2Norm():0.###E-00}, |u_ext - u_iface| on interface={ifaceDiffNorm:0.###E-00}");
+                                + $"|div(u_ext)|={ExtensionVelocity.Divergence().L2Norm():0.###E-00}, |u_ext - u_iface| on interface={ifaceDiffNorm:0.###E-00}, "
+                                + $"time={stw_k.Elapsed.TotalSeconds:0.###}sec");
 
                             if(relResNorm < PseudoTimeConvergenceCriterion)
                                 break;
@@ -506,6 +522,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
 
                         ExtenstionSolVec.SetV(u, 1.0);
                     } else {
+                        var stw = Stopwatch.StartNew();
                         MultigridOperator mgOp = new MultigridOperator(AggBasis, ExtenstionSolVec.Mapping, OpMtx, null, MultigridOperatorConfig, GetBulkOperator());
 
                         var Pre_RHS = RHS.CloneAs();
@@ -524,14 +541,10 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                         SolveOnce(mgOp, Pre_Sol, Pre_RHS);
 
                         mgOp.TransformSolFrom(ExtenstionSolVec, Pre_Sol);
-                        var cutCells_k = lsTrk.Regions.GetCutCellMask4LevSet(levelSetIndex);
-                        double ifaceDiffNorm = 0.0;
-                        for(int d = 0; d < D; d++) {
-                            double err_d = ExtensionVelocity[d].L2Error(VelocityAtInterface[d], cutCells_k);
-                            ifaceDiffNorm += err_d * err_d;
-                        }
-                        ifaceDiffNorm = Math.Sqrt(ifaceDiffNorm);
-                        Console.WriteLine($"|div(u_ext)|={ExtensionVelocity.Divergence().L2Norm():0.###E-00}, |u_ext - u_iface| on interface={ifaceDiffNorm:0.###E-00}");
+                        double ifaceDiffNorm = InterfaceVelocityMismatchNorm();
+                        stw.Stop();
+                        Console.WriteLine($"|div(u_ext)|={ExtensionVelocity.Divergence().L2Norm():0.###E-00}, |u_ext - u_iface| on interface={ifaceDiffNorm:0.###E-00}, "
+                            + $"time={stw.Elapsed.TotalSeconds:0.###}sec");
                     }
                     e = null;
                 } catch(Exception ee) {
