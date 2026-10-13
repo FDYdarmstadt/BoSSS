@@ -547,7 +547,6 @@ namespace BoSSS.Foundation {
         static MultidimensionalArray.MultiplyProgram mp_ike_im_Tikme = MultidimensionalArray.MultiplyProgram.Compile("ike", "im", "T(i)kme", true);
         static MultidimensionalArray.MultiplyProgram mp_ik_im_Tikm = MultidimensionalArray.MultiplyProgram.Compile("ik", "im", "T(i)km", true);
 
-
         private static void TransformCoördinatesEdge(int e0, int L, IGridData grd,
             MultidimensionalArray Coördinates, int N_IN, int N_OT, int Degree, bool AffineLinear,
             MultidimensionalArray trfCoördinatesIN, MultidimensionalArray trfCoördinatesOT) //

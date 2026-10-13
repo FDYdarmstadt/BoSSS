@@ -1,5 +1,7 @@
 <Project>
   <PropertyGroup>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <!-- .NET code analyzers (CA*) disabled (owner decision 2026-10-02) -->
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
   </PropertyGroup>
 </Project>

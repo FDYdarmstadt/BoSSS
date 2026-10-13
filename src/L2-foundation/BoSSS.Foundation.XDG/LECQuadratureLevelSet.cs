@@ -139,7 +139,7 @@ namespace BoSSS.Foundation.XDG {
             // ------------------
 
             base.CustomTimers = new Stopwatch[] { new Stopwatch(), new Stopwatch(), new Stopwatch(), new Stopwatch() };
-            base.CustomTimers_Names = new string[] { "Flux-Eval", "Basis-Eval", "Loops", "ParametersAndNormals" };
+            base.CustomTimers_Names = new string[] { "Flux-Eval", "Basis-Eval", "LoopsLECls", "ParametersAndNormals" };
             base.CustomTimers_RootPointer = new int[4];
             ArrayTools.SetAll(base.CustomTimers_RootPointer, -1);
 

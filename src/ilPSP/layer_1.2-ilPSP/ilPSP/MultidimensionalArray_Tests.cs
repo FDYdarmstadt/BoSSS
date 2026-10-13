@@ -96,7 +96,7 @@ namespace ilPSP {
                 Console.WriteLine("runtime of tensorized multiplication: " + sw.ElapsedMilliseconds + " millisec.");
 
                 // old-fashioned equivalent with loops:
-                double errsum = 0;
+                double errsum = 0, errMax = 0, refMax = 0;
                 sw.Reset();
                 sw.Start();
                 for(int i = 0; i < I; i++) {
@@ -112,16 +112,20 @@ namespace ilPSP {
 
                             errsum += Math.Abs(ResTst1[j, k, i] - ResChck[j, k, i]);
                             errsum += Math.Abs(ResTst2[j, k, i] - ResChck[j, k, i]);
+                            errMax = Math.Max(errMax, Math.Max(Math.Abs(ResTst1[j, k, i] - ResChck[j, k, i]), Math.Abs(ResTst2[j, k, i] - ResChck[j, k, i])));
+                            refMax = Math.Max(refMax, Math.Abs(ResChck[j, k, i]));
                         }
                     }
                 }
                 sw.Stop();
 
                 Console.WriteLine("runtime of loop multiplication: " + sw.ElapsedMilliseconds + " millisec.");
-                Console.WriteLine("total error: " + errsum);
+                Console.WriteLine("total error: " + errsum + ", max. error: " + errMax + ", max. |result|: " + refMax);
 
-                double thres = 1.0e-13;
-                Assert.IsTrue(errsum < thres);
+                // relative tolerance (2026-10-03, owner decision): the result may be computed in a different summation order
+                // (e.g. DGEMM); an absolute bound on the error sum effectively required the order of the loop below
+                double thres = 1.0e-12 * refMax;
+                Assert.IsTrue(errMax <= thres);
             }
         }
 
@@ -168,7 +172,7 @@ namespace ilPSP {
             Console.WriteLine("runtime of tensorized multiplication: " + sw.ElapsedMilliseconds + " millisec.");
 
             // old-fashioned equivalent with loops:
-            double errsum = 0;
+            double errsum = 0, errMax = 0, refMax = 0;
             sw.Reset();
             sw.Start();
             for (int i = 0; i < I; i++) {
@@ -184,15 +188,19 @@ namespace ilPSP {
 
                     //errsum += Math.Abs(ResTst1[j, i] - ResChck[j, i]);
                     errsum += Math.Abs(ResTst2[j, i] - ResChck[j, i]);
+                    errMax = Math.Max(errMax, Math.Abs(ResTst2[j, i] - ResChck[j, i]));
+                    refMax = Math.Max(refMax, Math.Abs(ResChck[j, i]));
                 }
             }
             sw.Stop();
 
             Console.WriteLine("runtime of loop multiplication: " + sw.ElapsedMilliseconds + " millisec.");
-            Console.WriteLine("total error: " + errsum);
+            Console.WriteLine("total error: " + errsum + ", max. error: " + errMax + ", max. |result|: " + refMax);
 
-            double thres = 1.0e-13;
-            Assert.IsTrue(errsum < thres);
+            // relative tolerance (2026-10-03, owner decision): the result may be computed in a different summation order
+            // (e.g. DGEMM); an absolute bound on the error sum effectively required the order of the loop below
+            double thres = 1.0e-12 * refMax;
+            Assert.IsTrue(errMax <= thres);
         
         }
 
@@ -234,7 +242,7 @@ namespace ilPSP {
             Stopwatch RefMult = new Stopwatch();
             RefMult.Start();
             
-            double errSum = 0;
+            double errSum = 0, errMax = 0, refMax = 0;
             for (int i = 0; i < I; i++) {
                 for (int k = 0; k < K; k++) {
                     for (int n = 0; n < N; n++) {
@@ -242,6 +250,8 @@ namespace ilPSP {
                             ResChck[i, k, m, n] = A[i, k, m] * B[i, k, n];
                             errSum += Math.Abs(ResChck[i, k, m, n] - ResTst1[i, k, m, n]);
                             errSum += Math.Abs(ResChck[i, k, m, n] - ResTst2[i, k, m, n]);
+                            errMax = Math.Max(errMax, Math.Max(Math.Abs(ResChck[i, k, m, n] - ResTst1[i, k, m, n]), Math.Abs(ResChck[i, k, m, n] - ResTst2[i, k, m, n])));
+                            refMax = Math.Max(refMax, Math.Abs(ResChck[i, k, m, n]));
                         }
                     }
 
@@ -251,10 +261,12 @@ namespace ilPSP {
             RefMult.Stop();
             Console.WriteLine("runtime of loop multiplication: " + RefMult.ElapsedMilliseconds + " millisec.");
 
-            Console.WriteLine("total error: " + errSum);
+            Console.WriteLine("total error: " + errSum + ", max. error: " + errMax + ", max. |result|: " + refMax);
 
-            double thres = 1.0e-13;
-            Assert.IsTrue(errSum < thres);
+            // relative tolerance (2026-10-03, owner decision): the result may be computed in a different summation order
+            // (e.g. DGEMM); an absolute bound on the error sum effectively required the order of the loop below
+            double thres = 1.0e-12 * refMax;
+            Assert.IsTrue(errMax <= thres);
         }
 
 

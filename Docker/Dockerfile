@@ -20,6 +20,7 @@ RUN apt-get update \
 		openssh-client \
 		sudo \
 		wget \
+		nano \
 	&& rm -rf /var/lib/apt/lists/*
 
 # Add Microsoft package feed for .NET SDK 8 and 10.
@@ -58,6 +59,49 @@ RUN install -d -o ${USERNAME} -g ${USERNAME} /home/${USERNAME}/.BoSSS/etc \
 EOF
 
 RUN chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.BoSSS/
+
+RUN install -d -o ${USERNAME} -g ${USERNAME} /home/${USERNAME}/.codex \
+	&& cat > /home/${USERNAME}/.codex/config.toml <<'EOF'
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
+
+model = "gpt-5.6-luna"
+model_reasoning_effort = "medium"
+service_tier = "default"
+
+[projects."/workspace"]
+trust_level = "trusted"
+
+EOF
+
+RUN chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.codex
+
+
+RUN install -d -o ${USERNAME} -g ${USERNAME} /home/${USERNAME}/.claude \
+	&& cat > /home/${USERNAME}/.claude/settings.json <<'EOF'
+{
+  "permissions": {
+    "defaultMode": "bypassPermissions",
+    "deny": [
+      "Bash(rm *)",
+      "Bash(rmdir *)",
+      "Bash(unlink *)",
+      "Bash(shred *)",
+      "Bash(find * -delete*)",
+      "Bash(find * -exec rm*)",
+      "Bash(git clean*)",
+      "Bash(git rm*)"
+    ]
+  },
+  "skipDangerousModePermissionPrompt": true,
+  "model": "opus",
+  "effortLevel": "high"
+}
+
+EOF
+
+RUN chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.claude
+
 
 # Runtime location for full BoSSS host install copied from host-mounted folder.
 RUN mkdir -p /home/${USERNAME}/BoSSS-Install \

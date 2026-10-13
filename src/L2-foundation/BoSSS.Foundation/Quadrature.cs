@@ -538,11 +538,17 @@ namespace BoSSS.Foundation.Quadrature {
                     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-                    var mcrEval = tr.LogDummyblock(allThreads.Max(th => stpwEval.Elapsed.Ticks), "integrand_evaluation");
-                    tr.LogDummyblock(allThreads.Max(th => stpwQuad.Elapsed.Ticks), "quadrature");
-                    tr.LogDummyblock(allThreads.Max(th => stpwSaveIntRes.Elapsed.Ticks), "saving_results");
-                    tr.LogDummyblock(allThreads.Max(th => stpwNdSet.Elapsed.Ticks), "node_set_management");
-                    tr.LogDummyblock(allThreads.Max(th => stpwAlloc.Elapsed.Ticks), "buffer_allocation");
+                    // Report the maximum over all threads (i.e., the critical path);
+                    // in the serial branch, `allThreads` is not populated, so only `this` is used.
+                    var timedThreads = allThreads.Where(th => th != null).ToArray();
+                    if (timedThreads.Length <= 0)
+                        timedThreads = new[] { this };
+
+                    var mcrEval = tr.LogDummyblock(timedThreads.Max(th => th.stpwEval.Elapsed.Ticks), "integrand_evaluation");
+                    tr.LogDummyblock(timedThreads.Max(th => th.stpwQuad.Elapsed.Ticks), "quadrature");
+                    tr.LogDummyblock(timedThreads.Max(th => th.stpwSaveIntRes.Elapsed.Ticks), "saving_results");
+                    tr.LogDummyblock(timedThreads.Max(th => th.stpwNdSet.Elapsed.Ticks), "node_set_management");
+                    tr.LogDummyblock(timedThreads.Max(th => th.stpwAlloc.Elapsed.Ticks), "buffer_allocation");
 
                     Debug.Assert(m_CustomTimers.Length == m_CustomTimers_Names.Length);
                     Debug.Assert(m_CustomTimers.Length == m_CustomTimers_RootPointer.Length);
@@ -551,7 +557,9 @@ namespace BoSSS.Foundation.Quadrature {
                     for (int iTimer = 0; iTimer < mcrS.Length; iTimer++) {
                         int pt = m_CustomTimers_RootPointer[iTimer];
                         MethodCallRecord OwnerMcr = pt >= 0 ? mcrS[pt] : mcrEval;
-                        mcrS[iTimer] = OwnerMcr.AddSubCall(CustomTimers_Names[iTimer], allThreads.Max(th => m_CustomTimers[iTimer].Elapsed.Ticks));
+                        // clones which did not receive their own custom timers (e.g., no clone callback) are skipped
+                        long maxTicks = timedThreads.Max(th => iTimer < th.m_CustomTimers.Length ? th.m_CustomTimers[iTimer].Elapsed.Ticks : 0L);
+                        mcrS[iTimer] = OwnerMcr.AddSubCall(CustomTimers_Names[iTimer], maxTicks);
                     }
                 }
             }

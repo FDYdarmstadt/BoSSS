@@ -1753,13 +1753,8 @@ namespace BoSSS.Solution.Control {
             if(!ReferenceEquals(this.GridFunc, oCtr.GridFunc))
                 return false;
 
-            if((this.GridGuid != null) != (oCtr.GridGuid != null))
+            if(!this.GridGuid.Equals(oCtr.GridGuid))
                 return false;
-
-            if(this.GridGuid != null) {
-                if(!this.GridGuid.Equals(oCtr.GridGuid))
-                    return false;
-            }
 
             // restart info
             // ============

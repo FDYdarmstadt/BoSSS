@@ -79,7 +79,7 @@ namespace BoSSS.Foundation.Comm {
             m_ItemsPerCell = ItemsPerCell;
             m_vector = vector;
             m_master = master;
-            m_comm =  comm == null ? csMPI.Raw._COMM.WORLD : comm;
+            m_comm = comm; // (MPI_Comm is a struct; a former null check here was always false)
 			//sms = new SerialisationMessenger(csMPI.Raw._COMM.WORLD);
 
 			//// set comm. paths

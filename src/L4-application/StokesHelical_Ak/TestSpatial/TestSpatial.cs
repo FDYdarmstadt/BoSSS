@@ -108,7 +108,7 @@ namespace StokesHelical_Ak.TestSpartial
                             exSol_uxi[i] = solver.uxi.CloneAs();
                             exSol_pressure[i] = solver.Pressure.CloneAs();
 
-                            //Exakte Lösung auf SinglePhaseField
+                            //Exakte Lï¿½sung auf SinglePhaseField
                             exSol_ur[i].ProjectField(ur);
                             exSol_ueta[i].ProjectField(ueta);
                             exSol_uxi[i].ProjectField(uxi);
@@ -242,7 +242,7 @@ namespace StokesHelical_Ak.TestSpartial
                             exSol_uxi[i] = solver.uxi.CloneAs();
                             exSol_pressure[i] = solver.Pressure.CloneAs();
 
-                            //Exakte Lösung auf SinglePhaseField
+                            //Exakte Lï¿½sung auf SinglePhaseField
                             exSol_ur[i].ProjectField(ur);
                             exSol_ueta[i].ProjectField(ueta);
                             exSol_uxi[i].ProjectField(uxi);
@@ -827,7 +827,7 @@ namespace StokesHelical_Ak.TestSpartial
                             exSol_uxi[i] = solver.uxi.CloneAs();
                             exSol_pressure[i] = solver.Pressure.CloneAs();
 
-                            //Exakte Lösung auf SinglePhaseField
+                            //Exakte Lï¿½sung auf SinglePhaseField
                             exSol_ur[i].ProjectField(ur);
                             exSol_ueta[i].ProjectField(ueta);
                             exSol_uxi[i].ProjectField(uxi);
@@ -961,7 +961,7 @@ namespace StokesHelical_Ak.TestSpartial
                             exSol_uxi[i] = solver.uxi.CloneAs();
                             exSol_pressure[i] = solver.Pressure.CloneAs();
 
-                            //Exakte Lösung auf SinglePhaseField
+                            //Exakte Lï¿½sung auf SinglePhaseField
                             exSol_ur[i].ProjectField(ur);
                             exSol_ueta[i].ProjectField(ueta);
                             exSol_uxi[i].ProjectField(uxi);
@@ -1088,7 +1088,7 @@ namespace StokesHelical_Ak.TestSpartial
             exSol_uxi = helical_direct.uxi.CloneAs();
             exSol_pressure = helical_direct.Pressure.CloneAs();
 
-            //Exakte Lösung auf SinglePhaseField
+            //Exakte Lï¿½sung auf SinglePhaseField
             exSol_ur.ProjectField(ur);
             exSol_ueta.ProjectField(ueta);
             exSol_uxi.ProjectField(uxi);
@@ -1144,7 +1144,7 @@ namespace StokesHelical_Ak.TestSpartial
             exSol_uxi = helical_iterative.uxi.CloneAs();
             exSol_pressure = helical_iterative.Pressure.CloneAs();
 
-            //Exakte Lösung auf SinglePhaseField
+            //Exakte Lï¿½sung auf SinglePhaseField
             exSol_ur.ProjectField(ur);
             exSol_ueta.ProjectField(ueta);
             exSol_uxi.ProjectField(uxi);
@@ -1263,7 +1263,7 @@ namespace StokesHelical_Ak.TestSpartial
             exSol_uxi = helical_direct.uxi.CloneAs();
             exSol_pressure = helical_direct.Pressure.CloneAs();
 
-            //Exakte Lösung auf SinglePhaseField
+            //Exakte Lï¿½sung auf SinglePhaseField
             exSol_ur.ProjectField(ur);
             exSol_ueta.ProjectField(ueta);
             exSol_uxi.ProjectField(uxi);
@@ -1319,7 +1319,7 @@ namespace StokesHelical_Ak.TestSpartial
             exSol_uxi = helical_iterative.uxi.CloneAs();
             exSol_pressure = helical_iterative.Pressure.CloneAs();
 
-            //Exakte Lösung auf SinglePhaseField
+            //Exakte Lï¿½sung auf SinglePhaseField
             exSol_ur.ProjectField(ur);
             exSol_ueta.ProjectField(ueta);
             exSol_uxi.ProjectField(uxi);
@@ -1675,42 +1675,42 @@ namespace StokesHelical_Ak.TestSpartial
             #region Grid
             spaceConvergence_hangingNodes.GridFunc = delegate {
                 int numberOfSegments = 4;
-                // Initialisierung einer Liste für die Gitter
+                // Initialisierung einer Liste fï¿½r die Gitter
                 GridCommons[] grids = new GridCommons[numberOfSegments];
                 // Basisanzahl der Zellen im ersten Segment
                 int N = (gridSize + 1) / numberOfSegments;
-                // Startpunkt für xNodes
+                // Startpunkt fï¿½r xNodes
                 double xStart = r_min;
-                // Die Schrittweite für xNodes-Bereiche erhöhen
+                // Die Schrittweite fï¿½r xNodes-Bereiche erhï¿½hen
                 double xStep = (spaceConvergence_hangingNodes.rMax / numberOfSegments) - xStart;
 
                 for (int i = 0; i < numberOfSegments; i++) {
-                    // Berechnung der Knotenanzahl für das aktuelle Segment
+                    // Berechnung der Knotenanzahl fï¿½r das aktuelle Segment
                     int nodesInSegment = N * (int)Math.Pow(2, i) + 1;
 
-                    // Bestimmung der x-Bereichsgrenzen für das aktuelle Segment
+                    // Bestimmung der x-Bereichsgrenzen fï¿½r das aktuelle Segment
                     double xEnd = xStart + xStep;
 
-                    // Erzeugung der x-Knoten und y-Knoten für das aktuelle Segment
+                    // Erzeugung der x-Knoten und y-Knoten fï¿½r das aktuelle Segment
                     double[] xNodes = GenericBlas.Linspace(xStart, xEnd, nodesInSegment);
                     double[] yNodes = GenericBlas.Linspace(0, 2 * Math.PI, nodesInSegment);
 
-                    // Erstellung des Gitters für das aktuelle Segment und Hinzufügen in die Liste
+                    // Erstellung des Gitters fï¿½r das aktuelle Segment und Hinzufï¿½gen in die Liste
                     grids[i] = Grid2D.Cartesian2DGrid(xNodes, yNodes, type: CellType.Square_Linear);
-                    // Aktualisierung des Startpunkts für den nächsten Durchlauf
+                    // Aktualisierung des Startpunkts fï¿½r den nï¿½chsten Durchlauf
                     xStart = xEnd;
                 }
 
-                // Zusammenführen der Gitter aus der Liste
+                // Zusammenfï¿½hren der Gitter aus der Liste
                 var grdJ = grids[0];
                 for (int i = 1; i < grids.Length; i++) {
                     grdJ = GridCommons.MergeLogically(grids[i], grdJ);
                 }
-                // Versiegelung des zusammengeführten Gitters
+                // Versiegelung des zusammengefï¿½hrten Gitters
                 GridCommons grd = GridCommons.Seal(grdJ, 4);
 
-                // Hinzufügen der Edge Tag Names und Definition der Edge Tags...
-                // (Füge hier den restlichen Teil deines Codes ein)
+                // Hinzufï¿½gen der Edge Tag Names und Definition der Edge Tags...
+                // (Fï¿½ge hier den restlichen Teil deines Codes ein)
 
                 grd.EdgeTagNames.Add(1, "Dirichlet");
                 grd.EdgeTagNames.Add(2, "Stuff");
@@ -2031,42 +2031,42 @@ namespace StokesHelical_Ak.TestSpartial
             #region Grid
             spaceConvergence_hangingNodes.GridFunc = delegate {
                 int numberOfSegments = 4;
-                // Initialisierung einer Liste für die Gitter
+                // Initialisierung einer Liste fï¿½r die Gitter
                 GridCommons[] grids = new GridCommons[numberOfSegments];
                 // Basisanzahl der Zellen im ersten Segment
                 int N = (gridSize + 1) / numberOfSegments;
-                // Startpunkt für xNodes
+                // Startpunkt fï¿½r xNodes
                 double xStart = r_min;
-                // Die Schrittweite für xNodes-Bereiche erhöhen
+                // Die Schrittweite fï¿½r xNodes-Bereiche erhï¿½hen
                 double xStep = (spaceConvergence_hangingNodes.rMax / numberOfSegments) - xStart;
 
                 for (int i = 0; i < numberOfSegments; i++) {
-                    // Berechnung der Knotenanzahl für das aktuelle Segment
+                    // Berechnung der Knotenanzahl fï¿½r das aktuelle Segment
                     int nodesInSegment = N * (int)Math.Pow(2, i) + 1;
 
-                    // Bestimmung der x-Bereichsgrenzen für das aktuelle Segment
+                    // Bestimmung der x-Bereichsgrenzen fï¿½r das aktuelle Segment
                     double xEnd = xStart + xStep;
 
-                    // Erzeugung der x-Knoten und y-Knoten für das aktuelle Segment
+                    // Erzeugung der x-Knoten und y-Knoten fï¿½r das aktuelle Segment
                     double[] xNodes = GenericBlas.Linspace(xStart, xEnd, nodesInSegment);
                     double[] yNodes = GenericBlas.Linspace(0, 2 * Math.PI, nodesInSegment);
 
-                    // Erstellung des Gitters für das aktuelle Segment und Hinzufügen in die Liste
+                    // Erstellung des Gitters fï¿½r das aktuelle Segment und Hinzufï¿½gen in die Liste
                     grids[i] = Grid2D.Cartesian2DGrid(xNodes, yNodes, type: CellType.Square_Linear);
-                    // Aktualisierung des Startpunkts für den nächsten Durchlauf
+                    // Aktualisierung des Startpunkts fï¿½r den nï¿½chsten Durchlauf
                     xStart = xEnd;
                 }
 
-                // Zusammenführen der Gitter aus der Liste
+                // Zusammenfï¿½hren der Gitter aus der Liste
                 var grdJ = grids[0];
                 for (int i = 1; i < grids.Length; i++) {
                     grdJ = GridCommons.MergeLogically(grids[i], grdJ);
                 }
-                // Versiegelung des zusammengeführten Gitters
+                // Versiegelung des zusammengefï¿½hrten Gitters
                 GridCommons grd = GridCommons.Seal(grdJ, 4);
 
-                // Hinzufügen der Edge Tag Names und Definition der Edge Tags...
-                // (Füge hier den restlichen Teil deines Codes ein)
+                // Hinzufï¿½gen der Edge Tag Names und Definition der Edge Tags...
+                // (Fï¿½ge hier den restlichen Teil deines Codes ein)
 
                 grd.EdgeTagNames.Add(1, "Dirichlet");
                 grd.EdgeTagNames.Add(2, "Stuff");

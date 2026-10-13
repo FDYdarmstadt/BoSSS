@@ -11,7 +11,35 @@ namespace MltdimAryMultiply_CodeGen {
         delegate void D();
         
         static void Main(string[] args) {
-            Out = new StreamWriter("..\\..\\..\\ilPSP\\MultidimensionalArray_CodeGenMultiply.cs");
+            if(args.Length >= 1 && args[0] == "--simd") {
+                // AVX2 micro-kernels of the GETT-style path, see SimdKernelGen.cs
+                if(args.Length > 2) {
+                    Console.Error.WriteLine("Usage: MltdimAryMultiply_CodeGen --simd [output-file]");
+                    System.Environment.ExitCode = 1;
+                    return;
+                }
+                string simdPath = args.Length == 2 ? Path.GetFullPath(args[1]) :
+                    Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
+                        "..", "..", "..", "..", "ilPSP", "MultidimensionalArray_CodeGenMultiplySimd.cs"));
+                using var simdWriter = new StreamWriter(simdPath, false, new UTF8Encoding(false));
+                simdWriter.NewLine = "\r\n";
+                SimdKernelGen.Generate(simdWriter);
+                return;
+            }
+            if(args.Length > 1) {
+                Console.Error.WriteLine("Usage: MltdimAryMultiply_CodeGen [output-file] | --simd [output-file]");
+                System.Environment.ExitCode = 1;
+                return;
+            }
+
+            // SDK builds add a target-framework directory. Resolve the default
+            // from the executable, so dotnet run works from any working directory.
+            string outputPath = args.Length == 1 ? Path.GetFullPath(args[0]) :
+                Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
+                    "..", "..", "..", "..", "ilPSP", "MultidimensionalArray_CodeGenMultiply.cs"));
+            using var writer = new StreamWriter(outputPath, false, new UTF8Encoding(false));
+            writer.NewLine = "\r\n";
+            Out = writer;
 
             Prolog();
 
@@ -85,7 +113,8 @@ namespace MltdimAryMultiply_CodeGen {
             // ==============
 
             Epilog();
-            Out.Close();
+            Out.Flush();
+            Console.WriteLine("Generated " + outputPath);
         }
 
         // params for routines without index trafo

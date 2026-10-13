@@ -683,6 +683,34 @@ namespace ilPSP {
 
             internal int iTrafoIdx;
 
+#if MULTIPLY_FASTPATH_DIAGNOSTICS
+            /// <summary>
+            /// DIAGNOSTIC (census mode): reconstructs a canonical program string, e.g. "ij,ik,kj";
+            /// running loops are named i,j,k,l,m,n,o,u (in T order), summation loops p,q,r,s;
+            /// the transformed operand index is written as T(x).
+            /// </summary>
+            internal string Describe() {
+                const string runNames = "ijklmnou", sumNames = "pqrs";
+                string Operand(int D, int runCount, uint runRank, uint runLoop, int sumCount, uint sumRank, uint sumLoop, bool trafo, int iTrafo) {
+                    string[] r = new string[D];
+                    for(int i = 0; i < runCount; i++) {
+                        int sh = i << 2;
+                        int rnk = (int)((runRank >> sh) & 0xf), lp = (int)((runLoop >> sh) & 0xf);
+                        r[rnk] = (trafo && lp == iTrafo) ? ("T(" + runNames[lp] + ")") : runNames[lp].ToString();
+                    }
+                    for(int i = 0; i < sumCount; i++) {
+                        int sh = i << 2;
+                        int rnk = (int)((sumRank >> sh) & 0xf), lp = (int)((sumLoop >> sh) & 0xf);
+                        r[rnk] = sumNames[lp].ToString();
+                    }
+                    return string.Concat(r);
+                }
+                string T = runNames.Substring(0, DT);
+                return T + "," + Operand(DA, RunACount, RunRankAStore, RunLoopAStore, SumACount, SumRankAStore, SumLoopAStore, TrfA0Sw != 0, iTrafoIdx)
+                    + "," + Operand(DB, RunBCount, RunRankBStore, RunLoopBStore, SumBCount, SumRankBStore, SumLoopBStore, TrfB0Sw != 0, iTrafoIdx);
+            }
+#endif
+
             /// <summary>
             /// Defines howto run across array 'A'.
             /// </summary>
@@ -987,6 +1015,9 @@ namespace ilPSP {
             if(this.IsLocked) {
                 throw new NotSupportedException("Array is locked -- no changes allows.");
             }
+#if MULTIPLY_FASTPATH_DIAGNOSTICS
+            long censusT0 = s_Census ? System.Diagnostics.Stopwatch.GetTimestamp() : 0;
+#endif
             // this is a routine where mono on windows crashes
             unsafe {
                 int DT = mp.DT;
@@ -1058,12 +1089,60 @@ namespace ilPSP {
                         if(IndexTrafo_T == null)
                             throw new ArgumentException("Index transformation required.");
                         {
-                            //Debug.Assert(mp.NoOfSumCycles == 1); Debug.Assert(DT == 2); __MultiplyWTrafo_Sum1_FOR2( 
-                            MultiplyWTrafo_Dispatch(
-                                DT, mp.NoOfSumCycles, pT, pA, pB, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale,
+                            bool trfDirect = !ReferenceEquals(this.m_Storage, A.m_Storage)
+                                && !ReferenceEquals(this.m_Storage, B.m_Storage);
+#if MULTIPLY_FASTPATH_DIAGNOSTICS
+                            // diagnostic check mode, see MultidimensionalArray_MultiplyBlas.cs
+                            double[] chkRef = null;
+                            if(s_FastPathCheck && trfDirect) {
+                                // DIAGNOSTIC: reference result into a copy of the destination storage
+                                chkRef = (double[])this.m_Storage.Clone();
+                                fixed(double* pR = chkRef) {
+                                    MultiplyWTrafo_Dispatch(
+                                        DT, mp.NoOfSumCycles, pR + this.m_Offset, pA, pB, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale,
+                                        IndexTrafo_T, IndexTrafo_A, IndexTrafo_B,
+                                        mp.TrfT0Sw, mp.TrfA0Sw, mp.TrfB0Sw,
+                                        0, 1, 0, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B);
+                                }
+                            }
+#endif
+                            if(TryMultiplyWTrafoGemm(
+                                DT, mp.NoOfSumCycles, pT, pA, pB, lenRun, cycRunT, cycRunA, cycRunB,
+                                lenSum, cycSumA, cycSumB, scale, thisscale,
                                 IndexTrafo_T, IndexTrafo_A, IndexTrafo_B,
                                 mp.TrfT0Sw, mp.TrfA0Sw, mp.TrfB0Sw,
-                                0, 1, 0, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B);
+                                trfPreOffset_A, trfCycle_A, trfPostOffset_A,
+                                trfPreOffset_B, trfCycle_B, trfPostOffset_B,
+                                trfDirect)) {
+#if MULTIPLY_FASTPATH_DIAGNOSTICS
+                                if(chkRef != null)
+                                    FastPathCompare(chkRef, this.m_Storage, "WTrafoGemm", DT, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale);
+                                s_LastPath = "WTrafoGemm";
+#endif
+                            } else
+                            if(TryMultiplyGettWTrafo(
+                                DT, mp.NoOfSumCycles, pT, pA, pB, lenRun, cycRunT, cycRunA, cycRunB,
+                                lenSum, cycSumA, cycSumB, scale, thisscale,
+                                IndexTrafo_T, IndexTrafo_A, IndexTrafo_B,
+                                mp.TrfT0Sw, mp.TrfA0Sw, mp.TrfB0Sw,
+                                0, 1, 0, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B,
+                                trfDirect)) {
+#if MULTIPLY_FASTPATH_DIAGNOSTICS
+                                if(chkRef != null)
+                                    FastPathCompare(chkRef, this.m_Storage, "GettWTrafo", DT, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale);
+#endif
+                            } else
+                            {
+                                //Debug.Assert(mp.NoOfSumCycles == 1); Debug.Assert(DT == 2); __MultiplyWTrafo_Sum1_FOR2( 
+                                MultiplyWTrafo_Dispatch(
+                                    DT, mp.NoOfSumCycles, pT, pA, pB, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale,
+                                    IndexTrafo_T, IndexTrafo_A, IndexTrafo_B,
+                                    mp.TrfT0Sw, mp.TrfA0Sw, mp.TrfB0Sw,
+                                    0, 1, 0, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B);
+#if MULTIPLY_FASTPATH_DIAGNOSTICS
+                                s_LastPath = "generated-trafo";
+#endif
+                            }
                         }
 
                     } else {
@@ -1071,9 +1150,50 @@ namespace ilPSP {
                         // Multiplication WITOUT index-transformation
                         // ++++++++++++++++++++++++++++++++++++++++++
 
-                        Multiply_Dispatch(DT, mp.NoOfSumCycles, pT, pA, pB, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale);
+                        // Shallow views can alias even when the array objects differ.
+                        // Retain the original execution order for all shared storage.
+                        bool blasDirect = !ReferenceEquals(this.m_Storage, A.m_Storage)
+                                && !ReferenceEquals(this.m_Storage, B.m_Storage);
+#if MULTIPLY_FASTPATH_DIAGNOSTICS
+                        // diagnostic check mode, see MultidimensionalArray_MultiplyBlas.cs
+                        double[] chkRef = null;
+                        if(s_FastPathCheck && blasDirect) {
+                            // DIAGNOSTIC: reference result into a copy of the destination storage
+                            chkRef = (double[])this.m_Storage.Clone();
+                            fixed(double* pR = chkRef) {
+                                Multiply_Dispatch(DT, mp.NoOfSumCycles, pR + this.m_Offset, pA, pB, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale);
+                            }
+                        }
+#endif
+                        if(TryMultiplyBlas(DT, mp.NoOfSumCycles, pT, pA, pB,
+                                lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale,
+                                blasDirect)) {
+#if MULTIPLY_FASTPATH_DIAGNOSTICS
+                            if(chkRef != null)
+                                FastPathCompare(chkRef, this.m_Storage, s_LastPath, DT, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale);
+#endif
+                        } else
+                        if(TryMultiplyGett(DT, mp.NoOfSumCycles, pT, pA, pB,
+                                lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale,
+                                blasDirect)) {
+#if MULTIPLY_FASTPATH_DIAGNOSTICS
+                            if(chkRef != null)
+                                FastPathCompare(chkRef, this.m_Storage, "Gett", DT, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale);
+#endif
+                        } else
+                        {
+                            Multiply_Dispatch(DT, mp.NoOfSumCycles, pT, pA, pB, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale);
+#if MULTIPLY_FASTPATH_DIAGNOSTICS
+                            s_LastPath = "generated";
+#endif
+                        }
                     }
                 }
+#if MULTIPLY_FASTPATH_DIAGNOSTICS
+                if(s_Census)
+                    CensusRecord(censusT0, ref mp, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale,
+                        !ReferenceEquals(this.m_Storage, A.m_Storage) && !ReferenceEquals(this.m_Storage, B.m_Storage));
+#endif
             }
         }
 

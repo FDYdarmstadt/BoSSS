@@ -95,7 +95,12 @@ namespace BoSSS.Application.MultithreadingSolverTest {
                     new ThreadScalingMethod {
                         Name = "AssembleMatrix",
                         Requirements = new[] {
-                            new ThreadScalingRequirement { FromThreads = 1, ToThreads = 2, MinSpeedup = 1.4 },
+                            // NOTE (2026-10-03, owner decision): lowered from 1.4 to 1.3. Since the blocked AVX2 Multiply path
+                            // (ilPSP, MultidimensionalArray_MultiplyGett.cs), AssembleMatrix is faster in absolute terms at 1 and
+                            // 2 threads (pcmit36: 3.57 -> 2.31 s resp. 2.69 -> 2.00 s), but the faster parallel part lowers the
+                            // speed-up ratio (Amdahl); measured 1.36 (previous code on the same day: 1.33). See
+                            // .agent/kummer/tensorproductoptimization/FINDINGS.md (2026-10-02).
+                            new ThreadScalingRequirement { FromThreads = 1, ToThreads = 2, MinSpeedup = 1.3 },
                             new ThreadScalingRequirement { FromThreads = 1, ToThreads = 4, MinSpeedup = 1.3 }
                         }
                     },

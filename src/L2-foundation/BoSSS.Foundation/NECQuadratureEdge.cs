@@ -190,7 +190,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 // ---------
 
                 var _CustomTimers = new Stopwatch[] { new Stopwatch(), new Stopwatch(), new Stopwatch(), new Stopwatch(), new Stopwatch(), new Stopwatch(), new Stopwatch() };
-                var _CustomTimers_Names = new string[] { "Flux-Eval", "Basis-Eval", "Field-Eval", "Loops", "ParametersAndNormals", "Flux-Trafo", "Flux-Lock-Wait" };
+                var _CustomTimers_Names = new string[] { "Flux-Eval", "Basis-Eval", "Field-Eval", "LoopsNECedge", "ParametersAndNormals", "Flux-Trafo", "Flux-Lock-Wait" };
                 Flux_Eval = _CustomTimers[0];
                 Field_Eval = _CustomTimers[2];
                 Basis_Eval = _CustomTimers[1];
