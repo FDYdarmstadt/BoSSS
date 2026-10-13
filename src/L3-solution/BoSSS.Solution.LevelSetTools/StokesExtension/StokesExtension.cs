@@ -261,7 +261,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         /// </param>
         public void SolveExtension(int levelSetIndex, LevelSetTracker lsTrk, DGField[] VelocityAtInterface, SinglePhaseField[] ExtensionVelocity) {
             using(FuncTrace tr = new FuncTrace()) {
-                tr.InfoToConsole = true;
+                tr.InfoToConsole = false;
                 var gDat = lsTrk.GridDat;
                 int deg = ExtensionVelocity[0].Basis.Degree;
 
@@ -395,7 +395,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                             double ifaceDiffNorm = InterfaceVelocityMismatchNorm();
 
                             stw_k.Stop();
-                            tr.Info($"pseudo-time step {k}: dtau={dtau:0.###E-00}, |RHS|={rhsNorm:0.###E-00}, "
+                            tr.Info($"pseudo-time step {k+1}: dtau={dtau:0.###E-00}, |RHS|={rhsNorm:0.###E-00}, "
                                 + $"true residual={resNorm:0.###E-00} (relative: {relResNorm:0.###E-00}), |u|={u.MPI_L2Norm():0.###E-00}, "
                                 + $"|div(u_ext)|={ExtensionVelocity.Divergence().L2Norm():0.###E-00}, |u_ext - u_iface| on interface={ifaceDiffNorm:0.###E-00}, "
                                 + $"time={stw_k.Elapsed.TotalSeconds:0.###}sec");
