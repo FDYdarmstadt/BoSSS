@@ -53,91 +53,10 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         const double viscosity = 1000.0;
 
         /// <summary>
-        /// If true, <see cref="SolveExtension"/> uses whatever is already in
-        /// <c>ExtensionVelocity</c> on entry (typically the previous time step's converged
-        /// extension velocity, since callers no longer clear it beforehand) as the initial guess
-        /// for the iterative solve, transformed into the solver's equilibrated basis via
-        /// <see cref="BoSSS.Solution.AdvancedSolvers.MultigridOperator.TransformSolInto{T1, T2}"/>.
-        /// If false (the default), the solve always starts from zero, matching the original behavior.
+        /// Options controlling <see cref="SolveExtension"/> (solver dispatch, warm-starting,
+        /// preconditioning, pseudo-transient continuation); the single source of truth for their defaults.
         /// </summary>
-        public bool WarmStart = false;
-
-        /// <summary>
-        /// If set, overrides the solver dispatch in <see cref="SolveExtension"/> entirely: this
-        /// factory is used directly (<see cref="BoSSS.Solution.AdvancedSolvers.ISolverFactory.CreateInstance(BoSSS.Solution.AdvancedSolvers.MultigridOperator)"/>)
-        /// to solve the extension's linear system (e.g. a <see cref="BoSSS.Solution.AdvancedSolvers.PetscGMRESConfig"/>
-        /// to solve through PETSc). Mirrors the <c>LinearSolver</c> property on the main application
-        /// control objects (e.g. <see cref="BoSSS.Solution.XdgTimestepping.AppControlSolver.LinearSolver"/>).
-        /// Null (the default) falls back to a plain direct solve
-        /// (<see cref="ilPSP.LinSolvers.SimpleSolversInterface.Solve_Direct"/>), matching the original behavior.
-        /// </summary>
-        public BoSSS.Solution.AdvancedSolvers.ISolverFactory LinearSolver = null;
-
-        /// <summary>
-        /// Only relevant if <see cref="fullStokes"/> is set (via the constructor). If true, the
-        /// velocity and pressure <see cref="BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig"/>
-        /// are combined into a single block using
-        /// <see cref="BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.SchurComplement"/>, mirroring
-        /// <c>XNSE_Control.UseSchurBlockPrec</c> (see <c>XNSE.cs</c>'s <c>AddMultigridConfigLevel</c>).
-        /// If false (the default), velocity and pressure keep their separate
-        /// <see cref="BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite"/>/
-        /// <see cref="BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.IdMass_DropIndefinite"/> configs, matching
-        /// the original behavior. Best paired with a field-split-aware <see cref="LinearSolver"/> (e.g. a
-        /// <see cref="BoSSS.Solution.AdvancedSolvers.PetscGMRESConfig"/> with a field-split PETSc options string);
-        /// combining it with the internal <see cref="BoSSS.Solution.AdvancedSolvers.SchurComplementForStokes"/>
-        /// fallback solver applies Schur-complement structure twice.
-        /// </summary>
-        public bool UseSchurBlockPrec = false;
-
-        /// <summary>
-        /// If true, skips BoSSS's own local (per-cell) preconditioning transform entirely -- neither
-        /// <see cref="UseSchurBlockPrec"/>'s combined block nor the "standard"
-        /// <see cref="BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite"/>/
-        /// <see cref="BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.IdMass_DropIndefinite"/> configs are
-        /// used -- instead every field gets <see cref="BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.Eye"/>
-        /// (identity: no change of basis at all), handing PETSc/the fallback solver the raw <c>OpMtx</c>
-        /// unmodified. Takes precedence over <see cref="UseSchurBlockPrec"/> if both are set. Note: without
-        /// <see cref="UsePseudoTimestepping"/> also regularizing the raw matrix, the pressure-pressure
-        /// diagonal block stays structurally exactly zero here (see remarks on <see cref="UseSchurBlockPrec"/>),
-        /// which a plain ILU factorization cannot handle. False (the default) preserves the original behavior.
-        /// </summary>
-        public bool DisableLocalPreconditioning = false;
-
-        /// <summary>
-        /// If true, <see cref="SolveExtension"/> solves via pseudo-transient continuation instead of a
-        /// single solve: repeatedly solves <c>(OpMtx + I/dtau)*u = RHS + u/dtau</c> for a growing
-        /// <c>dtau</c> (switched-evolution-relaxation between <see cref="PseudoDtau0"/> and
-        /// <see cref="PseudoDtauMax"/>), until the TRUE (un-regularized) residual <c>RHS - OpMtx*u</c>,
-        /// relative to <c>‖RHS‖</c>, falls below <see cref="PseudoTimeConvergenceCriterion"/> or
-        /// <see cref="MaxPseudoTimeSteps"/> is reached. False (the default) preserves the original
-        /// single-solve behavior.
-        /// </summary>
-        public bool UsePseudoTimestepping = false;
-
-        /// <summary>
-        /// Initial pseudo-time step size. Only relevant if <see cref="UsePseudoTimestepping"/> is set.
-        /// </summary>
-        public double PseudoDtau0 = 1.0;
-
-        /// <summary>
-        /// Upper bound for the pseudo-time step size's growth (switched-evolution-relaxation).
-        /// Only relevant if <see cref="UsePseudoTimestepping"/> is set.
-        /// </summary>
-        public double PseudoDtauMax = 1.0e8;
-
-        /// <summary>
-        /// Maximum number of pseudo-time steps. Only relevant if <see cref="UsePseudoTimestepping"/> is set.
-        /// </summary>
-        public int MaxPseudoTimeSteps = 20;
-
-        /// <summary>
-        /// Convergence criterion on the true (un-regularized) residual norm, RELATIVE to <c>‖RHS‖</c>
-        /// (i.e. stops once <c>‖RHS - OpMtx*u‖ / ‖RHS‖</c> falls below this value) -- an absolute
-        /// criterion would be meaningless here, since ‖RHS‖ itself can vary by many orders of magnitude
-        /// depending on the problem's physical scale. Only relevant if <see cref="UsePseudoTimestepping"/>
-        /// is set.
-        /// </summary>
-        public double PseudoTimeConvergenceCriterion = 1.0e-10;
+        public StokesExtensionControl Config = new StokesExtensionControl();
 
         /// <summary>
         /// Bulk of the artificial Stokes extension equation;
@@ -366,12 +285,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
 
                 (BlockMsrMatrix OpMtx, double[] RHS) = ComputeMatrix(levelSetIndex, lsTrk, ExtenstionSolVec.Mapping, VelocityAtInterface);
 
-                // Level-set-restricted (surface) quadrature for the interface-velocity-mismatch
-                // diagnostic below: a plain CellMask-based L2Error would integrate over the FULL
-                // volume of each cut cell, not just the interface itself. GetLevelSetQuadScheme
-                // gives the same kind of surface quadrature that InteriorVelocityBoundary (an
-                // ILevelSetForm) is actually integrated with when the interface condition is
-                // assembled into OpMtx/RHS, so this measures compliance with exactly what's enforced.
+                // Level-set-restricted (surface) quadrature for the interface-velocity-mismatch diagnostic
                 var ifaceSchemeHelper = lsTrk.GetXDGSpaceMetrics(lsTrk.SpeciesIdS.ToArray(), this.m_CutCellQuadOrder, 1).XQuadSchemeHelper;
                 var ifaceQuadRule = ifaceSchemeHelper.GetLevelSetQuadScheme(levelSetIndex, lsTrk.Regions.GetCutCellMask4LevSet(levelSetIndex))
                     .Compile(gDat, this.m_CutCellQuadOrder);
@@ -389,15 +303,14 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                 //RHSdg.SetV(RHS, 1.0);
                 //double[] RHSL2norm = RHSdg.Fields.Select(f => f.L2Norm()).ToArray();
 
-                if (this.UseSchurBlockPrec && !this.fullStokes)
-                    throw new InvalidOperationException($"{nameof(UseSchurBlockPrec)} requires {nameof(fullStokes)} (no pressure to combine with otherwise).");
+                if (this.Config.UseSchurBlockPrec && !this.fullStokes)
+                    throw new InvalidOperationException($"{nameof(StokesExtensionControl.UseSchurBlockPrec)} requires {nameof(fullStokes)} (no pressure to combine with otherwise).");
 
                 var AggGrid = CoarseningAlgorithms.CreateSequence(ExtenstionSolVec.Mapping.GridDat, -1);
                 var AggBasis = AggregationGridBasis.CreateSequence(AggGrid, ExtenstionSolVec.Mapping.BasisS);
                 var configsLevel = new List<BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig>();
-                if (this.DisableLocalPreconditioning) {
-                    // no local preconditioning transform at all -- every field gets Mode.Eye (identity),
-                    // handing PETSc/the fallback solver the raw OpMtx unmodified.
+                if (this.Config.DisableLocalPreconditioning) {
+                    // no local preconditioning transform at all -- handing the solver the raw OpMtx unmodified.
                     for (int i = 0; i < ExtenstionSolVec.Mapping.Fields.Count; i++) {
                         configsLevel.Add(new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig() {
                             mode = BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.Eye,
@@ -405,8 +318,8 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                             DegreeS = new int[] { ExtenstionSolVec.Mapping.Fields[i].Basis.Degree }
                         });
                     }
-                } else if (this.fullStokes && this.UseSchurBlockPrec) {
-                    // single combined block for velocity + pressure, mirroring XNSE.cs's UseSchurBlockPrec
+                } else if (this.fullStokes && this.Config.UseSchurBlockPrec) {
+                    // single combined block for velocity + pressure
                     configsLevel.Add(new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig() {
                         mode = BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.SchurComplement,
                         VarIndex = Enumerable.Range(0, ExtenstionSolVec.Mapping.Fields.Count).ToArray(),
@@ -437,11 +350,9 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                 var bkup_RHS = RHS.CloneAs();
                 Exception e;
                 try {
-                    // Solves one (possibly pseudo-time-regularized) linearization, dispatching to
-                    // LinearSolver if set, or the original direct-solver behavior otherwise.
                     void SolveOnce(MultigridOperator mgOp_, double[] Pre_Sol_, double[] Pre_RHS_) {
-                        if(LinearSolver != null) {
-                            var customSolver = LinearSolver.CreateInstance(mgOp_);
+                        if(Config.LinearSolver != null) {
+                            var customSolver = Config.LinearSolver.CreateInstance(mgOp_);
                             customSolver.Solve(Pre_Sol_, Pre_RHS_);
                             customSolver.Dispose();
                         } else {
@@ -449,17 +360,15 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                         }
                     }
 
-                    if(UsePseudoTimestepping) {
-                        // Pseudo-transient continuation: repeatedly solve (OpMtx + I/dtau)*u = RHS + u/dtau
-                        // for a growing dtau (switched-evolution-relaxation), until the TRUE (un-regularized)
-                        // residual RHS - OpMtx*u is small, or MaxPseudoTimeSteps is reached. dtau/I are added
-                        // to the whole system (velocity and pressure alike), not just the momentum rows.
+                    if(Config.UsePseudoTimestepping) {
+                        // Repeatedly solve (OpMtx + I/dtau)*u = RHS + u/dtau for a growing dtau (switched-evolution-relaxation), 
+                        // until the true residual RHS - OpMtx*u is small, or MaxPseudoTimeSteps is reached.
                         tr.Info("StokesExtension.SolveExtension trying with pseudo-timestepping");
-                        double dtau = PseudoDtau0;
-                        double[] u = WarmStart ? ExtenstionSolVec.ToArray() : new double[ExtenstionSolVec.Mapping.LocalLength];
+                        double dtau = Config.PseudoDtau0 ?? 1.0;
+                        double[] u = Config.WarmStart ? ExtenstionSolVec.ToArray() : new double[ExtenstionSolVec.Mapping.LocalLength];
                         double resNorm_prev = RHS.MPI_L2Norm();
 
-                        for(int k = 0; k < MaxPseudoTimeSteps; k++) {
+                        for(int k = 0; k < Config.MaxPseudoTimeSteps; k++) {
                             var stw_k = Stopwatch.StartNew();
                             var OpMtx_k = OpMtx.CloneAs();
                             OpMtx_k.AccEyeSp(1.0 / dtau);
@@ -493,10 +402,10 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                                 + $"|div(u_ext)|={ExtensionVelocity.Divergence().L2Norm():0.###E-00}, |u_ext - u_iface| on interface={ifaceDiffNorm:0.###E-00}, "
                                 + $"time={stw_k.Elapsed.TotalSeconds:0.###}sec");
 
-                            if(relResNorm < PseudoTimeConvergenceCriterion)
+                            if(relResNorm < Config.PseudoTimeConvergenceCriterion)
                                 break;
 
-                            dtau = Math.Min(dtau * resNorm_prev / resNorm, PseudoDtauMax);
+                            dtau = Math.Min(dtau * resNorm_prev / resNorm, Config.PseudoDtauMax);
                             resNorm_prev = resNorm;
                         }
 
@@ -509,13 +418,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                         double[] Pre_Sol = new double[mgOp.Mapping.LocalLength];
                         tr.Info("StokesExtension.SolveExtension trying with Multigridoperator");
                         mgOp.TransformRhsInto(RHS, Pre_RHS, true);
-                        // Warm start: 'ExtenstionSolVec' may already carry the previous time step's
-                        // extension velocity (see callers of SolveExtension); it must be moved into
-                        // the same equilibrated basis as 'Pre_RHS'/'OperatorMatrix', otherwise a nonzero
-                        // initial guess would be handed to the solver in the wrong scaling. 'Pre_Sol' is
-                        // zero-initialized above, so leaving this out when WarmStart is false reproduces
-                        // the original cold-start behavior.
-                        if(WarmStart)
+                        if(Config.WarmStart)
                             mgOp.TransformSolInto(ExtenstionSolVec, Pre_Sol);
 
                         SolveOnce(mgOp, Pre_Sol, Pre_RHS);

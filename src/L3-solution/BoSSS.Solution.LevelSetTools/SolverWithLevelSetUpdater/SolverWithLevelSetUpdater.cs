@@ -285,32 +285,21 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     }
                     case LevelSetEvolution.StokesExtension: {
                         ILevelSetEvolver stokesExtEvo;
+                        // Resolve PseudoDtau0, if not explicitly set, to the flow solve's own fixed
+                        // timestep size -- or 1.0 if that is not set (e.g. adaptive/steady-state timestepping).
+                        var stokesExtConfig = this.Control.StokesExtension.Clone();
+                        stokesExtConfig.PseudoDtau0 ??= (this.Control.dtFixed > 0 ? this.Control.dtFixed : 1.0);
                         if(LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
                             stokesExtEvo = new StokesExtensionEvolver(LevelSetCG, QuadOrder(), D,
                             GetBcMap(),
                             this.Control.AgglomerationThreshold, this.GridData,
-                            warmStart: this.Control.StokesExtensionWarmStart,
-                            useSchurBlockPrec: this.Control.StokesExtensionUseSchurBlockPrec,
-                            usePseudoTimestepping: this.Control.StokesExtensionUsePseudoTimestepping,
-                            pseudoDtau0: this.Control.StokesExtensionPseudoDtau0,
-                            pseudoDtauMax: this.Control.StokesExtensionPseudoDtauMax,
-                            maxPseudoTimeSteps: this.Control.StokesExtensionMaxPseudoTimeSteps,
-                            pseudoTimeConvergenceCriterion: this.Control.StokesExtensionPseudoTimeConvergenceCriterion,
-                            disableLocalPreconditioning: this.Control.StokesExtensionDisableLocalPreconditioning);
+                            config: stokesExtConfig);
                         } else {
                             stokesExtEvo = new StokesExtensionEvolver(LevelSetCG, QuadOrder(), D,
                             GetBcMap(),
                             this.Control.AgglomerationThreshold, this.GridData, useBCmap: this.Control.StokesExtentionUseBCmap,
                             ReInitControl: this.Control.ReInitControl, ReInitPeriod: this.Control.ReInitPeriod,
-                            linearSolver: this.Control.StokesExtensionLinearSolver,
-                            warmStart: this.Control.StokesExtensionWarmStart,
-                            useSchurBlockPrec: this.Control.StokesExtensionUseSchurBlockPrec,
-                            usePseudoTimestepping: this.Control.StokesExtensionUsePseudoTimestepping,
-                            pseudoDtau0: this.Control.StokesExtensionPseudoDtau0,
-                            pseudoDtauMax: this.Control.StokesExtensionPseudoDtauMax,
-                            maxPseudoTimeSteps: this.Control.StokesExtensionMaxPseudoTimeSteps,
-                            pseudoTimeConvergenceCriterion: this.Control.StokesExtensionPseudoTimeConvergenceCriterion,
-                            disableLocalPreconditioning: this.Control.StokesExtensionDisableLocalPreconditioning);
+                            config: stokesExtConfig);
                         }
                         lsUpdater.AddEvolver(LevelSetCG, stokesExtEvo);
                         break;

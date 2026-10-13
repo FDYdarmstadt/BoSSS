@@ -152,80 +152,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public StokesExtentionBoundaryOption StokesExtentionUseBCmap = StokesExtentionBoundaryOption.FreeSlipAtWall;
 
         /// <summary>
-        /// If set, overrides the Stokes-extension velocity solve's (<see cref="LevelSetEvolution.StokesExtension"/>)
-        /// solver dispatch entirely (<see cref="LevelSetEvolution.StokesExtension.LinearSolver"/>) -- e.g. a
-        /// <see cref="BoSSS.Solution.AdvancedSolvers.PetscGMRESConfig"/> to solve through PETSc. Null (the
-        /// default) falls back to a plain direct solve, matching the original behavior.
+        /// Options for the Stokes-extension velocity solve (<see cref="LevelSetEvolution.StokesExtension"/>)
         /// </summary>
         [DataMember]
-        public BoSSS.Solution.AdvancedSolvers.ISolverFactory StokesExtensionLinearSolver = null;
-
-        /// <summary>
-        /// If true, the Stokes-extension velocity solve (<see cref="LevelSetEvolution.StokesExtension"/>)
-        /// is warm-started from the previous time step's converged extension velocity. False (the default)
-        /// always starts the solve from zero, matching the original behavior.
-        /// </summary>
-        [DataMember]
-        public bool StokesExtensionWarmStart = false;
-
-        /// <summary>
-        /// If true, the Stokes-extension velocity solve's (<see cref="LevelSetEvolution.StokesExtension"/>)
-        /// velocity and pressure <see cref="BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig"/>
-        /// are combined into a single <see cref="BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.SchurComplement"/>
-        /// block, mirroring the <c>UseSchurBlockPrec</c> option used for the main flow solve (e.g.
-        /// <c>XNSE_Control.UseSchurBlockPrec</c>). False (the default) preserves the original per-field
-        /// configuration.
-        /// </summary>
-        [DataMember]
-        public bool StokesExtensionUseSchurBlockPrec = false;
-
-        /// <summary>
-        /// If true, the Stokes-extension velocity solve (<see cref="LevelSetEvolution.StokesExtension"/>) is
-        /// solved via pseudo-transient continuation (repeated solves of a progressively less-regularized
-        /// system, switched-evolution-relaxation) instead of a single solve. False (the default) preserves
-        /// the original single-solve behavior. See <c>StokesExtension.UsePseudoTimestepping</c>.
-        /// </summary>
-        [DataMember]
-        public bool StokesExtensionUsePseudoTimestepping = false;
-
-        /// <summary>
-        /// Only relevant if <see cref="StokesExtensionUsePseudoTimestepping"/> is set: initial pseudo-time
-        /// step size.
-        /// </summary>
-        [DataMember]
-        public double StokesExtensionPseudoDtau0 = 1.0;
-
-        /// <summary>
-        /// Only relevant if <see cref="StokesExtensionUsePseudoTimestepping"/> is set: upper bound for the
-        /// pseudo-time step size's growth.
-        /// </summary>
-        [DataMember]
-        public double StokesExtensionPseudoDtauMax = 1.0e8;
-
-        /// <summary>
-        /// Only relevant if <see cref="StokesExtensionUsePseudoTimestepping"/> is set: maximum number of
-        /// pseudo-time steps.
-        /// </summary>
-        [DataMember]
-        public int StokesExtensionMaxPseudoTimeSteps = 20;
-
-        /// <summary>
-        /// Only relevant if <see cref="StokesExtensionUsePseudoTimestepping"/> is set: convergence criterion
-        /// on the true (un-regularized) residual norm, RELATIVE to ‖RHS‖.
-        /// </summary>
-        [DataMember]
-        public double StokesExtensionPseudoTimeConvergenceCriterion = 1.0e-10;
-
-        /// <summary>
-        /// If true, the Stokes-extension velocity solve (<see cref="LevelSetEvolution.StokesExtension"/>) skips
-        /// BoSSS's own local preconditioning transform entirely (neither <see cref="StokesExtensionUseSchurBlockPrec"/>'s
-        /// combined block nor the standard per-field configs are used) -- every field gets
-        /// <see cref="BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.Eye"/> (identity), handing the raw
-        /// system matrix directly to PETSc/the fallback solver. See <c>StokesExtension.DisableLocalPreconditioning</c>.
-        /// Default (false) preserves the original behavior.
-        /// </summary>
-        [DataMember]
-        public bool StokesExtensionDisableLocalPreconditioning = false;
+        public StokesExtension.StokesExtensionControl StokesExtension = new StokesExtension.StokesExtensionControl();
 
 
         #endregion

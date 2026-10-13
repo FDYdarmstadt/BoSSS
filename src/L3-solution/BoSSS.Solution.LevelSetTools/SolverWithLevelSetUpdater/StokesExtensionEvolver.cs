@@ -49,9 +49,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         public StokesExtensionEvolver(string levelSetName, int hMForder, int D, IncompressibleBoundaryCondMap bcMap, double AgglomThreshold, IGridData grd,
             bool fullStokes = true, StokesExtentionBoundaryOption useBCmap = StokesExtentionBoundaryOption.FreeSlipAtWall, EllipticReInitAlgoControl ReInitControl = null, int ReInitPeriod = 0,
-            BoSSS.Solution.AdvancedSolvers.ISolverFactory linearSolver = null, bool warmStart = false, bool useSchurBlockPrec = false,
-            bool usePseudoTimestepping = false, double pseudoDtau0 = 1.0, double pseudoDtauMax = 1.0e8, int maxPseudoTimeSteps = 20, double pseudoTimeConvergenceCriterion = 1.0e-10,
-            bool disableLocalPreconditioning = false) {
+            StokesExtension.StokesExtensionControl config = null) {
             for(int d = 0; d < D; d++) {
                 if(!bcMap.bndFunction.ContainsKey(NSECommon.VariableNames.Velocity_d(d)))
                     throw new ArgumentException($"Missing boundary condition for variable {NSECommon.VariableNames.Velocity_d(d)}.");
@@ -72,15 +70,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
             ReInit_Control = ReInitControl != null ? ReInitControl : new EllipticReInitAlgoControl();
             this.ReInit_Period = ReInitPeriod;
-            this.linearSolver = linearSolver;
-            this.warmStart = warmStart;
-            this.useSchurBlockPrec = useSchurBlockPrec;
-            this.usePseudoTimestepping = usePseudoTimestepping;
-            this.pseudoDtau0 = pseudoDtau0;
-            this.pseudoDtauMax = pseudoDtauMax;
-            this.maxPseudoTimeSteps = maxPseudoTimeSteps;
-            this.pseudoTimeConvergenceCriterion = pseudoTimeConvergenceCriterion;
-            this.disableLocalPreconditioning = disableLocalPreconditioning;
+            this.config = config ?? new StokesExtension.StokesExtensionControl();
 
         }
 
@@ -94,15 +84,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         bool fullStokes;
         StokesExtentionBoundaryOption useBCmap;
         IncompressibleBoundaryCondMap bcmap;
-        BoSSS.Solution.AdvancedSolvers.ISolverFactory linearSolver;
-        bool warmStart;
-        bool useSchurBlockPrec;
-        bool usePseudoTimestepping;
-        double pseudoDtau0;
-        double pseudoDtauMax;
-        int maxPseudoTimeSteps;
-        double pseudoTimeConvergenceCriterion;
-        bool disableLocalPreconditioning;
+        StokesExtension.StokesExtensionControl config;
 
         /// <summary>
         /// should only be the interface velocity vector; typically, a phase-averaged velocity.
@@ -212,15 +194,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 //dgPltList.AddRange(meanVelocity);
 
                 var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold, fullStokes, useBCMap: useBCmap) {
-                    LinearSolver = this.linearSolver,
-                    WarmStart = this.warmStart,
-                    UseSchurBlockPrec = this.useSchurBlockPrec,
-                    UsePseudoTimestepping = this.usePseudoTimestepping,
-                    PseudoDtau0 = this.pseudoDtau0,
-                    PseudoDtauMax = this.pseudoDtauMax,
-                    MaxPseudoTimeSteps = this.maxPseudoTimeSteps,
-                    PseudoTimeConvergenceCriterion = this.pseudoTimeConvergenceCriterion,
-                    DisableLocalPreconditioning = this.disableLocalPreconditioning
+                    Config = this.config
                 };
                 ExtVelBuilder.SolveExtension(levelSet.LevelSetIndex, levelSet.Tracker, meanVelocity, extensionVelocity);
                 //dgPltList.AddRange(extensionVelocity);
