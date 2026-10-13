@@ -50,8 +50,6 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
 
         const double penalty_safety = 4.0;
 
-        const double viscosity = 1000.0;
-
         /// <summary>
         /// Options controlling <see cref="SolveExtension"/> (solver dispatch, warm-starting,
         /// preconditioning, pseudo-transient continuation); the single source of truth for their defaults.
@@ -84,7 +82,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             {
                 // Momentum, Viscous:
                 for(int d = 0; d < D; d++) {
-                    var visc = new ExtensionSIP(penalty_safety, d, D, map, ViscosityOption.ConstantViscosity, constantViscosityValue: viscosity, useBCMap: m_useBCMap);
+                    var visc = new ExtensionSIP(penalty_safety, d, D, map, ViscosityOption.ConstantViscosity, constantViscosityValue: Config.Viscosity, useBCMap: m_useBCMap);
                     Op.EquationComponents[EquationNames.MomentumEquationComponent(d)].Add(visc);
                 }
 
@@ -263,7 +261,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         /// </param>
         public void SolveExtension(int levelSetIndex, LevelSetTracker lsTrk, DGField[] VelocityAtInterface, SinglePhaseField[] ExtensionVelocity) {
             using(FuncTrace tr = new FuncTrace()) {
-                tr.InfoToConsole = false;
+                tr.InfoToConsole = true;
                 var gDat = lsTrk.GridDat;
                 int deg = ExtensionVelocity[0].Basis.Degree;
 
@@ -397,7 +395,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                             double ifaceDiffNorm = InterfaceVelocityMismatchNorm();
 
                             stw_k.Stop();
-                            Console.WriteLine($"pseudo-time step {k}: dtau={dtau:0.###E-00}, |RHS|={rhsNorm:0.###E-00}, "
+                            tr.Info($"pseudo-time step {k}: dtau={dtau:0.###E-00}, |RHS|={rhsNorm:0.###E-00}, "
                                 + $"true residual={resNorm:0.###E-00} (relative: {relResNorm:0.###E-00}), |u|={u.MPI_L2Norm():0.###E-00}, "
                                 + $"|div(u_ext)|={ExtensionVelocity.Divergence().L2Norm():0.###E-00}, |u_ext - u_iface| on interface={ifaceDiffNorm:0.###E-00}, "
                                 + $"time={stw_k.Elapsed.TotalSeconds:0.###}sec");
@@ -426,7 +424,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                         mgOp.TransformSolFrom(ExtenstionSolVec, Pre_Sol);
                         double ifaceDiffNorm = InterfaceVelocityMismatchNorm();
                         stw.Stop();
-                        Console.WriteLine($"|div(u_ext)|={ExtensionVelocity.Divergence().L2Norm():0.###E-00}, |u_ext - u_iface| on interface={ifaceDiffNorm:0.###E-00}, "
+                        tr.Info($"|div(u_ext)|={ExtensionVelocity.Divergence().L2Norm():0.###E-00}, |u_ext - u_iface| on interface={ifaceDiffNorm:0.###E-00}, "
                             + $"time={stw.Elapsed.TotalSeconds:0.###}sec");
                     }
                     e = null;
