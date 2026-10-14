@@ -1,6 +1,7 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Aggregation;
+using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution.AdvancedSolvers;
@@ -288,13 +289,34 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                 var ifaceQuadRule = ifaceSchemeHelper.GetLevelSetQuadScheme(levelSetIndex, lsTrk.Regions.GetCutCellMask4LevSet(levelSetIndex))
                     .Compile(gDat, this.m_CutCellQuadOrder);
 
+                // Diagnostic: L2 norm of the interface velocity mismatch (normal component only)
                 double InterfaceVelocityMismatchNorm() {
                     double acc = 0.0;
-                    for(int d = 0; d < D; d++) {
-                        double err_d = ExtensionVelocity[d].LxError(VelocityAtInterface[d].Evaluate, null, ifaceQuadRule).Sqrt();
-                        acc += err_d * err_d;
-                    }
-                    return Math.Sqrt(acc);
+                    CellQuadrature.GetQuadrature(new int[] { 1 }, gDat, ifaceQuadRule,
+                        delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+                            NodeSet nodes = QR.Nodes;
+                            int N = nodes.NoOfNodes;
+                            var normals = lsTrk.DataHistories[levelSetIndex].Current.GetLevelSetNormals(nodes, i0, Length);
+
+                            var diff = MultidimensionalArray.Create(Length, N, D);
+                            var ifaceVal = MultidimensionalArray.Create(Length, N);
+                            for(int d = 0; d < D; d++) {
+                                var extSlice = diff.ExtractSubArrayShallow(-1, -1, d);
+                                ExtensionVelocity[d].Evaluate(i0, Length, nodes, extSlice);
+                                VelocityAtInterface[d].Evaluate(i0, Length, nodes, ifaceVal);
+                                extSlice.Acc(-1.0, ifaceVal);
+                            }
+
+                            var dot = MultidimensionalArray.Create(Length, N);
+                            dot.Multiply(1.0, diff, normals, 0.0, "jn", "jnd", "jnd");
+                            EvalResult.ExtractSubArrayShallow(-1, -1, 0).Multiply(1.0, dot, dot, 0.0, "jn", "jn", "jn");
+                        },
+                        delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+                            for(int j = 0; j < Length; j++)
+                                acc += ResultsOfIntegration[j, 0];
+                        }
+                    ).Execute();
+                    return Math.Sqrt(acc.MPISum());
                 }
 
                 //var RHSdg = new CoordinateVector(DummySolFields.Select(dd => dd.CloneAs()));
@@ -392,13 +414,17 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                             double relResNorm = resNorm / Math.Max(rhsNorm, 1.0e-300);
 
                             ExtenstionSolVec.SetV(u, 1.0);
-                            double ifaceDiffNorm = InterfaceVelocityMismatchNorm();
-
                             stw_k.Stop();
+
+                            string diagnostics = "";
+                            if(Config.WriteDebugInfoLevel >= 2) {
+                                double ifaceDiffNorm = InterfaceVelocityMismatchNorm();
+                                diagnostics = $", |div(u_ext)|={ExtensionVelocity.Divergence().L2Norm():0.###E-00}, "
+                                    + $"|u_ext - u_iface| on interface={ifaceDiffNorm:0.###E-00}";
+                            }
                             tr.Info($"pseudo-time step {k+1}: dtau={dtau:0.###E-00}, |RHS|={rhsNorm:0.###E-00}, "
-                                + $"true residual={resNorm:0.###E-00} (relative: {relResNorm:0.###E-00}), |u|={u.MPI_L2Norm():0.###E-00}, "
-                                + $"|div(u_ext)|={ExtensionVelocity.Divergence().L2Norm():0.###E-00}, |u_ext - u_iface| on interface={ifaceDiffNorm:0.###E-00}, "
-                                + $"time={stw_k.Elapsed.TotalSeconds:0.###}sec");
+                                + $"true residual={resNorm:0.###E-00} (relative: {relResNorm:0.###E-00}), |u|={u.MPI_L2Norm():0.###E-00}"
+                                + $"{diagnostics}, time={stw_k.Elapsed.TotalSeconds:0.###}sec");
 
                             if(relResNorm < Config.PseudoTimeConvergenceCriterion)
                                 break;
@@ -422,10 +448,15 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                         SolveOnce(mgOp, Pre_Sol, Pre_RHS);
 
                         mgOp.TransformSolFrom(ExtenstionSolVec, Pre_Sol);
-                        double ifaceDiffNorm = InterfaceVelocityMismatchNorm();
                         stw.Stop();
-                        tr.Info($"|div(u_ext)|={ExtensionVelocity.Divergence().L2Norm():0.###E-00}, |u_ext - u_iface| on interface={ifaceDiffNorm:0.###E-00}, "
-                            + $"time={stw.Elapsed.TotalSeconds:0.###}sec");
+
+                        string diagnostics = "";
+                        if(Config.WriteDebugInfoLevel >= 2) {
+                            double ifaceDiffNorm = InterfaceVelocityMismatchNorm();
+                            diagnostics = $"|div(u_ext)|={ExtensionVelocity.Divergence().L2Norm():0.###E-00}, "
+                                + $"|u_ext - u_iface| on interface={ifaceDiffNorm:0.###E-00}, ";
+                        }
+                        tr.Info($"{diagnostics}time={stw.Elapsed.TotalSeconds:0.###}sec");
                     }
                     e = null;
                 } catch(Exception ee) {

@@ -67,12 +67,20 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         public bool DisableLocalPreconditioning = false;
 
         /// <summary>
-        /// Artificial (not physical) viscosity of the Stokes-extension equation itself -- not the
+        /// Artificial viscosity of the StokesExtension equation itself -- not the
         /// physical flow's viscosity. Affects both the conditioning of the extension's linear system
         /// and the relative strength of the interface-matching penalty against the viscous term.
         /// </summary>
         [DataMember]
         public double Viscosity = 1.0;
+
+        /// <summary>
+        /// Amount of debug information to write (via <see cref="BoSSS.Solution.LevelSetTools.StokesExtension.StokesExtension.SolveExtension"/>'s
+        /// <c>FuncTrace</c>): 0 writes nothing extra; 2 or higher additionally computes and logs,
+        /// per pseudo-time step, the interface-velocity-mismatch and divergence norms.
+        /// </summary>
+        [DataMember]
+        public uint WriteDebugInfoLevel = 0;
 
         /// <summary>
         /// Shallow copy; used to resolve externally-derived defaults (e.g. <see cref="PseudoDtau0"/>'s
