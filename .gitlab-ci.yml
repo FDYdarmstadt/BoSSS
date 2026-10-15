@@ -13,7 +13,7 @@ stages:
 build:
   stage: build
   script: 
-    - dotnet build ./src/Public.sln -c Release -v q # build the project
+    - dotnet build ./src/Public.sln -c Release -v q /m:4 /nr:false # build the project
   tags:
     - big_server
     - windows
