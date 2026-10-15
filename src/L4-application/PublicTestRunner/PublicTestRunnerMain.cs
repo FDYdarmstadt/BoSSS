@@ -713,49 +713,71 @@ namespace PublicTestRunner {
         /// started after the original test-runner process has already been terminated.
         /// </summary>
         public static int CancelSubmittedJobs(int executionQueueNo, string pipelineIdentifier) {
-            string manifestFileName = GetSubmissionManifestFileName(pipelineIdentifier);
-            if(!File.Exists(manifestFileName)) {
-                Console.WriteLine($"No submission manifest for pipeline '{pipelineIdentifier}' found; nothing to cancel.");
-                return 0;
-            }
-
-            BoSSSshell.ReloadExecutionQueues();
-            if(executionQueueNo < 0 || executionQueueNo >= BoSSSshell.ExecutionQueues.Count) {
-                Console.Error.WriteLine($"Execution queue #{executionQueueNo} does not exist; cannot cancel submitted jobs.");
-                return -1;
-            }
-
-            BatchProcessorClient bpc = BoSSSshell.ExecutionQueues[executionQueueNo];
-            string[] identifiers = File.ReadAllLines(manifestFileName)
-                .Select(line => line.Trim())
-                .Where(line => line.IsNonEmpty())
-                .Distinct()
-                .ToArray();
-
-            Console.WriteLine($"Cancelling {identifiers.Length} job(s) recorded for pipeline '{pipelineIdentifier}' using queue #{executionQueueNo}: {bpc}.");
-            int failures = 0;
-            foreach(string id in identifiers) {
-                try {
-                    bpc.Cancel(id, "GitLab CI job was cancelled");
-                } catch(Exception e) {
-                    failures++;
-                    Console.Error.WriteLine($"Unable to cancel submitted job {id}: {e.GetType().Name}: {e.Message}");
+            try {
+                string manifestFileName = GetSubmissionManifestFileName(pipelineIdentifier);
+                if(!File.Exists(manifestFileName)) {
+                    Console.WriteLine($"No submission manifest for pipeline '{pipelineIdentifier}' found; nothing to cancel.");
+                    return 0;
                 }
-            }
 
-            if(failures == 0) {
-                File.Delete(manifestFileName);
-                Console.WriteLine("Submitted-job cancellation completed.");
-                return 0;
-            }
+                BoSSSshell.ReloadExecutionQueues();
+                if(executionQueueNo < 0 || executionQueueNo >= BoSSSshell.ExecutionQueues.Count) {
+                    Console.Error.WriteLine($"Execution queue #{executionQueueNo} does not exist; cannot cancel submitted jobs.");
+                    return -1;
+                }
 
-            Console.Error.WriteLine($"Cancellation completed with {failures} error(s); keeping the active marker for diagnosis.");
-            return -1;
+                BatchProcessorClient bpc = BoSSSshell.ExecutionQueues[executionQueueNo];
+                string[] identifiers = File.ReadAllLines(manifestFileName)
+                    .Select(line => line.Trim())
+                    .Where(line => line.IsNonEmpty())
+                    .Distinct()
+                    .ToArray();
+
+                Console.WriteLine($"Cancelling {identifiers.Length} job(s) recorded for pipeline '{pipelineIdentifier}' using queue #{executionQueueNo}: {bpc}.");
+                int failures = 0;
+                if(bpc is SlurmClient slurm) {
+                    try {
+                        slurm.CancelMany(identifiers, "GitLab CI job was cancelled");
+                    } catch(Exception e) {
+                        failures++;
+                        Console.Error.WriteLine($"Unable to cancel submitted Slurm jobs: {e.GetType().Name}: {e.Message}");
+                    }
+                } else {
+                    foreach(string id in identifiers) {
+                        try {
+                            bpc.Cancel(id, "GitLab CI job was cancelled");
+                        } catch(Exception e) {
+                            failures++;
+                            Console.Error.WriteLine($"Unable to cancel submitted job {id}: {e.GetType().Name}: {e.Message}");
+                        }
+                    }
+                }
+
+                if(failures == 0) {
+                    File.Delete(manifestFileName);
+                    Console.WriteLine("Submitted-job cancellation completed.");
+                    return 0;
+                }
+
+                Console.Error.WriteLine($"Cancellation completed with {failures} error(s); keeping the active marker for diagnosis.");
+                return -1;
+            } finally {
+                SlurmClient.CloseAllSSHconnections();
+            }
         }
 
         public static int JobManagerRun(string AssemblyFilter, int ExecutionQueueNo, int BackupExecutionQueueNo = -1, string PipelineIdentifier = null) {
-            AppDomain.CurrentDomain.ProcessExit += CancelAllJobsOnExit;
-            Console.CancelKeyPress += CancelAllJobsOnExit;
+            // CI runs with a pipeline identifier persist the submitted batch IDs and
+            // let the GitLab after_script cancel precisely those IDs. Do not run
+            // the legacy in-process cancellation here: it visits every submitted
+            // job individually and can exhaust GitLab's cancellation grace period
+            // before the after_script gets a chance to run.
+            if(PipelineIdentifier.IsEmptyOrWhite()) {
+                AppDomain.CurrentDomain.ProcessExit += CancelAllJobsOnExit;
+                Console.CancelKeyPress += CancelAllJobsOnExit;
+            } else {
+                Console.WriteLine($"Pipeline '{PipelineIdentifier}' uses manifest-based cancellation in the GitLab after_script.");
+            }
             BackupExecutionQueueNo = BackupExecutionQueueNo >= 0 ? BackupExecutionQueueNo : ExecutionQueueNo;
 
             // ===================================

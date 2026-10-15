@@ -63,7 +63,7 @@ ValidationTestsLocal:
       - ls *.html
   after_script:
       - cd public/src/L4-application/ValidationTestRunner/bin/Release/net10.0
-      - if ($env:CI_JOB_STATUS -eq "canceled") { ./ValidationTestRunner.exe canceljobmanager queue#0 pipeline#$env:CI_PIPELINE_ID }
+      - ./ValidationTestRunner.exe canceljobmanager queue#0 pipeline#$env:CI_PIPELINE_ID
   dependencies:
     - build
   needs:
@@ -87,7 +87,7 @@ ValidationTestsLichtenberg:
       - ls *.html     
   after_script:
       - cd public/src/L4-application/ValidationTestRunner/bin/Release/net10.0
-      - if [ "$CI_JOB_STATUS" = "canceled" ]; then dotnet ValidationTestRunner.dll canceljobmanager queue#2 pipeline#$CI_PIPELINE_ID; fi
+      - dotnet ValidationTestRunner.dll canceljobmanager queue#2 pipeline#$CI_PIPELINE_ID
   dependencies:
     - build
   needs:
