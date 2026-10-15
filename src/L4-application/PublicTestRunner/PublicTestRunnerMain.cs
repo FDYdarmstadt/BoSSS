@@ -257,6 +257,47 @@ namespace PublicTestRunner {
 
         private static List<Job> AllJobs = new();
 
+        // Recording is intentionally opt-in. A CI job passes the same pipeline
+        // identifier to runjobmanager and to canceljobmanager in its after_script.
+        static string SubmissionManifestFileName;
+
+        static string GetSubmissionManifestFileName(string pipelineIdentifier) {
+            if(pipelineIdentifier.IsEmptyOrWhite())
+                return null;
+            if(pipelineIdentifier.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0
+                || pipelineIdentifier.Contains(Path.DirectorySeparatorChar)
+                || pipelineIdentifier.Contains(Path.AltDirectorySeparatorChar))
+                throw new ArgumentException("Pipeline identifier contains characters which are invalid in a file name.", nameof(pipelineIdentifier));
+
+            return "runjobmanager-submissions-" + pipelineIdentifier + ".txt";
+        }
+
+        static void StartSubmissionManifest(string pipelineIdentifier) {
+            SubmissionManifestFileName = GetSubmissionManifestFileName(pipelineIdentifier);
+            if(SubmissionManifestFileName == null)
+                return;
+
+            File.Delete(SubmissionManifestFileName);
+            File.WriteAllText(SubmissionManifestFileName, "");
+            Console.WriteLine($"Recording submitted batch job identifiers for pipeline '{pipelineIdentifier}' in '{SubmissionManifestFileName}'.");
+        }
+
+        static void RecordSubmittedJob(Job job) {
+            if(SubmissionManifestFileName == null)
+                return;
+
+            string id = job?.LatestDeployment?.BatchProcessorIdentifierToken;
+            if(id.IsEmptyOrWhite())
+                throw new IOException($"Unable to record batch job identifier for {job?.Name ?? "unknown job"}.");
+
+            File.AppendAllText(SubmissionManifestFileName, id.Trim() + System.Environment.NewLine);
+        }
+
+        static void FinishSubmissionManifest() {
+            if(SubmissionManifestFileName != null && File.Exists(SubmissionManifestFileName))
+                File.Delete(SubmissionManifestFileName);
+        }
+
         /// <summary>
         /// finds all assemblies which potentially contain tests.
         /// </summary>
@@ -650,23 +691,93 @@ namespace PublicTestRunner {
         public static string RunnerPrefix = "Pub";
 
         public static void CancelAllJobsOnExit(object sender, EventArgs args) {
-            var running = AllJobs.Where(j => !(j.Status == JobStatus.FinishedSuccessful || j.Status == JobStatus.FailedOrCanceled)).ToArray();
-            if(running.Length < 0) {
-                Console.WriteLine("No running jobs.");
+            // Do not query Slurm status here: one query per job can exhaust the
+            // GitLab cancellation grace period. `scancel` is safe for completed jobs.
+            var submitted = AllJobs.Where(j => j?.LatestDeployment?.BatchProcessorIdentifierToken.IsNonEmpty() ?? false).ToArray();
+            if(submitted.Length == 0) {
+                Console.WriteLine("No submitted jobs to cancel.");
                 return;
             }
 
-            Console.WriteLine($"Forcefully Cancelling {running.Length} Jobs");
-            foreach(Job job in running) {
+            Console.WriteLine($"Forcefully cancelling {submitted.Length} submitted job(s).");
+            foreach(Job job in submitted) {
                 Console.WriteLine($"Canceling {job.Name}...");
                 job.LatestDeployment.Cancel("Forcefully Cancelled");
             }
 
         }
 
-        public static int JobManagerRun(string AssemblyFilter, int ExecutionQueueNo, int BackupExecutionQueueNo = -1) {
-            AppDomain.CurrentDomain.ProcessExit += CancelAllJobsOnExit;
-            Console.CancelKeyPress += CancelAllJobsOnExit;
+        /// <summary>
+        /// Cancels the jobs recorded by an interrupted <c>runjobmanager</c> process.
+        /// This entry point is designed for a GitLab <c>after_script</c>, which is
+        /// started after the original test-runner process has already been terminated.
+        /// </summary>
+        public static int CancelSubmittedJobs(int executionQueueNo, string pipelineIdentifier) {
+            try {
+                string manifestFileName = GetSubmissionManifestFileName(pipelineIdentifier);
+                if(!File.Exists(manifestFileName)) {
+                    Console.WriteLine($"No submission manifest for pipeline '{pipelineIdentifier}' found; nothing to cancel.");
+                    return 0;
+                }
+
+                BoSSSshell.ReloadExecutionQueues();
+                if(executionQueueNo < 0 || executionQueueNo >= BoSSSshell.ExecutionQueues.Count) {
+                    Console.Error.WriteLine($"Execution queue #{executionQueueNo} does not exist; cannot cancel submitted jobs.");
+                    return -1;
+                }
+
+                BatchProcessorClient bpc = BoSSSshell.ExecutionQueues[executionQueueNo];
+                string[] identifiers = File.ReadAllLines(manifestFileName)
+                    .Select(line => line.Trim())
+                    .Where(line => line.IsNonEmpty())
+                    .Distinct()
+                    .ToArray();
+
+                Console.WriteLine($"Cancelling {identifiers.Length} job(s) recorded for pipeline '{pipelineIdentifier}' using queue #{executionQueueNo}: {bpc}.");
+                int failures = 0;
+                if(bpc is SlurmClient slurm) {
+                    try {
+                        slurm.CancelMany(identifiers, "GitLab CI job was cancelled");
+                    } catch(Exception e) {
+                        failures++;
+                        Console.Error.WriteLine($"Unable to cancel submitted Slurm jobs: {e.GetType().Name}: {e.Message}");
+                    }
+                } else {
+                    foreach(string id in identifiers) {
+                        try {
+                            bpc.Cancel(id, "GitLab CI job was cancelled");
+                        } catch(Exception e) {
+                            failures++;
+                            Console.Error.WriteLine($"Unable to cancel submitted job {id}: {e.GetType().Name}: {e.Message}");
+                        }
+                    }
+                }
+
+                if(failures == 0) {
+                    File.Delete(manifestFileName);
+                    Console.WriteLine("Submitted-job cancellation completed.");
+                    return 0;
+                }
+
+                Console.Error.WriteLine($"Cancellation completed with {failures} error(s); keeping the active marker for diagnosis.");
+                return -1;
+            } finally {
+                SlurmClient.CloseAllSSHconnections();
+            }
+        }
+
+        public static int JobManagerRun(string AssemblyFilter, int ExecutionQueueNo, int BackupExecutionQueueNo = -1, string PipelineIdentifier = null) {
+            // CI runs with a pipeline identifier persist the submitted batch IDs and
+            // let the GitLab after_script cancel precisely those IDs. Do not run
+            // the legacy in-process cancellation here: it visits every submitted
+            // job individually and can exhaust GitLab's cancellation grace period
+            // before the after_script gets a chance to run.
+            if(PipelineIdentifier.IsEmptyOrWhite()) {
+                AppDomain.CurrentDomain.ProcessExit += CancelAllJobsOnExit;
+                Console.CancelKeyPress += CancelAllJobsOnExit;
+            } else {
+                Console.WriteLine($"Pipeline '{PipelineIdentifier}' uses manifest-based cancellation in the GitLab after_script.");
+            }
             BackupExecutionQueueNo = BackupExecutionQueueNo >= 0 ? BackupExecutionQueueNo : ExecutionQueueNo;
 
             // ===================================
@@ -694,6 +805,8 @@ namespace PublicTestRunner {
                 throw new NotSupportedException("(primary) batch queue and backup batch queue must be the same server (`IsSameSystem` test must evaluate to true)");
             }
             bpc2.EnsurePathsExist();
+
+            StartSubmissionManifest(PipelineIdentifier);
 
             FileStream ServerMutex;
             string DateNtime = null;
@@ -886,6 +999,7 @@ namespace PublicTestRunner {
                             (Job job, string resultFile, string name) j = SubmitJob(ass, testname, shortname, TestTypeProvider.RetryCount, bpc, depfiles, DateNtime, NoOfProcs, NumThreads, NativeOverride, RelManagedPath, cnt);
 
                             AllJobs.Add(j.job);
+                            RecordSubmittedJob(j.job);
 
                             // Check if there exists timing information for this job
                             if(!monitor.JobExists(j.job, DateNtime)) {
@@ -971,6 +1085,7 @@ namespace PublicTestRunner {
                                     Console.WriteLine("Trying once again with failed job...");
                                     job.AssignedBatchProc = bpc2;
                                     job.Reactivate();
+                                    RecordSubmittedJob(job);
                                     continue;
                                 }
                             }
@@ -1212,6 +1327,9 @@ namespace PublicTestRunner {
 
             CloseTracing();
 
+            // The runner completed its own cleanup. Keep the manifest for audit,
+            // but mark it inactive so a normal GitLab after_script does nothing.
+            FinishSubmissionManifest();
             return returnCode;
         }
 
@@ -1768,6 +1886,8 @@ namespace PublicTestRunner {
             Console.WriteLine("         runjobmanager         : submit tests to the job manger.");
             Console.WriteLine("         runjobmanager-release : submit ALL tests to the job manger.");
             Console.WriteLine("         runjobmanager-debug   : submit only DEBUG tests to the job manger.");
+            Console.WriteLine("         runjobmanager ... queue#N pipeline#ID : additionally record jobs under ID.");
+            Console.WriteLine("         canceljobmanager queue#N pipeline#ID : cancel jobs recorded under ID.");
             Console.WriteLine("         runjobmanager-ignore_tests_w_deps : ignore all tests which have the");
             Console.WriteLine("                                 'NUnitFileToCopyHack' attribute; these depend");
             Console.WriteLine("                                 on files within the source repo; skipping those");
@@ -1910,8 +2030,9 @@ namespace PublicTestRunner {
                 }
 
                 int iQueue = 1, iBkupQueue = 1;
+                string pipelineIdentifier = null;
                 string filter = args.Length > 1 ? args[1] : "*";
-                if(args.Length == 3) {
+                if(args.Length >= 3) {
                     Console.WriteLine("arg 2 is:" + args[2]);
                     if(args[2].StartsWith("queue#")) {
                         try {
@@ -1933,11 +2054,38 @@ namespace PublicTestRunner {
                         PrintMainUsage();
                         break;
                     }
-                } else {
-
                 }
 
-                ret = JobManagerRun(filter, iQueue, iBkupQueue);
+                if(args.Length == 4) {
+                    if(!args[3].StartsWith("pipeline#") || args[3].Length <= "pipeline#".Length) {
+                        Console.Error.WriteLine("Pipeline identifier must use the form pipeline#<identifier>.");
+                        PrintMainUsage();
+                        ret = -1;
+                        break;
+                    }
+                    pipelineIdentifier = args[3].Substring("pipeline#".Length);
+                } else if(args.Length > 4) {
+                    PrintMainUsage();
+                    ret = -1;
+                    break;
+                }
+
+                ret = JobManagerRun(filter, iQueue, iBkupQueue, pipelineIdentifier);
+                break;
+
+                case "canceljobmanager":
+                if(args.Length != 3 || !args[1].StartsWith("queue#") || !args[2].StartsWith("pipeline#")) {
+                    Console.Error.WriteLine("Usage: canceljobmanager queue#<number> pipeline#<identifier>");
+                    ret = -1;
+                    break;
+                }
+                try {
+                    int queue = int.Parse(args[1].Split(new[] { '#' }, StringSplitOptions.RemoveEmptyEntries)[1]);
+                    ret = CancelSubmittedJobs(queue, args[2].Substring("pipeline#".Length));
+                } catch(Exception e) {
+                    Console.Error.WriteLine($"Unable to cancel submitted jobs: {e.GetType().Name}: {e.Message}");
+                    ret = -1;
+                }
                 break;
 
                 case "help":

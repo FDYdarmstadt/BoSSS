@@ -13,7 +13,7 @@ stages:
 build:
   stage: build
   script: 
-    - dotnet build ./src/Public.sln -c Release -v q # build the project
+    - dotnet build ./src/Public.sln -c Release -v q /m:4 /nr:false # build the project
   tags:
     - big_server
     - windows
@@ -58,9 +58,12 @@ ValidationTestsLocal:
       - cd public/src/L4-application/ValidationTestRunner/bin/Release/net10.0
       - dir ValidationTestRunner*
       - $Env:BOSSS_RUNTESTFROMBACKUP = "yesofcourse"
-      - ./ValidationTestRunner.exe runjobmanager ValidationTestRunner\\*WorksheetTests_Local* queue#0
+      - ./ValidationTestRunner.exe runjobmanager ValidationTestRunner\\*WorksheetTests_Local* queue#0 pipeline#$env:CI_PIPELINE_ID
       - ls result*.xml
       - ls *.html
+  after_script:
+      - cd public/src/L4-application/ValidationTestRunner/bin/Release/net10.0
+      - ./ValidationTestRunner.exe canceljobmanager queue#0 pipeline#$env:CI_PIPELINE_ID
   dependencies:
     - build
   needs:
@@ -79,9 +82,12 @@ ValidationTestsLichtenberg:
   script: 
       - cd public/src/L4-application/ValidationTestRunner/bin/Release/net10.0
       - export BOSSS_RUNTESTFROMBACKUP=yesofcourse
-      - dotnet ValidationTestRunner.dll runjobmanager ValidationTestRunner\\WorksheetTests_Lichtenberg.* queue#2
+      - dotnet ValidationTestRunner.dll runjobmanager ValidationTestRunner\\WorksheetTests_Lichtenberg.* queue#2 pipeline#$CI_PIPELINE_ID
       - ls result*.xml
       - ls *.html     
+  after_script:
+      - cd public/src/L4-application/ValidationTestRunner/bin/Release/net10.0
+      - dotnet ValidationTestRunner.dll canceljobmanager queue#2 pipeline#$CI_PIPELINE_ID
   dependencies:
     - build
   needs:

@@ -211,6 +211,15 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
+        /// <summary>
+        /// Closes cached SSH connections explicitly. Batch cleanup commands use
+        /// this before returning so their SSH client cannot keep CI build files
+        /// open while GitLab starts the next job.
+        /// </summary>
+        public static void CloseAllSSHconnections() {
+            KillAllSSHconnections();
+        }
+
         static SlurmClient() {
             AppDomain.CurrentDomain.ProcessExit += delegate (object sender, EventArgs args) {
                 KillAllSSHconnections();
@@ -503,6 +512,27 @@ namespace BoSSS.Application.BoSSSpad {
                 tr.Info($"Canceling Job {idToken}");
                 var cancelcmd = "scancel " + idToken;
                 SSHConnection.RunCommand(cancelcmd);
+            }
+        }
+
+        /// <summary>
+        /// Cancels several Slurm jobs per SSH command. This is used by CI cleanup,
+        /// where cancelling hundreds of submitted tests one-by-one can exceed the
+        /// GitLab cancellation grace period.
+        /// </summary>
+        public void CancelMany(IEnumerable<string> idTokens, string message) {
+            const int batchSize = 100;
+            string[] tokens = idTokens
+                .Where(id => id.IsNonEmpty())
+                .Distinct()
+                .ToArray();
+
+            for(int i = 0; i < tokens.Length; i += batchSize) {
+                string batch = string.Join(" ", tokens.Skip(i).Take(batchSize));
+                using(var tr = new FuncTrace()) {
+                    tr.Info($"Canceling {Math.Min(batchSize, tokens.Length - i)} Slurm job(s)");
+                    SSHConnection.RunCommand("scancel " + batch);
+                }
             }
         }
 
