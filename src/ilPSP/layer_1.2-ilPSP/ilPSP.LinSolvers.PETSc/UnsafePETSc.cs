@@ -17,223 +17,473 @@ limitations under the License.
 using System;
 using System.Runtime.InteropServices;
 using System.Security;
-using System.Text;
+using System.Threading;
 using MPI.Wrappers.Utils;
 
 namespace ilPSP.LinSolvers.PETSc {
 
     /// <summary>
-    /// Dynamic binding to the BoSSS-owned PETSc C ABI in a dedicated native library.
+    /// Direct dynamic binding to the PETSc C ABI used by BoSSS PETSc solvers.
     /// </summary>
+    /// <remarks>
+    /// This class deliberately exposes only the PETSc functions needed by the
+    /// existing BoSSS wrapper and direct-ABI solvers. It assumes the BoSSS PETSc ABI contract:
+    /// real double scalars and 32-bit <c>PetscInt</c>. PETSc handles are opaque
+    /// pointers; ownership follows the PETSc C API exactly.
+    /// </remarks>
     [SuppressUnmanagedCodeSecurity]
     public sealed class UnsafePETSc : DynLibLoader {
 
         static (string[] _LibNames, string[][][] PrequesiteLibraries, GetNameMangling[] NameMangling, PlatformID[] OsFilter, int[] PointerSizeFilter) SelectLibrary(PETScNativeVariant variant) {
-            string linuxName;
             string windowsName;
-            bool includeLegacyLinuxName = false;
+            string linuxName;
             switch(variant) {
                 case PETScNativeVariant.Mpi:
-                    linuxName = "libBoSSSnative_petsc_mpi.so";
-                    windowsName = "BoSSSnative_petsc_mpi.dll";
-                    includeLegacyLinuxName = true;
+                    windowsName = "libpetsc_mpi.dll";
+                    linuxName = "libpetsc_mpi.so";
                     break;
                 case PETScNativeVariant.OpenMp:
-                    linuxName = "libBoSSSnative_petsc_omp.so";
-                    windowsName = "BoSSSnative_petsc_omp.dll";
+                    windowsName = "libpetsc_omp.dll";
+                    linuxName = "libpetsc_omp.so";
                     break;
                 case PETScNativeVariant.MpiOpenMp:
-                    linuxName = "libBoSSSnative_petsc_mpi_omp.so";
-                    windowsName = "BoSSSnative_petsc_mpi_omp.dll";
+                    windowsName = "libpetsc_mpi_omp.dll";
+                    linuxName = "libpetsc_mpi_omp.so";
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(variant), variant, "Unknown PETSc native variant.");
             }
 
-            string[] libraryNames = includeLegacyLinuxName
-                ? new[] { windowsName, linuxName, "libBoSSSnative_mpi.so" }
-                : new[] { windowsName, linuxName };
-            var nameMangling = new GetNameMangling[libraryNames.Length];
-            var osFilter = new PlatformID[libraryNames.Length];
-            var pointerSizeFilter = new int[libraryNames.Length];
-            for(int i = 0; i < libraryNames.Length; i++) {
-                nameMangling[i] = DynLibLoader.Identity;
-                osFilter[i] = i == 0 ? PlatformID.Win32NT : PlatformID.Unix;
-                pointerSizeFilter[i] = -1;
-            }
-            return (libraryNames, new string[libraryNames.Length][][], nameMangling, osFilter, pointerSizeFilter);
+            return (
+                new[] { windowsName, linuxName },
+                new[] { Array.Empty<string[]>(), Array.Empty<string[]>() },
+                new GetNameMangling[] { DynLibLoader.Identity, DynLibLoader.Identity },
+                new[] { PlatformID.Win32NT, PlatformID.Unix },
+                new[] { 8, 8 });
         }
 
         /// <summary>
-        /// Loads the selected native library and resolves the PETSc entry points.
+        /// Loads the shared PETSc ABI corresponding to <paramref name="variant"/>.
         /// </summary>
+        /// <remarks>
+        /// Windows and Linux shared PETSc artifacts are produced by the PETSc
+        /// platform build scripts and staged beside BoSSS native libraries.
+        /// </remarks>
         public UnsafePETSc(PETScNativeVariant variant = PETScNativeVariant.Mpi) : base(SelectLibrary(variant)) {
             NativeVariant = variant;
         }
 
-        /// <summary>
-        /// Native runtime selected by this loader.
-        /// </summary>
+        /// <summary>Native PETSc runtime selected by this binding.</summary>
         public PETScNativeVariant NativeVariant { get; }
 
+        /// <summary>Current BoSSS PETSc ABI uses a 32-bit <c>PetscInt</c>.</summary>
+        public const int PetscIntSize = 4;
+
+        /// <summary>Current BoSSS PETSc ABI uses a real double <c>PetscScalar</c>.</summary>
+        public const int PetscScalarSize = 8;
+
+        /// <summary>Signature of a PETSc error handler.</summary>
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate int _bosss_petsc_initialize();
+        public delegate int PetscErrorHandler(IntPtr communicator, int line, IntPtr function, IntPtr file, int errorCode, int errorType, IntPtr message, IntPtr context);
+
+        /// <summary>Signature of a PETSc KSP convergence monitor.</summary>
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate int KspMonitor(IntPtr ksp, int iteration, double residualNorm, IntPtr context);
+
+        /// <summary>Signature of a PETSc shell-preconditioner apply callback.</summary>
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate int PcShellApply(IntPtr pc, IntPtr input, IntPtr output);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate int _BoSSS_PETSc_Initialize();
+        internal delegate int _PetscInitializeNoArguments();
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _PetscInitialized(out int initialized);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _PetscFinalize();
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _PetscGetVersion([Out] byte[] version, UIntPtr length);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _PetscErrorMessage(int errorCode, out IntPtr text, IntPtr specific);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _PetscPushErrorHandler(PetscErrorHandler handler, IntPtr context);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _PetscPopErrorHandler();
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _PetscReturnErrorHandler(IntPtr communicator, int line, IntPtr function, IntPtr file, int errorCode, int errorType, IntPtr message, IntPtr context);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate int _BoSSS_PETSc_GetVersion(byte[] buffer, int bufferLength);
+        internal delegate int _PetscOptionsCreate(out IntPtr options);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _PetscOptionsDestroy(ref IntPtr options);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _PetscOptionsInsertString(IntPtr options, [MarshalAs(UnmanagedType.LPStr)] string optionsString);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _PetscOptionsClear(IntPtr options);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _PetscObjectSetOptions(IntPtr petscObject, IntPtr options);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _PetscObjectTypeCompare(IntPtr petscObject, [MarshalAs(UnmanagedType.LPStr)] string typeName, out int matches);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate int _bosss_petsc_create_matrix_solver(
-            int localRows,
-            int globalRows,
-            int globalRowStart,
-            int[] rowPointers,
-            int[] columnIndices,
-            double[] values,
-            out IntPtr solver);
+        internal delegate int _ISCreateGeneral(IntPtr communicator, int length, IntPtr indices, int copyMode, out IntPtr indexSet);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _ISCreateStride(IntPtr communicator, int length, int first, int step, out IntPtr indexSet);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _ISDestroy(ref IntPtr indexSet);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate int _bosss_petsc_create_split_csr_matrix_solver(
-            int localRows,
-            int globalRows,
-            int globalRowStart,
-            int[] diagonalRowPointers,
-            int[] diagonalColumnIndices,
-            double[] diagonalValues,
-            int[] offdiagonalRowPointers,
-            int[] offdiagonalColumnIndices,
-            double[] offdiagonalValues,
-            out IntPtr solver);
+        internal delegate int _VecCreateMPI(IntPtr communicator, int localSize, int globalSize, out IntPtr vector);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _VecCreateSeq(IntPtr communicator, int size, out IntPtr vector);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _VecDestroy(ref IntPtr vector);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _VecSet(IntPtr vector, double value);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _VecGetArray(IntPtr vector, out IntPtr values);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _VecGetArrayRead(IntPtr vector, out IntPtr values);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _VecRestoreArray(IntPtr vector, ref IntPtr values);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _VecRestoreArrayRead(IntPtr vector, ref IntPtr values);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _VecScatterCreate(IntPtr source, IntPtr sourceIndices, IntPtr destination, IntPtr destinationIndices, out IntPtr scatter);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _VecScatterBegin(IntPtr scatter, IntPtr source, IntPtr destination, int insertMode, int scatterMode);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _VecScatterEnd(IntPtr scatter, IntPtr source, IntPtr destination, int insertMode, int scatterMode);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _VecScatterDestroy(ref IntPtr scatter);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate int _bosss_petsc_create_ksp_for_matrix(IntPtr solver);
+        internal delegate int _MatCreateAIJ(IntPtr communicator, int localRows, int localColumns, int globalRows, int globalColumns, int diagonalNonzeros, IntPtr diagonalNonzerosPerRow, int offDiagonalNonzeros, IntPtr offDiagonalNonzerosPerRow, out IntPtr matrix);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _MatSeqAIJSetPreallocationCSR(IntPtr matrix, IntPtr rowPointers, IntPtr columnIndices, IntPtr values);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _MatMPIAIJSetPreallocationCSR(IntPtr matrix, IntPtr rowPointers, IntPtr columnIndices, IntPtr values);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _MatCreateMPIAIJWithSplitArrays(IntPtr communicator, int localRows, int localColumns, int globalRows, int globalColumns, IntPtr diagonalRowPointers, IntPtr diagonalColumnIndices, IntPtr diagonalValues, IntPtr offDiagonalRowPointers, IntPtr offDiagonalColumnIndices, IntPtr offDiagonalValues, out IntPtr matrix);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _MatCreateShell(IntPtr communicator, int localRows, int localColumns, int globalRows, int globalColumns, IntPtr context, out IntPtr matrix);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _MatDestroy(ref IntPtr matrix);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _MatSetValues(IntPtr matrix, int rowCount, IntPtr rows, int columnCount, IntPtr columns, IntPtr values, int insertMode);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _MatAssemblyBegin(IntPtr matrix, int assemblyType);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _MatAssemblyEnd(IntPtr matrix, int assemblyType);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _MatGetOwnershipRange(IntPtr matrix, out int firstRow, out int lastRow);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _MatCreateVecs(IntPtr matrix, out IntPtr rightVector, out IntPtr leftVector);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _MatShellGetContext(IntPtr matrix, out IntPtr context);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _MatShellSetOperation(IntPtr matrix, int operation, IntPtr callback);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate int _bosss_petsc_configure_ksp_solver(
-            IntPtr solver,
-            [MarshalAs(UnmanagedType.LPStr)] string petscOptions,
-            int firstFieldRowsCount,
-            int[] firstFieldRowIndices,
-            int secondFieldRowsCount,
-            int[] secondFieldRowIndices);
+        internal delegate int _KSPCreate(IntPtr communicator, out IntPtr ksp);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _KSPDestroy(ref IntPtr ksp);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _KSPSetType(IntPtr ksp, [MarshalAs(UnmanagedType.LPStr)] string typeName);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _KSPSetUp(IntPtr ksp);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _KSPSolve(IntPtr ksp, IntPtr rightHandSide, IntPtr solution);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _KSPSetTolerances(IntPtr ksp, double relativeTolerance, double absoluteTolerance, double divergenceTolerance, int maximumIterations);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _KSPSetInitialGuessNonzero(IntPtr ksp, int initialGuessNonzero);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _KSPGetResidualNorm(IntPtr ksp, out double residualNorm);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _KSPGetIterationNumber(IntPtr ksp, out int iterations);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _KSPGetConvergedReason(IntPtr ksp, out int reason);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _KSPGetPC(IntPtr ksp, out IntPtr pc);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _KSPMonitorSet(IntPtr ksp, KspMonitor monitor, IntPtr context, IntPtr destroy);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _KSPGMRESSetRestart(IntPtr ksp, int restart);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _KSPSetFromOptions(IntPtr ksp);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _KSPSetOperators(IntPtr ksp, IntPtr matrix, IntPtr preconditionerMatrix);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate int _bosss_petsc_setup_ksp_solver(IntPtr solver);
-
+        internal delegate int _PCSetType(IntPtr pc, [MarshalAs(UnmanagedType.LPStr)] string typeName);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate void _bosss_petsc_ksp_monitor(IntPtr context, int iteration, double residualNorm);
-
+        internal delegate int _PCShellSetApply(IntPtr pc, PcShellApply apply);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate int _bosss_petsc_set_ksp_monitor(
-            IntPtr solver,
-            _bosss_petsc_ksp_monitor monitor,
-            IntPtr context);
-
+        internal delegate int _PCShellSetContext(IntPtr pc, IntPtr context);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate int _bosss_petsc_solve(
-            IntPtr solver,
-            double[] solution,
-            double[] rightHandSide,
-            int useInitialGuess,
-            out int iterations,
-            out double residualNorm,
-            out int convergenceReason);
-
+        internal delegate int _PCShellGetContext(IntPtr pc, out IntPtr context);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate int _bosss_petsc_destroy_solver(IntPtr solver);
-
+        internal delegate int _PCShellSetName(IntPtr pc, [MarshalAs(UnmanagedType.LPStr)] string name);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate IntPtr _bosss_petsc_last_error();
-
+        internal delegate int _PCFactorSetMatSolverType(IntPtr pc, [MarshalAs(UnmanagedType.LPStr)] string solverType);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate int _BoSSS_PETSc_Finalize();
+        internal delegate int _PCFactorSetMatOrderingType(IntPtr pc, [MarshalAs(UnmanagedType.LPStr)] string orderingType);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _PCFactorSetLevels(IntPtr pc, int levels);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _PCASMSetOverlap(IntPtr pc, int overlap);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _PCASMSetType(IntPtr pc, int type);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _PCASMSetLocalType(IntPtr pc, int type);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _PCASMGetSubKSP(IntPtr pc, out int localSubdomains, out int firstSubdomain, out IntPtr subdomainKsps);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _PCFieldSplitSetIS(IntPtr pc, [MarshalAs(UnmanagedType.LPStr)] string splitName, IntPtr indexSet);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _PCMGSetLevels(IntPtr pc, int levels, IntPtr communicator);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _PCMGSetInterpolation(IntPtr pc, int level, IntPtr interpolation);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _PCMGSetRestriction(IntPtr pc, int level, IntPtr restriction);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _PCMGGetSmoother(IntPtr pc, int level, out IntPtr ksp);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int _PCMGSetGalerkin(IntPtr pc, int galerkinType);
 
 #pragma warning disable 649
-        _bosss_petsc_initialize bosss_petsc_initialize;
-        _BoSSS_PETSc_Initialize BoSSS_PETSc_Initialize;
-        _BoSSS_PETSc_GetVersion BoSSS_PETSc_GetVersion;
-        _bosss_petsc_create_matrix_solver bosss_petsc_create_matrix_solver;
-        _bosss_petsc_create_split_csr_matrix_solver bosss_petsc_create_split_csr_matrix_solver;
-        _bosss_petsc_create_ksp_for_matrix bosss_petsc_create_ksp_for_matrix;
-        _bosss_petsc_configure_ksp_solver bosss_petsc_configure_ksp_solver;
-        _bosss_petsc_setup_ksp_solver bosss_petsc_setup_ksp_solver;
-        _bosss_petsc_set_ksp_monitor bosss_petsc_set_ksp_monitor;
-        _bosss_petsc_solve bosss_petsc_solve;
-        _bosss_petsc_destroy_solver bosss_petsc_destroy_solver;
-        _bosss_petsc_last_error bosss_petsc_last_error;
-        _BoSSS_PETSc_Finalize BoSSS_PETSc_Finalize;
+        _PetscInitializeNoArguments PetscInitializeNoArguments;
+        _PetscInitialized PetscInitialized;
+        _PetscFinalize PetscFinalize;
+        _PetscGetVersion PetscGetVersion;
+        _PetscErrorMessage PetscErrorMessage;
+        _PetscPushErrorHandler PetscPushErrorHandler;
+        _PetscPopErrorHandler PetscPopErrorHandler;
+        _PetscReturnErrorHandler PetscReturnErrorHandler;
+        _PetscOptionsCreate PetscOptionsCreate;
+        _PetscOptionsDestroy PetscOptionsDestroy;
+        _PetscOptionsInsertString PetscOptionsInsertString;
+        _PetscOptionsClear PetscOptionsClear;
+        _PetscObjectSetOptions PetscObjectSetOptions;
+        _PetscObjectTypeCompare PetscObjectTypeCompare;
+        _ISCreateGeneral ISCreateGeneral;
+        _ISCreateStride ISCreateStride;
+        _ISDestroy ISDestroy;
+        _VecCreateMPI VecCreateMPI;
+        _VecCreateSeq VecCreateSeq;
+        _VecDestroy VecDestroy;
+        _VecSet VecSet;
+        _VecGetArray VecGetArray;
+        _VecGetArrayRead VecGetArrayRead;
+        _VecRestoreArray VecRestoreArray;
+        _VecRestoreArrayRead VecRestoreArrayRead;
+        _VecScatterCreate VecScatterCreate;
+        _VecScatterBegin VecScatterBegin;
+        _VecScatterEnd VecScatterEnd;
+        _VecScatterDestroy VecScatterDestroy;
+        _MatCreateAIJ MatCreateAIJ;
+        _MatSeqAIJSetPreallocationCSR MatSeqAIJSetPreallocationCSR;
+        _MatMPIAIJSetPreallocationCSR MatMPIAIJSetPreallocationCSR;
+        _MatCreateMPIAIJWithSplitArrays MatCreateMPIAIJWithSplitArrays;
+        _MatCreateShell MatCreateShell;
+        _MatDestroy MatDestroy;
+        _MatSetValues MatSetValues;
+        _MatAssemblyBegin MatAssemblyBegin;
+        _MatAssemblyEnd MatAssemblyEnd;
+        _MatGetOwnershipRange MatGetOwnershipRange;
+        _MatCreateVecs MatCreateVecs;
+        _MatShellGetContext MatShellGetContext;
+        _MatShellSetOperation MatShellSetOperation;
+        _KSPCreate KSPCreate;
+        _KSPDestroy KSPDestroy;
+        _KSPSetType KSPSetType;
+        _KSPSetUp KSPSetUp;
+        _KSPSolve KSPSolve;
+        _KSPSetTolerances KSPSetTolerances;
+        _KSPSetInitialGuessNonzero KSPSetInitialGuessNonzero;
+        _KSPGetResidualNorm KSPGetResidualNorm;
+        _KSPGetIterationNumber KSPGetIterationNumber;
+        _KSPGetConvergedReason KSPGetConvergedReason;
+        _KSPGetPC KSPGetPC;
+        _KSPMonitorSet KSPMonitorSet;
+        _KSPGMRESSetRestart KSPGMRESSetRestart;
+        _KSPSetFromOptions KSPSetFromOptions;
+        _KSPSetOperators KSPSetOperators;
+        _PCSetType PCSetType;
+        _PCShellSetApply PCShellSetApply;
+        _PCShellSetContext PCShellSetContext;
+        _PCShellGetContext PCShellGetContext;
+        _PCShellSetName PCShellSetName;
+        _PCFactorSetMatSolverType PCFactorSetMatSolverType;
+        _PCFactorSetMatOrderingType PCFactorSetMatOrderingType;
+        _PCFactorSetLevels PCFactorSetLevels;
+        _PCASMSetOverlap PCASMSetOverlap;
+        _PCASMSetType PCASMSetType;
+        _PCASMSetLocalType PCASMSetLocalType;
+        _PCASMGetSubKSP PCASMGetSubKSP;
+        _PCFieldSplitSetIS PCFieldSplitSetIS;
+        _PCMGSetLevels PCMGSetLevels;
+        _PCMGSetInterpolation PCMGSetInterpolation;
+        _PCMGSetRestriction PCMGSetRestriction;
+        _PCMGGetSmoother PCMGGetSmoother;
+        _PCMGSetGalerkin PCMGSetGalerkin;
 #pragma warning restore 649
 
-        internal _bosss_petsc_initialize Initialize => bosss_petsc_initialize;
-
-        internal _BoSSS_PETSc_Initialize InitializeRuntime => BoSSS_PETSc_Initialize;
+        internal _PetscInitializeNoArguments InitializeNoArguments => PetscInitializeNoArguments;
+        internal _PetscInitialized Initialized => PetscInitialized;
+        internal _PetscFinalize Finalize => PetscFinalize;
+        internal _PetscGetVersion GetVersion => PetscGetVersion;
+        internal _PetscErrorMessage ErrorMessage => PetscErrorMessage;
+        internal _PetscPushErrorHandler PushErrorHandler => PetscPushErrorHandler;
+        internal _PetscPopErrorHandler PopErrorHandler => PetscPopErrorHandler;
+        internal _PetscReturnErrorHandler ReturnErrorHandler => PetscReturnErrorHandler;
+        internal _PetscOptionsCreate OptionsCreate => PetscOptionsCreate;
+        internal _PetscOptionsDestroy OptionsDestroy => PetscOptionsDestroy;
+        internal _PetscOptionsInsertString OptionsInsertString => PetscOptionsInsertString;
+        internal _PetscOptionsClear OptionsClear => PetscOptionsClear;
+        internal _PetscObjectSetOptions ObjectSetOptions => PetscObjectSetOptions;
+        internal _PetscObjectTypeCompare ObjectTypeCompare => PetscObjectTypeCompare;
+        internal _ISCreateGeneral CreateGeneralIndexSet => ISCreateGeneral;
+        internal _ISCreateStride CreateStrideIndexSet => ISCreateStride;
+        internal _ISDestroy DestroyIndexSet => ISDestroy;
+        internal _VecCreateMPI CreateMpiVector => VecCreateMPI;
+        internal _VecCreateSeq CreateSequentialVector => VecCreateSeq;
+        internal _VecDestroy DestroyVector => VecDestroy;
+        internal _VecSet SetVector => VecSet;
+        internal _VecGetArray GetVectorArray => VecGetArray;
+        internal _VecGetArrayRead GetVectorArrayRead => VecGetArrayRead;
+        internal _VecRestoreArray RestoreVectorArray => VecRestoreArray;
+        internal _VecRestoreArrayRead RestoreVectorArrayRead => VecRestoreArrayRead;
+        internal _VecScatterCreate CreateVectorScatter => VecScatterCreate;
+        internal _VecScatterBegin BeginVectorScatter => VecScatterBegin;
+        internal _VecScatterEnd EndVectorScatter => VecScatterEnd;
+        internal _VecScatterDestroy DestroyVectorScatter => VecScatterDestroy;
+        internal _MatCreateAIJ CreateAijMatrix => MatCreateAIJ;
+        internal _MatSeqAIJSetPreallocationCSR SetSequentialAijPreallocationCsr => MatSeqAIJSetPreallocationCSR;
+        internal _MatMPIAIJSetPreallocationCSR SetMpiAijPreallocationCsr => MatMPIAIJSetPreallocationCSR;
+        internal _MatCreateMPIAIJWithSplitArrays CreateMpiAijWithSplitArrays => MatCreateMPIAIJWithSplitArrays;
+        internal _MatCreateShell CreateShellMatrix => MatCreateShell;
+        internal _MatDestroy DestroyMatrix => MatDestroy;
+        internal _MatSetValues SetMatrixValues => MatSetValues;
+        internal _MatAssemblyBegin BeginMatrixAssembly => MatAssemblyBegin;
+        internal _MatAssemblyEnd EndMatrixAssembly => MatAssemblyEnd;
+        internal _MatGetOwnershipRange GetMatrixOwnershipRange => MatGetOwnershipRange;
+        internal _MatCreateVecs CreateMatrixVectors => MatCreateVecs;
+        internal _MatShellGetContext GetMatrixShellContext => MatShellGetContext;
+        internal _MatShellSetOperation SetMatrixShellOperation => MatShellSetOperation;
+        internal _KSPCreate CreateKsp => KSPCreate;
+        internal _KSPDestroy DestroyKsp => KSPDestroy;
+        internal _KSPSetType SetKspType => KSPSetType;
+        internal _KSPSetUp SetUpKsp => KSPSetUp;
+        internal _KSPSolve SolveKsp => KSPSolve;
+        internal _KSPSetTolerances SetKspTolerances => KSPSetTolerances;
+        internal _KSPSetInitialGuessNonzero SetKspInitialGuessNonzero => KSPSetInitialGuessNonzero;
+        internal _KSPGetResidualNorm GetKspResidualNorm => KSPGetResidualNorm;
+        internal _KSPGetIterationNumber GetKspIterationNumber => KSPGetIterationNumber;
+        internal _KSPGetConvergedReason GetKspConvergedReason => KSPGetConvergedReason;
+        internal _KSPGetPC GetKspPreconditioner => KSPGetPC;
+        internal _KSPMonitorSet SetKspMonitor => KSPMonitorSet;
+        internal _KSPGMRESSetRestart SetKspGmresRestart => KSPGMRESSetRestart;
+        internal _KSPSetFromOptions SetKspFromOptions => KSPSetFromOptions;
+        internal _KSPSetOperators SetKspOperators => KSPSetOperators;
+        internal _PCSetType SetPcType => PCSetType;
+        internal _PCShellSetApply SetPcShellApply => PCShellSetApply;
+        internal _PCShellSetContext SetPcShellContext => PCShellSetContext;
+        internal _PCShellGetContext GetPcShellContext => PCShellGetContext;
+        internal _PCShellSetName SetPcShellName => PCShellSetName;
+        internal _PCFactorSetMatSolverType SetPcFactorMatSolverType => PCFactorSetMatSolverType;
+        internal _PCFactorSetMatOrderingType SetPcFactorMatOrderingType => PCFactorSetMatOrderingType;
+        internal _PCFactorSetLevels SetPcFactorLevels => PCFactorSetLevels;
+        internal _PCASMSetOverlap SetPcAsmOverlap => PCASMSetOverlap;
+        internal _PCASMSetType SetPcAsmType => PCASMSetType;
+        internal _PCASMSetLocalType SetPcAsmLocalType => PCASMSetLocalType;
+        internal _PCASMGetSubKSP GetPcAsmSubKsps => PCASMGetSubKSP;
+        internal _PCFieldSplitSetIS SetPcFieldSplitIndexSet => PCFieldSplitSetIS;
+        internal _PCMGSetLevels SetPcMgLevels => PCMGSetLevels;
+        internal _PCMGSetInterpolation SetPcMgInterpolation => PCMGSetInterpolation;
+        internal _PCMGSetRestriction SetPcMgRestriction => PCMGSetRestriction;
+        internal _PCMGGetSmoother GetPcMgSmoother => PCMGGetSmoother;
+        internal _PCMGSetGalerkin SetPcMgGalerkin => PCMGSetGalerkin;
 
         /// <summary>
-        /// Gets the PETSc release reported by the loaded native PETSc wrapper.
+        /// Sets one matrix entry through <see cref="SetMatrixValues"/>.
         /// </summary>
-        public string GetPETScVersion() {
-            var buffer = new byte[256];
-            int error = BoSSS_PETSc_GetVersion(buffer, buffer.Length);
-            if(error != 0) {
-                throw new InvalidOperationException($"PETSc version query failed with error {error}.");
-            }
-            int length = Array.IndexOf(buffer, (byte)0);
-            if(length < 0) {
-                length = buffer.Length;
-            }
-            return Encoding.UTF8.GetString(buffer, 0, length);
+        /// <remarks>
+        /// PETSc implements <c>MatSetValue</c> as a C inline function rather
+        /// than an exported shared-library symbol. The BoSSS C wrapper calls
+        /// that inline helper; direct managed callers must use this equivalent
+        /// one-entry <c>MatSetValues</c> call instead.
+        /// </remarks>
+        internal unsafe int SetMatrixValue(IntPtr matrix, int row, int column, double value, int insertMode) {
+            return MatSetValues(matrix, 1, (IntPtr)(&row), 1, (IntPtr)(&column), (IntPtr)(&value), insertMode);
+        }
+    }
+
+    /// <summary>
+    /// Process-lifetime PETSc ABI bindings for every BoSSS PETSc runtime variant.
+    /// </summary>
+    /// <remarks>
+    /// PETSc objects are still owned and destroyed by their individual solver.
+    /// Only the dynamic-library handles and their function delegates are shared.
+    /// Keeping these libraries loaded avoids unloading native code while PETSc or
+    /// an OpenMP/MPI dependency may retain process-global state.
+    /// </remarks>
+    public static class PETScNativeLibraries {
+
+        static readonly Lazy<UnsafePETSc> s_OpenMp = Create(PETScNativeVariant.OpenMp);
+        static readonly Lazy<UnsafePETSc> s_Mpi = Create(PETScNativeVariant.Mpi);
+        static readonly Lazy<UnsafePETSc> s_MpiOpenMp = Create(PETScNativeVariant.MpiOpenMp);
+
+        static Lazy<UnsafePETSc> Create(PETScNativeVariant variant) {
+            return new Lazy<UnsafePETSc>(() => new UnsafePETSc(variant), LazyThreadSafetyMode.ExecutionAndPublication);
         }
 
         /// <summary>
-        /// Returns a concise description of the loaded PETSc release and native capabilities.
+        /// Loads and binds all shipped PETSc ABI variants for the rest of this
+        /// process. Call this after BoSSS native-library bootstrap when PETSc
+        /// startup latency should not occur in the first solve.
         /// </summary>
-        public string GetPETScRuntimeDescription() {
-            string capabilities;
-            string mpiRuntime = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-                ? "Microsoft MPI 10"
-                : "OpenMPI 4";
-            switch(NativeVariant) {
-                case PETScNativeVariant.Mpi:
-                    capabilities = mpiRuntime;
-                    break;
-                case PETScNativeVariant.OpenMp:
-                    capabilities = "MPIUNI, OpenMP";
-                    break;
-                case PETScNativeVariant.MpiOpenMp:
-                    capabilities = mpiRuntime + ", OpenMP";
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(NativeVariant), NativeVariant, "Unknown PETSc native variant.");
-            }
-            return $"Loaded PETSc Version {GetPETScVersion()} with capabilities {capabilities}.";
+        public static void PreloadAll() {
+            _ = s_OpenMp.Value;
+            _ = s_Mpi.Value;
+            _ = s_MpiOpenMp.Value;
         }
 
-        internal _bosss_petsc_create_matrix_solver CreateMatrixSolver => bosss_petsc_create_matrix_solver;
-
-        internal _bosss_petsc_create_split_csr_matrix_solver CreateSplitCsrMatrixSolver => bosss_petsc_create_split_csr_matrix_solver;
-
-        internal _bosss_petsc_create_ksp_for_matrix CreateKspForMatrix => bosss_petsc_create_ksp_for_matrix;
-
-        internal _bosss_petsc_configure_ksp_solver ConfigureKspSolver => bosss_petsc_configure_ksp_solver;
-
-        internal _bosss_petsc_setup_ksp_solver SetupKspSolver => bosss_petsc_setup_ksp_solver;
-
-        internal _bosss_petsc_set_ksp_monitor SetKspMonitor => bosss_petsc_set_ksp_monitor;
-
-        internal _bosss_petsc_solve Solve => bosss_petsc_solve;
-
-        internal _bosss_petsc_destroy_solver DestroySolver => bosss_petsc_destroy_solver;
-
-        internal _bosss_petsc_last_error LastError => bosss_petsc_last_error;
-
         /// <summary>
-        /// Finalizes PETSc at application shutdown. All PETSc solvers must already be disposed.
+        /// Attempts to load every PETSc variant without making PETSc a mandatory
+        /// runtime dependency of the host application.
         /// </summary>
-        public int FinalizePETScRuntime() {
-            return BoSSS_PETSc_Finalize();
+        /// <param name="failureMessage">
+        /// A description of every unavailable variant, or <see langword="null"/>
+        /// when all variants were loaded.
+        /// </param>
+        /// <returns><see langword="true"/> when every variant was loaded.</returns>
+        public static bool TryPreloadAll(out string failureMessage) {
+            string failures = null;
+            TryPreload(s_OpenMp, PETScNativeVariant.OpenMp, ref failures);
+            TryPreload(s_Mpi, PETScNativeVariant.Mpi, ref failures);
+            TryPreload(s_MpiOpenMp, PETScNativeVariant.MpiOpenMp, ref failures);
+            failureMessage = failures;
+            return failures == null;
+        }
+
+        static void TryPreload(Lazy<UnsafePETSc> binding, PETScNativeVariant variant, ref string failures) {
+            try {
+                _ = binding.Value;
+            } catch(Exception error) {
+                string failure = $"{variant}: {error.Message}";
+                failures = failures == null ? failure : failures + System.Environment.NewLine + failure;
+            }
+        }
+
+        /// <summary>Returns the already process-owned ABI binding for <paramref name="variant"/>.</summary>
+        internal static UnsafePETSc Get(PETScNativeVariant variant) {
+            switch(variant) {
+                case PETScNativeVariant.OpenMp: return s_OpenMp.Value;
+                case PETScNativeVariant.Mpi: return s_Mpi.Value;
+                case PETScNativeVariant.MpiOpenMp: return s_MpiOpenMp.Value;
+                default: throw new ArgumentOutOfRangeException(nameof(variant), variant, "A concrete PETSc native variant is required.");
+            }
         }
     }
 }

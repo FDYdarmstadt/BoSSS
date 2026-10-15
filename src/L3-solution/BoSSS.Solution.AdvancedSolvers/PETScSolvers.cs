@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.Serialization;
+using ilPSP.LinSolvers;
 using ilPSP.LinSolvers.PETSc;
 using MPI.Wrappers;
 
@@ -43,8 +44,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public PETScNativeVariant NativeVariant = PETScNativeVariant.Auto;
 
         /// <summary>
-        /// PETSc matrix representation. Direct PETSc solvers require the default
-        /// assembled copied CSR representation.
+        /// PETSc matrix representation. Borrowed split CSR retains the backing
+        /// buffers for PETSc's lifetime and avoids a second native CSR copy.
         /// </summary>
         [DataMember]
         public PETScMatrixInput MatrixInput = PETScMatrixInput.BorrowedCsr;
@@ -78,15 +79,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public string Shortname => "PETSc-" + Factorization + "-" + Backend;
 
         /// <summary>
-        /// Creates and initializes a direct PETSc solver for a multigrid level.
+        /// Creates and initializes a direct PETSc solver for the supplied operator level.
         /// </summary>
         public ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
             ValidateConfiguration(level);
 
-            var solver = new PETScMultigridSolver {
-                Options = PETScDirectSolver.BuildOptions(Factorization, Backend, AdditionalOptions),
+            var solver = new PETScDirectSolverAdapter {
                 NativeVariant = NativeVariant,
-                MatrixInput = MatrixInput
+                MatrixInput = MatrixInput,
+                Factorization = Factorization,
+                Backend = Backend,
+                AdditionalOptions = AdditionalOptions
             };
             solver.Init(level);
             return solver;
@@ -100,11 +103,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if(level == null)
                 throw new ArgumentNullException(nameof(level));
 
-            if(MatrixInput != PETScMatrixInput.CopiedCsr && MatrixInput != PETScMatrixInput.BorrowedCsr)
-                throw new NotSupportedException("PETSc direct solvers require an assembled CSR matrix; use CopiedCsr or BorrowedCsr.");
+            if(MatrixInput != PETScMatrixInput.BorrowedCsr && MatrixInput != PETScMatrixInput.CopiedCsr)
+                throw new NotSupportedException($"Unknown PETSc direct matrix input mode '{MatrixInput}'.");
 
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int mpiSize);
-            PETScNativeVariant effectiveVariant = PETScSolverBase.ResolveNativeVariant(NativeVariant, mpiSize, ilPSP.Environment.NumThreads);
+            PETScNativeVariant effectiveVariant = PETScNativeVariantResolver.Resolve(NativeVariant, mpiSize, ilPSP.Environment.NumThreads);
 
             if(effectiveVariant == PETScNativeVariant.OpenMp && mpiSize > 1)
                 throw new NotSupportedException(
@@ -163,6 +166,107 @@ namespace BoSSS.Solution.AdvancedSolvers {
     }
 
 
+    /// <summary>
+    /// Level-3 adapter for one direct PETSc ABI solve.
+    /// </summary>
+    /// <remarks>
+    /// This adapter retains the established Level-3 PETSc direct-solver API
+    /// and delegates to the direct PETSc ABI implementation.
+    /// </remarks>
+    public sealed class PETScDirectSolverAdapter : ISolverSmootherTemplate {
+        IPETScDirectSolverAbi m_Solver;
+        MultigridOperator m_Operator;
+        int m_Iterations;
+        bool m_Converged;
+
+        /// <summary>Native PETSc parallel runtime.</summary>
+        public PETScNativeVariant NativeVariant { get; set; } = PETScNativeVariant.Auto;
+
+        /// <summary>PETSc matrix ownership and transfer representation.</summary>
+        public PETScMatrixInput MatrixInput { get; set; } = PETScMatrixInput.BorrowedCsr;
+
+        /// <summary>LU or Cholesky factorization.</summary>
+        public PETScDirectFactorization Factorization { get; set; } = PETScDirectFactorization.LU;
+
+        /// <summary>PETSc factorization package.</summary>
+        public PETScDirectBackend Backend { get; set; } = PETScDirectBackend.Default;
+
+        /// <summary>Optional PETSc package-specific options.</summary>
+        public string AdditionalOptions { get; set; } = string.Empty;
+
+        /// <summary>Reason returned by PETSc for the most recent solve.</summary>
+        public int ConvergenceReason => m_Solver?.ConvergenceReason ?? 0;
+
+        /// <summary>Residual norm returned by PETSc for the most recent solve.</summary>
+        public double ResidualNorm => m_Solver?.ResidualNorm ?? double.NaN;
+
+        public int IterationsInNested => 0;
+        public int ThisLevelIterations => m_Iterations;
+        public bool Converged => m_Converged;
+
+        public void Init(MultigridOperator op) {
+            if(op == null)
+                throw new ArgumentNullException(nameof(op));
+            if(ReferenceEquals(op, m_Operator) && m_Solver != null)
+                return;
+
+            DisposeSolver();
+            var solver = PETScDirectSolverAbi.Create();
+            solver.NativeVariant = NativeVariant;
+            solver.MatrixInput = MatrixInput;
+            solver.Factorization = Factorization;
+            solver.Backend = Backend;
+            solver.AdditionalOptions = AdditionalOptions ?? string.Empty;
+            try {
+                solver.DefineMatrix(op.OperatorMatrix);
+            } catch {
+                solver.Dispose();
+                throw;
+            }
+            m_Solver = solver;
+            m_Operator = op;
+        }
+
+        public void Solve<U, V>(U X, V B)
+            where U : IList<double>
+            where V : IList<double> {
+            if(m_Solver == null)
+                throw new InvalidOperationException("PETSc direct solver is not initialized.");
+
+            var result = m_Solver.Solve(X, B);
+            m_Iterations += result.NoOfIterations;
+            m_Converged = result.Converged;
+        }
+
+        public void ResetStat() {
+            m_Iterations = 0;
+            m_Converged = false;
+        }
+
+        public long UsedMemory() => 0;
+
+        public object Clone() {
+            return new PETScDirectSolverAdapter {
+                NativeVariant = NativeVariant,
+                MatrixInput = MatrixInput,
+                Factorization = Factorization,
+                Backend = Backend,
+                AdditionalOptions = AdditionalOptions
+            };
+        }
+
+        public void Dispose() {
+            DisposeSolver();
+            m_Operator = null;
+        }
+
+        void DisposeSolver() {
+            m_Solver?.Dispose();
+            m_Solver = null;
+        }
+    }
+
+
 
     /// <summary>
     /// Configuration for the options-driven PETSc Krylov solver adapter.
@@ -205,17 +309,35 @@ namespace BoSSS.Solution.AdvancedSolvers {
         [DataMember]
         public int[] SecondFieldVariables;
 
+        /// <summary>
+        /// Uses BoSSS's explicit geometric hierarchy as a PETSc <c>PCMG</c>
+        /// preconditioner instead of a single-level PETSc matrix.
+        /// </summary>
+        [DataMember]
+        public bool UseGeometricMultigrid;
+
+        /// <summary>
+        /// Stops descending the BoSSS hierarchy once this many global unknowns
+        /// or fewer remain; that level becomes PETSc's coarse level.
+        /// </summary>
+        [DataMember]
+        public int CoarseKickIn = 90000;
+
         public override string Name => $"PETSc Krylov solver ({DescribeNativeVariant(NativeVariant)}; {MatrixInput}; {ComposeOptions()})";
 
         public override string Shortname => "PETSc-Krylov";
 
         public override ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
-            var solver = new PETScMultigridSolver {
+            var solver = new PETScKrylovSolverAdapter {
                 Options = ComposeOptions(),
                 NativeVariant = NativeVariant,
                 MatrixInput = MatrixInput,
                 FirstFieldVariables = FirstFieldVariables == null ? null : (int[])FirstFieldVariables.Clone(),
-                SecondFieldVariables = SecondFieldVariables == null ? null : (int[])SecondFieldVariables.Clone()
+                SecondFieldVariables = SecondFieldVariables == null ? null : (int[])SecondFieldVariables.Clone(),
+                UseGeometricMultigrid = UseGeometricMultigrid,
+                CoarseKickIn = CoarseKickIn,
+                EnableKspMonitor = WriteDebugInfoLevel >= 2,
+                EnableKspConvergedReason = WriteDebugInfoLevel >= 1
             };
             solver.Init(level);
             return solver;
@@ -228,11 +350,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 ("-ksp_min_it", MinSolverIterations.ToString(CultureInfo.InvariantCulture), nameof(MinSolverIterations)),
                 ("-ksp_max_it", MaxSolverIterations.ToString(CultureInfo.InvariantCulture), nameof(MaxSolverIterations))
             };
-
-            if(WriteDebugInfoLevel >= 1)
-                generatedOptions.Add(("-ksp_converged_reason", null, nameof(WriteDebugInfoLevel)));
-            if(WriteDebugInfoLevel >= 2)
-                generatedOptions.Add(("-ksp_monitor", null, nameof(WriteDebugInfoLevel)));
 
             foreach(var generated in generatedOptions) {
                 if(ContainsPetscOption(PETScOptions, generated.Option)) {
@@ -279,11 +396,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
     }
 
     /// <summary>
-    /// Shared Level-3 adapter from a <see cref="MultigridOperator"/> to a PETSc solver.
+    /// Level-3 adapter from a supplied operator level to a PETSc Krylov solver.
     /// </summary>
-    public sealed class PETScMultigridSolver : ISolverSmootherTemplate {
+    public sealed class PETScKrylovSolverAdapter : ISolverSmootherTemplate {
 
-        PETScKrylovSolver m_Solver;
+        PETScSolver m_Solver;
         MultigridOperator m_Operator;
         int m_Iterations;
         bool m_Converged;
@@ -299,7 +416,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public PETScNativeVariant NativeVariant { get; set; } = PETScNativeVariant.Auto;
 
         /// <summary>
-        /// PETSc matrix representation used for the multigrid operator matrix.
+        /// PETSc matrix representation used for the supplied operator matrix.
         /// </summary>
         public PETScMatrixInput MatrixInput { get; set; } = PETScMatrixInput.BorrowedCsr;
 
@@ -312,6 +429,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Optional BoSSS variable indices for PETSc field split 1.
         /// </summary>
         public int[] SecondFieldVariables { get; set; }
+
+        /// <summary>Whether to install BoSSS's geometric hierarchy as PETSc PCMG.</summary>
+        public bool UseGeometricMultigrid { get; set; }
+
+        /// <summary>Global-DOF threshold at which the supplied BoSSS hierarchy stops.</summary>
+        public int CoarseKickIn { get; set; } = 90000;
+
+        /// <summary>Writes managed outer-KSP residual lines to job standard output.</summary>
+        public bool EnableKspMonitor { get; set; }
+
+        /// <summary>Writes the final PETSc KSP convergence reason to job standard output.</summary>
+        public bool EnableKspConvergedReason { get; set; }
 
         /// <summary>
         /// PETSc convergence reason from the most recent solve.
@@ -355,16 +484,32 @@ namespace BoSSS.Solution.AdvancedSolvers {
             DisposeSolver();
             ValidateFieldVariables(op);
 
-            var solver = new PETScKrylovSolver {
-                Options = Options ?? string.Empty,
-                NativeVariant = NativeVariant,
-                MatrixInput = MatrixInput
-            };
+            PETScSolver solver;
+            if(UseGeometricMultigrid) {
+                if((FirstFieldVariables?.Length ?? 0) > 0 || (SecondFieldVariables?.Length ?? 0) > 0)
+                    throw new NotSupportedException("PETSc PCMG cannot simultaneously use the Level-3 PCFIELDSPLIT variable configuration.");
+                solver = new PETScGeometricMultigridSolver {
+                    Options = ForcePcMultigrid(Options),
+                    Hierarchy = BuildGeometricHierarchy(op),
+                    NativeVariant = NativeVariant,
+                    MatrixInput = MatrixInput,
+                    EnableKspMonitor = EnableKspMonitor,
+                    EnableKspConvergedReason = EnableKspConvergedReason
+                };
+            } else {
+                solver = new PETScKrylovSolver {
+                    Options = Options ?? string.Empty,
+                    NativeVariant = NativeVariant,
+                    MatrixInput = MatrixInput,
+                    EnableKspMonitor = EnableKspMonitor,
+                    EnableKspConvergedReason = EnableKspConvergedReason
+                };
+            }
 
             try {
-                if(FirstFieldVariables != null && FirstFieldVariables.Length > 0) {
-                    solver.FirstFieldRows = ConvertRows(op.Mapping.GetSubvectorIndices(FirstFieldVariables));
-                    solver.SecondFieldRows = ConvertRows(op.Mapping.GetSubvectorIndices(SecondFieldVariables));
+                if(solver is PETScKrylovSolver krylovSolver && FirstFieldVariables != null && FirstFieldVariables.Length > 0) {
+                    krylovSolver.FirstFieldRows = ConvertRows(op.Mapping.GetSubvectorIndices(FirstFieldVariables));
+                    krylovSolver.SecondFieldRows = ConvertRows(op.Mapping.GetSubvectorIndices(SecondFieldVariables));
                 }
                 solver.DefineMatrix(op.OperatorMatrix);
             } catch {
@@ -397,12 +542,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public object Clone() {
-            return new PETScMultigridSolver {
+            return new PETScKrylovSolverAdapter {
                 Options = Options,
                 NativeVariant = NativeVariant,
                 MatrixInput = MatrixInput,
                 FirstFieldVariables = FirstFieldVariables == null ? null : (int[])FirstFieldVariables.Clone(),
-                SecondFieldVariables = SecondFieldVariables == null ? null : (int[])SecondFieldVariables.Clone()
+                SecondFieldVariables = SecondFieldVariables == null ? null : (int[])SecondFieldVariables.Clone(),
+                UseGeometricMultigrid = UseGeometricMultigrid,
+                CoarseKickIn = CoarseKickIn,
+                EnableKspMonitor = EnableKspMonitor,
+                EnableKspConvergedReason = EnableKspConvergedReason
             };
         }
 
@@ -443,6 +592,57 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 result[i] = (int)rows[i];
             }
             return result;
+        }
+
+        PETScGeometricMultigridHierarchy BuildGeometricHierarchy(MultigridOperator finest) {
+            if(CoarseKickIn < 1)
+                throw new ArgumentOutOfRangeException(nameof(CoarseKickIn), "The PETSc multigrid coarse-level threshold must be positive.");
+
+            var levels = new List<MultigridOperator> { finest };
+            MultigridOperator coarsest = finest;
+            while(coarsest.CoarserLevel != null && coarsest.Mapping.TotalLength > CoarseKickIn) {
+                coarsest = coarsest.CoarserLevel;
+                levels.Add(coarsest);
+            }
+            _ = coarsest.OperatorMatrix;
+            if(levels.Count < 2)
+                throw new InvalidOperationException(
+                    $"PETSc geometric multigrid requires at least two levels at or above CoarseKickIn={CoarseKickIn}.");
+
+            var hierarchy = new PETScGeometricMultigridHierarchy();
+            for(int index = 0; index < levels.Count - 1; index++) {
+                MultigridOperator coarse = levels[index + 1];
+                BlockMsrMatrix interpolation = coarse.RightChangeOfBasis == null
+                    ? coarse.GetPrologonationOperator
+                    : BlockMsrMatrix.Multiply(coarse.GetPrologonationOperator, coarse.RightChangeOfBasis);
+                BlockMsrMatrix restriction = coarse.LeftChangeOfBasis == null
+                    ? coarse.GetRestrictionOperator
+                    : BlockMsrMatrix.Multiply(coarse.LeftChangeOfBasis, coarse.GetRestrictionOperator);
+                hierarchy.Transitions.Add(new PETScMultigridTransition {
+                    CoarseOperator = coarse.OperatorMatrix,
+                    Interpolation = interpolation,
+                    Restriction = restriction
+                });
+            }
+            return hierarchy;
+        }
+
+        static string ForcePcMultigrid(string options) {
+            var tokens = (options ?? string.Empty).Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+            var retained = new List<string>();
+            for(int index = 0; index < tokens.Length; index++) {
+                if(tokens[index].Equals("-pc_type", StringComparison.Ordinal)) {
+                    if(index + 1 < tokens.Length)
+                        index++;
+                    continue;
+                }
+                if(tokens[index].StartsWith("-pc_type=", StringComparison.Ordinal))
+                    continue;
+                retained.Add(tokens[index]);
+            }
+            retained.Add("-pc_type");
+            retained.Add("mg");
+            return string.Join(" ", retained);
         }
     }
 }

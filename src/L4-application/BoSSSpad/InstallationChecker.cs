@@ -121,7 +121,7 @@ namespace BoSSS.Application.BoSSSpad {
                 // PETSc variants cannot be exchanged safely within one process.
                 // Check only the variant selected for this MPI/thread configuration;
                 // the other variants are intentionally not loaded.
-                PETScNativeVariant petscVariant = PETScSolverBase.ResolveNativeVariant(
+                PETScNativeVariant petscVariant = PETScNativeVariantResolver.Resolve(
                     PETScNativeVariant.Auto, size, ilPSP.Environment.NumThreads);
                 bool petscLoaded = CheckDynamicLibrary($"PETSc {GetPETScVariantDescription(petscVariant)}",
                     () => new UnsafePETSc(petscVariant), isOptional: true);
@@ -337,7 +337,7 @@ namespace BoSSS.Application.BoSSSpad {
             });
 
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int mpiSize);
-            PETScNativeVariant petscVariant = PETScSolverBase.ResolveNativeVariant(
+                PETScNativeVariant petscVariant = PETScNativeVariantResolver.Resolve(
                 PETScNativeVariant.Auto, mpiSize, ilPSP.Environment.NumThreads);
             RunDetailedCheck($"PETSc {GetPETScVariantDescription(petscVariant)} Krylov solver", () => {
                 Console.WriteLine("  Components: PETSc Mat/Vec/KSP; KSP=CG; PC=Jacobi; 3-by-3 diagonal solve.");

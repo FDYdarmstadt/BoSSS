@@ -237,6 +237,12 @@ namespace BoSSS.Solution {
                 nativeLibDir,
                 out bool _MustFinalizeMPI);
 
+            // PETSc is optional: native loading failures must not prevent a
+            // non-PETSc BoSSS application from starting.
+            if(!ilPSP.LinSolvers.PETSc.PETScNativeLibraries.TryPreloadAll(out string petscLoadFailure)) {
+                m_Logger.Warn("PETSc native runtime is unavailable; PETSc solvers cannot be selected:" + System.Environment.NewLine + petscLoadFailure);
+            }
+
             //ilPSP.Utils.CPUAffinityWindows.SetOMP_PLACESfromCCPVar(1);
             if(args.Contains("--num_threads") || args.Contains("-T")) {
                 int iOff = args.FirstIndexWhere(arg => arg == "--num_threads" || arg == "-T");

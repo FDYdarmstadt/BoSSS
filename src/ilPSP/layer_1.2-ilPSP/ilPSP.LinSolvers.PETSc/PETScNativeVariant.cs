@@ -44,4 +44,22 @@ namespace ilPSP.LinSolvers.PETSc {
         /// </summary>
         MpiOpenMp = 4        
     }
+
+    /// <summary>Resolves the PETSc shared-library variant for a BoSSS execution.</summary>
+    public static class PETScNativeVariantResolver {
+
+        /// <summary>Returns the explicitly requested variant or resolves <see cref="PETScNativeVariant.Auto"/>.</summary>
+        public static PETScNativeVariant Resolve(PETScNativeVariant requestedVariant, int mpiSize, int numberOfThreads) {
+            if(mpiSize < 1)
+                throw new System.ArgumentOutOfRangeException(nameof(mpiSize), mpiSize, "At least one MPI rank is required.");
+            if(numberOfThreads < 1)
+                throw new System.ArgumentOutOfRangeException(nameof(numberOfThreads), numberOfThreads, "At least one thread is required.");
+
+            if(requestedVariant != PETScNativeVariant.Auto)
+                return requestedVariant;
+            if(mpiSize == 1)
+                return PETScNativeVariant.OpenMp;
+            return numberOfThreads == 1 ? PETScNativeVariant.Mpi : PETScNativeVariant.MpiOpenMp;
+        }
+    }
 }
