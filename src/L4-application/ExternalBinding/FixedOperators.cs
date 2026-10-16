@@ -24,8 +24,22 @@ using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 
 
 namespace BoSSS.Application.ExternalBinding {
-    
 
+
+    /// <summary>
+    /// Minimal, self-contained call surface for individual BoSSS operators that
+    /// are to be invoked from outside BoSSS (currently: from OpenFOAM, via the
+    /// <c>foam-dg</c> project). Ordinary BoSSS operators are normally embedded
+    /// in a full solver application, with its own control-object configuration,
+    /// grid handling and time stepping, which makes them awkward to invoke
+    /// individually without pulling in that entire surrounding infrastructure.
+    /// Methods here (and the data-exchange classes <see cref="OpenFoamMatrix"/>
+    /// and <see cref="OpenFoamPatchField"/>) are marked with
+    /// <see cref="CodeGenExportAttribute"/>; this is what BoSSS's code
+    /// generator inspects to automatically produce the corresponding C++
+    /// wrapper code on the <c>foam-dg</c> side. Currently only a Laplace
+    /// operator and the Cahn-Hilliard operator are exposed this way.
+    /// </summary>
     public class FixedOperators : IForeignLanguageProxy {
 
         /// <summary>
@@ -404,40 +418,9 @@ namespace BoSSS.Application.ExternalBinding {
         /// </summary>
         [CodeGenExport]
         public void CahnHilliard(OpenFoamMatrix mtx, OpenFoamSurfaceField Flux, OpenFoamDGField U, OpenFoamPatchField ptch, OpenFoamPatchField ptchU, double time, double deltaT, double Cahn, double Diff) {
-
-            // TODO sync from OpenFOAM
-            //  double epsilon = 1e-5; // capillary width
-            //  // double r = 5e-4; // radius
-            //  double r = 1; // dimensional form
-            //  // double cahn = 5e-5;
-            //  double cahn = 5e-2;
-            // double diff = 1e-1;
-
-            //  // double shearRate = 0.89235;
-            //  double shearRate = 0.01;
-            //  // double shearRate = 89.235;
-            //  double u = shearRate * r;
-            //  double kappa = 5e-11;
-            //  double sigma = 0.063;
-            //  // double sigma = 1.0;
-            //  // double diff = 3 * kappa * sigma / (2 * Math.Sqrt(2) * r * u * epsilon);
-            // //                        // double M = 1; // mobility parameter
-            // double M = Math.Sqrt(epsilon); // mobility parameter
-            // double lam = 3 / (2 * Math.Sqrt(2)) * sigma * epsilon; // Holger's lambda
-            // // double diff = M * lam * 10;
-
-            // bool convection = true;
-            // bool stat = false;
-
-            // TODO only for 1D test
-            // cahn = 0.1;
-            // diff = 0.1;
-            // convection = false;
-            // stat = true;
             CahnHilliardParameters chParams = new CahnHilliardParameters(_dt: deltaT, _diffusion: Diff, _cahn: Cahn, _stationary: false, _endT: deltaT*0.9);
             CahnHilliardInternal(mtx, Flux, U, ptch, ptchU, null, null, chParams);
         }
-        // public static bool FirstTimeStep = true;
 
         static void VerifyTrackerState(LevelSetTracker lsTrk) {
             var NoOfCells_a = lsTrk.Regions.GetSpeciesMask("a").NoOfItemsLocally.MPISum();
