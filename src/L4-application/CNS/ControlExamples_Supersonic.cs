@@ -3701,6 +3701,7 @@ namespace CNS {
             double epsilon0 = 1.0;
             double kappa = 1.0;
 
+
             if (AV) {
                 Variable sensorVariable = CompressibleVariables.Density;
                 c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
