@@ -2,7 +2,8 @@
 # performes the splitting of the 'public' subtree from the fuul repository
 # must be called from the public repo
 #
-git remote add root git@git.rwth-aachen.de:bosss1/experimental.git
+#git remote add root git@git.rwth-aachen.de:bosss1/experimental.git
+git remote add root git@gitlab.hefdi.de:tuda/bosss/bosss-experimental-3.git
 git fetch root
 git branch
 git checkout -f -b staging-branch root/master
