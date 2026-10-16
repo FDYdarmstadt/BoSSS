@@ -34,47 +34,22 @@ namespace ilPSP.LinSolvers.PETSc {
     [SuppressUnmanagedCodeSecurity]
     public sealed class UnsafePETSc : DynLibLoader {
 
-        static (string[] _LibNames, string[][][] PrequesiteLibraries, GetNameMangling[] NameMangling, PlatformID[] OsFilter, int[] PointerSizeFilter) SelectLibrary(PETScNativeVariant variant) {
-            string windowsName;
-            string linuxName;
-            switch(variant) {
-                case PETScNativeVariant.Mpi:
-                    windowsName = "libpetsc_mpi.dll";
-                    linuxName = "libpetsc_mpi.so";
-                    break;
-                case PETScNativeVariant.OpenMp:
-                    windowsName = "libpetsc_omp.dll";
-                    linuxName = "libpetsc_omp.so";
-                    break;
-                case PETScNativeVariant.MpiOpenMp:
-                    windowsName = "libpetsc_mpi_omp.dll";
-                    linuxName = "libpetsc_mpi_omp.so";
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(variant), variant, "Unknown PETSc native variant.");
-            }
-
-            return (
-                new[] { windowsName, linuxName },
-                new[] { Array.Empty<string[]>(), Array.Empty<string[]>() },
-                new GetNameMangling[] { DynLibLoader.Identity, DynLibLoader.Identity },
-                new[] { PlatformID.Win32NT, PlatformID.Unix },
-                new[] { 8, 8 });
-        }
+        static readonly (string[] _LibNames, string[][][] PrequesiteLibraries, GetNameMangling[] NameMangling, PlatformID[] OsFilter, int[] PointerSizeFilter) PETScLibrary = (
+            new[] { "libpetsc_mpi_omp.dll", "libpetsc_mpi_omp.so" },
+            new[] { Array.Empty<string[]>(), Array.Empty<string[]>() },
+            new GetNameMangling[] { DynLibLoader.Identity, DynLibLoader.Identity },
+            new[] { PlatformID.Win32NT, PlatformID.Unix },
+            new[] { 8, 8 });
 
         /// <summary>
-        /// Loads the shared PETSc ABI corresponding to <paramref name="variant"/>.
+        /// Loads the packaged shared MPI+OpenMP PETSc ABI.
         /// </summary>
         /// <remarks>
         /// Windows and Linux shared PETSc artifacts are produced by the PETSc
         /// platform build scripts and staged beside BoSSS native libraries.
         /// </remarks>
-        public UnsafePETSc(PETScNativeVariant variant = PETScNativeVariant.Mpi) : base(SelectLibrary(variant)) {
-            NativeVariant = variant;
+        public UnsafePETSc() : base(PETScLibrary) {
         }
-
-        /// <summary>Native PETSc runtime selected by this binding.</summary>
-        public PETScNativeVariant NativeVariant { get; }
 
         /// <summary>Current BoSSS PETSc ABI uses a 32-bit <c>PetscInt</c>.</summary>
         public const int PetscIntSize = 4;
@@ -420,8 +395,7 @@ namespace ilPSP.LinSolvers.PETSc {
     }
 
     /// <summary>
-    /// Process-lifetime PETSc ABI bindings. A BoSSS process normally loads only
-    /// its selected runtime variant.
+    /// Process-lifetime PETSc ABI binding.
     /// </summary>
     /// <remarks>
     /// PETSc objects are still owned and destroyed by their individual solver.
@@ -431,51 +405,38 @@ namespace ilPSP.LinSolvers.PETSc {
     /// </remarks>
     public static class PETScNativeLibraries {
 
-        static readonly Lazy<UnsafePETSc> s_OpenMp = Create(PETScNativeVariant.OpenMp);
-        static readonly Lazy<UnsafePETSc> s_Mpi = Create(PETScNativeVariant.Mpi);
-        static readonly Lazy<UnsafePETSc> s_MpiOpenMp = Create(PETScNativeVariant.MpiOpenMp);
-
-        static Lazy<UnsafePETSc> Create(PETScNativeVariant variant) {
-            return new Lazy<UnsafePETSc>(() => new UnsafePETSc(variant), LazyThreadSafetyMode.ExecutionAndPublication);
-        }
+        static readonly Lazy<UnsafePETSc> s_Instance = new Lazy<UnsafePETSc>(
+            () => new UnsafePETSc(), LazyThreadSafetyMode.ExecutionAndPublication);
 
         /// <summary>
-        /// Loads and binds one concrete PETSc runtime variant for the rest of
-        /// this process.
+        /// Loads and binds the packaged PETSc runtime for the rest of this process.
         /// </summary>
-        /// <param name="variant">The concrete variant to load.</param>
-        public static void Preload(PETScNativeVariant variant) {
-            _ = Get(variant);
+        public static void Preload() {
+            _ = Get();
         }
 
         /// <summary>
-        /// Attempts to load one concrete PETSc runtime variant without making
+        /// Attempts to load the packaged PETSc runtime without making
         /// PETSc a mandatory runtime dependency of the host application.
         /// </summary>
-        /// <param name="variant">The concrete variant to load.</param>
         /// <param name="failureMessage">
         /// A description of the load failure, or <see langword="null"/> on success.
         /// </param>
-        /// <returns><see langword="true"/> when the selected variant was loaded.</returns>
-        public static bool TryPreload(PETScNativeVariant variant, out string failureMessage) {
+        /// <returns><see langword="true"/> when PETSc was loaded.</returns>
+        public static bool TryPreload(out string failureMessage) {
             try {
-                Preload(variant);
+                Preload();
                 failureMessage = null;
                 return true;
             } catch(Exception error) {
-                failureMessage = $"{variant}: {error.Message}";
+                failureMessage = error.Message;
                 return false;
             }
         }
 
-        /// <summary>Returns the already process-owned ABI binding for <paramref name="variant"/>.</summary>
-        internal static UnsafePETSc Get(PETScNativeVariant variant) {
-            switch(variant) {
-                case PETScNativeVariant.OpenMp: return s_OpenMp.Value;
-                case PETScNativeVariant.Mpi: return s_Mpi.Value;
-                case PETScNativeVariant.MpiOpenMp: return s_MpiOpenMp.Value;
-                default: throw new ArgumentOutOfRangeException(nameof(variant), variant, "A concrete PETSc native variant is required.");
-            }
+        /// <summary>Returns the process-owned PETSc ABI binding.</summary>
+        internal static UnsafePETSc Get() {
+            return s_Instance.Value;
         }
     }
 }

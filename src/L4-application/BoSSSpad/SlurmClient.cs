@@ -733,6 +733,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                     // when using SLURM, sometime `srun` is recommended instead of `mpiexec`; but on Ubuntu 24, e.g., slurm and openMPI are incompatible and sometimes crash the application
                     sw.WriteLine($"export OMP_NUM_THREADS={NumThreads}");
+                    sw.WriteLine($"export OPENBLAS_NUM_THREADS={NumThreads}");
                     sw.WriteLine($"mpirun -n {MPIprocs} --map-by slot:PE={TotalThreadsPerRank}:HWTCPUS --bind-to hwthread " +
                         $"{base.DotnetRuntime} " +
                         GetSanitizedEntryAssemblyname(myJob) + 
@@ -744,7 +745,7 @@ namespace BoSSS.Application.BoSSSpad {
                     sw.WriteLine($"srun --cpu-bind=cores " +
                         $"--mem-bind=local " +
                         //"--output=rank_%t_trace.out strace -f -e clone " + // for debugging threading
-                        $"bash -c 'export OMP_NUM_THREADS={NumThreads}; " + //if not used like this, srun overwrites OMP_NUM_THREADS to TotalThreadsPerRank.
+                        $"bash -c 'export OMP_NUM_THREADS={NumThreads}; export OPENBLAS_NUM_THREADS={NumThreads}; " + //if not used like this, srun overwrites OMP_NUM_THREADS to TotalThreadsPerRank.
                         $"{base.DotnetRuntime} " +
                         GetSanitizedEntryAssemblyname(myJob) +
                         "'");

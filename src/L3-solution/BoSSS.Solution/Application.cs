@@ -256,13 +256,10 @@ namespace BoSSS.Solution {
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
 
-            // PETSc MPIUNI is not ABI-compatible with a process that already
-            // hosts real MPI. Resolve and preload precisely one safe runtime;
-            // in particular, never eagerly load every shipped PETSc variant.
-            PETScNativeVariant petscVariant = PETScNativeVariantResolver.Resolve(
-                PETScNativeVariant.Auto, size, ilPSP.Environment.NumThreads, csMPI.Raw.Initialized());
-            if(!PETScNativeLibraries.TryPreload(petscVariant, out string petscLoadFailure)) {
-                m_Logger.Warn($"The selected PETSc runtime ({petscVariant}) could not be preloaded: {petscLoadFailure}");
+            // Preload the one packaged real-MPI PETSc runtime after MPI and threading
+            // have been initialized.
+            if(!PETScNativeLibraries.TryPreload(out string petscLoadFailure)) {
+                m_Logger.Warn($"The PETSc MPI+OpenMP runtime could not be preloaded: {petscLoadFailure}");
             }
 
             if (_MustFinalizeMPI) {

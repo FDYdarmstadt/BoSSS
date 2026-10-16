@@ -36,9 +36,6 @@ namespace ilPSP.LinSolvers.PETSc {
     /// </remarks>
     public abstract unsafe class PETScSolver : ISparseSolver {
 
-        // PETSc MPIUNI defines MPI_COMM_WORLD as 2 and MPI_COMM_NULL as 0.
-        const int MpiUniCommunicatorWorld = 2;
-
         /// <summary>Loaded direct PETSc ABI for the selected native variant.</summary>
         protected UnsafePETSc m_Native;
         /// <summary>Native KSP handle configured by the derived solver.</summary>
@@ -54,9 +51,6 @@ namespace ilPSP.LinSolvers.PETSc {
         int m_LocalRows = -1;
         bool m_Disposed;
 
-        /// <summary>Parallel PETSc runtime. Set before <see cref="DefineMatrix"/>.</summary>
-        public PETScNativeVariant NativeVariant { get; set; } = PETScNativeVariant.Auto;
-
         /// <summary>PETSc matrix ownership and transfer representation.</summary>
         public PETScMatrixInput MatrixInput { get; set; } = PETScMatrixInput.BorrowedCsr;
 
@@ -68,9 +62,6 @@ namespace ilPSP.LinSolvers.PETSc {
 
         /// <summary>Writes the final PETSc convergence reason to standard output.</summary>
         public bool EnableKspConvergedReason { get; set; }
-
-        /// <summary>Variant selected during <see cref="DefineMatrix"/>.</summary>
-        public PETScNativeVariant? EffectiveNativeVariant { get; private set; }
 
         /// <summary>PETSc convergence reason from the most recent solve.</summary>
         public int ConvergenceReason { get; private set; }
@@ -91,7 +82,7 @@ namespace ilPSP.LinSolvers.PETSc {
         protected abstract void ConfigureKsp();
 
         /// <summary>Validates solver-specific MPI/runtime restrictions.</summary>
-        protected virtual void ValidateParallelConfiguration(int mpiSize, PETScNativeVariant variant) {
+        protected virtual void ValidateParallelConfiguration(int mpiSize) {
         }
 
         /// <summary>Selects the matrix transfer mode for this KSP configuration.</summary>
@@ -113,17 +104,14 @@ namespace ilPSP.LinSolvers.PETSc {
                     throw new NotSupportedException("The direct PETSc ABI currently supports MPI_COMM_WORLD only.");
 
                 csMPI.Raw.Comm_Size(matrix.MPI_Comm, out int mpiSize);
-                bool mpiIsInitialized = csMPI.Raw.Initialized();
-                PETScNativeVariant variant = PETScNativeVariantResolver.Resolve(NativeVariant, mpiSize, ilPSP.Environment.NumThreads, mpiIsInitialized);
-                ValidateParallelConfiguration(mpiSize, variant);
+                ValidateParallelConfiguration(mpiSize);
 
                 MPICollectiveWatchDog.Watch(matrix.MPI_Comm);
 
                 try {
-                    // Load only the variant selected for this solver.
-                    m_Native = PETScNativeLibraries.Get(variant);
+                    m_Native = PETScNativeLibraries.Get();
                     EnsurePetscInitialized();
-                    m_Communicator = GetNativeCommunicator(variant, matrix.MPI_Comm);
+                    m_Communicator = GetNativeCommunicator(matrix.MPI_Comm);
                     using(new BlockTrace("PETSC2_NativeMatrixCreate", tr)) {
                         m_Matrix = PETScMPIAIJMatrix.Create(m_Native, m_Communicator, SelectMatrixInput(mpiSize), matrix);
                         m_LocalRows = m_Matrix.LocalRows;
@@ -141,7 +129,6 @@ namespace ilPSP.LinSolvers.PETSc {
                             Check(m_Native.SetKspMonitor(m_Ksp, m_KspMonitor, IntPtr.Zero, IntPtr.Zero), "PETSc KSPMonitorSet");
                         }
                     }
-                    EffectiveNativeVariant = variant;
                 } catch {
                     DestroyNativeObjects();
                     m_Native = null;
@@ -266,8 +253,7 @@ namespace ilPSP.LinSolvers.PETSc {
             throw new ApplicationException($"{operation} failed with PETSc error code {errorCode}{(string.IsNullOrEmpty(message) ? string.Empty : ": " + message)}");
         }
 
-        static IntPtr GetNativeCommunicator(PETScNativeVariant variant, MPI_Comm communicator) {
-            if(variant == PETScNativeVariant.OpenMp) return new IntPtr(MpiUniCommunicatorWorld);
+        static IntPtr GetNativeCommunicator(MPI_Comm communicator) {
             int size = csMPI.Raw.MPI_Comm_f2c(communicator, out uint fourByteCommunicator, out ulong eightByteCommunicator);
             switch(size) {
                 case 4: return new IntPtr(unchecked((int)fourByteCommunicator));

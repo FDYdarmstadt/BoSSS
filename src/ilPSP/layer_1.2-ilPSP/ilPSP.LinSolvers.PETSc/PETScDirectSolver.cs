@@ -49,9 +49,6 @@ namespace ilPSP.LinSolvers.PETSc {
         /// <summary>Package-specific PETSc options.</summary>
         string AdditionalOptions { get; set; }
 
-        /// <summary>Requested native PETSc runtime.</summary>
-        PETScNativeVariant NativeVariant { get; set; }
-
         /// <summary>PETSc matrix ownership and transfer representation.</summary>
         PETScMatrixInput MatrixInput { get; set; }
 
@@ -104,12 +101,10 @@ namespace ilPSP.LinSolvers.PETSc {
         }
 
         /// <inheritdoc/>
-        protected override void ValidateParallelConfiguration(int mpiSize, PETScNativeVariant variant) {
+        protected override void ValidateParallelConfiguration(int mpiSize) {
             if(Factorization == PETScDirectFactorization.Cholesky
                 && (Backend == PETScDirectBackend.Umfpack || Backend == PETScDirectBackend.SuperLuDist))
                 throw new NotSupportedException($"PETSc direct backend '{Backend}' supports LU factorization only; Cholesky is not available.");
-            if(Backend == PETScDirectBackend.SuperLuDist && variant == PETScNativeVariant.OpenMp)
-                throw new NotSupportedException("PETSc direct backend 'SuperLuDist' requires an MPI-capable PETSc native variant.");
             if(mpiSize > 1 && (Backend == PETScDirectBackend.Default || Backend == PETScDirectBackend.Umfpack))
                 throw new NotSupportedException($"PETSc direct backend '{Backend}' is sequential and cannot run with {mpiSize} MPI ranks.");
         }
