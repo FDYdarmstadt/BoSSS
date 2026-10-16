@@ -122,7 +122,7 @@ namespace BoSSS.Application.BoSSSpad {
                 // Check only the variant selected for this MPI/thread configuration;
                 // the other variants are intentionally not loaded.
                 PETScNativeVariant petscVariant = PETScNativeVariantResolver.Resolve(
-                    PETScNativeVariant.Auto, size, ilPSP.Environment.NumThreads);
+                PETScNativeVariant.Auto, size, ilPSP.Environment.NumThreads, csMPI.Raw.Initialized());
                 bool petscLoaded = CheckDynamicLibrary($"PETSc {GetPETScVariantDescription(petscVariant)}",
                     () => new UnsafePETSc(petscVariant), isOptional: true);
                 if(isReportingRank && petscLoaded)
@@ -338,7 +338,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int mpiSize);
                 PETScNativeVariant petscVariant = PETScNativeVariantResolver.Resolve(
-                PETScNativeVariant.Auto, mpiSize, ilPSP.Environment.NumThreads);
+                PETScNativeVariant.Auto, mpiSize, ilPSP.Environment.NumThreads, csMPI.Raw.Initialized());
             RunDetailedCheck($"PETSc {GetPETScVariantDescription(petscVariant)} Krylov solver", () => {
                 Console.WriteLine("  Components: PETSc Mat/Vec/KSP; KSP=CG; PC=Jacobi; 3-by-3 diagonal solve.");
                 using(var solver = new PETScKrylovSolver {

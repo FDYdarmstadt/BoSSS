@@ -107,12 +107,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 throw new NotSupportedException($"Unknown PETSc direct matrix input mode '{MatrixInput}'.");
 
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int mpiSize);
-            PETScNativeVariant effectiveVariant = PETScNativeVariantResolver.Resolve(NativeVariant, mpiSize, ilPSP.Environment.NumThreads);
-
-            if(effectiveVariant == PETScNativeVariant.OpenMp && mpiSize > 1)
-                throw new NotSupportedException(
-                    "The OpenMP-only PETSc variant uses MPIUNI and requires exactly one MPI rank. "
-                    + "Select the MPI or MPI+OpenMP variant for a multi-rank job.");
+            PETScNativeVariant effectiveVariant = PETScNativeVariantResolver.Resolve(
+                NativeVariant, mpiSize, ilPSP.Environment.NumThreads, csMPI.Raw.Initialized());
 
             if(Backend == PETScDirectBackend.Umfpack && mpiSize > 1)
                 throw new NotSupportedException(

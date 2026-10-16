@@ -420,7 +420,8 @@ namespace ilPSP.LinSolvers.PETSc {
     }
 
     /// <summary>
-    /// Process-lifetime PETSc ABI bindings for every BoSSS PETSc runtime variant.
+    /// Process-lifetime PETSc ABI bindings. A BoSSS process normally loads only
+    /// its selected runtime variant.
     /// </summary>
     /// <remarks>
     /// PETSc objects are still owned and destroyed by their individual solver.
@@ -439,40 +440,31 @@ namespace ilPSP.LinSolvers.PETSc {
         }
 
         /// <summary>
-        /// Loads and binds all shipped PETSc ABI variants for the rest of this
-        /// process. Call this after BoSSS native-library bootstrap when PETSc
-        /// startup latency should not occur in the first solve.
+        /// Loads and binds one concrete PETSc runtime variant for the rest of
+        /// this process.
         /// </summary>
-        public static void PreloadAll() {
-            _ = s_OpenMp.Value;
-            _ = s_Mpi.Value;
-            _ = s_MpiOpenMp.Value;
+        /// <param name="variant">The concrete variant to load.</param>
+        public static void Preload(PETScNativeVariant variant) {
+            _ = Get(variant);
         }
 
         /// <summary>
-        /// Attempts to load every PETSc variant without making PETSc a mandatory
-        /// runtime dependency of the host application.
+        /// Attempts to load one concrete PETSc runtime variant without making
+        /// PETSc a mandatory runtime dependency of the host application.
         /// </summary>
+        /// <param name="variant">The concrete variant to load.</param>
         /// <param name="failureMessage">
-        /// A description of every unavailable variant, or <see langword="null"/>
-        /// when all variants were loaded.
+        /// A description of the load failure, or <see langword="null"/> on success.
         /// </param>
-        /// <returns><see langword="true"/> when every variant was loaded.</returns>
-        public static bool TryPreloadAll(out string failureMessage) {
-            string failures = null;
-            TryPreload(s_OpenMp, PETScNativeVariant.OpenMp, ref failures);
-            TryPreload(s_Mpi, PETScNativeVariant.Mpi, ref failures);
-            TryPreload(s_MpiOpenMp, PETScNativeVariant.MpiOpenMp, ref failures);
-            failureMessage = failures;
-            return failures == null;
-        }
-
-        static void TryPreload(Lazy<UnsafePETSc> binding, PETScNativeVariant variant, ref string failures) {
+        /// <returns><see langword="true"/> when the selected variant was loaded.</returns>
+        public static bool TryPreload(PETScNativeVariant variant, out string failureMessage) {
             try {
-                _ = binding.Value;
+                Preload(variant);
+                failureMessage = null;
+                return true;
             } catch(Exception error) {
-                string failure = $"{variant}: {error.Message}";
-                failures = failures == null ? failure : failures + System.Environment.NewLine + failure;
+                failureMessage = $"{variant}: {error.Message}";
+                return false;
             }
         }
 

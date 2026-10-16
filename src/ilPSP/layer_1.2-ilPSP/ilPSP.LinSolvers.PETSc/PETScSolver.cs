@@ -113,17 +113,14 @@ namespace ilPSP.LinSolvers.PETSc {
                     throw new NotSupportedException("The direct PETSc ABI currently supports MPI_COMM_WORLD only.");
 
                 csMPI.Raw.Comm_Size(matrix.MPI_Comm, out int mpiSize);
-                PETScNativeVariant variant = PETScNativeVariantResolver.Resolve(NativeVariant, mpiSize, ilPSP.Environment.NumThreads);
-                if(variant == PETScNativeVariant.OpenMp && mpiSize != 1)
-                    throw new NotSupportedException("The PETSc OpenMP variant uses MPIUNI and requires exactly one BoSSS MPI rank.");
+                bool mpiIsInitialized = csMPI.Raw.Initialized();
+                PETScNativeVariant variant = PETScNativeVariantResolver.Resolve(NativeVariant, mpiSize, ilPSP.Environment.NumThreads, mpiIsInitialized);
                 ValidateParallelConfiguration(mpiSize, variant);
 
                 MPICollectiveWatchDog.Watch(matrix.MPI_Comm);
 
                 try {
-                    // Application.InitMPI preloads all variants when available.
-                    // Do not force unrelated missing variants on direct L0 clients.
-                    PETScNativeLibraries.TryPreloadAll(out _);
+                    // Load only the variant selected for this solver.
                     m_Native = PETScNativeLibraries.Get(variant);
                     EnsurePetscInitialized();
                     m_Communicator = GetNativeCommunicator(variant, matrix.MPI_Comm);

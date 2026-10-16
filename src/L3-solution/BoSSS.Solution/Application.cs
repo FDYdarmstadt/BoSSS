@@ -29,6 +29,7 @@ using BoSSS.Solution.Queries;
 using CommandLine;
 using CommandLine.Text;
 using ilPSP;
+using ilPSP.LinSolvers.PETSc;
 using ilPSP.Tracing;
 using ilPSP.Utils;
 using log4net;
@@ -237,12 +238,6 @@ namespace BoSSS.Solution {
                 nativeLibDir,
                 out bool _MustFinalizeMPI);
 
-            // PETSc is optional: native loading failures must not prevent a
-            // non-PETSc BoSSS application from starting.
-            if(!ilPSP.LinSolvers.PETSc.PETScNativeLibraries.TryPreloadAll(out string petscLoadFailure)) {
-                m_Logger.Warn("PETSc native runtime is unavailable; PETSc solvers cannot be selected:" + System.Environment.NewLine + petscLoadFailure);
-            }
-
             //ilPSP.Utils.CPUAffinityWindows.SetOMP_PLACESfromCCPVar(1);
             if(args.Contains("--num_threads") || args.Contains("-T")) {
                 int iOff = args.FirstIndexWhere(arg => arg == "--num_threads" || arg == "-T");
@@ -260,6 +255,16 @@ namespace BoSSS.Solution {
             int rank, size;
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
+
+            // PETSc MPIUNI is not ABI-compatible with a process that already
+            // hosts real MPI. Resolve and preload precisely one safe runtime;
+            // in particular, never eagerly load every shipped PETSc variant.
+            PETScNativeVariant petscVariant = PETScNativeVariantResolver.Resolve(
+                PETScNativeVariant.Auto, size, ilPSP.Environment.NumThreads, csMPI.Raw.Initialized());
+            if(!PETScNativeLibraries.TryPreload(petscVariant, out string petscLoadFailure)) {
+                m_Logger.Warn($"The selected PETSc runtime ({petscVariant}) could not be preloaded: {petscLoadFailure}");
+            }
+
             if (_MustFinalizeMPI) {
                 if (rank == 0) {
 

@@ -22,15 +22,15 @@ namespace ilPSP.LinSolvers.PETSc {
     public enum PETScNativeVariant {
 
         /// <summary>
-        /// Selects OpenMP for one MPI rank, MPI for multiple ranks with one
-        /// thread each, and MPI plus OpenMP for multiple multi-threaded ranks.
+        /// Selects the MPI-enabled build for an MPI-initialized BoSSS process.
         /// </summary>
         Auto = 0,
 
         // Seq = 1, // we don't have this :)
 
         /// <summary>
-        /// Shared-memory OpenMP build using PETSc MPIUNI. BoSSS must run with one MPI rank.
+        /// Shared-memory OpenMP build using PETSc MPIUNI. This is only valid
+        /// when no real MPI implementation has been initialized.
         /// </summary>
         OpenMp = 2,
 
@@ -48,16 +48,33 @@ namespace ilPSP.LinSolvers.PETSc {
     /// <summary>Resolves the PETSc shared-library variant for a BoSSS execution.</summary>
     public static class PETScNativeVariantResolver {
 
-        /// <summary>Returns the explicitly requested variant or resolves <see cref="PETScNativeVariant.Auto"/>.</summary>
+        /// <summary>
+        /// Returns the explicitly requested variant or resolves <see cref="PETScNativeVariant.Auto"/> for a process
+        /// without initialized MPI. Use the MPI-aware overload for BoSSS jobs.
+        /// </summary>
         public static PETScNativeVariant Resolve(PETScNativeVariant requestedVariant, int mpiSize, int numberOfThreads) {
+            return Resolve(requestedVariant, mpiSize, numberOfThreads, mpiIsInitialized: false);
+        }
+
+        /// <summary>
+        /// Returns the explicitly requested variant or resolves <see cref="PETScNativeVariant.Auto"/>.
+        /// An initialized real-MPI process must never load PETSc MPIUNI, because its MPI symbols and communicator
+        /// constants conflict with the process MPI implementation even for one rank.
+        /// </summary>
+        public static PETScNativeVariant Resolve(PETScNativeVariant requestedVariant, int mpiSize, int numberOfThreads, bool mpiIsInitialized) {
             if(mpiSize < 1)
                 throw new System.ArgumentOutOfRangeException(nameof(mpiSize), mpiSize, "At least one MPI rank is required.");
             if(numberOfThreads < 1)
                 throw new System.ArgumentOutOfRangeException(nameof(numberOfThreads), numberOfThreads, "At least one thread is required.");
 
+            if(requestedVariant == PETScNativeVariant.OpenMp && mpiIsInitialized)
+                throw new System.NotSupportedException(
+                    "The PETSc OpenMP-only runtime uses MPIUNI and cannot be loaded after real MPI is initialized. "
+                    + "Select the MPI or MPI+OpenMP PETSc runtime.");
             if(requestedVariant != PETScNativeVariant.Auto)
                 return requestedVariant;
-            if(mpiSize == 1)
+
+            if(!mpiIsInitialized && mpiSize == 1)
                 return PETScNativeVariant.OpenMp;
             return numberOfThreads == 1 ? PETScNativeVariant.Mpi : PETScNativeVariant.MpiOpenMp;
         }
