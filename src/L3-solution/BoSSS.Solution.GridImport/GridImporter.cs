@@ -131,6 +131,7 @@ namespace BoSSS.Solution.GridImport {
                     grid = importer.GenerateBoSSSGrid();
                 }
 
+
                 return grid;
             }
         }
