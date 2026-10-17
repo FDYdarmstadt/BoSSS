@@ -28,7 +28,7 @@
     <PackageReference Include="System.Runtime.Caching" Version="5.0.0" />
   </ItemGroup-->
   <ItemGroup>
-    <PackageReference Include="log4net" Version="2.0.15" />
+    <PackageReference Include="log4net" Version="3.3.0" />
     <PackageReference Include="System.Security.Permissions" Version="5.0.0" />
   </ItemGroup>
   <ItemGroup>
