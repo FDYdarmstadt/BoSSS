@@ -1,4 +1,7 @@
-﻿using ilPSP;
+﻿using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.XDG;
+using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.Utils;
 using MPI.Wrappers;
@@ -172,5 +175,172 @@ namespace BoSSS.Solution.AdvancedSolvers {
             //%      V       n        -by-  (kact+1)  Arnoldi vectors
             //%      H      (kact+1)  -by-   kact
         }
+
+
+        /// <summary>
+        /// returns the persson sensor field for a given field
+        /// </summary>
+        public static void getPerssonSensorXDGField(out XDGField PerssonSensorField, XDGField FieldToTest, CellMask mask = null) {
+            if (FieldToTest.Basis.Degree == 0) {
+                throw new NotSupportedException("Sensor not supported for DG degree 0");
+            }
+
+            LevelSetTracker LsTrk = ((XDGBasis)FieldToTest.Basis).Tracker;
+            XDGField SensorField = new XDGField(new XDGBasis(LsTrk, 0), "PerssonSensorField-" + FieldToTest.Identification);
+
+            //setting all mean values to minus infinity
+            if (mask == null) 
+                mask = CellMask.GetFullMask(LsTrk.GridDat);
+            foreach (int jCell in mask.ItemEnum) {
+                foreach (SpeciesId speciesId in LsTrk.SpeciesIdS) {
+                    SensorField.GetSpeciesShadowField(speciesId).SetMeanValue(jCell, -10.0);
+                }
+            }
+
+            //Choose Quad Order
+            int deg = FieldToTest.Basis.Degree;
+            var AvailOrders = LsTrk.GetCachedOrders().Where(order => order >= 2 * deg);
+            int order2Pick = AvailOrders.Any() ? AvailOrders.Min() : 2 * deg;
+
+            //get the p-1 Projection Up-1
+            XDGField fieldPMinus1 = GetPMinus1Projection(LsTrk, FieldToTest, order2Pick);
+            var fieldPMinus1LaidBack = new XDGField(FieldToTest.Basis, "fieldPMinus1LaidBack");
+            fieldPMinus1LaidBack.AccLaidBack(1.0, fieldPMinus1);
+
+            //do the substraction U - Up-1
+            var diffField = FieldToTest.CloneAs();
+            diffField.Identification = "diffField";
+            diffField.Acc(-1.0, fieldPMinus1LaidBack);
+            int N = FieldToTest.Basis.NonX_Basis.Length; // DOFs per cell per species.
+
+            //helper functions
+            double[] GetCoords(int j, SpeciesId spc, XDGField field) {
+                int iSpc = LsTrk.Regions.GetSpeciesIndex(spc, j);
+                if (iSpc < 0)
+                    return null;
+                else
+                    return field.Coordinates.GetRowPart(j, iSpc * N, N);
+            }
+
+            void SetValuePersonField(int cell, SpeciesId speciesId, double nominator, double denominator) {
+                if (nominator == 0) {
+                    SensorField.GetSpeciesShadowField(speciesId).SetMeanValue(cell, -10.0);
+                } else {
+
+                    if (denominator == 0) {
+                        throw new ArgumentException("denominator zero but nominator not zero");
+                    } else {
+                        double PerssonSensor = (nominator / denominator).Sqrt();
+                        double val = Math.Log10(PerssonSensor);
+                        if (val == 0) {
+                            Console.WriteLine("WTF");
+                        }
+                        SensorField.GetSpeciesShadowField(speciesId).SetMeanValue(cell, val);
+                    }
+                }
+            }
+
+            //compute the persson field
+            foreach (SpeciesId speciesId in LsTrk.SpeciesIdS) {
+                var speciesMask = LsTrk.Regions.GetSpeciesMask(speciesId);
+                var cutCellMask = LsTrk.Regions.GetCutCellMask().Intersect(speciesMask);
+                var UnCutSpeciesMask = speciesMask.Except(cutCellMask);
+
+                var MMF = LsTrk.GetXDGSpaceMetrics(speciesId, order2Pick).MassMatrixFactory;
+                var MMblox = MMF.GetMassMatrixBlocks(FieldToTest.Basis.NonX_Basis, speciesId);
+
+                // 1st, do all the cut cells with non-id mass matrix
+                // =================================================
+                double[] tmp = new double[N];
+                double[] tmp2 = new double[N];
+                for (int iSub = 0; iSub < MMblox.jSub2jCell.Length; iSub++) {
+                    int jCell = MMblox.jSub2jCell[iSub];
+                    double[] CoordsFTT = GetCoords(jCell, speciesId, FieldToTest);
+                    double[] CoordsDiff = GetCoords(jCell, speciesId, diffField);
+                    if (CoordsFTT == null)
+                        continue; // species not present in cell; no contribution.
+
+                    var MM_j = MMblox.MassMatrixBlocks.ExtractSubArrayShallow(new int[] { iSub, 0, 0 }, new int[] { iSub - 1, N - 1, N - 1 });
+
+                    MM_j.GEMV(1.0, CoordsFTT, 0.0, tmp);
+                    double denominator = CoordsFTT.InnerProd(tmp);
+
+                    MM_j.GEMV(1.0, CoordsDiff, 0.0, tmp2);
+                    double nominator = CoordsDiff.InnerProd(tmp2);
+
+                    SetValuePersonField(jCell, speciesId, nominator, denominator);
+
+                }
+
+                //2nd we do the NonCutCells
+                foreach (int iCell in UnCutSpeciesMask.ItemEnum) {
+                    double[] CoordsFTT = GetCoords(iCell, speciesId, FieldToTest);
+                    double[] CoordsDiff = GetCoords(iCell, speciesId, diffField);
+
+                    // in this iCell, we have an orthonormal basis, i.e. the mass matrix is the identity
+                    double denominator = CoordsFTT.L2NormPow2();
+                    double nominator = CoordsDiff.L2NormPow2();
+
+                    SetValuePersonField(iCell, speciesId, nominator, denominator);
+                }
+            }
+
+
+            PerssonSensorField = SensorField.CloneAs();
+        }
+
+
+        /// <summary>
+        /// Computes the Projection onto the (p-1)-Polynomial space (relative to the input field)
+        /// </summary>
+        /// <param name="LsTrk"></param>
+        /// <param name="xdgfieldToTest"></param>
+        /// <param name="order2Pick"></param>
+        /// <returns>projection</returns>
+        public static XDGField GetPMinus1Projection(LevelSetTracker LsTrk, XDGField xdgfieldToTest, int order2Pick) {
+            var fieldPMinus1 = new XDGField(new XDGBasis(LsTrk, xdgfieldToTest.Basis.Degree - 1), "fieldPMinus1");
+            {
+                //get the MassMatrix
+                MassMatrixFactory massMatrixFactory = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS, order2Pick).MassMatrixFactory;
+                BlockMsrMatrix massMatrix = massMatrixFactory.GetMassMatrix(xdgfieldToTest.Mapping, inverse: false);
+                BlockMsrMatrix MMPmin1Pmin1Inv = massMatrixFactory.GetMassMatrix(fieldPMinus1.Mapping, inverse: true);
+
+                //get the subMassMatrices of deg p-1
+                MsrMatrix MMPmin1P;//Sub of Mass Mat with (rows p-1 ,column p)
+                {
+                    //compute the lists of indices used by GetSubMatrix()
+                    var rowIndices = new List<long>();
+                    var colIndices = new List<long>();
+                    {
+                        int MaxModeR = xdgfieldToTest.Mapping.MaxTotalNoOfCoordinatesPerCell / LsTrk.TotalNoOfSpecies;
+                        int MaxModer = fieldPMinus1.Mapping.MaxTotalNoOfCoordinatesPerCell / LsTrk.TotalNoOfSpecies;
+
+                        int iField;
+                        int jCell;
+                        int nMode;
+                        for (int iRow = 0; iRow < fieldPMinus1.Mapping.TotalLength; iRow++) {
+                            fieldPMinus1.Mapping.LocalFieldCoordinateIndex(iRow, out iField, out jCell, out nMode);
+                            double rMode = (double)nMode;
+                            int fac = (int)Math.Floor(rMode / MaxModer);
+                            int row = xdgfieldToTest.Mapping.LocalUniqueCoordinateIndex(iField, jCell, nMode + fac * (MaxModeR - MaxModer));
+                            rowIndices.Add(row);
+                        }
+                        for (int i = 0; i < massMatrix.NoOfCols; i++) {
+                            colIndices.Add(i);
+                        }
+                    }
+                    MMPmin1P = massMatrix.ToMsrMatrix().GetSubMatrix(rowIndices, colIndices);
+                }
+
+                // Here we compute M_{p-1,p-1}^{-1} * M_{p-1,p} * Coords(xdgfieldtoTest)
+                var tmpVec = new double[fieldPMinus1.CoordinateVector.Length];
+                MMPmin1P.SpMV(1.0, xdgfieldToTest.CoordinateVector, 0.0, tmpVec);
+                MMPmin1Pmin1Inv.SpMV(1.0, tmpVec, 0.0, fieldPMinus1.CoordinateVector);
+
+
+            }
+            return fieldPMinus1;
+        }
+
     }
 }

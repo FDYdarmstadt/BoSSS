@@ -20,6 +20,7 @@ using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 
 namespace ilPSP.LinSolvers {
 
@@ -133,14 +134,12 @@ namespace ilPSP.LinSolvers {
             else
                 SolverFallbackSeq = SolverFallbackSeq.Take(3).ToArray();
 
-
             //*
 
             string LastError = null;
             int count = 0;
             foreach (var f in SolverFallbackSeq) {
                 using (var slv = f()) {
-                    //Console.WriteLine("Using solver: " + slv.GetType() + " ...");
                     slv.DefineMatrix(Matrix);
                     var SolRes = slv.Solve(X, B.ToArray());
 

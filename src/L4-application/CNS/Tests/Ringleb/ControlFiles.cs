@@ -101,6 +101,7 @@ namespace CNS.Tests.Ringleb {
         /// </summary>
         /// <returns></returns>
         public static RinglebControl RinglebStiffenedGasTest() {
+            // --control 'cs:CNS.Tests.Ringleb.ControlFiles.RinglebStiffenedGasTest()'
             RinglebControl c = GetTemplate(2, new StiffenedGas(7.0, 10.0));
 
             c.GridGuid = new Guid("f5a0fea5-156d-42ce-abf2-a418469140bb");

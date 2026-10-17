@@ -137,7 +137,7 @@ namespace BoSSS.Solution.RheologyCommon {
             IncompressibleBcType edgType = m_BcMap.EdgeTag2Type[inp.EdgeTag];
 
             switch (edgType) {
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet:
 
 

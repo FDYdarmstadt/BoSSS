@@ -24,6 +24,13 @@ namespace BoSSS.Application.XNSERO_Solver {
     public class MotionFixed : Motion {
 
         /// <summary>
+        /// Empty constructor used during de-serialization
+        /// </summary>
+        protected MotionFixed() : base() {
+            // noop
+        }
+
+        /// <summary>
         /// No motion
         /// </summary>
         /// <param name="gravity">
@@ -32,7 +39,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="density">
         /// The density of the particle.
         /// </param>
-        public MotionFixed(double density = 0) : base(density) { }
+        public MotionFixed(double density = 0.0, int spatDim = 2) : base(density, spatDim) { }
 
         public override bool IncludeRotation() {
             return false;
@@ -88,7 +95,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         //}
 
         public override object Clone() {
-            MotionFixed clonedMotion = new MotionFixed(Density);
+            MotionFixed clonedMotion = new MotionFixed(Density, SpatialDim);
             clonedMotion.Volume = this.Volume;
             clonedMotion.MomentOfInertia = this.MomentOfInertia;
             return clonedMotion;
@@ -100,7 +107,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="fluidDensity"></param>
         /// <param name="tempForces"></param>
         public override Vector GravityForce(Vector Gravity) {
-            return new Vector(0, 0);
+            return new Vector(SpatialDim);
         }
     }
 }

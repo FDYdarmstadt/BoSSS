@@ -29,17 +29,17 @@ using BoSSS.Foundation.Grid.Classic;
 namespace BoSSS.Foundation.Grid.RefElements {
 
     /// <summary>
-    /// The triangular reference element \f$ K^{\textrm{tri}}  \f$.
+    /// The triangular reference element $K^{\textrm{tri}}$.
     /// </summary>
     /// <remarks>
     /// The vertices in the reference space are:
-    ///     \f[
+    ///     \[
     ///     \left[
     ///       (0,                      \frac{4}{3}),
     ///       (-\frac{2}{3} \sqrt{3}, -\frac{2}{3}),
     ///       ( \frac{2}{3} \sqrt{3}, -\frac{2}{3}) 
     ///     \right]
-    ///     \f]
+    ///     \]
     /// </remarks>
     public class Triangle : RefElement {
 
@@ -130,7 +130,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
             {
                 var qrTemp = QuadRuleResource.DecodeFromBase64(Resource.TriangleQuadRules_bin);
                 foreach(var q in qrTemp) {
-                    var realQr = QuadRule.CreateEmpty(this, q.Item2.GetLength(0), this.SpatialDimension, true);
+                    var realQr = QuadRule.CreateBlank(this, q.Item2.GetLength(0), this.SpatialDimension, true);
                     realQr.Nodes.Set2DArray(q.Item2);
                     realQr.Weights.SetVector(q.Item3);
                     realQr.OrderOfPrecision = q.Item1;

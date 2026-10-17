@@ -7,11 +7,13 @@ using System.Threading.Tasks;
 namespace ZwoLevelSetSolver {
     public static class EquationNames {
 
-        public static string DisplacementEvolutionX = "DisplacementEvolutionX";
+        public static string DisplacementEvolutionX = "DisplaceX";
 
-        public static string DisplacementEvolutionY = "DisplacementEvolutionY";
+        public static string DisplacementEvolutionY = "DisplaceY";
 
-        public static string DisplacementEvolutionZ = "DisplacementEvolutionZ";
+        public static string DisplacementEvolutionZ = "DisplaceZ";
+
+        public static string DisplacementContinuity = "DisplacementContinuity";
 
         static public string DisplacementEvolutionComponent(int d) {
             switch(d) {

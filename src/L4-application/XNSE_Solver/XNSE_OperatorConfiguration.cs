@@ -39,6 +39,9 @@ namespace BoSSS.Application.XNSE_Solver {
 
             Gravity = control.InitialValues_EvaluatorsVec.Keys.Any(name => name.StartsWith(VariableNames.GravityX.TrimEnd('X', 'Y', 'Z'))) || control.FieldOptions.Keys.Where(k => k.Contains("Gravity")).Any();
             VolForce = control.InitialValues_EvaluatorsVec.Keys.Any(name => name.StartsWith(VariableNames.VolumeForceX.TrimEnd('X', 'Y', 'Z'))) || control.FieldOptions.Keys.Where(k => k.Contains("VolumeForce")).Any();
+            //RotInertForce = control.UseRotInertForceTerms;
+            //AngularVelocity = control.AngularVelocity;
+            //CylindricalCoord = control.UseCylindricalCoords;
             Continuity = true;
             PressureGradient = true;
             InterfaceSlip = control.PhysicalParameters.slipI > 0.0;
@@ -170,6 +173,21 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public bool VolForce;
 
+        /// <summary>
+        /// include rotational inertia force terms 
+        /// </summary>
+        public bool RotInertForce;
+
+        /// <summary>
+        /// angular velocity of the rotating system
+        /// </summary>
+        public double[] AngularVelocity;
+
+        /// <summary>
+        /// include cylindrical coord terms
+        /// </summary>
+        public bool CylindricalCoord;
+
 
         // <summary>
         // include heat equation
@@ -293,6 +311,14 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public virtual bool withPressureDissipation {
             get { return withDissP; }
+        }
+
+        public virtual bool isRotInertiaForce {
+            get { return RotInertForce; }
+        }
+
+        public virtual bool isCylindricalCoords {
+            get { return CylindricalCoord; }
         }
 
     }

@@ -299,7 +299,7 @@ namespace BoSSS.Application.ExternalBinding {
         }
 
         public static void Main() {
-
+            
             // GridImportTest.ConvertFOAMGrid();
             Init();
 
@@ -370,7 +370,7 @@ namespace BoSSS.Application.ExternalBinding {
             // RunDropletTest(grd);
 
             // DropletTest();
-            ConvergenceTest();
+            // ConvergenceTest();
             // Test1D();
 
         }

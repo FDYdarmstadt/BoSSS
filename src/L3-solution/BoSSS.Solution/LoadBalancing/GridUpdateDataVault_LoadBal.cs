@@ -23,13 +23,14 @@ using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.Tracing;
 using ilPSP.Utils;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Bson;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.Serialization.Formatters.Binary;
 
 namespace BoSSS.Solution.LoadBalancing {
     
@@ -133,6 +134,9 @@ namespace BoSSS.Solution.LoadBalancing {
         }
 
 
+       
+
+
         /// <summary>
         /// Loads some data vector before grid-redistribution.
         /// </summary>
@@ -143,6 +147,9 @@ namespace BoSSS.Solution.LoadBalancing {
         /// <param name="Reference">
         /// Unique string reference under which data has been stored before grid-redistribution.
         /// </param>
+        /// <remarks>
+        /// Note: the counter-part of this method is in the base-class, <see cref="GridUpdateDataVaultBase.BackupVector{T, V}(V, string)"/>
+        /// </remarks>
         public void RestoreVector<T, V>(V vec, string Reference)
             where V : IList<T> //
         {
@@ -152,12 +159,16 @@ namespace BoSSS.Solution.LoadBalancing {
 
                 double[][] SerializedData = m_newDGFieldData_OnlyRedist[Reference];
                 Debug.Assert(SerializedData.Length == m_newJ);
-                var fmt = new BinaryFormatter();
+                //var fmt = new BinaryFormatter();
 
                 for(int j = 0; j < m_newJ; j++) {
                     if(SerializedData[j].Length > 0) {
                         using(var ms = new MemoryStream(ConvertBuffer(SerializedData[j]))) {
-                            vec[j] = (T)(fmt.Deserialize(ms));
+                            //vec[j] = (T)(fmt.Deserialize(ms));
+                            using(var w = new BsonDataReader(ms)) {
+                                var containerObj = (JsonContainer)jsonFormatter.Deserialize(w, typeof(JsonContainer));
+                                vec[j] = (T)(containerObj.PayLoad);
+                            }
                         }
                     } else {
                         vec[j] = default(T);
@@ -256,16 +267,6 @@ namespace BoSSS.Solution.LoadBalancing {
             }
         }
 
-        /*
-        Dictionary<string, CcmData> m_CCMdata = new Dictionary<string, CcmData>();
-
-        class CcmData {
-            public string[] SpeciesNamesList;
-            public int HMForder;
-            public XQuadFactoryHelper.MomentFittingVariants HMFvariant;
-        }
-        */
-
         /// <summary>
         /// Restores the state of the level-set tracker after load balancing.
         /// </summary>
@@ -287,15 +288,19 @@ namespace BoSSS.Solution.LoadBalancing {
                         ushort[] RegionCode = new ushort[m_newJ];
                         this.RestoreVector(RegionCode, base.GetLSregioncodeName(iH));
 
-                        
-                        (int iLevSet, int iFace)[][] LevSetCoincidingFaces = new (int iLevSet, int iFace)[m_newJ][];
-                        this.RestoreVector<(int iLevSet, int iFace)[],(int iLevSet, int iFace)[][]>(LevSetCoincidingFaces, GetLSlevsetcoincidingfacesName(iH));
+
+                        (int iLevSet, int iFace)[][] __LevSetCoincidingFaces = new (int iLevSet, int iFace)[m_newJ][];
+                        this.RestoreVector<(int iLevSet, int iFace)[], (int iLevSet, int iFace)[][]>(__LevSetCoincidingFaces, GetLSlevsetcoincidingfacesName(iH));
+
+                        (int iLevSet, int iFace)[][] __LevSetCoincidingCoFaces = new (int iLevSet, int iFace)[m_newJ][];
+                        this.RestoreVector<(int iLevSet, int iFace)[], (int iLevSet, int iFace)[][]>(__LevSetCoincidingCoFaces, GetLSlevsetcoincidingcofacesName(iH));
 
                         m_NewTracker.ReplaceCurrentTimeLevel(
                             new LevelSetTracker.TrackerBackup() {
                                 LevelSets = tmpLS,
                                 Regions = RegionCode,
-                                LevSetCoincidingFaces = LevSetCoincidingFaces, 
+                                LevSetCoincidingFaces = __LevSetCoincidingFaces, 
+                                LevSetCoincidingCoFaces = __LevSetCoincidingCoFaces,
                                 Version = m_LsTrkPrivData.Versions[1 - iH],
                                 time = m_LsTrkPrivData.Times[1 - iH]
                             });
@@ -317,131 +322,6 @@ namespace BoSSS.Solution.LoadBalancing {
                 }
             }
         }
-
-        /*
-        /// <summary>
-        /// Backup of a cut-cell metric.
-        /// </summary>
-        public void BackupCutCellMetrics(CutCellMetrics ccm, string Reference) {
-            if(!object.ReferenceEquals(m_OldTracker, ccm.Tracker))
-                throw new ArgumentException();
-
-            CcmData da = new CcmData();
-
-            SpeciesId[] speciesIdList = ccm.SpeciesList.ToArray();
-            int NoOfSpc = speciesIdList.Length;
-            da.SpeciesNamesList = speciesIdList.Select(spc => m_OldTracker.GetSpeciesName(spc)).ToArray();
-            da.HMForder = ccm.HMForder;
-            da.HMFvariant = ccm.HMFvariant;
-
-
-            m_CCMdata.Add(Reference, da);
-
-            for(int iSpc = 0; iSpc < speciesIdList.Length; iSpc++) {
-                SpeciesId spc = speciesIdList[iSpc];
-                string SpeciesName = m_OldTracker.GetSpeciesName(spc);
-
-                double[] Avol = ccm.CutCellVolumes[spc].ExtractSubArrayShallow(new int[] { 0 }, new int[] { m_oldJ - 1 }).To1DArray();
-                double[] Aint = ccm.InterfaceArea[spc].ExtractSubArrayShallow(new int[] { 0 }, new int[] { m_oldJ - 1 }).To1DArray();
-                MultidimensionalArray Aedg = ccm.CutEdgeAreas[spc];
-
-                Debug.Assert(Aedg.Dimension == 1 && Aedg.GetLength(0) == m_OldGrid.iGeomEdges.Count);
-
-                Tuple<long, double>[][] AedgGathered = GatherEdge2Cell(m_OldGrid, iEdge => Aedg[iEdge]);
-                Debug.Assert(AedgGathered.Length == m_oldJ);
-
-#if DEBUG
-                BitArray CheckTouch = new BitArray(Aedg.GetLength(0));
-                ScatterCell2Edge(m_OldGrid, AedgGathered, delegate (int iEdge, double val) {
-                    Debug.Assert(Aedg[iEdge] == val);
-                    CheckTouch[iEdge] = true;
-                });
-                for(int i = 0; i < Aedg.GetLength(0); i++)
-                    Debug.Assert(CheckTouch[i] == true);
-#endif
-
-                BackupVector(Avol, Reference + "::CutCellMetrics-Vol:" + SpeciesName);
-                BackupVector(Aint, Reference + "::CutCellMetrics-Int:" + SpeciesName);
-                BackupVector<Tuple<long, double>[], Tuple<long, double>[][]>(AedgGathered, Reference + "::CutCellMetrics-Edge:" + SpeciesName);
-
-#if DEBUG
-                Tuple<long, double>[][] check_AedgGathered = new Tuple<long, double>[m_oldJ][];
-
-                int bkup_new_J = m_newJ;
-                Debug.Assert(m_newDGFieldData_OnlyRedist == null);
-                this.m_newDGFieldData_OnlyRedist = m_oldDGFieldData;
-                this.m_newJ = m_oldJ; // hack to make next line working
-                RestoreVector<Tuple<long, double>[], Tuple<long, double>[][]>(check_AedgGathered, Reference + "::CutCellMetrics-Edge:" + SpeciesName);
-                this.m_newJ = bkup_new_J;
-                this.m_newDGFieldData_OnlyRedist = null;
-                for(int j = 0; j < m_oldJ; j++) {
-                    var Lst1 = AedgGathered[j];
-                    var Lst2 = check_AedgGathered[j];
-                    Debug.Assert(Lst1.Length == Lst2.Length);
-                    int LL = Lst2.Length;
-                    for(int l = 0; l < LL; l++) {
-                        Debug.Assert(Lst1[l].Item1 == Lst2[l].Item1);
-                        Debug.Assert(Lst1[l].Item2 == Lst2[l].Item2);
-                    }
-                }
-#endif
-            }
-        }
-
-        /// <summary>
-        /// Reload cut-cell metrics.
-        /// </summary>
-        public void RestoreCutCellMetrics(out CutCellMetrics ccm, string Reference) {
-            if(m_NewTracker == null)
-                throw new NotSupportedException();
-
-            CcmData da = m_CCMdata[Reference];
-
-            SpeciesId[] speciesIdList = da.SpeciesNamesList.Select(spcName => m_NewTracker.GetSpeciesId(spcName)).ToArray();
-            int NoOfSpc = speciesIdList.Length;
-
-            Dictionary<SpeciesId, MultidimensionalArray> CcVol = new Dictionary<SpeciesId, MultidimensionalArray>();
-            Dictionary<SpeciesId, MultidimensionalArray> CcInt = new Dictionary<SpeciesId, MultidimensionalArray>();
-            Dictionary<SpeciesId, MultidimensionalArray> CcEdg = new Dictionary<SpeciesId, MultidimensionalArray>();
-
-            int JE = m_newJ + m_NewGrid.iLogicalCells.NoOfExternalCells;
-            double[] vec_cellMetrics = new double[JE * speciesIdList.Length * 2];
-
-            // collect all per-cell-metrics in the same MultidimArry, for MPI-exchange
-            // 1st index: cell
-            // 2nd index: species
-            // 3rd index: 0 for interface surface per cell, 1 for cut-cell-volume
-            MultidimensionalArray cellMetrics = MultidimensionalArray.CreateWrapper(vec_cellMetrics, JE, speciesIdList.Length, 2);
-
-
-            for(int iSpc = 0; iSpc < speciesIdList.Length; iSpc++) {
-                SpeciesId spc = speciesIdList[iSpc];
-                string SpeciesName = m_NewTracker.GetSpeciesName(spc);
-
-                double[] Avol = new double[m_newJ];
-                double[] Aint = new double[m_newJ];
-                Tuple<long, double>[][] AedgGathered = new Tuple<long, double>[m_newJ][];
-
-                RestoreVector(delegate (int j, double[] v) { cellMetrics[j, iSpc, 1] = v[0]; Debug.Assert(v.Length == 1); }, Reference + "::CutCellMetrics-Vol:" + SpeciesName);
-                RestoreVector(delegate (int j, double[] v) { cellMetrics[j, iSpc, 0] = v[0]; Debug.Assert(v.Length == 1); }, Reference + "::CutCellMetrics-Int:" + SpeciesName);
-                RestoreVector<Tuple<long, double>[], Tuple<long, double>[][]>(AedgGathered, Reference + "::CutCellMetrics-Edge:" + SpeciesName);
-
-                CcVol.Add(spc, cellMetrics.ExtractSubArrayShallow(-1, iSpc, 1));
-                CcInt.Add(spc, cellMetrics.ExtractSubArrayShallow(-1, iSpc, 1));
-
-                MultidimensionalArray Aedg = MultidimensionalArray.Create(m_NewGrid.iGeomEdges.Count);
-                ScatterCell2Edge(m_NewGrid, AedgGathered, delegate (int iEdge, double val) { Aedg[iEdge] = val; });
-
-                CcEdg.Add(spc, Aedg);
-            }
-
-            vec_cellMetrics.MPIExchange(m_NewGrid);
-
-            ccm = new CutCellMetrics(da.HMFvariant, da.HMForder, m_NewTracker,
-                CcVol, CcInt, CcEdg);
-        }
-        */
-
 
         /// <summary>
         /// Gathers data from edges to cells.

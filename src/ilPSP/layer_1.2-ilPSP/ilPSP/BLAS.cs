@@ -836,6 +836,37 @@ namespace ilPSP.Utils {
         }
 
         /// <summary>
+        /// returns <paramref name="a"/> + <paramref name="B1"/>, allocates memory for the result
+        /// </summary>
+        static public double[] PlusVec<T, V1>(this T a, V1 B1)
+            where T : IList<double>
+            where V1 : IList<double> {
+            return a.WeightedPlusVec(1.0, B1, 1.0);
+        }
+
+        /// <summary>
+        /// returns <paramref name="a"/>*<paramref name="alpha1"/> + <paramref name="B1"/>*<paramref name="alpha2"/>, allocates memory for the result
+        /// </summary>
+        static public double[] WeightedPlusVec<T, V1>(this T a, double alpha1, V1 B1, double alpha2)
+            where T : IList<double>
+            where V1 : IList<double> {
+
+            var ret = new double[a.Count];
+            a.SetV(a, alpha1);
+            a.AccV(alpha2, B1);
+            return ret;
+        }
+
+
+        /// <summary>
+        /// returns <paramref name="a"/> - <paramref name="B1"/>, allocates memory for the result
+        /// </summary>
+        static public double[] MinusVec<T, V1>(this T a, V1 B1)
+            where T : IList<double>
+            where V1 : IList<double> {
+            return a.WeightedPlusVec(1.0, B1, -1.0);
+        }
+        /// <summary>
         /// checks all entries for infinity or NAN - values, and
         /// throws an <see cref="ArithmeticException"/> if found;
         /// </summary>
@@ -920,7 +951,6 @@ namespace ilPSP.Utils {
                     throw new ArgumentOutOfRangeException("length of 'acc_index' and 'b_index' must match.");
 
                 int N = acc_index.Count;
-                //var dir = new ConcurrentDictionary<int, List<int>>();
                 ilPSP.Environment.ParallelFor(0, N, delegate (int i0, int iE) {
                     for(int i = i0; i < iE; i++) 
                         acc[acc_index[i] + acc_index_shift] += alpha*b[b_index[i] + b_index_shift];
@@ -928,14 +958,12 @@ namespace ilPSP.Utils {
 
                 //for (int i = 0; i < N; i++) {
                 //    acc[acc_index[i] + acc_index_shift] += alpha*b[b_index[i] + b_index_shift];
-                //}
-
             } else if( acc_index != null && b_index == null) {
 
                 int N = acc_index.Count;
                 ilPSP.Environment.ParallelFor(0, N, delegate (int i0, int iE) {
-                    for (int i = i0; i < iE; i++)
-                        acc[acc_index[i] + acc_index_shift] += alpha*b[i + b_index_shift];
+                    for(int i = i0; i < iE; i++)
+                        acc[acc_index[i] + acc_index_shift] += alpha * b[i + b_index_shift];
                 });
             } else if (acc_index == null && b_index != null) {
 
@@ -1138,12 +1166,16 @@ namespace ilPSP.Utils {
         }
     }
 
-    internal class BLAS_LAPACK_Libstuff {
+
+    /// <summary>
+    /// provides arguments for <see cref="DynLibLoader"/>
+    /// </summary>
+    public class BLAS_LAPACK_IntelMKL_Libstuff {
         // workaround for .NET bug:
         // https://connect.microsoft.com/VisualStudio/feedback/details/635365/runtimehelpers-initializearray-fails-on-64b-framework
         public static PlatformID[] GetPlatformID(Parallelism par) {
             switch (par) {
-                case Parallelism.SEQ: return new PlatformID[] { PlatformID.Win32NT, PlatformID.Win32NT, PlatformID.Unix };
+                case Parallelism.SEQ: return new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix };
                 case Parallelism.OMP: return new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix };
                 default: throw new ArgumentOutOfRangeException();
             }
@@ -1151,15 +1183,15 @@ namespace ilPSP.Utils {
 
         public static string[] GetLibname(Parallelism par) {
             switch (par) {
-                case Parallelism.SEQ: return new string[] { "PARDISO_seq.dll", "BLAS_LAPACK.dll", "libBoSSSnative_seq.so" };
-                case Parallelism.OMP: return new string[] { "PARDISO2_omp.dll", "libBoSSSnative_omp.so" };
+                case Parallelism.SEQ: return new string[] { "PARDISO_seq.dll", "libBoSSSnative_seq.so" };
+                case Parallelism.OMP: return new string[] { "PARDISO_omp.dll", "libBoSSSnative_omp.so" };
                 default: throw new ArgumentOutOfRangeException();
             }
         }
 
         public static GetNameMangling[] GetGetNameMangling(Parallelism par) {
             switch (par) {
-                case Parallelism.SEQ: return new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix };
+                case Parallelism.SEQ: return new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix };
                 case Parallelism.OMP: return new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix };
                 default: throw new ArgumentOutOfRangeException();
             }
@@ -1190,11 +1222,11 @@ namespace ilPSP.Utils {
         /// ctor
         /// </summary>
         public UnsafeDBLAS(Parallelism par) :
-            base(BLAS_LAPACK_Libstuff.GetLibname(par),
-                 BLAS_LAPACK_Libstuff.GetPrequesiteLibraries(par),
-                 BLAS_LAPACK_Libstuff.GetGetNameMangling(par),
-                 BLAS_LAPACK_Libstuff.GetPlatformID(par),
-                 BLAS_LAPACK_Libstuff.GetPointerSizeFilter(par)) { }
+            base(BLAS_LAPACK_IntelMKL_Libstuff.GetLibname(par),
+                 BLAS_LAPACK_IntelMKL_Libstuff.GetPrequesiteLibraries(par),
+                 BLAS_LAPACK_IntelMKL_Libstuff.GetGetNameMangling(par),
+                 BLAS_LAPACK_IntelMKL_Libstuff.GetPlatformID(par),
+                 BLAS_LAPACK_IntelMKL_Libstuff.GetPointerSizeFilter(par)) { }
 
         
         /// <summary> FORTRAN BLAS routine </summary>
@@ -1436,7 +1468,7 @@ namespace ilPSP.Utils {
         }
 
         /// <summary>
-        /// native blas in C-stype
+        /// native blas in C-style
         /// (matrices are still in FORTRAN order)
         /// </summary>
         unsafe static public void dgemm(int TRANSA, int TRANSB,

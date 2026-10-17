@@ -21,6 +21,7 @@ using System.Text;
 using ilPSP.LinSolvers;
 using System.Diagnostics;
 using ilPSP.Tracing;
+using NUnit.Framework;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -61,11 +62,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 int N = this.m_OpThisLevel.CoarserLevel.Mapping.LocalLength;
                 double[] xc = new double[N], bc = new double[N];
-                //this.RestrictionOperator.SpMVpara(1.0, X, 0.0, xc);
-                //this.RestrictionOperator.SpMVpara(1.0, B, 0.0, bc);
 
                 this.m_OpThisLevel.CoarserLevel.Restrict(B, bc);
-                this.m_OpThisLevel.CoarserLevel.Restrict(X, xc);
+
+				bool allZeros = X.All(x => x == 0.0); //usually, this is the case for the first iteration, no need for the expensive matrix-vector operation
+				if (!allZeros)
+                    this.m_OpThisLevel.CoarserLevel.Restrict(X, xc);
 
                 CoarserLevelSolver.Solve(xc, bc);
 

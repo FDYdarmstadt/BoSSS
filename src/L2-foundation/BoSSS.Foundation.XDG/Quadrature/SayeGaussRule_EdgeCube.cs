@@ -11,7 +11,7 @@ using static BoSSS.Foundation.XDG.Quadrature.HMF.LineSegment;
 using ilPSP;
 using BoSSS.Platform.LinAlg;
 
-namespace BoSSS.Foundation.XDG.Quadrature {
+namespace BoSSS.Foundation.XDG.Quadrature.Saye {
     class SayeGaussRule_EdgeCube : SayeGaussRule_Cube, ISayeGaussEdgeRule {
 
         QuadratureMode mode;
@@ -108,13 +108,13 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
             weight *= gradient.L2Norm() / Math.Abs(gradient[heightDirection]);
 
-            MultidimensionalArray jacobian = grid.Jacobian.GetValue_Cell(node, cell, 1).ExtractSubArrayShallow(0, 0, -1, -1);
-            //Scale weight
-            if (IsScalingMatrix(jacobian)) {
-                weight /= jacobian[heightDirection, heightDirection];
-            } else {
-                throw new NotImplementedException("To do");
-            }
+            //MultidimensionalArray jacobian = grid.Jacobian.GetValue_Cell(node, cell, 1).ExtractSubArrayShallow(0, 0, -1, -1);
+            ////Scale weight
+            //if (IsScalingMatrix(jacobian)) {
+            //    //weight /= jacobian[heightDirection, heightDirection];
+            //} else {
+            //    throw new NotImplementedException("To do");
+            //}
 
             MultidimensionalArray weightArr = new MultidimensionalArray(1);
             weightArr.Allocate(1);

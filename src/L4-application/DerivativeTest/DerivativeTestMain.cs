@@ -203,30 +203,15 @@ namespace BoSSS.Application.DerivativeTest {
         static void Main(string[] args) {
 
             BoSSS.Solution.Application.InitMPI(args);
-            BoSSS.Application.DerivativeTest.Tests.DerivativeTest_BuildInGrid(4, 1, 1024);
-            BoSSS.Application.DerivativeTest.Tests.DerivativeTest_BuildInGrid(4, 1, 1024);
-            BoSSS.Application.DerivativeTest.Tests.DerivativeTest_BuildInGrid(4, 1, 1024);
-            BoSSS.Application.DerivativeTest.Tests.DerivativeTest_BuildInGrid(4, 1, 1024);
-            BoSSS.Application.DerivativeTest.Tests.DerivativeTest_BuildInGrid(4, 1, 1024);
-            //public static void DerivativeTest_BuildInGrid([Range(1, 22)] int gridCase, [Values(1, 500, 10000000)] int bulksize_limit, [Values(1024, 1024 * 1024 * 128)] int cache_size)
-            //BoSSS.Application.DerivativeTest.Tests.DerivativeTest_BuildInGrid(19, 1, 1024);
-            //BoSSS.Application.DerivativeTest.Tests.DerivativeTest_BuildInGrid(21, 1, 1024);
-            //BoSSS.Application.DerivativeTest.Tests.DerivativeTest_BuildInGrid(10, 1, 1024);
-            //ilPSP.Environment.NumThreads = 8;
-            //for(int i = 0; i < 1000; i++)
-            //    BoSSS.Application.DerivativeTest.Tests.DerivativeTest_BuildInGrid(6, 1, 1024);
-            //BoSSS.Solution.Application.FinalizeMPI();
-            //return;
+            ilPSP.Environment.NumThreads = 1;
+            
 
-
-            //Quadrature_Bulksize.BULKSIZE_LIMIT_OVERRIDE = 1;
-            //BoSSS.Application.DerivativeTest.Tests.DerivativeTest_BuildInGrid(11, 10000000, 1024);
 
             // Build-In Grids
             // ==============
 
-            /*
-            for (int i = 14; i <= 14; i++) {
+            
+            for (int i = 12; i <= 12; i++) {
                 BoSSS.Solution.Application._Main(args, true, delegate () {
                     var R = new DerivativeTestMain();
                     GRID_CASE = i;

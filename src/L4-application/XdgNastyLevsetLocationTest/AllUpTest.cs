@@ -31,12 +31,12 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
     [TestFixture]
     public class AllUpTest { 
         /// <summary>
-        /// Level-Set is parallel resp. close-to-parallel ot a cell edge
+        /// Level-Set is parallel resp. close-to-parallel to a cell edge
         /// </summary>
         [Test]
         public static void ParalleTest_2D(
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGauss, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)]
-            XQuadFactoryHelper.MomentFittingVariants variant) {
+            [Values(CutCellQuadratureMethod.OneStepGauss, CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)]
+            CutCellQuadratureMethod variant) {
 
             TestTemplate(variant, new Parallel(XdgNastyLevsetLocationTest.GetTestRange(), XdgNastyLevsetLocationTest.GetTestRange()));
         }
@@ -46,14 +46,14 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
         /// </summary>
         [Test]
         public static void CornerTest_2D(
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGauss, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)]
-            XQuadFactoryHelper.MomentFittingVariants variant) {
+            [Values(CutCellQuadratureMethod.OneStepGauss, CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)]
+            CutCellQuadratureMethod variant) {
 
             TestTemplate(variant, new Schraeg(XdgNastyLevsetLocationTest.GetTestRange(), XdgNastyLevsetLocationTest.GetTestRange()));
         }
 
 
-        static void TestTemplate(XQuadFactoryHelper.MomentFittingVariants variant, ITest tst) {
+        static void TestTemplate(CutCellQuadratureMethod variant, ITest tst) {
             XdgNastyLevsetLocationTest p = null;
 
             tst.ResetTest();

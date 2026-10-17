@@ -47,7 +47,7 @@ namespace BoSSS.Solution.XNSECommon {
             }
 
             // Divergence term
-            // \/ . (\rho \vec{u})
+            // \/ . (\rho \underline{u})
             for (int d = 0; d < D; ++d) {
                 var contiNewton = new Solution.XNSECommon.Operator.Continuity.DivergenceInSpeciesBulk_CentralDifferenceNewton(spcName, d, BcMap, D, EoS, NoOfChemicalSpecies);
                 AddComponent(contiNewton);

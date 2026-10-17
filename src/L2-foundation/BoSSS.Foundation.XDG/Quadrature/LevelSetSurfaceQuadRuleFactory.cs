@@ -34,12 +34,12 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
     /// <summary>
     /// This factory uses the hierarchical moment-fitting (HMF) strategy in
     /// order to produce quadrature rules which are, for each cell
-    /// \f$ K\f$  in a volume mask, capable of computing
+    /// $K$  in a volume mask, capable of computing
     /// (an approximation of)
-    /// \f[ 
-    ///    \oint\limits_{\partial K \cap \{ \vec{x}; \varphi(\vec{x}) = 0 \} }  f \;dS,
-    /// \f]
-    /// where \f$ \varphi\f$  denotes the level set
+    /// \[ 
+    ///    \oint\limits_{\partial K \cap \{ \underline{x}; \varphi(\underline{x}) = 0 \} }  f \;dS,
+    /// \]
+    /// where $\varphi$  denotes the level set
     /// function.
     /// </summary>
     /// <remarks>
@@ -159,9 +159,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <summary>
         /// For each cell in the given <paramref name="mask"/>: Constructs a
         /// quadrature rule that can be used to evaluate
-        /// \f[ 
-        ///    \oint\limits_{\partial K \cap \{ \vec{x}; \varphi(\vec{x}) = 0 \} }  f \;dS,
-        /// \f]
+        /// \[ 
+        ///    \oint\limits_{\partial K \cap \{ \underline{x}; \varphi(\underline{x}) = 0 \} }  f \;dS,
+        /// \]
         /// with relatively high accuracy (depending on the selected integration
         /// <paramref name="order"/>)
         /// </summary>
@@ -258,6 +258,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         }
                     }
                 }
+
+                
 
                 cachedRules[order] = result.ToArray();
 
@@ -501,18 +503,17 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 MultidimensionalArray phis = EvaluatePhis(i0, length, nodes);
                 MultidimensionalArray normals =
                     LevelSetData.GetLevelSetReferenceNormals(nodes, i0, length);
-                MultidimensionalArray metrics =
-                    LevelSetData.GetLevelSetNormalReferenceToPhysicalMetrics(nodes, i0, length);
+                //MultidimensionalArray metrics =
+                //    LevelSetData.GetLevelSetNormalReferenceToPhysicalMetrics(nodes, i0, length);
 
-                if (!phis.IsContinuous || !quadResults.IsContinuous || !normals.IsContinuous || !metrics.IsContinuous) {
+                if (!phis.IsContinuous || !quadResults.IsContinuous || !normals.IsContinuous) {
                     throw new NotImplementedException(
                         String.Format(
                             "This method assumes that all input arrays have a continuous memory layout, but we have"
-                                + " phis.IsContinuous={0}, quadResults.IsContinuous={1}, normals.IsContinuous={2}, metrics.IsContinuous={3}",
+                                + " phis.IsContinuous={0}, quadResults.IsContinuous={1}, normals.IsContinuous={2}",
                             phis.IsContinuous,
                             quadResults.IsContinuous,
-                            normals.IsContinuous,
-                            metrics.IsContinuous));
+                            normals.IsContinuous));
                 }
 
                 // Additional space required by Fortran routine
@@ -530,8 +531,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         pMatrix = &matrix[0],
                         pQuad = &quadResults.Storage[0],
                         pPhis = &phis.Storage[0],
-                        pNormals = &normals.Storage[0],
-                        pMetrics = &metrics.Storage[0]) {
+                        pNormals = &normals.Storage[0]//, pMetrics = &metrics.Storage[0]
+                        ) {
 
                         for (int i = 0; i < length; i++) {
                             int cell = i0 + i;
@@ -553,8 +554,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                             if (rhsL2Norm < 1e-14) {
                                 // All integrals are zero => cell not really cut
                                 // (happens e.g. if level set is tangent)
-                                QuadRule emptyRule = QuadRule.CreateEmpty(RefElement, 1, RefElement.SpatialDimension);
+                                QuadRule emptyRule = QuadRule.CreateBlank(RefElement, 1, RefElement.SpatialDimension);
                                 emptyRule.Nodes.LockForever();
+                                emptyRule.OrderOfPrecision = int.MaxValue;
                                 optimizedRules[i] = emptyRule;
                                 continue;
                             }
@@ -582,9 +584,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                             double maxWeight = 0.0;
                             pRhsCur = pRhs;
-                            double* pMetricsCur = pMetrics + metrics.Index(i, 0);
+                            //double* pMetricsCur = pMetrics + metrics.Index(i, 0);
                             for (int j = 0; j < noOfNodes; j++) {
-                                optimizedRule.Weights[j] = *(pRhsCur++) / *(pMetricsCur++);
+                                optimizedRule.Weights[j] = *(pRhsCur++);// / *(pMetricsCur++);
                                 maxWeight = Math.Max(optimizedRule.Weights[j].Abs(), maxWeight);
                             }
 
@@ -628,8 +630,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 MultidimensionalArray phis = EvaluatePhis(jCell, nodes);
                 MultidimensionalArray normals =
                     LevelSetData.GetLevelSetReferenceNormals(nodes, jCell, 1);
-                MultidimensionalArray metrics =
-                    LevelSetData.GetLevelSetNormalReferenceToPhysicalMetrics(nodes, jCell, 1);
+                //MultidimensionalArray metrics =
+                //    LevelSetData.GetLevelSetNormalReferenceToPhysicalMetrics(nodes, jCell, 1);
 
                 // Additional space required by Fortran routine
                 double[] rhs = new double[Math.Max(noOfNodes, noOfPhis)];
@@ -654,7 +656,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 if (rhs.L2NormPow2() < 1e-14) {
                     // All integrals are zero => cell not really cut
                     // (happens e.g. if level set is tangent)
-                    QuadRule emptyRule = QuadRule.CreateEmpty(RefElement, 1, RefElement.SpatialDimension);
+                    QuadRule emptyRule = QuadRule.CreateBlank(RefElement, 1, RefElement.SpatialDimension);
+                    emptyRule.OrderOfPrecision = int.MaxValue;
                     emptyRule.Nodes.LockForever();
                     return emptyRule;
                 }
@@ -679,7 +682,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 };
 
                 for (int j = 0; j < noOfNodes; j++) {
-                    optimizedRule.Weights[j] = rhs[j] / metrics[0, j];
+                    optimizedRule.Weights[j] = rhs[j];// / metrics[0, j];
                 }
 
                 double max = optimizedRule.Weights.Max(d => d.Abs());
@@ -794,7 +797,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     AffineTrafo trafo = trafosToBoundingBox[localCellIndex2SubgridIndex[jCell]];
 
                     if (trafo == null) {
-                        QuadRule emptyRule = QuadRule.CreateEmpty(RefElement, 1, 2);
+                        QuadRule emptyRule = QuadRule.CreateBlank(RefElement, 1, 2);
                         emptyRule.Nodes.LockForever();
                         result.Add(new ChunkRulePair<QuadRule>(
                             singleElementMask.Single(), emptyRule));
@@ -823,7 +826,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     reducedNodes.LockForever();
 
                     if (nodesToBeCopied.Count == 0) {
-                        QuadRule emptyRule = QuadRule.CreateEmpty(RefElement, 1, 2);
+                        QuadRule emptyRule = QuadRule.CreateBlank(RefElement, 1, 2);
                         emptyRule.Nodes.LockForever();
                         result.Add(new ChunkRulePair<QuadRule>(
                             singleElementMask.Single(), emptyRule));
@@ -1028,15 +1031,13 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
 
             /// <summary>
-            /// For each cell \f$ K\f$  and for each
+            /// For each cell $K$  and for each
             /// divergence-free basis polynomial
-            /// \f$ \vec{\Phi}\f$ : Computes the
+            /// $\underline{\Phi}$ : Computes the
             /// integral
-            /// \f$ 
-            ///     \int \limits_{\partial K} \vec{\Phi} H(\varphi) \;dS,
-            /// \f$ 
-            /// where \f$ \varphi\f$  is the level set
-            /// function and \f$ H\f$  is an indicator
+            /// $\int \limits_{\partial K} \underline{\Phi} H(\varphi) \;dS,$ 
+            /// where $\varphi$  is the level set
+            /// function and $H$  is an indicator
             /// function that restricts the integration domain to positive
             /// level set values (Heaviside) or negative level set values
             /// (One minus Heaviside). This choice is implicitly given by

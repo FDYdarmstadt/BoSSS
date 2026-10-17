@@ -539,7 +539,7 @@ namespace BoSSS.Application.XNSEC {
         }
 
         private static XNSEC_Control TstObj2CtrlObj(IXNSECTest tst, int FlowSolverDegree, double AgglomerationTreshold, ViscosityMode vmode,
-            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            CutCellQuadratureMethod CutCellQuadratureType,
             SurfaceStressTensor_IsotropicMode SurfTensionMode,
             bool constantDensity,
             int GridResolution = 1, LinearSolverCode solvercode = LinearSolverCode.direct_pardiso) {
@@ -591,17 +591,14 @@ namespace BoSSS.Application.XNSEC {
             // initial values and exact solution
             // =================================
 
-            C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
-            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionTemperature = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionMassFractions = new Dictionary<string, Func<double[], double, double>[]>();
-
             foreach (var spc in new[] { "A", "B" }) {
-                C.ExactSolutionPressure.Add(spc, tst.GetPress(spc));
-                C.ExactSolutionVelocity.Add(spc, D.ForLoop(d => tst.GetU(spc, d)));
-                C.ExactSolutionMassFractions.Add(spc, NoChemSpc.ForLoop(q => tst.GetMassFractions(spc, q)));
+                C.AddExactSolution(VariableNames.Pressure + "#" + spc, tst.GetPress(spc));
+                for(int d = 0; d < D; d++)
+                    C.AddExactSolution(VariableNames.Velocity_d(d) + "#" + spc, tst.GetU(spc, d));
+                for(int q = 0; q < NoChemSpc; q++)
+                    C.AddExactSolution(VariableNames.MassFraction_n(q) + "#" + spc, tst.GetMassFractions(spc, q));
 
-                C.ExactSolutionTemperature.Add(spc, tst.GetTemperature(spc));
+                C.AddExactSolution(VariableNames.Temperature + "#" + spc, tst.GetTemperature(spc));
                 for (int d = 0; d < D; d++) {
                     C.InitialValues_Evaluators.Add(VariableNames.Velocity_d(d) + "#" + spc, tst.GetU(spc, d).Convert_Xt2X(0.0));
                     var Gravity_d = tst.GetF(spc, d).Convert_X2Xt();
@@ -619,7 +616,7 @@ namespace BoSSS.Application.XNSEC {
                 }
             }
 
-            C.Phi = tst.GetPhi();
+            C.AddExactSolution("Phi", tst.GetPhi());
             C.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCG, tst.GetPhi());
 
             // advanced spatial discretization settings
@@ -785,7 +782,7 @@ namespace BoSSS.Application.XNSEC {
         }
 
         private static XNSEC_Control TstObj2CtrlObj(IXNSECTest_Heat tst, int FlowSolverDegree, double AgglomerationTreshold, ViscosityMode vmode,
-        XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+        CutCellQuadratureMethod CutCellQuadratureType,
         SurfaceStressTensor_IsotropicMode SurfTensionMode,
         bool constantDensity,
         int GridResolution = 1, LinearSolverCode solvercode = LinearSolverCode.direct_pardiso) {
@@ -852,26 +849,23 @@ namespace BoSSS.Application.XNSEC {
 
             // initial values and exact solution
             // =================================
-            C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
-            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionTemperature = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionMassFractions = new Dictionary<string, Func<double[], double, double>[]>();
-
             foreach (var spc in new[] { "A", "B" }) {
-                C.ExactSolutionPressure.Add(spc, tst.GetPress(spc));
-                C.ExactSolutionVelocity.Add(spc, D.ForLoop(d => tst.GetU(spc, d)));
-                C.ExactSolutionMassFractions.Add(spc, NoChemSpc.ForLoop(q => tst.GetMassFractions(spc, q)));
-                C.ExactSolutionTemperature.Add(spc, tst.GetTemperature(spc));
+                C.AddExactSolution(VariableNames.Pressure, spc, tst.GetPress(spc));
+                for(int d = 0; d < D; d++)
+                    C.AddExactSolution(VariableNames.Velocity_d(d), spc, tst.GetU(spc, d));
+                for(int q = 0; q < NoChemSpc; q++)
+                    C.AddExactSolution(VariableNames.MassFraction_n(q), spc, tst.GetMassFractions(spc, q));
 
-                for (int d = 0; d < D; d++) {
-                    C.InitialValues_Evaluators.Add(VariableNames.Velocity_d(d) + "#" + spc, tst.GetU(spc, d).Convert_Xt2X(0.0));
-                    var Gravity_d = tst.GetF(spc, d).Convert_X2Xt();
-                    C.SetGravity(spc, d, Gravity_d);
+                C.AddExactSolution(VariableNames.Temperature, spc, tst.GetTemperature(spc));
+                for(int d = 0; d < D; d++) {
+                    C.AddInitialValue(VariableNames.Velocity_d(d), spc, tst.GetU(spc, d).Convert_Xt2X(0.0));
+                    C.SetGravity(spc, d, tst.GetF(spc, d).Convert_X2Xt());
                 }
-                C.InitialValues_Evaluators.Add(VariableNames.Pressure + "#" + spc, tst.GetPress(spc).Convert_Xt2X(0.0));
-                C.InitialValues_Evaluators.Add(VariableNames.Temperature + "#" + spc, tst.GetTemperature(spc).Convert_Xt2X(0.0));
-                for (int i = 0; i < tst.NumberOfChemicalComponents; i++) {
-                    C.InitialValues_Evaluators.Add(VariableNames.MassFraction_n(i) + "#" + spc, tst.GetMassFractions(spc, i).Convert_Xt2X(0.0));
+
+                C.AddInitialValue(VariableNames.Pressure, spc, tst.GetPress(spc).Convert_Xt2X(0.0));
+                C.AddInitialValue(VariableNames.Temperature, spc, tst.GetTemperature(spc).Convert_Xt2X(0.0));
+                for (int i = 0; i < NoChemSpc; i++) {
+                    C.AddInitialValue(VariableNames.MassFraction_n(i), spc, tst.GetMassFractions(spc, i).Convert_Xt2X(0.0));
                 }
             }
             if (tst.TestImmersedBoundary) {
@@ -880,7 +874,7 @@ namespace BoSSS.Application.XNSEC {
                 }
             }
 
-            C.Phi = tst.GetPhi();
+            C.AddExactSolution("Phi", tst.GetPhi());
             C.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCG, tst.GetPhi());
 
             // advanced spatial discretization settings

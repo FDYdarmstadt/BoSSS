@@ -55,12 +55,16 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             //Console.WriteLine("ivb parameter out " + ParameterOrdering[2] + " " + inp.Parameters_OUT[2]);
             double Ret = 0;
             double pnlty = this.Penalty(inp.jCellIn, inp.jCellOut);
-            Ret += (uA[m_d] - inp.Parameters_IN[m_d]) * (vA) * pnlty;
-            Ret += (uB[m_d] - inp.Parameters_OUT[m_d]) * (vB) * pnlty;
 
+            // enforce interface velocity including tangential component
+            //Ret += (uA[m_d] - inp.Parameters_IN[m_d]) * (vA) * pnlty;
+            //Ret += (uB[m_d] - inp.Parameters_OUT[m_d]) * (vB) * pnlty;
 
-
-
+            //only enforce interface normal velocity
+            for (int dN = 0; dN<m_D; dN++) {
+                Ret += (uA[dN] - inp.Parameters_IN[dN]) * inp.Normal[dN] * vA* inp.Normal[m_d] * pnlty;
+                Ret += (uB[dN] - inp.Parameters_IN[dN]) * inp.Normal[dN] * vB* inp.Normal[m_d] * pnlty;
+            }
             return Ret;
         }
 
@@ -98,7 +102,19 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         protected double Penalty(int jCellIn, int jCellOut) {
 
             double penaltySizeFactor_A = 1.0 / NegLengthScaleS[jCellIn];
-            double penaltySizeFactor_B = 1.0 / PosLengthScaleS[jCellOut];
+            double penaltySizeFactor_B;// = 1.0 / PosLengthScaleS[jCellOut];
+            if(jCellOut < 0 || PosLengthScaleS[jCellOut].IsNaNorInf())
+                // there is no OUT-cell, i.e., current edge is at the boundary of the domain
+                // -- or -- 
+                // in 3D, with certain cut-cell quad rules (e.g. Algoim),
+                // when the Level Set passes exactly through the corner of the cell,
+                // it might happen that the species-volume of the OUT-cell is empty,
+                // but the edge integral is only almost zero (slightly positive, e.g., weights around 10e-14 or so).
+                // In such cases, the edge integral is evaluated (since it is a non-empty rule),
+                // but the OUT-cell already has a NAN-length scale assigned.
+                penaltySizeFactor_B = 0.0;
+            else
+                penaltySizeFactor_B = 1.0 / PosLengthScaleS[jCellOut];
 
             double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
 

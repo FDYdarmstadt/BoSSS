@@ -1,0 +1,2 @@
+# Inherit all settings from the root .editorconfig
+root = false

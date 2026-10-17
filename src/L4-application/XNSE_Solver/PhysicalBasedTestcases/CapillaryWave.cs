@@ -32,6 +32,7 @@ using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.LevelSetTools;
+using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 
 namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
@@ -40,6 +41,175 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
     /// class providing Controls for the Capillary Wave Testcase
     /// </summary>
     public static class CapillaryWave {
+
+
+
+        /// <summary>
+        /// Control for various testing
+        /// </summary>
+        public static XNSE_Control CapillaryWaveResolution(int k = 3, int xkelem = 6, string _DbPath = null) {
+
+            XNSE_Control C = new XNSE_Control();
+
+            //C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Classic;
+
+            // basic database options
+            // ======================
+            #region db
+
+            C.DbPath = _DbPath;
+            C.savetodb = C.DbPath != null;
+            C.ProjectName = "XNSE/CapillaryWave";
+
+            #endregion
+
+            // DG degrees
+            // ==========
+            #region degrees
+
+            int DgLsDegree = k;
+            int CgLsDegree = k + 1;
+            C.SetFieldOptions(k, DgLsDegree, CgLsDegree);
+
+            #endregion
+
+
+            // Physical Parameters
+            // ===================
+            #region physics  
+
+            double rho_l = 1.0;
+            double rho_h = 1.0;
+            double mu_l = 1.0;
+            double mu_h = 1.0;
+            double sigma = 1.0;
+
+            C.PhysicalParameters.rho_A = rho_l;
+            C.PhysicalParameters.rho_B = rho_h;
+            C.PhysicalParameters.mu_A = mu_l;
+            C.PhysicalParameters.mu_B = mu_h;
+            C.PhysicalParameters.Sigma = sigma;
+
+
+            C.PhysicalParameters.IncludeConvection = false;
+            C.PhysicalParameters.Material = true;
+
+            #endregion
+
+
+            // Initial disturbance
+            // ===================
+
+            double lambda = 1;
+            double A0 = 0.4; // lambda / 10;
+            Func<double, double> PeriodicFunc = x => A0 * Math.Sin(x * 2 * Math.PI / lambda);
+
+
+            // grid genration
+            // ==============
+            #region grid
+
+            double L = lambda;
+
+            C.GridFunc = delegate () {
+                double[] Xnodes = GenericBlas.Linspace(0, L, xkelem + 0);
+                double[] Ynodes = GenericBlas.Linspace(-1.0 * L / 2.0, 1.0 * L / 2.0, (1 * xkelem) + 0);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true);
+
+                grd.EdgeTagNames.Add(1, "wall_lower");
+                grd.EdgeTagNames.Add(2, "wall_upper");
+
+
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    byte et = 0;
+                    if(Math.Abs(X[1] + (1.0 * L / 2.0)) <= 1.0e-8)
+                        et = 1;
+                    if(Math.Abs(X[1] - (1.0 * L / 2.0)) <= 1.0e-8)
+                        et = 2;
+                    //if(Math.Abs(X[0]) <= 1.0e-8)
+                    //    et = 3;
+                    //if(Math.Abs(X[0] - L) <= 1.0e-8)
+                    //    et = 4;
+
+                    return et;
+                });
+
+                return grd;
+            };
+
+
+            #endregion
+
+
+            // boundary conditions
+            // ===================
+            #region BC
+
+            C.AddBoundaryValue("wall_lower");
+            C.AddBoundaryValue("wall_upper");
+
+            #endregion
+
+
+            // Initial Values
+            // ==============
+            #region init
+
+            C.InitialValues_Evaluators.Add("Phi", (X => X[1] - PeriodicFunc(X[0])));
+
+            #endregion
+
+            // misc. solver options
+            // ====================
+            #region solver
+
+            C.NonLinearSolver.MaxSolverIterations = 50;
+
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
+
+            C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
+            //C.StokesExtentionUseBCmap = StokesExtentionBoundaryOption.useBcMap
+
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+
+            C.AgglomerationThreshold = 0.2;
+
+
+
+            C.ReInitControl = new BoSSS.Solution.LevelSetTools.EllipticReInit.EllipticReInitAlgoControl() {
+                UseAdaptiveReInit = true,
+            };
+
+
+            C.AdaptiveMeshRefinement = true;
+            int maxAMRlevel = 3;
+            C.activeAMRlevelIndicators.Add(new AMRwithIntegralTheoremChecks() { maxRefinementLevel = 0, errThreshold_Gauss = 1e-8, errThreshold_Stokes = 1e-8, printErrors = true });
+            C.activeAMRlevelIndicators.Add(new AMRcurvaturebased() { maxRefinementLevel = 0, radiusMaxThreshold = 1.0, printErrors = true });
+            //C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = maxAMRlevel });
+
+            C.AMR_startUpSweeps = maxAMRlevel;
+
+            #endregion
+
+
+            // Timestepping
+            // ============
+            #region time
+
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            C.dtFixed = 1e-1;
+            C.NoOfTimesteps = 300;
+
+            #endregion
+
+
+            return C;
+
+        }
+
 
 
         /// <summary>
@@ -52,7 +222,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
-            //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Classic;
 
             // basic database options
             // ======================
@@ -233,7 +403,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region solver
 
             //C.solveKineticEnergyEquation = true;
-            //C.ComputeEnergyProperties = true;
+            //////C.ComputeEnergyProperties = true;
 
             C.NonLinearSolver.MaxSolverIterations = 100;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
@@ -548,8 +718,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint;
 
             C.AdaptiveMeshRefinement = false;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.RefinementLevel = 1;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.RefinementLevel = 1;
 
             C.SuperSampling = 2;
             //C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
@@ -933,10 +1103,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.AdaptiveMeshRefinement = true;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.BaseRefinementLevel = 1;
-            C.InitSignedDistance = false;
-
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.BaseRefinementLevel  1;
 
             #endregion
 
@@ -992,7 +1160,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
-            //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Classic;
 
             // basic database options
             // ======================
@@ -1153,7 +1321,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region solver
 
             //C.solveKineticEnergyEquation = true;
-            //C.ComputeEnergyProperties = true;
+            //////C.ComputeEnergyProperties = true;
             //C.CheckInterfaceProps = true;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
@@ -1227,7 +1395,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
-            //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Classic;
 
             // basic database options
             // ======================
@@ -1268,7 +1436,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
 
-            C.RegisterUtilitiesToIOFields = true;
+            //C.RegisterUtilitiesToIOFields = true;
 
             #endregion
 
@@ -1356,7 +1524,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.CheckJumpConditions = true;
+            //C.CheckJumpConditions = true;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;

@@ -24,15 +24,15 @@ namespace BoSSS.Solution.Timestepping {
     /// <summary>
     /// Structure for storing the Butcher Tableau of a Runge-Kutta Method;
     /// The Runge-Kutta Method for the ODE 
-    /// \f[
+    /// \[
     ///    y' = f(t,y), y(0) = y0 
-    /// \f] 
+    /// \] 
     /// is defined as:
-    /// ```math
+    /// \[
     /// k[0] = f(0,y0), \\
     /// k[r] = f(c[r],y0 + k[0]*a[r,0] + ... + k[r-1]*a[r,r-1]); \\
     /// y1   = y0 + (b[0]*k[0] + ... + b[s-1]*k[s-1]);
-    /// ```
+    /// \]
     /// </summary>
     public class RungeKuttaScheme : ICloneable {
 

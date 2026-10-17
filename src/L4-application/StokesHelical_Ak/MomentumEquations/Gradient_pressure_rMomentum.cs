@@ -50,11 +50,11 @@ namespace StokesHelical_Ak {
             }
         }
 
-        /// The volume integrand, for a vector-valued test-function $\vec{v}$
-        /// would be $-\operatorname{div}{\vec{v}} \psi$. Our test function $v$
+        /// The volume integrand, for a vector-valued test-function $\underline{v}$
+        /// would be $-\operatorname{div}{\underline{v}} \psi$. Our test function $v$
         /// is scalar-valued, so e.g. for $\code{d} = 0$ we have
-        /// $\vec{v} = (v,0)$. In this case, our volume integrand reduces as 
-        /// $-\operatorname{div}{\vec{v}} \psi = -\partial_x v \psi$:
+        /// $\underline{v} = (v,0)$. In this case, our volume integrand reduces as 
+        /// $-\operatorname{div}{\underline{v}} \psi = -\partial_x v \psi$:
         public double VolumeForm(ref CommonParamsVol cpv,
                double[] Psi, double[,] GradPsi,
                double V, double[] GradV) {
@@ -74,8 +74,8 @@ namespace StokesHelical_Ak {
 
         /// On interior cell edges, we simply use a central-difference flux.
         /// Again, we consider a scalar test function, so we have
-        /// $ \jump{\psi} \vec{v} \cdot \vec{n} = \jump{\psi} v n_d $,
-        /// where $n_d$ is the $d$--th component of $\vec{n}$:
+        /// $ \jump{\psi} \underline{v} \cdot \underline{n} = \jump{\psi} v n_d $,
+        /// where $n_d$ is the $d$--th component of $\underline{n}$:
         public double InnerEdgeForm(ref CommonParams inp,
             double[] Psi_IN, double[] Psi_OT,
             double[,] GradPsi_IN, double[,] GradPsi_OT,

@@ -72,7 +72,7 @@ namespace XESTSF.SPFluxes {
         public IVolumeForm m_VolumeSpaceFlux;
         public int i_comp;
         public IBoundaryConditionMap boundaryMap;
-        public SPBulkFlux(IBoundaryConditionMap boundaryMap,IEdgeForm EdgeSpaceFlux,IVolumeForm VolumeSpaceFlux, int i_comp,SpeciesId speciesId, string spcName,Material material) {
+        public SPBulkFlux(IBoundaryConditionMap boundaryMap, IEdgeForm EdgeSpaceFlux, IVolumeForm VolumeSpaceFlux, int i_comp, SpeciesId speciesId, string spcName, Material material) {
             m_EdgeSpaceFlux = EdgeSpaceFlux;
             m_VolumeSpaceFlux = VolumeSpaceFlux;
             this.i_comp = i_comp;
@@ -137,7 +137,7 @@ namespace XESTSF.SPFluxes {
         }
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
 
-            //TODO: Think about wether this makes truly sense.....
+            //TODO: Think about whether this makes truly sense.....
             var inpDM1 = SPFluxConverter.GetRedInp(inp);
 
             double[] Uout = GetExternalState(ref inpDM1, _uA);

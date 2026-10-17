@@ -15,17 +15,22 @@ limitations under the License.
 */
 
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Platform;
 using ilPSP;
 using ilPSP.Tracing;
+using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.Permissions;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace BoSSS.Foundation.Grid {
 
@@ -198,18 +203,147 @@ namespace BoSSS.Foundation.Grid {
             return enu;
         }
 
+        /// <summary>
+        /// Returns the logical cell index corresponding to a given geometrical cell index <paramref name="jGeom"/>.
+        /// For standard grids, this is an identity mapping (i.e., <paramref name="jGeom"/> == logical cell index).
+        /// For aggregation or adaptive grids, this uses the <c>GeomCell2LogicalCell</c> mapping.
+        /// </summary>
+        /// <param name="g">The grid data object.</param>
+        /// <param name="jGeom">The geometrical cell index.</param>
+        /// <returns>
+        /// the logical cell index related to geometrical cell <paramref name="jGeom"/>; for standard grids, this is always identical to <paramref name="jGeom"/>.
+        /// </returns>
+        public static int GetLogicalCellIndex(this IGridData g, int jGeom) {
+            if(jGeom < 0 || jGeom >= g.iGeomCells.Count)
+                throw new ArgumentOutOfRangeException(nameof(jGeom), "Geometrical cell index is out of range.");
 
-        class Mask2GeomChunks_Enum : IEnumerator<Tuple<int, int>> {
+            var geom2log = g.iGeomCells.GeomCell2LogicalCell;
+            if(geom2log == null) {
+                // Standard grid: logical and geometrical indices are identical
+                return jGeom;
+            } else {
+                int jLog = geom2log[jGeom];
+                return jLog;
+            }
+        }
+
+
+        /// <summary>
+        /// Returns the logical cell indices corresponding to a given set of geometrical cell indices <paramref name="GeomCells"/>.
+        /// For standard grids, this is an identity mapping (i.e., there is a 1-to-1 relation between geometrical and logical cells and both indices are equal).
+        /// For aggregation or adaptive grids, this uses the <c>GeomCell2LogicalCell</c> mapping.
+        /// </summary>
+        /// <param name="g">The grid data object.</param>
+        /// <param name="GeomCells">The geometrical cell index.</param>
+        /// <returns>
+        /// a collection of logical cell indices related to geometrical cells <paramref name="GeomCells"/>; for standard grids, this is always identical to <paramref name="GeomCells"/>.
+        /// </returns>
+        public static IEnumerable<int> GetLogicalCellIndices(this IGridData g, IEnumerable<int> GeomCells) {
+            if(g is Classic.GridData)
+                return GeomCells;
+            
+            var LogNeighs = new HashSet<int>();
+            foreach(int jGeomNeigh in GeomCells) {
+                LogNeighs.Add(g.GetLogicalCellIndex(jGeomNeigh));
+            }
+            return LogNeighs.ToArray();
+        }
+
+        /// <summary>
+        /// Returns an enumeration over all geometrical cells which the logical cell <paramref name="jLog"/> consists of
+        /// </summary>
+        public static IEnumerable<int> GetGeometricalCellIndices(this IGridData g, int jLog) {
+            if(g.iLogicalCells.AggregateCellToParts == null)
+                return [jLog];
+            if(g.iLogicalCells.AggregateCellToParts[jLog] == null)
+                return [jLog];
+            return g.iLogicalCells.AggregateCellToParts[jLog];
+        }
+
+
+
+        /// <summary>
+        /// Returns a geometrical cell indices (<see cref="IGeometricalCellsData"/>) for a logical cell index <paramref name="j"/>.
+        /// </summary>
+        /// <param name="g">
+        /// The grid object.
+        /// </param>
+        /// <param name="j">
+        /// A logical cell index.
+        /// </param>
+        /// <param name="iPart">
+        /// sub-index of geometrical cell index within the logical cell; for standard grids, this is always 0.
+        /// </param>
+        /// <returns>
+        /// An enumeration of geometrical cell indices.
+        /// </returns>
+        public static int GetGeometricCellIndex(this IGridData g, int j, int iPart) {
+            if (j < 0)
+                throw new ArgumentException();
+            if (j >= g.iLogicalCells.Count)
+                throw new ArgumentException();
+
+            if (g.iLogicalCells.AggregateCellToParts == null || g.iLogicalCells.AggregateCellToParts[j] == null) {
+                if (iPart != 0)
+                    throw new ArgumentException("part index out-of-range");
+                return j;
+            }
+
+            return g.iLogicalCells.AggregateCellToParts[j][iPart];
+        }
+
+
+
+        /// <summary>
+        /// Returns a geometrical cell indices (<see cref="IGeometricalCellsData"/>) for a logical cell index <paramref name="jG"/>.
+        /// </summary>
+        /// <param name="g">
+        /// The grid object.
+        /// </param>
+        /// <param name="jG">
+        /// A geometrical cell index.
+        /// </param>
+        /// <returns>
+        /// the sub-index of geometrical cell <paramref name="jG"/> index within the logical cell; for standard grids, this is always 0.
+        /// </returns>
+        public static int GetGeometricalPartIndex(this IGridData g, int jG) {
+            if (jG < 0)
+                throw new ArgumentException();
+            if (jG >= g.iGeomCells.Count)
+                throw new ArgumentException();
+
+            if (g.iLogicalCells.AggregateCellToParts == null)
+                return 0;
+
+            int jLog = GetLogicalCellIndex(g, jG);
+
+            if (g.iLogicalCells.AggregateCellToParts[jLog] == null)
+                return 0;
+
+            return g.iLogicalCells.AggregateCellToParts[jLog].IndexWhere(_jG => _jG == jG);
+        }
+
+
+
+
+
+//        class Mask2GeomChunks_Enum : IEnumerator<Tuple<int, int>> {
+//=======
+
+
+
+        class Mask2GeomChunks_Enum : IEnumerator<(int i0, int Length)> {
+
 
             public int MaxVecLen = 1;
             public CellMask CM;
             public CellInfo ConsecutiveMask = CellInfo.Undefined;
 
             IEnumerator<Chunk> CMenum = null;
-            Tuple<int, int> m_Current = null;
+            (int i0, int Length) m_Current;
             //List<Tuple<int, int>> bisher = new List<Tuple<int, int>>();
 
-            public Tuple<int, int> Current {
+            public (int i0, int Length) Current {
                 get {
                     if (CMenum == null)
                         throw new InvalidOperationException();
@@ -318,9 +452,9 @@ namespace BoSSS.Foundation.Grid {
                                 Current_jLog = Current_Chunk.i0;
                                 Debug.Assert(Current_Chunk.i0 > iE, "strange overlap of chunks");
 
-                                if(Current_Chunk.i0 - iE > 0) {
+                                if (Current_Chunk.i0 - iE > 0) {
                                     // unable to concat chunks
-                                    if(i0 == iE) {
+                                    if (i0 == iE) {
                                         // chunk is still empty
                                         i0 = Current_Chunk.i0;
                                         iE = i0;
@@ -343,19 +477,19 @@ namespace BoSSS.Foundation.Grid {
                         // +++++++++++++++++++++++++++++++
 
                         // hehe
-                        throw new NotImplementedException("todo"); 
+                        throw new NotImplementedException("todo");
                     }
 
                     iE++;
                 }
 
                 if (iE > i0) {
-                    m_Current = new Tuple<int, int>(i0, iE - i0);
+                    m_Current = (i0, iE - i0);
                     //bisher.Add(m_Current);
                     Debug.Assert(iE - i0 <= MaxLen);
                     return true;
                 } else {
-                    m_Current = null;
+                    m_Current = (-1, -2);
                     return false;
                 }
             }
@@ -367,12 +501,12 @@ namespace BoSSS.Foundation.Grid {
             }
         }
 
-        class Mask2GeomChunks_Enumable : IEnumerable<Tuple<int, int>> {
+        class Mask2GeomChunks_Enumable : IEnumerable<(int i0, int Length)> {
             public int MaxVecLen = 1;
             public CellMask CM;
             public CellInfo ConsecutiveMask = CellInfo.Undefined;
 
-            public IEnumerator<Tuple<int, int>> GetEnumerator() {
+            public IEnumerator<(int i0, int Length)> GetEnumerator() {
                 return new Mask2GeomChunks_Enum() { CM = CM, MaxVecLen = MaxVecLen, ConsecutiveMask = ConsecutiveMask };
             }
 
@@ -386,11 +520,7 @@ namespace BoSSS.Foundation.Grid {
         /// <summary>
         /// Returns an enumeration of geometrical cell chunks (first index an length) for a given cell mask.
         /// </summary>
-        /// <param name="CM"></param>
-        /// <param name="MaxVecLen"></param>
-        /// <param name="ConsecutiveMask"></param>
-        /// <returns></returns>
-        public static IEnumerable<Tuple<int, int>> GetGeometricCellChunks(this CellMask CM, int MaxVecLen, CellInfo ConsecutiveMask = CellInfo.Undefined) {
+        public static IEnumerable<(int i0, int Length)> GetGeometricCellChunks(this CellMask CM, int MaxVecLen, CellInfo ConsecutiveMask = CellInfo.Undefined) {
             var ret = new Mask2GeomChunks_Enumable() { CM = CM, MaxVecLen = MaxVecLen, ConsecutiveMask = ConsecutiveMask };
 #if DEBUG
             int JG = CM.GridData.iGeomCells.Count;
@@ -478,6 +608,143 @@ namespace BoSSS.Foundation.Grid {
             return new Logical2Geom_Enumable() { j0 = e, Len = 1, Log2Geom = g.iLogicalEdges.EdgeToParts };
         }
 
+        /// <summary>
+        /// Returns all geometrical edges that bound to geometrical cell <paramref name="jCellGeom"/>
+        /// </summary>
+        public static IEnumerable<int> GetGeometricalEdgesForCells(this IGridData g, int jCellGeom) {
+#if !DEBUG
+            if(g is Classic.GridData cg)
+                return cg.Cells.Cells2Edges[jCellGeom].Select(edge_enc => Math.Abs(edge_enc) - 1);
+#endif
+            int[] LogicalEdges_enc = g.iLogicalCells.Cells2Edges[g.GetLogicalCellIndex(jCellGeom)];
+
+            var Log2GeomEdges = g.iLogicalEdges.EdgeToParts;
+            var Edge2Cell = g.iGeomEdges.CellIndices;
+
+            var ret = new HashSet<int>();
+            foreach(int iEdgeLog_enc in LogicalEdges_enc) {
+
+                int iEdgeLog = Math.Abs(iEdgeLog_enc) - 1;
+                //int inOt = iEdgeLog > 0 ? 0 : 1;
+
+                int[] GeomEdges = null;
+                if(Log2GeomEdges == null || Log2GeomEdges[iEdgeLog] == null) {
+                    GeomEdges = [iEdgeLog];
+                } else {
+                    GeomEdges = Log2GeomEdges[iEdgeLog];
+                }
+
+                foreach(int iEdgeGeom in GeomEdges) {
+                    if(Edge2Cell[iEdgeGeom, 0] == jCellGeom || Edge2Cell[iEdgeGeom, 1] == jCellGeom)
+                        ret.Add(iEdgeGeom);
+                }
+            }
+
+#if DEBUG
+            if(g is Classic.GridData cg) {
+                if(!cg.Cells.Cells2Edges[jCellGeom].Select(edge_enc => Math.Abs(edge_enc) - 1).SetEquals(ret))
+                    throw new ApplicationException("Error in algorithm or grid data structure.");
+
+            }
+#endif
+
+            return ret;
+        }
+
+        /// <summary>
+        /// determines whether **geometrical** <paramref name="jCellGeom"/> is an IN or OUT-cell with respect to **geometrical** edge <paramref name="iEdgeGeom"/>.
+        /// </summary>
+        /// <param name="g"></param>
+        /// <param name="iEdgeGeom">
+        /// geometrical edge index
+        /// </param>
+        /// <param name="jCellGeom">
+        /// geometrical cell index
+        /// </param>
+        /// <returns>
+        /// - 0, if <paramref name="jCellGeom"/> is the IN-cell at edge <paramref name="iEdgeGeom"/>
+        /// - 1, if <paramref name="jCellGeom"/> is the OUT-cell at edge <paramref name="iEdgeGeom"/>
+        /// </returns>
+        public static int IsInOrOut_Geom(this IGridData g, int iEdgeGeom, int jCellGeom) {
+            var E2C = g.iLogicalEdges.CellIndices;
+            if(E2C[iEdgeGeom, 0] == jCellGeom)
+                return 0;
+            if(E2C[iEdgeGeom, 1] == jCellGeom)
+                return 1;
+            throw new ArgumentException($"logical edge {iEdgeGeom}, between cells [{E2C[iEdgeGeom, 0]},{E2C[iEdgeGeom, 1]}] does not connect to cell {jCellGeom}.");
+        }
+
+        /// <summary>
+        /// determines whether **logical** <paramref name="jCellLog"/> is an IN or OUT-cell with respect to **logical** edge <paramref name="iEdgeLog"/>.
+        /// </summary>
+        /// <param name="g"></param>
+        /// <param name="iEdgeLog">
+        /// geometrical edge index
+        /// </param>
+        /// <param name="jCellLog">
+        /// geometrical cell index
+        /// </param>
+        /// <returns>
+        /// - 0, if <paramref name="jCellLog"/> is the IN-cell at edge <paramref name="iEdgeLog"/>
+        /// - 1, if <paramref name="jCellLog"/> is the OUT-cell at edge <paramref name="iEdgeLog"/>
+        /// </returns>
+        public static int IsInOrOut(this IGridData g, int iEdgeLog, int jCellLog) {
+            var E2C = g.iLogicalEdges.CellIndices;
+            if(E2C[iEdgeLog, 0] == jCellLog)
+                return 0;
+            if(E2C[iEdgeLog, 1] == jCellLog)
+                return 1;
+            throw new ArgumentException($"logical edge {iEdgeLog}, between cells [{E2C[iEdgeLog, 0]},{E2C[iEdgeLog, 1]}] does not connect to cell {jCellLog}.");
+        }
+
+        /// <summary>
+        /// Returns all **geometrical** cells which are neighbors of geometrical cell <paramref name="jCellGeom"/> on face <paramref name="iFace"/>.
+        /// </summary>
+        /// <param name="g"></param>
+        /// <param name="jCellGeom">
+        /// geometrical cell index
+        /// </param>
+        /// <param name="iFace">
+        /// face with respect to the reference element, see <see cref="RefElement.NoOfFaces"/>
+        /// </param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        public static IEnumerable<int> GetGeometricalNeighborCells(this IGridData g, int jCellGeom, int iFace) {
+            if(jCellGeom < 0 || jCellGeom >= g.iGeomCells.NoOfLocalUpdatedCells)
+                throw new ArgumentOutOfRangeException(nameof(jCellGeom), "expecting a locally updated geometrical cell");
+            if(iFace < 0 || iFace >= g.iGeomCells.GetRefElement(jCellGeom).NoOfFaces)
+                throw new ArgumentOutOfRangeException(nameof(iFace), $"expecting a face index between 0 and {g.iGeomCells.GetRefElement(jCellGeom).NoOfFaces}, but got {iFace}");
+
+            //if(g is Classic.GridData g) {
+            //    return GetGeometricalNeighborCells_classic(g);
+            //}
+
+            //var edges_enc = g.Edges.Cells2Edges[jCellGeom];
+            var edges = g.GetGeometricalEdgesForCells(jCellGeom);
+            var E2F = g.iGeomEdges.FaceIndices;
+            var E2C = g.iGeomEdges.CellIndices;
+
+            var ret = new List<int>();
+
+            foreach(int iEdge in edges) {
+                //int iEdge = Math.Abs(e_enc) - 1;
+                int inOt_this = g.IsInOrOut_Geom(iEdge, jCellGeom);
+                int inOt_neig = 1 - inOt_this;
+
+                Debug.Assert(E2C[iEdge, inOt_this] == jCellGeom, "mismatch in cells-to-edges, in-cell");
+                if(E2C[iEdge, inOt_neig] < 0)
+                    continue;
+                if(E2F[iEdge, inOt_this] != iFace)
+                    continue;
+
+                ret.Add(E2C[iEdge, inOt_neig]);
+            }
+
+            return ret.ToArray();
+
+
+
+        }
 
 
         /// <summary>
@@ -657,33 +924,8 @@ namespace BoSSS.Foundation.Grid {
         /// Returns an edge mask which contains all boundary cells.
         /// </summary>
         public static EdgeMask GetBoundaryEdgeMask(this IGridData gdat) {
-
-            int E = gdat.iLogicalEdges.Count;
-            BitArray boundaryEdges = new BitArray(E);
-            BitArray boundaryCellsEdges = new BitArray(E);
-
-            int[,] C2E = gdat.iLogicalEdges.CellIndices;
-
-            // loop over all Edges
-            for (int e = 0; e < E; e++) {
-                int Cel1 = C2E[e, 0];
-                int Cel2 = C2E[e, 1];
-
-                if (Cel2 < 0) {
-                    // edge is located on the computational domain boundary
-                    boundaryEdges[e] = true;
-                }
-            }
-
-            return new EdgeMask(gdat, boundaryEdges);
-        }
-
-
-
-        /// <summary>
-        /// Returns a mask which contains all boundary edges
-        /// </summary>
-        static public EdgeMask GetBoundaryEdges(this IGridData gdat) {
+            if(gdat is GridData gdat2)
+                return gdat2.BoundaryEdges;
 
             int E = gdat.iLogicalEdges.Count;
             BitArray boundaryEdges = new BitArray(E);
@@ -692,11 +934,11 @@ namespace BoSSS.Foundation.Grid {
             int[,] CellIndices = gdat.iLogicalEdges.CellIndices;
 
             // loop over all Edges
-            for (int e = 0; e < E; e++) {
-                int Cel1 = CellIndices[e, 0];
+            for(int e = 0; e < E; e++) {
+                //int Cel1 = CellIndices[e, 0];
                 int Cel2 = CellIndices[e, 1];
 
-                if (Cel2 < 0) {
+                if(Cel2 < 0) {
                     // edge is located on the computational domain boundary
                     boundaryEdges[e] = true;
 
@@ -706,6 +948,60 @@ namespace BoSSS.Foundation.Grid {
             return new EdgeMask(gdat, boundaryEdges, MaskType.Logical);
         }
 
+
+
+
+        /// <summary>
+        /// alias for <see cref="IGeometricalEdgeData.GetEdges4RefElement"/>
+        /// </summary>
+        static public EdgeMask GetEdges4RefElement(this IGridData gdat, RefElement KrefEdge) {
+            return gdat.iGeomEdges.GetEdges4RefElement(KrefEdge);
+        }
+
+
+        /// <summary>
+        /// alias for <see cref="IGeometricalEdgeData.GetEdges4RefElement"/>
+        /// </summary>
+        public static CellMask GetCells4Refelement(this IGridData gdat, RefElement Kref) {
+            return gdat.iGeomCells.GetCells4Refelement(Kref);
+        }
+
+        /// <summary>
+        /// alias for <see cref="IGeometricalEdgeData.GetEdges4RefElement"/>
+        /// </summary>
+        public static CellMask GetCells4Refelement(this IGridData gdat, int iKref) {
+            return gdat.iGeomCells.GetCells4Refelement(gdat.iGeomCells.RefElements[iKref]);
+        }
+
+
+        /// <summary>
+        /// Returns a mask which contains all edges for reference element <paramref name="KrefEdge"/>, which bound to a cell with reference element <paramref name="KrefVol"/>.
+        /// </summary>
+        static public EdgeMask GetEdges4RefElement(this IGridData gdat, RefElement KrefVol, RefElement KrefEdge) {
+            var bMask = new BitArray(gdat.iGeomEdges.Count);
+
+            int iKrefVol = gdat.iGeomCells.RefElements.IndexOf(KrefVol);
+
+            foreach (var jEdge in gdat.GetEdges4RefElement(KrefEdge).ItemEnum) {
+                int jCell0 = gdat.iGeomEdges.CellIndices[jEdge, 0];
+                int jCell1 = gdat.iGeomEdges.CellIndices[jEdge, 1];
+
+                if(gdat.iGeomCells.GetRefElementIndex(jCell0) == iKrefVol) {
+                    bMask[jEdge] = true;
+                } else if(jCell1 >= 0 && gdat.iGeomCells.GetRefElementIndex(jCell1) == iKrefVol) {
+                    bMask[jEdge] = true;
+                }
+            }
+
+            return new EdgeMask(gdat, bMask, MaskType.Geometrical);
+        }
+
+        /// <summary>
+        /// alias for <see cref="IGeometricalEdgeData.GetEdges4RefElement"/>
+        /// </summary>
+        static public EdgeMask GetEdges4RefElement(this IGridData gdat, int iKref) {
+            return gdat.GetEdges4RefElement(gdat.iGeomEdges.EdgeRefElements[iKref]);
+        }
 
 
         /// <summary>
@@ -731,8 +1027,24 @@ namespace BoSSS.Foundation.Grid {
             int K = Cell2Edges_jCell.GetLength(0);
             byte[] __EdgeTags = g.iGeomEdges.EdgeTags;
 
-            if (OmmitPeriodic && g.iLogicalEdges.EdgeToParts != null)
-                throw new NotImplementedException("todo"); // problem: edge tags have geometric index.
+            //if (OmmitPeriodic && g.iLogicalEdges.EdgeToParts != null)
+            //    throw new NotImplementedException("todo"); // problem: edge tags have geometric index.
+
+
+            bool isPeriodic(int iEdge) {
+                if(g.iLogicalEdges.EdgeToParts == null || g.iLogicalEdges.EdgeToParts[iEdge] == null)
+                    return __EdgeTags[iEdge] >= GridCommons.FIRST_PERIODIC_BC_TAG;
+
+                foreach(int iEdgeGeom in g.iLogicalEdges.EdgeToParts[iEdge]) {
+                    if(__EdgeTags[iEdgeGeom] >= GridCommons.FIRST_PERIODIC_BC_TAG)
+                        return true;
+                }
+
+                return false;
+            }
+            
+
+
 
             for (int k = 0; k < K; k++) { // loop over edges
                 int q = Cell2Edges_jCell[k];
@@ -741,7 +1053,16 @@ namespace BoSSS.Foundation.Grid {
                 Debug.Assert(jCell == __Edges[iEdge, iOther == 1 ? 0 : 1]);
 
                 int jCellOut = __Edges[iEdge, iOther];
-                if (jCellOut >= 0 && (!OmmitPeriodic || __EdgeTags[iEdge] < GridCommons.FIRST_PERIODIC_BC_TAG)) {
+
+                //bool cond1 = (jCellOut >= 0 && (!OmmitPeriodic || __EdgeTags[iEdge] < GridCommons.FIRST_PERIODIC_BC_TAG));
+                //bool cond2 = jCellOut >= 0 && (!OmmitPeriodic || !isPeriodic(iEdge));
+                //if(cond1 != cond2) {
+                //    throw new Exception();
+                //}
+
+
+                //if (jCellOut >= 0 && (!OmmitPeriodic || __EdgeTags[iEdge] < GridCommons.FIRST_PERIODIC_BC_TAG)) {
+                if (jCellOut >= 0 && (!OmmitPeriodic || !isPeriodic(iEdge))) {
                     ret.Add((jCellOut, iEdge, iOther));
                 }
             }
@@ -755,7 +1076,7 @@ namespace BoSSS.Foundation.Grid {
         /// <param name="jCell">
         /// a local cell index in the range of locally updated cells
         /// </param>
-        /// <param name="CellNeighBours">
+        /// <param name="NeighborCells">
         /// a collection of neighbor cells (local indices);
         /// </param>
         /// <param name="ConectingEntities">
@@ -773,7 +1094,7 @@ namespace BoSSS.Foundation.Grid {
             this IGridData g,
             int jCell,
             GetCellNeighbours_Mode mode,
-            out int[] CellNeighBours,
+            out int[] NeighborCells,
             out int[] ConectingEntities) {
 
             if (jCell < 0 || jCell >= g.iLogicalCells.NoOfLocalUpdatedCells)
@@ -784,58 +1105,65 @@ namespace BoSSS.Foundation.Grid {
 
             switch (mode) {
                 case GetCellNeighbours_Mode.ViaEdges: {
-                    var R = g.GetCellNeighboursViaEdges(jCell);
-                    foreach (var rr in R) {
-                        ret.Add(rr.Item1);
-                        ret2.Add(rr.Item2);
+                        var R = g.GetCellNeighboursViaEdges(jCell);
+                        foreach (var rr in R) {
+                            ret.Add(rr.Item1);
+                            ret2.Add(rr.Item2);
+                        }
+                        break;
                     }
-                    break;
-                }
 
                 case GetCellNeighbours_Mode.ViaVertices: {
-                    foreach (int jCellGeom in g.GetGeometricCellIndices(jCell)) {
-                        var CellVtx_jCell = g.iGeomCells.CellVertices[jCellGeom];
-                        int K = CellVtx_jCell.GetLength(0);
-                        var VerticeIndex2Cell = g.iVertices.VerticeToCell;
+                        foreach (int jCellGeom in g.GetGeometricCellIndices(jCell)) {
+                            var CellVtx_jCell = g.iGeomCells.CellVertices[jCellGeom];
+                            int K = CellVtx_jCell.GetLength(0);
+                            var VerticeIndex2Cell = g.iVertices.VerticeToCell;
 
-                        for (int k = 0; k < K; k++) {
-                            int iVtx = CellVtx_jCell[k];
-                            ret2.Add(iVtx);
+                            for (int k = 0; k < K; k++) {
+                                int iVtx = CellVtx_jCell[k];
+                                ret2.Add(iVtx);
 
-                            foreach (int jN in VerticeIndex2Cell[iVtx]) {
-                                if (jN != jCell) {
-                                    if (!ret.Contains(jN))
-                                        ret.Add(jN);
+                                foreach (int jN in VerticeIndex2Cell[iVtx]) {
+                                    
+                                    if (jN != jCell) {
+                                        if (!ret.Contains(jN))
+                                            ret.Add(jN);
+                                    }
+
                                 }
-
                             }
                         }
+                        break;
                     }
-                    break;
-                }
 
                 default:
-                throw new NotImplementedException();
+                    throw new NotImplementedException();
             }
 
-            CellNeighBours = ret.ToArray();
+            NeighborCells = ret.ToArray();
             ConectingEntities = ret2.ToArray();
         }
 
         /// <summary>
-        /// For edge number <paramref name="e"/>, whether it is conformal
-        /// with cell 1
+        /// For edge number <paramref name="e"/>, whether it is conformal with cell 1
         /// </summary>
         static public bool IsEdgeConformalWithCell1(this IGeometricalEdgeData ge, int e) {
             return ((ge.Info[e] & EdgeInfo.Cell1_Nonconformal) == 0);
         }
 
         /// <summary>
-        /// For edge number <paramref name="e"/>, whether it is conformal
-        /// with cell 2
+        /// For edge number <paramref name="e"/>, whether it is conformal with cell 2
         /// </summary>
         static public bool IsEdgeConformalWithCell2(this IGeometricalEdgeData ge, int e) {
             return ((ge.Info[e] & EdgeInfo.Cell2_Nonconformal) == 0);
+        }
+
+        /// <summary>
+        /// For edge number <paramref name="e"/>, whether it is between to MPI processes.
+        /// </summary>
+        static public bool IsInterprocess(this IGeometricalEdgeData ge, int e) {
+            bool ret = ((ge.Info[e] & EdgeInfo.Interprocess) != 0);
+            return ret;
         }
 
 
@@ -852,11 +1180,11 @@ namespace BoSSS.Foundation.Grid {
         static public bool IsEdgeConformal(this IGeometricalEdgeData ge, int iedge, int InOrOut) {
             switch (InOrOut) {
                 case 0:
-                return ge.IsEdgeConformalWithCell1(iedge);
+                    return ge.IsEdgeConformalWithCell1(iedge);
                 case 1:
-                return ge.IsEdgeConformalWithCell2(iedge);
+                    return ge.IsEdgeConformalWithCell2(iedge);
                 default:
-                throw new ArgumentOutOfRangeException();
+                    throw new ArgumentOutOfRangeException();
             }
 
         }
@@ -963,7 +1291,7 @@ namespace BoSSS.Foundation.Grid {
 
                     m_CFL_EvalPoints[i] = new NodeSet(Kref, vert, true);
                 }
-                
+
 
 
                 // evaluators an memory for result
@@ -1025,21 +1353,18 @@ namespace BoSSS.Foundation.Grid {
 
                 // find the minimum over all processes via MPI and return
                 // ------------------------------------------------------
-                double cfltotal;
-                unsafe {
-                    csMPI.Raw.Allreduce((IntPtr)(&cflhere), (IntPtr)(&cfltotal), 1, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.MIN, csMPI.Raw._COMM.WORLD);
-                }
+                double cfltotal = cflhere.MPIMin();
                 tr.Info("computed CFL timestep: " + cfltotal);
                 return cfltotal;
 
             }
         }
 
-
+        
         /// <summary>
-        /// returns the logical edge index for a cell/face index pair
+        /// returns logical edges index for a cell/face index pair
         /// </summary>
-        /// <param name="jCell">
+        /// <param name="jCellGeom">
         /// local cell index
         /// </param>
         /// <param name="iFace">
@@ -1047,28 +1372,267 @@ namespace BoSSS.Foundation.Grid {
         /// </param>
         /// <param name="g"></param>
         /// <returns></returns>
-        static public int CellToEdge(this IGridData g, int jCell, int iFace) {
-            GridData gdat = (GridData)g;
-            
-            int[] EdgeCandidates = g.iLogicalCells.Cells2Edges[jCell];
+        static public IEnumerable<int> GeomCellToLogicalEdge(this IGridData g, int jCellGeom, int iFace) {
+            //GridData gdat = (GridData)g;
 
-            if(iFace < 0 || iFace >= gdat.Cells.GetRefElement(jCell).NoOfFaces)
+            int[] EdgeCandidates = g.iLogicalCells.Cells2Edges[GetLogicalCellIndex(g, jCellGeom)];
+
+            if (iFace < 0 || iFace >= g.iGeomCells.GetRefElement(jCellGeom).NoOfFaces)
                 throw new ArgumentOutOfRangeException("illegal face index.");
 
-            foreach(int i in EdgeCandidates) {
-                int iEdge = Math.Abs(i) - 1;
-                int inOut = i > 0 ? 0 : 1;
+            var ret = new HashSet<int>();
 
-                if(gdat.Edges.FaceIndices[iEdge, inOut] == iFace) {
-                    return iEdge;
+            foreach (int _i in EdgeCandidates) {
+                int iEdgeLog = Math.Abs(_i) - 1;
+                foreach(int iEdgeGeom in GetGeometricEdgeIndices(g, iEdgeLog)) {
+
+                    int inOut = IsInOrOut_Geom(g, iEdgeGeom, jCellGeom);
+
+                    if(g.iGeomEdges.FaceIndices[iEdgeGeom, inOut] == iFace) {
+                        ret.Add(iEdgeLog);
+                    }
                 }
             }
 
-            throw new ApplicationException($"Unable to find edge for cell {jCell}, face {iFace}.");
+            if(ret.Count <= 0)
+                throw new ApplicationException($"Unable to find edge for cell {jCellGeom}, face {iFace}.");
+            return ret.ToArray();
+        }
+        
+
+        /// <summary>
+        /// transforms vertices from the local coordinate system of cells <paramref name="jCell"/>
+        /// to global coordinates;
+        /// </summary>
+        /// <param name="LocalVerticesIn">
+        /// Input; vertices in the local coordinate system of a cell;
+        /// - 1st index: vertex index
+        /// - 2nd index: spatial coordinate index 0 for 1D and 0,1 for 2D and 0,1,2 for 3D;
+        /// </param>
+        /// <param name="GlobalVerticesOut">
+        /// Output; the vertices form <paramref name="LocalVerticesIn"/>, transformed to global
+        /// coordinates;
+        /// - 1st index: vertex index, corresponds with the 1st index of <paramref name="LocalVerticesIn"/>;
+        /// - 2nd index: spatial coordinate index 0 for 1D and 0,1 for 2D and 0,1,2 for 3D;
+        /// </param>
+        /// <param name="jCell">local cell index of the cell to transform</param>
+        /// <param name="g"></param>
+        static public void TransformLocal2Global(this IGridData g, MultidimensionalArray LocalVerticesIn, MultidimensionalArray GlobalVerticesOut, int jCell) {
+            int N = LocalVerticesIn.GetLength(0);
+            int D = g.SpatialDimension;
+            if(GlobalVerticesOut.Dimension != 2)
+                throw new ArgumentException("wrong dimension/array rank");
+            if(LocalVerticesIn.Dimension != 2)
+                throw new ArgumentException("wrong dimension/array rank");
+            if(GlobalVerticesOut.GetLength(1) != D)
+                throw new ArgumentException("wrong spatial dimension of GlobalVerticesOut");
+            if(LocalVerticesIn.GetLength(1) != D)
+                throw new ArgumentException("wrong spatial dimension of LocalVerticesIn");
+            if(LocalVerticesIn.GetLength(0) != GlobalVerticesOut.GetLength(0))
+                throw new ArgumentException("mismatch in number of vertices per cell.");
+
+
+            var _GlobalVerticesOut = MultidimensionalArray.Create(1, N, D);
+            g.TransformLocal2Global(LocalVerticesIn, jCell, 1, _GlobalVerticesOut, 0);
+            GlobalVerticesOut.Set(_GlobalVerticesOut.ExtractSubArrayShallow(0, -1, -1));
         }
 
-    }
 
+        /// <summary>
+        /// Easy-to-use routine (version with memory allocation):
+        /// transform nodes in local coordinates to global coordinates for cell <paramref name="jCell"/> 
+        /// </summary>
+        /// <param name="g"></param>
+        /// <param name="localNodes">
+        /// 2D-array:
+        /// - 1st dimension: node index
+        /// - 2nd dimension: spatial direction
+        /// </param>
+        /// <param name="jCell">
+        /// geometrical cell index
+        /// </param>
+        /// <returns>
+        /// 2D-array, <paramref name="localNodes"/> transformed to global coordinates
+        /// - 1st dimension: node index
+        /// - 2nd dimension: spatial direction
+        /// </returns>
+        static public MultidimensionalArray TransformLocal2Global(this IGridData g, MultidimensionalArray localNodes, int jCell) {
+            if(localNodes.Dimension != 2) {
+                throw new ArgumentException("expecting a 2D-array as input");
+            }
+            var ret = MultidimensionalArray.Create(1, localNodes.GetLength(0), localNodes.GetLength(1));
+            g.TransformLocal2Global(localNodes, jCell, 1, ret);
+            return ret.ExtractSubArrayShallow(0, -1, -1);
+        }
+
+        /// <summary>
+        /// Easy-to-use routine (for a single point):
+        /// transform nodes in local coordinate to a global coordinate for cell <paramref name="jCell"/> 
+        /// </summary>
+        /// <param name="g"></param>
+        /// <param name="localNode">
+        /// point in local coordinates
+        /// </param>
+        /// <param name="jCell">
+        /// geometrical cell index
+        /// </param>
+        /// <returns>
+        /// point in global coordinates
+        /// </returns>
+        static public Vector TransformLocal2Global(this IGridData g, Vector localNode, int jCell) {
+            if(localNode.Dim != g.SpatialDimension) {
+                throw new ArgumentException("spatial dimension mismatch");
+            }
+            var localNodesW = MultidimensionalArray.Create(1, localNode.Dim);
+            localNodesW.SetRow(0, localNode);
+            var globalNodesW = g.TransformLocal2Global(localNodesW, jCell);
+            return globalNodesW.GetRowPt(0);
+        }
+
+
+        /// <summary>
+        /// <see cref="TransformLocal2Global(IGridData, MultidimensionalArray, int)"/>
+        /// </summary>
+        static public MultidimensionalArray TransformLocal2Global(this MultidimensionalArray localNodes, IGridData g, int jCell) {
+            return g.TransformLocal2Global(localNodes, jCell);
+        }
+
+
+        /// <summary>
+        /// transform nodes from local edge or cell coordinates (depending on <see cref="NodeSet.GetNodeCoordinateSystem"/>) to global coordinates
+        /// </summary>
+        /// <param name="iItem">
+        /// a geometrical edge or cell index
+        /// </param>
+        /// <param name="localNodes"></param>
+        /// <param name="g"></param>
+        static public MultidimensionalArray TransformLocal2Global(this NodeSet localNodes, IGridData g, int iItem) {
+            switch(localNodes.GetNodeCoordinateSystem(g)) {
+                case NodeCoordinateSystem.CellCoord:
+                return g.TransformLocal2Global(localNodes, iItem);
+                case NodeCoordinateSystem.EdgeCoord:
+                return g.GlobalNodes.GetValue_EdgeSV(localNodes, iItem);
+                default: throw new NotImplementedException();
+            }
+        }
+
+
+        /// <summary>
+        /// Easy-to-use routine (version with memory allocation):
+        /// in local coordinates to global coordinates, 
+        /// for a range of cells, starting at <paramref name="jCell0"/> to <paramref name="jCell0"/>+<paramref name="Len"/>-1.
+        /// to coordinated to global coordinates
+        /// </summary>
+        /// <param name="g"></param>
+        /// <param name="localNodes">
+        /// 2D-array:
+        /// - 1st dimension: node index
+        /// - 2nd dimension: spatial direction
+        /// </param>
+        /// <param name="jCell0">
+        /// geometrical cell index
+        /// </param>
+        /// <param name="Len">
+        /// Number of cells to transform consecutive to cell <paramref name="jCell0"/>
+        /// </param>
+        /// <returns>
+        /// 3D-array, <paramref name="localNodes"/> transformed to global coordinates
+        /// - 1st dimension: cell index
+        /// - 2nd dimension: node index
+        /// - 3rd dimension: spatial direction
+        /// </returns>
+        static public MultidimensionalArray TransformLocal2Global(this IGridData g, MultidimensionalArray localNodes, int jCell0, int Len) {
+            if(localNodes.Dimension != 2) {
+                throw new ArgumentException("expecting a 2D-array as input");
+            }
+            var ret = MultidimensionalArray.Create(Len, localNodes.GetLength(0), localNodes.GetLength(1));
+            return ret.ExtractSubArrayShallow(0, -1, -1);
+        }
+
+        
+
+        /// <summary>
+        /// Finds all edges for a specific face of a cell
+        /// </summary>
+        /// <param name="jCellGeom">geometrical cell index</param>
+        /// <param name="iFace">face index (<see cref="BoSSS.Foundation.Grid.RefElements.RefElement.NoOfFaces"/>)</param>
+        /// <param name="InOrOut">
+        /// - 0 if <paramref name="jCellGeom"/> is the IN-cell w.r.t. the found edge
+        /// - 1 if <paramref name="jCellGeom"/> is the OUT-cell w.r.t. the found edge
+        /// </param>
+        /// <param name="MoreEdges">
+        /// Only used for hanging nodes:
+        /// If there is more than one edge on the face, the indices of all edges in addition to the return value
+        /// </param>
+        /// <param name="m_owner"></param>
+        /// <returns>
+        /// the first found edge on the face; if there are no hanging node, this is typically the only edge.
+        /// </returns>
+        public static int GetEdgesForFace(this IGridData m_owner, int jCellGeom, int iFace, out int InOrOut, out int[] MoreEdges) {
+
+            
+            int jCell = m_owner.iGeomCells?.GeomCell2LogicalCell?[jCellGeom] ?? jCellGeom;
+            int[] CellToEdges = m_owner.iLogicalCells.Cells2Edges[jCell];
+            var iEdgeLog2iEdgeGeom = m_owner.iLogicalEdges.EdgeToParts;
+
+            
+            int[,] E2C = m_owner.iGeomEdges.CellIndices;
+            byte[,] E2F = m_owner.iGeomEdges.FaceIndices; // edge -> face1, face2
+
+            if(iFace < 0 || iFace >= m_owner.iGeomCells.GetRefElement(jCellGeom).NoOfFaces)
+                throw new ArgumentException("Face index out ouf range.");
+
+            int Ret = -1;
+            int[] _MoreEdges = null;
+            int L = CellToEdges.Length;
+            InOrOut = -1;
+            for(int l = 0; l < L; l++) { // loop over potential edges
+                int iEdgeLog = Math.Abs(CellToEdges[l]) - 1;
+
+                foreach(int iEdge in iEdgeLog2iEdgeGeom?[iEdgeLog] ?? new int[] { iEdgeLog }) {
+
+
+                    int __InOut = CellToEdges[l] > 0 ? 0 : 1;
+
+                    if(E2F[iEdge, __InOut] == iFace) {
+                        Debug.Assert(m_owner.iGeomEdges.CellIndices[iEdge, __InOut] == jCellGeom);
+
+                        if(Ret < 0) {
+                            Ret = iEdge;
+                            InOrOut = __InOut;
+                        } else {
+                            iEdge.AddToArray(ref _MoreEdges);
+                        }
+                    }
+                }
+            }
+
+            MoreEdges = _MoreEdges;
+            return Ret;
+        }
+
+        /// <summary>
+        /// A mask containing all edges between two MPI processes, i.e., between an ordinary cell and a ghost cell.
+        /// </summary>
+        static public EdgeMask GetInterprocessEdges(this IGridData g) {
+            int E = g.iGeomEdges.Count;
+            var bm = new BitArray(E);
+            for(int e = 0; e < E; e++) {
+                bm[e] = g.iGeomEdges.IsInterprocess(e);
+
+                int jCell2 = g.iGeomEdges.CellIndices[e, 1];
+                bool ext2 = jCell2 >= g.iGeomCells.NoOfLocalUpdatedCells;
+                if(bm[e] != ext2)
+                    throw new ApplicationException("invalid grid structure: interprocess edges seem to be marked inconsistent with cell indices.");
+            }
+
+            return new EdgeMask(g, bm, MaskType.Geometrical);
+        }
+
+
+    }
+        
+        
     /// <summary>
     /// used by <see cref="IGridData_Extensions.GetCellNeighbours(IGridData, int, GetCellNeighbours_Mode, out int[], out int[])"/>.
     /// </summary>
@@ -1085,6 +1649,6 @@ namespace BoSSS.Foundation.Grid {
         ViaVertices
     }
 
-    
+
 
 }

@@ -130,7 +130,7 @@ namespace CNS.IBM {
         public MultiphaseCellAgglomerator CellAgglomeration {
             get {
                 if (cellAgglomeration == null) {
-                    if (Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Classic) {
+                    if (Control.CutCellQuadratureType == CutCellQuadratureMethod.Classic) {
                         BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetSurfaceQuadRuleFactory.UseNodesOnLevset =
                             Control.SurfaceHMF_ProjectNodesToLevelSet;
                         BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetSurfaceQuadRuleFactory.RestrictNodes =
@@ -153,6 +153,7 @@ namespace CNS.IBM {
                         oldAggThreshold = null;
                     }
 
+                    //_LevelSetQuadratureOrder
                     cellAgglomeration = Tracker.GetAgglomerator(
                         new SpeciesId[] { Tracker.GetSpeciesId(Control.FluidSpeciesName) },
                         Control.LevelSetQuadratureOrder,
@@ -201,7 +202,7 @@ namespace CNS.IBM {
                     Tracker.GetSpeciesId(Control.FluidSpeciesName)
                 };
 
-                return Tracker.GetXDGSpaceMetrics(species, Control.LevelSetQuadratureOrder, 1).XQuadSchemeHelper;
+                return Tracker.GetXDGSpaceMetrics(species, Control.LevelSetQuadratureOrder + 2, 1).XQuadSchemeHelper;
             }
         }
 

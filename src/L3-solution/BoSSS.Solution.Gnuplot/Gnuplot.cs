@@ -656,7 +656,7 @@ namespace BoSSS.Solution.Gnuplot {
 
         /// <summary>
         /// plots the affine-linear function
-        /// \f$ y = x ^ <paramref name="expo"/> * <paramref name="C"/> \f$
+        /// $y = x ^ <paramref name="expo"/> * <paramref name="C"/>$
         /// </summary>
         public void PlotPow(double expo, double C, string title = null,
              PlotFormat format = null, bool deferred = true, bool useX2 = false, bool useY2 = false) {

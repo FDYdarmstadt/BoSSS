@@ -27,16 +27,14 @@ namespace BoSSS.Foundation.XDG.Quadrature {
     /// Implementation of <see cref="LevelSetIntegrator"/> that is able to
     /// integrate an arbitrary scalar field over a level set. The idea behind
     /// this class is write the integral of a scalar integrand g over the 
-    /// zero level set (given by \f$ \Phi = 0\f$ ) I as
+    /// zero level set (given by $\Phi = 0$) I as
     /// \f{multline*}
     /// \int \limits_I g ds \\
-    /// = \int \limits_I g \vec{n}_I \vec{n}_I ds \\
-    /// = \int \limits_I g \frac{\nabla \Phi}{|\nabla \Phi|} \vec{n}_I ds
+    /// = \int \limits_I g \underline{n}_I \underline{n}_I ds \\
+    /// = \int \limits_I g \frac{\nabla \Phi}{|\nabla \Phi|} \underline{n}_I ds
     /// \f{multline*}
     /// and using Gauss' theorem on the modified integrand
-    /// \f$ 
-    /// \vec{g} = g \frac{\nabla \Phi}{|\nabla \Phi|}
-    /// \f$ 
+    /// $\underline{g} = g \frac{\nabla \Phi}{|\nabla \Phi|}$ 
     /// </summary>
     public class ScalarFieldLevelSetIntegrator : LevelSetIntegrator {
 
@@ -116,9 +114,9 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
         /// <summary>
         /// Evaluates the modified integrand which is
-        /// \f$ 
-        /// \vec{g} = g \frac{\nabla \Phi}{|\nabla \Phi|}
-        /// \f$ 
+        /// $ 
+        /// \underline{g} = g \frac{\nabla \Phi}{|\nabla \Phi|}
+        /// $ 
         /// where g represents <see cref="m_Field"/>.
         /// </summary>
         public override void EvaluateIntegrand(NodeSet N, int j0, int Length, MultidimensionalArray EvalResult) {
@@ -155,16 +153,14 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
         /// <summary>
         /// Evaluates the divergence of the modified integrand 
-        /// \f$ 
-        /// \nabla \cdot \vec{g} = \nabla \cdot (g \frac{\nabla \Phi}{|\nabla \Phi|})
-        /// \f$ 
+        /// $\nabla \cdot \underline{g} = \nabla \cdot (g \frac{\nabla \Phi}{|\nabla \Phi|})$ 
         /// which can be expanded to
-        /// \f$ 
-        /// \nabla \cdot \vec{g} = \nabla g \frac{\nabla \Phi}{|\nabla \Phi|} + g (
+        /// $ 
+        /// \nabla \cdot \underline{g} = \nabla g \frac{\nabla \Phi}{|\nabla \Phi|} + g (
         /// \frac{\Delta \Phi}{|\nabla \Phi|}
         /// - \frac{\nabla \Phi}{|\nabla \Phi|} \frac{H(\Phi)}{|\nabla \Phi|} \frac{\nabla \Phi}{|\nabla \Phi|})
-        /// \f$ 
-        /// using the chain rule. HEre, \f$ H(\Phi)\f$ 
+        /// $ 
+        /// using the chain rule. HEre, $H(\Phi)$ 
         /// denotes the Hessian of the level set (i.e., the second derivatives)
         /// </summary>
         public override void EvaluateDivergenceOfIntegrand(NodeSet nodes, int j0, int Length, MultidimensionalArray EvalResult) {

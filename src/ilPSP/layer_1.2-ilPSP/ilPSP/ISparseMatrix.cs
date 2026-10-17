@@ -237,9 +237,6 @@ namespace ilPSP.LinSolvers {
         /// </returns>
         int GetRow(long RowIndex, ref long[] ColumnIndices, ref double[] Values);
 
-       
-
-
         /// <summary>
         /// Sets all entries to 0.0; 
         /// </summary>

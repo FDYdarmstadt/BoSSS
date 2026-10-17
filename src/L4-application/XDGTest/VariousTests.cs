@@ -31,7 +31,7 @@ namespace BoSSS.Application.XDGTest {
             GridCommons grd = Grid2D.Cartesian2DGrid(Nodes, Nodes);
             var gdat = grd.GridData;
             var phi = new LevelSet(new Basis(gdat, 2), "Phi");
-            var trk = new LevelSetTracker(gdat, XQuadFactoryHelper.MomentFittingVariants.Saye, NearRegionWidht, new[] { "A", "B" }, phi);
+            var trk = new LevelSetTracker(gdat, CutCellQuadratureMethod.Saye, NearRegionWidht, new[] { "A", "B" }, phi);
 
             Func<double[], double> UA = X => X[0] * X[1];
             Func<double[], double> UB = X => X[0].Pow2();

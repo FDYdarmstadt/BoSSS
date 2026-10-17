@@ -64,7 +64,7 @@ namespace CNS.Tests.IBMTests {
             };
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
 
-            //c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //c.MomentFittingVariant = CutCellQuadratureMethod.Classic;
             //c.SurfaceHMF_ProjectNodesToLevelSet = false;
             //c.SurfaceHMF_RestrictNodes = true;
             //c.SurfaceHMF_UseGaussNodes = false;
@@ -73,7 +73,7 @@ namespace CNS.Tests.IBMTests {
             //c.VolumeHMF_UseGaussNodes = false;
             //c.LevelSetQuadratureOrder = 6;
 
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 6;
             c.AgglomerationThreshold = 0.2;
             c.AddVariable(IBMVariables.LevelSet, 1);
@@ -249,7 +249,7 @@ namespace CNS.Tests.IBMTests {
             c.AddVariable(IBMVariables.LevelSet, 2);
 
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 3 * dgDegree;
             c.AgglomerationThreshold = agg;
 

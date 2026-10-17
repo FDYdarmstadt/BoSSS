@@ -502,9 +502,9 @@ namespace BoSSS.Solution.NSECommon {
 
     /// <summary>
     /// Implements the operator 
-    /// \f[ 
-    ///   -\operatorname{div} \left( \mu \nabla \vec{u} \right) +   - \operatorname{div} \left( \mu (\partial_d \vec{u}) \right) +\frac{2}{3} \operatorname{div} \left( \mu \myMatrix{I} \operatorname{div} ( \vec{u} )  \right)
-    /// \f]
+    /// \[ 
+    ///   -\operatorname{div} \left( \mu \nabla \underline{u} \right) +   - \operatorname{div} \left( \mu (\partial_d \underline{u}) \right) +\frac{2}{3} \operatorname{div} \left( \mu \boldsymbol{I} \operatorname{div} ( \underline{u} )  \right)
+    /// \]
     /// for a variable \mu value
     /// </summary>
     public class SipViscosity_Variable : SipViscosityNewBase, INonlinVolumeForm_GradV,
@@ -692,7 +692,7 @@ namespace BoSSS.Solution.NSECommon {
                 //        goto case IncompressibleBcType.Velocity_Inlet;
                 //    }
                 //}
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet:
                 case IncompressibleBcType.ScalarDirichlet_PressureOutlet: {
                         // Atmospheric outlet/pressure outflow: hom. Neumann
@@ -821,7 +821,7 @@ namespace BoSSS.Solution.NSECommon {
                 //        }
                 //    }
                 case IncompressibleBcType.Pressure_Dirichlet:
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet:
                 case IncompressibleBcType.ScalarDirichlet_PressureOutlet: {
 
@@ -893,7 +893,7 @@ namespace BoSSS.Solution.NSECommon {
                         break;
                     }
                 case IncompressibleBcType.Pressure_Dirichlet:
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet:
                 case IncompressibleBcType.ScalarDirichlet_PressureOutlet: {
 

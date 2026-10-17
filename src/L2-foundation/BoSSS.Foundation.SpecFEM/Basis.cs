@@ -234,9 +234,9 @@ namespace BoSSS.Foundation.SpecFEM {
         NodeSet[] m_CellNodes;
 
         /// <summary>
-        /// Nodes for the reference cell in local coordinates<br/>
-        ///  - 1st index: reference element <br/>
-        ///  - 2nd index: node index <br/>
+        /// Nodes for the reference cell in local coordinates
+        ///  - 1st index: reference element
+        ///  - 2nd index: node index
         ///  - 3rd index: spatial dimension
         /// </summary>
         public NodeSet[] CellNodes {
@@ -246,17 +246,17 @@ namespace BoSSS.Foundation.SpecFEM {
         }
 
         /// <summary>
-        ///  - 1st index: reference element.<br/>
-        ///  - 2nd index: type <br/>
-        ///  - 3rd index: unit (face index, vertex index, ...)<br/>
+        ///  - 1st index: reference element.
+        ///  - 2nd index: type 
+        ///  - 3rd index: unit (face index, vertex index, ...)
         /// </summary>
         MultidimensionalArray[][][] UNodes;
 
 
 
         /// <summary>
-        /// Number of Nodes in one cell;<br/>
-        ///  - index: reference element <br/>
+        /// Number of Nodes in one cell;
+        ///  - index: reference element 
         /// </summary>
         public int[] NodesPerCell {
             get {
@@ -267,8 +267,8 @@ namespace BoSSS.Foundation.SpecFEM {
         PolynomialList[] m_NodalBasis;
 
         /// <summary>
-        /// the nodal basis polynomials.<br/>
-        ///  - 1st index: reference element index<br/>
+        /// the nodal basis polynomials.
+        ///  - 1st index: reference element index
         ///  - 2nd index: node index.
         /// </summary>
         public PolynomialList[] NodalBasis {
@@ -278,8 +278,8 @@ namespace BoSSS.Foundation.SpecFEM {
         }
 
         /// <summary>
-        /// The Node type for each node of a cell, i.e. whether the node is a cell- (1D,2D,3D), face- (only 2D and 3D), co-face- (only 3D), or vertex node (1D,2D,3D);<br/>
-        ///  - 1st index: reference element;<br/>
+        /// The Node type for each node of a cell, i.e. whether the node is a cell- (1D,2D,3D), face- (only 2D and 3D), co-face- (only 3D), or vertex node (1D,2D,3D);
+        ///  - 1st index: reference element
         ///  - 2nd index: cell node;
         /// </summary>
         int[][] m_Type;
@@ -1306,8 +1306,8 @@ namespace BoSSS.Foundation.SpecFEM {
 
 
         /// <summary>
-        /// Transformation from cell-node index to local node index:<br/>
-        ///  - 1st index: cell index<br/>
+        /// Transformation from cell-node index to local node index:
+        ///  - 1st index: cell index
         ///  - 2nd index: node index within cell
         /// </summary>
         public int[,] CellNode_To_Node;

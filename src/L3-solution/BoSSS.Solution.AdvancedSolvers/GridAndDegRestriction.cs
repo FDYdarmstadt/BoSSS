@@ -366,7 +366,79 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 LowerPSolver.ResetStat();
         }
 
+        /// <summary>
+        /// MPI operations are usually not thread-safe (at least for now); 
+        /// this generic method checks the residual before solving step, which can be done in thread parallel 
+        /// Hence, the solve and residual checks are decoupled
+        /// </summary>
+        /// <typeparam name="U"></typeparam>
+        /// <typeparam name="V"></typeparam>
+        /// <param name="X"></param>
+        /// <param name="B"></param>
+        /// <exception cref="ArgumentException"></exception>
+        public (bool conv, double[] xLo, double[] bLo, double[] xExt, double[] bExt) ThreadSafeSolveInit<U, V>(U X, V B)
+            where U : IList<double>
+            where V : IList<double> //
+        {
+            if(X.Count != Len)
+                throw new ArgumentException("mismatch in solution vector length");
+            if(B.Count != Len)
+                throw new ArgumentException("mismatch in right-hand-side vector length");
+
+            if(LenSub <= 0)
+                return (true, null, null, null, null); // empty solver: might happen in certain IBM-calculations
+
+            double[] xLo, bLo; // yes, they are intentionally not a fields of the class
+            double[] xExt, bExt;
+            if(this.GetExtMem != null) {
+                (xExt, bExt) = GetExtMem();
+                xLo = m_MgOperatorRestriction.BlkMask.GetSubVec(xExt, X);
+                bLo = m_MgOperatorRestriction.BlkMask.GetSubVec(bExt, B);
+            } else {
+                xExt = null;
+                bExt = null;
+                xLo = m_MgOperatorRestriction.BlkMask.GetSubVec(X);
+                bLo = m_MgOperatorRestriction.BlkMask.GetSubVec(B);
+            }
+
+            if(LowerPSolver != null) {
+                double normRHS = bLo.MPI_L2Norm(m_MgOperatorRestriction.OperatorMatrix.MPI_Comm);
+                if(normRHS <= 0) {
+                    m_converged = true;
+                    return (true, null, null, null, null);
+                }
+            }
+
+            return (false, xLo, bLo, xExt, bExt);
+        }
+
+
+        public void ThreadSafeSolve<U, V>(U X, V B, double[] xLo, double[] bLo, double[] xExt, double[] bExt)
+            where U : IList<double>
+            where V : IList<double> 
+            {
+            if (LowerPSolver != null) { 
+                LowerPSolver.Solve(xLo, bLo);
+                m_converged = LowerPSolver.Converged;
+            }
+
+            if(xExt != null)
+                m_MgOperatorRestriction.BlkMask.AccSubVec(xLo, xExt, X);
+            else
+                m_MgOperatorRestriction.BlkMask.AccSubVec(xLo, X);
+        }
+
         public void Solve<U, V>(U X, V B)
+            where U : IList<double>
+            where V : IList<double> {
+            var (skipSolve, xLo, bLo, xExt, bExt) = ThreadSafeSolveInit(X, B);
+            if (skipSolve)
+                return;
+
+            ThreadSafeSolve(X, B, xLo, bLo, xExt, bExt);
+        }
+
+        public void SolveReference<U, V>(U X, V B)
             where U : IList<double>
             where V : IList<double> //
         {

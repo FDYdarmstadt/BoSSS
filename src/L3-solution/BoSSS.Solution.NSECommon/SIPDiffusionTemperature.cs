@@ -140,7 +140,7 @@ namespace BoSSS.Solution.NSECommon {
                     Acc = -1 * BoundaryEdgeFormDirichlet2(ref inp, _uA, _Grad_uA, _vA, _Grad_vA, u_D);
                     break;
 
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet:
                 case IncompressibleBcType.NoSlipNeumann:
                     Acc = base.BoundaryEdgeFormNeumann();
@@ -341,7 +341,10 @@ namespace BoSSS.Solution.NSECommon {
             Debug.Assert(!double.IsInfinity(penaltySizeFactor));
             Debug.Assert(!double.IsInfinity(m_penalty));
 
-            return penaltySizeFactor * m_penalty * m_penalty_base;
+            double mu = penaltySizeFactor * m_penalty * m_penalty_base;
+            if(mu.IsNaNorInf())
+                throw new ArithmeticException("Inf/NaN in penalty computation.");
+            return mu;
         }
 
 

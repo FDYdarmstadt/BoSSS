@@ -78,8 +78,7 @@ namespace CNS {
 
 
         /// <summary>
-        /// Or-combination of all variables for which initial value definitions
-        /// exist
+        /// Or-combination of all variables for which initial value definitions exist
         /// </summary>
         public VariableTypes GetInitialValueVariables() {
             bool conservative = InitialValues_Evaluators.ContainsKey(BoSSS.Solution.CompressibleFlowCommon.CompressibleVariables.Density)

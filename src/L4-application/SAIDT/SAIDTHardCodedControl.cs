@@ -174,21 +174,6 @@ namespace SAIDT {
         /// <summary>
         /// Example with straight shock
         /// </summary>
-        /// <param name="dbPath"></param>
-        /// <param name="MaxIterations"></param>
-        /// <param name="dgDegree"></param>
-        /// <param name="numOfCellsX"></param>
-        /// <param name="numOfCellsY"></param>
-        /// <param name="OptiNumOfCellsX"></param>
-        /// <param name="OptiNumOfCellsY"></param>
-        /// <param name="ImmediatePlotPeriod"></param>
-        /// <param name="agg"></param>
-        /// <param name="optiLevelSetType"></param>
-        /// <param name="LSDegree"></param>
-        /// <param name="withReInit"></param>
-        /// <param name="meritFunctionType"></param>
-        /// <param name="isFarConfig"></param>
-        /// <returns></returns>
         public static SAIDTControl StraightShock(string dbPath = null, int MaxIterations = 50, int dgDegree = 0, int numOfCellsX = 10,
         int numOfCellsY = 10,
         int OptiNumOfCellsX = 1,

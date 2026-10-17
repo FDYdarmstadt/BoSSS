@@ -78,6 +78,28 @@ namespace BoSSS.Foundation.Quadrature {
         int[] GetCachedRuleOrders();
     }
 
+
+    /// <summary>
+    /// This to supports the uniform caching and **multi-threading** architecture which is introduced in the XDG module.
+    /// Note:
+    /// - Caching within a 'family' of quadrature rule, as supported by <see cref="IQuadRuleFactory{TQuadRule}.GetCachedRuleOrders"/>, 
+    ///   aids performance
+    ///   since certain calculations within the family are common, e.g., for surface and volume rules; 
+    ///   also, e.g., for HMF, volume rules require surface rules first, but the surface rules themselves are also required.
+    ///   This is difficult to support with the uniform caching architecture
+    /// - One purpose of the uniform caching architecture is also to support multi-threading, 
+    ///   where the total number of cells has to be split up into one part for each thread; afterwards, the rules from each thread must be combined;
+    ///   This is the same for each rule, therefore it should be centralized to avoid bloating of the code of the quadrature families.
+    /// </summary>
+    public interface IQuadRuleFactory_ext<out TQuadRule> : IQuadRuleFactory<TQuadRule> where TQuadRule : QuadRule {
+
+        /// <summary>
+        /// Return true to indicate that the quadrature rule should not be globally cached 
+        /// </summary>
+        bool RuleIsCached { get; }
+
+    }
+
     /// <summary>
     /// A tuple consisting of a chunk (a subset of a domain of integration) and
     /// an associated quadrature rule.

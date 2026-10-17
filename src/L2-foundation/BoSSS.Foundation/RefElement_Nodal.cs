@@ -39,13 +39,12 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// 2D-array, 1st index: node index, 2nd index: spatial direction 
         /// </param>
         /// <param name="Type">
-        /// The location of the node within the cell; <br/>
+        /// The location of the node within the cell;
+        /// 
         /// Index: node index;
-        /// <list type="bullet">
-        /// <item>in 1D: 0 for cells, 1 for edges</item>
-        /// <item>in 2D: 0 for cells/volumes, 1 for edges/faces, 2 for corners</item>
-        /// <item>in 3D: 0 for cells/volumes, 1 for faces, 2 for edges, 3 for corners</item>
-        /// </list>
+        /// - in 1D: 0 for cells, 1 for edges
+        /// - in 2D: 0 for cells/volumes, 1 for edges/faces, 2 for corners
+        /// - in 3D: 0 for cells/volumes, 1 for faces, 2 for edges, 3 for corners
         /// </param>
         protected abstract void GetNodeSet(int px, out MultidimensionalArray Nodes, out int[] Type);
 
@@ -56,30 +55,32 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// Number of subdivisions in each direction, along one edge.
         /// </param>
         /// <param name="Nodes">
-        /// 2D-array, 1st index: node index, 2nd index: spatial direction 
+        /// 2D-array:
+        /// - 1st index: node index
+        /// - 2nd index: spatial direction 
         /// </param>
         /// <param name="Type">
         /// The location of the node within the cell; <br/>
         /// Index: node index;
-        /// <list type="bullet">
-        /// <item>in 1D: 0 for cells (volume nodes, volume is 1D), 1 for vertices (vertex nodes, faces are 0D, i.e. points or vertices)</item>
-        /// <item>in 2D: 0 for cells (volume nodes, volume is 2D), <br/>
-        ///              1 for edges (face nodes, faces are 1D, i.e. lines),  <br/>
-        ///              2 for corners (in 2D the vertices correlate with the co-faces, i.e. 0D objects)</item>
-        /// <item>in 3D: 0 for cells (volume nodes, volume is 3D), <br/>
-        ///              1 for faces (face nodes, the faces are 2D - polygons, e.g. rectangles or triangles),<br/>
-        ///              2 for edges (co-face nodes: co-faces are the edges of the faces; these are lines) <br/>
-        ///              3 for corners (etc.) </item>
-        /// </list>
+        /// - in 1D: 
+        ///    - 0 for cells (volume nodes, volume is 1D), 
+        ///    - 1 for vertices (vertex nodes, faces are 0D, i.e. points or vertices)
+        /// - in 2D:
+        ///    - 0 for cells (volume nodes, volume is 2D),
+        ///    - 1 for edges (face nodes, faces are 1D, i.e. lines),
+        ///    - 2 for corners (in 2D the vertices correlate with the co-faces, i.e. 0D objects)
+        /// - in 3D: 
+        ///    - 0 for cells (volume nodes, volume is 3D),
+        ///    - 1 for faces (face nodes, the faces are 2D - polygons, e.g. rectangles or triangles),
+        ///    - 2 for edges (co-face nodes: co-faces are the edges of the faces; these are lines)
+        ///    - 3 for corners (etc.)
         /// </param>
         /// <param name="EntityIndex">
         /// If the k-th node is 
-        /// <list type="bullet">
-        /// <item>a type 0 nodes, i.e. a cell node, <paramref name="EntityIndex"/>[k] is always 0.</item>
-        /// <item>a face node, <paramref name="EntityIndex"/>[k] is the index of the face within this reference element.</item>
-        /// <item>a co-face node, <paramref name="EntityIndex"/>[k] is the index of the co-face within this reference element</item>
-        /// <item>a vertex node, <paramref name="EntityIndex"/>[k] is the index of the vertex within this reference element</item>
-        /// </list>
+        /// - a type 0 nodes, i.e. a cell node, <paramref name="EntityIndex"/>[k] is always 0.
+        /// - a face node, <paramref name="EntityIndex"/>[k] is the index of the face within this reference element.
+        /// - a co-face node, <paramref name="EntityIndex"/>[k] is the index of the co-face within this reference element
+        /// - a vertex node, <paramref name="EntityIndex"/>[k] is the index of the vertex within this reference element
         /// </param>
 		/// <param name="TypeFilter">
 		/// Node types (see <paramref name="Type"/>) which should be filtered OUT, i.e. nodes with types in <paramref name="TypeFilter"/> will be omitted.
@@ -170,8 +171,8 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 int Vert_type = 2; 
 
                 for (int iCoFace = this.NoOfCoFaces - 1; iCoFace >= 0; iCoFace--) { // loop over co-faces
-                    var plane0 = this.GetFacePlane(this.CoFace_FaceIndices[iCoFace, 0]);
-                    var plane1 = this.GetFacePlane(this.CoFace_FaceIndices[iCoFace, 1]);
+                    var plane0 = this.GetFacePlane(this.CoFaceToFaceIndices[iCoFace, 0]);
+                    var plane1 = this.GetFacePlane(this.CoFaceToFaceIndices[iCoFace, 1]);
                     Debug.Assert(plane0.Normal.Dim == D);
                     Debug.Assert(plane1.Normal.Dim == D);
 

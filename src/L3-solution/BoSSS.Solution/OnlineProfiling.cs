@@ -239,6 +239,7 @@ namespace BoSSS.Solution {
         public void WriteProfilingReport(TextWriter wrt) {
             var R = RootCall;
 
+            
             WriteProfilingHeader(wrt);
 
             //if (ilPSP.Environment.OpenMPenabled) {
@@ -255,7 +256,11 @@ namespace BoSSS.Solution {
             wrt.WriteLine();
             wrt.WriteLine("Micro-Benchmarking results");
             wrt.WriteLine("=========================================================");
-            this.OnlinePerformanceLog.WriteStatistics(wrt);
+            if(this.OnlinePerformanceLog != null) {
+                this.OnlinePerformanceLog.WriteStatistics(wrt);
+            } else {
+                wrt.WriteLine("not-executed");
+            }
 
 
             wrt.WriteLine();

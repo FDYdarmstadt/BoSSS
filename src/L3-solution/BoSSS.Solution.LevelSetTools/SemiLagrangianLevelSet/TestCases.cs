@@ -899,7 +899,7 @@ namespace BoSSS.Application.SemiLagrangianLevelSetTestSuite
         {
             this.Grid = Grid;
             LevelSet = new LevelSet(new Basis(this.Grid, dgDegree), "LevelSet");
-            LevelSetTrck = new LevelSetTracker((GridData)this.Grid, XQuadFactoryHelper.MomentFittingVariants.Saye, 4, new string[] { "A", "B" }, LevelSet);
+            LevelSetTrck = new LevelSetTracker((GridData)this.Grid, CutCellQuadratureMethod.Saye, 4, new string[] { "A", "B" }, LevelSet);
             LevelSetGradient = new VectorField<SinglePhaseField>(this.Grid.SpatialDimension, new Basis(this.Grid, dgDegree), "LevelSetGradient", SinglePhaseField.Factory);
             Velocity_Current = new VectorField<SinglePhaseField>(this.Grid.SpatialDimension, new Basis(this.Grid, dgDegree), "VelocityCurrentStep", SinglePhaseField.Factory);
             Velocity_Next = new VectorField<SinglePhaseField>(this.Grid.SpatialDimension, new Basis(this.Grid, dgDegree), "VelocityNextStep", SinglePhaseField.Factory);

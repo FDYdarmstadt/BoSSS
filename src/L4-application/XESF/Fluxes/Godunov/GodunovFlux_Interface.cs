@@ -107,7 +107,7 @@ namespace XESF.Fluxes {
 
         private readonly Material material;
 
-        public GodunovFlux_Interface(LevelSetTracker levelSetTracker, CompressibleControl control, IBoundaryConditionMap boundaryMap, Material material, FluxVariables flux, int component = int.MinValue, int levelSetIndex = 0, string posSpecies = "B", string negSpecies = "A") {
+        public GodunovFlux_Interface(LevelSetTracker levelSetTracker, ICompressibleControl control, IBoundaryConditionMap boundaryMap, Material material, FluxVariables flux, int component = int.MinValue, int levelSetIndex = 0, string posSpecies = "B", string negSpecies = "A") {
             //this.levelSetTracker = levelSetTracker;
             this.material = material;
 
@@ -116,7 +116,7 @@ namespace XESF.Fluxes {
                     this.bulkFlux = new GodunovFlux(control, boundaryMap, new EulerDensityComponent(), material);
                     break;
                 case FluxVariables.Momentum:
-                    this.bulkFlux = new GodunovFlux(control, boundaryMap, new EulerMomentumComponent(component, material.EquationOfState.HeatCapacityRatio, control.MachNumber, levelSetTracker.GridDat.SpatialDimension), material);
+                    this.bulkFlux = new GodunovFlux(control, boundaryMap, new EulerMomentumComponent(component, material.EquationOfState.HeatCapacityRatio, control.CompressibleConfiguration.MachNumber, levelSetTracker.GridDat.SpatialDimension), material);
                     break;
                 case FluxVariables.Energy:
                     this.bulkFlux = new GodunovFlux(control, boundaryMap, new EulerEnergyComponent(), material);

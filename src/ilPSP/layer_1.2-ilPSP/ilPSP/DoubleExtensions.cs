@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using ilPSP.Utils;
 
@@ -118,6 +119,7 @@ namespace ilPSP {
         /// </summary>
         /// <param name="d"><see cref="Math.Sqrt(double)"/></param>
         /// <returns><see cref="Math.Sqrt(double)"/></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double Sqrt(this double d) {
             return Math.Sqrt(d);
         }
@@ -125,6 +127,7 @@ namespace ilPSP {
         /// <summary>
         /// the square of <paramref name="d"/>
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double Pow2(this double d) {
             return d * d;
         }
@@ -152,6 +155,31 @@ namespace ilPSP {
         public static double Pow(this double d, double exponent) {
             return Math.Pow(d, exponent);
         }
+
+        /// <summary>
+        /// <see cref="Math.Pow"/>
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static double Pow(this double d, int exponent) {
+            double r = 1;
+            for(int i = 0; i < exponent; i++) {
+                r *= d;
+            }
+            return r;
+        }
+
+        /// <summary>
+        /// <see cref="Math.Pow"/>
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int Pow(this int d, int exponent) {
+            int r = 1;
+            for(int i = 0; i < exponent; i++) {
+                r *= d;
+            }
+            return r;
+        }
+
 
         /// <summary>
         /// Checks <paramref name="d1"/> and <paramref name="d2"/> for equality

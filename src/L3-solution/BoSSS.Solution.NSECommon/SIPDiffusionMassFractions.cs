@@ -91,7 +91,7 @@ namespace BoSSS.Solution.NSECommon {
                 double u_D = BcMap.bndFunction[VariableNames.MassFraction_n(i - 1)][inp.EdgeTag](inp.X, inp.time);
                 Acc = -1 * base.BoundaryEdgeFormDirichlet(ref inp, _uA, _Grad_uA, _vA, _Grad_vA, u_D);
                 break;
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet:
                 case IncompressibleBcType.NoSlipNeumann: {
                     Acc = 0.0;

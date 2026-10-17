@@ -131,7 +131,7 @@ namespace BoSSS.Solution {
                 row["Message"] = e.Message;
                 set.Tables["Exception"].Rows.Add(row);
 
-                set.WriteXml(drv.GetNewLogStream(s, "Exception"), XmlWriteMode.WriteSchema);
+                set.WriteXml(drv.GetNewLogStream(s, "Exception", "txt"), XmlWriteMode.WriteSchema);
             }
 
             internal static SingleExceptionDataSet LoadException(string loggedException) {

@@ -35,5 +35,37 @@ namespace MPI.Wrappers {
                 return m_Raw1;
             }
         }
+
+        /// <summary>
+        /// returns the world communicator
+        /// </summary>
+        public static MPI_Comm COMM_WORLD {
+            get {
+                return Raw._COMM.WORLD;
+            }
+        }
+
+        /// <summary>
+        /// MPI rank of current process within the <see cref="IMPI_CommConstants.WORLD"/> communicator
+        /// </summary>
+        public static int Rank_World {
+            get {
+                Raw.Comm_Rank(COMM_WORLD, out int Rank);
+                return Rank;
+            }
+        }
+
+        /// <summary>
+        /// MPI size of  the <see cref="IMPI_CommConstants.WORLD"/> communicator
+        /// </summary>
+
+        public static int Size_World {
+            get {
+                Raw.Comm_Size(COMM_WORLD, out int Size);
+                return Size;
+            }
+        }
+
+
     }
 }

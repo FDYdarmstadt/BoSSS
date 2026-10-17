@@ -24,6 +24,7 @@ using ilPSP.Utils;
 using MPI.Wrappers;
 using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
+using ilPSP.Tracing;
 
 namespace BoSSS.Foundation {
 
@@ -127,139 +128,138 @@ namespace BoSSS.Foundation {
         /// The number of cells (locally) for which the algorithm was not able to extrapolate a value
         /// </returns>
         virtual public int CellExtrapolation(CellMask ExtrapolateTo, CellMask ExtrapolateFrom) {
-            //MPICollectiveWatchDog.Watch();
-            int J = this.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
-            int NoOfNeigh;
-            int[] NeighIdx;
-            int[][] CN = this.GridDat.iLogicalCells.CellNeighbours;
+                //MPICollectiveWatchDog.Watch();
+                int J = this.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+                int NoOfNeigh;
+                int[] NeighIdx;
+                int[][] CN = this.GridDat.iLogicalCells.CellNeighbours;
 
 
-            // mark all cells in which species 'Id' is known
-            // ---------------------------------------------
-            BitArray ValueIsKnown = ExtrapolateFrom.GetBitMaskWithExternal().CloneAs();
-            CellMask _ExtrapolateTo = ExtrapolateTo.Except(ExtrapolateFrom);
-            BitArray NeedToKnowValue = _ExtrapolateTo.GetBitMask();
-            this.Clear(_ExtrapolateTo);
+                // mark all cells in which species 'Id' is known
+                // ---------------------------------------------
+                BitArray ValueIsKnown = ExtrapolateFrom.GetBitMaskWithExternal().CloneAs();
+                CellMask _ExtrapolateTo = ExtrapolateTo.Except(ExtrapolateFrom);
+                BitArray NeedToKnowValue = _ExtrapolateTo.GetBitMask();
+                this.Clear(_ExtrapolateTo);
 
-            // repeat until (for species 'Id' the DOF' of) all cells
-            // that contain (at least a fraction of) species 'Id' are known...
-            // ------------------------------------------------------------------
-            int NoOfCells_ToExtrapolate = _ExtrapolateTo.NoOfItemsLocally;
-            int NoOfCells_ExtrapolatedInSweep = 1;
-            int sweepcnt = 0;
+                // repeat until (for species 'Id' the DOF' of) all cells
+                // that contain (at least a fraction of) species 'Id' are known...
+                // ------------------------------------------------------------------
+                int NoOfCells_ToExtrapolate = _ExtrapolateTo.NoOfItemsLocally;
+                int NoOfCells_ExtrapolatedInSweep = 1;
+                int sweepcnt = 0;
 
-            List<double> scaling = new List<double>();
-            List<int[]> CellPairs = new List<int[]>();
-            BitArray cells_mod_in_sweep = new BitArray(J);
-            while (true) {
-
-
-                // MPI-parallel evaluation of termination criterion
-                // ------------------------------------------------
-
-                int bool_LocalRun = ((NoOfCells_ToExtrapolate > 0) && (NoOfCells_ExtrapolatedInSweep > 0)) ? 1 : 0;
-                int bool_GlobalRun = 0;
-                unsafe
-                {
-                    csMPI.Raw.Allreduce((IntPtr)(&bool_LocalRun), (IntPtr)(&bool_GlobalRun), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.MAX, csMPI.Raw._COMM.WORLD);
-                }
-
-                if (bool_GlobalRun <= 0)
-                    // finished on all MPI processors
-                    break;
-
-                // MPI-update before local sweep: necessary for consistent result of alg.
-                this.MPIExchange();
-                if (sweepcnt > 0)
-                    ValueIsKnown.MPIExchange(this.GridDat);
+                List<double> scaling = new List<double>();
+                List<int[]> CellPairs = new List<int[]>();
+                BitArray cells_mod_in_sweep = new BitArray(J);
+                while (true) {
 
 
+                    // MPI-parallel evaluation of termination criterion
+                    // ------------------------------------------------
 
-                // local work
-                // ----------
-                if (bool_LocalRun > 0) {
+                    int bool_LocalRun = ((NoOfCells_ToExtrapolate > 0) && (NoOfCells_ExtrapolatedInSweep > 0)) ? 1 : 0;
+                    int bool_GlobalRun = 0;
+                    unsafe 
+                    {
+                        csMPI.Raw.Allreduce((IntPtr)(&bool_LocalRun), (IntPtr)(&bool_GlobalRun), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.MAX, csMPI.Raw._COMM.WORLD);
+                    }
+
+                    if (bool_GlobalRun <= 0)
+                        // finished on all MPI processors
+                        break;
+
+                    // MPI-update before local sweep: necessary for consistent result of alg.
+                    this.MPIExchange();
+                    if (sweepcnt > 0)
+                        ValueIsKnown.MPIExchange(this.GridDat);
 
 
+
+                    // local work
+                    // ----------
                     sweepcnt++;
-                    NoOfCells_ExtrapolatedInSweep = 0;
+                    if (bool_LocalRun > 0) {
 
-                    scaling.Clear();
-                    CellPairs.Clear();
+                        NoOfCells_ExtrapolatedInSweep = 0;
 
-                    cells_mod_in_sweep.SetAll(false);
+                        scaling.Clear();
+                        CellPairs.Clear();
 
-                    for (int j = 0; j < J; j++) {
+                        cells_mod_in_sweep.SetAll(false);
 
-                        // determine whether there is something to do for cell 'j' or not ...
-                        bool needToKnowSpecies = NeedToKnowValue[j];
-                        bool _mustbeExtrapolated = needToKnowSpecies && !ValueIsKnown[j];
+                        for (int j = 0; j < J; j++) {
 
-                        if (_mustbeExtrapolated) {
-                            // continuation for this cell is needed
-                            // ++++++++++++++++++++++++++++++++++++
+                            // determine whether there is something to do for cell 'j' or not ...
+                            bool needToKnowSpecies = NeedToKnowValue[j];
+                            bool _mustbeExtrapolated = needToKnowSpecies && !ValueIsKnown[j];
+
+                            if (_mustbeExtrapolated) {
+                                // continuation for this cell is needed
+                                // ++++++++++++++++++++++++++++++++++++
 
 
-                            // try to find a neighbour
-                            NeighIdx = CN[j].CloneAs();
-                            NoOfNeigh = NeighIdx.Length;
-                            int FoundNeighs = 0;
-                            for (int nn = 0; nn < NoOfNeigh; nn++) {
-                                if (ValueIsKnown[NeighIdx[nn]]) {
-                                    // bingo
-                                    FoundNeighs++;
-                                } else {
-                                    NeighIdx[nn] = -1; // not usable
+                                // try to find a neighbour
+                                NeighIdx = CN[j].CloneAs();
+                                NoOfNeigh = NeighIdx.Length;
+                                int FoundNeighs = 0;
+                                for (int nn = 0; nn < NoOfNeigh; nn++) {
+                                    if (ValueIsKnown[NeighIdx[nn]]) {
+                                        // bingo
+                                        FoundNeighs++;
+                                    } else {
+                                        NeighIdx[nn] = -1; // not usable
+                                    }
                                 }
-                            }
 
-                            if (FoundNeighs <= 0)
-                                // hope for better luck in next sweep
-                                continue;
-
-                            //Array.Clear(u2, 0, N);
-
-                            for (int nn = 0; nn < NoOfNeigh; nn++) {
-                                if (NeighIdx[nn] < 0)
+                                if (FoundNeighs <= 0)
+                                    // hope for better luck in next sweep
                                     continue;
 
-                                int _2 = j;            // cell to extrapolate TO
-                                int _1 = NeighIdx[nn]; // cell to extrapolate FROM
+                                //Array.Clear(u2, 0, N);
 
-                                CellPairs.Add(new int[] { _1, _2 });
-                                double ooFoundNeighs = 1.0 / (double)FoundNeighs;
-                                scaling.Add(ooFoundNeighs);
+                                for (int nn = 0; nn < NoOfNeigh; nn++) {
+                                    if (NeighIdx[nn] < 0)
+                                        continue;
+
+                                    int _2 = j;            // cell to extrapolate TO
+                                    int _1 = NeighIdx[nn]; // cell to extrapolate FROM
+
+                                    CellPairs.Add(new int[] { _1, _2 });
+                                    double ooFoundNeighs = 1.0 / (double)FoundNeighs;
+                                    scaling.Add(ooFoundNeighs);
+                                }
+
+                                cells_mod_in_sweep[j] = true;
+                                NoOfCells_ExtrapolatedInSweep++;
                             }
-
-                            cells_mod_in_sweep[j] = true;
-                            NoOfCells_ExtrapolatedInSweep++;
                         }
-                    }
 
-                    int E = CellPairs.Count;
-                    int[,] _CellPairs = new int[E, 2];
-                    for (int e = 0; e < E; e++)
-                        _CellPairs.SetRow(e, CellPairs[e]);
+                        int E = CellPairs.Count;
+                        int[,] _CellPairs = new int[E, 2];
+                        for (int e = 0; e < E; e++)
+                            _CellPairs.SetRow(e, CellPairs[e]);
 
-                    double[] preScale = new double[scaling.Count];
-                    preScale.SetAll(1.0);
+                        double[] preScale = new double[scaling.Count];
+                        preScale.SetAll(1.0);
 
-                    this.CellExtrapolation(_CellPairs, scaling, preScale);
+                        this.CellExtrapolation(_CellPairs, scaling, preScale);
 
-                    for (int j = 0; j < J; j++) {
-                        if (cells_mod_in_sweep[j] == true) {
-                            ValueIsKnown[j] = true;
+                        for (int j = 0; j < J; j++) {
+                            if (cells_mod_in_sweep[j] == true) {
+                                ValueIsKnown[j] = true;
+                            }
                         }
-                    }
 
-                    NoOfCells_ToExtrapolate -= NoOfCells_ExtrapolatedInSweep;
+                        NoOfCells_ToExtrapolate -= NoOfCells_ExtrapolatedInSweep;
+                    }
                 }
+
+                // return
+                // ------
+
+                return NoOfCells_ToExtrapolate;
             }
-
-            // return
-            // ------
-
-            return NoOfCells_ToExtrapolate;
-        }
 
     }
 }

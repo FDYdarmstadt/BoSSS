@@ -41,7 +41,7 @@ namespace ilPSP.Connectors.Matlab {
         public static double cond(this IMatrix M, string workingPath = null) {
             if (M == null)
                 throw new ArgumentNullException();
-            using (var connector = new BatchmodeConnector( WorkingPath: workingPath)) {
+            using (var connector = new BatchmodeConnector(WorkingPath: workingPath)) {
 
                 MultidimensionalArray output = MultidimensionalArray.Create(1, 1);
                 connector.PutMatrix(M, "Matrix");

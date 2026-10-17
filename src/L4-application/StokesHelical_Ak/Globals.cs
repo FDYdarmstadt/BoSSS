@@ -147,6 +147,14 @@ namespace StokesHelical_Ak {
         public static bool pressureStabilEtaMom = false;
         public static bool pressureReferencePoint = false;
         public static double MaxAmp = 1;
+
+        // Compare with the Documentation of Akbari 2025 (Draft of PhD Thesis. Chapter 4.2.15)
+        // ConcetiveTerms_Add_on_Term_1 was already done by DDD
+        // Temann Modification is implemented by Schahin Akbari
+
+        public static bool ConcetiveTerms_Add_on_Term_2 = false;
+        public static bool ConcetiveTerms_Add_on_Term_3 = false;
+        public static bool ConcetiveTerms_Add_on_Term_4 = false;
     }
 
 

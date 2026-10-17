@@ -193,6 +193,7 @@ namespace BoSSS.Solution {
 
                     ilPSP.Connectors.Matlab.BatchmodeConnector.Flav = (ilPSP.Connectors.Matlab.BatchmodeConnector.Flavor)System.Enum.Parse(typeof(ilPSP.Connectors.Matlab.BatchmodeConnector.Flavor), o.Flav);
                     ilPSP.Connectors.Matlab.BatchmodeConnector.MatlabExecuteable = o.MatlabExecuteable;
+                    ilPSP.Connectors.Matlab.BatchmodeConnector.AltTempDir = o.TempDir;
 
                 } catch (Exception e) {
                     var errStr = $"{e.GetType().Name} while reading/saving Matlab connector configuration file: {e.Message}";
@@ -331,8 +332,8 @@ namespace BoSSS.Solution {
 
             ReadBatchModeConnectorConfig();
 
-            System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
-
+            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+            CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
             return _MustFinalizeMPI;
         }
@@ -654,7 +655,11 @@ namespace BoSSS.Solution {
                 Console.Write("rm");
                 foreach (var pltFile in dir.GetFiles("*.plt").Concat(dir.GetFiles("*.curve"))) {
                     Console.Write(" " + pltFile.Name);
-                    pltFile.Delete();
+                    try {
+                        pltFile.Delete();
+                    } catch (IOException ioe) {
+                        Console.Error.WriteLine(ioe.Message);
+                    }
                 }
                 Console.WriteLine(";");
             }
@@ -864,9 +869,7 @@ namespace BoSSS.Solution {
         /// </summary>
         public int MPISize {
             get {
-                int size;
-                csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
-                return size;
+                return csMPI.Size_World;
             }
         }
 
@@ -876,9 +879,7 @@ namespace BoSSS.Solution {
         /// </summary>
         public int MPIRank {
             get {
-                int rank;
-                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
-                return rank;
+                return csMPI.Rank_World;
             }
         }
 
@@ -1348,7 +1349,9 @@ namespace BoSSS.Solution {
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                 if (this.Control != null) {
                     InitFromAttributes.CreateFieldsAuto(
-                        this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
+                        this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields, out var __lstrk);
+                    if(__lstrk != null)
+                        this.LsTrk = __lstrk;
                 }
                 CreateTracker();
                 using(new BlockTrace("CreateFieldsBlock", ht)) {
@@ -1380,6 +1383,17 @@ namespace BoSSS.Solution {
                 if (DatabaseDriver.FsDriver != null
                     && !this.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
                     this.CurrentSessionInfo.Save();
+                }
+
+                // AMR level indactors
+                //====================
+                m_AMRLevelIndicators.Clear();
+                if(this.Control != null && this.Control.AdaptiveMeshRefinement  && this.Control.activeAMRlevelIndicators != null) {
+                    m_AMRLevelIndicators.AddRange(this.Control.activeAMRlevelIndicators);
+                }
+
+                foreach(var lvlInd in ActiveAMRLevelIndicators) {
+                    lvlInd.Setup(this);
                 }
             }
         }
@@ -1615,20 +1629,34 @@ namespace BoSSS.Solution {
 
             //FieldOpts fopts;
             //bool isSpec = FieldOptions.TryGetValue(f.Identification, out fopts);
-            FieldOpts fopts = FieldOptions.Where(kv => kv.Key.WildcardMatch(f.Identification)).SingleOrDefault().Value;
+            FieldOpts fopts;
+            if(f.Identification != null)
+                fopts = FieldOptions.Where(kv => kv.Key.WildcardMatch(f.Identification)).SingleOrDefault().Value;
+            else
+                fopts = null;
 
-            if (fopts != null) {
-                if (ioOpt == IOListOption.Always && fopts.SaveToDB == FieldOpts.SaveToDBOpt.FALSE)
+            if(fopts != null) {
+                if(ioOpt == IOListOption.Always && fopts.SaveToDB == FieldOpts.SaveToDBOpt.FALSE)
                     throw new ApplicationException("IO for field '" + f.Identification + "' cannot be turned OFF, i.e. 'SaveToDB==false' is illegal.");
-                if (ioOpt == IOListOption.Never && fopts.SaveToDB == FieldOpts.SaveToDBOpt.TRUE)
+                if(ioOpt == IOListOption.Never && fopts.SaveToDB == FieldOpts.SaveToDBOpt.TRUE)
                     throw new ApplicationException("IO for field '" + f.Identification + "' cannot be turned ON, i.e. 'SaveToDB==true' is illegal");
 
-                if (ioOpt == IOListOption.Always || fopts.SaveToDB == FieldOpts.SaveToDBOpt.TRUE)
+                if(ioOpt == IOListOption.Always || fopts.SaveToDB == FieldOpts.SaveToDBOpt.TRUE)
                     IOFields.Add(f);
 
             } else {
-                if (ioOpt == IOListOption.Always)
+                if(ioOpt == IOListOption.Always) {
+                    if(f.Identification.IsEmptyOrWhite()) {
+                        // try to fix zhe name of the field `f`
+                        string newName;
+                        int cnt = 1;
+                        do {
+                            newName = "unnamed" + cnt;
+                        } while(IOFields.Where(fi => fi.Identification == newName).Count() <= 0);
+                        f.Identification = newName;
+                    }
                     IOFields.Add(f);
+                }
             }
 
         }
@@ -1982,49 +2010,56 @@ namespace BoSSS.Solution {
                         if (!object.ReferenceEquals(xdgf.Basis.Tracker, this.LsTrk))
                             throw new ApplicationException("XDG is defined against unknown level-set tracker!");
                     }
+
+                    if(f is TraceDGField) {
+                        var tdgf = (TraceDGField)f;
+                        if(!object.ReferenceEquals(tdgf.Basis.Tracker, this.LsTrk))
+                            throw new ApplicationException("TraceDG is defined against unknown level-set tracker!");
+                    }
                 }
 
 
                 // pass 1: single phase fields
                 // ===========================
+                var bfound = new Dictionary<string, bool>();
+                foreach(var name in this.Control.InitialValues_EvaluatorsVec.Keys)
+                    bfound.Add(name, false); 
 
-                var Pass2_Evaluators = new Dictionary<string, ScalarFunction>();
+
                 foreach (var val in this.Control.InitialValues_EvaluatorsVec) {
                     string DesiredFieldName = val.Key;
                     //ScalarFunction Function = Utils.NonVectorizedScalarFunction.Vectorize(val.Value);
                     ScalarFunction Function = val.Value.SetTime(time);
 
-                    bool found = false;
                     foreach (DGField f in relevantFields) {
-                        if (f.Identification.Equals(DesiredFieldName)) {
-                            tr.Info("projecting field \"" + f.Identification + "\"");
-                            f.ProjectField(Function);
-                            found = true;
-                            break;
+                        if(f.Identification.IsEmptyOrWhite()) 
+                            // cannot set initial value for field without any identification
+                            continue;
+
+                        if((f is XDGField) || (f is TraceDGField)) {
+                            // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            // we have to perform this after the setting the level-set and updating the tracker
+                            // see you later...
+                            // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
                         } else {
+                            // ++++++++++++++++++++++++++++++++++++
+                            // some normal DG field or a level-set
+                            // ++++++++++++++++++++++++++++++++++++
 
-                            // now, the XDG hack:
-                            var NameAndSpc = DesiredFieldName.Split(new string[] { "#" }, StringSplitOptions.RemoveEmptyEntries);
-                            if (NameAndSpc.Length == 2 && f.Identification.Equals(NameAndSpc[0])) {
-                                tr.Info("projecting XDG-field \"" + f.Identification + "\"");
-                                string spc = NameAndSpc[1];
-                                var xdgf = (XDGField)f;
-                                //var SpeciesOnlyField = xdgf.GetSpeciesShadowField(spc);
-                                //SpeciesOnlyField.ProjectField(Function);
 
-                                Pass2_Evaluators.Add(val.Key, val.Value.SetTime(time));
-
-                                found = true;
-                                break;
+                            if(f.Identification.Equals(DesiredFieldName)) {
+                                tr.Info("projecting field \"" + f.Identification + "\"");
+                                f.ProjectField(Function);
+                                bfound[val.Key] = true;
                             }
+
+
                         }
                     }
 
-                    if (!found) {
-                        Console.WriteLine("Warning: " +
-                            "initial value specified for a field named \"" + DesiredFieldName +
-                            "\", but no field with that identification exists in context.");
-                    }
+                    
                 }
 
                 if (LsTrk != null) {
@@ -2033,46 +2068,53 @@ namespace BoSSS.Solution {
                         AllowedLSMovement[i] = LsTrk.NearRegionWidth + 1;
                     }
                     LsTrk.UpdateTracker(time, __LevSetAllowedMovement: AllowedLSMovement);  // disable CFL-check for first time (setInitial is called after initial AMR and depending on the projected LS the near region may change more than the allowed movement)
-                    LsTrk.UpdateTracker(time); // doppeltes Update h�lt besser; 
+                    LsTrk.UpdateTracker(time); // doppeltes Update hält besser; 
                 }
 
-                // pass 2: XDG fields (after tracker update)
-                // =========================================
-                if (Pass2_Evaluators.Count > 0) {
+                // pass 2: TraceDG/XDG fields (after tracker update)
+                // =================================================
+                foreach(var val in this.Control.InitialValues_EvaluatorsVec) {
+                    string DesiredFieldName = val.Key;
+                    ScalarFunction Function = val.Value.SetTime(time);
 
+                    foreach(DGField f in relevantFields) {
+                        if(f is XDGField || f is TraceDGField) {
+                            if(f.Identification.IsEmptyOrWhite()) 
+                                // cannot set initial value for field without any identification
+                                continue;
 
-                    foreach (var val in Pass2_Evaluators) {
-                        string DesiredFieldName = val.Key;
-                        //ScalarFunction Function = Utils.NonVectorizedScalarFunction.Vectorize(val.Value);
-                        ScalarFunction Function = val.Value;
+                            if(f.Identification.Equals(DesiredFieldName)) {
+                                    tr.Info("projecting field \"" + f.Identification + "\"");
+                                    f.ProjectField(Function);
+                                    bfound[val.Key] = true;
+                                }
 
-                        bool found = false;
-                        foreach (DGField f in relevantFields) {
-                            if (f.Identification.Equals(DesiredFieldName)) {
-                                throw new ApplicationException();
-                            } else {
-
+                            if(f is XDGField xdgf) {
                                 // now, the XDG hack:
                                 var NameAndSpc = DesiredFieldName.Split(new string[] { "#" }, StringSplitOptions.RemoveEmptyEntries);
-                                if (NameAndSpc.Length == 2 && f.Identification.Equals(NameAndSpc[0])) {
+                                if(NameAndSpc.Length == 2 && f.Identification.Equals(NameAndSpc[0])) {
                                     tr.Info("projecting XDG-field \"" + f.Identification + "\"");
                                     string spc = NameAndSpc[1];
-                                    var xdgf = (XDGField)f;
                                     var SpeciesOnlyField = xdgf.GetSpeciesShadowField(spc);
                                     SpeciesOnlyField.ProjectField(Function);
-                                    found = true;
-                                    break;
+                                    bfound[val.Key] = true;
                                 }
-                            }
-                        }
 
-                        if (!found) {
-                            throw new ApplicationException(
-                                "initial value specified for a field named \"" + DesiredFieldName +
-                                "\", but no field with that identification exists in context.");
+                            }
                         }
                     }
                 }
+
+                foreach(var kv in bfound) {
+                    if(kv.Value == false) {
+                        tr.Warning("Warning: " +
+                                "initial value specified for a field named \"" + kv.Key +
+                                "\" in the control object, but no field with that identification exists the solver.");
+                        
+                    }
+                }
+
+
             }
         }
 
@@ -2351,7 +2393,7 @@ namespace BoSSS.Solution {
                 // Main/outmost time-stepping loop
                 // (in steady-state: only one iteration)
                 // =================================================================================
-                ilPSP.OnlinePerformanceMeasurement.ExecuteBenchmarks();
+                //ilPSP.OnlinePerformanceMeasurement.ExecuteBenchmarks();
                 {
 
 
@@ -2369,18 +2411,19 @@ namespace BoSSS.Solution {
 
                     bool gridChanged;
 
-                    var lastLogWrite = DateTime.Now;
-
+                    
                     for (int i = i0.MajorNumber + 1; RunLoop(i); i++) {
                         tr.Info("performing timestep " + i + ", physical time = " + physTime);
+                        MPICollectiveWatchDog.Watch(token: -5672 + i);
                         gridChanged = this.MpiRedistributeAndMeshAdapt(i, physTime);
+                        MPICollectiveWatchDog.Watch(token: -42345 + i);
                         this.QueryResultTable.UpdateKey("Timestep", ((int)i));
+                        MPICollectiveWatchDog.Watch(token: -8643 + i);
                         // Call the solver    vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
                         double dt = RunSolverOneStep(i, physTime, -1);
-                        if( i <= i0.MajorNumber + 1 || (DateTime.Now - lastLogWrite > new TimeSpan(0, 5, 0))) { // prevent writing the log to often
-                            this.ProfilingLog();
-                            lastLogWrite = DateTime.Now;
-                        }
+                        MPICollectiveWatchDog.Watch(token: -123 + i);
+                        this.ProfilingLog(i <= i0.MajorNumber + 1);
+                        MPICollectiveWatchDog.Watch(token: -9 + i);
                         // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                         tr.Info("simulated time: " + dt + " timeunits.");
                         tr.LogMemoryStat();
@@ -2403,9 +2446,11 @@ namespace BoSSS.Solution {
 
                         SaveApplicationToDatabase(i, physTime, RunLoop(i + 1), gridChanged);
 
-
-                        if (this.Control != null && this.Control.ImmediatePlotPeriod > 0 && i % this.Control.ImmediatePlotPeriod == 0)
+                        //Console.WriteLine("End of timestep #" + i + ", ImmediatePlotPeriod = " + this.Control.ImmediatePlotPeriod);
+                        if (this.Control != null && this.Control.ImmediatePlotPeriod > 0 && i % this.Control.ImmediatePlotPeriod == 0) {
+                            tr.Info("Plotting timestep #" + i);
                             PlotCurrentState(physTime, i, this.Control.SuperSampling);
+                        }
                     }
 
 
@@ -2456,6 +2501,128 @@ namespace BoSSS.Solution {
             }
         }
 
+        public void SetupSolverMode() {
+            // =========================================
+            // loading grid, initializing database, etc:
+            // =========================================
+            SetUpEnvironment(); // remark: tracer is not avail before setup
+
+            using (var tr = new FuncTrace()) {
+
+                var rollingSavesTsi = new List<Tuple<int, ITimestepInfo, bool>>();
+
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
+                double physTime = 0.0;
+                TimestepNumber i0 = 0;
+                if (this.Control == null) {
+                    SetInitial(0.0); // default behavior if no control file is present
+                } else {
+                    if (this.Control != null) {
+                        if (!this.Control.InitialValues_Evaluators.IsNullOrEmpty() && this.Control.RestartInfo != null) {
+                            //throw new ApplicationException("Invalid state in control object: the specification of initial values ('AppControl.InitialValues') and restart info ('AppControl.RestartInfo') is exclusive: "
+                            //    + " both cannot be unequal null at the same time.");
+                            Console.WriteLine("Warning: InitialValues set, while restarting a simulation.");
+                        }
+
+                        if (this.Control.RestartInfo != null) {
+                            LoadRestart(out physTime, out i0);
+                            TimeStepNoRestart = i0;
+                        } else {
+                            SetInitial(0.0);
+                        }
+                    }
+                }
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
+                m_queryHandler.QueryResults.Clear();
+
+                if (this.Control.RestartInfo != null) {
+                    CreateEquationsAndSolvers(null);
+                    tr.LogMemoryStat();
+                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
+                    if (LsTrk != null) {
+                        if (LsTrk.Regions.Time != physTime)
+                            LsTrk.UpdateTracker(physTime);
+                        LsTrk.PushStacks();
+                    }
+                }
+
+                // =========================================================
+                // Adaptive-Mesh-Refinement and/or load balancing on startup
+                // =========================================================
+
+
+                // load balancing solo
+                if (this.Control.DynamicLoadBalancing_RedistributeAtStartup && !this.Control.AdaptiveMeshRefinement) {
+                    PlotAndSave(physTime, i0, rollingSavesTsi);
+                    MpiRedistributeAndMeshAdaptOnInit(i0.MajorNumber, physTime);
+                    PlotAndSave(physTime, i0, rollingSavesTsi);
+                }
+
+                // load balancing and adaptive mesh refinement
+                if (this.Control.AdaptiveMeshRefinement) {
+
+                    // unprocessed initial value IO
+                    if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
+                        PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(0)), this.Control.SuperSampling);
+
+                    var ts0amr = SaveToDatabase(new TimestepNumber(i0.Numbers.Cat(0)), physTime); // save the initial value
+                    if (this.RollingSave)
+                        rollingSavesTsi.Add(Tuple.Create(0, ts0amr, false));
+
+
+                    bool initialRedist = false;
+                    for (int s = 1; s <= this.Control.AMR_startUpSweeps; s++) {
+                        initialRedist |= this.MpiRedistributeAndMeshAdaptOnInit(i0.MajorNumber, physTime);
+
+                        if (initialRedist == true) {
+
+                            if (this.Control.ImmediatePlotPeriod > 0)
+                                PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(s)), this.Control.SuperSampling);
+
+                            ts0amr = SaveToDatabase(new TimestepNumber(i0.Numbers.Cat(s)), physTime); // save the AMR'ed initial value
+                            if (this.RollingSave)
+                                rollingSavesTsi[0] = Tuple.Create(0, ts0amr, false);
+
+                        }
+                    }
+                }
+
+                // ================================================================================
+                // sometimes, the operators depend on parameters,
+                // therefore 'CreateEquationsAndSolvers()' has to be called after ' SetInitial()',
+                // resp. 'LoadRestart(..)'!!!
+                // ================================================================================
+
+                if (this.Control.RestartInfo == null) {
+                    //{ 
+                    CreateEquationsAndSolvers(null);
+                    tr.LogMemoryStat();
+                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
+                    if (LsTrk != null)
+                        LsTrk.PushStacks();
+                }
+
+                // ========================================================================
+                // initial value IO:
+                // (note: in some apps, the initial values might be tweaked in the 
+                // 'CreateEquationsAndSolvers(...)' method; but here we should have the 
+                // "true" initial value)
+                // ========================================================================
+
+
+                if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
+                    PlotCurrentState(physTime, i0, this.Control.SuperSampling);
+
+                var ts0 = SaveToDatabase(i0, physTime); // save the initial value
+                if (this.RollingSave)
+                    rollingSavesTsi.Add(Tuple.Create(0, ts0, false));
+            }
+        }
+
         /// <summary>
         /// used for initial plot and save routine (mesh adaption and load balancing)
         /// </summary>
@@ -2495,10 +2662,10 @@ namespace BoSSS.Solution {
                 if ((timeStepInt + sb) % SavePeriod == 0 || (!runNextLoop && sb == 0)) {
                     tsi = SaveToDatabase(timeStepInt, physTime);
                     //Console.WriteLine($"timestep: {tsi} saved");
-                    this.ProfilingLog();
                     break;
                 }
             }
+            this.ProfilingLog();
 
 
             if (this.RollingSave) {
@@ -2682,7 +2849,12 @@ namespace BoSSS.Solution {
                 // re-create fields
                 if (this.Control != null) {
                     InitFromAttributes.CreateFieldsAuto(
-                        this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
+                        this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields, out var __lstrk);
+                    if(__lstrk != null) {
+                        if(this.LsTrk != null && !object.ReferenceEquals(this.LsTrk, __lstrk))
+                            throw new ApplicationException("it seems the application tries to initialize two level-set trackers, through `CreateTracker()` AND `[LevelSetTracker]`-attribute.");
+                        this.LsTrk = __lstrk;
+                    }
                 }
                 CreateFields(); // full user control   
                 PostRestart(physTime, TimeStepNo);
@@ -2800,15 +2972,42 @@ namespace BoSSS.Solution {
 
                     // re-set Level-Set tracker
                     this.CreateTracker();
-                    int trackerVersion = remshDat.SetNewTracker(this.LsTrk);
 
+                    //void FuckYouLog() {
+                    //    Console.WriteLine(" ------ tracker version: " + this.LsTrk?.VersionCnt);
+                    //    foreach(var f in m_RegisteredFields) {
+                    //        string white = " ";
+                    //        for(int i = f?.Identification?.Length ?? 0; i < 25; i++)
+                    //            white += " ";
+
+                    //        if(f is XDGField xf) {
+                    //            Console.WriteLine("         " + f.Identification + ":" + white + xf.m_TrackerVersion + "\t" + xf.UpdateBehaviour);
+                    //        }
+                    //        if(f is TraceDGField tf) {
+                    //            Console.WriteLine("         " + f.Identification + ":" + white + tf.m_TrackerVersion + "\t" + tf.UpdateBehaviour);
+                    //        }
+                    //    }
+                    //    Console.WriteLine(" ~~~~~~~ ");
+                    //    Console.WriteLine();
+                    //}
+
+                    
                     // re-create fields
                     if (this.Control != null) {
                         InitFromAttributes.CreateFieldsAuto(
-                            this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
+                            this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields, out var __lstrk);
+                        if(__lstrk != null) {
+                            if(this.LsTrk != null && !object.ReferenceEquals(this.LsTrk, __lstrk))
+                                throw new ApplicationException("it seems the application tries to initialize two level-set trackers, through `CreateTracker()` AND `[LevelSetTracker]`-attribute.");
+                            this.LsTrk = __lstrk;
+                        }
                     }
+                    int trackerVersion = remshDat.SetNewTracker(this.LsTrk);
+
                     CreateFields(); // full user control   
-                                    //PostRestart(physTime, TimeStepNo);
+                    //PostRestart(physTime, TimeStepNo);
+                    SetInternalTimestepNumber(TimeStepNo);
+
                     if(this.LsTrk != null) {
                         if(this.LsTrk.Regions.Time != physTime)
                             this.LsTrk.UpdateTracker(physTime);
@@ -2816,11 +3015,14 @@ namespace BoSSS.Solution {
 
                     if (plotAdaption)
                         PlotCurrentState(physTime, new TimestepNumber(new int[] { TimeStepNo, 11 }), 2);
-                    
-                    if (IsInit && this.Control.RestartInfo != null)
+
+                    if(IsInit && this.Control.RestartInfo != null)
                         PostRestart(physTime, TimeStepNo);
 
                     ReCreateEquationAndSolvers(IsInit, remshDat, physTime);
+
+                    if(plotAdaption)
+                        PlotCurrentState(physTime, new TimestepNumber(new int[] { TimeStepNo, 12 }), 2);
                 }
                 return true;
             }
@@ -2865,16 +3067,21 @@ namespace BoSSS.Solution {
 
             // backup DG Fields
             foreach(var f in this.m_RegisteredFields) {
-                if(f is XDGField) {
-                    XDGBasis xb = ((XDGField)f).Basis;
+                if(f is XDGField xf) {
+                    XDGBasis xb = xf.Basis;
                     if(!object.ReferenceEquals(xb.Tracker, oldLsTrk))
+                        throw new ApplicationException();
+                }
+                if(f is TraceDGField tf) {
+                    TraceDGBasis tb = tf.Basis;
+                    if(!object.ReferenceEquals(tb.Tracker, oldLsTrk))
                         throw new ApplicationException();
                 }
                 if(!object.ReferenceEquals(f.Basis.GridDat, oldGridData))
                     throw new ApplicationException();
 
-
-                loadbal.BackupField(f);
+                if(f.Identification.IsNonEmpty())
+                    loadbal.BackupField(f);
             }
 
             // backup user data
@@ -2945,15 +3152,124 @@ namespace BoSSS.Solution {
         LoadBalancer m_Balancer;
 
         /// <summary>
-        /// Adaptation of the current mesh (<see cref="Grid"/>).
+        /// 
         /// </summary>
         protected virtual void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
-            newGrid = null;
-            old2NewGrid = null;
+            using(var tr = new FuncTrace()) {
+
+                if(this.Control.AdaptiveMeshRefinement) {
+
+                    // Check grid changes
+                    // ==================
+
+                    int[] desiredLevels = GetDesiredRefinementLevels();
+
+
+
+                    GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData);
+                    bool AnyChange = gridRefinementController.ComputeGridChange(desiredLevels, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+
+
+                    int NoOfCellsToRefine = 0;
+                    int NoOfCellsToCoarsen = 0;
+                    if(AnyChange.MPIOr()) {
+                        int[] glb = (new int[] { CellsToRefineList.Count, Coarsening.Sum(L => L.Length) }).MPISum();
+                        NoOfCellsToRefine = glb[0];
+                        NoOfCellsToCoarsen = glb[1];
+                    }
+                    long oldJ = this.GridData.CellPartitioning.TotalLength;
+
+                    // Update Grid
+                    // ===========
+                    if(AnyChange.MPIOr()) {
+
+                        Console.WriteLine(" Refining   " + NoOfCellsToRefine + " of " + oldJ + " cells");
+                        Console.WriteLine(" Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
+
+                        newGrid = ((GridData)this.GridData).Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
+
+                        //AMRtests.MeshSymmetryTest(newGrid);
+                    } else {
+                        newGrid = null;
+                        old2NewGrid = null;
+                    }
+                } else {
+                    newGrid = null;
+                    old2NewGrid = null;
+                }
+
+            }
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        private int[] GetDesiredRefinementLevels() {
+            using(var tr = new FuncTrace()) {
+                if(Control.AdaptiveMeshRefinement == true) {
+                    if(ActiveAMRLevelIndicators == null || ActiveAMRLevelIndicators.Count <= 0) {
+                        tr.Error("Control object configuration inconsistent: 'AdaptiveMeshRefinement == true', but no refinement indicators in 'activeAMRLevelIndicators' are set.");
+                    }
+                }
+
+                int J = this.GridData.CellPartitioning.LocalLength;
+                int[] levelChanges = null;
+
+                // combine all results of active level indicators
+                int cnt = 0;
+                foreach(var lvlInd in ActiveAMRLevelIndicators) {
+                    if(cnt == 0) {
+                        levelChanges = lvlInd.DesiredCellChanges(); // levelChanges is instantiated to zero. Without this line, coarsening is impossible due to Max(a,b)
+                    } else {
+                        int[] lvls = lvlInd.DesiredCellChanges();
+                        //levelChanges = levelChanges.Zip(lvls, (a, b) => a + b).ToArray();
+                        levelChanges = levelChanges.Zip(lvls, (a, b) => Math.Max(a, b)).ToArray(); // keep finer level indicator, but don't double refine
+                    }
+                    cnt++;
+                }
+                if(levelChanges == null)
+                    levelChanges = new int[J];
+
+
+                // get desired level 
+                int[] levels = new int[J];
+                Cell[] cells = ((GridData)this.GridData).Grid.Cells;
+
+                int cellsToRefine = 0;
+                int cellsToCoarse = 0;
+                for(int j = 0; j < J; j++) {
+                    levels[j] = cells[j].RefinementLevel;
+                    if(levelChanges[j] > 0) {
+                        levels[j] += 1;
+                        cellsToRefine++;
+                    } else if(levelChanges[j] < 0) {
+                        levels[j] -= 1;
+                        cellsToCoarse++;
+                    }
+                }
+
+                tr.Info($"all AMR indicators combined: cells to refine: {cellsToRefine}, cells to coarsen: {cellsToCoarse}");
+
+                return levels;
+            }
+        }
+
+
+        List<AMRLevelIndicator> m_AMRLevelIndicators = new List<AMRLevelIndicator>();
+
+        /// <summary>
+        /// <see cref="Control.AppControl.activeAMRlevelIndicators"/>
+        /// </summary>
+        public IList<AMRLevelIndicator> ActiveAMRLevelIndicators {
+            get {
+                return m_AMRLevelIndicators;
+            }
         }
 
         /// <summary>
-        /// Default implementation (which does nothing) for the computation of the grid partitioning
+        /// Default implementation for the computation of the grid partitioning
         /// during runtime (dynamic load balancing).
         /// </summary>
         /// <param name="TimeStepNo"></param>
@@ -2965,7 +3281,6 @@ namespace BoSSS.Solution {
         /// </returns>
         protected virtual int[] ComputeNewCellDistribution(int TimeStepNo, double physTime) {
             using (var tr = new FuncTrace()) {
-                tr.InfoToConsole = true;
                 if (Control == null
                     || !Control.DynamicLoadBalancing_On
                     || (     TimeStepNo % Control.DynamicLoadBalancing_Period != 0 
@@ -2974,12 +3289,9 @@ namespace BoSSS.Solution {
                     || MPISize <= 1) {
                     return null;
                 }
-
                 
                 if (m_Balancer == null) {
                     m_Balancer = new LoadBalancer(Control.DynamicLoadBalancing_CellCostEstimators, this);
-
-                    
                 }
 
                 return m_Balancer.GetNewPartitioning(
@@ -3067,23 +3379,53 @@ namespace BoSSS.Solution {
             private set; 
         }
 
+        DateTime? ProfilingLog_lastLogWrite = null;
+
+        string ProfilingLog_suffix = null;
+
+
         /// <summary>
         /// writes the profiling report 
         /// </summary>
-        protected virtual void ProfilingLog() {
+        protected virtual void ProfilingLog(bool force = false) {
             using (new FuncTrace()) {
                 if (OnlineProfiling == null)
                     //OnlineProfiling = new OnlineProfiling(this.Control);
                     return; // for some reason (i.e., because only Dispose was called()) not initialized yet
-                ilPSP.OnlinePerformanceMeasurement.ExecuteBenchmarks();
+
+                if(force == false) {
+                    if(ProfilingLog_lastLogWrite == null) {
+                        // must write
+                        ProfilingLog_lastLogWrite = DateTime.Now;
+                    } else {
+                        if(DateTime.Now - ProfilingLog_lastLogWrite > new TimeSpan(0, 5, 0)) {
+                            ProfilingLog_lastLogWrite = DateTime.Now;
+                        } else {
+                            return; // can skip writing
+                        }
+
+                    }
+                }
+
+
+                //ilPSP.OnlinePerformanceMeasurement.ExecuteBenchmarks();
                 OnlineProfiling.AppEndTime = DateTime.Now;
                 
                 OnlineProfiling.UpdateDGInfo(this.Grid, this.m_RegisteredFields);
                 Tracer.Current.UpdateTime();
 
                 if (this.DatabaseDriver != null && this.CurrentSessionInfo != null) {
+
+                    if(ProfilingLog_suffix == null) {
+                        if(this.CurrentSessionInfo.ID == Guid.Empty)
+                            ProfilingLog_suffix = $"{DateTime.Now.ToString("MMMdd_HHmmss")}.";
+                        else
+                            ProfilingLog_suffix = "";
+                    }
+
+
                     try {
-                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_bin")) {
+                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, $"profiling_bin", $"{ProfilingLog_suffix}bin")) {
                             var str = OnlineProfiling.Serialize();
                             using (StreamWriter stw = new StreamWriter(stream)) {
                                 stw.Write(str);
@@ -3096,7 +3438,7 @@ namespace BoSSS.Solution {
                     }
 
                     try {
-                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_summary")) {
+                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_summary", $"{ProfilingLog_suffix}txt")) {
                             using (StreamWriter stw = new StreamWriter(stream)) {
                                 OnlineProfiling.WriteProfilingReport(stw);
                                 stw.Flush();
@@ -3290,7 +3632,7 @@ namespace BoSSS.Solution {
                     // log to session directory
                     if (app.MPIRank == 0 && !app.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
                         var nlog_stream_session = app.DatabaseDriver.GetNewLogStream(
-                            app.CurrentSessionInfo, "ParameterStudy.case-" + iPstudy);
+                            app.CurrentSessionInfo, "ParameterStudy.case-" + iPstudy, "txt");
                         try {
                             var w = new StreamWriter(nlog_stream_session);
                             nlog.WriteToStream(w, RowFilter: nlog.CurrentKeyHistory);
@@ -3312,7 +3654,7 @@ namespace BoSSS.Solution {
 
                         app.ByeInt();
                         app.Bye();
-                        app.ProfilingLog();
+                        app.ProfilingLog(true);
 #if DEBUG
                     }
 #else
@@ -3524,6 +3866,15 @@ namespace BoSSS.Solution {
         public virtual void PostRestart(double time, TimestepNumber timestep) {
         }
 
+
+        /// <summary>
+        /// intermediate helper method to update the internal timestep counter, e.g ReInit period after AMR
+        /// </summary>
+        /// <param name="timestep"></param>
+        public virtual void SetInternalTimestepNumber(TimestepNumber timestep) {     
+        }
+
+
         /// <summary>
         /// Override this method in order to construct a
         /// <see cref="QueryHandler"/> specific to your application. This might
@@ -3553,7 +3904,7 @@ namespace BoSSS.Solution {
                 try {
                     ByeInt();
                     Bye();
-                    ProfilingLog();
+                    ProfilingLog(true);
 
                     foreach( var l in PostprocessingModules) {
                         l.Dispose();

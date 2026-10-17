@@ -38,6 +38,7 @@ namespace BoSSS.Application.IncompressibleNSE {
             //BoSSS.Application.IncompressibleNSE.ControlExamples.ChannelFlow(k:2,GridRes:4)
             IncompressibleControl C = new IncompressibleControl();
 
+
             // database and saving options
             C.DbPath = null;
             C.savetodb = false;

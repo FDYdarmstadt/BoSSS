@@ -222,8 +222,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     int[] noOfNodesPerEdge = new int[noOfEdges];
                     int[,] noOfNodesPerEdgeOfEdge = new int[noOfEdges, noOfEdgesOfEdge];
                     for (int e = 0; e < noOfEdges; e++) {
-                        int edge = Math.Abs(lsData.GridDat.Cells.Cells2Edges[jCell][e]) - 1;
-                        double edgeDet = lsData.GridDat.Edges.SqrtGramian[edge];
+                        //int edge = Math.Abs(lsData.GridDat.Cells.Cells2Edges[jCell][e]) - 1;
+                        //double edgeDet = lsData.GridDat.Edges.SqrtGramian[edge];
 
                         for (int ee = 0; ee < noOfEdgesOfEdge; ee++) {
                             LineSegment refSegment = referenceLineSegments[e, ee];

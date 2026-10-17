@@ -508,11 +508,13 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// <summary>
             /// An inverse length scale (dimension is one-over-length, resp. area over volume)
             /// for each cell <em>j</em> this is
-            /// \f[ 
-            /// c_j = frac{Area(\partial K_j \\ \partial \Omega) \cdot 0.5 + Area(\partial K_j \cap \partial \Omega)}{Volume(K_j)},
-            /// \f]
-            /// where \f$ K_j \f$ is the cell an
-            /// \f$ \Omega \f$ is the whole computational
+            /// \[
+            /// c_j = \frac{\textrm{Area}(\partial K_j \setminus \partial \Omega)
+            /// \cdot 0.5 + \textrm{Area}(\partial K_j \cap \partial \Omega)}
+            /// {\textrm{ Volume} (K_j)}
+            /// \]
+            /// where $K_j$ is the cell an
+            /// $\Omega$ is the whole computational
             /// domain.
             /// </summary>
             /// <remarks>
@@ -886,10 +888,8 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// - 1st index: local cell index <em>j</em>, only local updated
             /// - 2nd index: collection, order is arbitrary;
             /// - content <em>e</em>: 
-            ///   If <em>e</em> is positive, then cell <em>j</em> is the first
-            ///   (IN) cell of edge <em>e - 1</em>. Otherwise, if <em>e</em> is
-            ///   negative, then cell <em>j</em> is the second (OUT) cell of edge
-            ///   <em>-e - 1</em>.
+            ///   - If <em>e</em> is positive, then cell <em>j</em> is the first (IN) cell of edge <em>e - 1</em>. 
+            ///   - Otherwise, if <em>e</em> is negative, then cell <em>j</em> is the second (OUT) cell of edge <em>-e - 1</em>.
             /// </summary>
             /// <remarks>
             /// Note: the second index does NOT correlate with the face index
@@ -902,6 +902,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                 get;
                 internal set;
             }
+
+            /*
 
             /// <summary>
             /// Finds all edges for a specific face of a cell
@@ -951,7 +953,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 return Ret;
             }
 
-
+            */
 
             /// <summary>
             /// Since each cell is already elementary (i.e. it maps to one reference element)

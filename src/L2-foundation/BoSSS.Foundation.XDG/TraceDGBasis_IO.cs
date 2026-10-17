@@ -1,0 +1,118 @@
+﻿/* =======================================================================
+Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+using System;
+using System.Runtime.Serialization;
+using BoSSS.Foundation.IO;
+
+namespace BoSSS.Foundation.XDG {
+
+    partial class TraceDGBasis {
+
+        /// <summary>
+        /// This class contains all necessary information to recreate an <see cref="TraceDGBasis"/>
+        /// </summary>
+        [Serializable]
+        [DataContract]
+        public class TraceDGBasisInitializer : BasisInitializer {
+
+            /// <summary>
+            /// Initializer of the tracker the represented basis depends on.
+            /// </summary>
+            [DataMember]
+            public LevelSetTracker.LevelSetTrackerInitializer TrackerInitializer;
+
+            /// <summary>
+            /// See <see cref="Basis.BasisInitializer"/>
+            /// </summary>
+            /// <param name="c"></param>
+            /// <returns></returns>
+            public override Basis Initialize(IInitializationContext c) {
+                TraceDGBasis tracebasis;
+                if (c.TryGetValue(this, out tracebasis))
+                    return tracebasis;
+
+                if (c.GridData == null)
+                    throw new ArgumentException();
+                if (!c.GridData.GridID.Equals(base.GridGuid))
+                    throw new ArgumentException("Wrong grid.");
+
+                var lsTrk = TrackerInitializer.Initialize(c);
+                TraceDGBasis xb = new TraceDGBasis(lsTrk, base.Degree);
+                myInstance = xb;
+                c.Add(this, xb);
+                return xb;
+            }
+
+            [NonSerialized]
+            private TraceDGBasis myInstance;
+
+            /// <summary>
+            /// Compares the given object <paramref name="other"/> 
+            /// </summary>
+            public override bool Equals(Initializer<Basis> other) {
+                TraceDGBasisInitializer initializer = other as TraceDGBasisInitializer;
+                if(initializer == null)
+                    return false;
+                if(!initializer.GridGuid.Equals(this.GridGuid))
+                    return false;
+                if(!initializer.TrackerInitializer.Equals(this.TrackerInitializer))
+                    return false;
+                if(initializer.Degree != this.Degree)
+                    return false;
+
+                return true;
+            }
+
+            /// <summary>
+            /// Computes a hash code
+            /// </summary>
+            public override int GetHashCode() {
+                // http://stackoverflow.com/questions/1646807/quick-and-simple-hash-code-combinations
+                int hash = 21787; // a prime number
+                hash += 236078 * GridGuid.GetHashCode();
+                hash += 236078 * base.Degree;
+                hash += 236078 * this.TrackerInitializer.GetHashCode();
+                
+                return hash;
+            }
+        }
+
+        /// <summary>
+        /// Initializer of this basis object
+        /// </summary>
+        [DataMember]
+        private TraceDGBasisInitializer m_Initializer;
+
+        /// <summary>
+        /// To support IO-architecture, NOT for direct user interaction. Note
+        /// that it is essential that this member always returns the SAME
+        /// object (reference-equals)!
+        /// </summary>
+        public override BasisInitializer Initializer {
+            get {
+                if (m_Initializer == null) {
+                    m_Initializer = new TraceDGBasisInitializer() {
+                        Degree = this.Degree,
+                        GridGuid = this.GridDat.GridID,
+                        TrackerInitializer = this.Tracker.Initializer
+                    };
+                }
+                return m_Initializer;
+            }
+        }
+    }
+}

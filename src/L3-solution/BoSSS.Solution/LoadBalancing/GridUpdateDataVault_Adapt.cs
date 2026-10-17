@@ -21,12 +21,59 @@ using BoSSS.Foundation.XDG;
 using ilPSP;
 using ilPSP.Tracing;
 using ilPSP.Utils;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
+
+namespace BoSSS.Solution {
+
+    public static class GridUpdate_Drivers {
+
+
+        /// <summary>
+        /// Easy-to-use driver routine: 
+        /// Transfers a DG field from an old mesh to a new, adapted mesh.
+        /// </summary>
+        /// <param name="targetField">
+        /// Output, DG field on the new mesh
+        /// </param>
+        /// <param name="sourceField">
+        /// Input, DG field on the old mesh
+        /// </param>
+        /// <param name="gridCorrelation">
+        /// connection between the old and the new mesh,
+        /// returned by <see cref="GridData.Adapt(IEnumerable{int}, IEnumerable{int[]}, out GridCorrelation)"/>
+        /// </param>
+        public static void InitFormOldMesh(this DGField targetField, DGField sourceField, GridCorrelation gridCorrelation) {
+            if(targetField.GetType() != sourceField.GetType()) {
+                throw new ArgumentException($"DG fields must be of the same type, but source is {sourceField.GetType()}, target is {targetField.GetType()}");
+            }
+            GridData newGridData = targetField.GridDat as GridData;
+            if(newGridData == null)
+                throw new NotSupportedException();
+
+
+            var oldTrk = (sourceField as XDGField)?.Basis.Tracker ?? null;
+            var gudv = new BoSSS.Solution.LoadBalancing.GridUpdateDataVault_Adapt(sourceField.GridDat, oldTrk);
+
+
+            gridCorrelation.ComputeDataRedist(newGridData);
+
+            gudv.BackupField(sourceField, "onlyField");
+
+            gudv.Resort(gridCorrelation, targetField.GridDat as GridData);
+
+            gudv.RestoreDGField(targetField, "onlyField");
+        }
+
+
+    }
+}
 
 namespace BoSSS.Solution.LoadBalancing {
 
@@ -176,21 +223,7 @@ namespace BoSSS.Solution.LoadBalancing {
             double[][] oldFieldsData = new double[m_oldJ][];
             m_oldDGFieldData.Add(Reference, oldFieldsData);
 
-            if(f is ConventionalDGField) {
-                Basis oldBasis = f.Basis;
-                int Nj = oldBasis.Length;
-
-                for(int j = 0; j < m_oldJ; j++) {
-                    double[] data_j = new double[Nj];
-                    for(int n = 0; n < Nj; n++) {
-                        data_j[n] = f.Coordinates[j, n];
-                    }
-
-                    FwdTrafo(data_j, Nj, 0, (GridData) m_OldGrid, j, f.Basis.Degree);
-
-                    oldFieldsData[j] = data_j;
-                }
-            } else if(f is XDGField) {
+            if(f is XDGField) {
                 XDGField xf = f as XDGField;
                 XDGBasis xb = xf.Basis;
                 int Np = xb.NonX_Basis.Length;
@@ -200,7 +233,7 @@ namespace BoSSS.Solution.LoadBalancing {
 
                 for(int j = 0; j < m_oldJ; j++) {
                     int NoOfSpc = lsTrk.Regions.GetNoOfSpecies(j);
-                    
+
                     int Nj = xb.GetLength(j);
                     Debug.Assert(Nj == NoOfSpc * Np);
 
@@ -212,7 +245,7 @@ namespace BoSSS.Solution.LoadBalancing {
                         data_j[c] = spc.cntnt;
                         c++;
                         for(int n = 0; n < Np; n++) {
-                            data_j[c] = f.Coordinates[j, n + Np*iSpc];
+                            data_j[c] = f.Coordinates[j, n + Np * iSpc];
                             c++;
                         }
 
@@ -224,6 +257,34 @@ namespace BoSSS.Solution.LoadBalancing {
                 }
 
 
+            } else if(f is TraceDGField) {
+                Basis oldBasis = f.Basis;
+
+                for(int j = 0; j < m_oldJ; j++) {
+                    int Nj = oldBasis.GetLength(j);
+                    double[] data_j = new double[Nj];
+                    for(int n = 0; n < Nj; n++) {
+                        data_j[n] = f.Coordinates[j, n];
+                    }
+
+                    FwdTrafo(data_j, Nj, 0, (GridData)m_OldGrid, j, f.Basis.Degree);
+
+                    oldFieldsData[j] = data_j;
+                }
+            } else if(f is ConventionalDGField) {
+                Basis oldBasis = f.Basis;
+
+                int Nj = oldBasis.Length;
+                for(int j = 0; j < m_oldJ; j++) {
+                    double[] data_j = new double[Nj];
+                    for(int n = 0; n < Nj; n++) {
+                        data_j[n] = f.Coordinates[j, n];
+                    }
+
+                    FwdTrafo(data_j, Nj, 0, (GridData)m_OldGrid, j, f.Basis.Degree);
+
+                    oldFieldsData[j] = data_j;
+                }
             } else {
                 throw new NotSupportedException();
             }
@@ -308,34 +369,7 @@ namespace BoSSS.Solution.LoadBalancing {
                 double[][][] ReDistDGCoords = m_newDGFieldData_GridAdapta[Reference];
                 Debug.Assert(ReDistDGCoords.Length == newJ);
 
-                if(f is ConventionalDGField) {
-                    // +++++++++++++++
-                    // normal DG field
-                    // +++++++++++++++
-
-                    int Np = f.Basis.Length;
-
-                    double[] temp = new double[Np];
-                    double[] acc = new double[Np];
-
-                    for(int j = 0; j < newJ; j++) {
-                        if(TargMappingIdx[j] == null) {
-                            // unchanged cell
-                            Debug.Assert(ReDistDGCoords[j].Length == 1);
-                            double[] Coord = ReDistDGCoords[j][0];
-                            Debug.Assert(Coord.Length == Np);
-                            
-                            BckTrafo(Coord, Np, 0, NewGrid, j, pDeg, 1.0);
-
-                            f.Coordinates.SetRow(j, Coord);
-                        } else {
-                            int L = ReDistDGCoords[j].Length;
-                            for(int l = 0; l < L; l++) {
-                                DoCellj(j, f, NewGrid, pDeg, TargMappingIdx[j], ReDistDGCoords[j], l, m_Old2NewCorr, 0, 0, Np, temp, acc);
-                            }
-                        }
-                    }
-                } else if(f is XDGField) {
+                if(f is XDGField) {
                     // +++++++++++++++++++++++
                     // treatment of XDG fields
                     // +++++++++++++++++++++++
@@ -349,10 +383,10 @@ namespace BoSSS.Solution.LoadBalancing {
                     double[] acc = new double[Np];
 
                     if(!object.ReferenceEquals(m_NewTracker, lsTrk))
-                        throw new ArgumentException("LevelSetTracker seems duplicate, or something.");                    
+                        throw new ArgumentException("LevelSetTracker seems duplicate, or something.");
 
                     for(int j = 0; j < newJ; j++) {
-                        int NoOfSpc =  lsTrk.Regions.GetNoOfSpecies(j);
+                        int NoOfSpc = lsTrk.Regions.GetNoOfSpecies(j);
                         f.Coordinates.ClearRow(j);
 
                         if(TargMappingIdx[j] == null) {
@@ -376,7 +410,7 @@ namespace BoSSS.Solution.LoadBalancing {
                                                                             //                                Debug.Assert(rcvSpc == lsTrk.Regions.GetSpeciesIdFromIndex(j, iSpc));
                                                                             //#endif
                                 SpeciesId rcvSpc;
-                                rcvSpc.cntnt = (int) ReDistDGCoords_jl[c];
+                                rcvSpc.cntnt = (int)ReDistDGCoords_jl[c];
                                 c++;
                                 int iSpcTarg = lsTrk.Regions.GetSpeciesIndex(rcvSpc, j);
 
@@ -405,7 +439,7 @@ namespace BoSSS.Solution.LoadBalancing {
                             int L = ReDistDGCoords[j].Length;
                             for(int l = 0; l < L; l++) {
                                 double[] ReDistDGCoords_jl = ReDistDGCoords[j][l];
-                                int NoSpcOrg = (int) ReDistDGCoords_jl[0]; // no of species in original cells
+                                int NoSpcOrg = (int)ReDistDGCoords_jl[0]; // no of species in original cells
 
                                 int c = 1;
                                 for(int iSpcRecv = 0; iSpcRecv < NoSpcOrg; iSpcRecv++) { // loop over species in original cell
@@ -423,6 +457,67 @@ namespace BoSSS.Solution.LoadBalancing {
                                         DoCellj(j, xf, NewGrid, pDeg, TargMappingIdx[j], ReDistDGCoords[j], l, m_Old2NewCorr, N0rcv, Np * iSpc, Np, temp, acc);
                                 }
                                 Debug.Assert(c == ReDistDGCoords_jl.Length);
+                            }
+                        }
+                    }
+                } else if(f is TraceDGField) {
+                    // +++++++++++++++
+                    // normal TraceDG field
+                    // +++++++++++++++
+
+                    double[] temp = null;// = new double[Np];
+                    double[] acc = null;// = new double[Np];
+
+                    for(int j = 0; j < newJ; j++) {
+                        int Np = f.Basis.GetLength(j);
+                        if(temp == null || temp.Length != Np)
+                            temp = new double[Np];
+                        if(acc == null || acc.Length != Np)
+                            acc = new double[Np];
+
+                        if(TargMappingIdx[j] == null) {
+                            // unchanged cell
+                            Debug.Assert(ReDistDGCoords[j].Length == 1);
+                            double[] Coord = ReDistDGCoords[j][0];
+                            Debug.Assert(Coord.Length == Np);
+
+                            BckTrafo(Coord, Np, 0, NewGrid, j, pDeg, 1.0);
+
+                            f.Coordinates.SetRow(j, Coord);
+                        } else {
+                            int L = ReDistDGCoords[j].Length;
+                            for(int l = 0; l < L; l++) {
+                                DoCellj(j, f, NewGrid, pDeg, TargMappingIdx[j], ReDistDGCoords[j], l, m_Old2NewCorr, 0, 0, Np, temp, acc);
+                            }
+                        }
+                    }
+
+                } else if(f is ConventionalDGField) {
+                    // +++++++++++++++
+                    // normal DG field
+                    // +++++++++++++++
+
+
+                    int Np = f.Basis.Length;
+                    double[] temp  = new double[Np];
+                    double[] acc = new double[Np];
+
+                    for(int j = 0; j < newJ; j++) {
+                        
+
+                        if(TargMappingIdx[j] == null) {
+                            // unchanged cell
+                            Debug.Assert(ReDistDGCoords[j].Length == 1);
+                            double[] Coord = ReDistDGCoords[j][0];
+                            Debug.Assert(Coord.Length == Np);
+
+                            BckTrafo(Coord, Np, 0, NewGrid, j, pDeg, 1.0);
+
+                            f.Coordinates.SetRow(j, Coord);
+                        } else {
+                            int L = ReDistDGCoords[j].Length;
+                            for(int l = 0; l < L; l++) {
+                                DoCellj(j, f, NewGrid, pDeg, TargMappingIdx[j], ReDistDGCoords[j], l, m_Old2NewCorr, 0, 0, Np, temp, acc);
                             }
                         }
                     }
@@ -446,6 +541,10 @@ namespace BoSSS.Solution.LoadBalancing {
             }
             
             int L = ReDistDGCoords_j.Length;
+
+            if(Np <= 0)
+                // might happen on variable-DOF-Cells such as TraceDG
+                return; 
 
 
             if (TargMappingIdx_j.Length == 1) {
@@ -472,15 +571,16 @@ namespace BoSSS.Solution.LoadBalancing {
                 for (int n = 0; n < Np; n++) {
                     ReDistDGCoords_jl[n] = ReDistDGCoords_j[l][N0rcv + n];
                 }
-                //if (!Oasch) {
-                //    Trafo.gemv(1.0, ReDistDGCoords_jl, 1.0, Coords_j, transpose: true);
-                //} else {
+
+                if(Trafo.NoOfRows > Np) 
+                    Trafo = Trafo.ExtractSubArrayShallow([0, 0], [Np - 1, Np - 1]);  
+
+                
                 double[] buf = new double[Np];
-                Trafo.GEMV(1.0, ReDistDGCoords_jl, 1.0, buf, transpose: true);
+                Trafo.GEMV(1.0, ReDistDGCoords_jl, 1.0, buf, transpose: true); // NoOfRows == ReDistDGCoords_jl, NoOfCols == buf
                 BckTrafo(buf, Np, 0, NewGrid, j, pDeg, 1.0 / scale.Sqrt());
 
                 Coords_j.AccV(1.0, buf);
-                //}
             }
 
             for(int n = 0; n < Np; n++) {

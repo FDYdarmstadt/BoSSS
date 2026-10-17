@@ -335,11 +335,11 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         else
                             surfNodes = NodeSet;
 
-                        MultidimensionalArray metrics;
-                        {
-                            int iKref = grddat.Cells.GetRefElementIndex(jCell);
-                            metrics = LevelSetData.GetLevelSetNormalReferenceToPhysicalMetrics(surfNodes, jCell, 1);
-                        }
+                        //MultidimensionalArray metrics;
+                        //{
+                        //    int iKref = grddat.Cells.GetRefElementIndex(jCell);
+                        //    metrics = LevelSetData.GetLevelSetNormalReferenceToPhysicalMetrics(surfNodes, jCell, 1);
+                        //}
 
                         MultidimensionalArray Mtx_Gauss = null;
                         if(this.UseGauß) {
@@ -355,11 +355,11 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                             Debug.Assert(Mtx_Stokes.Dimension == 2);
                             Debug.Assert(Mtx_Stokes.GetLength(0) == NoOfStokesEq);
                             Debug.Assert(Mtx_Stokes.GetLength(1) == NoOfNodes);
-                            for(int i = 0; i < NoOfStokesEq; i++) {
-                                for(int j = 0; j < NoOfNodes; j++) {
-                                    Mtx_Stokes[i, j] /= metrics[0, j];
-                                }
-                            }
+                            //for(int i = 0; i < NoOfStokesEq; i++) {
+                            //    for(int j = 0; j < NoOfNodes; j++) {
+                            //        Mtx_Stokes[i, j] /= metrics[0, j];
+                            //    }
+                            //}
                         }
 
                         stpwGetQuadRuleSet_SolveRHS.Start();
@@ -439,7 +439,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
 
                                 for(int k = 0; k < NoOfNodes; k++) {
-                                    qr_l.Weights[k] = _RHS[k, 0] / metrics[0, k];
+                                    qr_l.Weights[k] = _RHS[k, 0];// / metrics[0, k];
                                 }
 
                                 SurfaceRule[jSub] = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(jCell), qr_l);

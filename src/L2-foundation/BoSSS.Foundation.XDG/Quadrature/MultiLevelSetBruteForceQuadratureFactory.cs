@@ -12,8 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static BoSSS.Foundation.XDG.LevelSetTracker;
 
-namespace BoSSS.Foundation.XDG.Quadrature
-{
+namespace BoSSS.Foundation.XDG.Quadrature.BruteForce {
     class LevelSetCombination
     {
         public CombinedID ID;
@@ -234,9 +233,10 @@ namespace BoSSS.Foundation.XDG.Quadrature
             }
 
             double SqrtGram(int edge) {
-                var g = grid.Edges.SqrtGramian[edge];
-                g = 1 / g;
-                return g;
+                //var g = grid.Edges.SqrtGramian[edge];
+                //g = 1 / g;
+                //return g;
+                return 1.0;
             }
 
             CombinedID id = new CombinedID {
@@ -266,9 +266,10 @@ namespace BoSSS.Foundation.XDG.Quadrature
             }
 
             double Det(int cell) {
-                MultidimensionalArray inverseJacobian = grid.JacobianDeterminat.GetValue_Cell(Square.Instance.Center, cell, 1);
-                double g = 1 / inverseJacobian[0, 0];
-                return g;
+                //MultidimensionalArray inverseJacobian = grid.JacobianDeterminat.GetValue_Cell(Square.Instance.Center, cell, 1);
+                //double g = 1 / inverseJacobian[0, 0];
+                //return g;
+                return 1.0;
             }
 
             CombinedID id = new CombinedID {
@@ -355,12 +356,14 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
                                 // add to List and jump to next chunk
                                 ChunkRulePair<QuadRule> pairSpecial = new ChunkRulePair<QuadRule>(singleChunk, specialRule);
+                                pairSpecial.Rule.OrderOfPrecision = order;
                                 rule.Add(pairSpecial);
                                 continue;
                             }
                         }
                     }
                     ChunkRulePair<QuadRule> pair = new ChunkRulePair<QuadRule>(singleChunk, scheme.GetQuadRule(i));
+                    pair.Rule.OrderOfPrecision = order;
                     rule.Add(pair);
                 }
             }
@@ -379,7 +382,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                     if (activeChunk) {
                         // do nothing, already built
                     } else {
-                        specialRule = QuadRule.CreateEmpty(b.ReferenceElement, 1, b.ReferenceElement.SpatialDimension);
+                        specialRule = QuadRule.CreateBlank(b.ReferenceElement, 1, b.ReferenceElement.SpatialDimension);
                         specialRule.Nodes.LockForever();
                     }
                     break;
@@ -396,7 +399,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                         int iFace = ((GridData)singleMask.GridData).Edges.FaceIndices[i, 0];
                         bool coinciding = specialFace == iFace;
                         if (coinciding) {
-                            specialRule = QuadRule.CreateEmpty(specialRule.RefElement, 1, specialRule.RefElement.SpatialDimension);
+                            specialRule = QuadRule.CreateBlank(specialRule.RefElement, 1, specialRule.RefElement.SpatialDimension);
                             specialRule.Nodes.LockForever();
                         }
                         break;
@@ -407,12 +410,12 @@ namespace BoSSS.Foundation.XDG.Quadrature
                         if (activeChunk) {
                             specialRule = fallBackFactory.GetQuadRuleSet(singleMask, order).Single().Rule;
                         } else {
-                            specialRule = QuadRule.CreateEmpty(b.ReferenceElement, 1, b.ReferenceElement.SpatialDimension);
+                            specialRule = QuadRule.CreateBlank(b.ReferenceElement, 1, b.ReferenceElement.SpatialDimension);
                             specialRule.Nodes.LockForever();
                         }
                     } else {
                         int iFace = detector.GetSpecialFace(i);
-                        int iEdge = ((GridData)singleMask.GridData).Cells.GetEdgesForFace(i, iFace, out int InOrOut, out int[] FurtherEdges);
+                        int iEdge = singleMask.GridData.GetEdgesForFace(i, iFace, out int InOrOut, out int[] FurtherEdges);
 
                         int J = ((GridData)singleMask.GridData).Cells.NoOfLocalUpdatedCells;
                         int OtherCell = ((GridData)singleMask.GridData).Edges.CellIndices[iEdge, InOrOut == 0 ? 1 : 0];
@@ -429,13 +432,13 @@ namespace BoSSS.Foundation.XDG.Quadrature
                             if(ThisCellGlob < OtherCellGlob) {
                                 // do nothing, already built
                             } else {
-                                specialRule = QuadRule.CreateEmpty(b.ReferenceElement, 1, b.ReferenceElement.SpatialDimension);
+                                specialRule = QuadRule.CreateBlank(b.ReferenceElement, 1, b.ReferenceElement.SpatialDimension);
                                 specialRule.Nodes.LockForever();
                             }
                         } else if (ThisConform & !OtherConform) {
                             // do nothing, already built
                         } else if (!ThisConform & OtherConform) {
-                            specialRule = QuadRule.CreateEmpty(b.ReferenceElement, 1, b.ReferenceElement.SpatialDimension);
+                            specialRule = QuadRule.CreateBlank(b.ReferenceElement, 1, b.ReferenceElement.SpatialDimension);
                             specialRule.Nodes.LockForever();
                         } else {
                             throw new NotSupportedException(String.Format("Error in cell {0}, {1}: Only one cell should have the hanging node.", i, OtherCell));
@@ -447,7 +450,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                     if (activeChunk) {
                         specialRule = fallBackFactory.GetQuadRuleSet(singleMask, order).Single().Rule;
                     } else {
-                        specialRule = QuadRule.CreateEmpty(b.ReferenceElement, 1, b.ReferenceElement.SpatialDimension);
+                        specialRule = QuadRule.CreateBlank(b.ReferenceElement, 1, b.ReferenceElement.SpatialDimension);
                         specialRule.Nodes.LockForever();
                     }
                     break;
@@ -464,11 +467,11 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
             // determine face
             int iFace = detector.GetSpecialFace(i);
-            int iEdge = ((GridData)singleMask.GridData).Cells.GetEdgesForFace(i, iFace, out int InOrOut, out int[] FurtherEdges);
+            int iEdge = singleMask.GridData.GetEdgesForFace(i, iFace, out int InOrOut, out int[] FurtherEdges);
             // select all edges, relevant in cells with hanging nodes
             singleMask = new EdgeMask(singleMask.GridData, Chunk.GetSingleElementChunk(iEdge), MaskType.Geometrical);
             if (FurtherEdges != null) {
-                specialRule = QuadRule.CreateEmpty(scheme.ReferenceElement, 1, scheme.ReferenceElement.SpatialDimension);
+                specialRule = QuadRule.CreateBlank(scheme.ReferenceElement, 1, scheme.ReferenceElement.SpatialDimension);
                 specialRule.Nodes.LockForever();
 
                 foreach (var edg in FurtherEdges) {
@@ -494,8 +497,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
                     var weights_t = rule_t.Weights;
 
                     // scale accordingly!, for a volume rule generated through an edge rule, this is length of linerefelem / length of edge perpendicular to rule edge
-                    double scale = singleMask.GridData.iGeomCells.GetRefElement(i).Volume / singleMask.GridData.iGeomCells.GetCellVolume(i) * singleMask.GridData.iGeomEdges.SqrtGramian[edg];
-                    weights_t.Scale(scale);
+                    //double scale = singleMask.GridData.iGeomCells.GetRefElement(i).Volume / singleMask.GridData.iGeomCells.GetCellVolume(i) * singleMask.GridData.iGeomEdges.SqrtGramian[edg];
+                    //weights_t.Scale(scale);
 
                     specialNodes.Add(nodes_t);
                     specialWeights.Add(weights_t);

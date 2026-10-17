@@ -2,14 +2,28 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace BoSSS.Application.XNSERO_Solver {
-    class ParticleSuperEllipsoidFlat : ParticleSuperEllipsoid{
 
+    [DataContract]
+    [Serializable]
+    public class ParticleSuperEllipsoidFlat : ParticleSuperEllipsoid {
+
+        /// <summary>
+        /// Empty constructor used during de-serialization
+        /// </summary>
+        private ParticleSuperEllipsoidFlat() : base() {
+
+        }
+
+        [DataMember]
         double m_Length;
+        [DataMember]
         double m_Exponent;
+        [DataMember]
         double m_Thickness;
 
         public ParticleSuperEllipsoidFlat(

@@ -44,6 +44,13 @@ namespace BoSSS.Foundation {
             Debug.Assert(L == ResultAcc.GetLength(0));
             Debug.Assert(NumNodes == ResultAcc.GetLength(1));
 
+            if(N == 0) {
+                if(ResultPreScale != 1.0) {
+                    ResultAcc.Scale(ResultPreScale);
+                }
+                return; 
+            }
+
             /*
             MultidimensionalArray BasisValues;
             BasisValues = basis.CellEval(NS, j0, L);
@@ -80,13 +87,9 @@ namespace BoSSS.Foundation {
                             double* pResultAcc = _pResultAcc + ResultAcc.Index(0,0);
                             double* ptrfCoördinates = _ptrfCoördinates + trfCoördinates.Index(0,0);
                             double* pBasisValues = _pBasisValues + BasisValues.Index(0, 0);
-
-                            
 //#if DEBUG
-//                            MultidimensionalArray check = ResultAcc.CloneAs();
-                            
+//                            MultidimensionalArray check = ResultAcc.CloneAs();                         
 //#endif
-
                             int _M = ResultAcc.GetLength(1);   // entspricht k   (node    index)
                             int _N = ResultAcc.GetLength(0);   // entspricht j   (cell    index)
                             int _K = BasisValues.GetLength(1); // entspricht m   (DG mode index)
@@ -107,8 +110,7 @@ namespace BoSSS.Foundation {
                                 pBasisValues, _K,
                                 ptrfCoördinates, _K,
                                 ResultPreScale,
-                                pResultAcc, _M);
-                        
+                                pResultAcc, _M);                
 //#if DEBUG
 //                            check.Multiply(1.0, trfCoördinates, BasisValues, ResultPreScale, ref mp_jk_jm_km);
 //                            check.Acc(-1.0, ResultAcc);
@@ -217,10 +219,10 @@ namespace BoSSS.Foundation {
             M = NS.NoOfNodes;            // number of nodes
             AffineLinear = basis.GridDat.iGeomCells.IsCellAffineLinear(j0);
 
-            Debug.Assert(basis.GetType() == typeof(Basis));
+            //Debug.Assert(basis.GetType() == typeof(Basis) || basis.GetType() == typeof(Trace);
 
             Debug.Assert(Coördinates.Dimension == 2);
-            Debug.Assert(Coördinates.GetLength(1) == N);
+            Debug.Assert(Coördinates.GetLength(1) >= N);
 
 #if DEBUG
             for(int i = 1; i < L; i++) {
@@ -276,7 +278,7 @@ namespace BoSSS.Foundation {
                     if (coördOffset == 0 && Coördinates.GetLength(0) == 1)
                         Coördinates_j = Coördinates;
                     else
-                        Coördinates_j = Coördinates.ExtractSubArrayShallow(new int[] { coördOffset, 0 }, new int[] { coördOffset, N - 1 });
+                        Coördinates_j = Coördinates.ExtractSubArrayShallow([coördOffset, 0], [coördOffset, N - 1]);
 
                     GradientRef.Multiply(scale0, Coördinates_j, BasisGradValues, 0.0, ref mp_jke_jm_kme);  // gradient in reference coördinates
                     ResultAcc.Multiply(1.0, InvJacobi, GradientRef, ResultPreScale, ref mp_jkd_ed_jke);
@@ -511,17 +513,17 @@ namespace BoSSS.Foundation {
                             {
                                 GradientRef.Multiply(1.0, trfCoördinatesIN, BasisGradValuesIN, 0.0, ref mp_ike_im_Tikme,
                                     pTrfIndex, pTrfIndex,
-                                    trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * e0), trfCycle_B: 2, trfPostOffset_B: 0);  // gradient in reference coördinates, i.e. \f$ \nabla_{\vec{xi}} \f$
+                                    trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * e0), trfCycle_B: 2, trfPostOffset_B: 0);  // gradient in reference coördinates, i.e. \f$ \nabla_{\underline{xi}} \f$
 
-                                gradIN.Multiply(1.0, invJacobiIN, GradientRef, ResultPreScale, ref mp_ikd_iked_ike);   // gradient in physical coördinates, i.e. \f$ \nabla_{\vec{x}}n \f$
+                                gradIN.Multiply(1.0, invJacobiIN, GradientRef, ResultPreScale, ref mp_ikd_iked_ike);   // gradient in physical coördinates, i.e. \f$ \nabla_{\underline{x}}n \f$
                             }
 
                             if(Not > 0) {
                                 GradientRef.Multiply(1.0, trfCoördinatesOT, BasisGradValuesOT, 0.0, ref mp_ike_im_Tikme,
                                     pTrfIndex, pTrfIndex,
-                                    trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * e0 + 1), trfCycle_B: 2, trfPostOffset_B: 0);  // gradient in reference coördinates, i.e. \f$ \nabla_{\vec{xi}} \f$
+                                    trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * e0 + 1), trfCycle_B: 2, trfPostOffset_B: 0);  // gradient in reference coördinates, i.e. \f$ \nabla_{\underline{xi}} \f$
 
-                                gradOT.Multiply(1.0, invJacobiOT, GradientRef, ResultPreScale, ref mp_ikd_iked_ike);   // gradient in physical coördinates, i.e. \f$ \nabla_{\vec{x}} \f$
+                                gradOT.Multiply(1.0, invJacobiOT, GradientRef, ResultPreScale, ref mp_ikd_iked_ike);   // gradient in physical coördinates, i.e. \f$ \nabla_{\underline{x}} \f$
                             }
                         }
 

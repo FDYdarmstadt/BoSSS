@@ -95,7 +95,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.InitialiseParticles(particles);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.UseSchurBlockPrec = false;
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.NonLinearSolver.ConvergenceCriterion = 1e-4;
 
@@ -170,7 +170,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             C.UseSchurBlockPrec = false;
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.NonLinearSolver.ConvergenceCriterion = 1e-4;
             C.NonLinearSolver.MinSolverIterations = 2;
@@ -226,7 +226,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             C.UseSchurBlockPrec = false;
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
             C.NonLinearSolver.MinSolverIterations = 3;
@@ -308,7 +308,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             C.UseSchurBlockPrec = false;
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
             C.NonLinearSolver.MinSolverIterations = 2;
@@ -382,7 +382,7 @@ namespace BoSSS.Application.XNSERO_Solver {
 
             // Coupling Properties
             // =============================
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
             return C;
@@ -455,7 +455,7 @@ namespace BoSSS.Application.XNSERO_Solver {
 
             // Coupling Properties
             // =============================
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
             return C;
@@ -532,7 +532,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             C.UseSchurBlockPrec = false;
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.NonLinearSolver.ConvergenceCriterion = 1e-4;
             C.NonLinearSolver.MinSolverIterations = 2;

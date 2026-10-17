@@ -493,7 +493,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             phiField.ProjectField(func);
             var LevSet = new LevelSet(phiField.Basis, "LevelSet");
             LevSet.Acc(1.0, phiField);
-            var LsTrk = new LevelSetTracker((GridData)phiField.GridDat, XQuadFactoryHelper.MomentFittingVariants.Classic, 1, new string[] { "A", "B" }, LevSet);
+            var LsTrk = new LevelSetTracker((GridData)phiField.GridDat, CutCellQuadratureMethod.Classic, 1, new string[] { "A", "B" }, LevSet);
             LsTrk.UpdateTracker(0.0);
             CellMask near = LsTrk.Regions.GetNearFieldMask(1);
             //SinglePhaseField nearField = new SinglePhaseField(new Basis(this.GridData, 0));

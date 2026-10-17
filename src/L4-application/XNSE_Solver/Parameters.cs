@@ -19,24 +19,14 @@ using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.LevelSetTools.Advection;
 using BoSSS.Solution.LevelSetTools.Reinit.FastMarch;
 using BoSSS.Foundation.IO;
+using BoSSS.Application.SemiLagrangianLevelSetTestSuite;
+using BoSSS.Solution.LevelSetTools;
+
 
 namespace BoSSS.Application.XNSE_Solver {
-    public static class FromControl {
-        public static BeltramiGradient BeltramiGradient(XNSE_Control control, string levelSetName, int D) {
-            string levelSet = levelSetName;
-            int levelSetDegree;
-            if (control.FieldOptions.TryGetValue(levelSet, out FieldOpts lsOpts)) {
-                var levelSetSource = control.AdvancedDiscretizationOptions.FilterConfiguration.LevelSetSource;
-                levelSetDegree = (levelSetSource == CurvatureAlgorithms.LevelSetSource.fromDG) ? lsOpts.Degree : lsOpts.Degree + 1;
-            } else {
-                throw new Exception("Level set options not found in FieldOptions");
-            }
+    public static class FromControl {       
 
-            DoNotTouchParameters AdvancedDiscretizationOptions = control.AdvancedDiscretizationOptions;
-            return new BeltramiGradient(D, AdvancedDiscretizationOptions, levelSetDegree);
-        }
-
-        public static BeltramiGradientAndCurvature BeltramiGradientAndCurvature(XNSE_Control control, string levelSetName, int m_HMForder, int D) {
+        public static GradientAndCurvature GradientAndCurvature(XNSE_Control control, string levelSetName, int m_HMForder, int D) {
             string curvature = BoSSS.Solution.NSECommon.VariableNames.Curvature;
             int curvatureDegree;
             if (control.FieldOptions.TryGetValue(curvature, out FieldOpts opts)) {
@@ -49,19 +39,37 @@ namespace BoSSS.Application.XNSE_Solver {
             int levelSetDegree;
             if (control.FieldOptions.TryGetValue(levelSet, out FieldOpts lsOpts)) {
                 var levelSetSource = control.AdvancedDiscretizationOptions.FilterConfiguration.LevelSetSource;
-                levelSetDegree = (levelSetSource == CurvatureAlgorithms.LevelSetSource.fromDG) ? lsOpts.Degree : lsOpts.Degree + 1;
+                levelSetDegree = (levelSetSource == Solution.LevelSetTools.CurvatureAlgorithms.LevelSetSource.fromDG) ? lsOpts.Degree : lsOpts.Degree + 1;
             } else {
                 levelSetDegree = 1;
             }
             DoNotTouchParameters AdvancedDiscretizationOptions = control.AdvancedDiscretizationOptions;
-            return new BeltramiGradientAndCurvature(curvatureDegree, levelSetDegree, m_HMForder, AdvancedDiscretizationOptions, D);
+            return new GradientAndCurvature(levelSet, curvatureDegree, levelSetDegree, m_HMForder, D, AdvancedDiscretizationOptions.SST_isotropicMode, AdvancedDiscretizationOptions.FilterConfiguration);
         }
+
+        public static Curvaturexye Curvature(XNSE_Control control, string levelSetName, int m_HMForder)
+        {
+            string curvature = BoSSS.Solution.NSECommon.VariableNames.Curvature;
+            int curvatureDegree;
+            if (control.FieldOptions.TryGetValue(curvature, out FieldOpts opts))
+            {
+                curvatureDegree = opts.Degree;
+            }
+            else
+            {
+                throw new Exception("Curvature options not found in FieldOptions");
+            }
+
+            DoNotTouchParameters AdvancedDiscretizationOptions = control.AdvancedDiscretizationOptions;
+            return new Curvaturexye(curvatureDegree, m_HMForder,AdvancedDiscretizationOptions);
+        }
+
     }
 
     /// <summary>
     /// Computation of the fluid interface velocity for material interfaces:
     /// Due to the discontinuous approximation at the interface, 
-    /// and the weak enforcement of the velocity jump condition `$ [[\vec{u}]] = 0 `$
+    /// and the weak enforcement of the velocity jump condition `$ [[\underline{u}]] = 0 `$
     /// the velocities of both phases do not match exactly in the discrete setting.
     /// (They are equal in the continuous setting, however.)
     /// 

@@ -301,6 +301,8 @@ namespace BoSSS.Solution.NSECommon {
             else
                 throw new NotSupportedException("unsupported spatial dimension: D = " + D + ".");
         }
+
+        public const string ElectricPoissonEquation = "ElectricPoissonEq";
     }
 
 
@@ -385,17 +387,17 @@ namespace BoSSS.Solution.NSECommon {
 
 
         /// <summary>
-        /// convective part, x-component, i.e. \f$ \nabla \cdot ( u_1 \cdot \vec{u} ) \f$ 
+        /// convective part, x-component, i.e. $\nabla \cdot ( u_1 \cdot \underline{u} )$ 
         /// </summary>
         public const string ConvectiveX = "ConvectiveX";
         
         /// <summary>
-        /// convective part, y-component, i.e. \f$ \nabla \cdot ( u_2 \cdot \vec{u} ) \f$ 
+        /// convective part, y-component, i.e. $\nabla \cdot ( u_2 \cdot \underline{u} )$ 
         /// </summary>
         public const string ConvectiveY = "ConvectiveY";
 
         /// <summary>
-        /// convective part, z-component, i.e. \f$ \nabla \cdot ( u_3 \cdot \vec{u} ) \f$ 
+        /// convective part, z-component, i.e. $\nabla \cdot ( u_3 \cdot \underline{u} )$ 
         /// </summary>
         public const string ConvectiveZ = "ConvectiveZ";
 
@@ -1780,6 +1782,8 @@ namespace BoSSS.Solution.NSECommon {
         public static string[] OrientationVector(int D) {
             if (D == 2)
                 return new string[] { OrientationVectorX, OrientationVectorY };
+            else if (D == 3)
+                return new string[] { OrientationVectorX, OrientationVectorY, OrientationVectorZ };
             else
                 throw new NotSupportedException("unsupported spatial dimension: D = " + D + ".");
         }
@@ -1795,6 +1799,7 @@ namespace BoSSS.Solution.NSECommon {
             switch (d) {
                 case 0: return OrientationVectorX;
                 case 1: return OrientationVectorY;
+                case 2: return OrientationVectorZ;
                 default: throw new NotSupportedException("unsupported spatial dimension: d = " + d + ".");
             }
         }
@@ -1808,5 +1813,49 @@ namespace BoSSS.Solution.NSECommon {
         /// vector of orientation of a rigid object, used in XNSERO - y component
         /// </summary>
         public const string OrientationVectorY = "OrientationVectorY";
+
+        /// <summary>
+        /// vector of orientation of a rigid object, used in XNSERO - z component
+        /// </summary>
+        public const string OrientationVectorZ = "OrientationVectorZ";
+
+        /// <summary>
+        /// Electric potential, dimensi is Voltage
+        /// </summary>
+        public const string ElectricPotential = "ElectricPotential";
+
+        public const string FreechargeDensity = "FreechargeDensity";
+
+        /// <summary>
+        /// used for surface advection-reaction problem.
+        /// </summary>
+        public const string SurfaceAdvectionVelocityX = "SurfaceAdvectionVelocityX";
+
+        public const string SurfaceAdvectionVelocityY = "SurfaceAdvectionVelocityY";
+
+        public const string SurfaceAdvectionVelocityZ = "SurfaceAdvectionVelocityZ";
+
+        static public string SurfaceAdvectionVelocity_d(int d) {
+            switch(d) {
+                case 0: return SurfaceAdvectionVelocityX;
+                case 1: return SurfaceAdvectionVelocityY;
+                case 2: return SurfaceAdvectionVelocityZ;
+                default: throw new NotSupportedException("unsupported names");
+            }
+        }
+
+        static public string[] SurfaceAdvectionVelocity(int D) {
+            switch(D) {
+                case 1: return new string[] { SurfaceAdvectionVelocityX };
+                case 2: return new string[] { SurfaceAdvectionVelocityX, SurfaceAdvectionVelocityY };
+                case 3: return new string[] { SurfaceAdvectionVelocityX, SurfaceAdvectionVelocityY, SurfaceAdvectionVelocityZ };
+                default: throw new NotSupportedException("unsupported names.");
+            }
+        }
+        /// <summary>
+        /// The domain variable for any surface equation defined on the level-set based on TraceDG Solver
+        /// </summary>
+        public const string SurfaceScalar = "q";
+
     }
 }

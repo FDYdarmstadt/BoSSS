@@ -69,7 +69,7 @@ namespace ilPSP.LinSolvers.monkey {
         abstract public void ReleaseTempObjects();
 
         /// <summary>
-        /// Computes the preconditioning, i.e. \f$ y = M \cdot x\f$ ,
+        /// Computes the preconditioning, i.e. $y = M \cdot x$ ,
         /// with the input (<em>x</em>) and output vectors (<em>y</em>)
         /// specified
         /// in <see cref="CreateTempObjects"/>;

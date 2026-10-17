@@ -335,17 +335,21 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             // surface
             double surface = 0.0;
             //CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
-            var surfElemVol = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(spcId, 0);
-            CellQuadrature.GetQuadrature(new int[] { 1 }, CorrectionLsTrk.GridDat,
-                surfElemVol.Compile(CorrectionLsTrk.GridDat, this.m_HMForder),
-                delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
-                    EvalResult.SetAll(1.0);
-                },
-                delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                    for (int i = 0; i < Length; i++)
-                        surface += ResultsOfIntegration[i, 0];
-                }
-            ).Execute();
+            foreach(var sp2 in LsTrk.SpeciesIdS) {
+                if(spcId == sp2)
+                    continue;
+                var surfElemVol = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(spcId, sp2, 0);
+                CellQuadrature.GetQuadrature(new int[] { 1 }, CorrectionLsTrk.GridDat,
+                    surfElemVol.Compile(CorrectionLsTrk.GridDat, this.m_HMForder),
+                    delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+                        EvalResult.SetAll(1.0);
+                    },
+                    delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+                        for(int i = 0; i < Length; i++)
+                            surface += ResultsOfIntegration[i, 0];
+                    }
+                ).Execute();
+            }
             surface = surface.MPISum();
 
             // circularity

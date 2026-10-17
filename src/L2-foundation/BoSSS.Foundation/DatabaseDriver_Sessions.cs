@@ -99,7 +99,7 @@ namespace BoSSS.Foundation.IO {
 
                 using(Stream s = fsDriver.GetSessionInfoStream(false, sessionId)) {
                     // fk, 19aug23: Create a MemoryStream and write he buffer into it
-                    // for certain streams, the JSON deserialization ifrom a memory stream than much faster than directly deserializing from the original stream
+                    // for certain streams, the JSON deserialization from a memory stream is much faster than directly deserializing from the original stream
                     using (MemoryStream memoryStream = new MemoryStream()) {
                         s.CopyTo(memoryStream);
                         memoryStream.Seek(0, SeekOrigin.Begin);

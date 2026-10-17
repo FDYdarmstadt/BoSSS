@@ -153,7 +153,7 @@ namespace BoSSS.Application.XNSEC {
                         return et;
                     });
                     var gDat = new GridData(grd);
-                    var em1 = gDat.GetBoundaryEdges();
+                    var em1 = gDat.GetBoundaryEdgeMask();
                     em1.SaveToTextFile("alledges2.csv", false, (double[] CoordGlobal, int LogicalItemIndex, int GeomItemIndex) => (double)gDat.iGeomEdges.EdgeTags[GeomItemIndex]);
                     return grd;
                 };
@@ -200,19 +200,17 @@ namespace BoSSS.Application.XNSEC {
             // ==============
             #region exact
 
-            C.Phi = ((X, t) => PhiFunc(X));
+            C.AddExactSolution("Phi", PhiFunc);
 
-            C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
             if(D == 2) {
-                C.ExactSolutionVelocity.Add("A", new Func<double[], double, double>[] { (X, t) => 0.0, (X, t) => 0.0 });
-                C.ExactSolutionVelocity.Add("B", new Func<double[], double, double>[] { (X, t) => 0.0, (X, t) => 0.0 });
+                for(int d = 0; d < D; d++) {
+                    C.AddExactSolution(VariableNames.Velocity_d(d), "A", (X, t) => 0.0);
+                    C.AddExactSolution(VariableNames.Velocity_d(d), "B", (X, t) => 0.0);
+                }
             }
 
-
-
-            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionPressure.Add("A", (X, t) => 0.0);
-            C.ExactSolutionPressure.Add("B", (X, t) => 0.0);
+            C.AddExactSolution(VariableNames.Pressure, "A", (X, t) => 0.0);
+            C.AddExactSolution(VariableNames.Pressure, "B", (X, t) => 0.0);
 
             #endregion
 
@@ -239,11 +237,11 @@ namespace BoSSS.Application.XNSEC {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
             C.solveKineticEnergyEquation = false;
 
-            C.CheckJumpConditions = false;
-            C.CheckInterfaceProps = false;
+            //C.CheckJumpConditions = false;
+            //C.CheckInterfaceProps = false;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
@@ -253,18 +251,15 @@ namespace BoSSS.Application.XNSEC {
 
             if(AMRlvl > 0) {
                 C.AdaptiveMeshRefinement = true;
-                C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-                C.BaseRefinementLevel = AMRlvl;
+                //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+                //C.BaseRefinementLevel  AMRlvl;
                 C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = AMRlvl });
             }
      
 
-            C.BaseRefinementLevel =2;
+            //C.BaseRefinementLevel 2;
             C.RefinementLevel = 1;
             C.AMR_startUpSweeps = 2;
-
-            //C.InitSignedDistance = false;
-            C.adaptiveReInit = false;
 
             C.LinearSolver = LinearSolverCode.automatic.GetConfig();
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;

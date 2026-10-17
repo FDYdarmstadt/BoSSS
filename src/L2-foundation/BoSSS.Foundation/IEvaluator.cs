@@ -102,12 +102,12 @@ namespace BoSSS.Foundation {
     public interface IEvaluatorLinear : IEvaluator {
 
         /// <summary>
-        /// Computation of matrix \f$ \mathcal{M} \f$ *and* affine offset \f$ \tilde{b} \f$; the
+        /// Computation of matrix $\mathcal{M}$ *and* affine offset $\tilde{b}$; the
         /// DG operator <see cref="IEvaluator.Owner"/> is discretized as
-        /// \f[
+        /// \[
         ///    \mathcal{M} \cdot \tilde{U} + \tilde{b}
-        /// \f]
-        /// where \f$ \tilde{U} \f$ are the DG coordinates of the trial function.
+        /// \]
+        /// where $\tilde{U}$ are the DG coordinates of the trial function.
         /// </summary>
         /// <param name="Matrix">
         /// On entry, some pre-allocated matrix; on exit, the operator matrix, scaled by <paramref name="alpha"/>, will be accumulated.

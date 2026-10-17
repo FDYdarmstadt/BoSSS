@@ -118,7 +118,7 @@ namespace BoSSS.Application.XNSFE_Solver.PhysicalBasedTestcases {
 
             // evaporated/condensed mass
             double mass_evap = 0.0;
-            var lqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            var lqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
             if (this.ThermParams.hVap != 0.0) {                
                 CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                     lqs.Compile(LsTrk.GridDat, order),

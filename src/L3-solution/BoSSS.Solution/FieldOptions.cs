@@ -51,6 +51,8 @@ namespace BoSSS.Solution.Control {
             /// </summary>
             unspecified
         }
+        [DataMember]
+        public bool isTraceDG = false;
 
         /// <summary>
         /// field state should be saved in control file

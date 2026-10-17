@@ -113,8 +113,22 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         public IList<string> VariableNames => new string[] { };
 
-        // nothing to do
-        public Action<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>> AfterMovePhaseInterface => null;
+        //public Func<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>, bool> AfterMovePhaseInterface => null;
+
+
+        /// <summary>
+        /// nothing to do 
+        /// </summary>
+        public bool AfterMovePhaseInterface(
+            DualLevelSet levelSet,
+            double time,
+            double dt,
+            bool incremental,
+            IReadOnlyDictionary<string, DGField> DomainVarFields,
+            IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            return false;
+        }
+
 
         /// <summary>
         /// <see cref="ILevelSetEvolver.InternalFields"/>; here, empty;
@@ -146,7 +160,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 tr.InfoToConsole = true;
 
                 levelSet.DGLevelSet.Clear();
-                levelSet.CGLevelSet.Clear();
+                levelSet.C0LevelSet.Clear();
 
                 ParameterizedLevelSet ls = (ParameterizedLevelSet)levelSet.DGLevelSet;
                 if (!object.ReferenceEquals(ls, m_ls)) {
@@ -159,11 +173,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     d => (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d))]
                     );
 
-                var quadScheme = levelSet.Tracker.GetXDGSpaceMetrics(levelSet.Tracker.SpeciesIdS, this.m_HMForder).XQuadSchemeHelper.GetLevelSetquadScheme(levelSet.LevelSetIndex, levelSet.Tracker.Regions.GetCutCellMask4LevSet(levelSet.LevelSetIndex));
+                var quadScheme = levelSet.Tracker.GetXDGSpaceMetrics(levelSet.Tracker.SpeciesIdS, this.m_HMForder).XQuadSchemeHelper.GetLevelSetQuadScheme(levelSet.LevelSetIndex, levelSet.Tracker.Regions.GetCutCellMask4LevSet(levelSet.LevelSetIndex));
 
                 //update of elliptic parameters
                 var myF = ls.GetIntegrandForMinimi(quadScheme, m_HMForder);
-                var Param1 = Parameterized_TimeStepper.MoveLevelSet(dt, time, meanVelocity, ls.Parameters, levelSet.CGLevelSet.GridDat, myF);
+                var Param1 = Parameterized_TimeStepper.MoveLevelSet(dt, time, meanVelocity, ls.Parameters, levelSet.C0LevelSet.GridDat, myF);
 
                 ls.Parameters = Param1;
                 ((ParameterizedLevelSet)levelSet.DGLevelSet).Project();

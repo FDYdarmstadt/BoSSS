@@ -207,7 +207,21 @@ namespace FreeXNSE {
         public IList<string> VariableNames => new string[] { };
 
         // nothing to do
-        public Action<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>> AfterMovePhaseInterface => null;
+        //public Func<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>, bool> AfterMovePhaseInterface => null;
+
+        /// <summary>
+        /// nothing to do
+        /// </summary>
+        public bool AfterMovePhaseInterface(
+            DualLevelSet levelSet,
+            double time,
+            double dt,
+            bool incremental,
+            IReadOnlyDictionary<string, DGField> DomainVarFields,
+            IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            return false;
+        }
+
 
         /// <summary>
         /// <see cref="ILevelSetEvolver.InternalFields"/>; here, empty;

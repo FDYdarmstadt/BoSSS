@@ -19,7 +19,7 @@ namespace ZwoLevelSetSolver.ContactLine {
 
         public IList<string> ArgumentOrdering {
             get {
-                return NSEVariableNames.VelocityVector(D);
+                return NSEVariableNames.VelocityVector(D).Cat(ZwoLevelSetSolver.VariableNames.DisplacementVector(D));
             }
         }
 
@@ -43,6 +43,9 @@ namespace ZwoLevelSetSolver.ContactLine {
             return SurfaceNormal(cpv.Parameters, D, D);
         }
 
+        /// <summary>
+        /// some kind of surface tension
+        /// </summary>
         protected static double Sigma(ref CommonParamsVol cpv) {
             return cpv.Parameters[cpv.Parameters.Length - 1];
         }
@@ -60,7 +63,7 @@ namespace ZwoLevelSetSolver.ContactLine {
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             // only parameter dependent, leave this empty
-            return new IEquationComponent[] { };
+            return new IEquationComponent[] { this };
         }
     }
 }

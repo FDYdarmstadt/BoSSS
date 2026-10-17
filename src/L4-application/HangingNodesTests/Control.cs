@@ -11,6 +11,7 @@ using BoSSS.Solution.XNSECommon;
 using BoSSS.Solution.XheatCommon;
 using BoSSS.Platform.Utils.Geom;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.LevelSetTools;
 
 namespace HangingNodesTests {
     partial class Control {
@@ -109,14 +110,14 @@ namespace HangingNodesTests {
 
             ctrl.SkipSolveAndEvaluateResidual = true;            
 
-            ctrl.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            ctrl.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             ctrl.Option_LevelSetEvolution = BoSSS.Solution.LevelSetTools.LevelSetEvolution.None;
             ctrl.Timestepper_LevelSetHandling = BoSSS.Solution.XdgTimestepping.LevelSetHandling.None;
 
             ctrl.TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Steady;
 
 
-            ctrl.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            ctrl.CutCellQuadratureType = BoSSS.Foundation.XDG.CutCellQuadratureMethod.Saye;
 
             return ctrl;
         }
@@ -125,7 +126,9 @@ namespace HangingNodesTests {
 
             if(setup != 0 && setup < 16)
                 ctrl.AdaptiveMeshRefinement = true;
-            
+            else
+                ctrl.AdaptiveMeshRefinement = false;
+
             double L = size;
             if((setup & 1) != 0) {
                 ctrl.activeAMRlevelIndicators.Add(new BoSSS.Solution.AMRLevelIndicatorLibrary.AMRInBoundingBox(new BoundingBox(new double[,] { { -L, -L }, { 0, 0 } })) { maxRefinementLevel = 1 });

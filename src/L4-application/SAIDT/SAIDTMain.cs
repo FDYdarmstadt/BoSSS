@@ -1,15 +1,16 @@
-﻿using BoSSS.Foundation;
+using ApplicationWithIDT;
+using ApplicationWithIDT.OptiLevelSets;
+using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
+using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.Utils;
 using ilPSP.LinSolvers;
 using ilPSP.Utils;
-using System;
-using BoSSS.Solution.Utils;
 using SAIDT.Fluxes;
-using ApplicationWithIDT;
-using BoSSS.Solution.AdvancedSolvers;
+using System;
 
 namespace SAIDT {
     /// <summary>
@@ -27,7 +28,8 @@ namespace SAIDT {
         /// </summary>
         /// <param name="args">string pointing to a control file, i.e. `cs:SAIDT.SAIDTHardCodedControl.CurvedShock_Eccomas22()` </param>
         static void Main(string[] args) {
-            //SAIDT.Tests.SAIDTTestProgram.StraightShock_p0_SplineLevelSet();
+            SAIDT.Tests.SAIDTTestProgram.StraightShock_p0_SplineLevelSet();
+
             //SAIDT.Tests.SAIDTTestProgram.CurvedShock_Eccomas22();
             SAIDTMain._Main(args, false, () => new SAIDTMain());
         }
@@ -124,9 +126,12 @@ namespace SAIDT {
             #endregion 
 
             #region necessary initializations for Operator evaluation
-            LsTBO = LevelSet;
-            LevelSetOpti.AssembleTransMat(LsTBO);
-            LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+            foreach ( LevelSetOptimizationState s in base.LevelSetOptStates ) {
+                IOptiLevelSet LevelSetOpti = s.LevelSetOpti;
+                var LsTBO = s.LsTBO;
+                LevelSetOpti.AssembleTransMat(LsTBO);
+                LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+            }
             LsTrk.UpdateTracker(CurrentStepNo);
             LsTrk.PushStacks();
             //note that the operator is assembled we can compute the p0 solution
@@ -194,16 +199,20 @@ namespace SAIDT {
                 case OptiLevelSetType.SinglePhaseField:
                 case OptiLevelSetType.SpecFemField:
                 case OptiLevelSetType.SplineLevelSet:
-                LevelSetOpti.ProjectFromFunction(Control.LevelSetTwoInitialValue);
+                PrimaryLevelSetOptimizer.ProjectFromFunction(Control.LevelSetTwoInitialValue);
                 break;
                 case OptiLevelSetType.GlobalLevelSet:
                 break;
 
                 default: throw new ArgumentOutOfRangeException(nameof(Control.OptiLevelSetType));
             }
-            //We project the LevelSetOpti object onto the DG LsTBO
-            LevelSetOpti.AssembleTransMat(LsTBO);
-            LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+            //We project the PrimaryLevelSetOptimizer object onto the DG PrimaryOptimizationLevelSet
+            foreach ( LevelSetOptimizationState s in base.LevelSetOptStates ) {
+                IOptiLevelSet LevelSetOpti = s.LevelSetOpti;
+                var LsTBO = s.LsTBO;
+                LevelSetOpti.AssembleTransMat(LsTBO);
+                LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+            }
             LsTrk.UpdateTracker(CurrentStepNo);
             LsTrk.PushStacks();
             switch (Control.GetInitialValue) {
@@ -237,4 +246,5 @@ namespace SAIDT {
         }
     }
 }
+
 

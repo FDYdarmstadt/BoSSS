@@ -32,9 +32,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
     /// <summary>
     /// Coupling of the fully symmetric viscous stress, i.e.
-    /// ```math
-    ///    - \mu \left( \nabla \vec{u} + \nabla \vec{u}^T \right) .
-    /// ```
+    /// \[
+    ///    - \mu \left( \nabla \underline{u} + \nabla \underline{u}^T \right) .
+    /// \]
     /// Must be used together with <see cref="ViscosityInSpeciesBulk_GradUTerm"/> **and** <see cref="ViscosityInSpeciesBulk_GradUtranspTerm"/> in the bulk.
     /// </summary>
     public class ViscosityAtLevelSet_FullySymmetric : BoSSS.Foundation.XDG.ILevelSetForm, ILevelSetEquationComponentCoefficient, ISupportsJacobianComponent {
@@ -192,12 +192,12 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         double m_penalty;
 
         /// <summary>
-        /// computation of penalty parameter according to: $` \mathrm{SafetyFactor} \cdot k^2 / h `$
+        /// computation of penalty parameter according to: $\mathrm{SafetyFactor} \cdot k^2 / h$
         /// </summary>
         protected double Penalty(int jCellIn, int jCellOut) {
 
-            double penaltySizeFactor_A = 1.0 / NegLengthScaleS[jCellIn];
-            double penaltySizeFactor_B = 1.0 / PosLengthScaleS[jCellOut];
+            double penaltySizeFactor_A = NegLengthScaleS[jCellIn].IsNaN() ? 0.0 : 1.0 / NegLengthScaleS[jCellIn];
+            double penaltySizeFactor_B = PosLengthScaleS[jCellIn].IsNaN() ? 0.0 : 1.0 / PosLengthScaleS[jCellOut];
 
             double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
 

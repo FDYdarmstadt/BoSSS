@@ -1,5 +1,6 @@
 ﻿using BoSSS.Application.XNSFE_Solver;
 using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
@@ -226,8 +227,7 @@ namespace BoSSS.Application.XNSEC {
                         var Normals = levelSet.Tracker.DataHistories[0].Current.GetLevelSetNormals(NS, j0, Len);
                         double fact = Q * zSt / (1 - zSt);// TODO
                         for (int j = 0; j < Len; j++) {
-                            MultidimensionalArray globCoord = MultidimensionalArray.Create(K, D);
-                            levelSet.Tracker.GridDat.TransformLocal2Global(NS, globCoord, j);
+                            MultidimensionalArray globCoord = NS.TransformLocal2Global(levelSet.Tracker.GridDat, j);
 
                             for (int k = 0; k < K; k++) {
                                 double qEvap = 0.0;

@@ -179,7 +179,7 @@ namespace BoSSS.Solution.NSECommon {
 
                 var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, order, 1).XQuadSchemeHelper;
                 //var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, LsTrk.GetSpeciesId("A"));
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
 
                 CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                     cqs.Compile(LsTrk.GridDat, order),
@@ -312,7 +312,7 @@ namespace BoSSS.Solution.NSECommon {
 
                 var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
                 //var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, );
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
 
                 CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                     cqs.Compile(LsTrk.GridDat, RequiredOrder), //  agg.HMForder),
@@ -409,7 +409,7 @@ namespace BoSSS.Solution.NSECommon {
 
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
             //var SchemeHelper = new XQuadSchemeHelper(_LsTrk, momentFittingVariant, _LsTrk.GetSpeciesId("A"));
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, _LsTrk.Regions.GetCutCellMask());
+            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, _LsTrk.Regions.GetCutCellMask());
 
             CellQuadrature.GetQuadrature(new int[] { 1 }, _LsTrk.GridDat,
                 cqs.Compile(_LsTrk.GridDat, RequiredOrder),
@@ -540,7 +540,7 @@ namespace BoSSS.Solution.NSECommon {
 
 
                 var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper; //   new XQuadSchemeHelper(LsTrk, momentFittingVariant, );
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
 
                 CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                     cqs.Compile(LsTrk.GridDat, RequiredOrder),
@@ -693,7 +693,7 @@ namespace BoSSS.Solution.NSECommon {
 
                 var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
                 //var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, );
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask());
 
                 CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                     cqs.Compile(LsTrk.GridDat, RequiredOrder), //  agg.HMForder),

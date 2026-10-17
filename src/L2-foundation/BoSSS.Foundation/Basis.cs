@@ -25,11 +25,15 @@ using BoSSS.Platform;
 using ilPSP.Utils;
 using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
+using MPI.Wrappers;
+using System.Collections;
+using System.Xml.Schema;
+using NUnit.Framework.Internal.Execution;
 
 namespace BoSSS.Foundation {
 
     /// <summary>
-    /// An orthonormal, modal basis $` \phi_{j,n} $` for a DG approximation of absolute degree <see cref="Degree"/>.
+    /// An orthonormal, modal basis $\phi_{j,n}$ for a DG approximation of absolute degree <see cref="Degree"/>.
     /// </summary>
     public partial class Basis {
 
@@ -241,13 +245,105 @@ namespace BoSSS.Foundation {
         /// the number of degrees-of-freedom per cell, 
         /// if <see cref="MinimalLength"/>==<see cref="MaximalLength"/>; otherwise an exception.
         /// </summary>
-        public int Length {
+        public virtual int Length {
             get {
                 if (MinimalLength != MaximalLength)
                     throw new NotSupportedException("not supported on variable-length basis objects");
 
                 return MaximalLength;
             }
+        }
+
+        /// <summary>
+        /// Returns the number of consecutive **logical*+ cells, starting at <paramref name="j0"/>, 
+        /// for which the number of basis functions (i.e., <see cref="GetLength(int)"/>) 
+        /// is the same as in cell <paramref name="j0"/>.
+        /// The search stops at the first cell with a different basis length or after <paramref name="Max"/> cells.
+        /// </summary>
+        /// <param name="j0">The starting cell index.</param>
+        /// <param name="Max">The maximum number of cells to check.</param>
+        /// <returns>
+        /// The number of consecutive cells (including <paramref name="j0"/>) with the same basis length as cell <paramref name="j0"/>.
+        /// </returns>
+        public int GetNoOfConsecutiveCellsWithSameLength(int j0, int Max) {
+            int j = j0 + 1;
+            int l0 = GetLength(j0);
+            while(j < j0 + Max) {
+                if(GetLength(j) != l0)
+                    break;
+                j++;
+            }
+            return j - j0;
+        }
+
+        /// <summary>
+        /// Returns the number of consecutive **geometrical** cells, starting at <paramref name="j0_Geom"/>, 
+        /// for which the number of basis functions (i.e., <see cref="GetLength(int)"/>) 
+        /// is the same as in cell <paramref name="j0_Geom"/>.
+        /// The search stops at the first cell with a different basis length or after <paramref name="Max"/> cells.
+        /// </summary>
+        /// <param name="j0_Geom">The starting cell index.</param>
+        /// <param name="Max">The maximum number of cells to check.</param>
+        /// <returns>
+        /// The number of consecutive cells (including <paramref name="j0_Geom"/>) with the same basis length as cell <paramref name="j0_Geom"/>.
+        /// </returns>
+        public int GetNoOfConsecutiveGeometricalCellsWithSameLength(int j0_Geom, int Max) {
+            int j_Geom = j0_Geom + 1;
+            int l0 = GetLength(this.GridDat.GetLogicalCellIndex(j0_Geom));
+            while(j_Geom < j0_Geom + Max) {
+                if(GetLength(this.GridDat.GetLogicalCellIndex(j_Geom)) != l0)
+                    break;
+                j_Geom++;
+            }
+            return j_Geom - j0_Geom;
+        }
+
+
+        /// <summary>
+        /// Returns a mask containing all cells where <see cref="GetLength"/> equals <paramref name="N"/>
+        /// </summary>
+        /// <param name="N">The exact basis length to filter for</param>
+        /// <returns>A cell mask for matching cells</returns>
+        public CellMask GetCellsWithLength(int N) {
+            // Early exit for impossible lengths
+            if (N < MinimalLength || N > MaximalLength)
+                return CellMask.GetEmptyMask(this.GridDat, MaskType.Logical);
+
+            // Prepare bitmask
+            int J = this.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+            BitArray mask = new BitArray(J, false);
+            
+            // Check each logical cell
+            for (int j = 0; j < J; j++) {
+                // Get reference element via first geometric cell
+                if (GetLength(j) == N)
+                    mask[j] = true;
+            }
+            
+            return new CellMask(this.GridDat, mask, MaskType.Logical);
+        }
+
+        /// <summary>
+        /// Returns all distinct lengths, i.e., number of basis elements per cell, for the entire mesh
+        /// </summary>
+        public ISet<int> GetAllUsedLengths() {
+            if(MaximalLength == MinimalLength)
+                return new HashSet<int>([ Length ]);
+
+            bool[] LengthUsed = new bool[MaximalLength + 1];
+            int J = this.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+            for(int j = 0; j < J; j++) {
+                LengthUsed[GetLength(j)] = true;
+            }
+
+            LengthUsed = LengthUsed.MPIOr();
+
+            var ret = new HashSet<int>();
+            for(int i = 0; i < LengthUsed.Length; i++) {
+                if( LengthUsed[i] )
+                    ret.Add(i);
+            }
+            return ret;
         }
 
 
@@ -268,7 +364,7 @@ namespace BoSSS.Foundation {
             if (Values.GetLength(1) == N)
                 return Values;
             else
-                return Values.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { Ns.NoOfNodes - 1, N - 1 });
+                return Values.ExtractSubArrayShallow([0, 0], [Ns.NoOfNodes - 1, N - 1]);
         }
 
 
@@ -290,24 +386,24 @@ namespace BoSSS.Foundation {
             if (Values.GetLength(1) == N)
                 return Values;
             else
-                return Values.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { Ns.NoOfNodes - 1, N - 1, D - 1 });
+                return Values.ExtractSubArrayShallow([0, 0, 0], [Ns.NoOfNodes - 1, N - 1, D - 1]);
         }
 
 
         /// <summary>
-        /// A vectorized evaluation for the 2nd derivative, i.e. the Hessian, in reference coordinates: \f$ \partial^2_{\vec{\xi}} \phi_n \f$.
+        /// A vectorized evaluation for the 2nd derivative, i.e. the Hessian, in reference coordinates: $\partial^2_{\underline{\xi}} \phi_n$.
         /// </summary>
         /// <param name="Ns"></param>
         /// <returns>
-        /// An array containing the value of the second derivatives of \f$ \phi_n \f$ at the nodes <paramref name="Ns"/>:
-        /// - 1st index: node index \f$ m \f$
-        /// - 2nd index: polynomial index \f$ n \f$
-        /// - 3rd index: spatial direction of 1st derivation, \f$ k \f$ 
-        /// - 4th index: spatial direction of 2nd derivation, \f$ l \f$ 
+        /// An array containing the value of the second derivatives of $\phi_n$ at the nodes <paramref name="Ns"/>:
+        /// - 1st index: node index $m$
+        /// - 2nd index: polynomial index $n$
+        /// - 3rd index: spatial direction of 1st derivation, $k$ 
+        /// - 4th index: spatial direction of 2nd derivation, $l$ 
         /// 
-        /// The \f$ (m,n,k,l) \f$-th entry is equal to 
-        /// \f$ \frac{\partial}{\partial \xi_k} \frac{\partial}{\partial \xi_l} \phi_n (\vec{\xi}_m) \f$,
-        /// where \f$ \vec{\xi}_m \f$ is the \f$ m \f$-th vector in the nodeset <paramref name="Ns"/>.
+        /// The $(m,n,k,l)$-th entry is equal to 
+        /// $\frac{\partial}{\partial \xi_k} \frac{\partial}{\partial \xi_l} \phi_n (\underline{\xi}_m)$,
+        /// where $\underline{\xi}_m$ is the $m$-th vector in the nodeset <paramref name="Ns"/>.
         /// </returns>        
         public MultidimensionalArray Evaluate2ndDeriv(NodeSet Ns) {
 
@@ -319,12 +415,12 @@ namespace BoSSS.Foundation {
             if (Values.GetLength(1) == N)
                 return Values;
             else
-                return Values.ExtractSubArrayShallow(new int[] { 0, 0, 0, 0 }, new int[] { Ns.NoOfNodes - 1, N - 1, D - 1, D - 1 });
+                return Values.ExtractSubArrayShallow([0, 0, 0, 0], [Ns.NoOfNodes - 1, N - 1, D - 1, D - 1]);
 
         }
 
         /// <summary>
-        /// A vectorized evaluation for the 2nd derivative, i.e. the Hessian, in physical coordinates: \f$ \partial^2_{\vec{x}} \phi_{j n} \f$.
+        /// A vectorized evaluation for the 2nd derivative, i.e. the Hessian, in physical coordinates: $\partial^2_{\underline{x}} \phi_{j n}$.
         /// </summary>
         /// <param name="Nodes"></param>
         /// <param name="j0">Index of first cell in the vector</param>
@@ -337,9 +433,7 @@ namespace BoSSS.Foundation {
         ///  - 5th index: spatial direction of 2nd derivation, <em>l</em>
         ///  
         /// So, the entry [m,n,k,l] =
-        /// \f$ 
-        /// \frac{\partial}{\partial x_k} \frac{\partial}{\partial x_l} \phi_n (\vec{x}_m)
-        ///  \f$, where \f$ \vec{x}_m \f$ is the
+        /// $\frac{\partial}{\partial x_k} \frac{\partial}{\partial x_l} \phi_n (\underline{x}_m)$, where $\underline{x}_m$ is the
         /// <em>m</em>-th vector in the nodeset #<paramref name="Nodes"/>.
         /// </returns>
         public MultidimensionalArray CellEval2ndDeriv(NodeSet Nodes, int j0, int Len) {
@@ -352,7 +446,7 @@ namespace BoSSS.Foundation {
             if (Values.GetLength(2) == N)
                 return Values;
             else
-                return Values.ExtractSubArrayShallow(new int[] { 0, 0, 0, 0, 0 }, new int[] { Len - 1, Nodes.NoOfNodes - 1, N - 1, D - 1, D - 1 });
+                return Values.ExtractSubArrayShallow([0, 0, 0, 0, 0], [Len - 1, Nodes.NoOfNodes - 1, N - 1, D - 1, D - 1]);
 
         }
 
@@ -373,7 +467,7 @@ namespace BoSSS.Foundation {
                 int M = ret.GetLength(1);
                 int N = ret.GetLength(2);
 
-                ret = ret.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { Len - 1, M - 1, N - 1 });
+                ret = ret.ExtractSubArrayShallow([0, 0, 0], [Len - 1, M - 1, N - 1]);
             }
             return ret;
         }
@@ -389,7 +483,7 @@ namespace BoSSS.Foundation {
         /// - 2nd index: node index
         /// - 3rd index: polynomial index
         /// </returns>
-        public virtual Tuple<MultidimensionalArray, MultidimensionalArray> EdgeEval(NodeSet nodes, int e0, int Len) {
+        public virtual (MultidimensionalArray INval, MultidimensionalArray OUTvl) EdgeEval(NodeSet nodes, int e0, int Len) {
             var ret = this.GridDat.ChefBasis.CellBasisValues.GetValue_EdgeDV(nodes, e0, Len, this.Degree);
             Debug.Assert(Len == ret.Item1.GetLength(0));
             Debug.Assert(nodes.NoOfNodes == ret.Item1.GetLength(1));
@@ -401,9 +495,9 @@ namespace BoSSS.Foundation {
                 int N = ret.Item1.GetLength(2);
 
 
-                ret = new Tuple<MultidimensionalArray, MultidimensionalArray>(
-                    ret.Item1.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { Len - 1, M - 1, N - 1 }),
-                    ret.Item2.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { Len - 1, M - 1, N - 1 }));
+                ret = (
+                    ret.Item1.ExtractSubArrayShallow([0, 0, 0], [Len - 1, M - 1, N - 1]),
+                    ret.Item2.ExtractSubArrayShallow([0, 0, 0], [Len - 1, M - 1, N - 1]));
             }
             return ret;
         }
@@ -429,7 +523,7 @@ namespace BoSSS.Foundation {
                 int N = ret.GetLength(2);
                 int D = ret.GetLength(3);
 
-                ret = ret.ExtractSubArrayShallow(new int[] { 0, 0, 0, 0 }, new int[] { Len - 1, M - 1, N - 1, D - 1 });
+                ret = ret.ExtractSubArrayShallow([0, 0, 0, 0], [Len - 1, M - 1, N - 1, D - 1]);
             }
             return ret;
         }
@@ -447,16 +541,16 @@ namespace BoSSS.Foundation {
         /// - 3rd index: polynomial index
         /// - 4th index: spatial dimension
         /// </returns>
-        public virtual Tuple<MultidimensionalArray, MultidimensionalArray> EdgeEvalGradient(NodeSet NS, int j0, int Len) {
+        public virtual (MultidimensionalArray INval, MultidimensionalArray OUTvl) EdgeEvalGradient(NodeSet NS, int j0, int Len) {
             var ret = this.GridDat.ChefBasis.CellBasisGradientValues.GetValue_EdgeDV(NS, j0, Len, this.Degree);
             if (ret.Item1.GetLength(0) != Len) {
                 int M = ret.Item1.GetLength(1);
                 int N = ret.Item1.GetLength(2);
                 int D = ret.Item1.GetLength(3);
 
-                ret = new Tuple<MultidimensionalArray, MultidimensionalArray>(
-                    ret.Item1.ExtractSubArrayShallow(new int[] { 0, 0, 0, 0 }, new int[] { Len - 1, M - 1, N - 1, D - 1 }),
-                    ret.Item2.ExtractSubArrayShallow(new int[] { 0, 0, 0, 0 }, new int[] { Len - 1, M - 1, N - 1, D - 1 }));
+                ret = (
+                    ret.Item1.ExtractSubArrayShallow([0, 0, 0, 0], [Len - 1, M - 1, N - 1, D - 1]),
+                    ret.Item2.ExtractSubArrayShallow([0, 0, 0, 0], [Len - 1, M - 1, N - 1, D - 1]));
             }
             return ret;
         }

@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <OutputType>Library</OutputType>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <UseVSHostingProcess>true</UseVSHostingProcess>
@@ -39,6 +39,9 @@
   <ItemGroup>
     <Compile Remove="ExtVelSolver_FastMarching.cs" />
     <Compile Remove="FourierLevelSet\FLS_Timestepper_AB.cs" />
-    <Compile Remove="SemiLagrangianLevelSet\Properties\AssemblyInfo.cs" />
+	<!--<Compile Remove="SemiLagrangianLevelSet\Properties\AssemblyInfo.cs" />-->
+  </ItemGroup>
+  <ItemGroup>
+    <!--PackageReference Include="System.Drawing.Common" Version="5.0.3" /-->
   </ItemGroup>
 </Project>

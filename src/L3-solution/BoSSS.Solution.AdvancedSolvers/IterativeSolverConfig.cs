@@ -32,14 +32,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public double ConvergenceCriterion = 1e-10;
 
 
-        /// <summary>
-        /// Termination criterion based on the threshold <see cref="ConvergenceCriterion"/>.
-        /// </summary>
-        /// <returns>
-        /// - 1st item: true: solver should continue; false: terminate;
-        /// - 2nd item: if first item true, either success (true, i.e. solver converged successfully) or fail (false, e.g. reached the <see cref="MaxSolverIterations"/>);
-        /// </returns>
-        public (bool bNotTerminate, bool bSuccess) DefaultTermination(int iter, double R0_l2, double R_l2) {
+		/// <summary>
+		/// Machine epsilon for the iterative solver. Used as a tolerance value for the convergence criterion.
+		/// </summary>
+		[DataMember]
+        public double MachineEpsilon = 2.2204460492503131e-16 * 1000;   // DoubleMachineEpsilon 2⁻⁵² * 1000
+
+		/// <summary>
+		/// Termination criterion based on the threshold <see cref="ConvergenceCriterion"/>.
+		/// </summary>
+		/// <returns>
+		/// - 1st item: true: solver should continue; false: terminate;
+		/// - 2nd item: if first item true, either success (true, i.e. solver converged successfully) or fail (false, e.g. reached the <see cref="MaxSolverIterations"/>);
+		/// </returns>
+		public (bool bNotTerminate, bool bSuccess) DefaultTermination(int iter, double R0_l2, double R_l2) {
             if(iter <= MinSolverIterations)
                 return (true, false); // keep running
 
@@ -49,7 +55,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if(iter > MaxSolverIterations)
                 return (false, false); // fail
 
-            return (true, false); // keep running
+            if (R0_l2 < MachineEpsilon || R_l2 < MachineEpsilon)
+                return (false, true); // already at the machine precision, so return success
+
+			return (true, false); // keep running
         }
 
         /// <summary>

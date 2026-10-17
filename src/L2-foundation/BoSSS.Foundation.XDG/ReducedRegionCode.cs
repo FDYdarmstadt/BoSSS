@@ -121,6 +121,37 @@ namespace BoSSS.Foundation.XDG {
             ret.rrc = r;
             return ret;
         }
+
+        /// <summary>
+        /// Set region code of levelSet to +far or -far
+        /// </summary>
+        /// <param name="levelSetIndex"> index of levelset</param>
+        /// <param name="sign"> true: +far, false: -far</param>
+        /// <param name="code"></param>
+        /// <returns></returns>
+        static public ReducedRegionCode Set2Far(int levelSetIndex, bool sign, ReducedRegionCode code) {
+            int r = code.rrc;
+            
+            for(int i = 0; i < levelSetIndex; ++i) {
+                r /= 3; 
+            }
+            int a = r % 3;
+
+            int b;
+            if(sign) {
+                b = 2;
+            } else {
+                b = 1;
+            }
+
+            for(int i = 0; i < levelSetIndex; ++i) {
+                a *= 3;
+                b *= 3;
+            }
+            r = code.rrc - a + b;
+            code.rrc = r;
+            return code;
+        }
     }
 
 

@@ -24,6 +24,7 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
+    [Serializable]
     public abstract class AMRLevelIndicatorWithLevelset : AMRLevelIndicator {
 
 
@@ -47,9 +48,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         }
 
         public override bool Equals(object obj) {
-            if (!base.Equals(obj))
+            if(!base.Equals(obj))
                 return false;
-            
+
             return true;
         }
 

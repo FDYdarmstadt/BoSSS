@@ -17,12 +17,8 @@ limitations under the License.
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using BoSSS.Foundation.Caching;
-using BoSSS.Platform;
 using ilPSP;
-using ilPSP.Utils;
-using BoSSS.Foundation.Grid.RefElements;
 
 namespace BoSSS.Foundation.Grid {
 
@@ -160,102 +156,63 @@ namespace BoSSS.Foundation.Grid {
         SortedDictionary<int, PolynomialList[]> m_PolynomialLists = new SortedDictionary<int, PolynomialList[]>();
 
         /// <summary>
-        /// Returns the orthonormal approximation polynomials \f$ \phi_n \f$ up to a specific degree.
+        /// Returns the orthonormal approximation polynomials $\phi_n$ up to a specific degree.
         /// </summary>
         /// <returns>
         /// A polynomial list for each involved reference element
         /// - index: reference element, correlates with <see cref="IGeometricalCellsData.RefElements"/>
         /// </returns>
         public PolynomialList[] GetOrthonormalPolynomials(int Degree) {
-            PolynomialList[] R;
-            if(!this.m_PolynomialLists.TryGetValue(Degree, out R)) {
-                var Krefs = this.m_Owner.iGeomCells.RefElements;
-                R = new PolynomialList[Krefs.Length];
-                for(int iKref = 0; iKref < Krefs.Length; iKref++) {
-                    R[iKref] = Krefs[iKref].GetOrthonormalPolynomials(Degree);
+            lock(m_PolynomialLists) {
+                PolynomialList[] R;
+                if(!this.m_PolynomialLists.TryGetValue(Degree, out R)) {
+                    var Krefs = this.m_Owner.iGeomCells.RefElements;
+                    R = new PolynomialList[Krefs.Length];
+                    for(int iKref = 0; iKref < Krefs.Length; iKref++) {
+                        R[iKref] = Krefs[iKref].GetOrthonormalPolynomials(Degree);
+                    }
+                    this.m_PolynomialLists.Add(Degree, R);
                 }
-                this.m_PolynomialLists.Add(Degree, R);
+                return R;
             }
-            return R;
         }
 
         public PolynomialList[] SetCustomPolynomials(int Degree, PolynomialList[] P) {
-            PolynomialList[] R;
-            if (!this.m_PolynomialLists.TryGetValue(Degree, out R)) {
-                var Krefs = this.m_Owner.iGeomCells.RefElements;
-                R = P;                
-                this.m_PolynomialLists.Add(Degree, R);
+            lock(m_PolynomialLists) {
+                PolynomialList[] R;
+                if(!this.m_PolynomialLists.TryGetValue(Degree, out R)) {
+                    var Krefs = this.m_Owner.iGeomCells.RefElements;
+                    R = P;
+                    this.m_PolynomialLists.Add(Degree, R);
+                }
+                return R;
             }
-            return R;
         }
 
         SortedDictionary<int, PolynomialList[,]> m_Polynomial1stDerivLists = new SortedDictionary<int, PolynomialList[,]>();
 
         /// <summary>
         /// Returns the 1st derivatives of the orthonormal approximation polynomials, 
-        /// i.e. \f$ \nabla_{\vec{\xi}} \phi_n \f$ up to a specific degree.
+        /// i.e. $\nabla_{\underline{\xi}} \phi_n$ up to a specific degree.
         /// </summary>
         /// <returns>
         /// - 1st index: reference element, correlates with <see cref="IGeometricalCellsData.RefElements"/>
         /// - 2nd index: spatial direction of derivative
         /// </returns>
         public PolynomialList[,] GetOrthonormalPolynomials1stDeriv(int Degree) {
-            PolynomialList[,] R;
-            if(!this.m_Polynomial1stDerivLists.TryGetValue(Degree, out R)) {
-                var Krefs = this.m_Owner.iGeomCells.RefElements;
-                int D = this.m_Owner.SpatialDimension;
+            lock(m_PolynomialLists) { // if we lock `m_Polynomial1stDerivLists`, and in subsequence `m_PolynomialLists`, this maybe would cause a deadlock?
+                PolynomialList[,] R;
+                if(!this.m_Polynomial1stDerivLists.TryGetValue(Degree, out R)) {
+                    var Krefs = this.m_Owner.iGeomCells.RefElements;
+                    int D = this.m_Owner.SpatialDimension;
 
-                R = new PolynomialList[Krefs.Length, D];
-                PolynomialList[] Polys = this.GetOrthonormalPolynomials(Degree);
+                    R = new PolynomialList[Krefs.Length, D];
+                    PolynomialList[] Polys = this.GetOrthonormalPolynomials(Degree);
 
-                int[] DerivExp = new int[D];
+                    int[] DerivExp = new int[D];
 
-                for(int d = 0; d < D; d++) {
-                    DerivExp[d] = 1;
-                    for(int iKref = 0; iKref < Krefs.Length; iKref++) {
-                        int N = Polys[iKref].Count;
-                        Polynomial[] tmp = new Polynomial[N];
-                        for(int n = 0; n < N; n++) {
-                            tmp[n] = Polys[iKref][n].Derive(DerivExp);
-                        }
-
-                        R[iKref, d] = new PolynomialList(tmp);
-                    }
-                    DerivExp[d] = 0;
-                }
-                this.m_Polynomial1stDerivLists.Add(Degree, R);
-            }
-            return R;
-        }
-
-        SortedDictionary<int, PolynomialList[,,]> m_Polynomial2ndDerivLists = new SortedDictionary<int, PolynomialList[,,]>();
-
-
-        /// <summary>
-        /// Returns the 2nd derivatives of the orthonormal approximation polynomials, 
-        /// i.e. \f$ \nabla_{\vec{\xi}} \phi_n \f$ up to a specific degree.
-        /// </summary>
-        /// <returns>
-        /// - 1st index: reference element, correlates with <see cref="IGeometricalCellsData.RefElements"/>
-        /// - 2nd index: spatial direction of first derivative
-        /// - 3rd index: spatial direction of second derivative
-        /// </returns>
-        public PolynomialList[,,] GetOrthonormalPolynomials2ndDeriv(int Degree) {
-            PolynomialList[,,] R;
-            if(!this.m_Polynomial2ndDerivLists.TryGetValue(Degree, out R)) {
-                var Krefs = this.m_Owner.iGeomCells.RefElements;
-                int D = this.m_Owner.SpatialDimension;
-
-                R = new PolynomialList[Krefs.Length, D, D];
-                PolynomialList[] Polys = this.GetOrthonormalPolynomials(Degree);
-
-                int[] DerivExp = new int[D];
-
-                for(int d1 = 0; d1 < D; d1++) {
-                    DerivExp[d1]++;
-                    for(int d2 = 0; d2 < D; d2++) {
-                        DerivExp[d2]++;
-
+                    for(int d = 0; d < D; d++) {
+                        DerivExp[d] = 1;
                         for(int iKref = 0; iKref < Krefs.Length; iKref++) {
                             int N = Polys[iKref].Count;
                             Polynomial[] tmp = new Polynomial[N];
@@ -263,34 +220,81 @@ namespace BoSSS.Foundation.Grid {
                                 tmp[n] = Polys[iKref][n].Derive(DerivExp);
                             }
 
-                            R[iKref, d1, d2] = new PolynomialList(tmp);
+                            R[iKref, d] = new PolynomialList(tmp);
                         }
-                        DerivExp[d2]--;
+                        DerivExp[d] = 0;
                     }
-                    DerivExp[d1]--;
+                    this.m_Polynomial1stDerivLists.Add(Degree, R);
                 }
+                return R;
+            }
+        }
+
+        SortedDictionary<int, PolynomialList[,,]> m_Polynomial2ndDerivLists = new SortedDictionary<int, PolynomialList[,,]>();
+
+
+        /// <summary>
+        /// Returns the 2nd derivatives of the orthonormal approximation polynomials, 
+        /// i.e. $\nabla_{\underline{\xi}} \phi_n$ up to a specific degree.
+        /// </summary>
+        /// <returns>
+        /// - 1st index: reference element, correlates with <see cref="IGeometricalCellsData.RefElements"/>
+        /// - 2nd index: spatial direction of first derivative
+        /// - 3rd index: spatial direction of second derivative
+        /// </returns>
+        public PolynomialList[,,] GetOrthonormalPolynomials2ndDeriv(int Degree) {
+            lock(m_PolynomialLists) { // if we lock `m_Polynomial2ndDerivLists`, and in subsequence `m_PolynomialLists`, this maybe would cause a deadlock?
+                PolynomialList[,,] R;
+                if(!this.m_Polynomial2ndDerivLists.TryGetValue(Degree, out R)) {
+                    var Krefs = this.m_Owner.iGeomCells.RefElements;
+                    int D = this.m_Owner.SpatialDimension;
+
+                    R = new PolynomialList[Krefs.Length, D, D];
+                    PolynomialList[] Polys = this.GetOrthonormalPolynomials(Degree);
+
+                    int[] DerivExp = new int[D];
+
+                    for(int d1 = 0; d1 < D; d1++) {
+                        DerivExp[d1]++;
+                        for(int d2 = 0; d2 < D; d2++) {
+                            DerivExp[d2]++;
+
+                            for(int iKref = 0; iKref < Krefs.Length; iKref++) {
+                                int N = Polys[iKref].Count;
+                                Polynomial[] tmp = new Polynomial[N];
+                                for(int n = 0; n < N; n++) {
+                                    tmp[n] = Polys[iKref][n].Derive(DerivExp);
+                                }
+
+                                R[iKref, d1, d2] = new PolynomialList(tmp);
+                            }
+                            DerivExp[d2]--;
+                        }
+                        DerivExp[d1]--;
+                    }
 
 #if DEBUG
-                for(int d1 = 0; d1 < D; d1++) {
-                    for(int d2 = d1 + 1; d2 < D; d2++) {
-                        for(int iKref = 0; iKref < Krefs.Length; iKref++) {
-                            int N = Polys[iKref].Count;
+                    for(int d1 = 0; d1 < D; d1++) {
+                        for(int d2 = d1 + 1; d2 < D; d2++) {
+                            for(int iKref = 0; iKref < Krefs.Length; iKref++) {
+                                int N = Polys[iKref].Count;
 
-                            for(int n = 0; n < N; n++) {
-                                Polynomial P_d1d2 = R[iKref, d1, d2][n];
-                                Polynomial P_d2d1 = R[iKref, d2, d1][n];
+                                for(int n = 0; n < N; n++) {
+                                    Polynomial P_d1d2 = R[iKref, d1, d2][n];
+                                    Polynomial P_d2d1 = R[iKref, d2, d1][n];
 
-                                Debug.Assert(P_d1d2.Equals(P_d2d1), "Hessian seems unsymmetric.");
+                                    Debug.Assert(P_d1d2.Equals(P_d2d1), "Hessian seems unsymmetric.");
+                                }
                             }
                         }
                     }
-                }
 #endif
 
 
-                this.m_Polynomial2ndDerivLists.Add(Degree, R);
+                    this.m_Polynomial2ndDerivLists.Add(Degree, R);
+                }
+                return R;
             }
-            return R;
         }
 
 
@@ -312,7 +316,7 @@ namespace BoSSS.Foundation.Grid {
 
 
         /// <summary>
-        /// Cached evaluation of basis polynomials \f$ \phi_n \f$ in reference space.
+        /// Cached evaluation of basis polynomials $\phi_n$ in reference space.
         /// </summary>
         public CacheLogic_NsP BasisValues {
             get;
@@ -331,7 +335,7 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Cached evaluation of basis polynomials gradients \f$ \nabla_{\vec{xi}} \phi_n \f$ in reference space.
+        /// Cached evaluation of basis polynomials gradients $\nabla_{\underline{xi}} \phi_n$ in reference space.
         /// </summary>
         public CacheLogic_NsP BasisGradientValues {
             get;
@@ -358,7 +362,7 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Cached evaluation of basis polynomials Hessian \f$ \partial_{\vec{xi}}^2 \phi_n \f$ in reference space.
+        /// Cached evaluation of basis polynomials Hessian $\partial_{\underline{xi}}^2 \phi_n$ in reference space.
         /// </summary>
         public CacheLogic_NsP BasisHessianValues {
             get;
@@ -399,7 +403,7 @@ namespace BoSSS.Foundation.Grid {
             int N = output.GetLength(2);
             Debug.Assert(BasisValRef.GetLength(1) >= N);
             if(BasisValRef.GetLength(1) > N)
-                BasisValRef = BasisValRef.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { NodeSet.NoOfNodes - 1, N - 1 });
+                BasisValRef = BasisValRef.ExtractSubArrayShallow([0, 0], [NodeSet.NoOfNodes - 1, N - 1]);
 
             bool AffineLinear = m_Owner.iGeomCells.IsCellAffineLinear(j0);
 #if DEBUG
@@ -432,14 +436,14 @@ namespace BoSSS.Foundation.Grid {
 
                 MultidimensionalArray Trafo = this.OrthonormalizationTrafo.GetValue_Cell(j0, Len, degree);
                 if(Trafo.GetLength(1) != N)
-                    Trafo = Trafo.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { Len - 1, N - 1, N - 1 });
+                    Trafo = Trafo.ExtractSubArrayShallow([0, 0, 0], [Len - 1, N - 1, N - 1]);
 
                 output.Multiply(1.0, BasisValRef, Trafo, 0.0, "jkn", "km", "jmn");
             }
         }
 
         /// <summary>
-        /// Values of polynomials in cells,  \f$ \phi_{j n} \f$
+        /// Values of polynomials in cells,  $\phi_{j n}$
         /// </summary>
         public Caching.CacheLogicImpl_CNsP CellBasisValues {
             get;
@@ -447,7 +451,7 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Values of polynomials gradients in cells, \f$ \nabla_{\vec{x}} \phi_{j n} \f$
+        /// Values of polynomials gradients in cells, $\nabla_{\underline{x}} \phi_{j n}$
         /// </summary>
         public Caching.CacheLogicImpl_CNsP CellBasisGradientValues {
             get;
@@ -469,7 +473,7 @@ namespace BoSSS.Foundation.Grid {
 
             Debug.Assert(resRef.GetLength(1) >= N);
             if(resRef.GetLength(1) > N)
-                resRef = resRef.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { NodeSet.NoOfNodes - 1, N - 1, D - 1 });
+                resRef = resRef.ExtractSubArrayShallow([0, 0, 0], [NodeSet.NoOfNodes - 1, N - 1, D - 1]);
 
 
             bool AffineLinear = m_Owner.iGeomCells.IsCellAffineLinear(j0);
@@ -500,7 +504,7 @@ namespace BoSSS.Foundation.Grid {
             } else {
                 var weights = this.OrthonormalizationTrafo.GetValue_Cell(j0, Len, degree);
                 if(weights.GetLength(1) != N)
-                    weights = weights.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { Len - 1, N - 1, N - 1 });
+                    weights = weights.ExtractSubArrayShallow([0, 0, 0], [Len - 1, N - 1, N - 1]);
 
                 MultidimensionalArray JacInverse = this.m_Owner.InverseJacobian.GetValue_Cell(NodeSet, j0, Len);
                 output.Multiply(1.0, JacInverse, weights, resRef, 0.0, "jknd", "jked", "jmn", "kme");
@@ -508,7 +512,7 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Values of polynomials gradients in cells, \f$ \partial^2_{\vec{x}} \phi_{j n} \f$
+        /// Values of polynomials gradients in cells, $\partial^2_{\underline{x}} \phi_{j n}$
         /// </summary>
         public Caching.CacheLogicImpl_CNsP CellBasisHessianValues {
             get;
@@ -537,7 +541,7 @@ namespace BoSSS.Foundation.Grid {
             Debug.Assert(gbv.GetLength(2) == D);
             Debug.Assert(gbv.GetLength(3) == D);
             if(gbv.GetLength(1) > N)
-                gbv = gbv.ExtractSubArrayShallow(new int[] { 0, 0, 0, 0 }, new int[] { NodeSet.NoOfNodes - 1, N - 1, D - 1, D - 1 });
+                gbv = gbv.ExtractSubArrayShallow([0, 0, 0, 0], [NodeSet.NoOfNodes - 1, N - 1, D - 1, D - 1]);
 
             bool AffineLinear = m_Owner.iGeomCells.IsCellAffineLinear(j0);
 #if DEBUG
@@ -590,7 +594,7 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Evaluation of the reference basis values \f$ \phi_n \f$ for edges.
+        /// Evaluation of the reference basis values $\phi_n$ for edges.
         /// </summary>
         public Caching.BasisEdgeValuesCacheLogic EdgeEval {
             get;
@@ -598,7 +602,7 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Evaluation of the reference basis gradient values \f$ \nabla_{\vec{xi}} \phi_n \f$ for edges.
+        /// Evaluation of the reference basis gradient values $\nabla_{\underline{xi}} \phi_n$ for edges.
         /// </summary>
         public Caching.BasisEdgeValuesCacheLogic EdgeGradientEval {
             get;

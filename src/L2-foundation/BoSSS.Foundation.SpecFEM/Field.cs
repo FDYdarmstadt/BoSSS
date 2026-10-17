@@ -54,7 +54,7 @@ namespace BoSSS.Foundation.SpecFEM {
         MultidimensionalArray m_Coordinates;
 
         /// <summary>
-        /// Coordinates with respect to the nodal basis;<br/>
+        /// Coordinates with respect to the nodal basis;
         ///  - 1st index: node index.
         /// </summary>
         public MultidimensionalArray Coordinates {

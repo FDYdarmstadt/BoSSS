@@ -61,6 +61,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// <summary>
         /// used to handle optional procedures after level set movement, e.g. reinitialization
         /// same footprint as <see cref="MovePhaseInterface(DualLevelSet, double, double, bool, IReadOnlyDictionary{string, DGField}, IReadOnlyDictionary{string, DGField})">
+        /// Set to null if not needed
         /// </summary>
         /// <param name="levelSet"></param>
         /// <param name="time"></param>
@@ -70,7 +71,21 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// sequence determined by <see cref="VariableNames"/> (maybe)
         /// </param>
         /// <param name="ParameterVarFields"></param>
-        Action<DualLevelSet,double,double,bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>> AfterMovePhaseInterface{ get; }
+        /// <returns>
+        /// - true: the level-set-field has been changed
+        /// - false: the level-set-field remains unchanged
+        /// </returns>
+        bool AfterMovePhaseInterface(
+            DualLevelSet levelSet,
+            double time,
+            double dt,
+            bool incremental,
+            IReadOnlyDictionary<string, DGField> DomainVarFields,
+            IReadOnlyDictionary<string, DGField> ParameterVarFields);
+
+
+
+        //Func<DualLevelSet,double,double,bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>, bool> AfterMovePhaseInterface{ get; }
 
     }
 

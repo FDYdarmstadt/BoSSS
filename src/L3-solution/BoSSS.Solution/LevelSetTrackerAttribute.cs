@@ -46,82 +46,11 @@ namespace BoSSS.Solution {
         /// </summary>
         internal int m_NearCellWidth;
 
-
-        /// <summary>
-        /// computes the species table array from the string that was provided in the constructor;
-        /// </summary>
-        internal Array GetSpeciesTable(int dim) {
-
-            int[] len = new int[dim];
-            for(int d = 0; d < dim; d++)
-                len[d] = 2;
-
-            Array speciestable = Array.CreateInstance(typeof(string), len);
-            Array touch = Array.CreateInstance(typeof(bool), len);
-
-            try {
-                string[] parts = m_SpeciesTable.Split(new char[] { '\n', '\t', ' ', '\r' }, StringSplitOptions.RemoveEmptyEntries);
-
-                int touchcnt = 0;
-                foreach(var p in parts) {
-                    string[] code_N_name = p.Split(new char[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
-                    if(code_N_name.Length != 2)
-                        throw new Exception();
-
-                    if(code_N_name[0].Length != dim)
-                        throw new Exception();
-
-                    char[] signs = code_N_name[0].ToCharArray();
-
-
-                    SetRec(dim, signs, code_N_name[1], new int[dim], 0, speciestable, touch, ref touchcnt);
-                }
-
-
-                if(touchcnt != Math.Round(Math.Pow(2, dim)))
-                    throw new Exception();
-            } catch(Exception) {
-                throw new ApplicationException("error in species table");
-            }
-
-
-            return speciestable;
-
+        internal Array GetSpeciesTable(int NoOfLevelSets) {
+            return BoSSS.Foundation.XDG.LevelSetTracker.GetSpeciesTable(m_SpeciesTable, NoOfLevelSets);
         }
 
-        static void SetRec(int D, char[] signs, string SpecName, int[] idx, int d, Array speciesTable, Array touch, ref int touchcnt) {
-            if(d == D) {
-                if((bool)(touch.GetValue(idx)))
-                    throw new Exception();
 
-                touch.SetValue(true, idx);
-                speciesTable.SetValue(SpecName, idx);
-                touchcnt++;
-
-            } else {
-                switch(signs[d]) {
-                    case '-':
-                    idx[d] = 0;
-                    SetRec(D, signs, SpecName, idx, d + 1, speciesTable, touch, ref touchcnt);
-                    return;
-
-                    case '+':
-                    idx[d] = 1;
-                    SetRec(D, signs, SpecName, idx, d + 1, speciesTable, touch, ref touchcnt);
-                    return;
-
-                    case '*':
-                    idx[d] = 0;
-                    SetRec(D, signs, SpecName, idx, d + 1, speciesTable, touch, ref touchcnt);
-                    idx[d] = 1;
-                    SetRec(D, signs, SpecName, idx, d + 1, speciesTable, touch, ref touchcnt);
-                    return;
-
-
-                    default: throw new Exception();
-                }
-            }
-        }
     }
 
 }

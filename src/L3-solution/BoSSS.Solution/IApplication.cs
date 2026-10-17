@@ -125,7 +125,7 @@ namespace BoSSS.Solution {
         /// This method should be overridden to support automatic numerical stability analysis of the PDE's operator
         /// </summary>
         /// <returns>
-        /// Pairs of property name and value, e.g. ConditionNumber and the respective value of the operators Jacobian matrix condition number.
+        /// Pairs of property name and value, e.g., ConditionNumber and the respective value of the operators Jacobian matrix condition number.
         /// </returns>
         IDictionary<string, double> OperatorAnalysis(OperatorAnalysisConfig config);
 
@@ -151,7 +151,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// Visualization option for stencil condition number <see cref="CalculateStencilConditionNumbers"/>
         /// </summary>
-        public bool PlotStencilConditionNumbers = false;
+        public bool PlotStencilConditionNumbers = true;
 
         /// <summary>
         /// Global condition number using MATLAB: very expensive, much more than actual solution of the system.

@@ -43,7 +43,7 @@ namespace CNS.Source {
 
         /// <summary>
         /// Evaluates the source term according to
-        /// \f$ \rho / \text{Fr}^2\f$ 
+        /// $\rho / \text{Fr}^2$ 
         /// </summary>
         /// <param name="time"></param>
         /// <param name="x"></param>

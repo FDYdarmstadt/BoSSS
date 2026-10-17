@@ -286,18 +286,18 @@ namespace BoSSS.Solution.LevelSetTools {
         }
 
         /// <summary>
-        /// Original points/nodes (i.e. the input data) in global coordinates <br/>
-        ///  - 1st index: subgrid cell index, into subgrid <see cref="sgrd"/> <br/>
-        ///  - 2nd index: node index <br/>
+        /// Original points/nodes (i.e. the input data) in global coordinates 
+        ///  - 1st index: subgrid cell index, into subgrid <see cref="sgrd"/> 
+        ///  - 2nd index: node index 
         ///  - 3rd index: spatial dimension
         /// </summary>
         public MultidimensionalArray X_global;
 
 
         /// <summary>
-        /// Distance of original points/nodes (<see cref="X_global"/>) to zero-level-set surface;<br/>
-        ///  - 1st index: subgrid cell index, correlates with 1st index of <see cref="X_global"/><br/>
-        ///  - 2nd index: node index, correlates with 2nd index of <see cref="X_global"/> <br/>
+        /// Distance of original points/nodes (<see cref="X_global"/>) to zero-level-set surface;
+        ///  - 1st index: subgrid cell index, correlates with 1st index of <see cref="X_global"/>
+        ///  - 2nd index: node index, correlates with 2nd index of <see cref="X_global"/> 
         /// </summary>
         public MultidimensionalArray Distance {
             get {
@@ -396,8 +396,7 @@ namespace BoSSS.Solution.LevelSetTools {
         /// <summary>
         /// Closest points/nodes (for each original point <see cref="X_global"/>) in global coordinates; note that the ordering 
         /// does not correlate with ordering in <see cref="X_global"/>. For sorting according to original ordering, see <see cref="X0_global_Resorted"/>.
-        /// <br/>
-        ///  - 1st index: node index (over all cells) <br/>
+        ///  - 1st index: node index (over all cells) 
         ///  - 2nd index: spatial dimension 
         /// </summary>
         public MultidimensionalArray X0_global;
@@ -405,11 +404,11 @@ namespace BoSSS.Solution.LevelSetTools {
         /// <summary>
         /// An error measure for the closest points defined as 
         /// \f[
-        ///   \| \varphi(\vec{x}_0) \| 
+        ///   \| \varphi(\underline{x}_0) \| 
         ///      + 
         ///   \| \|
-        ///   \frac{ \langle \vec{x} - \vec{x}_0 , ( \nabla \varphi ) ( \vec{x}_0 ) \rangle  }
-        ///        { \| \vec{x} - \vec{x}_0 \| \| ( \nabla \varphi ) ( \vec{x}_0 ) \| }
+        ///   \frac{ \langle \underline{x} - \underline{x}_0 , ( \nabla \varphi ) ( \underline{x}_0 ) \rangle  }
+        ///        { \| \underline{x} - \underline{x}_0 \| \| ( \nabla \varphi ) ( \underline{x}_0 ) \| }
         ///   \| - 1 \|
         /// \f]
         /// The ordering correlates with <see cref="X0_global"/>.
@@ -791,8 +790,6 @@ namespace BoSSS.Solution.LevelSetTools {
                             // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-
-
                             _GridData.TransformGlobal2Local(x0_ip1_Global, X0_loc, jCell, null); // transform to local
                             NodeSet _X0_loc2 = new NodeSet(Kref, X0_loc, false);
                             LevSet.Evaluate(jCell, 1, _X0_loc2, LevSetValues2, 0, 0.0);
@@ -891,8 +888,6 @@ namespace BoSSS.Solution.LevelSetTools {
                                     //  X(alpha) = X0 + (X1-X0)*alpha;
                                     // Annahme: die Normale verhält in X(alpha) = N0 + (N1-N0)*alpha
                                     // dann soll q(alpha) := (Y - X(alpha))*N(alpha) minimiert werden.
-
-
 
                                     if(nenner.Abs() <= 1.0e-4 * zähler.Abs()) {
                                         alpha = 0.5;
@@ -1159,7 +1154,7 @@ namespace BoSSS.Solution.LevelSetTools {
                                         jCellNeigh = Neighs[ii];
 
                                     int jSubNeigh = jCell_to_jSub[jCellNeigh];
-                                    if(jSubNeigh < 0)
+                                    if(jSubNeigh < 0 || jSubNeigh >= JSUB)
                                         continue;
 
                                     int I0neigh = I[jSubNeigh];

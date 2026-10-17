@@ -9,6 +9,7 @@ using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XheatCommon;
@@ -23,7 +24,7 @@ using System.Linq;
 
 namespace BoSSS.Application.XNSEC {
     /// <summary>
-    /// Low Mach number flow solver. Supports temperature dependeant density and transport parameters.
+    /// Low Mach number flow solver. Supports temperature dependent density and transport parameters.
     /// The mixture fraction solver <see cref="XNSEC_MixtureFraction"/> can be used for finding estimates for combustion applications
     /// </summary>
     public partial class XNSEC : SolverWithLevelSetUpdater<XNSEC_Control> {
@@ -35,27 +36,9 @@ namespace BoSSS.Application.XNSEC {
             //-n 4 ./XNSEC.exe -c "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.BackwardFacingStep()"
 
             //InitMPI();
-            //BoSSS.Application.XNSEC.NUnitTest.ManufacturedSolutionLowMachCombustionTest();
-            //BoSSS.Application.XNSEC.NUnitTest.ViscosityJumpTest(2, 1, 0.0d, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
+            //ilPSP.Environment.NumThreads = 2;
+            //BoSSS.Application.XNSEC.NUnitTest.XDG_PSEUDO1D_COMBUSTION_TEST();
 
-
-            //DeleteOldPlotFiles();
-            //DeleteOldTextFiles();
-            //Debugger.Launch();
-
-            //NUnitTest.XDG_PSEUDO1D_EVAPORATION_TEST();
-            //NUnitTest.CavityNaturalConvection();
-            //NUnitTest.XDG_DROPLET_COMBUSTION_TEST();
-            //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
-
-            //BoSSS.Solution.Application<XNSEC_Control>._Main(new string[] { "--control", "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.XDG_pseudo2dCombustion_MixtureFraction()", "--delplt" }, false, delegate () {
-            //    var p = new XNSEC_MixtureFraction();
-            //    return p;
-            //});
-            //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
-
-            //-n 8 ./XNSEC.exe -c "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.XDG_DropletCombustion()"
-            //System.Environment.Exit(111);
 
             bool MixtureFractionCalculation = false;
             try {
@@ -145,10 +128,10 @@ namespace BoSSS.Application.XNSEC {
         /// $`n = 0$`, the degree of the integrand immensely simplifies to $`(p - 1)$`.
         /// </remarks>
         public override int QuadOrder() {
-            if (Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
-               && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
+            if (Control.CutCellQuadratureType != CutCellQuadratureMethod.Saye
+               && Control.CutCellQuadratureType != CutCellQuadratureMethod.OneStepGaussAndStokes) {
                 throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules " +
-                    $"{XQuadFactoryHelper.MomentFittingVariants.Saye} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; " +
+                    $"{CutCellQuadratureMethod.Saye} and {CutCellQuadratureMethod.OneStepGaussAndStokes}; " +
                     $"you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; " +
                     $"If you do not know how to remove this exception, you should better return now!");
             }
@@ -157,7 +140,7 @@ namespace BoSSS.Application.XNSEC {
 
             int degU = VelocityDegree();
             int quadOrder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 4 : 2);
-            if (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
+            if (this.Control.CutCellQuadratureType == CutCellQuadratureMethod.Saye) {
                 //See remarks
                 quadOrder *= 2;
                 quadOrder += 1;
@@ -382,21 +365,21 @@ namespace BoSSS.Application.XNSEC {
                     MaxSigma maxSigmaParameter = new MaxSigma(Control.PhysicalParameters, Control.AdvancedDiscretizationOptions, QuadOrder(), Control.dtFixed);
                     opFactory.AddParameter(maxSigmaParameter);
                     lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, maxSigmaParameter);
-                    BeltramiGradient lsBGradient = FromControl.BeltramiGradient(Control, "Phi", D);
+                    GradientAndCurvature lsBGradient = FromControl.GradientAndCurvature(Control, "Phi", quadOrder, D);
                     lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsBGradient);
                     break;
 
                 case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux:
                 case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local:
-                    BeltramiGradient lsGradient = FromControl.BeltramiGradient(Control, "Phi", D);
+                    GradientAndCurvature lsGradient = FromControl.GradientAndCurvature(Control, "Phi", quadOrder, D);
                     lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsGradient);
                     break;
 
                 case SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint:
                 case SurfaceStressTensor_IsotropicMode.Curvature_Projected:
                 case SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean:
-                    BeltramiGradientAndCurvature lsGradientAndCurvature =
-                        FromControl.BeltramiGradientAndCurvature(Control, "Phi", quadOrder, D);
+                    GradientAndCurvature lsGradientAndCurvature =
+                        FromControl.GradientAndCurvature(Control, "Phi", quadOrder, D);
                     opFactory.AddParameter(lsGradientAndCurvature);
                     lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsGradientAndCurvature);
                     break;
@@ -670,11 +653,9 @@ namespace BoSSS.Application.XNSEC {
 
 
             if (Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
-                Console.WriteLine("Linearization Hint:" + LinearizationHint.GetJacobiOperator.ToString());
                 XOP.LinearizationHint = LinearizationHint.GetJacobiOperator;
             } else if (Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard){
-                Console.WriteLine("Linearization Hint:" + LinearizationHint.GetJacobiOperator.ToString());
-
+                
                 //throw new NotImplementedException("LowMach solver supports only Newton as NonLinearSolver");
             }
 
@@ -938,7 +919,7 @@ namespace BoSSS.Application.XNSEC {
             }
 
             var overallstart = DateTime.Now;
-            Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt}");
+            Console.WriteLine($"Starting time step {TimestepNo}, t = {phystime:g4}, dt = {dt:g4} ...");
             bool SolverSuccess = Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
             var overallstop = DateTime.Now;
             var overallduration = overallstop - overallstart;
@@ -950,7 +931,7 @@ namespace BoSSS.Application.XNSEC {
             Console.WriteLine("Duration of this timestep: " + overallduration);
             Console.WriteLine($"done with time step {TimestepNo}");
 
-            if (Control.AnalyticsolutionSwitch || !Control.ExactSolutionVelocity.IsNullOrEmpty()) {
+            if (Control.AnalyticsolutionSwitch || Control.ExactSolutions_Evaluators_TimeDep.Keys.Any(name => name.StartsWith("Velocity"))) {
                 CalcErrors();
             }
 
@@ -974,7 +955,7 @@ namespace BoSSS.Application.XNSEC {
                 CurrentState.Fields.Where(f => f.Identification == VariableNames.Temperature).Single().GetExtremalValues(out minTemperature, out maxTemperature);
                 Console.WriteLine("Min Temperature in this timestep: " + minTemperature);
                 Console.WriteLine("Max Temperature in this timestep: " + maxTemperature);
-            } catch (Exception e) {
+            } catch (Exception) {
 
             }
             //sensor.Update(CurrentState.Fields.Where(f => f.Identification == VariableNames.Temperature).Single());
@@ -1032,7 +1013,7 @@ namespace BoSSS.Application.XNSEC {
             }
 
             // Create fields for analytical solution and errors
-            if (Control.AnalyticsolutionSwitch || !Control.ExactSolutionVelocity.IsNullOrEmpty()) {
+            if (Control.AnalyticsolutionSwitch || Control.ExactSolutions_Evaluators_TimeDep.Keys.Any(name => name.StartsWith("Velocity"))) {
                 // Errors:
                 var errFields = InstantiateErrorFields();
                 foreach (var f in errFields) {
@@ -1070,30 +1051,6 @@ namespace BoSSS.Application.XNSEC {
         public override IDictionary<string, double> OperatorAnalysis(OperatorAnalysisConfig config) {
             return this.Operator.OperatorAnalysis(this.CurrentStateVector.Mapping, config, this.MultigridOperatorConfig);
         }
-
-
-        //protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
-        //    // Cells Numbers
-        //    var CellNumbers = this.m_RegisteredFields.Where(s => s.Identification == "CellNumbers").SingleOrDefault();
-        //    if (CellNumbers == null) {
-        //        CellNumbers = new SinglePhaseField(new Basis(this.GridData, 0), "CellNumbers");
-        //        this.RegisterField(CellNumbers);
-        //    }
-        //    CellNumbers.Clear();
-        //    CellNumbers.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
-        //        int K = result.GetLength(1); // No nof Nodes
-        //        for (int j = 0; j < Len; j++) {
-        //            for (int k = 0; k < K; k++) {
-        //                result[j, k] = j0 + j;
-        //            }
-        //        }
-        //    }, new CellQuadratureScheme());
-
-
-        //    //DGField[] RefinedFields = new[] { Refined_u, Refined_TestData, Refined_Grad_u[0], Refined_Grad_u[1], Refined_MagGrad_u };
-        //    //string filename2 = "RefinedGrid." + timestepNo;
-        //    //Tecplot.PlotFields(RefinedFields, filename2, physTime, superSampling);
-        //}
 
         /// <summary>
         /// User-defined validation of a solver step, e.g. to prevent the solver to iterate out-of-bounds,

@@ -39,7 +39,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         protected int m_d = -1;
 
-        BoundaryCondMap<IncompressibleBcType> m_bcmap;
+        protected BoundaryCondMap<IncompressibleBcType> m_bcmap;
 
         /// <summary>
         /// ctor
@@ -82,12 +82,13 @@ namespace BoSSS.Solution.NSECommon {
                 case IncompressibleBcType.Pressure_Dirichlet:
                 case IncompressibleBcType.Pressure_Outlet:
                 case IncompressibleBcType.ScalarDirichlet_PressureOutlet:
-                // Atmospheric outlet/pressure outlet: inhom. Dirichlet
-                // ++++++++++++++++++++++++++++++++++++++++++++++++++++
-                return pressureFunction[inp.EdgeTag](inp.X, inp.time) * inp.Normal[m_d];
-                //return Stress(inp.X, m_d) * inp.Normal[m_d];
+                //case IncompressibleBcType.Freestream:
+                    // Atmospheric outlet/pressure outlet: inhom. Dirichlet
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    return pressureFunction[inp.EdgeTag](inp.X, inp.time) * inp.Normal[m_d];
+                    //return Stress(inp.X, m_d) * inp.Normal[m_d];
 
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                     throw new ArithmeticException("Tests on channel flow indicate that b.c. " + edgType + " is ill-posed, fk 25may16.");
                 case IncompressibleBcType.Velocity_Inlet:
                 case IncompressibleBcType.Wall:
@@ -98,6 +99,8 @@ namespace BoSSS.Solution.NSECommon {
                     // hom. Neumann b.c.
                     // +++++++++++++++++
                     return Uin[0] * inp.Normal[m_d];
+                case IncompressibleBcType.Dong_OutFlow:
+                    return 0.0; // Uin[0] * inp.Normal[m_d];
                 default:
                     throw new NotImplementedException();
             }

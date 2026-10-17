@@ -22,11 +22,9 @@ using BoSSS.Platform;
 using ilPSP.Tracing;
 using MPI.Wrappers;
 using ilPSP;
-using IntersectingQuadrature;
 using BoSSS.Foundation.Grid.RefElements;
 using System.Collections;
 using BoSSS.Foundation.XDG.Quadrature;
-using IntersectingQuadrature.TensorAnalysis;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -79,8 +77,8 @@ namespace BoSSS.Foundation.XDG {
         ///   - 1st index: cell index <em>j</em>
         ///   - 2nd index: node index <em>m</em> into nodeset <paramref name="NodeSet"/>
         /// </list>
-        /// So, the entry [j,m] = \f$ \sum_{d=1}^{D} \frac{\partial}{\partial x_d} \varphi (\vec{\xi}_m)\f$ 
-        /// where \f$ \vec{xi}_m\f$  is the <em>m</em>-th vector in the <paramref name="NodeSet"/>,
+        /// So, the entry [j,m] = $\sum_{d=1}^{D} \frac{\partial}{\partial x_d} \varphi (\underline{\xi}_m)$ 
+        /// where $\underline{xi}_m$  is the <em>m</em>-th vector in the <paramref name="NodeSet"/>,
         /// in the <em>j</em>-th cell.
         /// </param>
         /// <remarks>
@@ -528,7 +526,7 @@ namespace BoSSS.Foundation.XDG {
         /// Cell Mask for the derivatives and their accumulation regarding the
         /// curvature
         /// </param>
-        public void ComputeTotalCurvature(SinglePhaseField Output, CellMask optionalCellMask) {
+        public void ComputeTotalCurvature(SinglePhaseField Output, CellMask optionalCellMask = null) {
             if (this.m_Basis.Degree <= 1)
                 throw new ArgumentException("For correct computation of these level set quantities, the level set has to be at least of degree 2!");
 
@@ -598,13 +596,13 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// computes the L2 norm of the Residual of the Eikonal equation in the
         /// domain <paramref name="K"/>, i.e. <br/>
-        /// \f[ 
+        /// \[ 
         /// \left\|
         /// \textrm{\textbf{1}}_K
         /// \cdot
         /// \left(  | \nabla \phi | - 1 \right)
         /// \right\|_2
-        /// \f]
+        /// \]
         /// </summary>
         /// <param name="K">
         /// optional restriction to a subdomain

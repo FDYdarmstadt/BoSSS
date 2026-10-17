@@ -158,7 +158,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                     //}
                     //flux = LevelSetFunction[EdgeTag](x) * U_dot_Normal;
                     break;
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                     for (int d = D - 1; d >= 0; d--) {
                         U_dot_Normal += (inp.Parameters_IN[d] * normal[d]);
                     }

@@ -99,7 +99,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 ql.SetV(bl);
                 Mtx.SpMV(-1.0, xl, 1.0, ql);
                 if(this.m_Tolerance > 0) {
-                    double ResNorm = ql.L2NormPow2().MPISum().Sqrt();
+                    double ResNorm = ql.L2NormPow2().MPISum(Mtx.MPI_Comm).Sqrt();
                     if(ResNorm < this.m_Tolerance) {
                         m_Converged = true;
                         return;
@@ -145,7 +145,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public void Dispose() {
-            throw new NotImplementedException();
+            Mtx = null;
+            //throw new NotImplementedException();
         }
 
         public long UsedMemory() {

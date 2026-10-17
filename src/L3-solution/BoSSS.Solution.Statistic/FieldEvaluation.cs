@@ -56,6 +56,27 @@ namespace BoSSS.Solution.Statistic {
             get { return CellLoc.GridBB; }
         }
 
+        /// <summary>
+        /// index of containing cell
+        /// </summary>
+        public int CellIndexOf(Vector Point) {
+            var gdat = CellLoc.GrdDat;
+            int D = gdat.SpatialDimension;
+            if (Point.Dim != D) {
+                throw new ArgumentException("Spatial dimension mismatch.");
+            }
+
+            MultidimensionalArray _Point = MultidimensionalArray.Create(1, Point.Dim);
+            _Point.SetRowPt(0, Point);
+            int[] cellIdx = new int[1];
+            CellLoc.LocalizePointsWithinGrid(_Point, cellIdx, out int NoOfUnassi);
+            if (NoOfUnassi > 0) {
+                throw new ArithmeticException("unable to locate point " + Point);
+            }
+            int j = cellIdx[0];
+            return j;
+        }
+
 
         /// <summary>
         /// Evaluation at a singe point
@@ -95,7 +116,7 @@ namespace BoSSS.Solution.Statistic {
 
         /// <summary>
         /// Like <see cref="Evaluate(double, IEnumerable{DGField}, MultidimensionalArray, double, MultidimensionalArray, BitArray, int[])"/>,
-        /// but with MPI-Exchange
+        /// but with MPI-Exchange, i.e., points (<paramref name="Points"/>) which could not be located within the locally stored part of the mesh are sent to other MPI processors.
         /// </summary>
         public int EvaluateParallel(double alpha, IEnumerable<DGField> Flds, MultidimensionalArray Points, double beta, MultidimensionalArray Result, BitArray UnlocatedPoints = null) {
             using(new FuncTrace()) {
@@ -252,8 +273,8 @@ namespace BoSSS.Solution.Statistic {
         /// a list of <em>M</em> DG fields.
         /// </param>
         /// <param name="Points">
-        /// 2-dimensional: <br/>
-        ///  - 1st index: point index, from 0 (including) to <em>N</em> (excluding)<br/>
+        /// 2-dimensional:
+        ///  - 1st index: point index, from 0 (including) to <em>N</em> (excluding)
         ///  - 2nd index: spatial dimension/direction
         /// </param>
         /// <param name="Result">
@@ -539,4 +560,65 @@ namespace BoSSS.Solution.Statistic {
             return (NoOfUnassignedNodes + NU);
         }
     }
+
+    /// <summary>
+    /// Driver routines (easy-to-use interfaces) for <see cref="FieldEvaluation"/>
+    /// </summary>
+    public static class FielEvaluationExtension {
+
+
+        /// <summary>
+        /// Evaluation of multiple DG field at global coordinates
+        /// </summary>
+        /// <param name="F"></param>
+        /// <param name="Points">
+        /// The points at which the field should be evaluated, in global coordinates
+        /// These do not necessarily need to be located within the MPI-local part of the grid.
+        /// Points which could not be localized within the local part of the grid will be sent to other MPI ranks and evaluated there.
+        /// - 1st index: point index
+        /// - 2nd index: spatial dimension
+        /// </param>
+        /// <returns>
+        /// value of DG field at the respective point
+        /// - 1st index: correlates with the point index, i.e., first index into <paramref name="Points"/>
+        /// - 2nd index: DG field index, correlates with <paramref name="F"/>
+        /// </returns>
+        public static MultidimensionalArray EvaluateParallel(this IEnumerable<DGField> F, MultidimensionalArray Points) {
+            if (Points.Dimension != 2)
+                throw new ArgumentException("expecting a 2d-array", "Points");
+            if (Points.GetLength(1) != F.First().GridDat.SpatialDimension)
+                throw new ArgumentException("mismatch in spatial dimension", "Points");
+
+            var FE = new FieldEvaluation(F.First().GridDat);
+
+            MultidimensionalArray Result = MultidimensionalArray.Create(Points.GetLength(0), F.Count());
+            BitArray UnlocatedPoints = new BitArray(Points.GetLength(0), false);
+            FE.EvaluateParallel(1.0, F, Points, 0.0, Result, UnlocatedPoints);
+
+            return Result;
+        }
+
+
+        /// <summary>
+        /// Evaluation a single DG field 
+        /// </summary>
+        /// <param name="F"></param>
+        /// <param name="Points">
+        /// The points at which the field should be evaluated, in global coordinates
+        /// These do not necessarily need to be located within the MPI-local part of the grid.
+        /// Points which could not be localized within the local part of the grid will be sent to other MPI ranks and evaluated there.
+        /// - 1st index: point index
+        /// - 2nd index: spatial dimension
+        /// </param>
+        /// <returns>
+        /// value of DG field at the respective point
+        /// - 1st index: correlates with the point index, i.e., first index into <paramref name="Points"/>
+        /// </returns>
+        public static MultidimensionalArray EvaluateParallel(this DGField F, MultidimensionalArray Points) {
+            var R = (new DGField[] { F }).EvaluateParallel(Points);
+            return R.ResizeShallow(Points.GetLength(0));
+        }
+
+    }        
+
 }

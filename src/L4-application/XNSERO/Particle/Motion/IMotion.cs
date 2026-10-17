@@ -271,7 +271,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Calls the integration of the hydrodynamic stress at this particles level-set
         /// </summary>
         /// <param name="hydrodynamicsIntegration"></param>
-        public Vector CalculateHydrodynamics(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, CellMask cutCells, string[] FluidSpecies, double dt = 0);
+        public double[] CalculateHydrodynamics(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, CellMask cutCells, string[] FluidSpecies, double dt = 0);
 
         /// <summary>
         /// Calculates the gravitational forces.

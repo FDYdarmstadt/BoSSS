@@ -145,6 +145,9 @@ namespace BoSSS.Foundation.XDG {
                 if(b is XDGBasis xb) {
                     var _b = xb.NonX_Basis;
                     N[f] = _b.GetLength(j);
+                } else if(b is TraceDGBasis tb) {
+                    var _b = tb.NonX_Basis;
+                    N[f] = _b.GetLength(j);
                 } else {
                     N[f] = b.GetLength(j);
                 }

@@ -51,7 +51,7 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
         /// <param name="args"></param>
         static void Main(string[] args) {
             InitMPI();
-            AllUpTest.ParalleTest_2D(XQuadFactoryHelper.MomentFittingVariants.Saye);
+            AllUpTest.ParalleTest_2D(CutCellQuadratureMethod.Saye);
         }
 
         
@@ -59,8 +59,8 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
         internal ITest test = new Schraeg(GetTestRange(), GetTestRange());
         //internal ITest test = new Schraeg( intercept: 5e-13);
 
-        internal XQuadFactoryHelper.MomentFittingVariants momentFittingVariant =
-            XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+        internal CutCellQuadratureMethod momentFittingVariant =
+            CutCellQuadratureMethod.OneStepGaussAndStokes;
 
         internal int QUAD_ORDER = 4;
 
@@ -130,7 +130,7 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
 
                     var volSchemeA = schemes.GetVolumeQuadScheme(this.LsTrk.GetSpeciesId("A"), IntegrationDomain: cutCells);
                     var volSchemeB = schemes.GetVolumeQuadScheme(this.LsTrk.GetSpeciesId("B"), IntegrationDomain: cutCells);
-                    CellQuadratureScheme surfScheme = schemes.GetLevelSetquadScheme(0, cutCells);
+                    CellQuadratureScheme surfScheme = schemes.GetLevelSetQuadScheme(0, cutCells);
                     var edgeSchemeA = schemes.GetEdgeQuadScheme(this.LsTrk.GetSpeciesId("A"));
                     var edgeSchemeB = schemes.GetEdgeQuadScheme(this.LsTrk.GetSpeciesId("B"));
 
@@ -343,7 +343,7 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
         }
 
         /// <summary>
-        /// Computes cut-cell-volume as \f$ \oint_{K_{j,\frakS}} (x,0) \cdot \vec{n} dS \f$
+        /// Computes cut-cell-volume as $\oint_{K_{j,\mathfrak{S}}} (x,0) \cdot \underline{n} dS$
         /// </summary>
         private MultidimensionalArray CellVolumeFromGauss(ICompositeQuadRule<QuadRule> edgeRule, ICompositeQuadRule<QuadRule> surfRule, double speciesSign) {
             int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;

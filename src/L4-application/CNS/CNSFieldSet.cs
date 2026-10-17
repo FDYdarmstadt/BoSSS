@@ -57,7 +57,7 @@ namespace CNS {
         public readonly DGField Density;
 
         /// <summary>
-        /// The momentum field $\rho \vec{u}$
+        /// The momentum field $\rho \underline{u}$
         /// </summary>
         public readonly VectorField<DGField> Momentum;
 

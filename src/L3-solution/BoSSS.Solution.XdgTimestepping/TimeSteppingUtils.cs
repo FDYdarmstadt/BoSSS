@@ -35,6 +35,20 @@ namespace BoSSS.Solution.XdgTimestepping {
     public class TimeSteppingUtils {
 
 
+        static void DebugAssertWrapper(bool cond)
+        {
+            if (cond == false)
+                throw new ArithmeticException();
+        }
+        static void DebugAssertWrapper(bool cond, string msg)
+        {
+            if (cond == false)
+                throw new ArithmeticException(msg);
+
+        }
+
+
+
         /// <summary>
         /// Tools for updating operator matrices under level-set movement, when ordering of DOFs (the mapping) changes.
         /// </summary>
@@ -65,10 +79,10 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                         int[] ColIdxUpdate = MappingUpdate(LsTrk, j, ColMap, false);
 
-                        Debug.Assert((j >= Jup) || ((RowIdxUpdate != null) == (ColIdxUpdate != null)));
+                        DebugAssertWrapper((j >= Jup) || ((RowIdxUpdate != null) == (ColIdxUpdate != null)));
                         if (RowIdxUpdate != null) {
-                            //Debug.Assert(RowMap.GetBlockLen(cell_j0 + j) == RowMap.MaxTotalNoOfCoordinatesPerCell);
-                            //Debug.Assert(RowIdxUpdate.Length == RowMap.GetBlockLen(cell_j0 + j));
+                            //DebugAssertWrapper(RowMap.GetBlockLen(cell_j0 + j) == RowMap.MaxTotalNoOfCoordinatesPerCell);
+                            //DebugAssertWrapper(RowIdxUpdate.Length == RowMap.GetBlockLen(cell_j0 + j));
 
                             long i0 = RowMap.GetBlockI0(cell_j0 + j);
 
@@ -77,16 +91,16 @@ namespace BoSSS.Solution.XdgTimestepping {
                                 long iOld = ii + i0;
                                 long iNew = RowIdxUpdate[ii] + i0;
                                 if (RowIdxUpdate[ii] >= 0) {
-                                    Debug.Assert(old2NewRows.Count == 0 || old2NewRows[old2NewRows.Count - 1].Item1 < iOld);
+                                    DebugAssertWrapper(old2NewRows.Count == 0 || old2NewRows[old2NewRows.Count - 1].Item1 < iOld);
                                     old2NewRows.Add((iOld, iNew));
                                 }
                             }
                         }
 
                         if (ColIdxUpdate != null) {
-                            //Debug.Assert(ColMap.MinTotalNoOfCoordinatesPerCell == ColMap.MaxTotalNoOfCoordinatesPerCell);
-                            //Debug.Assert(ColMap.GetBlockLen(cell_j0 + j) == ColMap.MaxTotalNoOfCoordinatesPerCell);
-                            //Debug.Assert(ColIdxUpdate.Length == ColMap.GetBlockLen(cell_j0 + j));
+                            //DebugAssertWrapper(ColMap.MinTotalNoOfCoordinatesPerCell == ColMap.MaxTotalNoOfCoordinatesPerCell);
+                            //DebugAssertWrapper(ColMap.GetBlockLen(cell_j0 + j) == ColMap.MaxTotalNoOfCoordinatesPerCell);
+                            //DebugAssertWrapper(ColIdxUpdate.Length == ColMap.GetBlockLen(cell_j0 + j));
 
                             // mapping is old-->new, i.e. new[IdxUpdate[k]] = old[k] for all k
 
@@ -97,7 +111,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                             //else 
                             //    jLoc = LsTrk.GridDat.iParallel.Global2LocalIdx[cell_j0 + j];
                             long i0 = ColMap.GlobalUniqueCoordinateIndex(0, j, 0);
-                            //Debug.Assert()
+                            //DebugAssertWrapper()
                             
                             int II = ColIdxUpdate.Length;
                             for (int ii = 0; ii < II; ii++) {
@@ -105,7 +119,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                                 long iNew = ColIdxUpdate[ii] + i0;
                                 if (ColIdxUpdate[ii] >= 0) {
                                     if (j < Jup) {
-                                        Debug.Assert(old2NewCols.Count == 0 || old2NewCols[old2NewCols.Count - 1].Item1 < iOld);
+                                        DebugAssertWrapper(old2NewCols.Count == 0 || old2NewCols[old2NewCols.Count - 1].Item1 < iOld);
                                         old2NewCols.Add((iOld, iNew));
                                     } else {
                                         old2NewColsExt.Add((iOld, iNew));
@@ -133,7 +147,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                             ValueTuple<long, long> t1, t2;
                             t1 = old2NewCols[ja];
                             t2 = old2NewColsExt[jb];
-                            Debug.Assert(t1.Item1 != t2.Item1);
+                            DebugAssertWrapper(t1.Item1 != t2.Item1);
                             if (t1.Item1 < t2.Item1) {
                                 t = t1;
                                 ja++;
@@ -145,8 +159,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                             t = old2NewCols[ja];
                             ja++;
                         } else {
-                            Debug.Assert(jb < old2NewColsExt.Count);
-                            Debug.Assert(ja >= old2NewCols.Count);
+                            DebugAssertWrapper(jb < old2NewColsExt.Count);
+                            DebugAssertWrapper(ja >= old2NewCols.Count);
                             t = old2NewColsExt[jb];
                             jb++;
                         }
@@ -154,10 +168,10 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                         _old2NewCols[j, 0] = t.Item1;
                         _old2NewCols[j, 1] = t.Item2;
-                        Debug.Assert(j == 0 || _old2NewCols[j - 1, 0] < _old2NewCols[j, 0]);
+                        DebugAssertWrapper(j == 0 || _old2NewCols[j - 1, 0] < _old2NewCols[j, 0]);
                     }
-                    Debug.Assert(ja == old2NewCols.Count);
-                    Debug.Assert(jb == old2NewColsExt.Count);
+                    DebugAssertWrapper(ja == old2NewCols.Count);
+                    DebugAssertWrapper(jb == old2NewColsExt.Count);
                 }
 
                 // update matrices
@@ -209,8 +223,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                         // +++++++++++++++++++++++
 
                         int i0 = RowMap.LocalUniqueCoordinateIndex(0, j, 0);
-                        Debug.Assert(i0 + RowBlockSize <= RowMap.LocalLength);
-                        Debug.Assert(i0 >= 0);
+                        DebugAssertWrapper(i0 + RowBlockSize <= RowMap.LocalLength);
+                        DebugAssertWrapper(i0 >= 0);
 
                         for (int i = 0; i < RowBlockSize; i++) {
                             OldAffine[i] = Affine[i + i0];
@@ -239,14 +253,14 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             double acc = 0;
             for(int l = 0; l < L; l++) {
-                Debug.Assert(idxs[l] >= 0);
+                DebugAssertWrapper(idxs[l] >= 0);
                 acc += Math.Abs(vals[l]);
             }
-#if DEBUG
+//#if DEBUG
             for (int l = L; l < Math.Max(idxs.Length, vals.Length); l++) {
-                Debug.Assert(idxs[l] < 0);
+                DebugAssertWrapper(idxs[l] < 0);
             }
-#endif
+//#endif
             return acc;
         }
         
@@ -319,7 +333,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         for (int n = 0; n < N; n++) {
                             int idxS = offset + n + i * N;
                             int idxT = ii >= 0 ? offset + n + ii * N : int.MinValue;
-                            Debug.Assert(IdxMap[idxS] < 0);
+                            DebugAssertWrapper(IdxMap[idxS] < 0);
                             IdxMap[idxS] = idxT;
 
                             AnyRelocation |= (idxS != idxT);
@@ -332,7 +346,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         int idx = offset + n;
                         //oldIdx.Add(idx);
                         //newIdx.Add(idx);
-                        Debug.Assert(IdxMap[idx] < 0);
+                        DebugAssertWrapper(IdxMap[idx] < 0);
                         IdxMap[idx] = idx;
                     }
                 }

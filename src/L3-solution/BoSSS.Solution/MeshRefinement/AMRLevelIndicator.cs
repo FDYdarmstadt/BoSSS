@@ -28,11 +28,13 @@ namespace BoSSS.Solution {
 
     /// <summary>
     /// Base-class for adaptive mesh refinement level indication.
-    /// Objects of this type can be added to the list `activeAMRlevelIndicators`,
-    /// and the respective post-processing (implemented in the derived class) will be executed.
+    /// Objects of this type can be added to the list  <see cref="BoSSS.Solution.Control.AppControl.activeAMRlevelIndicators"/>
+    /// in order to apply the respective mesh reinement.
     /// </summary>
+    [DataContract]
     [Serializable]
     public abstract class AMRLevelIndicator {
+
         [DataMember]
         public int maxRefinementLevel = 1;
 
@@ -80,7 +82,6 @@ namespace BoSSS.Solution {
 
 
         [JsonIgnore]
-        [NonSerialized]
         bool m_Setupdone = false;
 
         /// <summary>

@@ -72,7 +72,7 @@ namespace CNS.Tests.IBMTests {
             };
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
 
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 6;
             c.AgglomerationThreshold = 0.2; // Using this agglomeration threshold, no cells are agglomerated (all cells are true cut cells)
             c.AddVariable(IBMVariables.LevelSet, 1);

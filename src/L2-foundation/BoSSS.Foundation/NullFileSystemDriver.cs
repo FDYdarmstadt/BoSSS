@@ -51,10 +51,7 @@ namespace BoSSS.Foundation.IO {
         /// Returns the <see cref="StreamWriter.BaseStream"/> of
         /// <see cref="StreamWriter.Null"/>
         /// </summary>
-        /// <param name="logName"></param>
-        /// <param name="sessionGuid"></param>
-        /// <returns></returns>
-        public Stream GetNewLogStream(string logName, Guid sessionGuid) {
+        public Stream GetNewLogStream(string logName, string fileExt, Guid sessionGuid) {
             return StreamWriter.Null.BaseStream;
         }
 

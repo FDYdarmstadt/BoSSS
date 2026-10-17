@@ -94,7 +94,7 @@ namespace BoSSS.Application.XNSFE_Solver {
 
             ctrl.AddInitialValue("Phi", "X => -1.0", false);
 
-            ctrl.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            ctrl.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.LevelSetTools.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             ctrl.Option_LevelSetEvolution = BoSSS.Solution.LevelSetTools.LevelSetEvolution.None;
             ctrl.Timestepper_LevelSetHandling = BoSSS.Solution.XdgTimestepping.LevelSetHandling.None;
 
@@ -192,7 +192,7 @@ namespace BoSSS.Application.XNSFE_Solver {
             ctrl.activeAMRlevelIndicators.Add(new BoSSS.Solution.AMRLevelIndicatorLibrary.AMRonBoundary(2) { maxRefinementLevel = level });
             ctrl.AMR_startUpSweeps = level;
 
-            ctrl.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            ctrl.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.LevelSetTools.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             ctrl.Option_LevelSetEvolution = BoSSS.Solution.LevelSetTools.LevelSetEvolution.None;
             ctrl.Timestepper_LevelSetHandling = BoSSS.Solution.XdgTimestepping.LevelSetHandling.None;
 
@@ -288,7 +288,7 @@ namespace BoSSS.Application.XNSFE_Solver {
             ctrl.activeAMRlevelIndicators.Add(new BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.AMRonNarrowband() { levelSet = 1, maxRefinementLevel = level });
             ctrl.AMR_startUpSweeps = level;
 
-            ctrl.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            ctrl.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.LevelSetTools.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             ctrl.Option_LevelSetEvolution = BoSSS.Solution.LevelSetTools.LevelSetEvolution.None;
             ctrl.Timestepper_LevelSetHandling = BoSSS.Solution.XdgTimestepping.LevelSetHandling.None;
 
@@ -402,7 +402,7 @@ namespace BoSSS.Application.XNSFE_Solver {
             ctrl.activeAMRlevelIndicators.Add(new BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.AMRatInnerContactLine() { maxRefinementLevel = level*2 });
             ctrl.AMR_startUpSweeps = level*2;
 
-            ctrl.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            ctrl.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.LevelSetTools.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             ctrl.Option_LevelSetEvolution = BoSSS.Solution.LevelSetTools.LevelSetEvolution.None;
             ctrl.Timestepper_LevelSetHandling = BoSSS.Solution.XdgTimestepping.LevelSetHandling.None;
 
@@ -539,7 +539,7 @@ namespace BoSSS.Application.XNSFE_Solver {
 
             #region Timestepping
 
-            ctrl.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            ctrl.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.LevelSetTools.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             ctrl.Option_LevelSetEvolution = BoSSS.Solution.LevelSetTools.LevelSetEvolution.StokesExtension;
             ctrl.Timestepper_LevelSetHandling = BoSSS.Solution.XdgTimestepping.LevelSetHandling.LieSplitting;
 
@@ -751,7 +751,7 @@ namespace BoSSS.Application.XNSFE_Solver {
 
             #region Timestepping
 
-            ctrl.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            ctrl.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.LevelSetTools.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             ctrl.Option_LevelSetEvolution = BoSSS.Solution.LevelSetTools.LevelSetEvolution.None;
             ctrl.Timestepper_LevelSetHandling = BoSSS.Solution.XdgTimestepping.LevelSetHandling.None;
 

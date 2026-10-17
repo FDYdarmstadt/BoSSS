@@ -50,13 +50,7 @@ namespace BoSSS.Foundation.Quadrature {
 
         
 
-        /// <summary>
-        /// the square root of the Gramian determinant
-        /// </summary>
-        protected override MultidimensionalArray GetScalingsForLinearElements(int i0, int L) {
-            var R = gridData.iGeomEdges.SqrtGramian.ExtractSubArrayShallow(new int[] { i0 }, new int[] { i0 + L - 1 });
-            return R;
-        }
+       
 
         /// <summary>
         /// Sweeps whether edge <paramref name="i0"/> is linear/nonlinear and how many cells of the same type are going to come after it.
@@ -76,13 +70,7 @@ namespace BoSSS.Foundation.Quadrature {
 
             NoOfElm = Len;
         }
-
-        /// <summary>
-        /// the transformation metric for nonlinear edges.
-        /// </summary>
-        protected override MultidimensionalArray GetScalingsForNonlinElements(int i0, int L) {
-            return base.GridDat.iGeomEdges.NormalsCache.GetIntegrationMetric(base.CurrentRule.Nodes, i0, L);
-        }
+ 
 
         /// <summary>
         /// creates an edge quadrature, where integrand evaluation (<paramref name="_Evaluate"/>) and other methods
@@ -150,6 +138,10 @@ namespace BoSSS.Foundation.Quadrature {
                     m_OnCloneForThreadParallelization = this.m_OnCloneForThreadParallelization
                 };
             }
+        }
+
+        protected override IIntegrationMetric GetDefaultIntegrationMetric() {
+            return new EdgeIntegrationMetric();
         }
 
 

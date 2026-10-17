@@ -85,7 +85,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Physical time.
         /// </summary>
-        public double time;
+        public double time = 0.0;
 
         /// <summary>
         /// index of the level set to evaluate
@@ -152,8 +152,7 @@ namespace BoSSS.Foundation.XDG {
                  context,
                  domAndRule) //
         {
-            MPICollectiveWatchDog.Watch();
-
+            
             // -----------------------------------
             // set members / check ctor parameters
             // -----------------------------------
@@ -518,34 +517,36 @@ namespace BoSSS.Foundation.XDG {
                 // - - - - - - - - - - -
 
                 bool MustLock = this.m_DiffOp.FluxesAreNOTMultithreadSafe;
-                if (MustLock)
-                    Monitor.Enter(this.m_DiffOp);
+                try {
+                    if ( MustLock )
+                        Monitor.Enter(this.m_DiffOp);
 
-                {
-                    EvalComponent(ref _inParams, gamma, this.m_NonlinLsForm_V[gamma], this.m_NonlinLsForm_V_Watches[gamma],
-                        Koeff_V[gamma].ExtractSubArrayShallow(-1, -1, 0), Koeff_V[gamma].ExtractSubArrayShallow(-1, -1, 1),
-                        m_FieldValuesPos, m_FieldValuesNeg, m_FieldGradientValuesPos, m_FieldGradientValuesNeg,
-                        DELTA,
-                        Flux_Eval,
-                        delegate (INonlinLevelSetForm_V _comp, MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[] Grad_uA, MultidimensionalArray[] Grad_uB, MultidimensionalArray SumBufIn, MultidimensionalArray SumBufOt) {
-                            _comp.NonlinInternalEdge_V(ref _inParams, uA, uB, Grad_uA, Grad_uB, SumBufIn, SumBufOt);
-                        },
-                        m_iThread);
+                    {
+                        EvalComponent(ref _inParams, gamma, this.m_NonlinLsForm_V[gamma], this.m_NonlinLsForm_V_Watches[gamma],
+                            Koeff_V[gamma].ExtractSubArrayShallow(-1, -1, 0), Koeff_V[gamma].ExtractSubArrayShallow(-1, -1, 1),
+                            m_FieldValuesPos, m_FieldValuesNeg, m_FieldGradientValuesPos, m_FieldGradientValuesNeg,
+                            DELTA,
+                            Flux_Eval,
+                            delegate (INonlinLevelSetForm_V _comp, MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[] Grad_uA, MultidimensionalArray[] Grad_uB, MultidimensionalArray SumBufIn, MultidimensionalArray SumBufOt) {
+                                _comp.NonlinInternalEdge_V(ref _inParams, uA, uB, Grad_uA, Grad_uB, SumBufIn, SumBufOt);
+                            },
+                            m_iThread, MustLock);
+                    }
+                    {
+                        EvalComponent(ref _inParams, gamma, this.m_NonlinLsForm_GradV[gamma], this.m_NonlinLsForm_GradV_Watches[gamma],
+                            Koeff_GradV[gamma].ExtractSubArrayShallow(-1, -1, 0, -1), Koeff_GradV[gamma].ExtractSubArrayShallow(-1, -1, 1, -1),
+                            m_FieldValuesPos, m_FieldValuesNeg, m_FieldGradientValuesPos, m_FieldGradientValuesNeg,
+                            DELTA,
+                            Flux_Eval,
+                            delegate (INonlinLevelSetForm_GradV _comp, MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[] Grad_uA, MultidimensionalArray[] Grad_uB, MultidimensionalArray SumBufIn, MultidimensionalArray SumBufOt) {
+                                _comp.NonlinInternalEdge_GradV(ref _inParams, uA, uB, Grad_uA, Grad_uB, SumBufIn, SumBufOt);
+                            },
+                            m_iThread, MustLock);
+                    }
+                } finally {
+                    if ( MustLock )
+                        Monitor.Exit(this.m_DiffOp);
                 }
-                {
-                    EvalComponent(ref _inParams, gamma, this.m_NonlinLsForm_GradV[gamma], this.m_NonlinLsForm_GradV_Watches[gamma],
-                        Koeff_GradV[gamma].ExtractSubArrayShallow(-1, -1, 0, -1), Koeff_GradV[gamma].ExtractSubArrayShallow(-1, -1, 1, -1), 
-                        m_FieldValuesPos, m_FieldValuesNeg, m_FieldGradientValuesPos, m_FieldGradientValuesNeg,
-                        DELTA,
-                        Flux_Eval,
-                        delegate (INonlinLevelSetForm_GradV _comp, MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[] Grad_uA, MultidimensionalArray[] Grad_uB, MultidimensionalArray SumBufIn, MultidimensionalArray SumBufOt) {
-                            _comp.NonlinInternalEdge_GradV(ref _inParams, uA, uB, Grad_uA, Grad_uB, SumBufIn, SumBufOt);
-                        },
-                        m_iThread);
-                }
-
-                if (MustLock)
-                    Monitor.Exit(this.m_DiffOp);
             }            
 
             // Summation Loops: multiply with test and trial functions
@@ -606,7 +607,7 @@ namespace BoSSS.Foundation.XDG {
             int DELTA,
             Stopwatch timer,
             Action<T, MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray, MultidimensionalArray> ComponentFunc,
-            int iThread) 
+            int iThread, bool ParrentLocked) 
             where T : ILevelSetForm //
         {
             timer.Start();
@@ -616,7 +617,7 @@ namespace BoSSS.Foundation.XDG {
             for (int __i = 0; __i < bf.m_AllComponentsOfMyType.Length; __i++) {  // loop over equation components
                 int i = (__i + iThread) % bf.m_AllComponentsOfMyType.Length; // shuffling in threads to reduce locking
                 var comp = bf.m_AllComponentsOfMyType[i];
-                object blck = bf.m_LockObjects[i];
+                object blck = ParrentLocked ? null : bf.m_LockObjects[i];
 
                 int NoOfArgs = bf.NoOfArguments[i];
                 Debug.Assert(NoOfArgs == comp.ArgumentOrdering.Count);

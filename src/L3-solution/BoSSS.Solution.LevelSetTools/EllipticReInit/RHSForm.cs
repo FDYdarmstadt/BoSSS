@@ -67,6 +67,15 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
             if (eval) return SingleWell(x, eval);
             else return DoubleWell(x, eval);
         }
+
+        public static Func<double, double> func = x => {
+            double s = 1.0; // gradient to enforce
+            if (x <= s) { return 1 + 1 / (s * s) - x / (s * s * s); } else { return 1; }
+        };
+
+        public static double SmoothStep(double x, bool eval) {
+            return func(x);
+        }
     }
 
 

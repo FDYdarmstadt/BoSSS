@@ -127,9 +127,11 @@ namespace BoSSS.Solution.LoadBalancing {
                     }
                     allCellCosts.AddRange(costs);
                 }
-                if (allCellCosts == null || allCellCosts.All(c => c == null)) {
-                    return null;
-                }
+                //if(allCellCosts.Count <= 0) {
+                //    // if no cost estimator has been specified, add uniform costs.
+                //    int J = app.Grid.CellPartitioning.LocalLength;
+                //    allCellCosts.Add(J.ForLoop(j => 1));
+                //}
 
 
                 int[] result;
@@ -162,9 +164,17 @@ namespace BoSSS.Solution.LoadBalancing {
                     case GridPartType.Hilbert:
                         return ((GridCommons)(app.Grid)).ComputePartitionHilbert(localcellCosts: allCellCosts, Functype: 1);
 
-                    case GridPartType.none:
-                        result = IndexBasedPartition(allCellCosts.Single());
+                    case GridPartType.none: {
+                        var sumCellCellCosts = allCellCosts[0].CloneAs();
+                        foreach(var costEstm in allCellCosts.Skip(1)) {
+                            int J = sumCellCellCosts.Length;
+                            for(int j = 0; j < J; j++)
+                                sumCellCellCosts[j] += costEstm[j];
+                        }
+
+                        result = IndexBasedPartition(allCellCosts.First());
                         break;
+                    }
 
                     case GridPartType.OtherSession:
                     case GridPartType.Predefined:

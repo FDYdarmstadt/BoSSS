@@ -1,0 +1,46 @@
+﻿//using BoSSS.Application.XNSE_Solver;
+//using BoSSS.Foundation.Grid;
+//using BoSSS.Foundation.Grid.Classic;
+//using BoSSS.Solution.Control;
+//using BoSSS.Solution.LevelSetTools;
+//using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
+//using BoSSS.Solution.Timestepping;
+//using BoSSS.Solution.XdgTimestepping;
+//using BoSSS.Solution.XNSECommon;
+//using ilPSP;
+//using ilPSP.Utils;
+//using NUnit.Framework;
+//using System;
+//using System.Collections.Generic;
+//using HFSISolver.SolidPhase;
+
+//namespace HFSISolver.Tests
+//{
+//    /// <summary>
+//    /// 
+//    /// </summary>
+//    [TestFixture]
+//    public class TwoPhaseCouplingTests
+//    {
+        
+//        [Test]
+//        public static void SolidBallInChannel([Values(2)] int p = 2,
+//                                    [Values(4)] int res = 8) {
+//            BoSSS.Solution.Application.DeleteOldPlotFiles();
+//            var C = HFSISolver.ControlFiles.HardCodedControl.AcceleratedBallInChannel(p, res);
+//            //var C = HFSISolver.ControlFiles.HardCodedControl.BallInChannel(p, res);
+//            //var C = HFSISolver.ControlFiles.HardCodedControl.DynamicChannel(p, res);
+//            //var C = HFSISolver.ControlFiles.HardCodedControl.Channel(p, res);
+//            C.NonLinearSolver.SolverCode = BoSSS.Solution.Control.NonLinearSolverCode.Newton;
+//            C.NonLinearSolver.ConvergenceCriterion = 0.0;
+//            //C.NonLinearSolver.MinSolverIterations = 200;
+//            C.NonLinearSolver.MaxSolverIterations = 20;
+
+//            using(var q = new ZLS()) {
+//                q.Init(C);
+//                q.RunSolverMode();
+//                Assert.IsTrue(q.LastSolverSuccess, "Nonlinear solver did not converge.");
+//            }
+//        }
+//    }
+//}

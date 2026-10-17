@@ -62,6 +62,10 @@ namespace BoSSS.Solution.Gnuplot {
                 this.LineColor = LineColors.Yellow;
             if (ContainsRemove(ref FormatString, "Magenta", ref anyColor))
                 this.LineColor = LineColors.Magenta;
+            if(ContainsRemove(ref FormatString, "Orange", ref anyColor))
+                this.LineColor = LineColors.Orange;
+            if(ContainsRemove(ref FormatString, "Grey", ref anyColor))
+                this.LineColor = LineColors.Grey;
 
             if (ContainsRemove(ref FormatString, "k", ref anyColor))
                 this.LineColor = LineColors.Black;

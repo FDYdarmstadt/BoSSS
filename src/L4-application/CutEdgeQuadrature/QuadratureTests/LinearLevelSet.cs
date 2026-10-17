@@ -21,9 +21,9 @@ namespace CutEdgeQuadrature.QuadratureTests {
 
         public double EdgeArea => 1.8;
 
-        private XQuadFactoryHelper.MomentFittingVariants _momentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye;
+        private CutCellQuadratureMethod _momentFittingVariant = CutCellQuadratureMethod.Saye;
 
-        public XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant {
+        public CutCellQuadratureMethod MomentFittingVariant {
             get => _momentFittingVariant;
             set => _momentFittingVariant = value;
         }
@@ -43,9 +43,9 @@ namespace CutEdgeQuadrature.QuadratureTests {
 
         public double EdgeArea => 3.5;
 
-        private XQuadFactoryHelper.MomentFittingVariants _momentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye;
+        private CutCellQuadratureMethod _momentFittingVariant = CutCellQuadratureMethod.Saye;
 
-        public XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant {
+        public CutCellQuadratureMethod MomentFittingVariant {
             get => _momentFittingVariant;
             set => _momentFittingVariant = value;
         }
@@ -65,9 +65,9 @@ namespace CutEdgeQuadrature.QuadratureTests {
 
         public double EdgeArea => 2.0;
 
-        private XQuadFactoryHelper.MomentFittingVariants _momentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye;
+        private CutCellQuadratureMethod _momentFittingVariant = CutCellQuadratureMethod.Saye;
 
-        public XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant {
+        public CutCellQuadratureMethod MomentFittingVariant {
             get => _momentFittingVariant;
             set => _momentFittingVariant = value;
         }
@@ -87,9 +87,9 @@ namespace CutEdgeQuadrature.QuadratureTests {
 
         public double EdgeArea => 2.0;
 
-        private XQuadFactoryHelper.MomentFittingVariants _momentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye;
+        private CutCellQuadratureMethod _momentFittingVariant = CutCellQuadratureMethod.Saye;
 
-        public XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant {
+        public CutCellQuadratureMethod MomentFittingVariant {
             get => _momentFittingVariant;
             set => _momentFittingVariant = value;
         }

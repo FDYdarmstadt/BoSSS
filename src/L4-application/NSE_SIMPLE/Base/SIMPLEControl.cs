@@ -200,8 +200,8 @@ namespace NSE_SIMPLE {
     }
 
     /// <summary>
-    /// Approximation \f$ \mathcal A^\vartheta\f$ 
-    /// of predictor matrix \f$ \mathbf{A}^\vartheta_{C} - \frac{1}{Re} \mathbf{A}_{D}\f$  in correction step of the SIMPLE-algorithm.
+    /// Approximation $\mathcal A^\vartheta$ 
+    /// of predictor matrix $\mathbf{A}^\vartheta_{C} - \frac{1}{Re} \mathbf{A}_{D}$  in correction step of the SIMPLE-algorithm.
     /// </summary>        
     public enum PredictorApproximations {
 

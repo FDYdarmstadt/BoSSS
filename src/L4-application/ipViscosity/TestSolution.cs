@@ -27,31 +27,31 @@ namespace BoSSS.Application.ipViscosity {
 
         /// <summary>
         /// \f$ 
-        /// u_d(\vec{X})
+        /// u_d(\underline{X})
         /// \f$ 
         /// </summary>
         public abstract double U(int d, double[] X);
 
         /// \f$ 
-        /// \partial_{i} u_d(\vec{X})
+        /// \partial_{i} u_d(\underline{X})
         /// \f$ 
         public abstract double dU(int d, double[] X, int i);
 
         /// \f$ 
-        /// \partial_{i} \partial_{j} u_d(\vec{X})
+        /// \partial_{i} \partial_{j} u_d(\underline{X})
         /// \f$ 
         public abstract double ddU(int d, double[] X, int i, int j);
 
         /// <summary>
         /// \f$ 
-        /// \mu(\vec{X})
+        /// \mu(\underline{X})
         /// \f$ 
         /// </summary>
         public abstract double mu(double[] X);
 
         /// <summary>
         /// \f$ 
-        /// \partial_{i} \mu(\vec{X})
+        /// \partial_{i} \mu(\underline{X})
         /// \f$ 
         /// </summary>
         public abstract double dmu(double[] X, int i);
@@ -87,7 +87,7 @@ namespace BoSSS.Application.ipViscosity {
 
         /// <summary>
         /// \f[ 
-        ///   - \operatorname{div} \left( \mu (\partial_d \vec{u}) \right)
+        ///   - \operatorname{div} \left( \mu (\partial_d \underline{u}) \right)
         /// \f]
         /// </summary>
         public double Term2(int d, double[] X) {
@@ -117,7 +117,7 @@ namespace BoSSS.Application.ipViscosity {
 
         /// <summary>
         /// \f[ 
-        ///   \frac{2}{3} \operatorname{div} \left( \mu \myMatrix{I} \operatorname{div} ( \vec{u} )  \right)
+        ///   \frac{2}{3} \operatorname{div} \left( \mu \boldsymbol{I} \operatorname{div} ( \underline{u} )  \right)
         /// \f]
         /// </summary>
         public double Term3(int d, double[] X) {

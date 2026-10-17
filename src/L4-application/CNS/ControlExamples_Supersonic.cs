@@ -2261,7 +2261,7 @@ namespace CNS {
             }
 
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 3 * dgDegree;
             c.AgglomerationThreshold = agg;
             c.AddVariable(IBMVariables.FluidCells, 1);
@@ -2573,7 +2573,7 @@ namespace CNS {
             }
 
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 3 * dgDegree;
             c.AgglomerationThreshold = agg;
             c.AddVariable(IBMVariables.FluidCells, 1);
@@ -2860,7 +2860,7 @@ namespace CNS {
             angle = 0.0;
 
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 3 * dgDegree;
             c.AgglomerationThreshold = agg;
             c.AddVariable(IBMVariables.FluidCells, 1);
@@ -3172,7 +3172,7 @@ namespace CNS {
                 return X[1] - ramp(X[0]);
             };
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 3 * dgDegree;
             c.AgglomerationThreshold = agg;
             c.SaveAgglomerationPairs = false;
@@ -3437,7 +3437,7 @@ namespace CNS {
                 }
             };
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 3 * dgDegree;
             c.AgglomerationThreshold = agg;
             c.SaveAgglomerationPairs = false;
@@ -3986,7 +3986,7 @@ namespace CNS {
                 }
             };
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.Saye;
             int levelSetDegree = 2;
             c.LevelSetQuadratureOrder = 3 * levelSetDegree;
             c.AgglomerationThreshold = 0.3;
@@ -4221,7 +4221,7 @@ namespace CNS {
                 }
             };
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.Saye;
             int levelSetDegree = 2;
             c.LevelSetQuadratureOrder = 3 * levelSetDegree;
             c.AgglomerationThreshold = 0.3;
@@ -4389,7 +4389,7 @@ namespace CNS {
             c.ReynoldsNumber = 1.0;
             c.PrandtlNumber = 0.71;
 
-            c.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            c.CutCellQuadratureType = BoSSS.Foundation.XDG.CutCellQuadratureMethod.Saye;
 
             bool AV = false;
 
@@ -4832,7 +4832,7 @@ namespace CNS {
             };
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
 
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 6;
             c.AgglomerationThreshold = 0.9;
             c.SaveAgglomerationPairs = true;
@@ -5394,7 +5394,7 @@ namespace CNS {
             };
 
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.Saye;
             int levelSetDegree = 1;
             c.LevelSetQuadratureOrder = 3 * levelSetDegree;
             c.AgglomerationThreshold = 0.3;

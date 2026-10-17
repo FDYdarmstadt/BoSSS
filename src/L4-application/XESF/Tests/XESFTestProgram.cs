@@ -1,4 +1,4 @@
-﻿using BoSSS.Foundation;
+using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
@@ -19,35 +19,33 @@ using MathNet.Numerics.Interpolation;
 using System.Linq;
 using NUnit.Framework;
 using System.Diagnostics.Metrics;
+using BoSSS.Solution.Tecplot;
 
-namespace XESF.Tests
-{
+namespace XESF.Tests {
     [TestFixture]
-    public static class XESFTestProgram
-            {
-        
+    public static class XESFTestProgram {
+
         #region NUnit stuff
         [OneTimeSetUp]
-        static public void Init()
-        {
+        static public void Init() {
             BoSSS.Solution.Application.InitMPI();
         }
 
         [OneTimeTearDown]
-        static public void Cleanup()
-        {
+        static public void Cleanup() {
         }
         #endregion
 
         #region SupersonicWedgeFlow using two LS on a Cartesian mesh
         [Test]
-        public static void XDG_SWF_TwoLs()
-        {
-            BoSSS.Solution.Application.InitMPI(num_threads:1); //fails if more than 1 thread is chosenm problem with OpenMP
-            Console.WriteLine("!!!!!!!!!!!!!!!! WARNING: OPENMP Paralelization turned off !!!!!!!!!!!!");
+        public static void XDG_SWF_TwoLs() {
+            //BoSSS.Solution.Application.InitMPI(num_threads: 1); //fails if more than 1 thread is chosen problem with OpenMP
+
+       
+
+            Console.WriteLine("!!!!!!!!!!!!!!!! WARNING: OPENMP Parallelization turned off !!!!!!!!!!!!");
             BoSSS.Solution.Application.DeleteOldPlotFiles();
-            using (var p = new XESFMain())
-            {
+            using(var p = new XESFMain()) {
                 var C = XESFHardCodedControl.XDGWedgeFlow_TwoLs_Base(
                     optiLSDegree: 1,
                     lsDegree: 1,
@@ -66,22 +64,25 @@ namespace XESF.Tests
                     agg: 0.4,
                     globalization: ApplicationWithIDT.GlobalizationStrategy.LineSearch
                     );
+                C.CutCellQuadratureType = CutCellQuadratureMethod.Algoim;
                 p.Init(C);
                 p.RunSolverMode();
                 var tol1 = 1e-07;
                 var tol2 = 1e-07;
-                Assert.IsTrue((p.obj_f_vec.MPI_L2Norm() < tol2 && p.ResidualVector.MPI_L2Norm() < tol1), $"the L2 Error is greater than {tol1} (Residual {p.ResidualVector.MPI_L2Norm()}, Enriched Residual {p.obj_f_vec.MPI_L2Norm()}");
+                //Assert.IsTrue((p.obj_f_vec.MPI_L2Norm() < tol2 && p.ResidualVector.MPI_L2Norm() < tol1), $"the L2 Error is greater than {tol1} (Residual {p.ResidualVector.MPI_L2Norm()}, Enriched Residual {p.obj_f_vec.MPI_L2Norm()}");
+
+                Assert.Less(p.obj_f_vec.MPI_L2Norm(), tol2, $"the enriched residual is greater than {tol2} (Residual {p.ResidualVector.MPI_L2Norm()}, Enriched Residual {p.obj_f_vec.MPI_L2Norm()}");
+                Assert.Less(p.ResidualVector.MPI_L2Norm() , tol1, $"the residual is greater than {tol1} (Residual {p.ResidualVector.MPI_L2Norm()}, Enriched Residual {p.obj_f_vec.MPI_L2Norm()}");
+
             }
         }
         #endregion
         #region SupersonicWedgeFlow using one LS on a Cartesian rotated mesh
         [Test]
-        public static void XDG_SWF_OneLs_Cart()
-        {
-            BoSSS.Solution.Application.InitMPI(num_threads: 1);
+        public static void XDG_SWF_OneLs_Cart() {
+            //BoSSS.Solution.Application.InitMPI(num_threads: 1);
             BoSSS.Solution.Application.DeleteOldPlotFiles();
-            using (var p = new XESFMain())
-            {
+            using(var p = new XESFMain()) {
                 var C = XESFHardCodedControl.XDGWedgeFlow_OneLs_Rotation(
                     MaxIterations: 100,
                     dgDegree: 0,
@@ -98,12 +99,10 @@ namespace XESF.Tests
             }
         }
         #endregion
-        public static void XDGBowShockFromDB()
-        {
-            BoSSS.Solution.Application.InitMPI(num_threads: 1);
+        public static void XDGBowShockFromDB() {
+            //BoSSS.Solution.Application.InitMPI(num_threads: 1);
             BoSSS.Solution.Application.DeleteOldPlotFiles();
-            using (var p = new XESFMain())
-            {
+            using(var p = new XESFMain()) {
                 var C = XESFHardCodedControl.XDGBS_Local(
                     plotInterval: 1
                     );
@@ -112,12 +111,10 @@ namespace XESF.Tests
                 p.RunSolverMode();
             }
         }
-        public static void XDG_SWF_TwoLs_HighOrder()
-        {
-            BoSSS.Solution.Application.InitMPI(num_threads: 1);
+        public static void XDG_SWF_TwoLs_HighOrder() {
+            //BoSSS.Solution.Application.InitMPI(num_threads: 1);
             BoSSS.Solution.Application.DeleteOldPlotFiles();
-            using (var p = new XESFMain())
-            {
+            using(var p = new XESFMain()) {
                 var C = XESFHardCodedControl.XDGWS_Cluster(
                     dgDegree: 3,
                     lsdegree: 3,
@@ -133,26 +130,22 @@ namespace XESF.Tests
 
             }
         }
-/// <summary>
-/// Helper function to store interpolating points of an SplineLevelSet
-/// </summary>
-/// <param name="p"></param>
-/// <param name="filename"></param>
-public static void SaveIsoContourToTextFile(XESFMain p, string filename)
-        {
-            if (p.LevelSetOpti is SplineOptiLevelSet spliny)
-            {
+        /// <summary>
+        /// Helper function to store interpolating points of an SplineLevelSet
+        /// </summary>
+        /// <param name="p"></param>
+        /// <param name="filename"></param>
+        public static void SaveIsoContourToTextFile(XESFMain p, string filename) {
+            if(p.PrimaryLevelSetOptimizerView is SplineOptiLevelSet spliny) {
                 spliny.GetSpline();
-                if (spliny.Spline is CubicSpline cSpliny)
-                {
+                if(spliny.Spline is CubicSpline cSpliny) {
                     var yMax = ((GridData)p.Grid.iGridData).Vertices.Coordinates.ExtractSubArrayShallow(-1, 1).To1DArray().Max();
                     var yMin = ((GridData)p.Grid.iGridData).Vertices.Coordinates.ExtractSubArrayShallow(-1, 1).To1DArray().Min();
                     var yPoints = GenericBlas.Linspace(yMin, yMax, 200);
                     var xPoints = new double[100];
                     var cPoints = new double[100];
                     var allPoints = MultidimensionalArray.Create(100, 3);
-                    for (int i = 0; i < 100; i++)
-                    {
+                    for(int i = 0; i < 100; i++) {
                         allPoints[i, 0] = yPoints[i];
 
                         xPoints[i] = cSpliny.Interpolate(yPoints[i]);
@@ -163,9 +156,7 @@ public static void SaveIsoContourToTextFile(XESFMain p, string filename)
                     }
                     allPoints.SaveToTextFile(filename);
 
-                }
-                else
-                {
+                } else {
                     throw new NotSupportedException("not supported - but one could implement a Newton Root finding along lines of type x -> (x,y_i) for that");
                 }
             }
@@ -173,3 +164,4 @@ public static void SaveIsoContourToTextFile(XESFMain p, string filename)
 
     }
 }
+

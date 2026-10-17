@@ -56,7 +56,7 @@ namespace BoSSS.Foundation.XDG {
             /// See <see cref="LevelSetTracker.CutCellQuadratureType"/>
             /// </summary>
             [DataMember]
-            public XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            public CutCellQuadratureMethod CutCellQuadratureType = CutCellQuadratureMethod.Classic;
 
             /// <summary>
             /// See <see cref="LevelSetTracker.SpeciesTable"/>

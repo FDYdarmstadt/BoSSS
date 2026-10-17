@@ -126,7 +126,19 @@ namespace BoSSS.Solution.NSECommon {
         protected double GetPenalty(int jCellIn, int jCellOut) {
 
             double penaltySizeFactor_A = 1.0 / cj[jCellIn];
-            double penaltySizeFactor_B = jCellOut >= 0 ? 1.0 / cj[jCellOut] : 0;
+            double penaltySizeFactor_B;// = jCellOut >= 0 ? 1.0 / cj[jCellOut] : 0;
+            if(jCellOut < 0 || cj[jCellOut].IsNaNorInf())
+                // there is no OUT-cell, i.e., current edge is at the boundary of the domain
+                // -- or -- 
+                // in 3D, with certain cut-cell quad rules (e.g. Algoim),
+                // when the Level Set passes exactly through the corner of the cell,
+                // it might happen that the species-volume of the OUT-cell is empty,
+                // but the edge integral is only almost zero (slightly positive, e.g., weights around 10e-14 or so).
+                // In such cases, the edge integral is evaluated (since it is a non-empty rule),
+                // but the OUT-cell already has a NAN-length scale assigned.
+                penaltySizeFactor_B = 0.0;
+            else
+                penaltySizeFactor_B = 1.0 / cj[jCellOut];
             double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
 
             Debug.Assert(!double.IsNaN(penaltySizeFactor_A));
@@ -311,7 +323,7 @@ namespace BoSSS.Solution.NSECommon {
                     }
                     break;
                 }
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet:
                 case IncompressibleBcType.Pressure_Dirichlet:
                 case IncompressibleBcType.NoSlipNeumann: {
@@ -637,7 +649,7 @@ namespace BoSSS.Solution.NSECommon {
                         }
                         break;
                     }
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet:
                 case IncompressibleBcType.Pressure_Dirichlet:
                 case IncompressibleBcType.NoSlipNeumann: {

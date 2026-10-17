@@ -40,8 +40,8 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
     /// <summary>
     /// Nonconservative Advection: 
     /// \f[
-    /// \textrm{d}_t \varphi + \vec{u} \cdot \operatorname{grad} \varphi = 0, \qquad
-    /// \operatorname{div} \vec{u} \neq 0
+    /// \textrm{d}_t \varphi + \underline{u} \cdot \operatorname{grad} \varphi = 0, \qquad
+    /// \operatorname{div} \underline{u} \neq 0
     /// \f]
     /// Now with Runge-Kutta Timestepping!
     /// </summary>
@@ -137,12 +137,12 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
     /// <summary>
     /// Nonconservative Advection:
     /// \f[
-    /// \textrm{d}_t \varphi + \vec{u} \cdot \operatorname{grad} \varphi = 0, \qquad
-    /// \operatorname{div} \vec{u} \neq 0
+    /// \textrm{d}_t \varphi + \underline{u} \cdot \operatorname{grad} \varphi = 0, \qquad
+    /// \operatorname{div} \underline{u} \neq 0
     /// \f]
     /// With Crank-Nicholson Timestepping:
     /// 
-    /// u_new/dt + 1/2 \vec{u_new} \cdot \operatorname{grad} \varphi_new = u_old/dt- 1/2 \vec{u_old} \cdot \operatorname{grad} \varphi_old
+    /// u_new/dt + 1/2 \underline{u_new} \cdot \operatorname{grad} \varphi_new = u_old/dt- 1/2 \underline{u_old} \cdot \operatorname{grad} \varphi_old
     /// 
     /// 
     /// </summary>

@@ -28,14 +28,14 @@ using NUnit.Framework;
 namespace CutCellQuadrature {
 
     [TestFixture]
-    public partial class Program : Application {
+    public partial class CutCellQuadratureMain : Application {
 
         [Test]
         public static void Test3DSphereVolume() {
             ITestCase testCase = new SphereVolume3DTestCase(GridSizes.Tiny, GridTypes.Structured);
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
-            Program app = new Program(testCase);
+            CutCellQuadratureMain app = new CutCellQuadratureMain(testCase);
             app.Init(null);
             app.SetUpEnvironment();
             app.SetInitial(0);
@@ -61,7 +61,7 @@ namespace CutCellQuadrature {
             ITestCase testCase = new SphereVolume3DTestCase(GridSizes.Tiny, GridTypes.Structured);
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
-            Program app = new Program(testCase);
+            CutCellQuadratureMain app = new CutCellQuadratureMain(testCase);
             app.Init(null);
             app.SetUpEnvironment();
             app.SetInitial(0);
@@ -87,7 +87,7 @@ namespace CutCellQuadrature {
             ITestCase testCase = new ConstantIntgreandSphereSurfaceIntegral3DTestCase(GridSizes.Tiny, GridTypes.Structured);
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
-            Program app = new Program(testCase);
+            CutCellQuadratureMain app = new CutCellQuadratureMain(testCase);
             app.Init(null);
             app.SetUpEnvironment();
             app.SetInitial(0);
@@ -113,7 +113,7 @@ namespace CutCellQuadrature {
             ITestCase testCase = new ConstantIntgreandSphereSurfaceIntegral3DTestCase(GridSizes.Tiny, GridTypes.Structured);
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
-            Program app = new Program(testCase);
+            CutCellQuadratureMain app = new CutCellQuadratureMain(testCase);
             app.Init(null);
             app.SetUpEnvironment();
             app.SetInitial(0);

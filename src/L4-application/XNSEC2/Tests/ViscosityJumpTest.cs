@@ -29,17 +29,17 @@ namespace BoSSS.Application.XNSEC {
     /// <summary>
     /// This tests the correctness of the strain jump condition:
     /// \f[
-    ///   \left\llbracket \mu \left( \vec{u} + \vec{u}^T \right) \vec{n}_{\mathfrak{I}} \right\rrbracket = 0
+    ///   \left[\![ \mu \left( \underline{u} + \underline{u}^T \right) \underline{n}_{\mathfrak{I}} \right]\!] = 0
     /// \f]
     /// Important for this testcase is,
     /// the individual terms of the jump condition are nonzero and only the sum of them cancels out, i.e.
     /// \f[
-    ///   \left\llbracket \mu \vec{u} \cdot \vec{n}_{\mathfrak{I}} \right\rrbracket \neq 0
+    ///   \left[\![ \mu \underline{u} \cdot \underline{n}_{\mathfrak{I}} \right]\!] \neq 0
     ///   \quad \textrm{and} \quad
-    ///   \left\llbracket \mu \vec{u}^T \cdot \vec{n}_{\mathfrak{I}} \right\rrbracket \neq 0,
+    ///   \left[\![ \mu \underline{u}^T \cdot \underline{n}_{\mathfrak{I}} \right]\!] \neq 0,
     /// \f]
     /// which is not the case in many other test-cases.
-    /// Atention: Test modified to be used with XNSEC! The \nabla\cdot \vec{u} term will be zero because
+    /// Atention: Test modified to be used with XNSEC! The \nabla\cdot \underline{u} term will be zero because
     /// constant density is asumed.
     /// </summary>
     internal class ViscosityJumpTest : IXNSECTest {

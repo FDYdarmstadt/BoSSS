@@ -1,4 +1,5 @@
 ﻿using BoSSS.Foundation.XDG.OperatorFactory;
+using BoSSS.Solution.XNSECommon;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
@@ -21,7 +22,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         static public double EulerAlamansiPenalty = 1.0;
 
-        public NavierCauchy(string speciesName, Solid material, int d, int D) {
+        public NavierCauchy(string speciesName, Solid material, int d, int D, IncompressibleMultiphaseBoundaryCondMap boundaryMap) {
             this.speciesName = speciesName;
             this.material = material;
             this.codomainName = BoSSS.Solution.NSECommon.EquationNames.MomentumEquationComponent(d);
@@ -29,29 +30,35 @@ namespace ZwoLevelSetSolver.SolidPhase {
             AddVariableNames(ZwoLevelSetSolver.VariableNames.DisplacementVector(D));
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Pressure);
 
-            
             var convection = new NonLinearConvectionForm(SpeciesName, 
                 BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], 
                 BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D),
-                d, material.Density);
+                material.Density);
             AddComponent(convection);
             
-            var pressure = new PressureGradientForm(SpeciesName, d);
+            var pressure = new GradientForm(SpeciesName, d, BoSSS.Solution.NSECommon.VariableNames.Pressure);
             AddComponent(pressure);
 
-            var eulerAlmansi0 = new SIPForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, EulerAlamansiPenalty);
-            AddComponent(eulerAlmansi0);
+            if(material.Lame2 != 0.0) {
+                var eulerAlmansi0 = new SIPForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, boundaryMap, 1);
+                AddComponent(eulerAlmansi0);
+                var eulerAlmansi1 = new SIPTransposeForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, boundaryMap, 0);
+                AddComponent(eulerAlmansi1);
+                //AddComponent(new SIPGradUTGradUForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, -material.Lame2, boundaryMap, 0));
 
-            var eulerAlmansi1 = new SIPTransposeForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, EulerAlamansiPenalty);
-            AddComponent(eulerAlmansi1);
-            
-            //if(d == 0) {
-            var viscosity = new SIPForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity);
-            AddComponent(viscosity);
-            //} else {
-            //    var viscosity = new Fake_ipFlux(1.3, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], material.Viscosity);
-            //    AddComponent(viscosity);
-            //}
+                //AddComponent(new BoundaryEdgePenaltyForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], 0.3 * material.Lame2));
+                //AddComponent(new EdgePenaltyForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[d], material.Lame2));
+            }
+            if(material.Viscosity != 0.0)
+            {
+                var viscosity = new SIPForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity, boundaryMap, 1);
+                AddComponent(viscosity);
+                var viscosityT = new SIPTransposeForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity, boundaryMap, 0);
+                AddComponent(viscosityT);
+
+                //AddComponent(new EdgePenaltyForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], material.Viscosity));
+            }
+
             string gravity = BoSSS.Solution.NSECommon.VariableNames.GravityVector(D)[d];
             string gravityOfSpecies = gravity + "#" + SpeciesName;
             var gravityComponent = new BoSSS.Solution.XNSECommon.Operator.MultiPhaseSource(gravityOfSpecies, speciesName);

@@ -1,4 +1,4 @@
-﻿using ApplicationWithIDT;
+using ApplicationWithIDT;
 using ApplicationWithIDT.OptiLevelSets;
 using ilPSP.Utils;
 using NUnit.Framework;
@@ -38,7 +38,7 @@ namespace BUIDT.Tests
         /// </summary>
         public static void StraightShockCurvedStart_Eccomas22()
         {
-            BoSSS.Solution.Application.InitMPI(num_threads: 1);
+            //BoSSS.Solution.Application.InitMPI(num_threads: 1);
             BoSSS.Solution.Application.DeleteOldPlotFiles();
             using (var p = new BUIDTMain())
             {
@@ -95,7 +95,7 @@ namespace BUIDT.Tests
         /// <param name="p"></param>
         /// <param name="filename"></param>
         public static void SaveIsoContourToTextFile(BUIDTMain p, string filename) {
-            if(p.LevelSetOpti is SplineOptiLevelSet spliny) {
+            if(p.PrimaryLevelSetOptimizerView is SplineOptiLevelSet spliny) {
                 spliny.GetSpline();
                 if(spliny.Spline is CubicSpline cSpliny) {
 
@@ -122,3 +122,4 @@ namespace BUIDT.Tests
     }
 
 }
+

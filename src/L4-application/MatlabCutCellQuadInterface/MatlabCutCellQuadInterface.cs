@@ -58,10 +58,10 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         public List<_3D> Levelsets3D { get => levelsets3D ?? (levelsets3D = new List<_3D>()); }
 
         static void Main(string[] args) {
-            
+
             Console.WriteLine("External binder for Matlab");
-            Console.WriteLine("Running an example 2d circle test case");
-            MatlabCutCellQuadInterfaceTests.circle2D();
+            Console.WriteLine("Running an example 2d ellipse test case");
+            MatlabCutCellQuadInterfaceTests.ellipse2D();
         }
 
 
@@ -72,7 +72,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             try {
                 Console.WriteLine("BoSSS has been initialized");
                 mustFinalizeMPI |= BoSSS.Solution.Application.InitMPI();
-            } catch (Exception ex) {
+            } catch(Exception ex) {
                 Console.WriteLine(ex);
                 throw;
             }
@@ -82,7 +82,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         /// MPI shutdown
         /// </summary>
         public void BoSSSFinalize() {
-            if (mustFinalizeMPI)
+            if(mustFinalizeMPI)
                 MPI.Wrappers.csMPI.Raw.mpiFinalize();
 
             Console.WriteLine("BoSSS has been finalized");
@@ -97,7 +97,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         /// <param name="yNodes"></param>
         /// <exception cref="ArgumentException"></exception>
         public void SetDomain(int Dim, double[] xNodes, double[] yNodes) {
-            if (Dim != 2) {
+            if(Dim != 2) {
                 throw new ArgumentException("Dimension must be 2 for the given input parameters.");
             }
             grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
@@ -105,10 +105,10 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
 
 
         public void SetDomain(int Dim, double[] xNodes, double[] yNodes, double[] zNodes) {
-            if (Dim != 3) {
+            if(Dim != 3) {
                 throw new ArgumentException("Dimension must be 3 for the given input parameters.");
             }
-            if (zNodes == null || zNodes.Length == 0) {
+            if(zNodes == null || zNodes.Length == 0) {
                 throw new ArgumentException("zNodes must not be empty for a 3D grid.");
             }
             grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
@@ -120,22 +120,14 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         /// <param name="delegates"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        private _2D ReturnMaxDelegate(IList<_2D> delegates, string CalculateMethod = "Max") {
-            if (delegates.Count == 0)
+        private _2D ReturnMaxDelegate(IList<_2D> delegates) {
+            if(delegates.Count == 0)
                 throw new Exception("No level sets are submitted, call Submit2DLevelSet() method first!");
 
-            if (delegates.Count == 1)
+            if(delegates.Count == 1)
                 return delegates.First();
 
-            switch (CalculateMethod) {
-                case "Max":
-                    return (x0, x1) => delegates.Max(del => del(x0, x1));
-                case "Min":
-                    return (x0, x1) => delegates.Min(del => del(x0, x1));
-                default:
-                    throw new ArgumentException("Invalid CalculateMethod. Use 'Max' or 'Min'.");
-			}
-
+            return (x0, x1) => delegates.Max(del => del(x0, x1));
         }
 
         /// <summary>
@@ -144,21 +136,14 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         /// <param name="delegates"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        private _3D ReturnMaxDelegate(IList<_3D> delegates, string CalculateMethod = "Max") {
-            if (delegates.Count == 0)
+        private _3D ReturnMaxDelegate(IList<_3D> delegates) {
+            if(delegates.Count == 0)
                 throw new Exception("No level sets are submitted, call Submit3DLevelSet() method first!");
 
-            if (delegates.Count == 1)
+            if(delegates.Count == 1)
                 return delegates.First();
 
-            switch (CalculateMethod) {
-                case "Max":
-                    return (x0, x1, x2) => delegates.Max(del => del(x0, x1, x2));
-                case "Min":
-                    return (x0, x1, x2) => delegates.Min(del => del(x0, x1, x2));
-                default:
-                    throw new ArgumentException("Invalid CalculateMethod. Use 'Max' or 'Min'.");
-			}
+            return (x0, x1, x2) => delegates.Max(del => del(x0, x1, x2));
         }
 
         /// <summary>
@@ -169,11 +154,10 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             if(grd == null)
                 throw new InvalidOperationException("Grid must be set");
 
-            if (grd.SpatialDimension != 2)
+            if(grd.SpatialDimension != 2)
                 throw new Exception($"Mismatch in the spatial dimension of the grid ({grd.SpatialDimension}D) with the level set (2D).");
 
             Levelsets2D.Add(inLevelSet);
-            Console.WriteLine("Submitted a 2D level set function.");
         }
 
         /// <summary>
@@ -184,11 +168,10 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             if(grd == null)
                 throw new InvalidOperationException("Grid must be set");
 
-            if (grd.SpatialDimension != 3)
+            if(grd.SpatialDimension != 3)
                 throw new Exception($"Mismatch in the spatial dimension of the grid ({grd.SpatialDimension}D) with the level set (3D).");
 
             Levelsets3D.Add(inLevelSet);
-            Console.WriteLine("Submitted a 3D level set function.");
         }
 
         /// <summary>
@@ -197,7 +180,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         /// <param name="degree">degree of the level set</param>
         public void ProjectLevelSetWithClassic(int degree) {
             Console.WriteLine("Using classic HMF quadrature rule");
-            ProjectLevelSet(degree, XQuadFactoryHelperBase.MomentFittingVariants.Classic);
+            ProjectLevelSet(degree, CutCellQuadratureMethod.Classic);
         }
 
         /// <summary>
@@ -206,7 +189,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         /// <param name="degree">degree of the level set</param>
         public void ProjectLevelSetWithGaussAndStokes(int degree) {
             Console.WriteLine("Using GaussAndStokes HMF quadrature rule");
-            ProjectLevelSet(degree, XQuadFactoryHelperBase.MomentFittingVariants.OneStepGaussAndStokes);
+            ProjectLevelSet(degree, CutCellQuadratureMethod.OneStepGaussAndStokes);
         }
 
         /// <summary>
@@ -215,7 +198,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         /// <param name="degree">degree of the level set</param>
         public void ProjectLevelWithTwoStepStokesAndGauss(int degree) {
             Console.WriteLine("Using GaussAndStokes HMF quadrature rule");
-            ProjectLevelSet(degree, XQuadFactoryHelperBase.MomentFittingVariants.TwoStepStokesAndGauss);
+            ProjectLevelSet(degree, CutCellQuadratureMethod.TwoStepStokesAndGauss);
         }
 
         /// <summary>
@@ -224,41 +207,40 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         /// <param name="degree">degree of the level set</param>
         public void ProjectLevelSet(int degree) {
             Console.WriteLine("Using classic HMF quadrature rule");
-            ProjectLevelSet(degree, XQuadFactoryHelperBase.MomentFittingVariants.Classic);
+            ProjectLevelSet(degree, CutCellQuadratureMethod.Classic);
         }
 
         /// <summary>
         /// Project the submitted level sets
         /// </summary>
         /// <param name="degree">degree of the level set</param>
-        public void ProjectLevelSet(int degree, XQuadFactoryHelperBase.MomentFittingVariants cellQuadratureMethod, string CalculateMethod = "Max") {
+        public void ProjectLevelSet(int degree, CutCellQuadratureMethod cellQuadratureMethod) {
             Basis b = new Basis(grd, degree);
             var levSet0 = new LevelSet(b, "LevelSetField0");
 
             // Projection
-            if (grd.SpatialDimension == 2) {
-                _2D inLevelSet = ReturnMaxDelegate(Levelsets2D, CalculateMethod);
+            if(grd.SpatialDimension == 2) {
+                _2D inLevelSet = ReturnMaxDelegate(Levelsets2D);
                 levSet0.ProjectField(inLevelSet);
 
-            } else if (grd.SpatialDimension == 3) {
-                _3D inLevelSet = ReturnMaxDelegate(Levelsets3D, CalculateMethod);
+            } else if(grd.SpatialDimension == 3) {
+                _3D inLevelSet = ReturnMaxDelegate(Levelsets3D);
                 levSet0.ProjectField(inLevelSet);
 
             } else {
                 throw new Exception("Only 2D and 3D meshes are supported.");
             }
 
-
-            lsTrk = new LevelSetTracker(grd.GridData, XQuadFactoryHelperBase.MomentFittingVariants.Classic, 1, new string[] { "A", "B" }, levSet0);
+            lsTrk = new LevelSetTracker(grd.GridData, cellQuadratureMethod, 1, new string[] { "A", "B" }, levSet0);
             lsTrk.UpdateTracker(0.0);
-            Console.WriteLine($"Successful projection of level set with {cellQuadratureMethod.ToString()}");
+            Console.WriteLine("Successful projection of level set");
         }
 
         /// <summary>
         /// Plot the current state as a .plt file
         /// </summary>
         /// <param name="superSampling">the super sampling level</param>
-        public void PlotCurrentState(int superSampling=0) {
+        public void PlotCurrentState(int superSampling = 0) {
             Tecplot tecplot = new Tecplot(grd.GridData, (uint)superSampling);
             string path = Path.Combine(Path.GetFullPath("."), "plot_LS");
             double t = 0.0;
@@ -274,7 +256,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         /// <param name="levelSetIndex">level set index (default: 0)</param>
         /// <returns></returns>
         public bool IsItACutCell(int jCell, int levelSetIndex = 0) {
-            var mask = lsTrk.Regions.GetCutCellMask4LevSet(levelSetIndex);                    
+            var mask = lsTrk.Regions.GetCutCellMask4LevSet(levelSetIndex);
             return mask.Contains(jCell);
         }
 
@@ -286,7 +268,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         /// 1 - external points; -1 - inner points; 0 - boundary points </param>
         public void CompileQuadRules(int deg, int SpeciesId = -1) {
             // If interface, do not bother to calculate others
-            if (SpeciesId == 0) {
+            if(SpeciesId == 0) {
                 CompileLevelsetQuadRules(deg);
                 return;
             }
@@ -297,7 +279,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             var scheme = metrics.XQuadSchemeHelper.GetVolumeQuadScheme(spec);
             Foundation.Quadrature.ICompositeQuadRule<Foundation.Quadrature.QuadRule> rules = scheme.Compile(grd.GridData, deg);
 
-            if (SpeciesId == -1)
+            if(SpeciesId == -1)
                 rulesA = rules;
             else
                 rulesB = rules;
@@ -309,10 +291,8 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         /// <param name="deg"></param>
         /// <param name="levelSetIndex">Integer value for the level set</param>
         public void CompileLevelsetQuadRules(int deg, int levelSetIndex = 0) {
-            var spcA = lsTrk.GetSpeciesId("A");
-
-            var metrics = lsTrk.GetXDGSpaceMetrics(new SpeciesId[] { spcA }, deg);
-            var scheme = metrics.XQuadSchemeHelper.GetLevelSetquadScheme(levelSetIndex, spcA, lsTrk.Regions.GetCutCellMask4LevSet(levelSetIndex));
+            var metrics = lsTrk.GetXDGSpaceMetrics();
+            var scheme = metrics.XQuadSchemeHelper.GetLevelSetQuadScheme(levelSetIndex, lsTrk.Regions.GetCutCellMask4LevSet(levelSetIndex));
             var rules = scheme.Compile(grd.GridData, deg);
 
             rulesInterface = rules;
@@ -335,37 +315,37 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
 
             var JacobiDet = grd.GridData.iGeomCells.JacobiDet;
 
-            foreach (var pair in rules) {
+            foreach(var pair in rules) {
                 var qr = pair.Rule;
 
-                for (int jCell = pair.Chunk.i0; jCell < pair.Chunk.JE; jCell++) {
-                    if (jCell != cellNo)
+                for(int jCell = pair.Chunk.i0; jCell < pair.Chunk.JE; jCell++) {
+                    if(jCell != cellNo)
                         continue;
 
-                    if (!grd.GridData.Cells.IsCellAffineLinear(jCell)) {
+                    if(!grd.GridData.Cells.IsCellAffineLinear(jCell)) {
                         throw new NotSupportedException("curved cells not supported!");
                     }
 
-                    var globTr = qr.CloneAs();
-                    globTr.TransformLocal2Global(grd.GridData, jCell);
+                    //qr.OutputQuadratureRuleAsVtpXML("NodesJ" + jCell + ".vtp");
+                    //var globTr = qr.CloneAs();
+                    var globTr = qr.Nodes.TransformLocal2Global(grd.GridData, jCell);
 
 #if DEBUG
-					qr.OutputQuadratureRuleAsVtpXML("NodesJ" + jCell + ".vtp");
-					globTr.OutputQuadratureRuleAsVtpXML("NodestransformedJ" + jCell + ".vtp");
+                    globTr.OutputQuadratureRuleAsVtpXML(qr.Weights, "NodestransformedJ" + jCell + ".vtp");
 #endif                    
 
                     double metric_jCell = JacobiDet[jCell];
                     var WeightsGlobal_jCell = qr.Weights.CloneAs();
                     WeightsGlobal_jCell.Scale(metric_jCell);
 
+                    int SpatialDim = grd.SpatialDimension;
+                    ret = MultidimensionalArray.Create(qr.NoOfNodes, SpatialDim + 1);
 
-                    ret = MultidimensionalArray.Create(globTr.NoOfNodes, globTr.SpatialDim + 1);
-
-                    for (int n = 0; n < qr.NoOfNodes; n++) {
-                        for (int d=0; d < qr.SpatialDim; d++) {
-                            ret[n, d] = globTr.Nodes[n, d];
+                    for(int n = 0; n < qr.NoOfNodes; n++) {
+                        for(int d = 0; d < qr.SpatialDim; d++) {
+                            ret[n, d] = globTr[n, d];
                         }
-                        ret[n, globTr.SpatialDim] = WeightsGlobal_jCell[n];
+                        ret[n, SpatialDim] = WeightsGlobal_jCell[n];
                     }
                     return ret;
                 }
@@ -393,20 +373,19 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
 
             var JacobiDet = grd.GridData.iGeomCells.JacobiDet;
 
-            foreach (var pair in rule) {
+            foreach(var pair in rule) {
                 var qr = pair.Rule;
                 var NodesGlobal = grd.GridData.GlobalNodes.GetValue_Cell(qr.Nodes, pair.Chunk.i0, pair.Chunk.Len);
 
-                for (int jCell = pair.Chunk.i0; jCell < pair.Chunk.JE; jCell++) {
+                for(int jCell = pair.Chunk.i0; jCell < pair.Chunk.JE; jCell++) {
                     int j = jCell - pair.Chunk.i0;
-                    if (!grd.GridData.Cells.IsCellAffineLinear(jCell)) {
+                    if(!grd.GridData.Cells.IsCellAffineLinear(jCell)) {
                         throw new NotSupportedException("curved cells not supported!");
                     }
 
                     qr.OutputQuadratureRuleAsVtpXML("NodesJ" + jCell + ".vtp");
-                    var globTr = qr.CloneAs();
-                    globTr.TransformLocal2Global(grd, jCell);
-                    globTr.OutputQuadratureRuleAsVtpXML("NodestransformedJ" + jCell + ".vtp");
+                    var globTr = qr.Nodes.TransformLocal2Global(grd.GridData, jCell);
+                    globTr.OutputQuadratureRuleAsVtpXML(qr.Weights, "NodestransformedJ" + jCell + ".vtp");
 
 
                     //var NodesGlobal_jCell = NodesGlobal.ExtractSubArrayShallow(j, -1, -1);
@@ -426,23 +405,21 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         /// <exception cref="NotSupportedException"></exception>
         public void WriteSrfQuadRules(int deg) {
 
-            var spcA = lsTrk.GetSpeciesId("A");
-
             int iLevSet = 0;
 
-            var metrics = lsTrk.GetXDGSpaceMetrics(new SpeciesId[] { spcA }, deg);
-            var scheme = metrics.XQuadSchemeHelper.GetLevelSetquadScheme(iLevSet, spcA, lsTrk.Regions.GetCutCellMask4LevSet(iLevSet));
+            var metrics = lsTrk.GetXDGSpaceMetrics();
+            var scheme = metrics.XQuadSchemeHelper.GetLevelSetQuadScheme(iLevSet, lsTrk.Regions.GetCutCellMask4LevSet(iLevSet));
             var rule = scheme.Compile(grd.GridData, deg);
 
             var JacobiDet = grd.GridData.iGeomCells.JacobiDet;
 
-            foreach (var pair in rule) {
+            foreach(var pair in rule) {
                 var qr = pair.Rule;
                 var NodesGlobal = grd.GridData.GlobalNodes.GetValue_Cell(qr.Nodes, pair.Chunk.i0, pair.Chunk.Len);
 
-                for (int jCell = pair.Chunk.i0; jCell < pair.Chunk.JE; jCell++) {
+                for(int jCell = pair.Chunk.i0; jCell < pair.Chunk.JE; jCell++) {
                     int j = jCell - pair.Chunk.i0;
-                    if (!grd.GridData.Cells.IsCellAffineLinear(jCell)) {
+                    if(!grd.GridData.Cells.IsCellAffineLinear(jCell)) {
                         throw new NotSupportedException("curved cells not supported!");
                     }
 

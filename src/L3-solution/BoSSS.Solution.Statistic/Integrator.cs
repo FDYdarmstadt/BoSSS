@@ -67,7 +67,7 @@ namespace BoSSS.Solution.Statistic {
         /// </summary>
         public static Integrator Circle(GridData grdDat, int Res, double Radius, double Cen_x = 0, double Cen_y = 0) {
             if (grdDat.SpatialDimension != 2)
-                throw new NotSupportedException("this operation requires a 3D - grid");
+                throw new NotSupportedException("this operation requires a 2D - grid");
 
             int D = 2;
             double[,] scheissQuadNodes = new double[Res, D];
@@ -319,22 +319,22 @@ namespace BoSSS.Solution.Statistic {
         int MaxNumberOfNodes;
 
         /// <summary>
-        ///  - 1st index: cell index <br/>
-        ///  - 2nd index: quad node index within cell <br/>
+        ///  - 1st index: cell index 
+        ///  - 2nd index: quad node index within cell 
         ///  - 3rd index: spatial coordinate
         /// </summary>
         NodeSet[] m_QuadNodesPerCell;
 
         /// <summary>
         /// for each quad node, its original index in the quad rule that was provided with the constructor.
-        ///  - 1st index: cell index <br/>
-        ///  - 2nd index: quad node index within cell <br/>
+        ///  - 1st index: cell index 
+        ///  - 2nd index: quad node index within cell 
         /// </summary>
         int[][] m_OriginalQuadNodesIndex;
 
 
         /// <summary>
-        ///  - 1st index: cell index <br/>
+        ///  - 1st index: cell index 
         ///  - 2nd index: quad node index within cell
         /// </summary>
         double[][] m_QuadWeightsPerCell;
@@ -398,19 +398,15 @@ namespace BoSSS.Solution.Statistic {
                 for (int n = 0; n < N; n++) {
                     for (int fld = 0; fld < FLD; fld++)
                         ladygaga[fld] = fieldValues[fld][0, n];
-                    
-                    double val = I(ladygaga,orgnodes[n],j);
+
+                    double val = I(ladygaga, orgnodes[n], j);
 
                     ResultAcc += val * quadweights[n];
                 }
             }
 
             // reduce over all MPI processes
-            unsafe {
-                double GlobalAcc = 0;
-                csMPI.Raw.Allreduce((IntPtr)(&ResultAcc), (IntPtr)(&GlobalAcc), 1, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.MAX, csMPI.Raw._COMM.WORLD);
-                return GlobalAcc;    
-            }
+            return ResultAcc.MPISum();
         }
     }
 }

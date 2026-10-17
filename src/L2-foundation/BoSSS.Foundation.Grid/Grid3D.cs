@@ -76,6 +76,9 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <param name="_CellType">
         /// The specific type of hexahedral elements to be used.
         /// </param>
+        /// /// <param name="NonlinearGridTrafo">
+        /// Arbitrary transformation applied to <paramref name="xNodes"/>, <paramref name="yNodes"/> and <paramref name="zNodes"/>, optional
+        /// </param>
         /// <param name="CutOuts">
         /// Optional regions that are not meshed
         /// </param>
@@ -84,10 +87,16 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </returns>
         public static Grid3D Cartesian3DGrid(double[] xNodes, double[] yNodes, double[] zNodes, 
             CellType _CellType = CellType.Cube_Linear,
-            bool periodicX = false, bool periodicY = false, bool periodicZ = false, 
+            bool periodicX = false, bool periodicY = false, bool periodicZ = false,
+            Func<Vector, Vector> NonlinearGridTrafo = null,
             params BoundingBox[] CutOuts) {
             using (var tr = new FuncTrace()) {
                 MPICollectiveWatchDog.Watch();
+
+                if (NonlinearGridTrafo != null) {
+                    if (_CellType == CellType.Cube_Linear)
+                        throw new NotSupportedException($"Not recommended to use a nonlinear transformation of the mesh together with linear cube cells - use at least {CellType.Cube_8}!");
+                }
 
                 // Some Checks
                 // ===========
@@ -134,6 +143,9 @@ namespace BoSSS.Foundation.Grid.Classic {
                 byte perxTag = 0;
                 byte peryTag = 0;
                 byte perzTag = 0;
+
+                if((periodicX || periodicY || periodicZ) & NonlinearGridTrafo != null)
+                    throw new NotSupportedException("grid transformation is not supported for periodic domains");
 
                 if (periodicX) {
                     Vector[] Inlet = { new Vector { xNodes[0], yNodes[0], zNodes[0] },
@@ -250,21 +262,55 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 C_cnt.Type = _CellType;
 
                                 C_cnt.TransformationParams = MultidimensionalArray.Create(NoOfNodes, 3);
-                                Vector xyzPoint = new Vector(3);
-                                //  var Bild0 = Cj0.TransformationParams;
+                                // transformation
+                                // ==============
+                                {
+                                    NoOfNodes = InterpolationNodes.GetLength(0);
+                                    Debug.Assert(InterpolationNodes.GetLength(1) == 3);
+
+                                    double xL = xNodes[i];
+                                    double xR = xNodes[i + 1];
+                                    double yL = yNodes[j];
+                                    double yR = yNodes[j + 1];
+                                    double zL = zNodes[k];
+                                    double zR = zNodes[k + 1];
+
+                                    for (int iNode = 0; iNode < NoOfNodes; iNode++) {
+                                        double xi = 0.5 * (InterpolationNodes[iNode, 0] + 1.0);
+                                        double eta = 0.5 * (InterpolationNodes[iNode, 1] + 1.0);
+                                        double nu = 0.5 * (InterpolationNodes[iNode, 2] + 1.0);
 
 
+                                        Vector A = new Vector(3);
+                                        A.x = xL * (1.0 - xi) + xR * xi;
+                                        A.y = yL * (1.0 - eta) + yR * eta;
+                                        A.z = zL * (1.0 - nu) + zR * nu;
 
 
-                                for (int PointNumber = 0; PointNumber < NoOfNodes; PointNumber++) {
-                                    xyzPoint[0] = xNodes[i] + (xNodes[i + 1] - xNodes[i]) * 0.5 * (InterpolationNodes[PointNumber, 0] + 1);
-                                    xyzPoint[1] = yNodes[j] + (yNodes[j + 1] - yNodes[j]) * 0.5 * (InterpolationNodes[PointNumber, 1] + 1);
-                                    xyzPoint[2] = zNodes[k] + (zNodes[k + 1] - zNodes[k]) * 0.5 * (InterpolationNodes[PointNumber, 2] + 1);
-                                    // Write Physical Coordinates to TransformParams
-                                    for (int dim = 0; dim < 3; dim++) {
-                                        C_cnt.TransformationParams[PointNumber, dim] = xyzPoint[dim];
+                                        Vector B = new Vector(3);
+                                        if (NonlinearGridTrafo != null) {
+                                            B = NonlinearGridTrafo(A);
+                                        } else {
+                                            B = A;
+                                        }
+
+                                        C_cnt.TransformationParams[iNode, 0] = B.x;
+                                        C_cnt.TransformationParams[iNode, 1] = B.y;
+                                        C_cnt.TransformationParams[iNode, 2] = B.z;
+
                                     }
                                 }
+                                //Vector xyzPoint = new Vector(3);
+
+                                //for (int PointNumber = 0; PointNumber < NoOfNodes; PointNumber++) {
+                                //    xyzPoint[0] = xNodes[i] + (xNodes[i + 1] - xNodes[i]) * 0.5 * (InterpolationNodes[PointNumber, 0] + 1);
+                                //    xyzPoint[1] = yNodes[j] + (yNodes[j + 1] - yNodes[j]) * 0.5 * (InterpolationNodes[PointNumber, 1] + 1);
+                                //    xyzPoint[2] = zNodes[k] + (zNodes[k + 1] - zNodes[k]) * 0.5 * (InterpolationNodes[PointNumber, 2] + 1);
+                                //    // Write Physical Coordinates to TransformParams
+                                //    for (int dim = 0; dim < 3; dim++) {
+                                //        C_cnt.TransformationParams[PointNumber, dim] = xyzPoint[dim];
+                                //    }
+                                //}
 
                                 // cell neighbourship
                                 // ==================

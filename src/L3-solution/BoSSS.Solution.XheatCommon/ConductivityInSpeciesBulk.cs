@@ -55,7 +55,7 @@ namespace BoSSS.Solution.XheatCommon {
 
 
         public ConductivityInSpeciesBulk(double penalty, double sw, ThermalMultiphaseBoundaryCondMap bcMap, int D,
-            string spcName, double _kA, double _kB)
+            string spcName, double _kA, double _kB, double _kC)
             : base(penalty, D, bcMap) {
 
             base.m_alpha = sw;
@@ -67,6 +67,7 @@ namespace BoSSS.Solution.XheatCommon {
             switch (spcName) {
                 case "A": currentk = _kA; complementk = _kB; break;
                 case "B": currentk = _kB; complementk = _kA; break;
+                case "C": currentk = _kC; complementk = _kC; break;
                 default: throw new ArgumentException("Unknown species.");
             }
 

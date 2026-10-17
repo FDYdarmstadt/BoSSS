@@ -73,6 +73,10 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
+        public IEnumerable<IParameterHandling> GetAllParameterHandlers() {
+            return null;
+        }
+
         XDifferentialOperatorMk2 owner;
 
         Dictionary<string, double[]> m_DiagonalScale;
@@ -276,6 +280,10 @@ namespace BoSSS.Foundation.XDG {
                 return InternalRepresentation.EquationComponents;
             }
         
+        }
+
+        public IEnumerable<IParameterHandling> GetAllParameterHandlers() {
+            return InternalRepresentation.GetAllParameterHandlers();
         }
 
         XDifferentialOperatorMk2 InternalRepresentation;

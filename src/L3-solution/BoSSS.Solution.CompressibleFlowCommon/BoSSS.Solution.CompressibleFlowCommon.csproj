@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <OutputType>Library</OutputType>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
@@ -20,5 +20,8 @@
   <ItemGroup>
     <Compile Remove="MaterialProperty\IdealGasLaw.cs" />
     <Compile Remove="MaterialProperty\StiffenedGasLaw.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <!--PackageReference Include="System.Drawing.Common" Version="5.0.3" /-->
   </ItemGroup>
 </Project>

@@ -47,7 +47,7 @@ namespace CNS {
 
         /// <summary>
         /// The optional velocity field:
-        /// \f[ \vec{u} = \frac{1}{\rho} \vec{m} \f] 
+        /// \[ \underline{u} = \frac{1}{\rho} \underline{m} \] 
         /// </summary>
         public static readonly Vector<DerivedVariable> Velocity = new Vector<DerivedVariable>(
             d => new DerivedVariable(
@@ -65,7 +65,7 @@ namespace CNS {
 
         /// <summary>
         /// The optional inner energy field:
-        /// \f[ e = E - \frac{1}{2} u_i u_i \f] 
+        /// \[ e = E - \frac{1}{2} u_i u_i \] 
         /// </summary>
         public static readonly DerivedVariable SpecificInnerEnergy = new DerivedVariable(
             "e",
@@ -81,7 +81,7 @@ namespace CNS {
 
         /// <summary>
         /// The optional temperature field:
-        /// \f[ (\kappa - 1) \kappa Ma_\infty e\f] 
+        /// \[ (\kappa - 1) \kappa Ma_\infty e\] 
         /// </summary>
         public static readonly DerivedVariable Temperature = new DerivedVariable(
             "T",
@@ -97,8 +97,8 @@ namespace CNS {
 
         /// <summary>
         /// The optional pressure field:
-        /// \f[ p = f(\rho, \vec{m}, \rho E) \f], where
-        /// \f[ f \f] depends on the equation of state
+        /// \[ p = f(\rho, \underline{m}, \rho E) \], where
+        /// \[ f \] depends on the equation of state
         /// </summary>
         public static readonly DerivedVariable Pressure = new DerivedVariable(
             "p",
@@ -114,8 +114,8 @@ namespace CNS {
 
         /// <summary>
         /// The optional local Mach number field
-        /// \f[ Ma = \frac{\Vert u \Vert}{a} \f], where the formula for the
-        /// local speed of sound \f[ a \f] depends on the equation of state
+        /// \[ Ma = \frac{\Vert u \Vert}{a} \], where the formula for the
+        /// local speed of sound \[ a \] depends on the equation of state
         /// </summary>
         public static readonly DerivedVariable LocalMachNumber = new DerivedVariable(
             "Ma",
@@ -131,7 +131,7 @@ namespace CNS {
 
         /// <summary>
         /// The optional kinetic energy field:
-        /// \f[ K = \rho u_i u_i \f] 
+        /// \[ K = \rho u_i u_i \] 
         /// </summary>
         public static readonly DerivedVariable KineticEnergy = new DerivedVariable(
             "K",
@@ -260,7 +260,7 @@ namespace CNS {
         
         /// <summary>
         /// The optional vorticity field:
-        /// \f[ \vec{\omega} = \nabla \times \vec{u} \f]
+        /// \[ \underline{\omega} = \nabla \times \underline{u} \]
         /// </summary>
         public static readonly Vector<DerivedVariable> Vorticity = new Vector<DerivedVariable>(
             d => new DerivedVariable(
@@ -331,8 +331,8 @@ namespace CNS {
 
         /// <summary>
         /// The local non-dimensional specific enthalpy which is given by
-        /// \f[h = \frac{\rho E + p}{\rho} \f], where \f[\rho E\f] is the total energy,
-        /// \f[p\f] is the pressure, and \f[\rho\f] is the density.
+        /// \[h = \frac{\rho E + p}{\rho} \], where \[\rho E\] is the total energy,
+        /// \[p\] is the pressure, and \[\rho\] is the density.
         /// </summary>
         public static readonly DerivedVariable Enthalpy = new DerivedVariable(
             "h",

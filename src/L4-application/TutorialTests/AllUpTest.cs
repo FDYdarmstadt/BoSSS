@@ -40,19 +40,19 @@ namespace BoSSS.Application.TutorialTests {
         internal static string DirectoryOffset = "";
 
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("quickStartCNS/IsentropicVortex.ipynb")]
-        [Test]
-        static public void Run__IsentropicVortex() {
-            RunWorksheet("quickStartCNS/IsentropicVortex.ipynb");
-        }
-
-        /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("InitialValues/InitialValues.ipynb")]
         [Test]
         static public void Run__InitialValues() {
             RunWorksheet("InitialValues/InitialValues.ipynb");
         }
 
+
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("quickStartCNS/IsentropicVortex.ipynb")]
+        [Test]
+        static public void Run__IsentropicVortex() {
+            RunWorksheet("quickStartCNS/IsentropicVortex.ipynb");
+        }
       
 
         /// <summary> Testing of respective worksheet. </summary>
@@ -68,6 +68,14 @@ namespace BoSSS.Application.TutorialTests {
         static public void Run__ue2Basics() {
             //--test=BoSSS.Application.TutorialTests.AllUpTest.Run__ue2Basics
             RunWorksheet("ue2Basics/ue2Basics.ipynb");
+        }
+
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("WeakVsSuperweak/WeakVsSuperweak.ipynb")]
+        [Test]
+        static public void Run__WeakVsSuperweak() {
+            //--test=BoSSS.Application.TutorialTests.AllUpTest.WeakVsSuperweak
+            RunWorksheet("WeakVsSuperweak/WeakVsSuperweak.ipynb");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
@@ -322,59 +330,6 @@ namespace BoSSS.Application.TutorialTests {
             
             killBatch = r;
             */
-        }
-
-        /// <summary>
-        /// Deletes a database <paramref name="Directory"/>
-        /// 
-        /// Note: the database must be located beneath the <see cref="BatchProcessorClient.AllowedDatabasesPaths"/>
-        /// of the <see cref="BoSSSshell.GetDefaultQueue"/>.
-        /// </summary>
-        public static void DeleteDatabase(string Directory) {
-
-            foreach (var q in BoSSSshell.ExecutionQueues) {
-                foreach (var allowedPath in q.AllowedDatabasesPaths) {
-                    var localBaseDir = new DirectoryInfo(allowedPath.LocalMountPath);
-                    if(localBaseDir.Exists) {
-                        var dbDirs = localBaseDir.GetDirectories(Directory, SearchOption.TopDirectoryOnly);
-                        foreach(var db in dbDirs) {
-                            Console.WriteLine("Deleting database: " + db.FullName);
-                            db.Delete(true);
-                        }
-                    } else {
-                        Console.WriteLine("Warning: missing directory: " + localBaseDir.FullName);
-                    }
-
-                }
-            }
-        }
-
-        /// <summary>
-        /// Deletes all deployments matching the search patter <paramref name="DirectoryWildCard"/>
-        /// </summary>
-        public static void DeleteDeployments(string DirectoryWildCard) {
-
-            foreach (var q in BoSSSshell.ExecutionQueues) {
-
-                var localBaseDir = new DirectoryInfo(q.DeploymentBaseDirectory);
-                if(localBaseDir.Exists) {
-                    var deplDirs = localBaseDir.GetDirectories(DirectoryWildCard, SearchOption.TopDirectoryOnly);
-                    foreach(var d in deplDirs) {
-                        Console.WriteLine("Deleting deployment: " + d.FullName);
-                        try {
-                            // we can be forgiving on deletion of old deployments; 
-                            // an old deployment will not harm or influence the worksheet execution
-                            // (for an old database, it's a different story!
-                            d.Delete(true);
-                        } catch (Exception e) {
-                            Console.Error.WriteLine($"{e.GetType()} during deletion of {d.FullName}: {e.Message}.");
-                        }
-                    }
-                } else {
-                    Console.WriteLine("Warning: missing directory: " + localBaseDir.FullName);
-                }
-
-            }
         }
 
     }

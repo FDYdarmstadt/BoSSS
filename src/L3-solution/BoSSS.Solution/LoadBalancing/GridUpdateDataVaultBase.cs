@@ -18,12 +18,13 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
 using ilPSP.Tracing;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Bson;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -175,6 +176,13 @@ namespace BoSSS.Solution.LoadBalancing {
         }
 
         /// <summary>
+        /// Backup reference for some special edges marker.
+        /// </summary>
+        protected string GetLSlevsetcoincidingcofacesName(int iHistory) {
+            return "LevelSetTracker_LevSetCoincidingCoFaces_at_time_level_" + iHistory + "_somewordstomakeitauniquekey54980272";
+        }
+
+        /// <summary>
         /// Saves the internal state of <see cref="m_OldTracker"/>.
         /// </summary>
         public void BackupTracker (double physTime) {
@@ -199,7 +207,8 @@ namespace BoSSS.Solution.LoadBalancing {
                             this.BackupField(TimeLevel.LevelSets[iLs], GetLSbackupName(iH, iLs));
                         }
                         this.BackupVector(TimeLevel.Regions, GetLSregioncodeName(iH));
-                        this.BackupVector<(int iLevSet, int iFace)[],(int iLevSet, int iFace)[][]>(TimeLevel.LevSetCoincidingFaces, GetLSlevsetcoincidingfacesName(iH));
+                        this.BackupVector<(int iLevSet, int iFace)[], (int iLevSet, int iFace)[][]>(TimeLevel.LevSetCoincidingFaces, GetLSlevsetcoincidingfacesName(iH));
+                        this.BackupVector<(int iLevSet, int iFace)[], (int iLevSet, int iFace)[][]>(TimeLevel.LevSetCoincidingCoFaces, GetLSlevsetcoincidingcofacesName(iH));
 
                         m_LsTrkPrivData.Versions[1 - iH] = TimeLevel.Version;
                         m_LsTrkPrivData.Times[1 - iH] = TimeLevel.time;
@@ -225,6 +234,27 @@ namespace BoSSS.Solution.LoadBalancing {
         }
 
         /// <summary>
+        /// formatter used for all serialization/de-serialization
+        /// </summary>
+        protected JsonSerializer jsonFormatter = new JsonSerializer() {
+            NullValueHandling = NullValueHandling.Include,
+            TypeNameHandling = TypeNameHandling.All,
+            ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
+            ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
+            //TypeNameAssemblyFormat = System.Runtime.Serialization.Formatters.FormatterAssemblyStyle.Full
+            TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Full
+        };
+
+        /// <summary>
+        /// payload container for serialization/de-serialization, see: https://stackoverflow.com/questions/25741895/error-serialising-simple-string-to-bson-using-newtonsoft-json-net
+        /// </summary>
+        [Serializable]
+        protected class JsonContainer {
+            public object PayLoad;
+        }
+
+
+        /// <summary>
         /// Backup data for some vector before grid-redistribution.
         /// </summary>
         /// <param name="vec">
@@ -234,6 +264,10 @@ namespace BoSSS.Solution.LoadBalancing {
         /// <param name="Reference">
         /// Unique string reference under which the re-distributed data can be accessed later, within <see cref="RestoreDGField(DGField, string)"/>.
         /// </param>
+        /// <remarks>
+        /// Note: the counter-part of this method is in the derived class, <see cref="GridUpdateDataVault_LoadBal.RestoreVector{T, V}(V, string)"/>.
+        /// This is, because restoring only works for grid redistribution/load balancing (<see cref="GridUpdateDataVault_LoadBal"/>), but not for grid adaptation (<see cref="GridUpdateDataVault_Adapt"/>)
+        /// </remarks>
         public void BackupVector<T, V>(V vec, string Reference)
             where V : IList<T> //
         {
@@ -244,13 +278,16 @@ namespace BoSSS.Solution.LoadBalancing {
                 var SerializedData = new double[m_oldJ][];
 
                 using(var ms = new MemoryStream()) {
-                    var fmt = new BinaryFormatter();
+                    //var fmt = new BinaryFormatter();
 
                     for(int j = 0; j < m_oldJ; j++) {
                         if(vec[j] != null) {
                             ms.Position = 0;
-                            fmt.Serialize(ms, vec[j]);
-
+                            //fmt.Serialize(ms, vec[j]);
+                            var containerObj = new JsonContainer() { PayLoad = vec[j] };
+                            using(var w = new BsonDataWriter(ms)) {
+                                jsonFormatter.Serialize(w, containerObj);
+                            }
                             SerializedData[j] = CopyData(ms);
                         } else {
                             SerializedData[j] = new double[0];

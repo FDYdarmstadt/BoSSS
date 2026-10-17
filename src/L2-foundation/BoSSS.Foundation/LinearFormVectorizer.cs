@@ -1036,7 +1036,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                         cp.Parameters_OUT[np] = efp.ParameterVars_OUT[np][l, k];
                     }
 
-                    for(int c = 0; c < NoArgs; c++) {
+                    for (int c = 0; c < NoArgs; c++) {
                         UxV[l, k, 0, 0, c] = GetCoeff(ref uA[c], ref vA, ref cp);
                         UxV[l, k, 0, 1, c] = GetCoeff(ref uB[c], ref vA, ref cp);
                         UxV[l, k, 1, 0, c] = GetCoeff(ref uA[c], ref vB, ref cp);

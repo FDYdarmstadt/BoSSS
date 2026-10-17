@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <RootNamespace>BoSSS.Application.Rheology</RootNamespace>
     <AssemblyName>RheologySolver</AssemblyName>
@@ -68,5 +68,8 @@
     <Compile Remove="Z_old\ConstitutiveEqns_Viscosity_old.cs" />
     <Compile Remove="Z_old\PerssonSensor_old.cs" />
     <Compile Remove="Z_old\StressDivergence_Cockburn_old.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <!--PackageReference Include="System.Drawing.Common" Version="5.0.3" /-->
   </ItemGroup>
 </Project>

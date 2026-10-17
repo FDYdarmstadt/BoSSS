@@ -53,7 +53,7 @@ using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
 
-namespace BoSSS.Application.XNSE_Solver {
+namespace BoSSS.Application.XRheology_Solver {
 
     public abstract class XBase_Solver<T> : BoSSS.Solution.Application<T>
         where T : XBase_Control, new() {

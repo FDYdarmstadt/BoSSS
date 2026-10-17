@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using MPI.Wrappers;
 using System.Diagnostics;
-using IntersectingQuadrature.TensorAnalysis;
+//using IntersectingQuadrature.TensorAnalysis;
 
 namespace BoSSS.Application.DatabaseTests {
     public class DatabaseTestsProgram {

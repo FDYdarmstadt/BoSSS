@@ -32,10 +32,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// <summary>
         /// Computes the transformation for a arbitrary vector from the
         /// standard coordinate system into a coordinate system with the axes
-        /// \f$  \vec{e}_1 = \vec{n}\f$ ,
-        /// \f$  \vec{e}_2 = (-n_2, n_1, 0)^T\f$  and
-        /// \f$  \vec{e}_3 = \vec{e}_1 \times \vec{e}_2\f$ ,
-        /// where \f$  \vec{n} = (n_1, n_2, n_3)^T\f$ 
+        /// \f$  \underline{e}_1 = \underline{n}\f$ ,
+        /// \f$  \underline{e}_2 = (-n_2, n_1, 0)^T\f$  and
+        /// \f$  \underline{e}_3 = \underline{e}_1 \times \underline{e}_2\f$ ,
+        /// where \f$  \underline{n} = (n_1, n_2, n_3)^T\f$ 
         /// is given by <paramref name="_edgeNormal"/>.
         /// </summary>
         /// <param name="_edgeNormal">
@@ -71,10 +71,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// <param name="_this"></param>
         /// <returns>
         /// This vector in a coordinate system with the axes
-        /// \f$  \vec{e}_1 = \vec{n}\f$ ,
-        /// \f$  \vec{e}_2 = (-n_2, n_1, 0)^T\f$  and
-        /// \f$  \vec{e}_3 = \vec{e}_1 \times \vec{e}_2\f$ ,
-        /// where \f$  \vec{n} = (n_1, n_2, n_3)^T\f$ 
+        /// \f$  \underline{e}_1 = \underline{n}\f$ ,
+        /// \f$  \underline{e}_2 = (-n_2, n_1, 0)^T\f$  and
+        /// \f$  \underline{e}_3 = \underline{e}_1 \times \underline{e}_2\f$ ,
+        /// where \f$  \underline{n} = (n_1, n_2, n_3)^T\f$ 
         /// is given by <paramref name="edgeNormal"/>
         /// </returns>
         static public Vector ToEdgeCoordinates(this Vector _this, Vector edgeNormal) {

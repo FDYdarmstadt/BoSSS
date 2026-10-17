@@ -58,6 +58,8 @@ namespace ilPSP.Utils {
             _F77_LAPACK = seq_F77_LAPACK;
         }
 
+
+
         static LAPACK() {
             seq_F77_LAPACK = new LAPACK(Parallelism.SEQ);
             omp_F77_LAPACK = new LAPACK(Parallelism.OMP);
@@ -70,11 +72,11 @@ namespace ilPSP.Utils {
         /// ctor
         /// </summary>
         public LAPACK(Parallelism par) :
-            base(BLAS_LAPACK_Libstuff.GetLibname(par),
-                 BLAS_LAPACK_Libstuff.GetPrequesiteLibraries(par),
-                 BLAS_LAPACK_Libstuff.GetGetNameMangling(par),
-                 BLAS_LAPACK_Libstuff.GetPlatformID(par),
-                 BLAS_LAPACK_Libstuff.GetPointerSizeFilter(par)) {
+            base(BLAS_LAPACK_IntelMKL_Libstuff.GetLibname(par),
+                 BLAS_LAPACK_IntelMKL_Libstuff.GetPrequesiteLibraries(par),
+                 BLAS_LAPACK_IntelMKL_Libstuff.GetGetNameMangling(par),
+                 BLAS_LAPACK_IntelMKL_Libstuff.GetPlatformID(par),
+                 BLAS_LAPACK_IntelMKL_Libstuff.GetPointerSizeFilter(par)) {
         }
 
 #pragma warning disable        649

@@ -201,7 +201,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// </summary>
         /// <param name="splitPoints">
         /// The split points given as a parameter
-        /// \f$ t \in ]-1, 1[\f$  of a parametrization that varies
+        /// $t \in ]-1, 1[$  of a parametrization that varies
         /// linearly between <see cref="Start"/> and <see cref="End"/>. In
         /// particular, t=-1 is the start point and t=1 the end point.
         /// </param>

@@ -141,9 +141,9 @@ namespace CNS {
 
             /// <summary>
             /// Evaluates to
-            /// \f$ 
-            /// p \vec{n} \cdot \vec{e_i} - (\tau \cdot \vec{n}) \cdot \vec{e_i}, where i is the given direction
-            /// \f$ 
+            /// $ 
+            /// p \underline{n} \cdot \underline{e_i} - (\tau \cdot \underline{n}) \cdot \underline{e_i}, where i is the given direction
+            /// $ 
             /// </summary>
             protected override double BorderEdgeFlux(double time, double[] x, double[] normal, byte EdgeTag, double[] Uin, int jEdge) {
                 StateVector state = new StateVector(

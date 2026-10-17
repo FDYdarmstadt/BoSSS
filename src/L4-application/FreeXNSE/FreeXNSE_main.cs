@@ -95,14 +95,14 @@ namespace FreeXNSE {
         }
 
         public override int QuadOrder() {
-            if(Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye) {
+            if(Control.CutCellQuadratureType != CutCellQuadratureMethod.Saye) {
                 throw new ArgumentException($"Please use Saye-Rules!");
             }
 
             //QuadOrder
             int degU = Control.Degree;
             int quadOrder = degU * (Control.ActiveTerms.Convective != Convective.Off ? 3 : 2);
-            if(this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
+            if(this.Control.CutCellQuadratureType == CutCellQuadratureMethod.Saye) {
                 //See remarks
                 quadOrder *= 2;
                 quadOrder += 1;
@@ -428,11 +428,11 @@ namespace FreeXNSE {
             if(!Control.ParameterLevelSet.IsNullOrEmpty()) {
                 return;
             } else if(Control.DualSplinePhi0Initial != null) {
-                DualSplineLevelSet SplineLevelSet = new DualSplineLevelSet(Control, new Basis(this.Grid, Control.FieldOptions[pair.CGLevelSet.Identification].Degree), VariableNames.LevelSetDG, Control.NoOfNodes);
+                DualSplineLevelSet SplineLevelSet = new DualSplineLevelSet(Control, new Basis(this.Grid, Control.FieldOptions[pair.C0LevelSet.Identification].Degree), VariableNames.LevelSetDG, Control.NoOfNodes);
                 pair.DGLevelSet = SplineLevelSet;
             } else if(Control.SemiCircleSplinePhi0Initial != null) {
                 Console.WriteLine("Careful! very experimental!");
-                SemiCircleSplineLevelSet SplineLevelSet = new SemiCircleSplineLevelSet(Control, new Basis(this.Grid, Control.FieldOptions[pair.CGLevelSet.Identification].Degree), VariableNames.LevelSetDG, Control.NoOfNodes);
+                SemiCircleSplineLevelSet SplineLevelSet = new SemiCircleSplineLevelSet(Control, new Basis(this.Grid, Control.FieldOptions[pair.C0LevelSet.Identification].Degree), VariableNames.LevelSetDG, Control.NoOfNodes);
                 pair.DGLevelSet = SplineLevelSet;
             } else {
                 throw new NotImplementedException();
@@ -705,7 +705,7 @@ namespace FreeXNSE {
 
                 double surfE = 0.0;
 
-                var scheme = SchemeHelper.GetLevelSetquadScheme(0, lsTrk.Regions.GetCutCellMask4LevSet(0));
+                var scheme = SchemeHelper.GetLevelSetQuadScheme(0, lsTrk.Regions.GetCutCellMask4LevSet(0));
                 CellQuadrature.GetQuadrature(new int[] { 1 }, lsTrk.GridDat,
                     scheme.Compile(lsTrk.GridDat, solver.QuadOrder()),
                     delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {

@@ -14,24 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using ilPSP.LinSolvers;
-using ilPSP;
-using ilPSP.Utils;
-using MPI.Wrappers;
+using BoSSS.Foundation;
+using BoSSS.Foundation.Voronoi;
 using BoSSS.Platform;
 using BoSSS.Platform.Utils;
-using BoSSS.Foundation;
-using ilPSP.Connectors.Matlab;
-using BoSSS.Solution.NSECommon;
-using System.Diagnostics;
-using ilPSP.Tracing;
-using ilPSP.LinSolvers.PARDISO;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.NSECommon;
+using ilPSP;
+using ilPSP.Connectors.Matlab;
+using ilPSP.LinSolvers;
+using ilPSP.LinSolvers.PARDISO;
+using ilPSP.Tracing;
+using ilPSP.Utils;
+using MPI.Wrappers;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Runtime.Serialization;
+using System.Text;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -39,19 +40,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
 	public class SchurPrecondConfig : IterativeSolverConfig {
 		/// <inheritdoc/>
 		[DataMember]
-		public override string Name => "Schur complement with Uzawa algorithm";
+		public override string Name => "Schur complement with UzawaGMRES algorithm";
 		/// <inheritdoc/>
 		[DataMember]
-		public override string Shortname => "Uzawa";
+		public override string Shortname => "UzawaGMRES";
 
         /// <inheritdoc/>
         [DataMember]
-        SchurPrecond.SchurOptions option = SchurPrecond.SchurOptions.Uzawa;
+        public SchurPrecond.SchurOptions Option = SchurPrecond.SchurOptions.UzawaGMRES;
 
 		/// <inheritdoc/>
 		public override ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
 			var templinearSolve = new SchurPrecond(this);
-            templinearSolve.SchurOpt = option;
+            templinearSolve.SchurOpt = Option;
 			templinearSolve.Init(level);
 			return templinearSolve;
 		}
@@ -126,11 +127,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			get { return Pidx.Length; }
 		}
 
-		public enum SchurOptions { Uzawa = 0, exact = 1, decoupledApprox = 2, SIMPLE = 3, exact_matlab = 4, least_square_commutor }
+		public enum SchurOptions { UzawaGMRES = 0, exact = 1, decoupledApprox = 2, SIMPLE = 3, exact_matlab = 4, least_square_commutor }
 
         public bool ApproxScaling = false;
         
-        public SchurOptions SchurOpt = SchurOptions.Uzawa;
+        public SchurOptions SchurOpt = SchurOptions.UzawaGMRES;
 
         public void Init(MultigridOperator op)
         {
@@ -156,7 +157,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			long i0 = Mtx.RowPartitioning.i0;
 
 			switch (SchurOpt) { //BlockMsr or Msr
-				case SchurOptions.Uzawa:
+				case SchurOptions.UzawaGMRES:
 					blockConvDiff = M.GetSubMatrix(Uidx, Uidx);
 					blockpGrad = M.GetSubMatrix(Uidx, Pidx);
 					blockdivVel = M.GetSubMatrix(Pidx, Uidx);
@@ -203,8 +204,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 			switch (SchurOpt)
             {
-				case SchurOptions.Uzawa: {
-                        Console.WriteLine("Uzawa with iterative solver is set");
+				case SchurOptions.UzawaGMRES: {
+                        Console.WriteLine("UzawaGMRES with iterative solver is set");
                         return;
                     }
 				case SchurOptions.exact_matlab:
@@ -427,7 +428,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 						//                   Mtx, null, configs, null);
 
 
-						Console.WriteLine("Uzawa is set");
+						Console.WriteLine("UzawaGMRES is set");
 						return;
 					}
 				case SchurOptions.exact: {
@@ -544,8 +545,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             // P.SpMVpara(1, B, 0, X);
         }
 
-        public void ResetStat()
-        {
+        public void ResetStat() {
             m_Converged = false;
             m_ThisLevelIterations = 0;
         }
@@ -653,7 +653,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 						rawOp, rawMaMa, leveledConfigs,
                         null);
 
-                        MultigridOp.m_RawOperatorMatrix = SchurMtx.ToBlockMsrMatrix(pressureMGmapping, pressureMGmapping);
+                        //MultigridOp.m_RawOperatorMatrix = SchurMtx.ToBlockMsrMatrix(pressureMGmapping, pressureMGmapping);
 
                         var OrthoMgConfig = new OrthoMGSchwarzConfig() {
                             TargetBlockSize = 100,
@@ -696,7 +696,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 						return;
 					}
 
-				case SchurOptions.Uzawa: {
+				case SchurOptions.UzawaGMRES: {
 						Console.WriteLine("starting uzawa iteration");
 						var b1 = Uidx.Select(ind => B[MgMap.Global2Local(ind)]);
 						var b2 = Pidx.Select(ind => B[MgMap.Global2Local(ind)]);
@@ -783,6 +783,66 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 			}
         }
+
+
+        
+
+
+        //MultigridOperator CreateSubMGOp(MultigridOperator fullOp, int[] VariableIndices) {
+
+
+        //    SubBlockSelector selector = new SubBlockSelector(fullOp.Mapping);
+        //    selector.SetVariableSelector(VariableIndices);
+        //    var mask = new BlockMask(selector);
+
+        //    var OpMtx = mask.GetSubBlockMatrix(fullOp.OperatorMatrix, fullOp.OperatorMatrix.MPI_Comm);
+        //    var MaMa = mask.GetSubBlockMatrix(fullOp.MassMatrix, fullOp.OperatorMatrix.MPI_Comm);
+
+
+        //    var ret = new MultigridOperator(GetSubBasesRecursive(fullOp),   
+        //                                new UnsetteledCoordinateMapping(fullOp.BaseGridProblemMapping.BasisS.Where((b, idx) => VariableIndices.Contains(idx)).ToArray()),
+        //                                OpMtx, MaMa,
+        //                                fullOp.Config.Where((conf, idx) => VariableIndices.Contains(idx)).ToArray(),
+        //                                null);
+
+
+
+        //    MultigridOperator.ChangeOfBasisConfig[] GetTopLevel() {
+        //        var conf = new MultigridOperator.ChangeOfBasisConfig[VariableIndices.Length];
+        //        for(int iNewVar = 0; iNewVar < VariableIndices.Length; iNewVar++) {
+        //            var newConf = new MultigridOperator.ChangeOfBasisConfig() {
+        //                DegreeS = new int[] { fullOp.Degrees[VariableIndices[iNewVar]] },
+        //                mode = MultigridOperator.Mode.Eye,
+        //                VarIndex = Enumerable.Range(0, VariableIndices.Length).ToArray()
+        //            };
+        //        }
+                               
+        //        return conf;
+        //    }
+
+
+
+
+
+
+        //    IEnumerable<AggregationGridBasis[]> GetSubBasesRecursive(MultigridOperator level_op) {
+        //        List<AggregationGridBasis[]> result = new List<AggregationGridBasis[]>();
+        //        var level_subbasis = level_op.Mapping.AggBasis
+        //            .Where((basis, idx) => VariableIndices.Contains(idx))
+        //            .ToArray();
+        //        result.Add(level_subbasis);
+
+        //        if(level_op.CoarserLevel != null) {
+        //            var coarser_bases = GetSubBasesRecursive(level_op.CoarserLevel);
+        //            result.AddRange(coarser_bases);
+        //        } 
+
+        //        return result;
+        //    }
+
+        //}
+
+
 
         MultigridOperator CreateSubMGOp(DGField field, BlockMsrMatrix OpMa, int index) {
 			List<AggregationGridBasis[]> leveledBases = new List<AggregationGridBasis[]>();
@@ -928,7 +988,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             X.SetV(temp);
         }
-
 
         /// <summary>
         /// Approximate the inverse of the Schur matrix and perform two Poisson solves and Matrix-Vector products. Finite elements and Fast Iterative Solvers p.383

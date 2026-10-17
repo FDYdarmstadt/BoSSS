@@ -14,19 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using System.Collections.Generic;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform;
 using BoSSS.Platform.Utils.Geom;
-using BoSSS.Solution.Control;
 using BoSSS.Solution.AdvancedSolvers;
+using BoSSS.Solution.Control;
 using BoSSS.Solution.XNSECommon;
-using ilPSP.Utils;
-using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
+using ilPSP.Utils;
+using System;
+using System.Collections.Generic;
 
 namespace BoSSS.Application.XdgPoisson3 {
 
@@ -35,8 +36,9 @@ namespace BoSSS.Application.XdgPoisson3 {
     /// </summary>
     public static class HardCodedControl {
 
+
         /// <summary>
-        /// A 45-degree interface in the 2D domain \f$ (-2,2)^2 \f$.
+        /// A 45-degree interface in the 2D domain $(-2,2)^2$.
         /// </summary>
         public static XdgPoisson3Control Schraeg() {
             // --control 'cs:BoSSS.Application.XdgPoisson3.HardCodedControl.Schraeg()'
@@ -89,7 +91,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         }
         
         /// <summary>
-        /// A circular interface in the 2D domain \f$ (3/2,3/2)^2 \f$.
+        /// A circular interface in the 2D domain $(3/2,3/2)^2$.
         /// </summary>
         public static XdgPoisson3Control Circle(int Resolution = 16, int p = 1, string DBPath = null, LinearSolverCode solver = LinearSolverCode.direct_pardiso) {
             //BoSSS.Application.XdgPoisson3.HardCodedControl.Circle(Resolution: 8);
@@ -147,9 +149,9 @@ namespace BoSSS.Application.XdgPoisson3 {
             List<XdgPoisson3Control> R = new List<XdgPoisson3Control>();
 
             var hmfVersions = new[] {
-                XQuadFactoryHelper.MomentFittingVariants.Classic,
-                XQuadFactoryHelper.MomentFittingVariants.OneStepGauss,
-                XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes };
+                CutCellQuadratureMethod.Classic,
+                CutCellQuadratureMethod.OneStepGauss,
+                CutCellQuadratureMethod.OneStepGaussAndStokes };
             foreach (var HMFversion in hmfVersions) {
                 foreach (int pOff in new int[] { -1, 0, 1, 2 }) {
                     foreach (int res in new int[] { 12, 24, 48, 96, 192 }) {
@@ -452,7 +454,7 @@ namespace BoSSS.Application.XdgPoisson3 {
 
 
         /// <summary>
-        /// A spherical interface in the 3D domain \f$ (-2, 2)^3 \f$.
+        /// A spherical interface in the 3D domain $(-2, 2)^3$.
         /// </summary>
         public static XdgPoisson3Control Ball3D(int pDeg, int Res, LinearSolverCode solverCode = LinearSolverCode.direct_pardiso) {
             //--control "cs:BoSSS.Application.XdgPoisson3.HardCodedControl.Ball3D(2, 5)"
@@ -492,6 +494,83 @@ namespace BoSSS.Application.XdgPoisson3 {
 
             return R;
         }
+
+        public static XdgPoisson3Control XdgPoissonWorksheet(int pDeg, int Res, SchwarzImplementation solverCode = SchwarzImplementation.TaskParallel, IDatabaseInfo db = null) {
+            //--control "cs:BoSSS.Application.XdgPoisson3.HardCodedControl.Ball3D(2, 5)"
+            XdgPoisson3Control R = new XdgPoisson3Control();
+
+
+            // Open the database (returns IDatabaseInfo)
+            IDatabaseInfo dbInfo = db;
+            R.DbPath = dbInfo.Path ?? null;
+            R.savetodb = R.DbPath != null;
+
+            R.SetDGdegree(pDeg);
+
+            R.GridFunc = delegate () {
+                return Grid3D.Cartesian3DGrid(GenericBlas.Linspace(-1, 1, Res+1), GenericBlas.Linspace(-1, 1, Res+1), GenericBlas.Linspace(-1, 1, Res+1));
+            };
+
+            double radius = 0.7;
+            // set the level-set
+            Formula PhiFunc = new Formula(
+                "Phi",
+                false,
+                "double Phi(double[] X) { " +
+                $"double radius = {radius};" +
+                "return (X[0].Pow2() + X[1].Pow2() + X[2].Pow2()) - radius.Pow2(); } "
+            );
+            R.AddInitialValue("Phi", PhiFunc);
+            //R.InitialValues.Add("Phi", X => X[0] + 0.1);
+            R.ExcactSolSupported = false;
+            //R.InitialValues.Add("uEx#A", X => X[1]);
+            //R.InitialValues.Add("uEx#B", X => X[1]);
+            Formula RhsAFunc = new Formula(
+                "rhsA",
+                false,
+                "double rhsA(double[] X) { " +
+                "return 1.0; } "
+            );
+            R.AddInitialValue("rhs#A", RhsAFunc);
+
+
+            Formula RhsBFunc = new Formula(
+                "rhsB",
+                false,
+                "double rhsB(double[] X) { " +
+                "return 1.0; } "
+            );
+            R.AddInitialValue("rhs#B", RhsBFunc);
+
+            R.MU_A = -1;
+            R.MU_B = -1000;
+
+            //R.xLaplaceBCs.g_Diri = ((CommonParamsBnd inp) => 0.0);
+            //R.xLaplaceBCs.IsDirichlet = (inp => true);
+
+            /*OrthoMGSchwarzConfig config = new OrthoMGSchwarzConfig(); 
+            config.CoarseKickIn = 0;
+            config.TargetBlockSize = 3000;
+            config.NoOfMultigridLevels = 1;
+            config.AutomaticSmootherSweepCalculation = false;
+            config.ForcedNoOfPostSmootherSweeps = 1;
+            config.AdditiveVariant = true;
+            config.SkipPreSmoother = true;
+            config.SchwarzImplementation = solverCode;            
+            R.LinearSolver = config;
+            */
+            R.AgglomerationThreshold = 0.1;
+            //R.PrePreCond = MultigridOperator.Mode.DiagBlockEquilib;
+            //R.penalty_multiplyer = 1.1;
+            //R.ViscosityMode = XLaplace_Interface.Mode.SIP;
+
+            return R;
+        }
+
+
+            
+
+
 
         /*
         /// <summary>
@@ -572,8 +651,8 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.InitialValues_Evaluators.Add("rhs#B", X => 1.0);
             C.InitialValues_Evaluators.Add("u#A", X => 0);
             C.InitialValues_Evaluators.Add("u#B", X => 0);
-            //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
-            C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            //C.CutCellQuadratureType = CutCellQuadratureMethod.Classic;
+            C.CutCellQuadratureType = CutCellQuadratureMethod.Saye;
             C.SetDefaultDiriBndCnd = true;  //which means ...
             //C.xLaplaceBCs.g_Diri = ((CommonParamsBnd inp) => 0.0);
             //C.xLaplaceBCs.IsDirichlet = (inp => true);
@@ -587,7 +666,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         */
 
         /// <summary>
-        /// A circular interface within the 2D domain \f$ (-1,1)^2 \f$, with Dirichlet boundary conditions at \f$ x = -1 \f$ and Neumann boundary conditions elsewhere.
+        /// A circular interface within the 2D domain $(-1,1)^2$, with Dirichlet boundary conditions at $x = -1$ and Neumann boundary conditions elsewhere.
         /// </summary>
         public static XdgPoisson3Control CircleNeum(int Resolution = 13) {
 
@@ -663,9 +742,9 @@ namespace BoSSS.Application.XdgPoisson3 {
             List<XdgPoisson3Control> R = new List<XdgPoisson3Control>();
 
             var hmfVersions = new[] {
-                XQuadFactoryHelper.MomentFittingVariants.Classic,
-                XQuadFactoryHelper.MomentFittingVariants.OneStepGauss,
-                XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes };
+                CutCellQuadratureMethod.Classic,
+                CutCellQuadratureMethod.OneStepGauss,
+                CutCellQuadratureMethod.OneStepGaussAndStokes };
             foreach (var HMFversion in hmfVersions) {
                 foreach (int pOff in new int[] { -1, 0, 1, 2 }) {
                     foreach (int res in new int[] { 12, 24, 48, 96, 192 }) {

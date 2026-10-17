@@ -500,7 +500,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
                 return X[1] - 0.16;
             };
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 6;
             c.AgglomerationThreshold = 0.3;
             c.AddVariable(IBMVariables.LevelSet, 1);

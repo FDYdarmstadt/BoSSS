@@ -128,6 +128,22 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
+        /// minimum, implemented through <see cref="GetExtremalValues(out double, out double)"/>
+        /// </summary>
+        public double GetMinimum() {
+            GetExtremalValues(out double minimum, out _);
+            return minimum;
+        }
+
+        /// <summary>
+        /// maximum, implemented through <see cref="GetExtremalValues(out double, out double)"/>
+        /// </summary>
+        public double GetMaximum() {
+            GetExtremalValues(out _, out double maximum);
+            return maximum;
+        }
+
+        /// <summary>
         /// used by <see cref="GetExtremalValues(out double,out double,out long,out long,CellMask)"/> and <see cref="GetExtremalValuesInCell"/>
         /// to find the extremal values in 
         /// </summary>
@@ -213,7 +229,7 @@ namespace BoSSS.Foundation {
         /// <param name="jMinGlob">
         /// global cell index in which the maximum value <paramref name="min"/> was found
         /// </param>
-        public void GetExtremalValues(out double min, out double max, out long jMinGlob, out long jMaxGlob, CellMask cm = null) {
+        virtual public void GetExtremalValues(out double min, out double max, out long jMinGlob, out long jMaxGlob, CellMask cm = null) {
             MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
             using (new FuncTrace()) {
                 int J = Basis.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
@@ -455,7 +471,7 @@ namespace BoSSS.Foundation {
             }
 
             int order = Math.Max(this.Basis.Degree, other.Basis.Degree) * 2;
-            CellQuadratureScheme cqs = new CellQuadratureScheme(domain: cm);
+            CellQuadratureScheme cqs = new CellQuadratureScheme(UseDefaultFactories:true, domain: cm);
             return LxError(other.Evaluate, null, cqs.Compile(this.GridDat, order)).Sqrt();
         }
 
@@ -509,11 +525,12 @@ namespace BoSSS.Foundation {
         /// <param name="Map">
         /// Arbitrary mapping applied to the values of this field and
         /// <paramref name="function"/> at some point, which is finally integrated.
-        /// E.g., the mapping for an L2-error would be \f$ (\vec{x},a,b) => (a - b)^2 \f$, 
-        /// where \f$ a \f$ is the value of this field at some point \f$ \vec{x} \f$ and
-        /// \f$ b \f$ is the value of <paramref name="function"/> at \f$ \vec{x} \f$.
+        /// E.g., the mapping for an L2-error would be $(\underline{x},a,b) => (a - b)^2$, 
+        /// where $a$ is the value of this field at some point $\underline{x}$ and
+        /// $b$ is the value of <paramref name="function"/> at $\underline{x}$.
         /// </param>
         /// <param name="Quadrature_ChunkDataLimitOverride">
+        /// only for debugging purpose,
         /// see <see cref="Foundation.Quadrature.Quadrature{TQuadRule, TDomain}.ChunkDataLimitOverride"/>
         /// </param>
         /// <returns>
@@ -547,9 +564,9 @@ namespace BoSSS.Foundation {
         /// <param name="Map">
         /// Arbiter mapping applied to the values of this field and
         /// <paramref name="function"/> at some point, which is finally integrated.
-        /// E.g., the mapping for an L2-error would be \f$ (\vec{x},a,b) => (a - b)^2 \f$, 
-        /// where \f$ a \f$ is the value of this field at some point \f$ \vec{x} \f$ and
-        /// \f$ b \f$ is the value of <paramref name="function"/> at \f$ \vec{x} \f$.
+        /// E.g., the mapping for an L2-error would be $(\underline{x},a,b) => (a - b)^2$, 
+        /// where $a$ is the value of this field at some point $\underline{x}$ and
+        /// $b$ is the value of <paramref name="function"/> at $\underline{x}$.
         /// </param>
         /// <returns>
         /// on all invoking MPI processes, the L2 norm of
@@ -587,9 +604,9 @@ namespace BoSSS.Foundation {
         /// Arbitrary mapping applied to the values of this field and
         /// <paramref name="function"/> at some point, which is finally
         /// integrated. E.g., the mapping for an L2-error would be
-        /// \f$ (a,b) => (a - b)^2 \f$, where \f$ a \f$ is the value of this
-        /// field at some point \f$ \vec{x} \f$ and \f$ b \f$ is the value of
-        /// <paramref name="function"/> at \f$ \vec{x} \f$.
+        /// $(a,b) => (a - b)^2$, where $a$ is the value of this
+        /// field at some point $\underline{x}$ and $b$ is the value of
+        /// <paramref name="function"/> at $\underline{x}$.
         /// </param>
         /// <returns>
         /// The cell-local Lx norm of this field minus
@@ -608,26 +625,62 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// computes the jump norm of this field at edges in<paramref name="innerEM"/>
         /// </summary>
-        /// <param name="innerEM"> if null full mask is chosen </param>
+        /// <param name="innerEM">optional domain restriction; if null, all inner edges are chosen </param>
         virtual public double JumpNorm(EdgeMask innerEM = null) {
+
+            if (innerEM == null) {
+                innerEM = EdgeMask.GetFullMask(this.GridDat, MaskType.Geometrical);
+            }
+            var eqs =  (new EdgeQuadratureScheme(true, innerEM));
+
+            return JumpNorm(eqs);
+        }
+
+
+        /// <summary>
+        /// computes the jump norm of this field using the quadrature scheme <paramref name="eqs"/>
+        /// </summary>
+        /// <param name="eqs"></param>
+        /// <param name="exchange">perform an MPI exchange of external/ghost cells before computation</param>
+        virtual public double JumpNorm(EdgeQuadratureScheme eqs, bool exchange = true) {
             var grd = this.GridDat;
             int D = grd.SpatialDimension;
             var e2cTrafo = grd.iGeomEdges.Edge2CellTrafos;
 
-            if (innerEM == null) {
-                innerEM = EdgeMask.GetFullMask(grd, MaskType.Geometrical);
-            }
+            
 
             int[,] CellIndices = grd.iGeomEdges.CellIndices;
+            int Jup = grd.iGeomCells.NoOfLocalUpdatedCells;
 
 
-            this.MPIExchange();
+            bool CountInterprocessEdge(int iEdge) {
+                int jCell0 = CellIndices[iEdge, 0];
+                int jCell1 = CellIndices[iEdge, 1];
+
+                if(jCell0 < 0)
+                    // boundary edge: there can be no jump, don't count this
+                    return false;
+                if(jCell1 < Jup)
+                    // edge between local edges - count that
+                    return true;                
+
+                int jCell0_log = grd.GetLogicalCellIndex(jCell0);
+                int jCell1_log = grd.GetLogicalCellIndex(jCell1);
+                long Gidx0 = jCell0_log + grd.CellPartitioning.i0;
+                long Gidx1 = grd.iParallel.GlobalIndicesExternalCells[jCell1_log - Jup];
+
+                return (Gidx0 < Gidx1); // convention: only count interprocess edge if the locally updated cell has the smaller index.
+            }
+
+            if(exchange)
+                this.MPIExchange();
+            var rule = eqs.Compile(grd, this.Basis.Degree * 2);
 
             double Unorm = 0;
 
             EdgeQuadrature.GetQuadrature(
                 new int[] { 1 }, grd,
-                (new EdgeQuadratureScheme(true, innerEM)).Compile(grd, this.Basis.Degree * 2),
+                rule,
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) { // Evaluate
                     NodeSet NS = QR.Nodes;
                     EvalResult.Clear();
@@ -648,7 +701,11 @@ namespace BoSSS.Foundation {
                     EvalResult.ApplyAll(x => x * x);
                 },
                 delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) { // SaveIntegrationResults
-                    Unorm += ResultsOfIntegration.Sum();
+                    for(int i = 0; i < Length; i++) {
+                        int iEdge = i + i0;
+                        if(CountInterprocessEdge(iEdge))
+                            Unorm += ResultsOfIntegration[i, 0];
+                    }
                 }).Execute();
 
             Unorm = Unorm.MPISum();

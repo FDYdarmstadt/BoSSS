@@ -1,19 +1,6 @@
-﻿using BoSSS.Foundation.Grid.Classic;
-using BoSSS.Foundation.XDG.Quadrature.HMF;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ilPSP;
-using static BoSSS.Foundation.XDG.LevelSetTracker;
-using System.Threading;
-using BoSSS.Platform;
-using System.ComponentModel;
-using System.Collections;
-using BoSSS.Foundation.Quadrature;
+﻿using BoSSS.Foundation.XDG.Quadrature.HMF;
 
-namespace BoSSS.Foundation.XDG.Quadrature
+namespace BoSSS.Foundation.XDG.Quadrature.BruteForce
 {
     struct CombinedID
     {

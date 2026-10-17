@@ -3,6 +3,7 @@ using ilPSP.Tracing;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -21,10 +22,10 @@ namespace BoSSS.Foundation {
         /// </summary>
         public static DGField[] InvokeParameterFactory(this IDifferentialOperator op, IEnumerable<DGField> __DomainFields) {
 
-            if (!op.IsCommitted)
+            if(!op.IsCommitted)
                 throw new NotSupportedException("not allowed before commit.");
             var _DomainFields = __DomainFields.ToArray();
-            if (_DomainFields.Length != op.DomainVar.Count) {
+            if(_DomainFields.Length != op.DomainVar.Count) {
                 string fl_domNames = _DomainFields.Select(f => f?.Identification ?? "NULL").ToConcatString("[", ",", "]");
                 string op_domNames = op.DomainVar.ToConcatString("[", ",", "]");
                 throw new ArgumentException($"Mismatch in number of domain variables: provided domain fields {fl_domNames}, specified by operator {op_domNames}.");
@@ -34,18 +35,18 @@ namespace BoSSS.Foundation {
             DGField[] ret = new DGField[NoOfParams];
 
             var DomainVarsDict = new Dictionary<string, DGField>();
-            for (int iVar = 0; iVar < _DomainFields.Length; iVar++) {
+            for(int iVar = 0; iVar < _DomainFields.Length; iVar++) {
                 DomainVarsDict.Add(op.DomainVar[iVar], _DomainFields[iVar]);
             }
 
             // invoke factories by the operator
-            if (op.ParameterFactories != null) {
-                foreach (DelParameterFactory Factory in op.ParameterFactories) {
+            if(op.ParameterFactories != null) {
+                foreach(DelParameterFactory Factory in op.ParameterFactories) {
                     var ttt = Factory(DomainVarsDict);
 
-                    foreach (var tt in ttt) {
+                    foreach(var tt in ttt) {
                         int idx = op.ParameterVar.IndexOf(tt.ParameterName);
-                        if (idx < 0)
+                        if(idx < 0)
                             throw new Exception($"Illegal parameter name {tt.ParameterName} provided by parameter factory -- not in the operator parameter list.");
                         ret[idx] = tt.ParamField;
                     }
@@ -54,7 +55,7 @@ namespace BoSSS.Foundation {
 
             bool ComponentFactoryUseful(IParameterHandling _ph, out int[] targidx) {
                 var phParams = _ph.ParameterOrdering;
-                if (phParams == null) {
+                if(phParams == null) {
                     targidx = new int[0];
                     return false;
                 }
@@ -64,10 +65,10 @@ namespace BoSSS.Foundation {
                 bool useful = false;
                 foreach(string phParamName in phParams) {
                     int idx = op.ParameterVar.IndexOf(phParamName);
-                    if (idx < 0)
+                    if(idx < 0)
                         throw new ApplicationException("should not happen if operator is committed and verified");
                     targidx[c] = idx;
-                    if (ret[idx] == null)
+                    if(ret[idx] == null)
                         useful = true; // some parameter has not been allocated yet
                     c++;
                 }
@@ -76,7 +77,7 @@ namespace BoSSS.Foundation {
 
             DGField[] GetArguments(IEquationComponent c) {
                 var cArgs = c.ArgumentOrdering;
-                if (cArgs == null)
+                if(cArgs == null)
                     return new DGField[0];
                 DGField[] rr = new DGField[cArgs.Count];
                 for(int i = 0; i < rr.Length; i++) {
@@ -86,22 +87,20 @@ namespace BoSSS.Foundation {
             }
 
             // invoke factories in equation components
-            foreach (string codName in op.CodomainVar) {
-                foreach (IEquationComponent comp in op.EquationComponents[codName]) {
-                    if (comp is IParameterHandling ph) {
-                        if(ComponentFactoryUseful(ph, out int[] targIdx)) {
-                            DGField[] newParams = ph.MyParameterAlloc(GetArguments(ph));
-                            if (newParams.Length != targIdx.Length)
-                                throw new NotSupportedException($"Illegal implementation of parameter allocation for {ph.GetType().Name}: the length of the array returned by parameter allocation must be equal to number of parameters.");
-                        
-                        
-                            for(int i = 0; i < newParams.Length; i++) {
-                                if (newParams[i] != null)
-                                    ret[targIdx[i]] = newParams[i];
-                            }
+            foreach(var ph in op.GetAllParameterHandlers()) {
+                if(ComponentFactoryUseful(ph, out int[] targIdx)) {
+                    DGField[] newParams = ph.MyParameterAlloc(GetArguments(ph));
+                    if(newParams.Length != targIdx.Length)
+                        throw new NotSupportedException($"Illegal implementation of parameter allocation for {ph.GetType().Name}: the length of the array returned by parameter allocation must be equal to number of parameters.");
+
+
+                    for(int i = 0; i < newParams.Length; i++) {
+                        if(newParams[i] != null)
+                            ret[targIdx[i]] = newParams[i];
+
+                        if(newParams[i] != null && newParams[i].Identification.IsEmptyOrWhite()) {
+                            newParams[i].Identification = ph.ParameterOrdering[i];
                         }
-
-
                     }
                 }
             }
@@ -183,17 +182,13 @@ namespace BoSSS.Foundation {
                 }
 
 
-                foreach(string codName in op.CodomainVar) {
-                    foreach(IEquationComponent comp in op.EquationComponents[codName]) {
-                        if(comp is IParameterHandling ph) {
-                            if(ComponentUpdateUseful(ph, out var ph_argFields, out var ph_paramFields, out int[] targIdx)) {
-                                ph.MyParameterUpdate(ph_argFields, ph_paramFields);
+                foreach(var ph in op.GetAllParameterHandlers()) {
+                    if(ComponentUpdateUseful(ph, out var ph_argFields, out var ph_paramFields, out int[] targIdx)) {
+                        ph.MyParameterUpdate(ph_argFields, ph_paramFields);
 
-                                for(int i = 0; i < ph_paramFields.Length; i++) {
-                                    if(ph_paramFields[i] != null) // hack: if the 'MyParameterUpdate' sets some entry to null, it signals that it did not updated the parameter variable
-                                        ParameterIsUpdated[targIdx[i]] = true;
-                                }
-                            }
+                        for(int i = 0; i < ph_paramFields.Length; i++) {
+                            if(ph_paramFields[i] != null) // hack: if the 'MyParameterUpdate' sets some entry to null, it signals that it did not updated the parameter variable
+                                ParameterIsUpdated[targIdx[i]] = true;
                         }
                     }
                 }

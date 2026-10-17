@@ -10,9 +10,9 @@ using BoSSS;
 namespace NSE_SIMPLE {
 
     /// <summary>
-    /// \f[ 
-    ///   -\operatorname{div} \left( \mu \nabla \vec{u} \right)
-    /// \f]
+    /// \[ 
+    ///   -\operatorname{div} \left( \mu \nabla \underline{u} \right)
+    /// \]
     /// </summary>
     public class SipViscosity_Term1_segregatedVar : SipViscosityBase {
 
@@ -204,7 +204,7 @@ namespace NSE_SIMPLE {
                     //}
                     break;
                 }
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet: {
                     // Atmospheric outlet/pressure outflow: hom. Neumann
                     // +++++++++++++++++++++++++++++++++++++++++++++++++

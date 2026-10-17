@@ -915,15 +915,71 @@ namespace ilPSP.LinSolvers {
         }
 
         /// <summary>
+        /// The Infinity-Norm (two-norm over all entries) of this matrix;
+        /// </summary>
+        /// <returns></returns>
+        static public double FrobeniusNorm(this IMutableMatrixEx M) {
+            using(var tr = new FuncTrace()) {
+                
+                int L = M.RowPartitioning.LocalLength;
+                long[] col = null;
+                double[] val = null;
+                int Lr;
+
+                double acc = 0;
+                for(int i = 0; i < L; i++) {
+                    Lr = M.GetRow(i + M.RowPartitioning.i0, ref col, ref val);
+                    for(int j = 0; j < Lr; j++) {
+                        acc += val[j].Pow2();
+                    }
+
+                }
+
+                //Console.WriteLine("local norm (R=" + M.RowPartitioning.Rank + ") = " + normLoc);
+                //tr.Info("local norm " + normLoc);
+
+                double accGlob = acc.MPISum(M.MPI_Comm);
+                return accGlob.Sqrt();
+            }
+        }
+
+        /// <summary>
+        /// Easy-to-use wrapper around <see cref="IMutableMatrixEx.GetRow(long, ref long[], ref double[])"/>
+        /// </summary>
+        static public (long[] colIdx, double[] entries) GetRow(this IMutableMatrixEx M, long iRow) {
+            int L = M.RowPartitioning.LocalLength;
+            long[] col = null;
+            double[] val = null;
+            int Lr = M.GetRow(iRow, ref col, ref val);
+            return (col, val);
+        }
+
+
+
+        /// <summary>
         /// The Infinity-Norm (maximum absolute row sum norm) between two matrices;
         /// </summary>
         /// <returns></returns>
         static public double MatrixDist(this IMutableMatrixEx A, IMutableMatrixEx B) {
-            using (var tr = new FuncTrace()) {
+            using(var tr = new FuncTrace()) {
 
                 var ERR = A.CloneAs();
                 ERR.Acc(-1.0, B);
                 return ERR.InfNorm();
+
+            }
+        }
+
+        /// <summary>
+        /// The Frobenius-Norm (maximum absolute row sum norm) between two matrices;
+        /// </summary>
+        /// <returns></returns>
+        static public double MatrixDistFrobenius(this IMutableMatrixEx A, IMutableMatrixEx B) {
+            using(var tr = new FuncTrace()) {
+
+                var ERR = A.CloneAs();
+                ERR.Acc(-1.0, B);
+                return ERR.FrobeniusNorm();
 
             }
         }

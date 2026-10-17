@@ -1,4 +1,4 @@
-﻿using BoSSS.Foundation;
+using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
@@ -26,6 +26,8 @@ using static BoSSS.Solution.GridImport.NASTRAN.NastranFile;
 
 namespace XESTSF {
     public class XESTSFMain : ApplicationWithIDT<XESTSFControl> {
+        private ICompressibleConfiguration CompressibleConfig => ((ICompressibleControl)Control).CompressibleConfiguration;
+
         /// <summary>
         /// Implements shock fitting for XDG Space Time Euler which is solved by the routines defined in ApplicationWithIDT 
         /// Naming: X(DG) - E(uler) - S(pace) - T(ime) - S(hock) - F(itting)
@@ -131,10 +133,15 @@ namespace XESTSF {
                     var grid_add = (GridCommons) p.ConservativeFields[0].GridDat.Grid;
                     var grd_updated = GridCommons.MergeLogically(grid_prev, grid_add);
                     LevelSetTracker lstrk_updated;
-                    if(Control.IsTwoLevelSetRun) {
+                    switch(Control.LevelSetOptimizationMode) {
+                        default:
+                        case LevelSetOptMode.TwoLevelSets_OptimizeBoth:
+                        case LevelSetOptMode.TwoLevelSets_OptimizeSecond:
                         lstrk_updated = new LevelSetTracker(grd_updated.GridData, LsTrk.CutCellQuadratureType, LsTrk.NearRegionWidth, Control.SpeciesTable, this.LevelSet, this.LevelSetTwo);
-                    } else {
+                        break;
+                        case LevelSetOptMode.SingleLevelSet:
                         lstrk_updated = new LevelSetTracker(grd_updated.GridData, LsTrk.CutCellQuadratureType, LsTrk.NearRegionWidth, Control.SpeciesTable, this.LevelSet);
+                        break;
                     }
 
                     CreateConservativeFields(lstrk_updated, Control.SolDegree);
@@ -162,7 +169,7 @@ namespace XESTSF {
         }
 
         /// <summary>
-        /// The momentum field $\rho \vec{u}$
+        /// The momentum field $\rho \underline{u}$
         /// </summary>
         public VectorField<XDGField> Momentum {
             get;
@@ -248,7 +255,7 @@ namespace XESTSF {
             //}
 
             GridData gridData = (GridData)this.GridData;
-            Material material = this.Control.GetMaterial();
+            Material material = CompressibleConfig.GetMaterial();
             IBoundaryConditionMap boundaryMap = new XDGCompressibleBoundaryCondMap(this.GridData, this.Control, material, this.Control.SpeciesToEvaluate);
             string[] variables;
             if(Grid.SpatialDimension == 2) {
@@ -432,7 +439,10 @@ namespace XESTSF {
             }
             #endregion
             #region Convective interface flux (level set two)
-            if(Control.IsTwoLevelSetRun) {
+            switch(Control.LevelSetOptimizationMode) {
+                default:
+                case LevelSetOptMode.TwoLevelSets_OptimizeBoth:
+                case LevelSetOptMode.TwoLevelSets_OptimizeSecond:
                 if(Control.LsTwo_SpeciesPairs == null) {
                     throw new ArgumentException("need to provide species pairs for level set two");
                 }
@@ -531,14 +541,15 @@ namespace XESTSF {
                     break;
 
                     default:
-                    if(Control.IsTwoLevelSetRun) {
-                        throw new NotSupportedException("This should never happen");
-                    }
+                    throw new NotSupportedException("This should never happen");
                     break;
 
                 }
             }
-        }
+                break;
+                case LevelSetOptMode.SingleLevelSet:
+                break;
+            }
             #endregion
 
             this.XSpatialOperator.LinearizationHint = LinearizationHint.FDJacobi;
@@ -553,13 +564,13 @@ namespace XESTSF {
             //untested_ComputeP0Solution();
             #region Residual logging
             // Configure residual handling
-            if(L == null && Control.ResidualInterval != 0) {
+            if(L == null && CompressibleConfig.ResidualInterval != 0) {
                 // Do not change these settings upon repartitioning
                 ResLogger.WriteResidualsToTextFile = false;
                 ResLogger.WriteResidualsToConsole = false;
             }
 
-            residualLoggers = Control.ResidualLoggerType.Instantiate(
+            residualLoggers = CompressibleConfig.ResidualLoggerType.Instantiate(
                 this,
                 Control,
                 null,
@@ -651,119 +662,156 @@ namespace XESTSF {
                 break;
                 default:
                 break;
-
             }
             #endregion
 
-            #region Initialiize the LevelSet
-            if(Control.IsTwoLevelSetRun) {
+            #region Initialize the LevelSet
+            switch(Control.LevelSetOptimizationMode) {
+                default:
+                case LevelSetOptMode.TwoLevelSets_OptimizeBoth:
+                    throw new NotImplementedException();
+                case LevelSetOptMode.TwoLevelSets_OptimizeSecond:
                 this.LevelSet.ProjectField(1.0, this.Control.LevelSetOneInitialValue, scheme);
-                LsTBO = LevelSetTwo;
-            } else {
+                break;
+                case LevelSetOptMode.SingleLevelSet:
                 // Level set one
-                LsTBO = LevelSet;
+                break;
             }
 
-            switch(Control.GetLevelSet) {
+            switch ( Control.GetLevelSet ) {
 
                 case GetLevelSet.FromParams:
-                LevelSetOpti.AssembleTransMat(LsTBO);
-                LevelSetOpti.ProjectOntoLevelSet(LsTBO);
-                break;
+                    foreach ( LevelSetOptimizationState s in base.LevelSetOptStates ) {
+                        IOptiLevelSet LevelSetOpti = s.LevelSetOpti;
+                        var LsTBO = s.LsTBO;
+                        LevelSetOpti.AssembleTransMat(LsTBO);
+                        LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+                    }
+                    break;
 
                 case GetLevelSet.FromFunction:
-                LevelSetOpti.AssembleTransMat(LsTBO);
-                if(Control.IsTwoLevelSetRun) {
-                    LevelSetOpti.ProjectFromFunction(Control.LevelSetTwoInitialValue);
-                } else {
-                    LevelSetOpti.ProjectFromFunction(Control.LevelSetOneInitialValue);
-                }
-                LevelSetOpti.ProjectOntoLevelSet(LsTBO);
-                break;
+                    foreach ( LevelSetOptimizationState s in base.LevelSetOptStates ) {
+                        IOptiLevelSet LevelSetOpti = s.LevelSetOpti;
+                        var LsTBO = s.LsTBO;
+
+                        LevelSetOpti.AssembleTransMat(LsTBO);
+                    }
+                    switch ( Control.LevelSetOptimizationMode ) {
+                        default:
+                        case LevelSetOptMode.TwoLevelSets_OptimizeBoth:
+                            base.LevelSetOptStates[1].LevelSetOpti.ProjectFromFunction(Control.LevelSetTwoInitialValue);
+                            base.LevelSetOptStates[0].LevelSetOpti.ProjectFromFunction(Control.LevelSetOneInitialValue);
+                            break;
+                        case LevelSetOptMode.TwoLevelSets_OptimizeSecond:
+                            base.LevelSetOptStates[0].LevelSetOpti.ProjectFromFunction(Control.LevelSetTwoInitialValue);
+                            break;
+                        case LevelSetOptMode.SingleLevelSet:
+                            base.LevelSetOptStates[0].LevelSetOpti.ProjectFromFunction(Control.LevelSetOneInitialValue);
+                            break;
+                    }
+                    foreach ( LevelSetOptimizationState s in base.LevelSetOptStates ) {
+                        IOptiLevelSet LevelSetOpti = s.LevelSetOpti;
+                        var LsTBO = s.LsTBO;
+                        PrimaryLevelSetOptimizer.ProjectOntoLevelSet(LsTBO);
+                    }
+
+                    break;
 
                 case GetLevelSet.FromOldSimulation: //Assuming that we allready Loaded the ShockLevelSet
                 case GetLevelSet.FromReconstruction:
-                LevelSetOpti.AssembleTransMat(LsTBO);
-                LsTBO.Clear();
-                this.LsTBO.Acc(1.0, this.ShockLevelSetField);
-                LevelSetOpti.ProjectFromLevelSet(LsTBO);
-                LevelSetOpti.ProjectOntoLevelSet(LsTBO);
-                break;
+                    foreach ( LevelSetOptimizationState s in base.LevelSetOptStates ) {
+                        IOptiLevelSet LevelSetOpti = s.LevelSetOpti;
+                        var LsTBO = s.LsTBO;
+
+                        LevelSetOpti.AssembleTransMat(LsTBO);
+                        LsTBO.Clear();
+                        LsTBO.Acc(1.0, this.ShockLevelSetField);
+                        LevelSetOpti.ProjectFromLevelSet(LsTBO);
+                        LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+                    }
+                    break;
 
                 case GetLevelSet.FromReconstructionFromPoints: //here we need to have a density field and points to work with
 
-                if(Control.PointPath == null) {
-                    throw new NotSupportedException("must specify a PointPath");
-                }
-                if(Control.GetInitialValue == GetInitialValue.FromFunctionPerSpecies) {
-                    throw new NotSupportedException("GetLevelSet.FromReconstructionFromPoints if Initial value is loaded from DB");
-                }
-
-                switch(Control.OptiLevelSetType) {
-                    // in case of a spline we can directly get the spline from the points (Hopefully)
-                    case OptiLevelSetType.SplineLevelSet:
-                    //get Points
-
-                    if(LevelSetOpti is SplineOptiLevelSet splineLS) {
-                        var points2 = IMatrixExtensions.LoadFromTextFile(Control.PointPath);
-                        var points3 = points2.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { points2.GetLength(0) - 1, 1 });
-                        splineLS.GetSplineOverDetermined(points3);
-                        splineLS.Interpolate();
-                        splineLS.ProjectOntoLevelSet(LsTBO);
+                    if ( Control.PointPath == null ) {
+                        throw new NotSupportedException("must specify a PointPath");
                     }
-                    break;
-                    default:
-                    LevelSetOpti.AssembleTransMat(LsTBO);
+                    if ( Control.GetInitialValue == GetInitialValue.FromFunctionPerSpecies ) {
+                        throw new NotSupportedException("GetLevelSet.FromReconstructionFromPoints if Initial value is loaded from DB");
+                    }
 
-                    //load the density of last timestep
-                    var densityField = tsiFromDb.Fields.Where(f => f.Identification == "rho").SingleOrDefault() as SinglePhaseField;
-                    var points = IMatrixExtensions.LoadFromTextFile(Control.PointPath);
-                    var tmpLS = ShockFindingExtensions.ReconstructLevelSetField(densityField, points);
+                    switch ( Control.OptiLevelSetType ) {
+                        // in case of a spline we can directly get the spline from the points (Hopefully)
+                        case OptiLevelSetType.SplineLevelSet:
+                            //get Points
 
-                    // Continuity Projection does not work
-                    //var jCells = new double[points.Lengths[0]];
-                    //for(int i=0; i< points.Lengths[0]; i++) {
-                    //    IGridData_Extensions.LocatePoint(LsTBO.GridDat, new double[] { points[i, 0], points[i, 1] }, out long GlobalId, out long GlobalIndex, out bool inSide, out bool onthisProcess);
-                    //    jCells[i] = GlobalIndex;
-                    //}
-                    //tmpLS = ShockFindingExtensions.ContinuousLevelSet(tmpLS, jCells);
-                    //LsTBO.ProjectFromForeignGrid(1.0, tmpLS);
-                    //LevelSetOpti.ProjectFromLevelSet(LsTBO);
-                    LevelSetOpti.ProjectFromForeignLevelSet(tmpLS);
-                    LevelSetOpti.ProjectOntoLevelSet(LsTBO);
-                    //PlotCurrentState(0.0, Grid.NumberOfCells + LsTBO.Basis.Degree, 3);
-                    break;
-                }
-                break;
-                case GetLevelSet.DirectyFromTimestep:
-                if(LevelSetOpti is SplineOptiLevelSet splineLs) {
-                    if(((TimestepProxy)tsiFromDb).GetInternal() is IDTTimeStepInfo IDTtsInfo) {
-                        var LSParams = IDTtsInfo.LevelSetParams;
-                        if(LSParams.Length == splineLs.m_AllParams.Length) {
-                            for(int i = 0; i < LSParams.Length; i++) {
-                                splineLs.m_AllParams[i] = LSParams[i];
+                            if ( base.LevelSetOptStates[0].LevelSetOpti is SplineOptiLevelSet splineLS ) {
+                                var points2 = IMatrixExtensions.LoadFromTextFile(Control.PointPath);
+                                var points3 = points2.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { points2.GetLength(0) - 1, 1 });
+                                splineLS.GetSplineOverDetermined(points3);
+                                splineLS.Interpolate();
+                                splineLS.ProjectOntoLevelSet(base.LevelSetOptStates[0].LsTBO);
                             }
-                            splineLs.Interpolate();
-                            splineLs.ProjectOntoLevelSet(LsTBO);
-                            //this.Mus = IDTtsInfo.MuHistory.ToList();
-                            //this.Alphas = IDTtsInfo.AlphaHistory.ToList();
-                            //this.Gammas = IDTtsInfo.GammaHistory.ToList();
-                            //this.ResNorms = IDTtsInfo.ResHistory.ToList();
-                            //this.EnResNorms = IDTtsInfo.EnResHistory.ToList();
-                            //this.CurrentStepNo = Control.IVTimestepNumber + 1;
-                            this.gamma = IDTtsInfo.Gamma;
-                        } else {
-                            throw new NotSupportedException($"{GetLevelSet.DirectyFromTimestep} not supported if Grid has not equal y - Cells");
-                        }
+                            break;
+                        default:
+                            foreach ( LevelSetOptimizationState s in base.LevelSetOptStates ) {
+                                s.LevelSetOpti.AssembleTransMat(s.LsTBO);
+                            }
 
+                            //load the density of last timestep
+                            var densityField = tsiFromDb.Fields.Where(f => f.Identification == "rho").SingleOrDefault() as SinglePhaseField;
+                            var points = IMatrixExtensions.LoadFromTextFile(Control.PointPath);
+                            var tmpLS = ShockFindingExtensions.ReconstructLevelSetField(densityField, points);
+
+                            // Continuity Projection does not work
+                            //var jCells = new double[points.Lengths[0]];
+                            //for(int i=0; i< points.Lengths[0]; i++) {
+                            //    IGridData_Extensions.LocatePoint(PrimaryOptimizationLevelSet.GridDat, new double[] { points[i, 0], points[i, 1] }, out long GlobalId, out long GlobalIndex, out bool inSide, out bool onthisProcess);
+                            //    jCells[i] = GlobalIndex;
+                            //}
+                            //tmpLS = ShockFindingExtensions.ContinuousLevelSet(tmpLS, jCells);
+                            //PrimaryOptimizationLevelSet.ProjectFromForeignGrid(1.0, tmpLS);
+                            //PrimaryLevelSetOptimizer.ProjectFromLevelSet(PrimaryOptimizationLevelSet);
+                            base.LevelSetOptStates[0].LevelSetOpti.ProjectFromForeignLevelSet(tmpLS);
+                            base.LevelSetOptStates[0].LevelSetOpti.ProjectOntoLevelSet(base.LevelSetOptStates[0].LsTBO);
+                            //PlotCurrentState(0.0, Grid.NumberOfCells + PrimaryOptimizationLevelSet.Basis.Degree, 3);
+                            break;
                     }
+                    break;
+                case GetLevelSet.DirectyFromTimestep:
+                    foreach ( LevelSetOptimizationState s in base.LevelSetOptStates ) {
+                        IOptiLevelSet LevelSetOpti = s.LevelSetOpti;
+                        var LsTBO = s.LsTBO;
 
-                    //splineLs.x = points3.To1DArray();
+                        if ( LevelSetOpti is SplineOptiLevelSet splineLs ) {
+                            if ( ((TimestepProxy) tsiFromDb).GetInternal() is IDTTimeStepInfo IDTtsInfo ) {
+                                var LSParams = IDTtsInfo.LevelSetParams;
+                                if ( LSParams.Length == splineLs.m_AllParams.Length ) {
+                                    for ( int i = 0; i < LSParams.Length; i++ ) {
+                                        splineLs.m_AllParams[i] = LSParams[i];
+                                    }
+                                    splineLs.Interpolate();
+                                    splineLs.ProjectOntoLevelSet(LsTBO);
+                                    //this.Mus = IDTtsInfo.MuHistory.ToList();
+                                    //this.Alphas = IDTtsInfo.AlphaHistory.ToList();
+                                    //this.Gammas = IDTtsInfo.GammaHistory.ToList();
+                                    //this.ResNorms = IDTtsInfo.ResHistory.ToList();
+                                    //this.EnResNorms = IDTtsInfo.EnResHistory.ToList();
+                                    //this.CurrentStepNo = Control.IVTimestepNumber + 1;
+                                    this.gamma = IDTtsInfo.Gamma;
+                                } else {
+                                    throw new NotSupportedException($"{GetLevelSet.DirectyFromTimestep} not supported if Grid has not equal y - Cells");
+                                }
 
-                } else {
-                    throw new NotSupportedException($"{Control.GetLevelSet} only supported for SplineOptiLevelSet");
-                }
-                break;
+                            }
+
+                            //splineLs.x = points3.To1DArray();
+
+                        } else {
+                            throw new NotSupportedException($"{Control.GetLevelSet} only supported for SplineOptiLevelSet");
+                        }
+                    }
+                    break;
             }
             //PlotCurrentState("00");
             LsTrk.UpdateTracker(CurrentStepNo);
@@ -928,7 +976,7 @@ namespace XESTSF {
                     velocityVec[0] = velocityX(X);
                     //velocityVec[1] = velocityY(X);
 
-                    StateVector state = StateVector.FromPrimitiveQuantities(this.Control.GetMaterial(), density(X), velocityVec, pressure(X));
+                    StateVector state = StateVector.FromPrimitiveQuantities(CompressibleConfig.GetMaterial(), density(X), velocityVec, pressure(X));
                     return state.Energy;
                 },
                     scheme);
@@ -974,10 +1022,15 @@ namespace XESTSF {
                     var fieldsFromDb = dbi.Controller.DBDriver.LoadFields(tsiFromDb, grid.iGridData);
 
                     // Project onto current grid
-                    if(Control.IsTwoLevelSetRun) {
+                    switch(Control.LevelSetOptimizationMode) {
+                    default:
+                    case LevelSetOptMode.TwoLevelSets_OptimizeBoth:
+                    case LevelSetOptMode.TwoLevelSets_OptimizeSecond:
                         ShockLevelSetField = new SinglePhaseField(new Basis(this.GridData, Control.LevelSetTwoDegree), "shockLevelSetField");
-                    } else {
+                        break;
+                    case LevelSetOptMode.SingleLevelSet:
                         ShockLevelSetField = new SinglePhaseField(new Basis(this.GridData, Control.LevelSetDegree), "shockLevelSetField");
+                        break;
                     }
 
                     ShockLevelSetField.ProjectFromForeignGrid(1.0, (ConventionalDGField)fieldsFromDb.ElementAt(1));
@@ -1027,7 +1080,7 @@ namespace XESTSF {
             this.DerivedVariableToXDGFieldMap = new Dictionary<DerivedVariable<XDGField>, XDGField>();
             this.DerivedVariableToSinglePhaseFieldMap = new Dictionary<DerivedVariable<SinglePhaseField>, SinglePhaseField>();
             this.DerivedVariableToDoubleMap = new Dictionary<DerivedVariable<double>, double>();
-            foreach(KeyValuePair<Variable, int> pair in this.Control.VariableToDegreeMap) {
+            foreach(KeyValuePair<Variable, int> pair in CompressibleConfig.VariableToDegreeMap) {
                 Variable variable = pair.Key;
                 int degree = pair.Value;
 
@@ -1072,6 +1125,7 @@ namespace XESTSF {
 
     }
 }
+
 
 
 

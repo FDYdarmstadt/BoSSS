@@ -32,7 +32,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <param name="useDefaultFactories"></param>
         /// <param name="domain"></param>
         public CellEdgeBoundaryQuadratureScheme(bool useDefaultFactories, CellMask domain = null)
-            : base(useDefaultFactories, domain) {
+            : base(null, useDefaultFactories, domain) {
         }
 
         /// <summary>
@@ -46,7 +46,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             bool useDefaultFactories,
             IQuadRuleFactory<CellEdgeBoundaryQuadRule> factory,
             CellMask domain = null)
-            : base(useDefaultFactories, domain) {
+            : base(null, useDefaultFactories, domain) {
             AddFactoryDomainPair(factory, domain);
         }
 

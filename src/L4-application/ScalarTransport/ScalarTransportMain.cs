@@ -54,7 +54,7 @@ namespace BoSSS.Application.ScalarTransport {
         }
 
         /// <summary>
-        /// creates a simple 2d/3d Cartesian grid within the domain \f$ (-7,7)^D \f$
+        /// creates a simple 2d/3d Cartesian grid within the domain $(-7,7)^D$
         /// </summary>
         protected override IGrid CreateOrLoadGrid() {
             /*

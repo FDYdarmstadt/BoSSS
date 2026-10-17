@@ -24,14 +24,111 @@ using MPI.Wrappers;
 using ilPSP.Utils;
 using BoSSS.Platform;
 using ilPSP;
+using System.Numerics;
 
 namespace BoSSS.Foundation.XDG {
-    
-    
+
+
+    /// <summary>
+    /// Specifies how TraceDG and XDG degrees of freedom (DOFs) are handled in the context of species framing.
+    /// Used to control which types of basis functions are included in the framed mapping/vector:
+    /// </summary>
+    public enum FrameBase_TraceDGhandling {
+
+        /// <summary>
+        /// Include all DOFs (standard DG, XDG, and TraceDG)
+        /// </summary>
+        DG_XDG_and_TraceDG = 0,
+
+        /// <summary>
+        /// Exclude TraceDG DOFs; only standard DG and XDG are included.
+        /// </summary>
+        Without_TraceDG = 1,
+
+        /// <summary>
+        /// Exclude standard DG and XDG DOFs; only TraceDG is included.
+        /// </summary>
+        Without_DG_and_XDG = 2
+
+    }
+
+
     /// <summary>
     /// common functionality for the framing classes <see cref="BoSSS.Foundation.XDG.XDifferentialOperatorMk2.SpeciesFrameMatrix{M}"/> and <see cref="BoSSS.Foundation.XDG.XDifferentialOperatorMk2.SpeciesFrameVector{V}"/>.
     /// </summary>
     public sealed class FrameBase {
+
+        class EmptyBasis : Basis { 
+            public EmptyBasis(Basis b) : base(b.GridDat, b.Degree) { }
+
+
+            public override int MaximalLength => 0;
+
+            public override int MinimalLength => 0;
+
+
+            public override int GetLength(int jCell) {
+                return 0;
+            }
+
+        }
+
+        /// <summary>
+        /// Replaces , in <paramref name="full"/>:
+        ///  - all <see cref="XDGBasis"/>-objects with their non-cut counterparts (<see cref="XDGBasis.NonX_Basis"/>.
+        ///  - all <see cref="TraceDGBasis"/>-objects with <see cref="EmptyBasis"/>
+        /// </summary>
+        static UnsetteledCoordinateMapping CreateWithoutTraceDG(UnsetteledCoordinateMapping full) {
+            Basis SelectModBasis(Basis b) {
+                if(b is XDGBasis xb)
+                    return xb.NonX_Basis;
+                if(b is TraceDGBasis tb)
+                    return new EmptyBasis(tb.NonX_Basis);
+                return b;
+            }
+
+            var basisS = full.BasisS.Select(SelectModBasis);
+            return new UnsetteledCoordinateMapping(basisS.ToArray<Basis>());
+        }
+
+
+        /// <summary>
+        /// Keeps all three, DG/XDG and TraceDG
+        /// </summary>
+        static UnsetteledCoordinateMapping CreateMapStandard(UnsetteledCoordinateMapping full) {
+            Basis SelectModBasis(Basis b) {
+                if(b is XDGBasis xb)
+                    return xb.NonX_Basis;
+                if(b is TraceDGBasis tb)
+                    return tb.NonX_Basis;
+
+                return b;
+            }
+
+            var basisS = full.BasisS.Select(SelectModBasis);
+            return new UnsetteledCoordinateMapping(basisS.ToArray<Basis>());
+        }
+
+
+        /// <summary>
+        /// Replaces , in <paramref name="full"/>:
+        ///  - all <see cref="XDGBasis"/>-objects with <see cref="EmptyBasis"/>
+        ///  - all <see cref="TraceDGBasis"/>-objects with their non-cut counterparts (<see cref="XDGBasis.NonX_Basis"/>.
+        /// </summary>
+        static UnsetteledCoordinateMapping CreateMapWithoutXDG(UnsetteledCoordinateMapping full) {
+            Basis SelectModBasis(Basis b) {
+                if(b is XDGBasis xb)
+                    return new EmptyBasis(xb.NonX_Basis);
+                if(b is TraceDGBasis tb)
+                    return tb.NonX_Basis;
+
+                return new EmptyBasis(b);
+            }
+
+            var basisS = full.BasisS.Select(SelectModBasis);
+            return new UnsetteledCoordinateMapping(basisS.ToArray<Basis>());
+        }
+
 
         /// <summary>
         /// ctor
@@ -42,16 +139,30 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="SupportExternal">
         /// true: support also indices related to external/ghost cells
         /// </param>
-        public FrameBase(LevelSetTracker.LevelSetRegions regions, SpeciesId spcId, UnsetteledCoordinateMapping __FullMap, bool SupportExternal) {
+        /// <param name="traceDGmode">
+        /// - false: TraceDG DOFs are sent to Nirvana 
+        /// - true:  the opposite
+        /// </param>
+        public FrameBase(LevelSetTracker.LevelSetRegions regions, SpeciesId spcId, UnsetteledCoordinateMapping __FullMap, bool SupportExternal, FrameBase_TraceDGhandling traceDGmode) {
             m_Regions = regions;
             m_spcId = spcId;
-            FrameMap = CreateMap(__FullMap);
+            m_traceDDhandling = traceDGmode;
+
+            switch(traceDGmode) {
+                case FrameBase_TraceDGhandling.DG_XDG_and_TraceDG: FrameMap = CreateMapStandard(__FullMap); break;
+                case FrameBase_TraceDGhandling.Without_TraceDG: FrameMap = CreateWithoutTraceDG(__FullMap); break;
+                case FrameBase_TraceDGhandling.Without_DG_and_XDG: FrameMap = CreateMapWithoutXDG(__FullMap); break;
+                default: throw new NotImplementedException();
+            }
             FullMap = __FullMap;
             m_supportExternal = SupportExternal;
                         
             Setup_Frame2Full(); // Frame2Full is almost used every time, so we set it up immediately
             //                     (in contrast, Full2Frame is set up on demand)
         }
+
+
+        FrameBase_TraceDGhandling m_traceDDhandling;
 
 
 
@@ -71,15 +182,7 @@ namespace BoSSS.Foundation.XDG {
             private set;
         }
 
-        /// <summary>
-        /// Replaces all <see cref="XDGBasis"/>-objects in the mapping <paramref name="full"/>
-        /// with their non-cut counterparts (<see cref="XDGBasis.NonX_Basis"/>.
-        /// </summary>
-        static UnsetteledCoordinateMapping CreateMap(UnsetteledCoordinateMapping full) {
-            var basisS = from b in full.BasisS
-                         select ((b is XDGBasis) ? ((XDGBasis)b).NonX_Basis : b);
-            return new UnsetteledCoordinateMapping(basisS.ToArray<Basis>());
-        }
+        
 
         LevelSetTracker.LevelSetRegions m_Regions;
         SpeciesId m_spcId;
@@ -118,8 +221,12 @@ namespace BoSSS.Foundation.XDG {
 
             Basis[] BasisS = FullMap.BasisS.ToArray();
             XDGBasis[] XBasisS = new XDGBasis[BasisS.Length];
-            for (int i = 0; i < BasisS.Length; i++)
+            for(int i = 0; i < BasisS.Length; i++)
                 XBasisS[i] = BasisS[i] as XDGBasis;
+            TraceDGBasis[] TBasisS = new TraceDGBasis[BasisS.Length];
+            for(int i = 0; i < BasisS.Length; i++)
+                TBasisS[i] = BasisS[i] as TraceDGBasis;
+            bool[] IsEmpty = FrameMap.BasisS.Select(b => b.MaximalLength <= 0).ToArray();
 
 
 
@@ -132,29 +239,41 @@ namespace BoSSS.Foundation.XDG {
             int Jtot = FrameMap.GridDat.iLogicalCells.Count;
             int G = BasisS.Length;
             for (int j = 0; j < Jup; j++) { // loop over all cells ...
-                int NoOfSpc = m_Regions.GetNoOfSpecies(j);
-                int iSpc = m_Regions.GetSpeciesIndex(m_spcId, j);
 
                 for (int g = 0; g < G; g++) { // loop over all basises
                     Basis b = BasisS[g];
                     XDGBasis xb = XBasisS[g];
+                    TraceDGBasis tb = TBasisS[g];
                     bool b_is_XDGbasis = (xb != null);
+                    bool b_is_TraceDGbasis = (tb != null);
+                    Debug.Assert((b_is_XDGbasis != b_is_TraceDGbasis) || (!b_is_XDGbasis && !b_is_TraceDGbasis), "basis cannot be XDG and TraceDG at the same time");
 
                     int n0, N;
-                    if (b_is_XDGbasis) {
-                        if (iSpc < 0) {
+
+                    if(IsEmpty[g]) {
+                        // we are using the `EmptyBasis` - this dominates everything
+                        n0 = int.MinValue;
+                        N = 0;
+                    } else if(b_is_XDGbasis) {
+                        int NoOfSpc = m_Regions.GetNoOfSpecies(j);
+                        int iSpc = m_Regions.GetSpeciesIndex(m_spcId, j);
+
+                        if(iSpc < 0) {
                             n0 = int.MaxValue;
                             N = int.MinValue;
                         } else {
                             N = xb.DOFperSpeciesPerCell;
-                            n0 = N*iSpc;
+                            n0 = N * iSpc;
                         }
+                    } else if(b_is_TraceDGbasis) {
+                        n0 = 0;
+                        N = b.GetLength(j);
                     } else {
                         n0 = 0;
                         N = b.GetLength(j);
                     }
 
-                    if (N >= 0) {
+                    if (N > 0) {
                         int iFull = (int)FullMap.GlobalUniqueCoordinateIndex(g, j, n0);
                         int iLoc = FrameMap.LocalUniqueCoordinateIndex(g, j, 0);
 
@@ -168,28 +287,33 @@ namespace BoSSS.Foundation.XDG {
 
 #if DEBUG
             var _Frame2Full_Lookup = new long[L];
-            for (int iLoc = 0; iLoc < L; iLoc++) { // loop over all indices of the frame...
+            for(int iLoc = 0; iLoc < L; iLoc++) { // loop over all indices of the frame...
                 int j, g, n;
                 FrameMap.LocalFieldCoordinateIndex(iLoc, out g, out j, out n);
 
-                int NoOfSpc = m_Regions.GetNoOfSpecies(j);
                 Basis b = BasisS[g];
                 XDGBasis xb = XBasisS[g];
                 bool b_is_XDGbasis = (xb != null);
-                int iSpc = m_Regions.GetSpeciesIndex(m_spcId, j);
 
-                if (b_is_XDGbasis) {
-                    if (iSpc < 0) {
-                        _Frame2Full_Lookup[iLoc] = long.MinValue;
+                if(n < b.GetLength(j)) {
+                    if(b_is_XDGbasis) {
+                        int NoOfSpc = m_Regions.GetNoOfSpecies(j);
+                        int iSpc = m_Regions.GetSpeciesIndex(m_spcId, j);
+                        if(iSpc < 0) {
+                            _Frame2Full_Lookup[iLoc] = long.MinValue;
+                        } else {
+                            int Nsep = xb.DOFperSpeciesPerCell;
+                            _Frame2Full_Lookup[iLoc] = FullMap.GlobalUniqueCoordinateIndex(g, j, iSpc * Nsep + n);
+                        }
                     } else {
-                        int Nsep = xb.DOFperSpeciesPerCell;
-                        _Frame2Full_Lookup[iLoc] = FullMap.GlobalUniqueCoordinateIndex(g, j, iSpc * Nsep + n);
+                        _Frame2Full_Lookup[iLoc] = FullMap.GlobalUniqueCoordinateIndex(g, j, n);
                     }
                 } else {
-                    _Frame2Full_Lookup[iLoc] = FullMap.GlobalUniqueCoordinateIndex(g, j, n);
-
+                    _Frame2Full_Lookup[iLoc] = -1234567;
                 }
-                Debug.Assert(_Frame2Full_Lookup[iLoc] == Frame2Full_Lookup[iLoc]);
+
+                Debug.Assert((_Frame2Full_Lookup[iLoc] == Frame2Full_Lookup[iLoc]) || (_Frame2Full_Lookup[iLoc] < 0 && Frame2Full_Lookup[iLoc] < 0));
+
             }
 
             for (int l = 0; l < L; l++) {
@@ -268,16 +392,17 @@ namespace BoSSS.Foundation.XDG {
                 int N_frame = this.FrameMap.MaxTotalNoOfCoordinatesPerCell;
                 var FramBasisS = this.FrameMap.BasisS.ToArray();
                 var FullBasisS = this.FullMap.BasisS.ToArray();
+                int NoOfVars = FramBasisS.Length;
+                Debug.Assert(FramBasisS.Length == FullBasisS.Length);
 
-
-                int[] NBs = FramBasisS.Select(b => b.Length).ToArray();
+                int[] NBs = FramBasisS.Select(b => b.MaximalLength).ToArray();
                 int[] NBf = FullBasisS.Select(b => b.MaximalLength).ToArray();
 
                 Debug.Assert(NBf.Length == NBs.Length);
-                for (int i = 0; i < NBf.Length; i++) {
-                    Debug.Assert(NBf[i] % NBs[i] == 0);
+                for(int i = 0; i < NBf.Length; i++) {
+                    //Debug.Assert(NBf[i] % NBs[i] == 0);
                 }
-               
+
                 bool[] XBasis = FullBasisS.Select(b => b is XDGBasis).ToArray();
                 
                 this.IndexTrafoWithinCell = new int[NoOfSpc, this.FrameMap.MaxTotalNoOfCoordinatesPerCell];
@@ -286,7 +411,7 @@ namespace BoSSS.Foundation.XDG {
                     int n_frame = 0;
                     int n_full = 0;
 
-                    for (int ifld = 0; ifld < NBs.Length; ifld++) { // loop over all basises in the mapping
+                    for (int ifld = 0; ifld < NoOfVars; ifld++) { // loop over all basises in the mapping
 
                         if (XBasis[ifld]) {
                             for (int n = 0; n < NBs[ifld]; n++) {
@@ -307,6 +432,12 @@ namespace BoSSS.Foundation.XDG {
         }
 
 
+        
+
+
+        /// <summary>
+        /// required for index transformations in external cells
+        /// </summary>
         int[,] IndexTrafoWithinCell;
 
 
@@ -372,7 +503,7 @@ namespace BoSSS.Foundation.XDG {
                     int jCellLoc, iSpc;
                     if (m_Last_jCellGlob != jCellGlob) {
                         jCellLoc = Parallel.Global2LocalIdx[jCellGlob];
-                        iSpc = m_Regions.GetSpeciesIndex(this.m_spcId, jCellLoc);
+                        iSpc = m_traceDDhandling == FrameBase_TraceDGhandling.Without_DG_and_XDG ? 0 : m_Regions.GetSpeciesIndex(this.m_spcId, jCellLoc);
                         m_Last_jCellGlob = jCellGlob;
                         m_Last_jCellLoc = jCellLoc;
                         m_Last_iSpc = iSpc;

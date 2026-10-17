@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Application.IncompressibleNSE {
 
+
     /// <summary>
     /// A minimal solver for the incompressible Navier-Stokes equation.
     /// </summary>
@@ -67,13 +68,13 @@ namespace BoSSS.Application.IncompressibleNSE {
         /// Pressure
         /// </summary>
         [InstantiateFromControlFile(VariableNames.Pressure, null, IOListOption.ControlFileDetermined)]
-        SinglePhaseField Pressure;
+        public SinglePhaseField Pressure;
 
         /// <summary>
         /// Residual of the continuity equation
         /// </summary>
         [InstantiateFromControlFile("ResidualConti", VariableNames.Pressure, IOListOption.ControlFileDetermined)]
-        SinglePhaseField ResidualContinuity;
+        public SinglePhaseField ResidualContinuity;
 #pragma warning restore 649
 
         /// <summary>

@@ -29,7 +29,7 @@ using System.Threading;
 
 namespace BoSSS.Foundation.Quadrature.NonLin {
 
-   
+     
     /// <summary>
     /// edge quadrature of nonlinear equation components
     /// </summary>
@@ -558,7 +558,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             /// <summary>
             /// Integrand evaluation.
             /// </summary>
-            public void EvaluateEx(int i0, int Length, QuadRule QR, MultidimensionalArray QuadResult, int iFred, int NoOfFreds) {
+            public void EvaluateEx(int i0, int Length, QuadRule QR, IIntegrationMetric metric, MultidimensionalArray QuadResult, int iFred, int NoOfFreds) {
 
                 NodeSet qrNodes = QR.Nodes;
                 IGridData grid = m_owner.GridDat;
@@ -571,18 +571,18 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
 
 #if DEBUG
-            for(int i = 1; i < Length; i++) {
-                int iedge = i + i0;
-                Debug.Assert(iKrefEdge == grid.iGeomEdges.GetRefElementIndex(iedge));
-                Debug.Assert(affine == grid.iGeomEdges.IsEdgeAffineLinear(iedge));
-            }
+                for ( int i = 1; i < Length; i++ ) {
+                    int iedge = i + i0;
+                    Debug.Assert(iKrefEdge == grid.iGeomEdges.GetRefElementIndex(iedge));
+                    Debug.Assert(affine == grid.iGeomEdges.IsEdgeAffineLinear(iedge));
+                }
 #endif
 
-                if (!affine) {
-                    for (int gamma = 0; gamma < NoOfEquations; gamma++) {
-                        if (m_QuadResultIN[gamma] == null)
+                if ( !affine ) {
+                    for ( int gamma = 0; gamma < NoOfEquations; gamma++ ) {
+                        if ( m_QuadResultIN[gamma] == null )
                             m_QuadResultIN[gamma] = new MultidimensionalArray(2);
-                        if (m_QuadResultOT[gamma] == null)
+                        if ( m_QuadResultOT[gamma] == null )
                             m_QuadResultOT[gamma] = new MultidimensionalArray(2);
 
                         int Ne = m_owner.m_CodomainBasisS[gamma].Length;
@@ -612,11 +612,11 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                     // evaluate test functions and test function gradients
                     // ----------------------------------------------------
-                    if (m_owner.maxTestBasis != null) {
+                    if ( m_owner.maxTestBasis != null ) {
                         TstFunc = grid.ChefBasis.EdgeEval.GetValues(qrNodes, i0, Length, m_owner.maxTestBasis.Degree);
                         Debug.Assert(TstFunc.Dimension == 3);
                         Debug.Assert(TstFunc.GetLength(2) >= Nmax);
-                        if (TstFunc.GetLength(2) > Nmax) {
+                        if ( TstFunc.GetLength(2) > Nmax ) {
                             int[] I0 = new int[] { 0, 0, 0 };
                             int[] IE = new int[] { TstFunc.GetLength(0) - 1, qrNodes.NoOfNodes - 1, Nmax - 1 };
                             TstFunc = TstFunc.ExtractSubArrayShallow(I0, IE);
@@ -627,11 +627,11 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         marker_TstFuncXwgt = new bool[TstFunc.GetLength(0)];
                     }
 
-                    if (m_owner.maxTestGradientBasis != null) {
+                    if ( m_owner.maxTestGradientBasis != null ) {
                         TstFuncGrad = grid.ChefBasis.EdgeGradientEval.GetValues(qrNodes, i0, Length, m_owner.maxTestBasis.Degree);
                         Debug.Assert(TstFuncGrad.Dimension == 4);
                         Debug.Assert(TstFuncGrad.GetLength(2) >= Nmax);
-                        if (TstFuncGrad.GetLength(2) > Nmax) {
+                        if ( TstFuncGrad.GetLength(2) > Nmax ) {
                             int[] I0 = new int[] { 0, 0, 0, 0 };
                             int[] IE = new int[] { TstFuncGrad.GetLength(0) - 1, qrNodes.NoOfNodes - 1, Nmax - 1, D - 1 };
                             TstFuncGrad = TstFuncGrad.ExtractSubArrayShallow(I0, IE);
@@ -645,12 +645,12 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     // sweep over all edges to process in order to check, ...
                     // ------------------------------------------------------
 
-                    if (m_InnerEdgesI0s == null) {
+                    if ( m_InnerEdgesI0s == null ) {
                         m_InnerEdgesI0s = new int[Length];
                         m_InnerEdgesIEs = new int[Length];
                     }
 
-                    if (m_InnerEdgesI0s.Length < Length) {
+                    if ( m_InnerEdgesI0s.Length < Length ) {
                         m_InnerEdgesI0s = new int[Length];
                         m_InnerEdgesIEs = new int[Length];
                     }
@@ -659,7 +659,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                     int[,] E2C = grid.iGeomEdges.CellIndices;
                     int[,] TrIdx = grid.iGeomEdges.Edge2CellTrafoIndex;
-                    for (int jEdge = 0; jEdge < Length; jEdge++) {
+                    for ( int jEdge = 0; jEdge < Length; jEdge++ ) {
                         int jCell1, jCell2, edge1, edge2;
                         jCell1 = E2C[jEdge + i0, 0];
                         jCell2 = E2C[jEdge + i0, 1];
@@ -673,21 +673,21 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                             jCellMin = Math.Min(jCellMin, jCell1);
                             jCellMax = Math.Max(jCellMax, jCell1);
                         }
-                        if (jCell2 >= 0) {
+                        if ( jCell2 >= 0 ) {
                             jCellMin = Math.Min(jCellMin, jCell2);
                             jCellMax = Math.Max(jCellMax, jCell2);
                         }
 
                         // multiply basis functions with quadrature weights
-                        if (marker_TstFuncXwgt != null) {
-                            if (!marker_TstFuncXwgt[edge1]) {
-                                if (TstFuncXwgt != null) {
+                        if ( marker_TstFuncXwgt != null ) {
+                            if ( !marker_TstFuncXwgt[edge1] ) {
+                                if ( TstFuncXwgt != null ) {
                                     int[] I0 = new int[] { edge1, 0, 0 };
                                     int[] IE = new int[] { edge1 - 1, NoOfNodes - 1, TstFunc.GetLength(2) - 1 };
                                     TstFuncXwgt.ExtractSubArrayShallow(I0, IE).Multiply(1.0, QR.Weights, TstFunc.ExtractSubArrayShallow(I0, IE), 0.0, ref mp_kn_k_kn);
                                 }
 
-                                if (TstFuncGradXwgt != null) {
+                                if ( TstFuncGradXwgt != null ) {
                                     int[] I0 = new int[] { edge1, 0, 0, 0 };
                                     int[] IE = new int[] { edge1 - 1, NoOfNodes - 1, TstFunc.GetLength(2) - 1, D - 1 };
                                     TstFuncGradXwgt.ExtractSubArrayShallow(I0, IE).Multiply(1.0, QR.Weights, TstFuncGrad.ExtractSubArrayShallow(I0, IE), 0.0, ref mp_knd_k_knd);
@@ -698,14 +698,14 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                                 marker_TstFuncXwgt[edge1] = true;
                             }
-                            if (jCell2 >= 0 && !marker_TstFuncXwgt[edge2]) {
-                                if (TstFuncXwgt != null) {
+                            if ( jCell2 >= 0 && !marker_TstFuncXwgt[edge2] ) {
+                                if ( TstFuncXwgt != null ) {
                                     int[] I0 = new int[] { edge2, 0, 0 };
                                     int[] IE = new int[] { edge2 - 1, NoOfNodes - 1, TstFunc.GetLength(2) - 1 };
                                     TstFuncXwgt.ExtractSubArrayShallow(I0, IE).Multiply(1.0, QR.Weights, TstFunc.ExtractSubArrayShallow(I0, IE), 0.0, ref mp_kn_k_kn);
                                 }
 
-                                if (TstFuncGradXwgt != null) {
+                                if ( TstFuncGradXwgt != null ) {
                                     int[] I0 = new int[] { edge2, 0, 0, 0 };
                                     int[] IE = new int[] { edge2 - 1, NoOfNodes - 1, TstFunc.GetLength(2) - 1, D - 1 };
                                     TstFuncGradXwgt.ExtractSubArrayShallow(I0, IE).Multiply(1.0, QR.Weights, TstFuncGrad.ExtractSubArrayShallow(I0, IE), 0.0, ref mp_knd_k_knd);
@@ -717,8 +717,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         }
 
                         // sections to switch between boundary and inner edge fluxes
-                        if (jCell2 >= 0 && !SubGridBnd) {
-                            if (InInnerEsec) {
+                        if ( jCell2 >= 0 && !SubGridBnd ) {
+                            if ( InInnerEsec ) {
                                 m_InnerEdgesIEs[NoOfSec]++;
                             } else {
                                 InInnerEsec = true;
@@ -728,7 +728,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                             }
                         } else {
 
-                            if (InInnerEsec) {
+                            if ( InInnerEsec ) {
                                 InInnerEsec = false;
                             }
                         }
@@ -783,10 +783,12 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 // evaluate normals and quadrature transformation metric
                 MultidimensionalArray NormalsGlobalCoords = grid.iGeomEdges.NormalsCache.GetNormals_Edge(qrNodes, i0, Length);
                 MultidimensionalArray QuadScalings;
-                if (affine) {
-                    QuadScalings = grid.iGeomEdges.SqrtGramian.ExtractSubArrayShallow(new int[] { i0 }, new int[] { i0 + Length - 1 });
+                if ( affine && !metric.AlwaysUsePerNodeScaling ) {
+                    //QuadScalings = grid.iGeomEdges.SqrtGramian.ExtractSubArrayShallow(new int[] { i0 }, new int[] { i0 + Length - 1 });
+                    QuadScalings = metric.GetScalingsForLinearElements(grid, QR, i0, Length);
                 } else {
-                    QuadScalings = grid.iGeomEdges.NormalsCache.GetIntegrationMetric(qrNodes, i0, Length);
+                    //QuadScalings = grid.iGeomEdges.NormalsCache.GetIntegrationMetric(qrNodes, i0, Length);
+                    QuadScalings = metric.GetScalingsForNonlinElements(grid, QR, i0, Length);
                 }
 
                 // nodes in global coordinates
@@ -797,8 +799,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                 this.Field_Eval.Start();
 
-                for (int f = 0; f < NoOfFields; f++) {
-                    if (m_owner.m_DomainAndParamFields[f] != null) {
+                for ( int f = 0; f < NoOfFields; f++ ) {
+                    if ( m_owner.m_DomainAndParamFields[f] != null ) {
                         m_owner.m_DomainAndParamFields[f].EvaluateEdge(i0, Length, qrNodes,
                             m_FieldValuesIN[f], m_FieldValuesOT[f],
                             f < m_MeanFieldValuesIN.Length ? m_MeanFieldValuesIN[f] : null, f < m_MeanFieldValuesOT.Length ? m_MeanFieldValuesOT[f] : null,
@@ -811,22 +813,22 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
 
 #if DEBUG
-                for(int f = 0; f < NoOfFields; f++) {
-                    if(m_owner.m_DomainAndParamFields[f] == null) {
+                for ( int f = 0; f < NoOfFields; f++ ) {
+                    if ( m_owner.m_DomainAndParamFields[f] == null ) {
 
-                        if(m_FieldValuesIN[f] != null) {
+                        if ( m_FieldValuesIN[f] != null ) {
                             Debug.Assert(m_FieldValuesIN[f].L2Norm() == 0.0);
                             Debug.Assert(m_FieldValuesOT[f].L2Norm() == 0.0);
                         }
 
 
-                        if(f < m_MeanFieldValuesIN.Length && m_MeanFieldValuesIN[f] != null) {
+                        if ( f < m_MeanFieldValuesIN.Length && m_MeanFieldValuesIN[f] != null ) {
                             Debug.Assert(m_MeanFieldValuesIN[f].L2Norm() == 0.0);
                             Debug.Assert(m_MeanFieldValuesOT[f].L2Norm() == 0.0);
                         }
 
 
-                        if(f < m_FieldGradientIN.Length && m_FieldGradientIN[f] != null) {
+                        if ( f < m_FieldGradientIN.Length && m_FieldGradientIN[f] != null ) {
                             Debug.Assert(m_FieldGradientIN[f].L2Norm() == 0.0);
                             Debug.Assert(m_FieldGradientOT[f].L2Norm() == 0.0);
                         }
@@ -848,329 +850,335 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 #region FLUX_EVAL
 
                 bool MustLock = this.m_owner.Operator.FluxesAreNOTMultithreadSafe;
+                try {
+                    this.Flux_Eval.Start();
 
-                this.Flux_Eval.Start();
+                    if ( MustLock ) {
+                        //Console.WriteLine($"Entering Monitor on {Thread.CurrentThread.ManagedThreadId}...");
+                        Monitor.Enter(m_owner);
+                        //Console.WriteLine($"ENTERED Monitor on {Thread.CurrentThread.ManagedThreadId}...");
+                    }
 
-                if (MustLock)
-                    Monitor.Enter(m_owner);
+                    {
+                        // loop over all equations ...
+                        for ( int _e = 0; _e < NoOfEquations; _e++ ) {
+                            int e = (_e + this.m_iThread) % NoOfEquations; // shuffling in threads to reduce locking
 
-                {
-                    // loop over all equations ...
-                    for (int _e = 0; _e < NoOfEquations; _e++) {
-                        int e = (_e + this.m_iThread) % NoOfEquations; // shuffling in threads to reduce locking
+                            if ( m_FluxValuesIN[e] != null ) {
+                                m_FluxValuesIN[e].Clear();
+                                m_FluxValuesOT[e].Clear();
+                            }
 
-                        if (m_FluxValuesIN[e] != null) {
-                            m_FluxValuesIN[e].Clear();
-                            m_FluxValuesOT[e].Clear();
+                            MultidimensionalArray FluxValuesIN = m_FluxValuesIN[e];
+                            MultidimensionalArray FluxValuesOT = m_FluxValuesOT[e];
+
+                            // -------------------------------
+                            // All INonlinearFlux - Components
+                            // -------------------------------
+
+                            EvalFlux(m_NonlinFluxes[e], i0, Length, grid, NoOfSec, true, false, base.m_NonlinFluxesWatches[e], MustLock,
+                                delegate (INonlinearFlux nonlinFlx, int _jEdge, int _IndexOffset, int _L, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] UinMean, MultidimensionalArray[] UoutMean, MultidimensionalArray[] UinGrad, MultidimensionalArray[] UoutGrad) {
+                                    nonlinFlx.InnerEdgeFlux(m_owner.m_Time, _jEdge,
+                                      NodesGlobalCoords,
+                                      NormalsGlobalCoords,
+                                      Uin, Uout,
+                                      _IndexOffset, _L,
+                                      FluxValuesIN);
+                                },
+                                delegate (INonlinearFlux nonlinFlx, int _jEdge, int _IndexOffset, int _L, int _EdgeTagsOffset, bool flipNormal, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] UinMean, MultidimensionalArray[] UinGrad) {
+                                    nonlinFlx.BorderEdgeFlux(m_owner.m_Time, _jEdge,
+                                                             NodesGlobalCoords,
+                                                             NormalsGlobalCoords, flipNormal,
+                                                             grid.iGeomEdges.EdgeTags, _EdgeTagsOffset,
+                                                             Uin,
+                                                             _IndexOffset, _L,
+                                                             FluxValuesIN);
+                                });
+#if DEBUG
+                            if ( FluxValuesIN != null )
+                                FluxValuesIN.CheckForNanOrInf(true, true, true);
+#endif
+
+                            // ---------------------------------
+                            // All INonlinearFluxEx - Components
+                            // ---------------------------------
+                            EvalFlux(m_NonlinFluxesEx[e], i0, Length, grid, NoOfSec, true, false, base.m_NonlinFluxesExWatches[e], MustLock,
+                                delegate (INonlinearFluxEx nonlinFlx, int _jEdge, int _IndexOffset, int _L, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] UinMean, MultidimensionalArray[] UoutMean, MultidimensionalArray[] UinGrad, MultidimensionalArray[] UoutGrad) {
+                                    nonlinFlx.InnerEdgeFlux(m_owner.m_Time, _jEdge,
+                                                            NodesGlobalCoords,
+                                                            NormalsGlobalCoords,
+                                                            Uin, Uout, UinMean, UoutMean,
+                                                            _IndexOffset, _L,
+                                                            FluxValuesIN);
+                                },
+                                delegate (INonlinearFluxEx nonlinFlx, int _jEdge, int _IndexOffset, int _L, int _EdgeTagsOffset, bool flipNormal, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] UinMean, MultidimensionalArray[] UinGrad) {
+                                    nonlinFlx.BorderEdgeFlux(m_owner.m_Time, _jEdge,
+                                                             NodesGlobalCoords,
+                                                             NormalsGlobalCoords, flipNormal,
+                                                             grid.iGeomEdges.EdgeTags, _EdgeTagsOffset,
+                                                             Uin, UinMean,
+                                                             _IndexOffset, _L,
+                                                             FluxValuesIN);
+                                });
+#if DEBUG
+                            if ( FluxValuesIN != null )
+                                FluxValuesIN.CheckForNanOrInf(true, true, true);
+#endif
+
+                            // set out-cell flux
+                            if ( FluxValuesIN != null )
+                                FluxValuesOT.Acc(-1.0, FluxValuesIN);
+
+
+                            // ----------------------------------
+                            // All INonlinEdgeform_V - components
+                            // ----------------------------------
+
+                            //bla 1
+                            EvalFlux(m_EdgeForm_V[e], i0, Length, grid, NoOfSec, false, true, this.m_EdgeForm_V_Watches[e], MustLock,
+                                delegate (INonlinEdgeForm_V edgeform, int _jEdge, int _IndexOffset, int _L, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] UinMean, MultidimensionalArray[] UoutMean, MultidimensionalArray[] UinGrad, MultidimensionalArray[] UoutGrad) {
+                                    EdgeFormParams efp;
+                                    efp.GridDat = m_owner.GridDat;
+                                    efp.Len = _L;
+                                    efp.e0 = _jEdge;
+                                    efp.time = m_owner.m_Time;
+                                    Debug.Assert(NoOfNodes == NormalsGlobalCoords.GetLength(1));
+                                    Debug.Assert(NoOfNodes == NodesGlobalCoords.GetLength(1));
+
+                                    int[] I0vec = new int[] { _IndexOffset, 0, 0 };
+                                    int[] IEvec = new int[] { _IndexOffset + _L - 1, NoOfNodes - 1, D - 1 };
+                                    int[] I0scl = new int[] { _IndexOffset, 0 };
+                                    int[] IEscl = new int[] { _IndexOffset + _L - 1, NoOfNodes - 1 };
+
+                                    efp.Normals = NormalsGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
+                                    efp.Nodes = NodesGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
+
+                                    var _FluxValuesIN = FluxValuesIN.ExtractSubArrayShallow(I0scl, IEscl);
+                                    var _FluxValuesOT = FluxValuesOT.ExtractSubArrayShallow(I0scl, IEscl);
+
+                                    MultidimensionalArray[] _Uin = new MultidimensionalArray[Uin.Length], _Uout = new MultidimensionalArray[Uout.Length];
+                                    for ( int i = 0; i < Uin.Length; i++ ) {
+                                        _Uin[i] = Uin[i] != null ? Uin[i].ExtractSubArrayShallow(I0scl, IEscl) : null;
+                                        _Uout[i] = Uout[i] != null ? Uout[i].ExtractSubArrayShallow(I0scl, IEscl) : null;
+                                    }
+                                    MultidimensionalArray[] _UinGrad = new MultidimensionalArray[UinGrad.Length], _UoutGrad = new MultidimensionalArray[UoutGrad.Length];
+                                    for ( int i = 0; i < UinGrad.Length; i++ ) {
+                                        _UinGrad[i] = UinGrad[i] != null ? UinGrad[i].ExtractSubArrayShallow(I0vec, IEvec) : null;
+                                        _UoutGrad[i] = UoutGrad[i] != null ? UoutGrad[i].ExtractSubArrayShallow(I0vec, IEvec) : null;
+                                    }
+                                    efp.ParameterVars_IN = _Uin.GetSubVector(NoArgs, NoParams);
+                                    efp.ParameterVars_OUT = _Uout.GetSubVector(NoArgs, NoParams);
+
+                                    edgeform.NonlinInternalEdge_V(ref efp, _Uin.GetSubVector(0, NoArgs), _Uout.GetSubVector(0, NoArgs), _UinGrad, _UoutGrad, _FluxValuesIN, _FluxValuesOT);
+                                },
+                                delegate (INonlinEdgeForm_V nonlinFlx, int _jEdge, int _IndexOffset, int _L, int _EdgeTagsOffset, bool flipNormal, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] UinMean, MultidimensionalArray[] UinGrad) {
+                                    EdgeFormParams efp;
+                                    efp.GridDat = m_owner.GridDat;
+                                    efp.Len = _L;
+                                    efp.e0 = _jEdge;
+                                    efp.time = m_owner.m_Time;
+                                    Debug.Assert(NoOfNodes == NormalsGlobalCoords.GetLength(1));
+                                    Debug.Assert(NoOfNodes == NodesGlobalCoords.GetLength(1));
+
+                                    int[] I0vec = new int[] { _IndexOffset, 0, 0 };
+                                    int[] IEvec = new int[] { _IndexOffset + _L - 1, NoOfNodes - 1, D - 1 };
+                                    int[] I0scl = new int[] { _IndexOffset, 0 };
+                                    int[] IEscl = new int[] { _IndexOffset + _L - 1, NoOfNodes - 1 };
+
+                                    efp.Normals = NormalsGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
+                                    efp.Nodes = NodesGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
+
+                                    var _FluxValuesIN = (flipNormal ? FluxValuesOT : FluxValuesIN).ExtractSubArrayShallow(I0scl, IEscl);
+
+                                    MultidimensionalArray[] _Uin = new MultidimensionalArray[Uin.Length];
+                                    for ( int i = 0; i < Uin.Length; i++ ) {
+                                        _Uin[i] = Uin[i] != null ? Uin[i].ExtractSubArrayShallow(I0scl, IEscl) : null;
+                                    }
+                                    MultidimensionalArray[] _UinGrad = new MultidimensionalArray[UinGrad.Length];
+                                    for ( int i = 0; i < UinGrad.Length; i++ ) {
+                                        _UinGrad[i] = UinGrad[i] != null ? UinGrad[i].ExtractSubArrayShallow(I0vec, IEvec) : null;
+                                    }
+                                    efp.ParameterVars_IN = _Uin.GetSubVector(NoArgs, NoParams);
+                                    efp.ParameterVars_OUT = null;
+
+                                    if ( flipNormal )
+                                        efp.Normals.Scale(-1.0);
+                                    nonlinFlx.NonlinBoundaryEdge_V(ref efp, _Uin.GetSubVector(0, NoArgs), _UinGrad, _FluxValuesIN);
+                                    if ( flipNormal )
+                                        efp.Normals.Scale(-1.0);
+                                });
+#if DEBUG
+                            if ( FluxValuesIN != null )
+                                FluxValuesIN.CheckForNanOrInf(true, true, true);
+                            if ( FluxValuesOT != null )
+                                FluxValuesOT.CheckForNanOrInf(true, true, true);
+#endif
+
+                            // --------------------------------------
+                            // All INonlinEdgeform_GradV - components
+                            // --------------------------------------
+
+                            if ( m_GradientFluxValuesIN[e] != null ) {
+                                m_GradientFluxValuesIN[e].Clear();
+                                m_GradientFluxValuesOT[e].Clear();
+                            }
+
+
+                            EvalFlux(m_EdgeForm_GradV[e], i0, Length, grid, NoOfSec, false, true, this.m_EdgeForm_GradV_Watches[e], MustLock,
+                                delegate (INonlinEdgeForm_GradV edgeform, int _jEdge, int _IndexOffset, int _L, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] UinMean, MultidimensionalArray[] UoutMean, MultidimensionalArray[] UinGrad, MultidimensionalArray[] UoutGrad) {
+                                    EdgeFormParams efp;
+                                    efp.GridDat = m_owner.GridDat;
+                                    efp.Len = _L;
+                                    efp.e0 = _jEdge;
+                                    efp.time = m_owner.m_Time;
+
+                                    Debug.Assert(NoOfNodes == NormalsGlobalCoords.GetLength(1));
+                                    Debug.Assert(NoOfNodes == NodesGlobalCoords.GetLength(1));
+                                    int[] I0vec = new int[] { _IndexOffset, 0, 0 };
+                                    int[] IEvec = new int[] { _IndexOffset + _L - 1, NoOfNodes - 1, D - 1 };
+                                    int[] I0scl = new int[] { _IndexOffset, 0 };
+                                    int[] IEscl = new int[] { _IndexOffset + _L - 1, NoOfNodes - 1 };
+
+                                    efp.Normals = NormalsGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
+                                    efp.Nodes = NodesGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
+
+                                    var _GradFluxIN = m_GradientFluxValuesIN[e].ExtractSubArrayShallow(I0vec, IEvec);
+                                    var _GradFluxOT = m_GradientFluxValuesOT[e].ExtractSubArrayShallow(I0vec, IEvec);
+
+                                    MultidimensionalArray[] _Uin = new MultidimensionalArray[Uin.Length], _Uout = new MultidimensionalArray[Uout.Length];
+                                    for ( int i = 0; i < Uin.Length; i++ ) {
+                                        _Uin[i] = Uin[i] != null ? Uin[i].ExtractSubArrayShallow(I0scl, IEscl) : null;
+                                        _Uout[i] = Uout[i] != null ? Uout[i].ExtractSubArrayShallow(I0scl, IEscl) : null;
+                                    }
+                                    MultidimensionalArray[] _UinGrad = new MultidimensionalArray[UinGrad.Length], _UoutGrad = new MultidimensionalArray[UoutGrad.Length];
+                                    for ( int i = 0; i < UinGrad.Length; i++ ) {
+                                        _UinGrad[i] = UinGrad[i] != null ? UinGrad[i].ExtractSubArrayShallow(I0vec, IEvec) : null;
+                                        _UoutGrad[i] = UoutGrad[i] != null ? UoutGrad[i].ExtractSubArrayShallow(I0vec, IEvec) : null;
+                                    }
+                                    efp.ParameterVars_IN = _Uin.GetSubVector(NoArgs, NoParams);
+                                    efp.ParameterVars_OUT = _Uout.GetSubVector(NoArgs, NoParams);
+
+                                    edgeform.NonlinInternalEdge_GradV(ref efp, _Uin.GetSubVector(0, NoArgs), _Uout.GetSubVector(0, NoArgs), _UinGrad, _UoutGrad, _GradFluxIN, _GradFluxOT);
+                                },
+                                delegate (INonlinEdgeForm_GradV nonlinFlx, int _jEdge, int _IndexOffset, int _L, int _EdgeTagsOffset, bool flipNormal, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] UinMean, MultidimensionalArray[] UinGrad) {
+                                    EdgeFormParams efp;
+                                    efp.GridDat = m_owner.GridDat;
+                                    efp.Len = _L;
+                                    efp.e0 = _jEdge;
+                                    efp.time = m_owner.m_Time;
+                                    Debug.Assert(NoOfNodes == NormalsGlobalCoords.GetLength(1));
+                                    Debug.Assert(NoOfNodes == NodesGlobalCoords.GetLength(1));
+                                    int[] I0vec = new int[] { _IndexOffset, 0, 0 };
+                                    int[] IEvec = new int[] { _IndexOffset + _L - 1, NoOfNodes - 1, D - 1 };
+                                    int[] I0scl = new int[] { _IndexOffset, 0 };
+                                    int[] IEscl = new int[] { _IndexOffset + _L - 1, NoOfNodes - 1 };
+
+                                    efp.Normals = NormalsGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
+                                    efp.Nodes = NodesGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
+
+                                    var _GradFluxIN = (flipNormal ? m_GradientFluxValuesOT[e] : m_GradientFluxValuesIN[e]).ExtractSubArrayShallow(I0vec, IEvec);
+
+                                    MultidimensionalArray[] _Uin = new MultidimensionalArray[Uin.Length];
+                                    for ( int i = 0; i < Uin.Length; i++ ) {
+                                        _Uin[i] = Uin[i] != null ? Uin[i].ExtractSubArrayShallow(I0scl, IEscl) : null;
+                                    }
+                                    MultidimensionalArray[] _UinGrad = new MultidimensionalArray[UinGrad.Length];
+                                    for ( int i = 0; i < UinGrad.Length; i++ ) {
+                                        _UinGrad[i] = UinGrad[i] != null ? UinGrad[i].ExtractSubArrayShallow(I0vec, IEvec) : null;
+                                    }
+                                    efp.ParameterVars_IN = _Uin.GetSubVector(NoArgs, NoParams);
+                                    efp.ParameterVars_OUT = null;
+
+                                    if ( flipNormal )
+                                        efp.Normals.Scale(-1.0);
+                                    nonlinFlx.NonlinBoundaryEdge_GradV(ref efp, _Uin.GetSubVector(0, NoArgs), _UinGrad, _GradFluxIN);
+                                    if ( flipNormal )
+                                        efp.Normals.Scale(-1.0);
+                                });
+#if DEBUG
+                            if ( m_GradientFluxValuesIN[e] != null )
+                                m_GradientFluxValuesIN[e].CheckForNanOrInf(true, true, true);
+                            if ( m_GradientFluxValuesOT[e] != null )
+                                m_GradientFluxValuesOT[e].CheckForNanOrInf(true, true, true);
+#endif
                         }
 
-                        MultidimensionalArray FluxValuesIN = m_FluxValuesIN[e];
-                        MultidimensionalArray FluxValuesOT = m_FluxValuesOT[e];
+                    }
+                    this.Flux_Eval.Stop();
 
-                        // -------------------------------
-                        // All INonlinearFlux - Components
-                        // -------------------------------
+                    #endregion
 
-                        EvalFlux(m_NonlinFluxes[e], i0, Length, grid, NoOfSec, true, false, base.m_NonlinFluxesWatches[e],
-                            delegate (INonlinearFlux nonlinFlx, int _jEdge, int _IndexOffset, int _L, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] UinMean, MultidimensionalArray[] UoutMean, MultidimensionalArray[] UinGrad, MultidimensionalArray[] UoutGrad) {
-                                nonlinFlx.InnerEdgeFlux(m_owner.m_Time, _jEdge,
-                                  NodesGlobalCoords,
-                                  NormalsGlobalCoords,
-                                  Uin, Uout,
-                                  _IndexOffset, _L,
-                                  FluxValuesIN);
-                            },
-                            delegate (INonlinearFlux nonlinFlx, int _jEdge, int _IndexOffset, int _L, int _EdgeTagsOffset, bool flipNormal, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] UinMean, MultidimensionalArray[] UinGrad) {
-                                nonlinFlx.BorderEdgeFlux(m_owner.m_Time, _jEdge,
-                                                         NodesGlobalCoords,
-                                                         NormalsGlobalCoords, flipNormal,
-                                                         grid.iGeomEdges.EdgeTags, _EdgeTagsOffset,
-                                                         Uin,
-                                                         _IndexOffset, _L,
-                                                         FluxValuesIN);
-                            });
-#if DEBUG
-                        if (FluxValuesIN != null)
-                            FluxValuesIN.CheckForNanOrInf(true, true, true);
-#endif
-
-                        // ---------------------------------
-                        // All INonlinearFluxEx - Components
-                        // ---------------------------------
-                        EvalFlux(m_NonlinFluxesEx[e], i0, Length, grid, NoOfSec, true, false, base.m_NonlinFluxesExWatches[e],
-                            delegate (INonlinearFluxEx nonlinFlx, int _jEdge, int _IndexOffset, int _L, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] UinMean, MultidimensionalArray[] UoutMean, MultidimensionalArray[] UinGrad, MultidimensionalArray[] UoutGrad) {
-                                nonlinFlx.InnerEdgeFlux(m_owner.m_Time, _jEdge,
-                                                        NodesGlobalCoords,
-                                                        NormalsGlobalCoords,
-                                                        Uin, Uout, UinMean, UoutMean,
-                                                        _IndexOffset, _L,
-                                                        FluxValuesIN);
-                            },
-                            delegate (INonlinearFluxEx nonlinFlx, int _jEdge, int _IndexOffset, int _L, int _EdgeTagsOffset, bool flipNormal, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] UinMean, MultidimensionalArray[] UinGrad) {
-                                nonlinFlx.BorderEdgeFlux(m_owner.m_Time, _jEdge,
-                                                         NodesGlobalCoords,
-                                                         NormalsGlobalCoords, flipNormal,
-                                                         grid.iGeomEdges.EdgeTags, _EdgeTagsOffset,
-                                                         Uin, UinMean,
-                                                         _IndexOffset, _L,
-                                                         FluxValuesIN);
-                            });
-#if DEBUG
-                        if (FluxValuesIN != null)
-                            FluxValuesIN.CheckForNanOrInf(true, true, true);
-#endif
-
-                        // set out-cell flux
-                        if (FluxValuesIN != null)
-                            FluxValuesOT.Acc(-1.0, FluxValuesIN);
+                    // ===================
+                    // Flux Transformation
+                    // ===================
+                    #region FLUX_TRAFO
+                    this.Flux_Trafo.Start();
 
 
-                        // ----------------------------------
-                        // All INonlinEdgeform_V - components
-                        // ----------------------------------
-
-                        //bla 1
-                        EvalFlux(m_EdgeForm_V[e], i0, Length, grid, NoOfSec, false, true, this.m_EdgeForm_V_Watches[e],
-                            delegate (INonlinEdgeForm_V edgeform, int _jEdge, int _IndexOffset, int _L, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] UinMean, MultidimensionalArray[] UoutMean, MultidimensionalArray[] UinGrad, MultidimensionalArray[] UoutGrad) {
-                                EdgeFormParams efp;
-                                efp.GridDat = m_owner.GridDat;
-                                efp.Len = _L;
-                                efp.e0 = _jEdge;
-                                efp.time = m_owner.m_Time;
-                                Debug.Assert(NoOfNodes == NormalsGlobalCoords.GetLength(1));
-                                Debug.Assert(NoOfNodes == NodesGlobalCoords.GetLength(1));
-
-                                int[] I0vec = new int[] { _IndexOffset, 0, 0 };
-                                int[] IEvec = new int[] { _IndexOffset + _L - 1, NoOfNodes - 1, D - 1 };
-                                int[] I0scl = new int[] { _IndexOffset, 0 };
-                                int[] IEscl = new int[] { _IndexOffset + _L - 1, NoOfNodes - 1 };
-
-                                efp.Normals = NormalsGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
-                                efp.Nodes = NodesGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
-
-                                var _FluxValuesIN = FluxValuesIN.ExtractSubArrayShallow(I0scl, IEscl);
-                                var _FluxValuesOT = FluxValuesOT.ExtractSubArrayShallow(I0scl, IEscl);
-
-                                MultidimensionalArray[] _Uin = new MultidimensionalArray[Uin.Length], _Uout = new MultidimensionalArray[Uout.Length];
-                                for (int i = 0; i < Uin.Length; i++) {
-                                    _Uin[i] = Uin[i] != null ? Uin[i].ExtractSubArrayShallow(I0scl, IEscl) : null;
-                                    _Uout[i] = Uout[i] != null ? Uout[i].ExtractSubArrayShallow(I0scl, IEscl) : null;
-                                }
-                                MultidimensionalArray[] _UinGrad = new MultidimensionalArray[UinGrad.Length], _UoutGrad = new MultidimensionalArray[UoutGrad.Length];
-                                for (int i = 0; i < UinGrad.Length; i++) {
-                                    _UinGrad[i] = UinGrad[i] != null ? UinGrad[i].ExtractSubArrayShallow(I0vec, IEvec) : null;
-                                    _UoutGrad[i] = UoutGrad[i] != null ? UoutGrad[i].ExtractSubArrayShallow(I0vec, IEvec) : null;
-                                }
-                                efp.ParameterVars_IN = _Uin.GetSubVector(NoArgs, NoParams);
-                                efp.ParameterVars_OUT = _Uout.GetSubVector(NoArgs, NoParams);
-
-                                edgeform.NonlinInternalEdge_V(ref efp, _Uin.GetSubVector(0, NoArgs), _Uout.GetSubVector(0, NoArgs), _UinGrad, _UoutGrad, _FluxValuesIN, _FluxValuesOT);
-                            },
-                            delegate (INonlinEdgeForm_V nonlinFlx, int _jEdge, int _IndexOffset, int _L, int _EdgeTagsOffset, bool flipNormal, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] UinMean, MultidimensionalArray[] UinGrad) {
-                                EdgeFormParams efp;
-                                efp.GridDat = m_owner.GridDat;
-                                efp.Len = _L;
-                                efp.e0 = _jEdge;
-                                efp.time = m_owner.m_Time;
-                                Debug.Assert(NoOfNodes == NormalsGlobalCoords.GetLength(1));
-                                Debug.Assert(NoOfNodes == NodesGlobalCoords.GetLength(1));
-
-                                int[] I0vec = new int[] { _IndexOffset, 0, 0 };
-                                int[] IEvec = new int[] { _IndexOffset + _L - 1, NoOfNodes - 1, D - 1 };
-                                int[] I0scl = new int[] { _IndexOffset, 0 };
-                                int[] IEscl = new int[] { _IndexOffset + _L - 1, NoOfNodes - 1 };
-
-                                efp.Normals = NormalsGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
-                                efp.Nodes = NodesGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
-
-                                var _FluxValuesIN = (flipNormal ? FluxValuesOT : FluxValuesIN).ExtractSubArrayShallow(I0scl, IEscl);
-
-                                MultidimensionalArray[] _Uin = new MultidimensionalArray[Uin.Length];
-                                for (int i = 0; i < Uin.Length; i++) {
-                                    _Uin[i] = Uin[i] != null ? Uin[i].ExtractSubArrayShallow(I0scl, IEscl) : null;
-                                }
-                                MultidimensionalArray[] _UinGrad = new MultidimensionalArray[UinGrad.Length];
-                                for (int i = 0; i < UinGrad.Length; i++) {
-                                    _UinGrad[i] = UinGrad[i] != null ? UinGrad[i].ExtractSubArrayShallow(I0vec, IEvec) : null;
-                                }
-                                efp.ParameterVars_IN = _Uin.GetSubVector(NoArgs, NoParams);
-                                efp.ParameterVars_OUT = null;
-
-                                if (flipNormal)
-                                    efp.Normals.Scale(-1.0);
-                                nonlinFlx.NonlinBoundaryEdge_V(ref efp, _Uin.GetSubVector(0, NoArgs), _UinGrad, _FluxValuesIN);
-                                if (flipNormal)
-                                    efp.Normals.Scale(-1.0);
-                            });
-#if DEBUG
-                        if (FluxValuesIN != null)
-                            FluxValuesIN.CheckForNanOrInf(true, true, true);
-                        if (FluxValuesOT != null)
-                            FluxValuesOT.CheckForNanOrInf(true, true, true);
-#endif
-
-                        // --------------------------------------
-                        // All INonlinEdgeform_GradV - components
-                        // --------------------------------------
-
-                        if (m_GradientFluxValuesIN[e] != null) {
-                            m_GradientFluxValuesIN[e].Clear();
-                            m_GradientFluxValuesOT[e].Clear();
+                    // multiply fluxes with Jacobi determinant (integral transformation metric):
+                    for ( int i = 0; i < NoOfEquations; i++ ) {
+                        bool __affine = affine && !metric.AlwaysUsePerNodeScaling;
+                        if ( m_FluxValuesIN[i] != null ) {
+                            m_FluxValuesIN[i].Multiply(1.0, m_FluxValuesIN[i], QuadScalings, 0.0, "jk", "jk", __affine ? "j" : "jk");
+                            m_FluxValuesOT[i].Multiply(1.0, m_FluxValuesOT[i], QuadScalings, 0.0, "jk", "jk", __affine ? "j" : "jk");
                         }
 
+                        if ( m_GradientFluxValuesIN[i] != null ) {
+                            m_GradientFluxValuesIN[i].Multiply(1.0, m_GradientFluxValuesIN[i], QuadScalings, 0.0, "jkd", "jkd", __affine ? "j" : "jk");
+                            m_GradientFluxValuesOT[i].Multiply(1.0, m_GradientFluxValuesOT[i], QuadScalings, 0.0, "jkd", "jkd", __affine ? "j" : "jk");
+                        }
+                    }
 
-                        EvalFlux(m_EdgeForm_GradV[e], i0, Length, grid, NoOfSec, false, true, this.m_EdgeForm_GradV_Watches[e],
-                            delegate (INonlinEdgeForm_GradV edgeform, int _jEdge, int _IndexOffset, int _L, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] UinMean, MultidimensionalArray[] UoutMean, MultidimensionalArray[] UinGrad, MultidimensionalArray[] UoutGrad) {
-                                EdgeFormParams efp;
-                                efp.GridDat = m_owner.GridDat;
-                                efp.Len = _L;
-                                efp.e0 = _jEdge;
-                                efp.time = m_owner.m_Time;
-
-                                Debug.Assert(NoOfNodes == NormalsGlobalCoords.GetLength(1));
-                                Debug.Assert(NoOfNodes == NodesGlobalCoords.GetLength(1));
-                                int[] I0vec = new int[] { _IndexOffset, 0, 0 };
-                                int[] IEvec = new int[] { _IndexOffset + _L - 1, NoOfNodes - 1, D - 1 };
-                                int[] I0scl = new int[] { _IndexOffset, 0 };
-                                int[] IEscl = new int[] { _IndexOffset + _L - 1, NoOfNodes - 1 };
-
-                                efp.Normals = NormalsGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
-                                efp.Nodes = NodesGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
-
-                                var _GradFluxIN = m_GradientFluxValuesIN[e].ExtractSubArrayShallow(I0vec, IEvec);
-                                var _GradFluxOT = m_GradientFluxValuesOT[e].ExtractSubArrayShallow(I0vec, IEvec);
-
-                                MultidimensionalArray[] _Uin = new MultidimensionalArray[Uin.Length], _Uout = new MultidimensionalArray[Uout.Length];
-                                for (int i = 0; i < Uin.Length; i++) {
-                                    _Uin[i] = Uin[i] != null ? Uin[i].ExtractSubArrayShallow(I0scl, IEscl) : null;
-                                    _Uout[i] = Uout[i] != null ? Uout[i].ExtractSubArrayShallow(I0scl, IEscl) : null;
-                                }
-                                MultidimensionalArray[] _UinGrad = new MultidimensionalArray[UinGrad.Length], _UoutGrad = new MultidimensionalArray[UoutGrad.Length];
-                                for (int i = 0; i < UinGrad.Length; i++) {
-                                    _UinGrad[i] = UinGrad[i] != null ? UinGrad[i].ExtractSubArrayShallow(I0vec, IEvec) : null;
-                                    _UoutGrad[i] = UoutGrad[i] != null ? UoutGrad[i].ExtractSubArrayShallow(I0vec, IEvec) : null;
-                                }
-                                efp.ParameterVars_IN = _Uin.GetSubVector(NoArgs, NoParams);
-                                efp.ParameterVars_OUT = _Uout.GetSubVector(NoArgs, NoParams);
-
-                                edgeform.NonlinInternalEdge_GradV(ref efp, _Uin.GetSubVector(0, NoArgs), _Uout.GetSubVector(0, NoArgs), _UinGrad, _UoutGrad, _GradFluxIN, _GradFluxOT);
-                            },
-                            delegate (INonlinEdgeForm_GradV nonlinFlx, int _jEdge, int _IndexOffset, int _L, int _EdgeTagsOffset, bool flipNormal, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] UinMean, MultidimensionalArray[] UinGrad) {
-                                EdgeFormParams efp;
-                                efp.GridDat = m_owner.GridDat;
-                                efp.Len = _L;
-                                efp.e0 = _jEdge;
-                                efp.time = m_owner.m_Time;
-                                Debug.Assert(NoOfNodes == NormalsGlobalCoords.GetLength(1));
-                                Debug.Assert(NoOfNodes == NodesGlobalCoords.GetLength(1));
-                                int[] I0vec = new int[] { _IndexOffset, 0, 0 };
-                                int[] IEvec = new int[] { _IndexOffset + _L - 1, NoOfNodes - 1, D - 1 };
-                                int[] I0scl = new int[] { _IndexOffset, 0 };
-                                int[] IEscl = new int[] { _IndexOffset + _L - 1, NoOfNodes - 1 };
-
-                                efp.Normals = NormalsGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
-                                efp.Nodes = NodesGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
-
-                                var _GradFluxIN = (flipNormal ? m_GradientFluxValuesOT[e] : m_GradientFluxValuesIN[e]).ExtractSubArrayShallow(I0vec, IEvec);
-
-                                MultidimensionalArray[] _Uin = new MultidimensionalArray[Uin.Length];
-                                for (int i = 0; i < Uin.Length; i++) {
-                                    _Uin[i] = Uin[i] != null ? Uin[i].ExtractSubArrayShallow(I0scl, IEscl) : null;
-                                }
-                                MultidimensionalArray[] _UinGrad = new MultidimensionalArray[UinGrad.Length];
-                                for (int i = 0; i < UinGrad.Length; i++) {
-                                    _UinGrad[i] = UinGrad[i] != null ? UinGrad[i].ExtractSubArrayShallow(I0vec, IEvec) : null;
-                                }
-                                efp.ParameterVars_IN = _Uin.GetSubVector(NoArgs, NoParams);
-                                efp.ParameterVars_OUT = null;
-
-                                if (flipNormal)
-                                    efp.Normals.Scale(-1.0);
-                                nonlinFlx.NonlinBoundaryEdge_GradV(ref efp, _Uin.GetSubVector(0, NoArgs), _UinGrad, _GradFluxIN);
-                                if (flipNormal)
-                                    efp.Normals.Scale(-1.0);
-                            });
+                    // transform gradient fluxes -- less costly than transforming basis
+                    if ( m_owner.maxTestGradientBasis != null ) {
 #if DEBUG
-                        if (m_GradientFluxValuesIN[e] != null)
-                            m_GradientFluxValuesIN[e].CheckForNanOrInf(true, true, true);
-                        if (m_GradientFluxValuesOT[e] != null)
-                            m_GradientFluxValuesOT[e].CheckForNanOrInf(true, true, true);
-#endif
-                    }
-
-                }
-                this.Flux_Eval.Stop();
-
-                #endregion
-
-                // ===================
-                // Flux Transformation
-                // ===================
-                #region FLUX_TRAFO
-                this.Flux_Trafo.Start();
-
-
-                // multiply fluxes with Jacobi determinant (integral transformation metric):
-                for (int i = 0; i < NoOfEquations; i++) {
-                    if (m_FluxValuesIN[i] != null) {
-                        m_FluxValuesIN[i].Multiply(1.0, m_FluxValuesIN[i], QuadScalings, 0.0, "jk", "jk", affine ? "j" : "jk");
-                        m_FluxValuesOT[i].Multiply(1.0, m_FluxValuesOT[i], QuadScalings, 0.0, "jk", "jk", affine ? "j" : "jk");
-                    }
-
-                    if (m_GradientFluxValuesIN[i] != null) {
-                        m_GradientFluxValuesIN[i].Multiply(1.0, m_GradientFluxValuesIN[i], QuadScalings, 0.0, "jkd", "jkd", affine ? "j" : "jk");
-                        m_GradientFluxValuesOT[i].Multiply(1.0, m_GradientFluxValuesOT[i], QuadScalings, 0.0, "jkd", "jkd", affine ? "j" : "jk");
-                    }
-                }
-
-                // transform gradient fluxes -- less costly than transforming basis
-                if (m_owner.maxTestGradientBasis != null) {
-#if DEBUG
-                    for (int i = 0; i < NoOfEquations; i++) {
-                        Debug.Assert((m_GradientFluxValuesINtrf[i] != null) == (m_GradientFluxValuesOTtrf[i] != null));
-                        Debug.Assert((m_GradientFluxValuesIN[i] != null) == (m_GradientFluxValuesINtrf[i] != null));
-                        Debug.Assert((m_GradientFluxValuesOT[i] != null) == (m_GradientFluxValuesOTtrf[i] != null));
-                    }
+                        for ( int i = 0; i < NoOfEquations; i++ ) {
+                            Debug.Assert((m_GradientFluxValuesINtrf[i] != null) == (m_GradientFluxValuesOTtrf[i] != null));
+                            Debug.Assert((m_GradientFluxValuesIN[i] != null) == (m_GradientFluxValuesINtrf[i] != null));
+                            Debug.Assert((m_GradientFluxValuesOT[i] != null) == (m_GradientFluxValuesOTtrf[i] != null));
+                        }
 #endif
 
-                    if (affine) {
-                        MultidimensionalArray invJacobi = grid.iGeomCells.InverseTransformation;
-                        int[,] Edge2Cell = grid.iGeomEdges.CellIndices;
+                        if ( affine ) {
+                            MultidimensionalArray invJacobi = grid.iGeomCells.InverseTransformation;
+                            int[,] Edge2Cell = grid.iGeomEdges.CellIndices;
 
-                        unsafe {
-                            fixed (int* pEdge2Cell = Edge2Cell) {
-                                for (int i = 0; i < NoOfEquations; i++) {
+                            unsafe {
+                                fixed ( int* pEdge2Cell = Edge2Cell ) {
+                                    for ( int i = 0; i < NoOfEquations; i++ ) {
 
-                                    if (m_GradientFluxValuesINtrf[i] != null) {
-                                        m_GradientFluxValuesINtrf[i].Multiply(1.0, m_GradientFluxValuesIN[i], invJacobi, 0.0, ref mp_jke_jkd_Tjed,
-                                            pEdge2Cell, pEdge2Cell,
-                                            trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * i0 + 0), trfCycle_B: 2, trfPostOffset_B: 0);
-                                        m_GradientFluxValuesOTtrf[i].Multiply(1.0, m_GradientFluxValuesOT[i], invJacobi, 0.0, ref mp_jke_jkd_Tjed,
-                                            pEdge2Cell, pEdge2Cell,
-                                            trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * i0 + 1), trfCycle_B: 2, trfPostOffset_B: 0);
+                                        if ( m_GradientFluxValuesINtrf[i] != null ) {
+                                            m_GradientFluxValuesINtrf[i].Multiply(1.0, m_GradientFluxValuesIN[i], invJacobi, 0.0, ref mp_jke_jkd_Tjed,
+                                                pEdge2Cell, pEdge2Cell,
+                                                trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * i0 + 0), trfCycle_B: 2, trfPostOffset_B: 0);
+                                            m_GradientFluxValuesOTtrf[i].Multiply(1.0, m_GradientFluxValuesOT[i], invJacobi, 0.0, ref mp_jke_jkd_Tjed,
+                                                pEdge2Cell, pEdge2Cell,
+                                                trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * i0 + 1), trfCycle_B: 2, trfPostOffset_B: 0);
+                                        }
                                     }
                                 }
                             }
-                        }
-                    } else {
-                        MultidimensionalArray invJacobiIN, invJacobiOT;
-                        var TiJ = grid.InverseJacobian.GetValue_EdgeDV(qrNodes, i0, Length);
-                        invJacobiIN = TiJ.Item1;
-                        invJacobiOT = TiJ.Item2;
+                        } else {
+                            MultidimensionalArray invJacobiIN, invJacobiOT;
+                            var TiJ = grid.InverseJacobian.GetValue_EdgeDV(qrNodes, i0, Length);
+                            invJacobiIN = TiJ.Item1;
+                            invJacobiOT = TiJ.Item2;
 
-                        for (int i = 0; i < NoOfEquations; i++) {
-                            if (m_GradientFluxValuesINtrf[i] != null) {
-                                m_GradientFluxValuesINtrf[i].Multiply(1.0, m_GradientFluxValuesIN[i], invJacobiIN, 0.0, "jke", "jkd", "jked");
-                                m_GradientFluxValuesOTtrf[i].Multiply(1.0, m_GradientFluxValuesOT[i], invJacobiOT, 0.0, "jke", "jkd", "jked");
+                            for ( int i = 0; i < NoOfEquations; i++ ) {
+                                if ( m_GradientFluxValuesINtrf[i] != null ) {
+                                    m_GradientFluxValuesINtrf[i].Multiply(1.0, m_GradientFluxValuesIN[i], invJacobiIN, 0.0, "jke", "jkd", "jked");
+                                    m_GradientFluxValuesOTtrf[i].Multiply(1.0, m_GradientFluxValuesOT[i], invJacobiOT, 0.0, "jke", "jkd", "jked");
+                                }
                             }
-                        }
 
+                        }
+                    }
+
+                } finally {
+                    if ( MustLock ) {
+                        Monitor.Exit(m_owner);
                     }
                 }
-
-                if (MustLock)
-                    Monitor.Exit(m_owner);
-
                 this.Flux_Trafo.Stop();
                 #endregion
 
@@ -1187,7 +1195,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     } else {
                         int MaxDegree = Math.Max(m_owner.maxTestBasis != null ? m_owner.maxTestBasis.Degree : 0, m_owner.maxTestGradientBasis != null ? m_owner.maxTestGradientBasis.Degree : 0);
                         OrthoTrf = grid.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(jCellMin, jCellMax - jCellMin + 1, MaxDegree); // sollte irgendwann sowieso
-                                                                                                                                       //                                                                                                                für alle Zellen vorliegen, also kein Stress
+                                                                                                                                       //                                                                                                                fï¿½r alle Zellen vorliegen, also kein Stress
                                                                                                                                        //                                                                                                                falls jCellMin und jCellMax weit auseinander
                     }
 
@@ -1552,6 +1560,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
             private void EvalFlux<T>(EquationComponentArgMapping<T> components, int i0, int Length, IGridData grid, int NoOfSec,
                 bool MapAlsoMean, bool MapAlsoGradient, Stopwatch[] timers,
+                bool ParrentSynchronized,
                 Action<T, int, int, int, int, int, MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray[]> CallInner,
                 Action<T, int, int, int, int, bool, int, int, MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray[]> CallBorder)
                 where T : IEquationComponent //
@@ -1564,7 +1573,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     for (int __iComp = 0; __iComp < L; __iComp++) {
                         int iComp = (__iComp + this.m_iThread) % L; // shuffling in threads to reduce locking
 
-                        object blck = components.m_LockObjects[iComp];
+                        object blck = ParrentSynchronized ? null : components.m_LockObjects[iComp];
 
                         timers[iComp].Start();
                         T nonlinFlx = components.m_AllComponentsOfMyType[iComp];
@@ -1603,7 +1612,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     // sum up all fluxes - border edges
                     for (int __iComp = 0; __iComp < L; __iComp++) {
                         int iComp = (__iComp + this.m_iThread) % L; // shuffling in threads to reduce locking
-                        object blck = components.m_LockObjects[iComp];
+                        object blck = ParrentSynchronized ? null : components.m_LockObjects[iComp];
 
                         timers[iComp].Start();
                         T nonlinFlx = components.m_AllComponentsOfMyType[iComp];
@@ -1665,7 +1674,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
 
 
-                                // Vektorisierung für Rand-Flussfunktionen im Moment ungenutzt
+                                // Vektorisierung fï¿½r Rand-Flussfunktionen im Moment ungenutzt
                                 CallBorder(nonlinFlx, jEdge, IndexOffset, __Len, jEdge, false, NoArgs, NoParams,
                                     components.MapArguments(m_FieldValuesIN, nonlinFlx, false),
                                     MapAlsoMean ? components.MapArguments(m_MeanFieldValuesIN, nonlinFlx, true) : null,
@@ -1771,8 +1780,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         ThreadLocalsEdg[] m_ThreadLocals;
 
 
-        void EvaluateEx(int i0, int Length, QuadRule qr, MultidimensionalArray QuadResult, int iThread, int NumThreads) {
-            m_ThreadLocals[iThread].EvaluateEx(i0, Length, qr, QuadResult, iThread, NumThreads);
+        void EvaluateEx(int i0, int Length, QuadRule qr, IIntegrationMetric metric, MultidimensionalArray QuadResult, int iThread, int NumThreads) {
+            m_ThreadLocals[iThread].EvaluateEx(i0, Length, qr, metric, QuadResult, iThread, NumThreads);
         }
 
         /// <summary>
@@ -1837,10 +1846,10 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                     int i0in = 0;
                     if (touchCell1)
-                        i0in = m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell1, 0);
+                        i0in = m_CodomainMapping.LocalUnique1stCoordinate(f, jCell1);
                     int i0ot = 0;
                     if (touchCell2)
-                        i0ot = m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell2, 0);
+                        i0ot = m_CodomainMapping.LocalUnique1stCoordinate(f, jCell2);
 
                     for (int m = 0; m < mE; m++) {
                         int idx = f_offset + m;

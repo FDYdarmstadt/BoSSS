@@ -205,7 +205,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
@@ -219,12 +219,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
 
             C.AdaptiveMeshRefinement = true;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.RefinementLevel = 1;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.RefinementLevel = 1;
 
             #endregion
 
@@ -259,7 +259,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
 
             //_DbPath = @"\\dc1\userspace\smuda\cluster\CapillaryRise\CapillaryRise_studyDB";
            // _DbPath = @"\\dc3\userspace\shishkina\cluster\\CapillaryRise_0";
@@ -604,7 +604,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 C.AddBoundaryValue("wall_lower");
             } else {
                 //C.AddBoundaryValue("wall_lower");
-                //C.ChangeBoundaryCondition("wall_lower", "pressure_outlet_lower");
+                C.ChangeBoundaryCondition("wall_lower", "pressure_outlet_lower");
                 C.AddBoundaryValue("pressure_outlet_lower");
             }
             C.AddBoundaryValue("pressure_outlet_upper");
@@ -629,7 +629,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 20;
@@ -648,13 +648,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.lambda_I = 2 * C.PhysicalParameters.Sigma;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
 
             C.AdaptiveMeshRefinement = true;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.RefineNavierSlipBoundary = false;
-            C.BaseRefinementLevel = 1;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.RefineNavierSlipBoundary = false;
+            //C.BaseRefinementLevel  1;
 
             #endregion
 

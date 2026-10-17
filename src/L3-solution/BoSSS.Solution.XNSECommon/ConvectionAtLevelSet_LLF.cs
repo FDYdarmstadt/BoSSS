@@ -152,8 +152,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
         */
 
         public double InnerEdgeForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
-            double[] U_NegFict, U_PosFict;
 
+            if (movingmesh)
+                return 0.0;
+
+            double[] U_NegFict, U_PosFict;
             this.TransformU(ref U_Neg, ref U_Pos, out U_NegFict, out U_PosFict);
 
             double[] ParamsNeg = cp.Parameters_IN;
@@ -189,10 +192,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
                 FlxPos = this.PosFlux.IEF(ref inp, U_PosFict, U_Pos);
             }
 
-            if (movingmesh)
-                return 0.0;
-            else 
-                return FlxNeg * v_Neg - FlxPos * v_Pos;
+            return FlxNeg * v_Neg - FlxPos * v_Pos;
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
@@ -289,8 +289,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
         }
 
         public double InnerEdgeForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
-            double[] U_NegFict, U_PosFict;
 
+            if (movingmesh)
+                return 0.0;
+
+            double[] U_NegFict, U_PosFict;
             this.TransformU(ref U_Neg, ref U_Pos, out U_NegFict, out U_PosFict);
 
             double[] ParamsNeg = cp.Parameters_IN;
@@ -326,10 +329,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
                 FlxPos = this.PosFlux.IEF(ref inp, U_PosFict, U_Pos);
             }
 
-            if (movingmesh)
-                return 0.0;
-            else
-                return FlxNeg * v_Neg - FlxPos * v_Pos;
+            return FlxNeg * v_Neg - FlxPos * v_Pos;
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {

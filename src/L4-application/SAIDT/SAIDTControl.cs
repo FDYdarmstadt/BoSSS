@@ -11,6 +11,7 @@ namespace SAIDT
         public SAIDTControl()
         {
             this.GetInitialValue = GetInitialValue.OneFullNewtonStep;
+            base.CutCellQuadratureType = BoSSS.Foundation.XDG.CutCellQuadratureMethod.Saye;
         }
         public double LeftValue { get; set; }
         public double RightValue { get; set; }

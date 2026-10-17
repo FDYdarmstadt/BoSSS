@@ -37,7 +37,7 @@ using BoSSS.Solution.XNSECommon;
 using BoSSS.Foundation.Voronoi;
 using System.Diagnostics.Metrics;
 using BoSSS.Solution.Control;
-using BoSSS.Solution.LevelSetTools.FourierLevelSet;
+using BoSSS.Solution.LevelSetTools;
 using StokesHelical_Ak.TestSpartial;
 using StokesHelical_Ak.TestTransient;
 using StokesHelical_Ak.NUnitTestsR0_fix;
@@ -48,12 +48,14 @@ namespace StokesHelical_Ak {
         /// <summary>
         /// Entry point of my program
         /// </summary>
-        /// <param name="args"></param>
+        /// <param name="args"></param> 
+        /// 
         static void Main(string[] args) {
 
             // InitMPI();
             BoSSS.Solution.Application.InitMPI(num_threads: 1);
-            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
+
+            if(ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
                 var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
                 Console.Write("rm");
                 foreach(var pltFile in dir.GetFiles("*.plt").Concat(dir.GetFiles("*.curve"))) {
@@ -62,8 +64,14 @@ namespace StokesHelical_Ak {
                 }
                 Console.WriteLine(";");
             }
-            //StokesHelical_Ak.TestTransient.TestTransient.Transient_CF_Re_10_White_Noise_1_ProMil_with_R0fix(3);
 
+            //for (int i = 2; i < 6; i++) {
+            //    StokesHelical_Ak.TestSpartial.TestSpatial.Steady_SpatialConv_CF_Re_100000_Stokes_with_R0fix(i);
+            //}
+            // StokesHelical_Ak.TestTransient.TestTransient.Transient_CF_Re_10_White_Noise_1_ProMil_with_R0fix(3);
+            // StokesHelical_Ak.TestTransient.TestTransient.Transient_HP_Re_10_White_Noise_1_ProMil_with_R0fix(3);
+            // StokesHelical_Ak.TestTransient.TestTransient.Transient_HP_Re_2500_White_Noise_1_ProMil_with_R0fix_Conv_Ak_1(3);
+            // StokesHelical_Ak.TestTransient.TestTransient.Transient_CF_Re_2500_White_Noise_10_Procent_with_R0fix_AK_Conv_Terms(3);
             ////c.ImmediatePlotPeriod = 1;
             ////c.NoOfTimesteps = 5;
             //var solver = new HelicalMain();
@@ -435,6 +443,7 @@ namespace StokesHelical_Ak {
             Globals.pressureStabilConti = true;
             Globals.pressureStabilEtaMom = false;
 
+
             diffOp_implicit = new DifferentialOperator(
             new string[] { "ur", "uxi", "ueta", "Pressure" },
             new string[0],   //no parameters
@@ -471,6 +480,9 @@ namespace StokesHelical_Ak {
             // Navier-Stokes (nonlinear)
             // +++++++++++++++++++++++++
             if(Control.NavierStokes) {
+                Globals.ConcetiveTerms_Add_on_Term_2 = this.Control.Conv_AK_2;
+                Globals.ConcetiveTerms_Add_on_Term_3 = this.Control.Conv_AK_3;
+                Globals.ConcetiveTerms_Add_on_Term_4 = this.Control.Conv_AK_4;
                 diffOp_explicit.EquationComponents["rmom"].Add(new convectiveRmom());
                 diffOp_explicit.EquationComponents["etamom"].Add(new convectiveETAmom());
                 diffOp_explicit.EquationComponents["zmom"].Add(new convectiveXImom());
@@ -542,8 +554,8 @@ namespace StokesHelical_Ak {
                     throw new Exception("Mutiplier BSQ and rMin>10e-6");
                 }
 
-                string nameOf_Plot = "Hel__BDF_" + this.Control.GetBDFOrder() +"_"+this.Control.grid+ "_LinSol" + this.Control.LinearSolver.Shortname + "_rMin_" + this.Control.rMin.ToString() + "_Mult_" + Globals.activeMult.ToString() + "_PRP_" + Globals.pressureReferencePoint + "_" + this.Control.Resolution_R.ToString() + "_x_" +
-                              this.Control.Resolution_R.ToString() + "_DGd_" + this.Control.dg_degree + "_Amp_" + this.Control.maxAmpli.ToString() + "_dt_" + this.Control.dtMax + "_TiStNo_" + timestepNo;
+                string nameOf_Plot = "Hel_BDF_10Noise_" + this.Control.GetBDFOrder() +"_"+this.Control.grid+ "_LinSol" + this.Control.LinearSolver.Shortname + "_rMin_" + this.Control.rMin.ToString() + "_Mult_" + Globals.activeMult.ToString() + "_PRP_" + Globals.pressureReferencePoint + "_" + this.Control.Resolution_R.ToString() + "_x_" +
+                              this.Control.Resolution_R.ToString()  + "_DGd_" + this.Control.dg_degree + "_Ak_Conv_" + this.Control.Conv_AK_2.ToString() + "_Amp_" + this.Control.maxAmpli.ToString() + "_dt_" + this.Control.dtMax + "_TiStNo_" + timestepNo;
 
                 plt1.PlotFields(nameOf_Plot, physTime, m_IOFields);
 

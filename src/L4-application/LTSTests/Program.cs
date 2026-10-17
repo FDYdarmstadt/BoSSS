@@ -31,7 +31,7 @@ using BoSSS.Foundation.Grid;
 
 namespace LTSTests {
     /// <summary>
-    /// NUnit test project for the implementation of LTS:
+    /// NUnit test project for the implementation of Local Time Stepping (LTS):
     /// The scalar transport equation of the BoSSS Tutorial is used to test LTS.
     /// </summary>
     public class Program : Application {

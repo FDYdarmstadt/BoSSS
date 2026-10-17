@@ -76,7 +76,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         /// <see cref="BoundaryCondition.GetBoundaryState"/>
         /// </param>
         /// <returns>
-        /// \f$ (\rho^*, \vec{u}^*, p^-)^T\f$ 
+        /// \f$ (\rho^*, \underline{u}^*, p^-)^T\f$ 
         /// </returns>
         public override StateVector GetBoundaryState(double time, Vector x, Vector normal, StateVector stateIn) {
             double rhoOut = densityFunction(x, time);

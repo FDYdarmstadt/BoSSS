@@ -35,9 +35,11 @@ namespace BoSSS.Foundation.IO {
         /// </param>
         /// <param name="sessionGuid">
         /// the session in which the log should be created.
-        /// </param>        
+        /// </param>
+        /// <param name="fileExt">
+        /// </param>
         /// <returns></returns>
-        Stream GetNewLogStream(string logName, Guid sessionGuid);
+        Stream GetNewLogStream(string logName, string fileExt, Guid sessionGuid);
 
         /// <summary>
         /// returns a text writer for logging information within this session;

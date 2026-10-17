@@ -223,6 +223,13 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             public double GetEdgeArea(int e) {
                 return m_Owner.ParentGrid.iGeomEdges.GetEdgeArea(e);
             }
+
+            /// <summary>
+            /// Center-of-gravity for the edge
+            /// </summary>
+            public Vector GetCenter(int e) {
+                return m_Owner.ParentGrid.iGeomEdges.GetCenter(e);
+            }
         }
 
         class LogEdgeData : ILogicalEdgeData {

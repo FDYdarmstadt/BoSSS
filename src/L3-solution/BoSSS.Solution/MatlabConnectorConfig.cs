@@ -26,6 +26,13 @@ namespace BoSSS.Solution {
 
 
         /// <summary>
+        /// Optional: directory, where temporary Matlab files are placed; if empty, a default location is selected.
+        /// </summary>
+        [DataMember]
+        public string TempDir;
+
+
+        /// <summary>
         /// Loads configuration from default location in user directory
         /// </summary>
         public static MatlabConnectorConfig LoadDefault(string userDir) {

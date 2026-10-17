@@ -28,7 +28,7 @@ namespace BoSSS.Application.XNSE_Solver.Logging {
     /// This is achieved by minimizing
     /// ```math 
     /// \oint_{\mathfrak{I}} \left(
-    ///   | \vec{x} | - \sum_{l,m} Y_{l,m}(\varphi,\theta) \underbrace{y_{l,m}}_{\text{?}}
+    ///   | \underline{x} | - \sum_{l,m} Y_{l,m}(\varphi,\theta) \underbrace{y_{l,m}}_{\text{?}}
     ///   \right)^2 dS
     ///   \rightarrow \text{min}
     /// ```
@@ -39,7 +39,7 @@ namespace BoSSS.Application.XNSE_Solver.Logging {
     /// \sum_{l,m} \left( \oint_{\mathfrak{I}} Y_{l,m} Y_{k,n} \dS \right) y_{l,m}
     /// = 
     ///   \oint_{\mathfrak{I}}
-    ///     | \vec{x} | Y_{k,n} dS .
+    ///     | \underline{x} | Y_{k,n} dS .
     /// ```
     /// </summary>
     [Serializable]
@@ -167,7 +167,7 @@ namespace BoSSS.Application.XNSE_Solver.Logging {
                 int qOrder = SolverMainOverride.QuadOrder();
 
                 var schemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS, qOrder).XQuadSchemeHelper;
-                var scheme = schemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask4LevSet(0).Intersect(LsTrk.Regions.GetSpeciesMask("A")));
+                var scheme = schemeHelper.GetLevelSetQuadScheme(0, LsTrk.Regions.GetCutCellMask4LevSet(0).Intersect(LsTrk.Regions.GetSpeciesMask("A")));
 
                 int dim = SH_dim(MaxL, RotSymmetric);
 

@@ -17,7 +17,7 @@ namespace CutEdgeQuadrature {
             Tester3D tester = new Tester3D();
                 
             foreach(var test in tests3D) {
-                test.MomentFittingVariant = BoSSS.Foundation.XDG.XQuadFactoryHelperBase.MomentFittingVariants.Algoim;
+                test.MomentFittingVariant = BoSSS.Foundation.XDG.CutCellQuadratureMethod.Algoim;
                 Console.WriteLine($"### Testing: {test.GetType()} ###");
                 int[] orders = new int[] { 1,2,3,4};
 
