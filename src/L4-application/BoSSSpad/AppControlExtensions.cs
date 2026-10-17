@@ -51,6 +51,7 @@ namespace BoSSS.Application.BoSSSpad {
         public static Job CreateJob(this AppControl ctrl) {
             ctrl.ProjectName = BoSSSshell.WorkflowMgm.CurrentProject;
 
+
             string JobName = ctrl.SessionName;
             int ctrl_idx = BoSSSshell.WorkflowMgm.RegisterControl(ctrl);
             if (JobName.IsEmptyOrWhite()) {
