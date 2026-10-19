@@ -34,6 +34,42 @@ native installation (`bin/native/linux/amd64-openmpi`). Hosting the CLR does not
 replace BoSSS's native libraries or MPI bootstrap. foam-extend and BoSSS must use
 compatible system OpenMPI installations.
 
+## Case-specific managed degrees
+
+OpenFOAM's compile-time DG storage can remain at p=2 (ten coefficients per
+3D cell). Named managed fields may use a different degree. BoSSS alone reads
+`bosss/config.json` relative to the case working directory, using the historical
+key spelling:
+
+```json
+{
+  "DgDgrees": {
+    "c": 3
+  }
+}
+```
+
+The named native constructor receives a UTF-8 field name, for example `c`, and
+constructs the managed basis with its configured degree. The managed matrix uses
+that full basis. For p=3, all twenty coefficients remain in BoSSS; OpenFOAM reads
+its ten native slots and receives cell means through `GetMean`. This native view
+does not resize the managed field or clear its higher modes. Only means are
+updated when importing FV fields. The active Cahn-Hilliard path retains the
+managed order-parameter object between time steps.
+
+If the file or a matching field override is absent, the supplied native degree
+is used. The three-argument unnamed constructor always uses its supplied degree
+(auxiliary fields do not accidentally inherit the override for `c`). Invalid
+JSON or an invalid matching degree produces an error with the field name and
+case-file path. Named field creation logs native degree, managed degree and
+coefficient count so a p3 run can be checked directly.
+
+Keep the complete case directory, including `bosss/`, when copying test cases.
+Changing native `dgOrder.H` or expanding native algebra to twenty components is
+not necessary to select managed p=3. `FieldDegreeTests` exercises degree
+selection and preservation of higher managed modes; the generated native smoke
+test accepts an optional expected managed degree after its deployment path.
+
 ## Boundary and ownership
 
 The C++ public class wrappers retain ordinary instance methods. Each call uses a

@@ -134,21 +134,30 @@ public static int BoSSS_Application_ExternalBinding_OpenFoamDGField_ctor_3(nint 
     } catch (global::System.Exception error) { return NativeExportRuntime.Fail(error); }
 }
 [global::System.Runtime.InteropServices.UnmanagedCallersOnly(CallConvs = new[] { typeof(global::System.Runtime.CompilerServices.CallConvCdecl) })]
-public static int BoSSS_Application_ExternalBinding_OpenFoamDGField_SetDGcoordinate_4(nint self, int a0, int a1, int a2, double a3) {
+public static int BoSSS_Application_ExternalBinding_OpenFoamDGField_ctor_4(nint a0, int a1, int a2, nint a3, nint* result) {
+    try {
+        if (result == null) throw new global::System.ArgumentNullException(nameof(result));
+        *result = default;
+        *result = NativeExportRuntime.Root(new global::BoSSS.Application.ExternalBinding.OpenFoamDGField(NativeExportRuntime.Target<global::BoSSS.Foundation.Grid.OpenFOAMGrid>(a0, allowNull: true), a1, a2, a3));
+        return 0;
+    } catch (global::System.Exception error) { return NativeExportRuntime.Fail(error); }
+}
+[global::System.Runtime.InteropServices.UnmanagedCallersOnly(CallConvs = new[] { typeof(global::System.Runtime.CompilerServices.CallConvCdecl) })]
+public static int BoSSS_Application_ExternalBinding_OpenFoamDGField_SetDGcoordinate_5(nint self, int a0, int a1, int a2, double a3) {
     try {
         NativeExportRuntime.Target<global::BoSSS.Application.ExternalBinding.OpenFoamDGField>(self).SetDGcoordinate(a0, a1, a2, a3);
         return 0;
     } catch (global::System.Exception error) { return NativeExportRuntime.Fail(error); }
 }
 [global::System.Runtime.InteropServices.UnmanagedCallersOnly(CallConvs = new[] { typeof(global::System.Runtime.CompilerServices.CallConvCdecl) })]
-public static int BoSSS_Application_ExternalBinding_OpenFoamDGField_SetMean_5(nint self, int a0, int a1, double a2) {
+public static int BoSSS_Application_ExternalBinding_OpenFoamDGField_SetMean_6(nint self, int a0, int a1, double a2) {
     try {
         NativeExportRuntime.Target<global::BoSSS.Application.ExternalBinding.OpenFoamDGField>(self).SetMean(a0, a1, a2);
         return 0;
     } catch (global::System.Exception error) { return NativeExportRuntime.Fail(error); }
 }
 [global::System.Runtime.InteropServices.UnmanagedCallersOnly(CallConvs = new[] { typeof(global::System.Runtime.CompilerServices.CallConvCdecl) })]
-public static int BoSSS_Application_ExternalBinding_OpenFoamDGField__SetForeignPointer_6(nint self, nint a0) {
+public static int BoSSS_Application_ExternalBinding_OpenFoamDGField__SetForeignPointer_7(nint self, nint a0) {
     try {
         NativeExportRuntime.Target<global::BoSSS.Application.ExternalBinding.OpenFoamDGField>(self)._SetForeignPointer(a0);
         return 0;
@@ -353,6 +362,6 @@ public static int BoSSS_Foundation_Grid_OpenFOAMGrid__SetForeignPointer_4(nint s
     } catch (global::System.Exception error) { return NativeExportRuntime.Fail(error); }
 }
 [global::System.Runtime.InteropServices.UnmanagedCallersOnly(CallConvs = new[] { typeof(global::System.Runtime.CompilerServices.CallConvCdecl) })]
-public static ulong AbiFingerprint() => 0xE7C6BB4C62561FE8UL;
+public static ulong AbiFingerprint() => 0x80C631FCC57FD5EBUL;
 }
 }

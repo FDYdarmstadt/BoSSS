@@ -15,7 +15,7 @@ using namespace BoSSS::Application::ExternalBinding;
 using namespace BoSSS::Foundation::Grid;
 using namespace BoSSS::Foundation::Grid::Classic;
 
-void InitMeshTest() {
+void InitMeshTest(int managedDegree) {
     int nCells = 9;
 
     
@@ -258,6 +258,18 @@ void InitMeshTest() {
     }
     assert(caught);
     assert(std::abs(field.GetMean(0, 0) - 0.375) < 1e-12);
+    char fieldName[] = "c";
+    OpenFoamDGField named(&grd, 2, 1, fieldName);
+    const int modes = (managedDegree + 3)*(managedDegree + 2)*(managedDegree + 1)/6;
+    named.SetDGcoordinate(0, 0, modes - 1, 0.625);
+    for (int n = 0; n < 10; ++n) {
+        double value = named.GetDGcoordinate(0, 0, n);
+        if (n < modes) named.SetDGcoordinate(0, 0, n, value);
+        else assert(value == 0);
+    }
+    named.SetMean(0, 0, 0.375);
+    assert(named.GetDGcoordinate(0, 0, modes - 1) == 0.625);
+    printf("PASS named managed degree %d: %d modes retained with ten native slots.\n", managedDegree, modes);
     GridData* grid1 = grd.GetGridData();
     assert(grid1 && grid1 == grd.GetGridData());
     delete grid1;
@@ -268,7 +280,7 @@ void InitMeshTest() {
 }
 
 int main(int argc, char** argv) {
-    if (argc != 2) { fprintf(stderr, "usage: ExtBindingTest <managed directory>\n"); return 2; }
+    if (argc < 2 || argc > 3) { fprintf(stderr, "usage: ExtBindingTest <managed directory> [managed c degree]\n"); return 2; }
     try {
         // Match foam-extend's hardware trap settings, including before CLR startup.
         const int traps = FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW;
@@ -277,7 +289,7 @@ int main(int argc, char** argv) {
         assert((fegetexcept() & traps) == traps);
         Initializer init;
         init.BoSSSInitialize();
-        InitMeshTest();
+        InitMeshTest(argc == 3 ? std::stoi(argv[2]) : 2);
         assert((fegetexcept() & traps) == traps);
         init.BoSSSFinalize();
         assert((fegetexcept() & traps) == traps);
