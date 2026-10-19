@@ -29,6 +29,7 @@ using BoSSS.Solution.Queries;
 using CommandLine;
 using CommandLine.Text;
 using ilPSP;
+using ilPSP.LinSolvers.PETSc;
 using ilPSP.Tracing;
 using ilPSP.Utils;
 using log4net;
@@ -254,6 +255,13 @@ namespace BoSSS.Solution {
             int rank, size;
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
+
+            // Preload the one packaged real-MPI PETSc runtime after MPI and threading
+            // have been initialized.
+            if(!PETScNativeLibraries.TryPreload(out string petscLoadFailure)) {
+                m_Logger.Warn($"The PETSc MPI+OpenMP runtime could not be preloaded: {petscLoadFailure}");
+            }
+
             if (_MustFinalizeMPI) {
                 if (rank == 0) {
 

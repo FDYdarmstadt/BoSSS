@@ -118,20 +118,10 @@ namespace BoSSS.Application.BoSSSpad {
                 CheckDynamicLibrary("MUMPS (sequential)", () => new UnsafeMUMPS(ilPSP.Parallelism.SEQ), isOptional: true);
                 CheckDynamicLibrary("MUMPS (MPI)", () => new UnsafeMUMPS(ilPSP.Parallelism.MPI), isOptional: true);
 
-                // PETSc variants cannot be exchanged safely within one process.
-                // Check only the variant selected for this MPI/thread configuration;
-                // the other variants are intentionally not loaded.
-                PETScNativeVariant petscVariant = PETScSolverBase.ResolveNativeVariant(
-                    PETScNativeVariant.Auto, size, ilPSP.Environment.NumThreads);
-                bool petscLoaded = CheckDynamicLibrary($"PETSc {GetPETScVariantDescription(petscVariant)}",
-                    () => new UnsafePETSc(petscVariant), isOptional: true);
+                bool petscLoaded = CheckDynamicLibrary("PETSc MPI+OMP",
+                    () => new UnsafePETSc(), isOptional: true);
                 if(isReportingRank && petscLoaded)
-                    ReportPETScLoadCoverage(petscVariant);
-                foreach(PETScNativeVariant variant in new[] { PETScNativeVariant.OpenMp, PETScNativeVariant.Mpi, PETScNativeVariant.MpiOpenMp }) {
-                    if(variant != petscVariant)
-                        ReportSkipped($"PETSc {GetPETScVariantDescription(variant)}",
-                            $"not selected ({size} rank(s), {ilPSP.Environment.NumThreads} thread(s))");
-                }
+                    ReportPETScLoadCoverage();
 
                 CheckDynamicLibrary("PARDISO (Intel MKL, sequential)", () => new ilPSP.LinSolvers.PARDISO.Wrapper_MKL(ilPSP.Parallelism.SEQ), isOptional: true);
                 CheckDynamicLibrary("PARDISO (Intel MKL, OMP)", () => new ilPSP.LinSolvers.PARDISO.Wrapper_MKL(ilPSP.Parallelism.OMP), isOptional: true);
@@ -227,21 +217,8 @@ namespace BoSSS.Application.BoSSSpad {
             Console.WriteLine(prepend + "Skipped (" + reason + ")");
         }
 
-        private static void ReportPETScLoadCoverage(PETScNativeVariant variant) {
-            Console.WriteLine($"  PETSc load check ({GetPETScVariantDescription(variant)}): native bridge, PETSc runtime, and its compiler/OpenMP runtime DLLs.");
-        }
-
-        private static string GetPETScVariantDescription(PETScNativeVariant variant) {
-            switch(variant) {
-                case PETScNativeVariant.OpenMp:
-                    return "OMP";
-                case PETScNativeVariant.Mpi:
-                    return "MPI";
-                case PETScNativeVariant.MpiOpenMp:
-                    return "MPI+OMP";
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(variant), variant, "Unknown PETSc native variant.");
-            }
+        private static void ReportPETScLoadCoverage() {
+            Console.WriteLine("  PETSc load check (MPI+OMP): native bridge, PETSc runtime, and its compiler/OpenMP runtime DLLs.");
         }
 
         /// <summary>
@@ -336,13 +313,9 @@ namespace BoSSS.Application.BoSSSpad {
                 }
             });
 
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int mpiSize);
-            PETScNativeVariant petscVariant = PETScSolverBase.ResolveNativeVariant(
-                PETScNativeVariant.Auto, mpiSize, ilPSP.Environment.NumThreads);
-            RunDetailedCheck($"PETSc {GetPETScVariantDescription(petscVariant)} Krylov solver", () => {
+            RunDetailedCheck("PETSc MPI+OMP Krylov solver", () => {
                 Console.WriteLine("  Components: PETSc Mat/Vec/KSP; KSP=CG; PC=Jacobi; 3-by-3 diagonal solve.");
                 using(var solver = new PETScKrylovSolver {
-                    NativeVariant = PETScNativeVariant.Auto,
                     Options = "-ksp_type cg -pc_type jacobi -ksp_rtol 1e-12 -ksp_atol 1e-50 -ksp_max_it 100"
                 }) {
                     SolveAndVerify(solver);

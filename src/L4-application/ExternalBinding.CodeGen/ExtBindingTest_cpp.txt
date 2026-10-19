@@ -4,6 +4,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <cmath>
+#include <fenv.h>
+#include <stdexcept>
+#include <string>
 
 #include "BoSSScpp.h"
 
@@ -11,7 +15,7 @@ using namespace BoSSS::Application::ExternalBinding;
 using namespace BoSSS::Foundation::Grid;
 using namespace BoSSS::Foundation::Grid::Classic;
 
-void InitMeshTest() {
+void InitMeshTest(int managedDegree) {
     int nCells = 9;
 
     
@@ -241,31 +245,57 @@ void InitMeshTest() {
     printf("Received in cpp: %d\n", RR);
 
 
+    assert(RR == nCells);
+    OpenFoamDGField field(&grd, 2, 1);
+    field.SetMean(0, 0, 0.375);
+    assert(std::abs(field.GetMean(0, 0) - 0.375) < 1e-12);
+    field.SetDGcoordinate(0, 0, 1, 0.125);
+    assert(field.GetDGcoordinate(0, 0, 1) == 0.125);
+    bool caught = false;
+    try { field.GetMean(42, 0); }
+    catch (const std::runtime_error& error) {
+        caught = std::string(error.what()).find("Exception") != std::string::npos;
+    }
+    assert(caught);
+    assert(std::abs(field.GetMean(0, 0) - 0.375) < 1e-12);
+    char fieldName[] = "c";
+    OpenFoamDGField named(&grd, 2, 1, fieldName);
+    const int modes = (managedDegree + 3)*(managedDegree + 2)*(managedDegree + 1)/6;
+    named.SetDGcoordinate(0, 0, modes - 1, 0.625);
+    for (int n = 0; n < 10; ++n) {
+        double value = named.GetDGcoordinate(0, 0, n);
+        if (n < modes) named.SetDGcoordinate(0, 0, n, value);
+        else assert(value == 0);
+    }
+    named.SetMean(0, 0, 0.375);
+    assert(named.GetDGcoordinate(0, 0, modes - 1) == 0.625);
+    printf("PASS named managed degree %d: %d modes retained with ten native slots.\n", managedDegree, modes);
     GridData* grid1 = grd.GetGridData();
+    assert(grid1 && grid1 == grd.GetGridData());
+    delete grid1;
+    FixedOperators operators;
+    free(names);
+    printf("PASS native grid/field round trip, wrapper identity and managed exception translation.\n");
     
 }
 
-int main()
-{
-	printf("Hello cruel world!\n");
-
-    mono_config_parse(NULL);
-
-#ifdef _WIN32
-    //char monodir[] = "C:\\Program Files\\Mono";
-    char exedir[] = "C:\\Users\\florian\\Documents\\BoSSS-master\\public\\src\\L4-application\\ExternalBinding\\bin\\Debug\\";
-#else
-    char exedir[] = "./Debug/";
-#endif 
-
-    BoSSS::Globals::Init(exedir);
-    Initializer MyInit;
-    MyInit.BoSSSInitialize();
-    printf("init done.\n");
-
-    InitMeshTest();
-
-    MyInit.BoSSSFinalize();
-	return 0;
+int main(int argc, char** argv) {
+    if (argc < 2 || argc > 3) { fprintf(stderr, "usage: ExtBindingTest <managed directory> [managed c degree]\n"); return 2; }
+    try {
+        // Match foam-extend's hardware trap settings, including before CLR startup.
+        const int traps = FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW;
+        feenableexcept(traps);
+        BoSSS::Globals::Init(argv[1]);
+        assert((fegetexcept() & traps) == traps);
+        Initializer init;
+        init.BoSSSInitialize();
+        InitMeshTest(argc == 3 ? std::stoi(argv[2]) : 2);
+        assert((fegetexcept() & traps) == traps);
+        init.BoSSSFinalize();
+        assert((fegetexcept() & traps) == traps);
+        return 0;
+    } catch (const std::exception& error) {
+        fprintf(stderr, "%s\n", error.what());
+        return 1;
+    }
 }
-

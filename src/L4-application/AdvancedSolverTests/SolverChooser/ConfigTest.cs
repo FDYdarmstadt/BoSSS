@@ -4,6 +4,7 @@ using BoSSS.Solution.Control;
 using ilPSP.LinSolvers.PETSc;
 using NUnit.Framework;
 using System;
+using System.Runtime.InteropServices;
 
 namespace AdvancedSolverTests.SolverChooser {
     [TestFixture]
@@ -13,6 +14,7 @@ namespace AdvancedSolverTests.SolverChooser {
         [Ignore("Fails due to timeout", Until = "2025-04-10 00:00:00Z")]
         public static void TestLinearSolverConfigurations() {
             // --test=AdvancedSolverTests.SolverChooser.ConfigTest.TestLinearSolverConfigurations
+            AssertWorldBcast();
             ////Arrange --- configs
             //var ACS = new AppControlSolver();
             //var lconfig = ACS.LinearSolver;
@@ -71,6 +73,26 @@ namespace AdvancedSolverTests.SolverChooser {
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Verifies the raw OpenMPI broadcast binding before grid construction
+        /// or PETSc loading can introduce additional native state.
+        /// </summary>
+        static void AssertWorldBcast() {
+            const int ProbeValue = 0x42535353; // "BSSS"
+            var value = new[] { ProbeValue };
+        Console.Error.WriteLine($"Raw MPI probe: communicator={MPI.Wrappers.csMPI.Raw._COMM.WORLD.m1}, datatype={MPI.Wrappers.csMPI.Raw._DATATYPE.INT.m1}");
+        Console.Error.Flush();
+            var pin = GCHandle.Alloc(value, GCHandleType.Pinned);
+            try {
+                MPI.Wrappers.csMPI.Raw.Bcast(pin.AddrOfPinnedObject(), 1,
+                    MPI.Wrappers.csMPI.Raw._DATATYPE.INT, 0,
+                    MPI.Wrappers.csMPI.Raw._COMM.WORLD);
+            } finally {
+                pin.Free();
+            }
+            Assert.That(value[0], Is.EqualTo(ProbeValue), "MPI_Bcast on MPI_COMM_WORLD failed.");
         }
 
         /// <summary>

@@ -1,0 +1,43 @@
+#pragma once
+#include <cstdio>
+#include <cfenv>
+#include <stdexcept>
+namespace BoSSS {
+// OpenFOAM enables hardware FP traps; the CLR and its JIT require masked traps.
+// Restore the caller's exact environment, including flags, on every return path.
+class ManagedCallScope {
+    std::fenv_t saved_;
+public:
+    ManagedCallScope() {
+        if (std::feholdexcept(&saved_) != 0)
+            throw std::runtime_error("Cannot establish the CLR floating-point environment.");
+    }
+    ManagedCallScope(const ManagedCallScope&) = delete;
+    ManagedCallScope& operator=(const ManagedCallScope&) = delete;
+    ~ManagedCallScope() noexcept { std::fesetenv(&saved_); }
+};
+class Globals {
+public:
+    static void Init(const char* managedDirectory);
+    static void* Resolve(const char* method);
+    static void Check(int status, const char* operation);
+    static void Bind(void* handle, void* foreign);
+    static void* Foreign(void* handle);
+    static void Release(void* handle, bool dispose) noexcept;
+};
+// A wrapper uniquely owns its managed root. Implicit copying would double-free it.
+class NativeObject {
+    void* handle_ = nullptr;
+protected:
+    NativeObject() = default;
+    void _Adopt(void* handle, void* foreign) {
+        Globals::Bind(handle, foreign);
+        handle_ = handle;
+    }
+public:
+    NativeObject(const NativeObject&) = delete;
+    NativeObject& operator=(const NativeObject&) = delete;
+    ~NativeObject() noexcept { if (handle_) Globals::Release(handle_, true); }
+    void* _ManagedHandle() const { return handle_; }
+};
+}

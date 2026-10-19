@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <OutputType>Exe</OutputType>
@@ -23,6 +23,10 @@
   <PropertyGroup>
     <StartupObject />
   </PropertyGroup>
+  <!-- Allows the generator to rebuild after an exported method was removed or renamed. -->
+  <ItemGroup Condition="'$(ExcludeNativeExports)' == 'true'">
+    <Compile Remove="NativeExports.g.cs" />
+  </ItemGroup>
   <ItemGroup>
     <!--PackageReference Include="System.Drawing.Common" Version="5.0.3" /-->
   </ItemGroup>
