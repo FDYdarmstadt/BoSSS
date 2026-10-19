@@ -2251,11 +2251,14 @@ namespace BoSSS.Foundation.XDG {
 
                     //convert the local number to the global and then create a new tuple with it
                     var globalCellNumberWithMaxVolume = grdDat.CellPartitioning.i0 + (long)localCellNumberWithMaxVolume;
-                    var cellWithMaxVolumeGlobal = new { GlobalCellNumber = globalCellNumberWithMaxVolume, CellVolume = cellWithMaxVolume.CellVolume };
+                    // processors without remaining cells only send a dummy (volume 0), which must never be chosen:
+                    // if all remaining cells have zero volume, the dummy with the smaller global index would win in every iteration,
+                    // nobody would make progress and this loop would never end
+                    var cellWithMaxVolumeGlobal = new { HasCell = possibleGroupTargets.Count > 0, GlobalCellNumber = globalCellNumberWithMaxVolume, CellVolume = cellWithMaxVolume.CellVolume };
 
                     //Gather all the biggest cells from each processor and choose the global biggest (cells can have the same volume so use global cell index as a second criterion)
                     var cellWithMaxVolumeArray = cellWithMaxVolumeGlobal.MPIAllGatherO();
-                    var cellWithGlobalMaxVolume = cellWithMaxVolumeArray.OrderByDescending(c => c.CellVolume).ThenBy(c => c.GlobalCellNumber).First();
+                    var cellWithGlobalMaxVolume = cellWithMaxVolumeArray.Where(c => c.HasCell).OrderByDescending(c => c.CellVolume).ThenBy(c => c.GlobalCellNumber).First();
 
                     //check if this processor has the biggest cell
                     if (cellWithGlobalMaxVolume.GlobalCellNumber == globalCellNumberWithMaxVolume && possibleGroupTargets.Count != 0) {
