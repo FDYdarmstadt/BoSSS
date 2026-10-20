@@ -20,7 +20,7 @@ using NUnit.Framework;
 namespace BoSSS.Application.CurvedElementTests {
 
     /// <summary>
-    /// Steady laminar Taylor-Couette flow on the curved grid of <see cref="CurvedWedgeHelpers.CreateGrid"/>
+    /// Steady laminar Taylor-Couette flow on the curved grids of <see cref="CurvedWedgeHelpers.CreateGrid"/> and <see cref="CurvedWedgeHelpers.CreateGrid3D"/>
     /// </summary>
     [TestFixture]
     public static class TaylorCouetteTests {
@@ -52,7 +52,8 @@ namespace BoSSS.Application.CurvedElementTests {
         /// <param name="degree">DG degree of the velocity</param>
         /// <param name="resolution">grid refinement level</param>
         /// <param name="convection">false: Stokes, true: Navier-Stokes</param>
-        static XNSE_Control BuildControl(int degree, int resolution, bool convection) {
+        /// <param name="D">spatial dimension: 2 (wedge) or 3 (cylinder wedge, periodic in z)</param>
+        static XNSE_Control BuildControl(int degree, int resolution, bool convection, int D) {
             var C = new XNSE_Control();
             C.DbPath = null;
             C.savetodb = false;
@@ -61,7 +62,7 @@ namespace BoSSS.Application.CurvedElementTests {
             C.SetDGdegree(degree);
 
             C.GridFunc = delegate () {
-                var grd = CurvedWedgeHelpers.CreateGrid(resolution, FullRing);
+                var grd = D == 3 ? CurvedWedgeHelpers.CreateGrid3D(resolution) : CurvedWedgeHelpers.CreateGrid(resolution, FullRing);
                 grd.DefineEdgeTags(delegate (double[] X) {
                     double r = Math.Sqrt(X[0] * X[0] + X[1] * X[1]);
                     double tol = 1.0e-3 * (r_o - r_i);
@@ -78,6 +79,8 @@ namespace BoSSS.Application.CurvedElementTests {
             foreach(string spc in new[] { "A", "B" }) {
                 C.AddBoundaryValue(innerWallTag, $"VelocityX#{spc}", $"X => -{uWall} * X[1] / Math.Sqrt(X[0]*X[0] + X[1]*X[1])", false);
                 C.AddBoundaryValue(innerWallTag, $"VelocityY#{spc}", $"X => +{uWall} * X[0] / Math.Sqrt(X[0]*X[0] + X[1]*X[1])", false);
+                if(D == 3)
+                    C.AddBoundaryValue(innerWallTag, $"VelocityZ#{spc}", "X => 0.0", false);
                 C.AddBoundaryValue(outerWallTag);
             }
 
@@ -175,7 +178,7 @@ namespace BoSSS.Application.CurvedElementTests {
         /// <param name="resolution">grid refinement level, see <see cref="CurvedWedgeHelpers.CreateGrid"/></param>
         [Test]
         public static void SteadyStokesOnPeriodicWedge([Values(1, 2, 3)] int degree, [Values(1, 2)] int resolution) {
-            SteadyTaylorCouette(degree, resolution, convection: false);
+            SteadyTaylorCouette(degree, resolution, convection: false, D: 2);
         }
 
         /// <summary>
@@ -185,15 +188,37 @@ namespace BoSSS.Application.CurvedElementTests {
         /// <param name="resolution">grid refinement level, see <see cref="CurvedWedgeHelpers.CreateGrid"/></param>
         [Test]
         public static void SteadyNavierStokesOnPeriodicWedge([Values(1, 2, 3)] int degree, [Values(1, 2)] int resolution) {
-            SteadyTaylorCouette(degree, resolution, convection: true);
+            SteadyTaylorCouette(degree, resolution, convection: true, D: 2);
         }
 
         /// <summary>
-        /// Common implementation of <see cref="SteadyStokesOnPeriodicWedge"/> and <see cref="SteadyNavierStokesOnPeriodicWedge"/>.
+        /// Steady Stokes flow on the 3D cylinder wedge (periodic in z)
         /// </summary>
-        static void SteadyTaylorCouette(int degree, int resolution, bool convection) {
-            var C = BuildControl(degree, resolution, convection);
-            string tag = $"{(convection ? "Navier-Stokes" : "Stokes")}, degree {degree}, resolution {resolution}";
+        /// <param name="degree">DG degree of the velocity</param>
+#if !DEBUG
+        [Test]
+#endif
+        public static void SteadyStokesOnPeriodicCylinderWedge([Values(1, 2)] int degree) {
+            SteadyTaylorCouette(degree, 1, convection: false, D: 3);
+        }
+
+        /// <summary>
+        /// Steady Navier-Stokes flow on the 3D cylinder wedge (periodic in z)
+        /// </summary>
+        /// <param name="degree">DG degree of the velocity</param>
+#if !DEBUG
+        [Test]
+#endif
+        public static void SteadyNavierStokesOnPeriodicCylinderWedge([Values(1, 2)] int degree) {
+            SteadyTaylorCouette(degree, 1, convection: true, D: 3);
+        }
+
+        /// <summary>
+        /// Common implementation of the Stokes and Navier-Stokes tests, in 2D and 3D.
+        /// </summary>
+        static void SteadyTaylorCouette(int degree, int resolution, bool convection, int D) {
+            var C = BuildControl(degree, resolution, convection, D);
+            string tag = $"{(convection ? "Navier-Stokes" : "Stokes")}, {D}D, degree {degree}, resolution {resolution}";
 
             using(var solver = new XNSE()) {
                 solver.Init(C);
@@ -225,11 +250,11 @@ namespace BoSSS.Application.CurvedElementTests {
                         mismatchAt2u = m.Absolute / m.NormF;
                 }
 
-                var u = new SinglePhaseField[2];
-                var velErr = new double[2];
-                var projErr = new double[2];
-                for(int d = 0; d < 2; d++) {
-                    u[d] = SpeciesA(solver, d == 0 ? VariableNames.VelocityX : VariableNames.VelocityY);
+                var u = new SinglePhaseField[D];
+                var velErr = new double[D];
+                var projErr = new double[D];
+                for(int d = 0; d < D; d++) {
+                    u[d] = SpeciesA(solver, VariableNames.Velocity_d(d));
                     var exact = CurvedWedgeHelpers.TaylorCouetteVelocity(d, r_i, r_o, Omega_i, Omega_o);
                     velErr[d] = u[d].L2Error(exact, 2 * degree + 4);
 
@@ -255,12 +280,14 @@ namespace BoSSS.Application.CurvedElementTests {
                 Console.WriteLine($"{tag}: RMS velocity jump per edge length: periodic (rotated) = {(hasPeriodicEdges ? rmsPeriodic.ToString("0.####e-00") : "none")}, interior = {rmsInterior:0.####e-00}");
 
                 double velThreshold = degree switch { 1 => 1.0e-1, 2 => 1.0e-2, 3 => 1.0e-4, _ => throw new NotSupportedException() };
-                for(int d = 0; d < 2; d++) {
+                for(int d = 0; d < D; d++) {
                     Assert.Less(velErr[d], velThreshold, $"L2 error of {u[d].Identification} too large.");
 
                     Assert.Less(projErr[d], 1.0e-2, $"L2 error of the projection of the exact {u[d].Identification} too large.");
 
-                    Assert.LessOrEqual(velErr[d] / projErr[d], 20.0, $"L2 error of {u[d].Identification} too large compared to the best approximation.");
+                    // ratio only for components with a non-trivial exact solution (u_z = 0 is represented exactly)
+                    if(projErr[d] > 0)
+                        Assert.LessOrEqual(velErr[d] / projErr[d], 20.0, $"L2 error of {u[d].Identification} too large compared to the best approximation.");
                 }
                 Assert.Less(presErr, 1.0e-1, "L2 error of pressure too large.");
 

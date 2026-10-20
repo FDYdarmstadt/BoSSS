@@ -18,6 +18,10 @@ namespace BoSSS.Application.CurvedElementTests {
                     TaylorCouetteTests.SteadyNavierStokesOnPeriodicWedge(degree, resolution);
                 }
             }
+            for(int degree = 1; degree <= 2; degree++) {
+                TaylorCouetteTests.SteadyStokesOnPeriodicCylinderWedge(degree);
+                TaylorCouetteTests.SteadyNavierStokesOnPeriodicCylinderWedge(degree);
+            }
 
             BoSSS.Solution.Application.FinalizeMPI();
         }

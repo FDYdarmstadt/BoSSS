@@ -34,9 +34,20 @@ namespace BoSSS.Application.CurvedElementTests {
         }
 
         /// <summary>
+        /// Curved 3D cylinder wedge, 1 &lt;= r &lt;= 2, 0 &lt;= z &lt;= 1: rotationally periodic in azimuthal direction and periodic in z
+        /// </summary>
+        /// <param name="resolution">refinement level: (4 x 10 x 4) * <paramref name="resolution"/> cells in (r, theta, z) direction</param>
+        internal static GridCommons CreateGrid3D(int resolution = 1) {
+            double[] rNodes = GenericBlas.Linspace(1, 2, 4 * resolution + 1);
+            double[] sNodes = GenericBlas.Linspace(0, 0.187, 10 * resolution + 1);
+            double[] zNodes = GenericBlas.Linspace(0, 1, 4 * resolution + 1);
+            return Grid3D.CylinderGrid(rNodes, sNodes, zNodes, CellType.Cube_64, PeriodicZ: true, PeriodicS: true);
+        }
+
+        /// <summary>
         /// Exact solution of laminar Taylor-Couette flow between two concentric cylinders
         /// </summary>
-        /// <param name="d">Cartesian velocity component (0: x, 1: y)</param>
+        /// <param name="d">Cartesian velocity component (0: x, 1: y, 2: z)</param>
         /// <param name="r_i">inner radius</param>
         /// <param name="r_o">outer radius</param>
         /// <param name="Omega_i">angular velocity of the inner cylinder</param>
@@ -51,7 +62,7 @@ namespace BoSSS.Application.CurvedElementTests {
                     double r = Math.Sqrt(x * x + y * y);
                     double uTheta = A * r + B / r;
                     // e_theta = (-y/r, x/r)
-                    U[k] = d == 0 ? -uTheta * y / r : uTheta * x / r;
+                    U[k] = d == 0 ? -uTheta * y / r : d == 1 ? uTheta * x / r : 0.0;
                 }
             };
         }
