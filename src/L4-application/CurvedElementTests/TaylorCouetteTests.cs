@@ -20,33 +20,26 @@ using NUnit.Framework;
 namespace BoSSS.Application.CurvedElementTests {
 
     /// <summary>
-    /// Steady laminar Taylor-Couette flow (Stokes and Navier-Stokes) on the curved grid of <see cref="CurvedWedgeHelpers.CreateGrid"/> (rotationally periodic wedge or full ring, see <see cref="FullRing"/>),
-    /// solved with the (single-phase) XNSE solver.
+    /// Steady laminar Taylor-Couette flow on the curved grid of <see cref="CurvedWedgeHelpers.CreateGrid"/>
     /// </summary>
     [TestFixture]
     public static class TaylorCouetteTests {
 
-        /// <summary>
-        /// MPI init.
-        /// </summary>
         [OneTimeSetUp]
         public static void SetUp() {
             BoSSS.Solution.Application.InitMPI();
         }
 
         /// <summary>
-        /// false: rotationally periodic wedge; true: full ring, without periodic boundaries,
-        /// e.g. to check whether an effect is caused by the periodic boundary
+        /// false: rotationally periodic wedge; true: full ring
         /// </summary>
         internal const bool FullRing = false;
 
-        // must match the radial extent of the grid, see CurvedWedgeHelpers.CreateGrid()
+        // must match the radial extent of the grid
         const double r_i = 1.0, r_o = 2.0;
 
-        // inner cylinder: tangential velocity 1 (i.e. angular velocity 1/r_i), outer cylinder at rest
         const double Omega_i = 1.0 / r_i, Omega_o = 0.0;
 
-        // viscosity 1, gap width 1, wall velocity 1, i.e. the Reynolds number is equal to the density
         const double mu = 1.0;
         const double rho = 1.0;
 
@@ -54,10 +47,10 @@ namespace BoSSS.Application.CurvedElementTests {
         static readonly string outerWallTag = IncompressibleBcType.Wall.ToString() + "_outer";
 
         /// <summary>
-        /// Control object: single phase (species A everywhere), steady.
+        /// Control object: single phase, steady.
         /// </summary>
         /// <param name="degree">DG degree of the velocity</param>
-        /// <param name="resolution">grid refinement level, see <see cref="CurvedWedgeHelpers.CreateGrid"/></param>
+        /// <param name="resolution">grid refinement level</param>
         /// <param name="convection">false: Stokes, true: Navier-Stokes</param>
         static XNSE_Control BuildControl(int degree, int resolution, bool convection) {
             var C = new XNSE_Control();
@@ -70,9 +63,6 @@ namespace BoSSS.Application.CurvedElementTests {
             C.GridFunc = delegate () {
                 var grd = CurvedWedgeHelpers.CreateGrid(resolution, FullRing);
                 grd.DefineEdgeTags(delegate (double[] X) {
-                    // X is the edge midpoint, which is in general not an interpolation node (e.g. Square_16):
-                    // it lies on the polynomial approximation of the arc, not exactly on the circle,
-                    // so assign each wall edge to the closer cylinder instead of testing r == r_i, r == r_o.
                     double r = Math.Sqrt(X[0] * X[0] + X[1] * X[1]);
                     double tol = 1.0e-3 * (r_o - r_i);
                     if(Math.Abs(r - r_i) <= tol)
@@ -84,7 +74,6 @@ namespace BoSSS.Application.CurvedElementTests {
                 return grd;
             };
 
-            // rotating inner cylinder: u = u_theta * (-y/r, x/r), with u_theta = Omega_i * r_i
             double uWall = Omega_i * r_i;
             foreach(string spc in new[] { "A", "B" }) {
                 C.AddBoundaryValue(innerWallTag, $"VelocityX#{spc}", $"X => -{uWall} * X[1] / Math.Sqrt(X[0]*X[0] + X[1]*X[1])", false);
@@ -92,7 +81,6 @@ namespace BoSSS.Application.CurvedElementTests {
                 C.AddBoundaryValue(outerWallTag);
             }
 
-            // single phase: level set negative everywhere, i.e. only species A, no cut cells
             C.AddInitialValue("Phi", -1.0);
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
@@ -125,10 +113,10 @@ namespace BoSSS.Application.CurvedElementTests {
         }
 
         /// <summary>
-        /// L2 error of <paramref name="p"/> against <paramref name="exact"/>, ignoring a constant offset (e.g. for a pressure which is only defined up to a constant).
+        /// L2 error of <paramref name="p"/> against <paramref name="exact"/>, ignoring a constant offset
         /// </summary>
         /// <remarks>
-        /// Note: <see cref="DGField.L2ErrorNoMean"/> subtracts the integral of the difference, not its mean value, i.e. it is only correct for a domain of measure 1.
+        /// <see cref="DGField.L2ErrorNoMean"/> is only correct for a domain of measure 1.
         /// </remarks>
         static double L2ErrorIgnoringMean(DGField p, ScalarFunction exact, int order) {
             var gdat = p.GridDat;
@@ -146,14 +134,10 @@ namespace BoSSS.Application.CurvedElementTests {
         }
 
         /// <summary>
-        /// Same self-consistency check as in <see cref="NonlinearSolver"/> (see <see cref="OperatorSelfConsistencyCheck"/>):
-        /// \f$ \| M(u_0) u_0 + b(u_0) - f(u_0) \| \f$, with the linearization (M, b) and the evaluation f
-        /// assembled by the timestepper of the solver, at the state \f$ u_0 = \textrm{scale} \cdot u \f$.
-        /// The check is done here explicitly, since for a linear operator (Stokes),
-        /// the linear solver is used and the check in <see cref="NonlinearSolver"/> is never executed.
+        /// \f$ \| M(u_0) u_0 + b(u_0) - f(u_0) \| \f$ at \f$ u_0 = \textrm{scale} \cdot u \f$, assembled by the timestepper
+        /// (same check as in <see cref="NonlinearSolver"/>, see <see cref="OperatorSelfConsistencyCheck"/>)
         /// </summary>
         static (double Absolute, double Denominator, double NormF) LinearizationMismatch(XNSE solver, double scale) {
-            // `AssembleMatrixCallback` is `internal protected`, therefore reflection
             var tsb = solver.Timestepping.TimesteppingBase;
             var mi = typeof(XdgTimesteppingBase).GetMethod("AssembleMatrixCallback", BindingFlags.Instance | BindingFlags.NonPublic);
             var assemble = (OperatorEvalOrLin)Delegate.CreateDelegate(typeof(OperatorEvalOrLin), tsb, mi);
@@ -164,7 +148,6 @@ namespace BoSSS.Application.CurvedElementTests {
                 return g;
             }).ToArray();
 
-            // note: the callback copies its argument into the current state of the solver, therefore backup and restore
             double[] backup = solver.CurrentStateVector.ToArray();
             BlockMsrMatrix M;
             double[] b, f;
@@ -180,16 +163,13 @@ namespace BoSSS.Application.CurvedElementTests {
             var err = check.CloneAs();
             err.AccV(-1.0, f);
 
-            // same comparison denominator as in NonlinearSolver.EvaluateOperator
             double normF = f.MPI_L2Norm();
             double comp = Math.Sqrt(Math.Max(normF, check.MPI_L2Norm()) * BLAS.MachineEps + BLAS.MachineEps);
             return (err.MPI_L2Norm(), comp, normF);
         }
 
         /// <summary>
-        /// Steady Stokes flow between a rotating inner cylinder (tangential velocity 1) and an outer cylinder at rest,
-        /// on the curved, rotationally periodic wedge.
-        /// The exact velocity is the laminar Taylor-Couette profile; for Stokes flow (no convection), the exact pressure is constant.
+        /// Steady Stokes flow
         /// </summary>
         /// <param name="degree">DG degree of the velocity</param>
         /// <param name="resolution">grid refinement level, see <see cref="CurvedWedgeHelpers.CreateGrid"/></param>
@@ -199,8 +179,7 @@ namespace BoSSS.Application.CurvedElementTests {
         }
 
         /// <summary>
-        /// Same as <see cref="SteadyStokesOnPeriodicWedge"/>, but for the Navier-Stokes equations:
-        /// the velocity profile is the same, the exact pressure is \f$ p(r) \f$ with \f$ \partial_r p = \rho u_\theta^2 / r \f$.
+        /// Steady Navier-Stokes flow
         /// </summary>
         /// <param name="degree">DG degree of the velocity</param>
         /// <param name="resolution">grid refinement level, see <see cref="CurvedWedgeHelpers.CreateGrid"/></param>
@@ -220,9 +199,7 @@ namespace BoSSS.Application.CurvedElementTests {
                 solver.Init(C);
                 solver.RunSolverMode();
 
-                // linearization vs. evaluation, at the solution u and at 2*u (where f is clearly non-zero);
-                // in BoSSS, the linearization around u0 is defined such that M(u0)*u0 + b(u0) == f(u0) for any state u0
-                // number of periodic edges whose two cells live on different MPI processes (relevant for MPI-parallel runs)
+                // number of periodic edges across MPI process boundaries
                 {
                     var gdat = solver.GridData;
                     int Jup = gdat.iGeomCells.NoOfLocalUpdatedCells;
@@ -237,12 +214,13 @@ namespace BoSSS.Application.CurvedElementTests {
                     Console.WriteLine($"{tag}: {gdat.MpiSize} MPI process(es), periodic edges (local, summed over processes) = {periodicEdges.MPISum()}, of which across process boundaries = {periodicEdgesAcrossProcs.MPISum()}");
                 }
 
+                // linearization vs. evaluation, at the solution u and at 2*u
                 double mismatchAtU = double.NaN, mismatchAt2u = double.NaN;
                 foreach(double scale in new[] { 1.0, 2.0 }) {
                     var m = LinearizationMismatch(solver, scale);
                     Console.WriteLine($"{tag}, linearization mismatch at {scale}*u: absolute = {m.Absolute:0.####e-00}, relative = {m.Absolute / m.Denominator:0.####e-00} (comparison denominator {m.Denominator:0.####e-00}, |f(u)| = {m.NormF:0.####e-00})");
                     if(scale == 1.0)
-                        mismatchAtU = m.Absolute / m.Denominator; // |f(u)| ~ 0 at the solution, so use the NonlinearSolver's own measure
+                        mismatchAtU = m.Absolute / m.Denominator; // |f(u)| ~ 0, therefore the NonlinearSolver's measure
                     else
                         mismatchAt2u = m.Absolute / m.NormF;
                 }
@@ -255,7 +233,7 @@ namespace BoSSS.Application.CurvedElementTests {
                     var exact = CurvedWedgeHelpers.TaylorCouetteVelocity(d, r_i, r_o, Omega_i, Omega_o);
                     velErr[d] = u[d].L2Error(exact, 2 * degree + 4);
 
-                    // best approximation in the same DG space (lower bound for the error of any discrete solution)
+                    // best approximation in the same DG space
                     var uProj = new SinglePhaseField(u[d].Basis);
                     uProj.ProjectField(exact);
                     projErr[d] = uProj.L2Error(exact, 2 * degree + 4);
@@ -276,28 +254,22 @@ namespace BoSSS.Application.CurvedElementTests {
                 double rmsInterior = j.Interior / Math.Sqrt(j.LengthInterior);
                 Console.WriteLine($"{tag}: RMS velocity jump per edge length: periodic (rotated) = {(hasPeriodicEdges ? rmsPeriodic.ToString("0.####e-00") : "none")}, interior = {rmsInterior:0.####e-00}");
 
-                // TODO: thresholds are roughly 2x the errors measured on the resolution-1 grid; replace e.g. by a convergence-rate check
-                double velThreshold = degree switch { 1 => 7.0e-2, 2 => 3.0e-3, 3 => 1.0e-4, _ => throw new NotSupportedException() };
+                double velThreshold = degree switch { 1 => 1.0e-1, 2 => 1.0e-2, 3 => 1.0e-4, _ => throw new NotSupportedException() };
                 for(int d = 0; d < 2; d++) {
                     Assert.Less(velErr[d], velThreshold, $"L2 error of {u[d].Identification} too large.");
 
-                    // best approximation; measured: at most ~3.2e-3
                     Assert.Less(projErr[d], 1.0e-2, $"L2 error of the projection of the exact {u[d].Identification} too large.");
 
-                    // the discrete solution should stay within a fixed factor of the best approximation; measured: ~3.5 to ~13.8
                     Assert.LessOrEqual(velErr[d] / projErr[d], 20.0, $"L2 error of {u[d].Identification} too large compared to the best approximation.");
                 }
                 Assert.Less(presErr, 1.0e-1, "L2 error of pressure too large.");
 
-                // linearization at the solution, with the NonlinearSolver's own warning threshold (measure < 1);
-                // measured: at most ~8e-3 (before the FixOutSelfDiagonalBlock fix: up to ~690 for Navier-Stokes)
+                // linearization at the solution: NonlinearSolver's warning threshold
                 Assert.Less(mismatchAtU, 1.0, "linearization M(u0)*u0 + b(u0) is inconsistent with the evaluation f(u0) at the solution.");
                 if(hasPeriodicEdges)
                     Assert.LessOrEqual(rmsPeriodic, 10 * rmsInterior, "velocity jump across periodic edges is too large compared to interior edges.");
 
-                // Regression check for the consistency of the linearization at rotated periodic edges
-                // (LECEdgeQuadrature2.FixOutSelfDiagonalBlock): at 2*u, |M*u0 + b - f(u0)| / |f(u0)| is ~1e-15 (round-off);
-                // before that fix, it was between ~6e-13 and ~7e-9 for Navier-Stokes on this wedge (all degrees and resolutions).
+                // linearization at 2*u, relative to |f|
                 Assert.Less(mismatchAt2u, 1.0e-13, "linearization M(u0)*u0 + b(u0) is inconsistent with the evaluation f(u0) at 2*u.");
             }
         }

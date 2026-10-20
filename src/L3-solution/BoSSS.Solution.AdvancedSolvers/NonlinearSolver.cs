@@ -65,35 +65,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
     public delegate void OperatorEvalOrLin(out BlockMsrMatrix Matrix, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] CurrentState, bool Linearization, out IDifferentialOperator OberFrickelHack);
 
     /// <summary>
-    /// Exposes the result of <see cref="NonlinearSolver.EvaluateOperator"/>'s internal
-    /// self-consistency check of the identity M(u0)*u0+b(u0) == f(u0) -- i.e. that the
-    /// linearization (matrix <c>M</c> plus affine part <c>b</c>) built around a state
-    /// <c>u0</c> is consistent with a direct nonlinear evaluation <c>f(u0)</c> of the same
-    /// operator at that state. That check normally only surfaces via a <see cref="Console.Error"/>
-    /// warning; this class records its last numeric result so regression tests can assert on it
-    /// directly, without re-implementing the assembly/comparison logic outside the solver or
-    /// scraping console output.
+    /// Results of the check M(u0)*u0 + b(u0) == f(u0) (linearization vs. evaluation) in <see cref="NonlinearSolver.EvaluateOperator"/>, e.g. for tests.
     /// </summary>
     public static class OperatorSelfConsistencyCheck {
 
         /// <summary>
-        /// Absolute L2-distance between M(u0)*u0+b(u0) and f(u0), from the most recent time
-        /// <see cref="NonlinearSolver.EvaluateOperator"/> performed this check (which happens on
-        /// the very first evaluation of a solve, and periodically thereafter); <c>null</c> if no
-        /// check has run yet in this process.
+        /// L2 norm of M(u0)*u0 + b(u0) - f(u0) of the most recent check; null, if no check has been performed yet.
         /// </summary>
         public static double? LastAbsoluteError { get; internal set; }
 
         /// <summary>
-        /// The machine-epsilon-scaled comparison denominator that <see cref="LastAbsoluteError"/>
-        /// is judged against by the production "Mismatch" warning (i.e. a mismatch is reported
-        /// iff <see cref="LastAbsoluteError"/> exceeds this).
+        /// comparison value of the most recent check; a mismatch is reported if <see cref="LastAbsoluteError"/> exceeds it
         /// </summary>
         public static double? LastComparisonDenominator { get; internal set; }
 
         /// <summary>
-        /// <see cref="LastAbsoluteError"/> divided by <see cref="LastComparisonDenominator"/>;
-        /// <c>null</c> if no check has run yet.
+        /// <see cref="LastAbsoluteError"/> divided by <see cref="LastComparisonDenominator"/>
         /// </summary>
         public static double? LastRelativeError =>
             (LastAbsoluteError.HasValue && LastComparisonDenominator.HasValue && LastComparisonDenominator.Value > 0)
@@ -101,26 +88,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
             : (double?)null;
 
         /// <summary>
-        /// The largest <see cref="LastRelativeError"/> seen across every check performed since
-        /// the last <see cref="Reset"/> (rather than only the most recent one) -- useful for
-        /// tests that run several nonlinear-solver iterations and want to catch a mismatch at
-        /// ANY evaluated state, not only the last.
+        /// maximum of <see cref="LastRelativeError"/> since the last <see cref="Reset"/>
         /// </summary>
         public static double? MaxRelativeError { get; internal set; }
 
         /// <summary>
-        /// When set to <c>true</c>, forces <see cref="NonlinearSolver.EvaluateOperator"/> to
-        /// perform its self-consistency check on EVERY call, rather than only every 10th (DEBUG
-        /// builds) / 1000th (RELEASE builds) call. Intended for tests that need the check to run
-        /// at a specific, Newton-evolved state, not only at the very first (typically still
-        /// trivial, all-zero) one. Default <c>false</c> -- zero behavior change for production
-        /// solves.
+        /// if true, the check is performed in every evaluation (instead of every 10th/1000th in DEBUG/RELEASE)
         /// </summary>
         public static bool ForceCheckEveryCall = false;
 
         /// <summary>
-        /// Resets all recorded values, e.g. before starting a fresh check in a test. Does NOT
-        /// reset <see cref="ForceCheckEveryCall"/>.
+        /// resets the recorded values (but not <see cref="ForceCheckEveryCall"/>)
         /// </summary>
         public static void Reset() {
             LastAbsoluteError = null;

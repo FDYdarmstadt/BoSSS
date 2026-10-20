@@ -1121,35 +1121,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                                     _R.Multiply(1.0, trafo, _R, 0.0, "im", "i", "im");
                                 } else {
                                     Debug.Assert(object.ReferenceEquals(QuadResult.Storage, _Q.Storage));
-                                    // BUGFIX (root-caused this session): this multiply applies the
-                                    // curved-cell orthonormalization transform ("trafo", from
-                                    // ChefBasis.OrthonormalizationTrafo) to the pre-orthonormalized
-                                    // affine/source result _R. The index pattern here was
-                                    // "im","imn","in" -- i.e. output mode = trafo's SECOND index,
-                                    // contracted/input mode = trafo's THIRD index. This is
-                                    // TRANSPOSED relative to (a) the MATRIX-part's own application
-                                    // of the exact same trafo array a few lines above in this file
-                                    // (bLinearRequired's non-affine-linear branch: "_R.Multiply(1.0,
-                                    // ExtractTrafo(trafo, m_owner.m_RowL[gamma]), _Q, 0.0, "jmn",
-                                    // "jbm", "jbn")" -- output mode = trafo's THIRD index,
-                                    // contracted = SECOND), which is validated correct via
-                                    // finite-difference Jacobian checks, and (b) the nonlinear
-                                    // evaluator's identical application of the same trafo array in
-                                    // NECQuadratureVolume.cs ("trfQuadResult_e.Multiply(1.0,
-                                    // _OrthoTrf, QuadResult_e, 0.0, "jn","jmn","jm")" -- SAME
-                                    // convention as the matrix part). Since OrthonormalizationTrafo
-                                    // is NOT symmetric in general, applying it transposed silently
-                                    // computes a numerically-different (but not obviously wrong-
-                                    // looking) result: this was the exact source of the
-                                    // curved-cell-only, quadrature-order-independent
-                                    // M(u0)*u0+b(u0)!=f(u0) affine-term defect diagnosed this
-                                    // session (confirmed by hand-computing the contraction with the
-                                    // correct index convention, using independently-dumped
-                                    // intermediate buffer values: the corrected convention
-                                    // reproduces f(u0) to ~1e-6 relative, the buggy one is off by
-                                    // exactly the reported residual). Fixed by matching the SAME
-                                    // "output=trafo's-3rd-index, contracted=trafo's-2nd-index"
-                                    // convention used everywhere else this trafo array is applied.
+                                    // apply the orthonormalization `trafo` for curved cells (same index convention as for the matrix part above)
                                     _Q.Multiply(1.0, ExtractTrafo(trafo, m_owner.m_RowL[gamma]), _R, 0.0, "in", "imn", "im");
                                 }
                             }

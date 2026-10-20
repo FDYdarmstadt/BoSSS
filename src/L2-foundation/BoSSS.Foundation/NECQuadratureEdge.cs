@@ -1402,22 +1402,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                             //(new CellMask(GridDat, Chunk.GetSingleElementChunk(GridDat.iLogicalEdges.CellIndices[iEdge, 1]))).SaveToTextFile("PerOtCell.csv", false);
 
 
-                            // Use the orientation-normalized accessor, not the raw PeriodicTrafo
-                            // entry: different grid constructors (e.g. Grid2D.CurvedSquareGrid vs
-                            // Grid3D.CylinderGrid) pass the low-angle/high-angle periodic faces to
-                            // ConstructPeriodicEdgeTrafo in opposite argument order, so the raw
-                            // matrix for the SAME physical rotation can be mutually inverse
-                            // between grid constructors -- exactly the bug found and fixed for the
-                            // LINEAR evaluator in LECEdgeQuadrature2.GetPeriodicEdgesAndMatrices
-                            // (see its remarks). This method's fwd/bck convention was previously
-                            // validated only against BoSSS.Application.PeriodicRotationTest's 2D
-                            // Grid2D.CurvedSquareGrid, whose raw matrix happens to already be
-                            // IN-to-OUT -- masking this exact same orientation bug, which only
-                            // surfaces on CylinderGrid-based 3D grids (found via
-                            // BoSSS.Application.PeriodicRotationTest3D's
-                            // CheckJacobianSelfConsistency: the nonlinear evaluator's raw-matrix
-                            // reads disagreed with the (already-fixed) linear evaluator by 6+
-                            // orders of magnitude specifically at periodic edges).
+                            // periodic transformation of this edge, normalized to the orientation IN -> OUT
                             var gridDataConcrete = grid as BoSSS.Foundation.Grid.Classic.GridData;
                             var Trafo = gridDataConcrete != null
                                 ? gridDataConcrete.Edges.GetPeriodicTrafo(iEdge, true)
@@ -1429,13 +1414,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                                 foreach (int[] VecPtr in VectorTuples) {
                                     Debug.Assert(VecPtr.Length == D);
 
-                                    // a tuple member may be null if no equation component in the
-                                    // whole operator actually requires its value -- treat it as
-                                    // zero (there is genuinely no other value to use) rather than
-                                    // crashing, and skip entirely if none of the tuple's members
-                                    // are present at all. For realistic vector fluxes (which
-                                    // reference all their components together) this is a no-op
-                                    // safety net, not the primary mechanism.
+                                    // missing tuple members (not required by any component) are treated as zero
                                     bool anyPresent = false;
                                     for (int d = 0; d < D; d++) {
                                         if (VecPtr[d] < Vals.Length && Vals[VecPtr[d]] != null)
@@ -1467,8 +1446,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                                 foreach (int[] VecPtr in VectorTuples) {
                                     Debug.Assert(VecPtr.Length == D);
 
-                                    // see remark in TransformVector: a tuple member's gradient
-                                    // may be null if no component requires it; treat as zero.
+                                    // missing tuple members (not required by any component) are treated as zero
                                     bool anyPresent = false;
                                     for (int e = 0; e < D; e++) {
                                         if (VecPtr[e] < Gradients.Length && Gradients[VecPtr[e]] != null)

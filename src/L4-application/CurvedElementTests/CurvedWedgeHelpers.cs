@@ -16,20 +16,14 @@ using NUnit.Framework;
 namespace BoSSS.Application.CurvedElementTests {
 
     /// <summary>
-    /// Shared helpers for tests on curved elements with rotationally periodic boundaries (see <see cref="TaylorCouetteTests"/>):
-    /// grid, exact Taylor-Couette solution, and the velocity jump across (rotated) periodic and interior edges.
+    /// Helpers for tests on curved elements with rotationally periodic boundaries (see <see cref="TaylorCouetteTests"/>)
     /// </summary>
     public static class CurvedWedgeHelpers {
 
         /// <summary>
-        /// Curved 2D annulus grid, 1 &lt;= r &lt;= 2:
-        /// either a wedge which is rotationally periodic in the azimuthal direction,
-        /// or the full ring, without any periodic boundary (the last cell in azimuthal direction is a conformal neighbor of the first one).
+        /// Curved 2D annulus grid, 1 &lt;= r &lt;= 2: rotationally periodic wedge or full ring
         /// </summary>
-        /// <param name="resolution">
-        /// refinement level: (4 x 10) * <paramref name="resolution"/> cells in (r, theta) direction for the wedge;
-        /// the full ring has the same cell size, i.e. (4 x 54) * <paramref name="resolution"/> cells
-        /// </param>
+        /// <param name="resolution">refinement level: (4 x 10) * <paramref name="resolution"/> cells for the wedge, same cell size for the ring</param>
         /// <param name="fullRing">false: periodic wedge, true: full ring</param>
         internal static GridCommons CreateGrid(int resolution = 1, bool fullRing = false) {
             double[] rNodes = GenericBlas.Linspace(1, 2, 4 * resolution + 1);
@@ -40,10 +34,7 @@ namespace BoSSS.Application.CurvedElementTests {
         }
 
         /// <summary>
-        /// Exact solution of laminar Taylor-Couette flow between two concentric cylinders:
-        /// azimuthal velocity \f$ u_\theta(r) = A r + B / r \f$, with
-        /// \f$ A = (\Omega_o r_o^2 - \Omega_i r_i^2)/(r_o^2 - r_i^2) \f$ and
-        /// \f$ B = (\Omega_i - \Omega_o) r_i^2 r_o^2 / (r_o^2 - r_i^2) \f$.
+        /// Exact solution of laminar Taylor-Couette flow between two concentric cylinders
         /// </summary>
         /// <param name="d">Cartesian velocity component (0: x, 1: y)</param>
         /// <param name="r_i">inner radius</param>
@@ -66,7 +57,7 @@ namespace BoSSS.Application.CurvedElementTests {
         }
 
         /// <summary>
-        /// Coefficients \f$ A, B \f$ of the Taylor-Couette velocity \f$ u_\theta(r) = A r + B / r \f$, see <see cref="TaylorCouetteVelocity"/>.
+        /// Coefficients A, B of the Taylor-Couette velocity.
         /// </summary>
         static (double A, double B) TaylorCouetteCoefficients(double r_i, double r_o, double Omega_i, double Omega_o) {
             double A = (Omega_o * r_o * r_o - Omega_i * r_i * r_i) / (r_o * r_o - r_i * r_i);
@@ -75,9 +66,7 @@ namespace BoSSS.Application.CurvedElementTests {
         }
 
         /// <summary>
-        /// Exact pressure of laminar Taylor-Couette flow (up to a constant), from \f$ \partial_r p = \rho u_\theta^2 / r \f$:
-        /// \f$ p(r) = \rho ( A^2 r^2 / 2 + 2 A B \ln r - B^2 / (2 r^2) ) \f$, see <see cref="TaylorCouetteVelocity"/> for \f$ A, B \f$;
-        /// for Stokes flow (no convection), use \f$ \rho = 0 \f$, i.e. constant pressure.
+        /// Exact pressure of laminar Taylor-Couette flow (up to a constant); \f$ \rho = 0 \f$ for Stokes flow
         /// </summary>
         /// <param name="rho">density</param>
         /// <param name="r_i">inner radius</param>
@@ -103,8 +92,6 @@ namespace BoSSS.Application.CurvedElementTests {
         internal struct JumpNorms {
             /// <summary> jump across periodic edges, OUT-velocity rotated into the IN-frame </summary>
             public double Periodic;
-            /// <summary> jump across periodic edges, without rotation </summary>
-            public double PeriodicUnrotated;
             /// <summary> jump across interior (non-periodic) edges </summary>
             public double Interior;
             /// <summary> total length (area in 3D) of periodic edges </summary>
@@ -114,9 +101,7 @@ namespace BoSSS.Application.CurvedElementTests {
         }
 
         /// <summary>
-        /// Computes the L2 norm of the jump \f$ \vec{u}_{IN} - \mathbf{M} \vec{u}_{OUT} \f$ over all inner edges,
-        /// where \f$ \mathbf{M} \f$ is the matrix of the periodic transformation which maps the OUT-side of an edge onto the IN-side
-        /// (identity for non-periodic edges).
+        /// L2 norms of the velocity jump across periodic edges (\f$ \vec{u}_{IN} - \mathbf{M} \vec{u}_{OUT} \f$) and interior edges
         /// </summary>
         /// <param name="u">velocity components</param>
         /// <param name="quadOrder">quadrature order</param>
@@ -158,7 +143,7 @@ namespace BoSSS.Application.CurvedElementTests {
 
             EdgeQuadratureScheme Scheme(EdgeMask m) => new EdgeQuadratureScheme(false, m).AddFixedOrderRules(gdat, quadOrder);
 
-            // plain (un-rotated) jump of the velocity vector, from the jumps of the individual components
+            // jump of the velocity vector, from the jumps of the individual components
             double PlainJump(EdgeMask m) => Math.Sqrt(u.Sum(f => f.JumpNorm(Scheme(m)).Pow2()));
 
             double TotalLength(EdgeMask m) => m.ItemEnum.Where(CountEdge).Sum(e => gdat.iGeomEdges.GetEdgeArea(e)).MPISum();
@@ -235,7 +220,6 @@ namespace BoSSS.Application.CurvedElementTests {
 
             return new JumpNorms() {
                 Periodic = Math.Sqrt(accRot.MPISum()),
-                PeriodicUnrotated = PlainJump(periodicMask),
                 LengthPeriodic = TotalLength(periodicMask),
                 Interior = PlainJump(interiorMask),
                 LengthInterior = TotalLength(interiorMask)

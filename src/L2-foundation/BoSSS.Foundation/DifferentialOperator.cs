@@ -1336,23 +1336,7 @@ namespace BoSSS.Foundation {
 
 
         internal bool RequiresComplicatedPeriodicity(IGridData gd) {
-            // true if this grid has at least one periodic boundary whose transformation is not
-            // a pure identity (translational periodicity needs no special treatment; a rotated
-            // pairing, e.g. a "pie slice" of a rotational domain, does).
-            //
-            // Re-enabled 2026-08-21 after validating the corresponding fix in the LINEAR
-            // evaluator (LECEdgeQuadrature2.ApplyPeriodicRotation) against an exact
-            // rigid-body-rotation test field, then re-deriving the NONLINEAR evaluator's
-            // existing (previously disabled) NECQuadratureEdge.PeriodicTransform from the same
-            // first principles and confirming its design -- the fwd/bck matrix choice, the
-            // normal-fix applying only to the "fwd" (OUT-cell's own equation) pass, and the
-            // two-sided (M * tensor * M^T) rotation of a vector field's own gradient -- is
-            // mathematically consistent with the validated linear-evaluator convention (raw
-            // ghost values transform by the *transpose* of how the linear evaluator's Jacobian
-            // blocks transform; see BoSSS.Application.PeriodicRotationTest for the check that
-            // established this relationship). The only concrete bugs found and fixed here are
-            // null-reference crashes in TransformVector/TransfromGradientTensor when a
-            // vector-tuple member isn't referenced by any single equation component.
+            // true, if at least one periodic boundary is rotated (i.e. its transformation matrix is not the identity)
             foreach(var Trafo in gd.Grid.PeriodicTrafo) {
                 var Mtx = Trafo.Matrix.CloneAs();
                 Mtx.AccEye(-1.0);
@@ -2949,36 +2933,8 @@ namespace BoSSS.Foundation {
             // create derivative operator
             // ==========================
 
-            // Quadrature order: MUST evaluate to the exact same number as `this.QuadOrderFunction`
-            // would for `this` (the original, pre-Jacobian operator), NOT simply be re-invoked
-            // as-is against JacobianOp's own (longer) parameter list.
-            //
-            // `h.JacobianParameterVars` appends synthetic "_lin"/"_lin_d[d]" linearization-point
-            // parameters after the operator's original parameters (see JacobianParamUpdate);
-            // these are frozen, EXACT coefficient-level copies of the DOMAIN fields (same DG
-            // degree), used only to freeze u0 for the affine/matrix split. Their polynomial
-            // degree is therefore already fully reflected in DomainDegrees. A generic
-            // QuadOrderFunc (e.g. QuadOrderFunc.NonLinear/SumOfMaxDegrees), however, has no way
-            // to tell synthetic linearization parameters apart from genuine, independently-varying
-            // parameter fields (e.g. a density field) -- it just adds MaxOr0(ParameterDegrees) on
-            // top of the domain-field contribution, as it must for genuine parameters. Called
-            // naively with JacobianOp's inflated parameter list, this silently increases the
-            // Jacobian operator's declared quadrature order above the original operator's.
-            //
-            // On affine/flat cells this is invisible (any sufficiently high order integrates a
-            // polynomial integrand exactly, so both orders agree). On curved/isoparametric cells,
-            // where the metric-weighted integrand (via the inverse-Jacobian/Jacobian-determinant
-            // transform of GradV to physical space) is never exactly polynomial, NO finite
-            // quadrature order integrates it exactly -- so evaluating M(u0)*u0+b(u0) (via
-            // JacobianOp, at the inflated order) and f(u0) (via `this`, at the original order)
-            // uses two DIFFERENT numerical approximations of the same true integral, breaking the
-            // M(u0)*u0+b(u0)==f(u0) self-consistency identity by an amount that does NOT vanish
-            // as either order individually increases (since it's the GAP between the two orders,
-            // not the absolute order, that drives the error) -- exactly the curved-cell-only,
-            // quadrature-order-sweep-invariant defect diagnosed this session. Truncating the
-            // parameter-degree array back down to just the original parameters before delegating
-            // to `this.QuadOrderFunction` reproduces the original operator's order exactly,
-            // regardless of how many synthetic Jacobian parameters get added.
+            // quadrature order of the Jacobian operator: same as for the original operator,
+            // i.e. the synthetic "_lin"/"_lin_d" parameters appended by JacobianParamUpdate are ignored
             Func<int[], int[], int[], int> JacobianQuadOrderFunction = (DomDegs, ParamDegs, CoDomDegs) => {
                 int[] origParamDegs;
                 if (h.NoOfOrgParams > 0 && ParamDegs != null && ParamDegs.Length >= h.NoOfOrgParams) {

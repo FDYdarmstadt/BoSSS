@@ -4,8 +4,7 @@ using BoSSS.Solution;
 namespace BoSSS.Application.CurvedElementTests {
 
     /// <summary>
-    /// Entry point for running the tests in this assembly without the test runner, e.g. for debugging.
-    /// For CI, the NUnit tests in <see cref="TaylorCouetteTests"/> are discovered by the <c>PublicTestRunner</c>.
+    /// Entry point for running the tests without the test runner, e.g. for debugging.
     /// </summary>
     public static class CurvedElementTestsMain {
 
