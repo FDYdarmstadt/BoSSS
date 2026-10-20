@@ -1312,26 +1312,42 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             /// has closed AND ApplyPeriodicRotation's Step 1/Step 2 has returned, restoring
             /// whatever it touched in its own finally-blocks), m_ParameterFieldsValues_IN,
             /// m_ParameterFieldsValues_OUT and NormalBuffer are all back in their native
-            /// (unrotated) state. Re-evaluate all four term buffers ONE more time with nothing
-            /// rotated at all, into scratch buffers, and splice ONLY the (cr=1,cc=1) slot from
-            /// this native rerun into the real buffers -- (cr=0,*) and (cr=1,cc=0), already
-            /// correctly computed by the main pass/Step 1/Step 2 above, are left untouched.
+            /// (unrotated) state. Re-evaluate all four term buffers ONE more time, with OUT's own
+            /// (rotated) normal, the OUT-side parameters left native, and the IN-side parameters
+            /// rotated into OUT's frame (by M), into scratch buffers, and splice ONLY the
+            /// (cr=1,cc=1) slot from this rerun into the real buffers -- (cr=0,*) and (cr=1,cc=0),
+            /// already correctly computed by the main pass/Step 1/Step 2 above, are left untouched.
+            ///
+            /// The IN-side parameters (vector tuples, incl. the "_lin"/"_lin_d" linearization-point
+            /// values and e.g. Velocity0Mean feeding the LLF dissipation coefficient) must be rotated
+            /// by M here, consistent with every other contribution to the OUT-cell's equation row:
+            /// ApplyPeriodicRotation's Step 1 (cr=1,cc=0), ApplyPeriodicRotationAffine (the cr=1 part
+            /// of the affine vector) and NECQuadratureEdge's fwd pass (the evaluation f of the
+            /// OUT-cell's equation) all express IN-side data in OUT's frame. Leaving them in IN's
+            /// frame here (as an earlier version of this method did) assembled the (cr=1,cc=1) block
+            /// with e.g. a different LLF coefficient than the rest of the row, breaking the
+            /// M(u0)*u0+b(u0)==f(u0) identity on periodic edges (the residual defect formerly tracked
+            /// in SPEC.md Section 9). With this rotation, the periodic-edge mismatch drops to the level
+            /// of non-periodic cells on the flat rotated box (STEP1/2/3), the CylinderGrid STEP checks,
+            /// XNSFE's CurvedRotationalPeriodicRegressionTest and a 2D curved-wedge Navier-Stokes case
+            /// (BoSSS.Application.CurvedElementTests).
             ///
             /// Permanently applied (unconditional): mechanistically confirmed correct for the ONE
             /// targeted (cr=1,cc=1) diagonal block (BoSSS.Application.PeriodicRotationTest3D's
             /// FlatRotatedPeriodicBoxMain, cell=40: every previously-wrong VelocityZ mode is fixed
             /// and every previously-correct VelocityY/VelocityZ mode stays correct, given the
             /// reverse/LIFO restore order in <see cref="RestoreIndices"/>, which is likewise
-            /// permanent). This method supersedes the old "force splice cc=1" experiment (confirmed
-            /// via PeriodicRotationTest3D to be a whack-a-mole trade rather than a fix: it spliced
-            /// Step 1's rerun -- rotated-normal + IN-rotated-by-M -- into (cr=1,cc=1), which is
-            /// wrong whenever the form's OUT-side coefficient does not itself depend on IN data).
+            /// permanent). This method supersedes the old "force splice cc=1" experiment, which
+            /// spliced Step 1's rerun -- rotated normal + IN rotated by M + OUT native, i.e. the
+            /// same configuration this method now uses -- into (cr=1,cc=1) and was assessed via
+            /// PeriodicRotationTest3D as a whack-a-mole trade rather than a fix. That assessment
+            /// predates the reverse/LIFO restore-order fix; with the current pipeline, this
+            /// configuration was re-validated as described above (why the earlier assessment
+            /// differed was not re-examined).
             /// The isJacobianOperator/skipCc1 gate this supersedes is left in place unchanged,
             /// since skipCc1 continues to correctly protect (cr=1,cc=1) from Step 1's rotated-IN
             /// rerun for Jacobian operators -- this method's splice simply runs after and is
-            /// authoritative for that one slot. Note: an analogous, still-unfixed instance of
-            /// presumably the same class of bug, affecting a different cell, is tracked separately
-            /// (see SPEC.md Section 9) and is not addressed by this method.
+            /// authoritative for that one slot.
             /// </remarks>
             private void FixOutSelfDiagonalBlock(int i0, int Length, IGridData grid, EdgeFormParams efp, List<MyChunk> Edges, bool MustLock, int NoOfNodes, int D) {
                 // Scoping guard: only Jacobian-differentiated operators have a (cr=1,cc=1) slot
@@ -1376,6 +1392,23 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                     }
                 }
 
+                // The IN-side parameters must be expressed in OUT's frame -- rotate by M, exactly as
+                // ApplyPeriodicRotation's Step 1 (cr=1,cc=0), ApplyPeriodicRotationAffine (cr=1 part
+                // of "b") and NECQuadratureEdge's fwd pass (evaluation of the OUT-cell's equation) do.
+                // Otherwise the OUT-cell's equation row is assembled from inconsistent IN-side data:
+                // e.g. the LLF dissipation coefficient (from Velocity0Mean) and the "_lin"/"_lin_d"
+                // linearization-point values would be in OUT's frame for (cr=1,cc=0) and "b", but in
+                // IN's frame for this (cr=1,cc=1) block. The OUT-side parameters stay native, see remarks.
+                int[][] ParamVectorTuples = GetParameterVectorTuples(D);
+                List<MultidimensionalArray[]> paramInSnapshots = null;
+                if (ParamVectorTuples.Length > 0) {
+                    paramInSnapshots = new List<MultidimensionalArray[]>();
+                    foreach (var tuple in ParamVectorTuples) {
+                        paramInSnapshots.Add(SnapshotParamSlots(m_ParameterFieldsValues_IN, tuple));
+                        RotateParamSlotsOnPeriodicEdges(m_ParameterFieldsValues_IN, tuple, periodicIdx, periodicMtx, NoOfNodes);
+                    }
+                }
+
                 var savedNormalBuffer = this.NormalBuffer;
                 this.NormalBuffer = RotatedNormalBuffer;
                 try {
@@ -1393,6 +1426,11 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                         (E, mda) => E.BoundaryEdge_GradUxGradV(ref efp, mda));
                 } finally {
                     this.NormalBuffer = savedNormalBuffer;
+                    if (paramInSnapshots != null) {
+                        // Reverse (LIFO) restore order -- see the main-pass fix/remarks in EvaluateEx.
+                        foreach (int t in RestoreIndices(ParamVectorTuples.Length))
+                            RestoreParamSlots(m_ParameterFieldsValues_IN, ParamVectorTuples[t], paramInSnapshots[t]);
+                    }
                 }
 
                 // Confirmed correct (FD-matched, per-cell survey fully clean on both components)

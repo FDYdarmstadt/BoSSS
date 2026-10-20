@@ -47,6 +47,7 @@
     <ProjectReference Include="..\SAIDT\SAIDT.csproj" />
     <ProjectReference Include="..\SpecFEM\SpecFEM.csproj" />
     <ProjectReference Include="..\TraceDGtest\TraceDGtest.csproj" />
+    <ProjectReference Include="..\CurvedElementTests\CurvedElementTests.csproj" />
     <ProjectReference Include="..\TutorialTests\TutorialTests.csproj" />
     <ProjectReference Include="..\XdgNastyLevsetLocationTest\XdgNastyLevsetLocationTest.csproj" />
     <ProjectReference Include="..\XdgPoisson3\XdgPoisson3.csproj" />

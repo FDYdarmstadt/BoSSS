@@ -53,18 +53,23 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
     /// state, with the nonlinear solver bounded to zero iterations, so this test needs only ONE
     /// assembled residual/Jacobian pair, never an actual (expensive) linear solve, keeping it fast.
     ///
-    /// A genuinely exact ("must be zero") threshold is not appropriate here: a separate,
-    /// structurally distinct, still-open defect in momentum's periodic-edge convection Jacobian
-    /// (a `JacobianParamUpdate` linearization-snapshot projection error, unrelated to the six
-    /// fixes this test guards) is known to leave a small residual on this exact configuration even
-    /// with all six fixes applied. The threshold below was determined empirically -- measured
+    /// A genuinely exact ("must be zero") threshold is not appropriate here: the measure is
+    /// round-off divided by sqrt(eps*|f|), and on curved cells the `JacobianParamUpdate`
+    /// gradient-snapshot projection (degree-preserving, inexact on non-affine cells, independent
+    /// of periodicity) can add a small residual in other states. A formerly separate defect in the
+    /// periodic-edge Jacobian -- <c>LECEdgeQuadrature2.FixOutSelfDiagonalBlock</c> assembled the
+    /// (OUT-cell equation, OUT-cell trial) block with the IN-side parameters in IN's instead of
+    /// OUT's frame -- has since been fixed; with that fix the measured relative error at this
+    /// configuration dropped from ~3.0 to ~1.75e-4 (single-threaded, Release), which is round-off
+    /// (|f| ~ 2.3e5 here, i.e. ~5e-15 relative to |f|). The threshold below
+    /// was left unchanged. It was determined empirically -- measured
     /// relative errors (<see cref="OperatorSelfConsistencyCheck.MaxRelativeError"/>) at the exact
     /// configuration <see cref="CurvedElementRotationalPeriodicSelfConsistency"/> uses:
-    /// current (all six fixes applied): ~1.8; any ONE of the six fixes reverted to its
+    /// with all six fixes applied (before the FixOutSelfDiagonalBlock fix): ~1.8-3.0; any ONE of the six fixes reverted to its
     /// pre-investigation state: from ~3.9e6 (<c>PeriodicBoundaryUtils.cs</c>) up to ~1.5e9
     /// (<c>NECQuadratureEdge.cs</c>) -- reverting <c>JacobianParamUpdate.cs</c> alone does not even
     /// compile, since <c>DifferentialOperator.cs</c>'s fix depends on a property it adds. The
-    /// chosen threshold sits about 3 orders of magnitude above the current value and at least 2
+    /// chosen threshold sits about 3 orders of magnitude above the pre-fix value (~1.8-3.0) and at least 2
     /// orders of magnitude below the smallest reverted-fix value -- ample margin on both sides.
     /// </remarks>
     [TestFixture]
