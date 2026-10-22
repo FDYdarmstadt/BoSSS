@@ -43,8 +43,11 @@ namespace ilPSP {
         /// Measured on AMD EPYC 7F52 (Zen 2; PLAN-4, FINDINGS.md 2026-10-03): vs. the generated kernels, gathered
         /// cases 1.42x geomean but down to 0.55x, staged T 1.06x but down to 0.42x (Intel i7-6700: 2.87x for
         /// gathered); unit-stride cases 2.75x. Per-machine calibration instead of this vendor rule: PLAN-5.
+        /// Not applied on AMD CPUs with AVX-512 (Zen 4 and newer): on AMD EPYC 9654 (Zen 4; PLAN-5, RESULTS-5.md),
+        /// the census replay with gathered/staged cases enabled is 16% faster (8.26 s -> 6.93 s census-weighted),
+        /// e.g. `ijk,pjq,ipkq` 20x10x10/49x2 2.97x; Zen 3 (no AVX-512) is unmeasured and keeps the exclusion.
         /// </summary>
-        internal static bool s_GettSlowGather = IsAmdCpu();
+        internal static bool s_GettSlowGather = IsAmdCpu() && !Avx512F.IsSupported;
 
         static bool IsAmdCpu() {
             if(!X86Base.IsSupported)

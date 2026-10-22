@@ -262,26 +262,14 @@ namespace BoSSS.Application.BoSSSpad {
                 return missing.Length == 0 ? "exports present" : "missing export(s) " + missing.ToConcatString("", ", ", "");
             }
             var mkl = BLAS.m_seq_BLAS.LibHandle;
-            const string notUsed = "; not used by this BoSSS version";
-            Console.WriteLine(Row("MKL batch GEMM/GEMV") + Exports(mkl, "BoSSS_dgemm_batch_strided", "BoSSS_dgemm_batch", "BoSSS_dgemv_batch_strided") + notUsed);
-            Console.WriteLine(Row("MKL JIT GEMM") + Exports(mkl, "BoSSS_mkl_jit_create_dgemm", "BoSSS_mkl_jit_get_dgemm_ptr", "BoSSS_mkl_jit_destroy") + notUsed);
-            Console.WriteLine(Row("BLIS (in MKL library)") + Exports(mkl, "BoSSS_bli_init", "BoSSS_bli_finalize", "BoSSS_bli_dgemm", "BoSSS_bli_dgemv") + notUsed);
+            string Usable(bool avail, string reason) => avail ? "Good" : "Unavailable (" + reason + ")";
+            Console.WriteLine(Row("MKL batch GEMM/GEMV") + Usable(MKLBatch.Available, MKLBatch.UnavailableReason) + "; not used by Multiply (no measured gain over a loop of DGEMMs)");
+            Console.WriteLine(Row("MKL JIT GEMM") + Usable(MKLJit.Available, MKLJit.UnavailableReason) + (MKLJit.Available ? $"; used by Multiply for small GEMMs ({MKLJit.NumKernels} kernel(s) cached in this process)" : "; Multiply uses the blocked SIMD path / DGEMM instead"));
+            Console.WriteLine(Row("BLIS (in MKL library)") + Usable(BLIS.Available, BLIS.UnavailableReason) + "; general-stride Multiply path available, but off by default (no consistent gain measured)");
             Console.WriteLine(Row("MKL fake-Intel probe") + Exports(mkl, "BOSSS_use_mkl_fakes", "BOSSS_mkl_fakes_were_called") + "; " + FakeIntelIndicator(mkl, "embedded"));
             foreach(var pre in BLAS.m_seq_BLAS.PreReqLibHandles.Where(h => h.val != IntPtr.Zero))
                 Console.WriteLine(Row("  libfakeintel (prerequisite)") + FakeIntelIndicator(pre, "separate library"));
-            if(System.Environment.OSVersion.Platform == PlatformID.Unix) {
-                string lib = "libBoSSSnative_libxsmm.so";
-                string path = DynLibLoader.PrimaryLibrarySearchPath != null ? Path.Combine(DynLibLoader.PrimaryLibrarySearchPath, lib) : lib;
-                var h = DynamicLibraries.LoadDynLib(path, out string err, false);
-                if(h.val == IntPtr.Zero) {
-                    Console.WriteLine(Row("LIBXSMM") + "Unavailable (" + path + ": " + (err.IsEmptyOrWhite() ? "cannot be loaded" : err) + ")");
-                } else {
-                    // kept loaded: unloading is never done for native BLAS modules
-                    Console.WriteLine(Row("LIBXSMM") + Exports(h, "BoSSS_libxsmm_init", "BoSSS_libxsmm_finalize", "BoSSS_libxsmm_dmmdispatch") + $" ({path})" + notUsed);
-                }
-            } else {
-                Console.WriteLine(Row("LIBXSMM") + "Unavailable (only supported on Linux)");
-            }
+            Console.WriteLine(Row("LIBXSMM") + Usable(LIBXSMM.Available, LIBXSMM.UnavailableReason) + (LIBXSMM.Available ? " (" + LIBXSMM.LibraryPath + ")" : "") + "; not used by Multiply (MKL JIT is faster)");
         }
 
         /// <summary>

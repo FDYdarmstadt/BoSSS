@@ -227,6 +227,8 @@ namespace ilPSP {
                 return false;
             for(int s = 0; s < sumDim; s++)
                 if(sums[s] <= 0) return false;
+            // small GEMMs: MKL JIT is faster than both the blocked SIMD path and DGEMM (PLAN-5, RESULTS-5.md)
+            if(sumDim == 1 && s_MklJitGemm && TryJitGemm(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) return FastPathSelected("TryJitGemm");
             long gettBelow = 0, gettBelowPacked = 0;
             {
                 // every BLAS path needs m*n*k >= 4096 per matrix; only then, the SIMD path plan is evaluated
@@ -248,12 +250,16 @@ namespace ilPSP {
             if(s_FastPathGemmOnly)
                 return false;
 #endif
+            if(s_BlisGett && TryBlisGett(runDim, sumDim, t, a, b, lengths, ct, ca, cb, sums, sa, sb, alpha, beta, Math.Max(s_BlisGettMinMnk, gettBelow))) return FastPathSelected("TryBlisGett");
             if(TryPackedGemm(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta, gettBelowPacked)) return FastPathSelected("TryPackedGemm");
+            goto packedGeneral;
         general:
 #if MULTIPLY_FASTPATH_DIAGNOSTICS
             if(s_FastPathGemmOnly)
                 return false;
 #endif
+            if(s_BlisGett && TryBlisGett(runDim, sumDim, t, a, b, lengths, ct, ca, cb, sums, sa, sb, alpha, beta, Math.Max(s_BlisGettMinMnk, gettBelow))) return FastPathSelected("TryBlisGett");
+        packedGeneral:
             if(TryPackedGemmGeneral(runDim, sumDim, t, a, b, lengths, ct, ca, cb, sums, sa, sb, alpha, beta, gettBelowPacked)) return FastPathSelected("TryPackedGemmGeneral");
             return false;
         }
@@ -419,7 +425,7 @@ namespace ilPSP {
             int trfT0Sw, int trfASw, int trfBSw,
             int preA, int cycleA, int postA, int preB, int cycleB, int postB,
             bool directAllowed) {
-            if(!directAllowed || runDim < 3 || sumDim != 1 || lengths[0] < 1 || sums[0] < 8)
+            if(!directAllowed || runDim < 3 || sumDim != 1 || lengths[0] < 1 || sums[0] < 1)
                 return false;
 #if MULTIPLY_FASTPATH_DIAGNOSTICS
             if(s_FastPathOff)
@@ -427,6 +433,32 @@ namespace ilPSP {
 #endif
             int innerRun = runDim - 1;
             if(innerRun != 2) return false;
+            // small slices: MKL JIT kernel (PLAN-5), all slices have the same shape and strides
+            if(s_MklJitGemm && JitGemmKernel(lengths + 1, ct + 1, ca + 1, cb + 1, sums[0], sa, sb, alpha, beta, out var jitKern)) {
+                for(int i = 0; i < lengths[0]; i++) {
+                    if(trfT[i] * trfT0Sw < 0 || (trfA[i * cycleA + preA] + postA) * trfASw < 0 || (trfB[i * cycleB + preB] + postB) * trfBSw < 0)
+                        return false; // validate every mapped slice before modifying the destination
+                }
+                if(beta == 0.0) {
+                    // all slices first: scaling directly before the kernel of the same slice stalls the kernel's
+                    // vector loads (store-to-load forwarding; 13x slower on AMD EPYC 9654, RESULTS-5.md)
+                    for(int i = 0; i < lengths[0]; i++) {
+                        double* ts = t + ct[0] * (i * (1 - trfT0Sw) + trfT[i] * trfT0Sw);
+                        JitGemmScale(ts, lengths[1], lengths[2], ct[1], beta);
+                    }
+                }
+                for(int i = 0; i < lengths[0]; i++) {
+                    int ti = trfT[i] * trfT0Sw;
+                    int ai = (trfA[i * cycleA + preA] + postA) * trfASw;
+                    int bi = (trfB[i * cycleB + preB] + postB) * trfBSw;
+                    double* ts = t + ct[0] * (i * (1 - trfT0Sw) + ti);
+                    double* ap = a + ca[0] * (i * (1 - trfASw) + ai);
+                    double* bp = b + cb[0] * (i * (1 - trfBSw) + bi);
+                    jitKern.Invoke(bp, ap, ts);
+                }
+                return FastPathSelected("WTrafoJit");
+            }
+            if(sums[0] < 8) return false;
             // the blocked SIMD path is preferred for small GEMMs, see GETT_PREFERRED_BELOW_MNK
             if((long)lengths[1] * lengths[2] * sums[0] < GETT_PREFERRED_BELOW_MNK
                 && GettWouldRun(innerRun, sumDim, lengths + 1, ct + 1, ca + 1, cb + 1, sums, sa, sb, lengths[0])
@@ -483,6 +515,9 @@ namespace ilPSP {
             else if(sb[0] == 1 && cb[col] >= k) { transA = 't'; lda = cb[col]; }
             else return false;
             int batches = row == 0 ? 1 : lengths[0], ldc = ct[row];
+            if(s_MklBatchDirect && row != 0
+                && DirectGemmMklBatch(batches, transA, transB, n, m, k, alpha, b, lda, cb[0], a, ldb, ca[0], beta, t, ldc, ct[0], m, n))
+                return true;
             for(int q = 0; q < batches; q++) {
                 double nativeBeta = beta;
                 if(beta == 0.0) {

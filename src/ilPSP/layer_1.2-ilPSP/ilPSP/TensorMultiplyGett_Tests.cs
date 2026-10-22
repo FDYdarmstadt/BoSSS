@@ -192,6 +192,8 @@ namespace ilPSP {
         /// <summary>
         /// Integration via the public API, for program shapes from the census of PLAN-4 (all operand
         /// patterns of the micro-kernels); the result must be bitwise identical to the generated kernels.
+        /// The MKL JIT path (PLAN-5), which differs at round-off level (owner decision 2026-10-22), is switched off
+        /// here; it is tested with a tolerance in <see cref="BLASExtensions_Tests.MultiplyJitPrograms"/>.
         /// </summary>
         [Test]
         public static void CensusPrograms() {
@@ -199,6 +201,17 @@ namespace ilPSP {
                 Assert.Ignore("AVX2 not supported on this machine.");
                 return;
             }
+            var fJit = typeof(MultidimensionalArray).GetField("s_MklJitGemm", BindingFlags.NonPublic | BindingFlags.Static);
+            object oldJit = fJit.GetValue(null);
+            fJit.SetValue(null, false);
+            try {
+                CensusProgramsBitwise();
+            } finally {
+                fJit.SetValue(null, oldJit);
+            }
+        }
+
+        static void CensusProgramsBitwise() {
             var rnd = new Random(1234);
             // (T, A, B, extents of T, extents of summation indices p, q)
             var cases = new (string T, string A, string B, int[] lenT, int[] lenS)[] {
