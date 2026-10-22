@@ -318,10 +318,10 @@ namespace ilPSP {
                             double* tq = t + ot, aq = a + oa, bq = b + ob;
                             for(int i = 0; i < M; i++) { double* ai = aq + oAM[i]; double* pai = pa + i * K; for(int l = 0; l < K; l++) pai[l] = ai[oAK[l]]; }
                             for(int l = 0; l < K; l++) { double* bl = bq + oBK[l]; double* pbl = pb + l * N; for(int j = 0; j < N; j++) pbl[j] = bl[oBN[j]]; }
-                            for(int i = 0; i < M; i++) { double* ti = tq + oTM[i]; double* pci = pc + i * N; for(int j = 0; j < N; j++) pci[j] = ti[oTN[j]]; }
+                            if(beta != 0.0) // beta = 0: T is not read (BLAS semantics, NaN/Inf in T are not propagated)
+                                for(int i = 0; i < M; i++) { double* ti = tq + oTM[i]; double* pci = pc + i * N; for(int j = 0; j < N; j++) pci[j] = ti[oTN[j]]; }
                             int ta = 'n', tb = 'n', lda = N, ldb = K, ldc = N;
                             double nativeBeta = beta;
-                            if(beta == 0.0) { for(int i = 0; i < M * N; i++) pc[i] *= beta; nativeBeta = 1.0; } // keeps NaN/Inf propagation
                             BLAS.SeqDGEMM(ref ta, ref tb, ref N, ref M, ref K, ref alpha,
                                 pb, ref lda, pa, ref ldb, ref nativeBeta, pc, ref ldc);
                             for(int i = 0; i < M; i++) { double* ti = tq + oTM[i]; double* pci = pc + i * N; for(int j = 0; j < N; j++) ti[oTN[j]] = pci[j]; }
@@ -403,11 +403,7 @@ namespace ilPSP {
                     ot += idx * ct[d]; oa += idx * ca[d]; ob += idx * cb[d];
                 }
                 double* tp = t + ot, ap = a + oa, bp = b + ob;
-                double nativeBeta = beta;
-                if(beta == 0.0) {
-                    for(int i = 0; i < m; i++) for(int j = 0; j < n; j++) tp[i * ldc + j] *= beta;
-                    nativeBeta = 1.0;
-                }
+                double nativeBeta = beta; // beta = 0: T is not read (BLAS semantics)
                 BLAS.SeqDGEMM(ref ta, ref tb, ref M, ref N, ref K,
                     ref alpha, ap, ref lda, bp, ref ldb, ref nativeBeta, tp, ref ldc);
             }
@@ -438,14 +434,6 @@ namespace ilPSP {
                 for(int i = 0; i < lengths[0]; i++) {
                     if(trfT[i] * trfT0Sw < 0 || (trfA[i * cycleA + preA] + postA) * trfASw < 0 || (trfB[i * cycleB + preB] + postB) * trfBSw < 0)
                         return false; // validate every mapped slice before modifying the destination
-                }
-                if(beta == 0.0) {
-                    // all slices first: scaling directly before the kernel of the same slice stalls the kernel's
-                    // vector loads (store-to-load forwarding; 13x slower on AMD EPYC 9654, RESULTS-5.md)
-                    for(int i = 0; i < lengths[0]; i++) {
-                        double* ts = t + ct[0] * (i * (1 - trfT0Sw) + trfT[i] * trfT0Sw);
-                        JitGemmScale(ts, lengths[1], lengths[2], ct[1], beta);
-                    }
                 }
                 for(int i = 0; i < lengths[0]; i++) {
                     int ti = trfT[i] * trfT0Sw;
@@ -519,11 +507,7 @@ namespace ilPSP {
                 && DirectGemmMklBatch(batches, transA, transB, n, m, k, alpha, b, lda, cb[0], a, ldb, ca[0], beta, t, ldc, ct[0], m, n))
                 return true;
             for(int q = 0; q < batches; q++) {
-                double nativeBeta = beta;
-                if(beta == 0.0) {
-                    for(int i = 0; i < m; i++) for(int j = 0; j < n; j++) t[i * ldc + j] *= beta;
-                    nativeBeta = 1.0;
-                }
+                double nativeBeta = beta; // beta = 0: T is not read (BLAS semantics)
                 BLAS.SeqDGEMM(ref transA, ref transB, ref n, ref m, ref k,
                     ref alpha, b, ref lda, a, ref ldb, ref nativeBeta, t, ref ldc);
                 if(row != 0) { t += ct[0]; a += ca[0]; b += cb[0]; }
@@ -547,10 +531,10 @@ namespace ilPSP {
                     for(int q = 0; q < batches; q++) {
                         for(int i = 0; i < m; i++) for(int l = 0; l < k; l++) pa[i * k + l] = a[i * ca[row] + l * sa[0]];
                         for(int l = 0; l < k; l++) for(int j = 0; j < n; j++) pb[l * n + j] = b[l * sb[0] + j * cb[col]];
-                        for(int i = 0; i < m; i++) for(int j = 0; j < n; j++) pc[i * n + j] = t[i * ct[row] + j * ct[col]];
+                        if(beta != 0.0) // beta = 0: T is not read (BLAS semantics)
+                            for(int i = 0; i < m; i++) for(int j = 0; j < n; j++) pc[i * n + j] = t[i * ct[row] + j * ct[col]];
                         int ta = 'n', tb = 'n', M = n, N = m, K = k, lda = n, ldb = k, ldc = n;
                         double nativeBeta = beta;
-                        if(beta == 0.0) { for(int i = 0; i < m * n; i++) pc[i] *= beta; nativeBeta = 1.0; }
                         BLAS.SeqDGEMM(ref ta, ref tb, ref M, ref N, ref K, ref alpha,
                             pb, ref lda, pa, ref ldb, ref nativeBeta, pc, ref ldc);
                         for(int i = 0; i < m; i++) for(int j = 0; j < n; j++) t[i * ct[row] + j * ct[col]] = pc[i * n + j];
@@ -579,11 +563,7 @@ namespace ilPSP {
             // and leaves T unchanged, although this path would report success.
             if(lda < k) return false;
             // all eligibility checks done; only now, the destination may be modified
-            double nativeBeta = beta;
-            if(beta == 0.0) {
-                for(int i = 0; i < m; i++) t[i] *= beta;
-                nativeBeta = 1.0;
-            }
+            double nativeBeta = beta; // beta = 0: T is not read (BLAS semantics)
             double* mtx = left ? a : b;
             double* vec = left ? b : a;
             BLAS.SeqDGEMV(ref trans, ref M, ref N, ref alpha, mtx, ref lda, vec, ref inc, ref nativeBeta, t, ref inc);

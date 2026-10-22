@@ -53,12 +53,6 @@ namespace ilPSP {
                 return false;
             int m = lengths[row], n = lengths[row + 1], ldc = ct[row];
             int batches = row == 0 ? 1 : lengths[0];
-            if(beta == 0.0) {
-                // all batch entries first, see JitGemmScale
-                double* tq = t;
-                for(int q = 0; q < batches; q++, tq += (row != 0 ? ct[0] : 0))
-                    JitGemmScale(tq, m, n, ldc, beta);
-            }
             for(int q = 0; q < batches; q++) {
                 // column-major view: T^T (n x m) = op(B^T) * op(A^T)
                 kern.Invoke(b, a, t);
@@ -84,29 +78,9 @@ namespace ilPSP {
             if(cb[1] == 1 && sb[0] >= n) { transA = MKLBatch.NoTrans; lda = sb[0]; }
             else if(sb[0] == 1 && cb[1] >= k) { transA = MKLBatch.Trans; lda = cb[1]; }
             else return false;
-            // beta = 0: T is scaled first (keeps NaN/Inf propagation of the generated kernels), kernel with beta = 1
-            return MKLJit.TryGetKernel(MKLBatch.ColMajor, transA, transB, n, m, k, alpha, lda, ldb, beta == 0.0 ? 1.0 : beta, ct[0], out kern);
+            // beta = 0: the kernel does not read T (BLAS semantics, NaN/Inf in T are not propagated)
+            return MKLJit.TryGetKernel(MKLBatch.ColMajor, transA, transB, n, m, k, alpha, lda, ldb, beta, ct[0], out kern);
         }
-
-        /// <summary>
-        /// T *= beta for one m x n block (for beta = 0: keeps NaN/Inf propagation of the generated kernels; the kernel then uses beta = 1).
-        /// Must be done for all blocks before the first kernel call: scaling directly before the kernel of the same block stalls the
-        /// kernel's vector loads (store-to-load forwarding; 13x slower on AMD EPYC 9654, RESULTS-5.md).
-        /// </summary>
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveOptimization)] // tier-0/OSR code of this loop is ~10x slower (RESULTS-5.md)
-        static unsafe void JitGemmScale(double* t, int m, int n, int ldc, double beta) {
-            int W = System.Numerics.Vector<double>.Count;
-            var vb = new System.Numerics.Vector<double>(beta);
-            for(int i = 0; i < m; i++) {
-                double* ti = t + (long)i * ldc;
-                int j = 0;
-                for(; j + W <= n; j += W)
-                    System.Runtime.CompilerServices.Unsafe.Write(ti + j, System.Runtime.CompilerServices.Unsafe.Read<System.Numerics.Vector<double>>(ti + j) * vb);
-                for(; j < n; j++)
-                    ti[j] *= beta;
-            }
-        }
-
 
         /// <summary>
         /// General contraction as a sequence of BLIS GEMMs with arbitrary row/column strides, directly on the
@@ -153,49 +127,24 @@ namespace ilPSP {
                 oLen[nO] = sums[s]; oT[nO] = 0; oA[nO] = sa[s]; oB[nO] = sb[s]; nO++;
             }
 
-            // beta first (keeps NaN/Inf propagation of beta = 0 as in the generated kernels), then accumulate with beta = 1
-            if(beta != 1.0)
-                ScaleStrided(runDim, t, lengths, ct, beta);
-
+            // beta is applied by the first GEMM of each T block (the second summation loop, if any, is the innermost
+            // outer loop); for beta = 0, T is not read (BLAS semantics, NaN/Inf in T are not propagated)
+            bool sumLoopOuter = sumDim > 1;
             int* idx = stackalloc int[MAXD + 1];
             for(int j = 0; j < nO; j++) idx[j] = 0;
             while(true) {
                 long ot = 0, oa = 0, ob = 0;
                 for(int j = 0; j < nO; j++) { ot += (long)idx[j] * oT[j]; oa += (long)idx[j] * oA[j]; ob += (long)idx[j] * oB[j]; }
+                double betaQ = (!sumLoopOuter || idx[nO - 1] == 0) ? beta : 1.0;
                 BLIS.Dgemm(false, false, m, n, k, alpha,
                     a + oa, ca[iM], sa[kS],
                     b + ob, sb[kS], cb[iN],
-                    1.0, t + ot, ct[iM], ct[iN]);
+                    betaQ, t + ot, ct[iM], ct[iN]);
                 int jj = nO - 1;
                 for(; jj >= 0; jj--) { if(++idx[jj] < oLen[jj]) break; idx[jj] = 0; }
                 if(jj < 0) break;
             }
             return true;
-        }
-
-        /// <summary> T *= beta over all running loops </summary>
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveOptimization)] // tier-0/OSR code of this loop is ~10x slower (RESULTS-5.md)
-        static unsafe void ScaleStrided(int runDim, double* t, int* lengths, int* ct, double beta) {
-            // innermost loop: the one with the smallest |stride|
-            int inner = runDim - 1;
-            for(int d = 0; d < runDim; d++)
-                if(Math.Abs(ct[d]) < Math.Abs(ct[inner])) inner = d;
-            int L = lengths[inner], c = ct[inner];
-            int* idx = stackalloc int[runDim];
-            for(int d = 0; d < runDim; d++) idx[d] = 0;
-            while(true) {
-                long o = 0;
-                for(int d = 0; d < runDim; d++) if(d != inner) o += (long)idx[d] * ct[d];
-                double* tp = t + o;
-                for(int i = 0; i < L; i++) tp[i * c] *= beta;
-                int jj = runDim - 1;
-                for(; jj >= 0; jj--) {
-                    if(jj == inner) continue;
-                    if(++idx[jj] < lengths[jj]) break;
-                    idx[jj] = 0;
-                }
-                if(jj < 0) break;
-            }
         }
 
         /// <summary>
@@ -210,14 +159,7 @@ namespace ilPSP {
                 return false;
             // batch entries are independent in MKL (no order): the T blocks must not overlap
             if(strideT <= 0 || strideT < (long)(rowLen - 1) * ldc + colLen || strideA < 0 || strideB < 0) return false;
-            double nativeBeta = beta;
-            if(beta == 0.0) {
-                for(int q = 0; q < batches; q++) {
-                    double* tq = t + (long)q * strideT;
-                    for(int i = 0; i < rowLen; i++) for(int j = 0; j < colLen; j++) tq[i * ldc + j] *= beta;
-                }
-                nativeBeta = 1.0;
-            }
+            double nativeBeta = beta; // beta = 0: T is not read (BLAS semantics)
             MKLBatch.DgemmBatchStrided(MKLBatch.ColMajor,
                 transA == 'n' ? MKLBatch.NoTrans : MKLBatch.Trans, transB == 'n' ? MKLBatch.NoTrans : MKLBatch.Trans,
                 n, m, k, alpha, b, lda, strideB, a, ldb, strideA, nativeBeta, t, ldc, strideT, batches);

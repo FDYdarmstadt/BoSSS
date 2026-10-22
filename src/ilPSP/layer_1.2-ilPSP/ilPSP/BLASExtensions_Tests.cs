@@ -228,7 +228,6 @@ namespace ilPSP {
 
                 double[] T = Rnd(rnd, sizeT), A = Rnd(rnd, sizeA), B = Rnd(rnd, sizeB);
                 double alpha = rnd.NextDouble() + 0.5, beta = new[] { 0.0, 1.0, -0.5 }[rnd.Next(3)];
-                if(beta == 0.0) T[0] = double.NaN; // beta = 0 must keep NaN*0 = NaN semantics of the generated kernels
                 double[] Tref = T.CloneAs();
                 for(int i = 0; i < len[0]; i++)
                     for(int j = 0; j < len[1]; j++)
@@ -264,7 +263,7 @@ namespace ilPSP {
         /// <summary>
         /// Multiply through the public API with the MKL JIT path (on by default) against the generated kernels (JIT switched off, which
         /// selects the bitwise-identical SIMD path or the generated kernels for these sizes): equal up to round-off, including
-        /// transformed programs, beta = 0 with NaN in T, and repeated calls (cached kernels).
+        /// transformed programs, beta = 0 and repeated calls (cached kernels).
         /// </summary>
         [Test]
         public static void MultiplyJitPrograms() {
@@ -296,7 +295,6 @@ namespace ilPSP {
                         for(int i = 0; i < T.Storage.Length; i++) T.Storage[i] = rnd.NextDouble() - .5;
                         for(int i = 0; i < A.Storage.Length; i++) A.Storage[i] = rnd.NextDouble() - .5;
                         for(int i = 0; i < B.Storage.Length; i++) B.Storage[i] = rnd.NextDouble() - .5;
-                        if(beta == 0.0) T.Storage[1] = double.NaN; // NaN*0 = NaN as in the generated kernels
                         bool trafo = c.A.Contains("T(") || c.B.Contains("T(");
                         int[] trf = trafo ? Enumerable.Range(0, c.lenT[0]).Select(i => (i * 5 + 3) % c.lenT[0]).ToArray() : null;
                         var mp = MultidimensionalArray.MultiplyProgram.Compile(c.T, c.A, c.B, trafo);
