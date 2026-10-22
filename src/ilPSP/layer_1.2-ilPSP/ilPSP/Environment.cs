@@ -906,6 +906,9 @@ namespace ilPSP {
                 StdoutOnlyOnRank0 = true;
                 tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity after OpenMP binding: " + CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ",", "]"));
 
+                // BLAS provider (MKL/OpenBLAS): once per process, now that thread budget and CPU allocation are known
+                BLAS.SelectProviderAtStartup();
+                tr.Info($"R{MPIEnv.MPI_Rank}: BLAS provider {BLAS.Provider}: {BLAS.ProviderSelectionReason}");
             }
         }
 

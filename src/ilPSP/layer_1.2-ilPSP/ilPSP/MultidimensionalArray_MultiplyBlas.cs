@@ -316,7 +316,7 @@ namespace ilPSP {
                             int ta = 'n', tb = 'n', lda = N, ldb = K, ldc = N;
                             double nativeBeta = beta;
                             if(beta == 0.0) { for(int i = 0; i < M * N; i++) pc[i] *= beta; nativeBeta = 1.0; } // keeps NaN/Inf propagation
-                            BLAS.m_seq_BLAS.DGEMM(ref ta, ref tb, ref N, ref M, ref K, ref alpha,
+                            BLAS.SeqDGEMM(ref ta, ref tb, ref N, ref M, ref K, ref alpha,
                                 pb, ref lda, pa, ref ldb, ref nativeBeta, pc, ref ldc);
                             for(int i = 0; i < M; i++) { double* ti = tq + oTM[i]; double* pci = pc + i * N; for(int j = 0; j < N; j++) ti[oTN[j]] = pci[j]; }
                             // next batch entry (odometer, innermost = last)
@@ -402,7 +402,7 @@ namespace ilPSP {
                     for(int i = 0; i < m; i++) for(int j = 0; j < n; j++) tp[i * ldc + j] *= beta;
                     nativeBeta = 1.0;
                 }
-                BLAS.m_seq_BLAS.DGEMM(ref ta, ref tb, ref M, ref N, ref K,
+                BLAS.SeqDGEMM(ref ta, ref tb, ref M, ref N, ref K,
                     ref alpha, ap, ref lda, bp, ref ldb, ref nativeBeta, tp, ref ldc);
             }
             return true;
@@ -489,7 +489,7 @@ namespace ilPSP {
                     for(int i = 0; i < m; i++) for(int j = 0; j < n; j++) t[i * ldc + j] *= beta;
                     nativeBeta = 1.0;
                 }
-                BLAS.m_seq_BLAS.DGEMM(ref transA, ref transB, ref n, ref m, ref k,
+                BLAS.SeqDGEMM(ref transA, ref transB, ref n, ref m, ref k,
                     ref alpha, b, ref lda, a, ref ldb, ref nativeBeta, t, ref ldc);
                 if(row != 0) { t += ct[0]; a += ca[0]; b += cb[0]; }
             }
@@ -516,7 +516,7 @@ namespace ilPSP {
                         int ta = 'n', tb = 'n', M = n, N = m, K = k, lda = n, ldb = k, ldc = n;
                         double nativeBeta = beta;
                         if(beta == 0.0) { for(int i = 0; i < m * n; i++) pc[i] *= beta; nativeBeta = 1.0; }
-                        BLAS.m_seq_BLAS.DGEMM(ref ta, ref tb, ref M, ref N, ref K, ref alpha,
+                        BLAS.SeqDGEMM(ref ta, ref tb, ref M, ref N, ref K, ref alpha,
                             pb, ref lda, pa, ref ldb, ref nativeBeta, pc, ref ldc);
                         for(int i = 0; i < m; i++) for(int j = 0; j < n; j++) t[i * ct[row] + j * ct[col]] = pc[i * n + j];
                         if(row != 0) { t += ct[0]; a += ca[0]; b += cb[0]; }
@@ -551,7 +551,7 @@ namespace ilPSP {
             }
             double* mtx = left ? a : b;
             double* vec = left ? b : a;
-            BLAS.m_seq_BLAS.DGEMV(ref trans, ref M, ref N, ref alpha, mtx, ref lda, vec, ref inc, ref nativeBeta, t, ref inc);
+            BLAS.SeqDGEMV(ref trans, ref M, ref N, ref alpha, mtx, ref lda, vec, ref inc, ref nativeBeta, t, ref inc);
             return true;
         }
 
