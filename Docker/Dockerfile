@@ -45,90 +45,46 @@ RUN npm install -g @anthropic-ai/claude-code || true
 RUN npm install -g @openai/codex || true
 
 # Non-root user by default (recommended for OpenMPI usage and safer dev workflows).
-RUN groupadd --gid ${GID} ${USERNAME} \
-	&& useradd --uid ${UID} --gid ${GID} -m -s /bin/bash ${USERNAME} \
-	&& usermod -aG sudo ${USERNAME} \
+# Base images may already contain the requested IDs (e.g. ubuntu at 1000:1000).
+# Reuse the group and rename/move an existing user rather than duplicating IDs.
+RUN test "${UID}" -ne 0 \
+	&& if ! getent group "${GID}" > /dev/null; then \
+		groupadd --gid "${GID}" "${USERNAME}"; \
+	fi \
+	&& if getent passwd "${UID}" > /dev/null; then \
+		existing_user="$(getent passwd "${UID}" | cut -d: -f1)"; \
+		if [ "$existing_user" != "${USERNAME}" ]; then \
+			usermod --login "${USERNAME}" "$existing_user" || exit 1; \
+		fi; \
+		usermod --home "/home/${USERNAME}" --move-home \
+			--gid "${GID}" --shell /bin/bash "${USERNAME}"; \
+	else \
+		useradd --uid "${UID}" --gid "${GID}" -m -s /bin/bash "${USERNAME}"; \
+	fi \
+	&& usermod -aG sudo "${USERNAME}" \
 	&& echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USERNAME} \
 	&& chmod 0440 /etc/sudoers.d/${USERNAME}
 
-RUN install -d -o ${USERNAME} -g ${USERNAME} /home/${USERNAME}/.BoSSS/etc \
-	&& cat > /home/${USERNAME}/.BoSSS/etc/MatlabConnectorConfig.json <<'EOF'
-{
-  "Flav": "Octave"
-}
-EOF
+COPY public/Docker/MatlabConnectorConfig.json /home/${USERNAME}/.BoSSS/etc/MatlabConnectorConfig.json
 
-RUN chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.BoSSS/
+RUN chown -R ${USERNAME}:${GID} /home/${USERNAME}/.BoSSS/
 
-RUN install -d -o ${USERNAME} -g ${USERNAME} /home/${USERNAME}/.codex \
-	&& cat > /home/${USERNAME}/.codex/config.toml <<'EOF'
-approval_policy = "never"
-sandbox_mode = "danger-full-access"
+COPY public/Docker/config.toml /home/${USERNAME}/.codex/config.toml
 
-model = "gpt-5.6-luna"
-model_reasoning_effort = "medium"
-service_tier = "default"
-
-[projects."/workspace"]
-trust_level = "trusted"
-
-EOF
-
-RUN chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.codex
+RUN chown -R ${USERNAME}:${GID} /home/${USERNAME}/.codex
 
 
-RUN install -d -o ${USERNAME} -g ${USERNAME} /home/${USERNAME}/.claude \
-	&& cat > /home/${USERNAME}/.claude/settings.json <<'EOF'
-{
-  "permissions": {
-    "defaultMode": "bypassPermissions",
-    "deny": [
-      "Bash(rm *)",
-      "Bash(rmdir *)",
-      "Bash(unlink *)",
-      "Bash(shred *)",
-      "Bash(find * -delete*)",
-      "Bash(find * -exec rm*)",
-      "Bash(git clean*)",
-      "Bash(git rm*)"
-    ]
-  },
-  "skipDangerousModePermissionPrompt": true,
-  "model": "opus",
-  "effortLevel": "high"
-}
+COPY public/Docker/settings.json /home/${USERNAME}/.claude/settings.json
 
-EOF
-
-RUN chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.claude
+RUN chown -R ${USERNAME}:${GID} /home/${USERNAME}/.claude
 
 
 # Runtime location for full BoSSS host install copied from host-mounted folder.
 RUN mkdir -p /home/${USERNAME}/BoSSS-Install \
-	&& chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/BoSSS-Install
+	&& chown -R ${USERNAME}:${GID} /home/${USERNAME}/BoSSS-Install
 
-RUN cat <<'EOF' > /usr/local/bin/bosss-entrypoint.sh
-#!/usr/bin/env bash
-set -euo pipefail
-
-export BOSSS_INSTALL="${BOSSS_INSTALL:-${HOME}/BoSSS-Install}"
-
-# If host BoSSS install is mounted to /host-bosss-install, copy it into user home.
-# Copy is done once by default; set BOSSS_FORCE_SYNC=1 to overwrite on every start.
-if [[ -d /host-bosss-install ]]; then
-	mkdir -p "$BOSSS_INSTALL"
-	if [[ "${BOSSS_FORCE_SYNC:-0}" == "1" || ! -f "$BOSSS_INSTALL/.host-sync-done" ]]; then
-		rm -rf "$BOSSS_INSTALL"
-		mkdir -p "$BOSSS_INSTALL"
-		cp -a /host-bosss-install/. "$BOSSS_INSTALL"/
-		date -u +"%Y-%m-%dT%H:%M:%SZ" > "$BOSSS_INSTALL/.host-sync-done"
-	fi
-fi
-
-export LD_LIBRARY_PATH="$BOSSS_INSTALL/bin/native/linux/amd64-openmpi:${LD_LIBRARY_PATH:-}"
-
-exec "$@"
-EOF
+# Copy scripts/configuration explicitly: legacy Docker builders can produce empty heredocs.
+COPY public/Docker/bosss-entrypoint.sh /usr/local/bin/bosss-entrypoint.sh
 
 RUN chmod +x /usr/local/bin/bosss-entrypoint.sh
 
