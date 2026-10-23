@@ -138,7 +138,7 @@ namespace ilPSP {
         }
 
         delegate bool TryKernelGeneral(int r, int s, double* t, double* a, double* b,
-            int* lr, int* ct, int* ca, int* cb, int* ls, int* sa, int* sb, double alpha, double beta, long gettBelow);
+            int* lr, int* ct, int* ca, int* cb, int* ls, int* sa, int* sb, double alpha, double beta, long gettBelow, int minDim);
 
         /// <summary>
         /// Packed DGEMM for general contractions (multi-index M, N, K, batches, padded strides), called directly,
@@ -194,7 +194,7 @@ namespace ilPSP {
                     Reference(DT, NS, t0, a0, b0, lr, ct, ca, cb, ls, sa, sb, .75, beta);
                     double[] expected = (double[])T.Storage.Clone();
                     initial.CopyTo(T.Storage, 0);
-                    taken = tryGeneral(DT, NS, t0, a0, b0, lr, ct, ca, cb, ls, sa, sb, .75, beta, 0);
+                    taken = tryGeneral(DT, NS, t0, a0, b0, lr, ct, ca, cb, ls, sa, sb, .75, beta, 0, 0);
                     Assert.IsTrue(taken, $"{c.T},{c.A},{c.B}: general packed DGEMM path expected");
                     double maxRef = expected.Where(x => !double.IsNaN(x)).Max(x => Math.Abs(x));
                     for(int i = 0; i < expected.Length; i++) {

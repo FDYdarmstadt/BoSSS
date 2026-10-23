@@ -275,13 +275,26 @@ namespace ilPSP {
         /// the caller must check <see cref="GettTNonOverlapping"/> for all loops)
         /// </summary>
         unsafe static bool GettWouldRun(int DT, int NS, int* len, int* ct, int* ca, int* cb, int* lenSum, int* sa, int* sb, int nBatch) {
+            return GettWouldRun(DT, NS, len, ct, ca, cb, lenSum, sa, sb, nBatch, out _);
+        }
+
+        /// <summary>
+        /// as <see cref="GettWouldRun(int, int, int*, int*, int*, int*, int*, int*, int*, int)"/>;
+        /// <paramref name="gathered"/>: the plan uses gathered operands or a staged T block (kernel patterns 2, 3, 5, 6),
+        /// which run at about 1/3 of the speed of the unit-stride patterns (PLAN-5, RESULTS-5.md)
+        /// </summary>
+        unsafe static bool GettWouldRun(int DT, int NS, int* len, int* ct, int* ca, int* cb, int* lenSum, int* sa, int* sb, int nBatch, out bool gathered) {
+            gathered = false;
 #if MULTIPLY_FASTPATH_DIAGNOSTICS
             if(s_FastPathOff || s_GettOff)
                 return false;
 #endif
-            return GettPrepare(out GettPlan p, DT, NS, len, ct, ca, cb, lenSum, sa, sb)
+            if(!(GettPrepare(out GettPlan p, DT, NS, len, ct, ca, cb, lenSum, sa, sb)
                 && GettProfitable(ref p, nBatch)
-                && GettTNonOverlapping(DT, len, ct);
+                && GettTNonOverlapping(DT, len, ct)))
+                return false;
+            gathered = p.stage || p.pat == 2 || p.pat == 3 || p.pat == 5 || p.pat == 6;
+            return true;
         }
 
         /// <summary>

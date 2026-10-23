@@ -324,6 +324,49 @@ namespace ilPSP {
         }
 
         /// <summary>
+        /// Matrix-vector programs through the public API (DGEMV path): row- and column-major matrices, strided vector and
+        /// destination views, a running loop of length 1, sizes from 8 on; against naive loops.
+        /// </summary>
+        [Test]
+        public static void GemvLayouts([Values(8, 21, 64)] int m, [Values(8, 35)] int k, [Values(0.0, 1.0, 0.5)] double beta) {
+            var rnd = new Random(18 + m + k);
+            // vector of length L with stride 3: column of an L x 3 matrix; for shape (L, 1): stride 3 in the first index
+            MultidimensionalArray Strided(params int[] shape) {
+                var P = MultidimensionalArray.Create(shape[0], 3);
+                P.ApplyAll(_ => rnd.NextDouble() - .5);
+                var col = P.ExtractSubArrayShallow(new[] { 0, 1 }, new[] { shape[0] - 1, shape.Length > 1 ? 1 : -1 });
+                Assert.AreEqual(3, col.GetCycle(0));
+                return col;
+            }
+            MultidimensionalArray Dense(params int[] shape) {
+                var X = MultidimensionalArray.Create(shape);
+                X.ApplyAll(_ => rnd.NextDouble() - .5);
+                return X;
+            }
+            foreach(bool colMajor in new[] { false, true })
+            foreach(bool stridedVec in new[] { false, true })
+            foreach(bool unitLoop in new[] { false, true }) {
+                // T[i] (or T[i,j] with j of length 1) = sum_p M[i,p] v[p]
+                var Mtx = colMajor ? Dense(k, m) : Dense(m, k);            // column-major: stored as M[p,i]
+                var v = stridedVec ? Strided(k) : Dense(k);
+                var T = unitLoop ? (stridedVec ? Strided(m, 1) : Dense(m, 1)) : (stridedVec ? Strided(m) : Dense(m));
+                var T0 = T.CloneAs();
+                double alpha = 1.25;
+                string tIdx = unitLoop ? "ij" : "i", mIdx = colMajor ? "pi" : "ip", vIdx = "p";
+                if(unitLoop) { v = stridedVec ? Strided(k, 1) : Dense(k, 1); vIdx = "pj"; }
+                T.Multiply(alpha, Mtx, v, beta, tIdx, mIdx, vIdx);
+                for(int i = 0; i < m; i++) {
+                    double s = 0;
+                    for(int p = 0; p < k; p++)
+                        s += (colMajor ? Mtx[p, i] : Mtx[i, p]) * (unitLoop ? v[p, 0] : v[p]);
+                    double expected = alpha * s + beta * (unitLoop ? T0[i, 0] : T0[i]);
+                    double got = unitLoop ? T[i, 0] : T[i];
+                    Assert.AreEqual(expected, got, 1e-13 * (1 + Math.Abs(expected)), $"colMajor={colMajor} stridedVec={stridedVec} unitLoop={unitLoop} i={i}");
+                }
+            }
+        }
+
+        /// <summary>
         /// Multiply through the public API with the BLIS path and the MKL batch path enabled, against the reference with all fast paths
         /// of this phase disabled
         /// </summary>
