@@ -32,8 +32,10 @@ namespace ilPSP {
         /// Switch for <see cref="TryJitGemm"/>: MKL JIT kernels for small GEMMs with BLAS-compatible layout.
         /// ON: on AMD EPYC 9654 1.5x-9x faster than the blocked SIMD path and 1.1x-5x faster than DGEMM for n = 4...35 (RESULTS-5.md);
         /// results differ from the generated kernels at round-off level (like all BLAS paths).
+        /// Process-global; configuration by code only. Solvers that are numerically on the edge of stability may switch it off
+        /// (e.g. <c>BUIDT.Tests.BUIDTTestProgram.AcceleratingShock</c> fails with it, see FINDINGS.md 2026-10-23).
         /// </summary>
-        internal static bool s_MklJitGemm = true;
+        public static bool MklJitGemm = true;
 
         /// <summary>
         /// maximal m*n*k for <see cref="TryJitGemm"/> (above, DGEMM is as fast)

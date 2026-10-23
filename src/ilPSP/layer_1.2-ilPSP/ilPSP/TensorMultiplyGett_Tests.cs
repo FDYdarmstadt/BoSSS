@@ -201,7 +201,7 @@ namespace ilPSP {
                 Assert.Ignore("AVX2 not supported on this machine.");
                 return;
             }
-            var fJit = typeof(MultidimensionalArray).GetField("s_MklJitGemm", BindingFlags.NonPublic | BindingFlags.Static);
+            var fJit = typeof(MultidimensionalArray).GetField("MklJitGemm", BindingFlags.Public | BindingFlags.Static);
             object oldJit = fJit.GetValue(null);
             fJit.SetValue(null, false);
             try {

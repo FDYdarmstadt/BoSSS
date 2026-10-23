@@ -39,23 +39,14 @@ namespace ilPSP {
         internal static bool s_GettStageShortVector = false;
 
         /// <summary>
-        /// true on AMD CPUs: gathered operands and staged T blocks are not used there (see <see cref="GettProfitable"/>).
-        /// Measured on AMD EPYC 7F52 (Zen 2; PLAN-4, FINDINGS.md 2026-10-03): vs. the generated kernels, gathered
-        /// cases 1.42x geomean but down to 0.55x, staged T 1.06x but down to 0.42x (Intel i7-6700: 2.87x for
-        /// gathered); unit-stride cases 2.75x. Per-machine calibration instead of this vendor rule: PLAN-5.
-        /// Not applied on AMD CPUs with AVX-512 (Zen 4 and newer): on AMD EPYC 9654 (Zen 4; PLAN-5, RESULTS-5.md),
-        /// the census replay with gathered/staged cases enabled is 16% faster (8.26 s -> 6.93 s census-weighted),
-        /// e.g. `ijk,pjq,ipkq` 20x10x10/49x2 2.97x; Zen 3 (no AVX-512) is unmeasured and keeps the exclusion.
+        /// If true, the blocked SIMD path (see <see cref="GettProfitable"/>) is not used for gathered operands and
+        /// staged T blocks; such calls then use the generated kernels or BLAS. Default: false on all CPUs.
+        /// This was a vendor rule (on for AMD CPUs without AVX-512) until PLAN-5: the census replay is faster without it
+        /// on AMD EPYC 7F52 (Zen 2) x1.07, 7543 and 7763 (Zen 3) x1.10 and x1.14, 9654 (Zen 4) x1.16 (FINDINGS.md, 2026-10-23);
+        /// it was introduced for Zen 2 on PLAN-4 measurements (gathered 1.42x geomean, down to 0.55x).
+        /// Configuration is by code only (e.g. for measurements, or if a CPU is found where gathers are slow).
         /// </summary>
-        internal static bool s_GettSlowGather = IsAmdCpu() && !Avx512F.IsSupported;
-
-        static bool IsAmdCpu() {
-            if(!X86Base.IsSupported)
-                return false;
-            var (_, ebx, ecx, edx) = X86Base.CpuId(0, 0);
-            // vendor string: EBX, EDX, ECX = "Auth" "enti" "cAMD"
-            return ebx == 0x68747541 && edx == 0x69746e65 && ecx == 0x444d4163;
-        }
+        public static bool GettAvoidGatheredAndStaged = false;
 
         /// <summary> execution plan of the blocked SIMD path for one call </summary>
         unsafe struct GettPlan {
@@ -172,8 +163,8 @@ namespace ilPSP {
             long K = (p.NS > 0 ? p.K0 : 1) * (long)(p.NS > 1 ? p.K1 : 1);
             if(p.lenV <= 3 && p.NS > 0 && K <= 4) return false;   // half-empty vectors vs. unrolled scalar reference kernels
             if(p.pat == 3 && K <= 2) return false;                // gathered X without re-use and very short reduction
-            if(s_GettSlowGather && (p.stage || p.pat == 2 || p.pat == 3 || p.pat == 5 || p.pat == 6))
-                return false;                                     // AMD (Zen 2): gathers / staging not profitable
+            if(GettAvoidGatheredAndStaged && (p.stage || p.pat == 2 || p.pat == 3 || p.pat == 5 || p.pat == 6))
+                return false;                                     // switched on explicitly: gathers / staging not wanted
             long work = (long)p.lenV * p.lenR * K * nBatch;
             for(int i = 0; i < p.nOuter; i++) work *= p.oLen[i];
             if(work < 64) return false;                           // tiny: set-up overhead dominates

@@ -268,7 +268,7 @@ namespace ilPSP {
         [Test]
         public static void MultiplyJitPrograms() {
             SkipIfUnavailable(MKLJit.Available, MKLJit.UnavailableReason, "MKL JIT");
-            var fJit = typeof(MultidimensionalArray).GetField("s_MklJitGemm", BindingFlags.NonPublic | BindingFlags.Static);
+            var fJit = typeof(MultidimensionalArray).GetField("MklJitGemm", BindingFlags.Public | BindingFlags.Static);
             object oldJit = fJit.GetValue(null);
             var rnd = new Random(17);
             var cases = new (string T, string A, string B, int[] lenT, int lenP)[] {

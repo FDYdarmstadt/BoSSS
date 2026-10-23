@@ -235,7 +235,7 @@ namespace ilPSP {
             for(int s = 0; s < sumDim; s++)
                 if(sums[s] <= 0) return false;
             // small GEMMs: MKL JIT is faster than both the blocked SIMD path and DGEMM (PLAN-5, RESULTS-5.md)
-            if(sumDim == 1 && s_MklJitGemm && TryJitGemm(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) return FastPathSelected("TryJitGemm");
+            if(sumDim == 1 && MklJitGemm && TryJitGemm(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) return FastPathSelected("TryJitGemm");
             // matrix-vector: DGEMV is 1.2x-5x faster than the SIMD path from 8x8 on (PLAN-5, RESULTS-5.md)
             if(sumDim == 1 && TryDirectGemv(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) return FastPathSelected("TryDirectGemv");
             long gettBelow = 0, gettBelowPacked = 0;
@@ -440,7 +440,7 @@ namespace ilPSP {
             int innerRun = runDim - 1;
             if(innerRun != 2) return false;
             // small slices: MKL JIT kernel (PLAN-5), all slices have the same shape and strides
-            if(s_MklJitGemm && JitGemmKernel(lengths + 1, ct + 1, ca + 1, cb + 1, sums[0], sa, sb, alpha, beta, out var jitKern)) {
+            if(MklJitGemm && JitGemmKernel(lengths + 1, ct + 1, ca + 1, cb + 1, sums[0], sa, sb, alpha, beta, out var jitKern)) {
                 for(int i = 0; i < lengths[0]; i++) {
                     if(trfT[i] * trfT0Sw < 0 || (trfA[i * cycleA + preA] + postA) * trfASw < 0 || (trfB[i * cycleB + preB] + postB) * trfBSw < 0)
                         return false; // validate every mapped slice before modifying the destination
