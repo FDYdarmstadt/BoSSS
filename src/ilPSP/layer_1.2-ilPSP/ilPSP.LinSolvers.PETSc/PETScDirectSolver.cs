@@ -15,167 +15,108 @@ limitations under the License.
 */
 
 using System;
-using System.Text;
 
 namespace ilPSP.LinSolvers.PETSc {
 
-    /// <summary>
-    /// Factorization performed by a <see cref="PETScDirectSolver"/>.
-    /// </summary>
+    /// <summary>Factorization performed by a <see cref="PETScDirectSolver"/>.</summary>
     public enum PETScDirectFactorization {
-
-        /// <summary>
-        /// General sparse LU factorization.
-        /// </summary>
+        /// <summary>General sparse LU factorization.</summary>
         LU,
-
-        /// <summary>
-        /// Sparse Cholesky factorization for symmetric positive-definite matrices.
-        /// </summary>
+        /// <summary>Sparse Cholesky factorization for symmetric positive-definite matrices.</summary>
         Cholesky
     }
 
-    /// <summary>
-    /// PETSc matrix-factorization package requested by a
-    /// <see cref="PETScDirectSolver"/>.
-    /// </summary>
-    /// <remarks>
-    /// A backend must be present in the selected native PETSc build. The portable
-    /// baseline currently contains only PETSc's built-in sequential factorization.
-    /// </remarks>
+    /// <summary>PETSc matrix-factorization package requested by a direct solver.</summary>
     public enum PETScDirectBackend {
-
-        /// <summary>
-        /// Let PETSc select its default factorization package.
-        /// </summary>
+        /// <summary>Let PETSc select its default factorization package.</summary>
         Default,
-
-        /// <summary>
-        /// MUMPS sparse direct solver. A MUMPS-enabled PETSc build is required.
-        /// </summary>
+        /// <summary>MUMPS sparse direct solver.</summary>
         Mumps,
-
-        /// <summary>
-        /// SuperLU_DIST sparse direct solver. A SuperLU_DIST-enabled PETSc build is required.
-        /// </summary>
+        /// <summary>SuperLU_DIST sparse direct solver.</summary>
         SuperLuDist,
-
-        /// <summary>
-        /// SuiteSparse UMFPACK. This backend is intended for single-rank LU solves.
-        /// </summary>
+        /// <summary>SuiteSparse UMFPACK.</summary>
         Umfpack
     }
 
+    /// <summary>Stable managed surface for a direct PETSc ABI solve.</summary>
+    public interface IPETScDirectSolverAbi : ISparseSolver {
+        /// <summary>Factorization to perform.</summary>
+        PETScDirectFactorization Factorization { get; set; }
+
+        /// <summary>Requested PETSc factorization backend.</summary>
+        PETScDirectBackend Backend { get; set; }
+
+        /// <summary>Package-specific PETSc options.</summary>
+        string AdditionalOptions { get; set; }
+
+        /// <summary>PETSc matrix ownership and transfer representation.</summary>
+        PETScMatrixInput MatrixInput { get; set; }
+
+        /// <summary>PETSc convergence reason from the latest solve.</summary>
+        int ConvergenceReason { get; }
+
+        /// <summary>PETSc residual norm from the latest solve.</summary>
+        double ResidualNorm { get; }
+    }
+
+    /// <summary>Creates the direct PETSc ABI implementation for upper BoSSS layers.</summary>
+    public static class PETScDirectSolverAbi {
+        /// <summary>Creates a direct PETSc ABI solver.</summary>
+        public static IPETScDirectSolverAbi Create() => new PETScDirectSolver();
+    }
+
     /// <summary>
-    /// Typed PETSc sparse direct solver.
+    /// Direct-solver policy built on the shared direct PETSc ABI L0 solver.
     /// </summary>
     /// <remarks>
-    /// This configures PETSc as <c>KSPPREONLY</c> with an LU or Cholesky
-    /// factorization preconditioner. Distributed direct solves require a backend
-    /// such as MUMPS or SuperLU_DIST to be compiled into PETSc.
+    /// <see cref="PETScSolver"/> owns the native PETSc lifecycle, matrix and
+    /// vector transfer, KSP creation, solve operation, and disposal. This class
+    /// only chooses <c>KSPPREONLY</c>, the factorization PC, and its backend.
     /// </remarks>
-    public sealed class PETScDirectSolver : PETScSolverBase {
+    public sealed class PETScDirectSolver : PETScSolver, IPETScDirectSolverAbi {
 
-        /// <summary>
-        /// Factorization to perform.
-        /// </summary>
+        /// <summary>Factorization to perform.</summary>
         public PETScDirectFactorization Factorization { get; set; } = PETScDirectFactorization.LU;
 
-        /// <summary>
-        /// Requested PETSc factorization backend.
-        /// </summary>
+        /// <summary>Requested PETSc factorization backend.</summary>
         public PETScDirectBackend Backend { get; set; } = PETScDirectBackend.Default;
 
-        /// <summary>
-        /// Additional PETSc options appended after the typed direct-solver options,
-        /// for example package-specific pivoting or ordering controls.
-        /// </summary>
+        /// <summary>Additional PETSc package-specific options for this KSP.</summary>
         public string AdditionalOptions { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Produces the PETSc option string corresponding to a typed direct-solver
-        /// configuration.
-        /// </summary>
-        public static string BuildOptions(
-            PETScDirectFactorization factorization,
-            PETScDirectBackend backend,
-            string additionalOptions = null) {
+        /// <inheritdoc/>
+        protected override void ConfigureKsp() {
+            Check(m_Native.SetKspType(m_Ksp, "preonly"), "PETSc KSPSetType");
+            Check(m_Native.GetKspPreconditioner(m_Ksp, out IntPtr pc), "PETSc KSPGetPC");
+            string pcType = Factorization == PETScDirectFactorization.LU ? "lu"
+                : Factorization == PETScDirectFactorization.Cholesky ? "cholesky"
+                : throw new ArgumentOutOfRangeException(nameof(Factorization));
+            Check(m_Native.SetPcType(pc, pcType), "PETSc PCSetType");
 
-            string pcType;
-            switch(factorization) {
-                case PETScDirectFactorization.LU:
-                    pcType = "lu";
-                    break;
-                case PETScDirectFactorization.Cholesky:
-                    pcType = "cholesky";
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(factorization), factorization, "Unknown PETSc direct factorization.");
-            }
+            string backend = GetBackendName(Backend);
+            if(backend != null)
+                Check(m_Native.SetPcFactorMatSolverType(pc, backend), "PETSc PCFactorSetMatSolverType");
 
-            string backendName;
-            switch(backend) {
-                case PETScDirectBackend.Default:
-                    backendName = null;
-                    break;
-                case PETScDirectBackend.Mumps:
-                    backendName = "mumps";
-                    break;
-                case PETScDirectBackend.SuperLuDist:
-                    backendName = "superlu_dist";
-                    break;
-                case PETScDirectBackend.Umfpack:
-                    backendName = "umfpack";
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(backend), backend, "Unknown PETSc direct backend.");
-            }
-
-            var options = new StringBuilder("-ksp_type preonly -pc_type ");
-            options.Append(pcType);
-            if(backendName != null) {
-                options.Append(" -pc_factor_mat_solver_type ");
-                options.Append(backendName);
-            }
-            if(!string.IsNullOrWhiteSpace(additionalOptions)) {
-                options.Append(' ');
-                options.Append(additionalOptions.Trim());
-            }
-            return options.ToString();
+            ApplyKspOptions(AdditionalOptions);
         }
 
         /// <inheritdoc/>
-        protected override string SolverOptions => BuildOptions(Factorization, Backend, AdditionalOptions);
-
-        /// <inheritdoc/>
-        protected override void ValidateParallelConfiguration(int mpiSize, PETScNativeVariant effectiveNativeVariant) {
+        protected override void ValidateParallelConfiguration(int mpiSize) {
             if(Factorization == PETScDirectFactorization.Cholesky
-                && (Backend == PETScDirectBackend.Umfpack || Backend == PETScDirectBackend.SuperLuDist)) {
-                throw new NotSupportedException(
-                    $"PETSc direct backend '{Backend}' supports LU factorization only; Cholesky is not available.");
-            }
-            if(Backend == PETScDirectBackend.SuperLuDist
-                && effectiveNativeVariant == PETScNativeVariant.OpenMp) {
-                throw new NotSupportedException(
-                    "PETSc direct backend 'SuperLuDist' requires an MPI-capable PETSc native variant. "
-                    + "Use the Mpi or MpiOpenMp variant.");
-            }
-            if(mpiSize > 1 && (Backend == PETScDirectBackend.Default || Backend == PETScDirectBackend.Umfpack)) {
-                throw new NotSupportedException(
-                    $"PETSc direct backend '{Backend}' is sequential and cannot run with {mpiSize} MPI ranks. "
-                    + "Use the Mumps or SuperLuDist backend for distributed direct solves.");
-            }
+                && (Backend == PETScDirectBackend.Umfpack || Backend == PETScDirectBackend.SuperLuDist))
+                throw new NotSupportedException($"PETSc direct backend '{Backend}' supports LU factorization only; Cholesky is not available.");
+            if(mpiSize > 1 && (Backend == PETScDirectBackend.Default || Backend == PETScDirectBackend.Umfpack))
+                throw new NotSupportedException($"PETSc direct backend '{Backend}' is sequential and cannot run with {mpiSize} MPI ranks.");
         }
 
-        /// <inheritdoc/>
-        protected override Exception CreateSetupException(Exception error) {
-            if(Backend == PETScDirectBackend.Default)
-                return error;
-            return new InvalidOperationException(
-                "PETSc could not initialize the requested direct-solver backend '"
-                + Backend
-                + "'. Ensure that this backend was compiled into the selected native PETSc variant.",
-                error);
+        static string GetBackendName(PETScDirectBackend backend) {
+            switch(backend) {
+                case PETScDirectBackend.Default: return null;
+                case PETScDirectBackend.Mumps: return "mumps";
+                case PETScDirectBackend.SuperLuDist: return "superlu_dist";
+                case PETScDirectBackend.Umfpack: return "umfpack";
+                default: throw new ArgumentOutOfRangeException(nameof(backend), backend, "Unknown PETSc direct backend.");
+            }
         }
     }
 }

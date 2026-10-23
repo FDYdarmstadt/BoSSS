@@ -270,12 +270,22 @@ namespace BoSSS.Application.BoSSSpad {
         /// set so far. Session/Job and project name are set automatically.
         /// </summary>
         /// <param name="Args">Path to control file, resp. C#-statement (starting with 'cs:')</param>
+        /// <param name="database">
+        /// Optional database, to override the one specified by the control statement; it is passed by its ID (`--dbguid`) and not by its path, 
+        /// the application resolves the path through the file `DatabasePaths.json` (<see cref="DatabasePaths"/>), which is deployed with the job.
+        /// This avoids machine-specific paths (and their escaping) within the control statement.
+        /// If null, the database is verified and, if necessary, set when the job is submitted, see <see cref="FiddleControlStatement(BatchProcessorClient)"/>.
+        /// </param>
+        /// <param name="savetodb">
+        /// Optional override for <see cref="BoSSS.Solution.Control.AppControl.savetodb"/> (`--savetodb`); 
+        /// if null, the setting of the control object is used - unless a <paramref name="database"/> is specified, then it is true.
+        /// </param>
         /// <remarks>
         /// Note: we pass the startup-arguments through environment variables, which is 
         /// (a bit) more robust (with respect to escape-characters, etc.) than 
         /// command line arguments.
         /// </remarks>
-        public void SetControlStatement(string Args) {
+        public void SetControlStatement(string Args, IDatabaseInfo database = null, bool? savetodb = null) {
             TestActivation();
 
             string PrjName = BoSSSshell.WorkflowMgm.CurrentProject;
@@ -283,19 +293,30 @@ namespace BoSSS.Application.BoSSSpad {
                 throw new NotSupportedException("Project management not initialized - set project name (try e.g. 'WorkflowMgm.CurrentProject = \"BlaBla\"').");
             }
 
-            // path translation for databases
-
+            m_ControlStatement = Args;
+            m_ControlStatementDatabase = database;
+            m_ControlStatementSaveToDb = savetodb;
 
             // we pass the startup-arguments through environment variables, which is 
             // (a bit) more robust (with respect to escape-characters, etc.) than 
             // command line arguments.
-            string[] args = new string[] {
+            var args = new List<string> {
                 "--control", Args,
                 "--prjnmn" , PrjName,
-                "--sesnmn", this.Name
+                "--sesnmn", this.Name,
             };
+            if(database != null) {
+                // the path is translated by the application, see `Application.GetDatabase` and `Job.Activate`
+                args.Add("--dbguid");
+                args.Add(database.ID.ToString());
+                savetodb ??= true;
+            }
+            if(savetodb != null) {
+                args.Add("--savetodb");
+                args.Add(savetodb.Value ? "true" : "false");
+            }
             m_EnvironmentVars.Clear();
-            for(int i = 0; i < args.Length; i++) {
+            for(int i = 0; i < args.Count; i++) {
                 m_EnvironmentVars.Add("BOSSS_ARG_" + i, args[i]);
             }
         }
@@ -336,8 +357,95 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         BoSSS.Solution.Control.AppControl m_ctrl;
+
+        // data of `SetControlStatement`
+        string m_ControlStatement = null;
+        IDatabaseInfo m_ControlStatementDatabase = null;
+        bool? m_ControlStatementSaveToDb = null;
+
         int m_ctrl_index;
         string ControlName = null;
+
+        /// <summary>
+        /// Analog to <see cref="FiddleControlFile(BatchProcessorClient)"/>, for jobs which are configured by a control statement 
+        /// (<see cref="SetControlStatement(string, IDatabaseInfo, bool?)"/>), i.e., 
+        /// ensures that the job saves its results to a database which is allowed on <paramref name="bpc"/>.
+        /// </summary>
+        /// <remarks>
+        /// The control statement is evaluated, using only the assemblies which the solver (<see cref="Solver"/>) depends on, 
+        /// to obtain a temporary control object, which is used only for verification and then thrown away
+        /// (the control object might not be serializable, and the statement is passed to the solver as is):
+        /// If the database specified by the statement is not set, or not allowed, the database is overridden by 
+        /// the command line argument `--dbguid`.
+        /// Neither the grid nor any other part of the control is touched.
+        /// If the evaluation fails, this is only reported in a single line, and the job is started with the settings as specified.
+        /// </remarks>
+        private void FiddleControlStatement(BatchProcessorClient bpc) {
+            if(m_ControlStatement == null)
+                return;
+
+            using(var tr = new FuncTrace()) {
+
+                // database specified by the user: only verify
+                // ===========================================
+                if(m_ControlStatementDatabase != null) {
+                    if(!bpc.IsDatabasePathAllowed(m_ControlStatementDatabase.Path)) {
+                        throw new IOException($"Database '{m_ControlStatementDatabase}' is not allowed for {this.ToString()}; You might either use a different database for this computation OR modify the 'AllowedDatabasesPaths' in '~/.BoSSS/etc/BatchProcessorConfig.json'.");
+                    }
+                    return;
+                }
+
+                // temporary control object, for verification
+                // ==========================================
+                BoSSS.Solution.Control.AppControl ctrl;
+                try {
+                    if(!m_ControlStatement.StartsWith("cs:", StringComparison.OrdinalIgnoreCase))
+                        throw new NotSupportedException("not a 'cs:' statement");
+
+                    BoSSS.Solution.Control.AppControl.FromCode(m_ControlStatement.Substring(3), typeof(BoSSS.Solution.Control.AppControl), out var c1, out var cN, this.Solver);
+                    ctrl = c1 ?? cN?.FirstOrDefault();
+                    if(ctrl == null)
+                        throw new ApplicationException("no control object");
+                } catch(Exception e) {
+                    var ee = e is AggregateException ae ? ae.Flatten().InnerExceptions.First() : e;
+                    string msg = (ee.Message ?? "").Split('\n').First().Trim();
+                    Console.WriteLine($"Note: unable to evaluate the control statement of job '{this.Name}' to verify the database settings ({ee.GetType().Name}: {msg}); continuing with the settings as specified.");
+                    tr.Info("Exception trace: " + e);
+                    return;
+                }
+
+                // is a database required at all?
+                // ==============================
+                if(!(m_ControlStatementSaveToDb ?? ctrl.savetodb))
+                    return;
+
+                // is the database set by the statement usable?
+                // ============================================
+                bool DatabaseOk;
+                if(!ctrl.DbPath.IsNullOrEmpty() || (ctrl.AlternateDbPaths != null && ctrl.AlternateDbPaths.Length > 0)) {
+                    DatabaseOk = ctrl.GetDatabase() != null && bpc.IsDatabaseAllowed(ctrl);
+                } else if(ctrl.DbID != Guid.Empty) {
+                    var db = BoSSSshell.wmg.AllDatabases.FirstOrDefault(d => d.ID.Equals(ctrl.DbID));
+                    DatabaseOk = db != null && bpc.IsDatabasePathAllowed(db.Path);
+                } else {
+                    DatabaseOk = false;
+                }
+                if(DatabaseOk)
+                    return;
+
+                // override
+                // ========
+                foreach(var db in BoSSSshell.wmg.AllDatabases) {
+                    if(bpc.IsDatabasePathAllowed(db.Path)) {
+                        Console.WriteLine("Set Database: " + db);
+                        AppendBoSSSArgumentUnchecked("--dbguid", db.ID.ToString());
+                        return;
+                    }
+                }
+
+                throw new IOException($"No database is allowed for {this.ToString()}, but the control statement requires one (savetodb); You might either create a database OR modify the 'AllowedDatabasesPaths' in '~/.BoSSS/etc/BatchProcessorConfig.json'.");
+            }
+        }
 
         private void FiddleControlFile(BatchProcessorClient bpc) {
             if(m_ctrl == null)
@@ -348,7 +456,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             m_ctrl.ProjectName = BoSSSshell.WorkflowMgm.CurrentProject;
             if(m_ctrl.SessionName != this.Name) {
-                Console.WriteLine("Warning: missmatch between Job name and session name specified in control object; setting to " + this.Name);
+                Console.WriteLine("Warning: mismatch between Job name and session name specified in control object; setting to " + this.Name);
                 m_ctrl.SessionName = this.Name;
             }
 
@@ -571,6 +679,14 @@ namespace BoSSS.Application.BoSSSpad {
         /// </remarks>
         public void AppendBoSSSArgument(string arg, string val) {
             TestActivation();
+            AppendBoSSSArgumentUnchecked(arg, val);
+        }
+
+        /// <summary>
+        /// Like <see cref="AppendBoSSSArgument(string, string)"/>, but also allowed after activation, 
+        /// which is required for the final adjustments immediately before submission.
+        /// </summary>
+        void AppendBoSSSArgumentUnchecked(string arg, string val) {
             int maxIndex = -1;
             foreach(var key in m_EnvironmentVars.Keys) {
                 if(key.StartsWith("BOSSS_ARG_")) {
@@ -1790,6 +1906,8 @@ namespace BoSSS.Application.BoSSSpad {
                 // ========================================================================
                 // finally, it might be necessary to submit the job to the batch processor. 
                 // ========================================================================
+
+                FiddleControlStatement(AssignedBatchProc); // only when really submitting; evaluates the statement
 
                 Console.WriteLine($"Deploying job {this.Name} ... ");
                

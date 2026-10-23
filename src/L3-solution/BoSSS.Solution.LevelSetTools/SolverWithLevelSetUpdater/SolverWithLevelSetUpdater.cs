@@ -285,15 +285,21 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     }
                     case LevelSetEvolution.StokesExtension: {
                         ILevelSetEvolver stokesExtEvo;
+                        // Resolve PseudoDtau0, if not explicitly set, to the flow solve's own fixed
+                        // timestep size -- or 1.0 if that is not set (e.g. adaptive/steady-state timestepping).
+                        var stokesExtConfig = this.Control.StokesExtension.Clone();
+                        stokesExtConfig.PseudoDtau0 ??= (this.Control.dtFixed > 0 ? this.Control.dtFixed : 1.0);
                         if(LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
                             stokesExtEvo = new StokesExtensionEvolver(LevelSetCG, QuadOrder(), D,
                             GetBcMap(),
-                            this.Control.AgglomerationThreshold, this.GridData);
+                            this.Control.AgglomerationThreshold, this.GridData,
+                            config: stokesExtConfig);
                         } else {
                             stokesExtEvo = new StokesExtensionEvolver(LevelSetCG, QuadOrder(), D,
                             GetBcMap(),
-                            this.Control.AgglomerationThreshold, this.GridData, useBCmap: this.Control.StokesExtentionUseBCmap, 
-                            ReInitControl: this.Control.ReInitControl, ReInitPeriod: this.Control.ReInitPeriod);
+                            this.Control.AgglomerationThreshold, this.GridData, useBCmap: this.Control.StokesExtentionUseBCmap,
+                            ReInitControl: this.Control.ReInitControl, ReInitPeriod: this.Control.ReInitPeriod,
+                            config: stokesExtConfig);
                         }
                         lsUpdater.AddEvolver(LevelSetCG, stokesExtEvo);
                         break;

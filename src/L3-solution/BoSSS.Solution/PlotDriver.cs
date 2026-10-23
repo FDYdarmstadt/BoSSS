@@ -1150,13 +1150,24 @@ namespace BoSSS.Solution {
         /// see <see cref="PlotFields(string, double, IEnumerable{Tuple{string, ScalarFunctionEx}})"/>.
         /// </summary>
         virtual public void PlotFields(string fileNameBase, double time, IEnumerable<DGField> fieldsToPlot) {
+            VerifyDGFields(fieldsToPlot);
             this.PlotFields(fileNameBase, time, fieldsToPlot.Select(x => new Tuple<string, ScalarFunctionEx>(x.Identification, x.Evaluate)));
+        }
+
+        private void VerifyDGFields(IEnumerable<DGField> fieldsToPlot) {
+            int cnt = 0;
+            foreach(var f in fieldsToPlot) {
+                if(!object.ReferenceEquals(this.gridData, f.GridDat))
+                    throw new ArgumentException($"Field #{cnt}, '{f.Identification}' is assigned to different mesh -- cannot plot with this plot driver; use a separate plot driver for each grid.");
+                cnt++;
+            }
         }
 
         /// <summary>
         /// see <see cref="PlotFields(string, double, IEnumerable{Tuple{string, ScalarFunctionEx}})"/>.
         /// </summary>
         virtual public void PlotFields(string fileNameBase, double time, params DGField[] fieldsToPlot) {
+            VerifyDGFields(fieldsToPlot);
             this.PlotFields(fileNameBase, time, (IEnumerable<DGField>)fieldsToPlot);
         }
 

@@ -1,6 +1,7 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Aggregation;
+using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution.AdvancedSolvers;
@@ -50,7 +51,11 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
 
         const double penalty_safety = 4.0;
 
-        const double viscosity = 1.0;
+        /// <summary>
+        /// Options controlling <see cref="SolveExtension"/> (solver dispatch, warm-starting,
+        /// preconditioning, pseudo-transient continuation); the single source of truth for their defaults.
+        /// </summary>
+        public StokesExtensionControl Config = new StokesExtensionControl();
 
         /// <summary>
         /// Bulk of the artificial Stokes extension equation;
@@ -78,7 +83,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             {
                 // Momentum, Viscous:
                 for(int d = 0; d < D; d++) {
-                    var visc = new ExtensionSIP(penalty_safety, d, D, map, ViscosityOption.ConstantViscosity, constantViscosityValue: viscosity, useBCMap: m_useBCMap);
+                    var visc = new ExtensionSIP(penalty_safety, d, D, map, ViscosityOption.ConstantViscosity, constantViscosityValue: Config.Viscosity, useBCMap: m_useBCMap);
                     Op.EquationComponents[EquationNames.MomentumEquationComponent(d)].Add(visc);
                 }
 
@@ -279,50 +284,180 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
 
                 (BlockMsrMatrix OpMtx, double[] RHS) = ComputeMatrix(levelSetIndex, lsTrk, ExtenstionSolVec.Mapping, VelocityAtInterface);
 
+                // Level-set-restricted (surface) quadrature for the interface-velocity-mismatch diagnostic
+                var ifaceSchemeHelper = lsTrk.GetXDGSpaceMetrics(lsTrk.SpeciesIdS.ToArray(), this.m_CutCellQuadOrder, 1).XQuadSchemeHelper;
+                var ifaceQuadRule = ifaceSchemeHelper.GetLevelSetQuadScheme(levelSetIndex, lsTrk.Regions.GetCutCellMask4LevSet(levelSetIndex))
+                    .Compile(gDat, this.m_CutCellQuadOrder);
+
+                // Diagnostic: L2 norm of the interface velocity mismatch (normal component only)
+                double InterfaceVelocityMismatchNorm() {
+                    double acc = 0.0;
+                    CellQuadrature.GetQuadrature(new int[] { 1 }, gDat, ifaceQuadRule,
+                        delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+                            NodeSet nodes = QR.Nodes;
+                            int N = nodes.NoOfNodes;
+                            var normals = lsTrk.DataHistories[levelSetIndex].Current.GetLevelSetNormals(nodes, i0, Length);
+
+                            var diff = MultidimensionalArray.Create(Length, N, D);
+                            var ifaceVal = MultidimensionalArray.Create(Length, N);
+                            for(int d = 0; d < D; d++) {
+                                var extSlice = diff.ExtractSubArrayShallow(-1, -1, d);
+                                ExtensionVelocity[d].Evaluate(i0, Length, nodes, extSlice);
+                                VelocityAtInterface[d].Evaluate(i0, Length, nodes, ifaceVal);
+                                extSlice.Acc(-1.0, ifaceVal);
+                            }
+
+                            var dot = MultidimensionalArray.Create(Length, N);
+                            dot.Multiply(1.0, diff, normals, 0.0, "jn", "jnd", "jnd");
+                            EvalResult.ExtractSubArrayShallow(-1, -1, 0).Multiply(1.0, dot, dot, 0.0, "jn", "jn", "jn");
+                        },
+                        delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+                            for(int j = 0; j < Length; j++)
+                                acc += ResultsOfIntegration[j, 0];
+                        }
+                    ).Execute();
+                    return Math.Sqrt(acc.MPISum());
+                }
+
                 //var RHSdg = new CoordinateVector(DummySolFields.Select(dd => dd.CloneAs()));
                 //RHSdg.SetV(RHS, 1.0);
                 //double[] RHSL2norm = RHSdg.Fields.Select(f => f.L2Norm()).ToArray();
 
+                if (this.Config.UseSchurBlockPrec && !this.fullStokes)
+                    throw new InvalidOperationException($"{nameof(StokesExtensionControl.UseSchurBlockPrec)} requires {nameof(fullStokes)} (no pressure to combine with otherwise).");
+
                 var AggGrid = CoarseningAlgorithms.CreateSequence(ExtenstionSolVec.Mapping.GridDat, -1);
                 var AggBasis = AggregationGridBasis.CreateSequence(AggGrid, ExtenstionSolVec.Mapping.BasisS);
-                var MultigridOperatorConfig = new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig[1][];
-                MultigridOperatorConfig[0] = new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig[ExtenstionSolVec.Mapping.Fields.Count];
-                if (this.fullStokes) {
+                var configsLevel = new List<BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig>();
+                if (this.Config.DisableLocalPreconditioning) {
+                    // no local preconditioning transform at all -- handing the solver the raw OpMtx unmodified.
                     for (int i = 0; i < ExtenstionSolVec.Mapping.Fields.Count; i++) {
-                        if( i == ExtenstionSolVec.Mapping.Fields.Count - 1) {
-                            MultigridOperatorConfig[0][i] = new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig() {
-                                mode = BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.IdMass_DropIndefinite,
-                                VarIndex = new int[] { i },
-                                DegreeS = new int[] { ExtenstionSolVec.Mapping.Fields[i].Basis.Degree }
-                            };
-                        } else {
-                            MultigridOperatorConfig[0][i] = new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig() {
-                                mode = BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
-                                VarIndex = new int[] { i },
-                                DegreeS = new int[] { ExtenstionSolVec.Mapping.Fields[i].Basis.Degree }
-                            };
-                        }
+                        configsLevel.Add(new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig() {
+                            mode = BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.Eye,
+                            VarIndex = new int[] { i },
+                            DegreeS = new int[] { ExtenstionSolVec.Mapping.Fields[i].Basis.Degree }
+                        });
+                    }
+                } else if (this.fullStokes && this.Config.UseSchurBlockPrec) {
+                    // single combined block for velocity + pressure
+                    configsLevel.Add(new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig() {
+                        mode = BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.SchurComplement,
+                        VarIndex = Enumerable.Range(0, ExtenstionSolVec.Mapping.Fields.Count).ToArray(),
+                        DegreeS = ExtenstionSolVec.Mapping.Fields.Select(f => f.Basis.Degree).ToArray()
+                    });
+                } else if (this.fullStokes) {
+                    for (int i = 0; i < ExtenstionSolVec.Mapping.Fields.Count; i++) {
+                        bool isPressure = i == ExtenstionSolVec.Mapping.Fields.Count - 1;
+                        configsLevel.Add(new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig() {
+                            mode = isPressure
+                                ? BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.IdMass_DropIndefinite
+                                : BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
+                            VarIndex = new int[] { i },
+                            DegreeS = new int[] { ExtenstionSolVec.Mapping.Fields[i].Basis.Degree }
+                        });
                     }
                 } else {
                     for (int i = 0; i < ExtenstionSolVec.Mapping.Fields.Count; i++) {
-                        MultigridOperatorConfig[0][i] = new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig() {
+                        configsLevel.Add(new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig() {
                             mode = BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
                             VarIndex = new int[] { i },
                             DegreeS = new int[] { ExtenstionSolVec.Mapping.Fields[i].Basis.Degree }
-                        };
+                        });
                     }
                 }
-                MultigridOperator mgOp = new MultigridOperator(AggBasis, ExtenstionSolVec.Mapping, OpMtx, null, MultigridOperatorConfig, GetBulkOperator());
+                var MultigridOperatorConfig = new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig[1][] { configsLevel.ToArray() };
 
                 var bkup_RHS = RHS.CloneAs();
                 Exception e;
                 try {
-                    var Pre_RHS = RHS.CloneAs();
-                    var Pre_Sol = ExtenstionSolVec.CloneAs();
-                    tr.Info("StokesExtension.SolveExtension trying with Multigridoperator");
-                    mgOp.TransformRhsInto(RHS, Pre_RHS, true);
-                    mgOp.OperatorMatrix.Solve_Direct(Pre_Sol, Pre_RHS);
-                    mgOp.TransformSolFrom(ExtenstionSolVec, Pre_Sol);
+                    void SolveOnce(MultigridOperator mgOp_, double[] Pre_Sol_, double[] Pre_RHS_) {
+                        if(Config.LinearSolver != null) {
+                            var customSolver = Config.LinearSolver.CreateInstance(mgOp_);
+                            customSolver.Solve(Pre_Sol_, Pre_RHS_);
+                            customSolver.Dispose();
+                        } else {
+                            mgOp_.OperatorMatrix.Solve_Direct(Pre_Sol_, Pre_RHS_);
+                        }
+                    }
+
+                    if(Config.UsePseudoTimestepping) {
+                        // Repeatedly solve (OpMtx + I/dtau)*u = RHS + u/dtau for a growing dtau (switched-evolution-relaxation), 
+                        // until the true residual RHS - OpMtx*u is small, or MaxPseudoTimeSteps is reached.
+                        tr.Info("StokesExtension.SolveExtension trying with pseudo-timestepping");
+                        double dtau = Config.PseudoDtau0 ?? 1.0;
+                        double[] u = Config.WarmStart ? ExtenstionSolVec.ToArray() : new double[ExtenstionSolVec.Mapping.LocalLength];
+                        double resNorm_prev = RHS.MPI_L2Norm();
+
+                        for(int k = 0; k < Config.MaxPseudoTimeSteps; k++) {
+                            var stw_k = Stopwatch.StartNew();
+                            var OpMtx_k = OpMtx.CloneAs();
+                            OpMtx_k.AccEyeSp(1.0 / dtau);
+
+                            var RHS_k = RHS.CloneAs();
+                            RHS_k.AccV(1.0 / dtau, u);
+
+                            var mgOp_k = new MultigridOperator(AggBasis, ExtenstionSolVec.Mapping, OpMtx_k, null, MultigridOperatorConfig, GetBulkOperator());
+
+                            var Pre_RHS_k = new double[mgOp_k.Mapping.LocalLength];
+                            mgOp_k.TransformRhsInto(RHS_k, Pre_RHS_k, true);
+                            var Pre_Sol_k = new double[mgOp_k.Mapping.LocalLength];
+                            mgOp_k.TransformSolInto(u, Pre_Sol_k);
+
+                            SolveOnce(mgOp_k, Pre_Sol_k, Pre_RHS_k);
+
+                            mgOp_k.TransformSolFrom(u, Pre_Sol_k);
+
+                            var Res = RHS.CloneAs();
+                            OpMtx.SpMV(-1.0, u, 1.0, Res);
+                            double resNorm = Res.MPI_L2Norm();
+                            double rhsNorm = RHS.MPI_L2Norm();
+                            double relResNorm = resNorm / Math.Max(rhsNorm, 1.0e-300);
+
+                            ExtenstionSolVec.SetV(u, 1.0);
+                            stw_k.Stop();
+
+                            string diagnostics = "";
+                            if(Config.WriteDebugInfoLevel >= 2) {
+                                double ifaceDiffNorm = InterfaceVelocityMismatchNorm();
+                                diagnostics = $", |div(u_ext)|={ExtensionVelocity.Divergence().L2Norm():0.###E-00}, "
+                                    + $"|u_ext - u_iface| on interface={ifaceDiffNorm:0.###E-00}";
+                            }
+                            tr.Info($"pseudo-time step {k+1}: dtau={dtau:0.###E-00}, |RHS|={rhsNorm:0.###E-00}, "
+                                + $"true residual={resNorm:0.###E-00} (relative: {relResNorm:0.###E-00}), |u|={u.MPI_L2Norm():0.###E-00}"
+                                + $"{diagnostics}, time={stw_k.Elapsed.TotalSeconds:0.###}sec");
+
+                            if(relResNorm < Config.PseudoTimeConvergenceCriterion)
+                                break;
+
+                            dtau = Math.Min(dtau * resNorm_prev / resNorm, Config.PseudoDtauMax);
+                            resNorm_prev = resNorm;
+                        }
+
+                        ExtenstionSolVec.SetV(u, 1.0);
+                    } else {
+                        var stw = Stopwatch.StartNew();
+                        MultigridOperator mgOp = new MultigridOperator(AggBasis, ExtenstionSolVec.Mapping, OpMtx, null, MultigridOperatorConfig, GetBulkOperator());
+
+                        var Pre_RHS = RHS.CloneAs();
+                        double[] Pre_Sol = new double[mgOp.Mapping.LocalLength];
+                        tr.Info("StokesExtension.SolveExtension trying with Multigridoperator");
+                        mgOp.TransformRhsInto(RHS, Pre_RHS, true);
+                        if(Config.WarmStart)
+                            mgOp.TransformSolInto(ExtenstionSolVec, Pre_Sol);
+
+                        SolveOnce(mgOp, Pre_Sol, Pre_RHS);
+
+                        mgOp.TransformSolFrom(ExtenstionSolVec, Pre_Sol);
+                        stw.Stop();
+
+                        string diagnostics = "";
+                        if(Config.WriteDebugInfoLevel >= 2) {
+                            double ifaceDiffNorm = InterfaceVelocityMismatchNorm();
+                            diagnostics = $"|div(u_ext)|={ExtensionVelocity.Divergence().L2Norm():0.###E-00}, "
+                                + $"|u_ext - u_iface| on interface={ifaceDiffNorm:0.###E-00}, ";
+                        }
+                        tr.Info($"{diagnostics}time={stw.Elapsed.TotalSeconds:0.###}sec");
+                    }
                     e = null;
                 } catch(Exception ee) {
                     e = ee;

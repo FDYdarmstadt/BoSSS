@@ -125,9 +125,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
             if (extensionVelocity == null) {
                 extensionVelocity = D.ForLoop(d => new SinglePhaseField(meanVelocity[d].Basis, $"ExtensionVelocity[{d}]"));
-            } else {
-                foreach (var f in extensionVelocity)
-                    f.Clear();
             }
 
             var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold, fullStokes);

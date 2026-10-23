@@ -151,6 +151,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         [DataMember]
         public StokesExtentionBoundaryOption StokesExtentionUseBCmap = StokesExtentionBoundaryOption.FreeSlipAtWall;
 
+        /// <summary>
+        /// Options for the Stokes-extension velocity solve (<see cref="LevelSetEvolution.StokesExtension"/>)
+        /// </summary>
+        [DataMember]
+        public StokesExtension.StokesExtensionControl StokesExtension = new StokesExtension.StokesExtensionControl();
+
 
         #endregion
 

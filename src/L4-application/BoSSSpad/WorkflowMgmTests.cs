@@ -92,6 +92,22 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         /// <summary>
+        /// Session name set by <see cref="ControlFunc"/>; for name-based correlation of sessions and jobs, 
+        /// the job must have the same name.
+        /// </summary>
+        public const string ChannelSessionName = WorkflowTestControls.ChannelSessionName;
+
+        /// <summary>
+        /// Control object for the channel test, see <see cref="WorkflowTestControls.ChannelControl"/>.
+        /// 
+        /// Note: to be used as a control statement (see <see cref="Job.SetControlStatement(string, IDatabaseInfo, bool?)"/>) on a batch system, 
+        /// the statement must refer to the solver assembly, see <see cref="WorkflowTestControls"/>.
+        /// </summary>
+        static public XNSE_Control ControlFunc() {
+            return WorkflowTestControls.ChannelControl();
+        }
+
+        /// <summary>
         /// test of job persistence, i.e., that a second try to submit a job actually finds the run which is already in place.
         /// </summary>
         [Test]
@@ -101,55 +117,6 @@ namespace BoSSS.Application.BoSSSpad {
             BoSSS.Solution.Application.InitMPI(num_threads: 1);
 
             string basename = "WorkFlowManagerFunctionalityCheck_1" + SessionEqualityComparisonVariant;
-
-            GridCommons GridFunction() {
-                var xNodes = GenericBlas.Linspace(0, 10, 41);
-                var yNodes = GenericBlas.Linspace(-1, 1, 9);
-                GridCommons grid = Grid2D.Cartesian2DGrid(xNodes, yNodes);
-                IGrid_Extensions.DefineEdgeTags(grid, delegate (double[] X) {
-                    double x = X[0];
-                    double y = X[1];
-                    if(Math.Abs(y - (-1)) <= 1.0e-8)
-                        return "wall"; // lower wall
-                    if(Math.Abs(y - (+1)) <= 1.0e-8)
-                        return "wall"; // upper wall
-                    if(Math.Abs(x - (0.0)) <= 1.0e-8)
-                        return "Velocity_Inlet"; // inlet
-                    if(Math.Abs(x - (+10.0)) <= 1.0e-8)
-                        return "Pressure_Outlet"; // outlet
-                    throw new ArgumentOutOfRangeException("unknown domain");
-                });
-                return grid;
-            }
-
-            XNSE_Control ControlFunc() {
-                var c = new XNSE_Control();
-
-                // general description:
-                int k = 1;
-                string desc = "Steady state, channel, k" + k;
-                c.SessionName = "SteadyStateChannel";
-                c.ProjectDescription = desc;
-                c.savetodb = true;
-                c.Tags.Add("k" + k);
-                // setting the grid:
-                c.SetGrid(GridFunction());
-                // DG polynomial degree
-                c.SetDGdegree(k);
-                // Physical parameters:
-                double reynolds = 20;
-                c.PhysicalParameters.rho_A = 1;
-                c.PhysicalParameters.mu_A = 1.0 / reynolds;
-                // Timestepping properties:
-                c.TimesteppingMode = AppControl._TimesteppingMode.Steady;
-
-                c.SessionName = "Channel_40x8k" + k;
-
-                c.AddBoundaryValue("Velocity_Inlet", "VelocityX", new Formula("X => 1 - X[0]*X[0]", false));
-
-                return c;
-            }
-
 
             Mutex TestMutex = new Mutex(false, basename);
             try {
@@ -329,6 +296,148 @@ namespace BoSSS.Application.BoSSSpad {
             Console.WriteLine("success!");
 
 
+        }
+
+        /// <summary>
+        /// Same as <see cref="Run__WorkFlowManagerFunctionalityCheck_1"/>, but the job is configured with a 
+        /// control statement (<see cref="Job.SetControlStatement(string, IDatabaseInfo, bool?)"/>) instead of a control object;
+        /// the correlation of job and session can therefore only be name-based
+        /// (<see cref="WorkflowMgm.SetNameBasedSessionJobControlCorrelation"/>).
+        /// </summary>
+        [Test]
+        static public void Run__WorkFlowManagerFunctionalityCheck_ControlStatement() {
+            BoSSS.Solution.Application.InitMPI(num_threads: 1);
+
+            string basename = "WorkFlowManagerFunctionalityCheck_CS";
+
+            // Job name must be equal to the session name set by the control statement, 
+            // otherwise, session and job are not correlated.
+            Job CreateJobFromStatement(int NoOfProcs) {
+                var J = new Job(ChannelSessionName, typeof(BoSSS.Application.XNSE_Solver.XNSE));
+                // no database specified: the job management sets it (see `Job.FiddleControlStatement`)
+                J.SetControlStatement("cs:BoSSS.Application.XNSE_Solver.WorkflowTestControls.ChannelControl(true)");
+                J.NumberOfMPIProcs = NoOfProcs;
+                return J;
+            }
+
+            Mutex TestMutex = new Mutex(false, basename);
+            try {
+                TestMutex.WaitOne();
+
+                // 0.) Clean leftover of previous runs
+                // -----------------------------------
+                {
+                    WorkflowMgmTestUtils.DeleteDatabase(basename);
+                    WorkflowMgmTestUtils.DeleteDeployments(basename + "*");
+
+                    BoSSSshell.Reset();
+                    BoSSSshell.WorkflowMgm.Init(basename);
+                    BoSSSshell.WorkflowMgm.ResetProject(true, true, true, true);
+                    BoSSSshell.WorkflowMgm.SetNameBasedSessionJobControlCorrelation();
+
+                    var allDepl = WorkflowMgmTestUtils.GetAllDeployments(basename + "*");
+                    Assert.Zero(allDepl.Length, $"expecting 0 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
+                }
+
+                // 1.) First run
+                // -----------------------------------
+                Guid sessionGuid;
+                {
+                    Console.WriteLine("========================================");
+                    Console.WriteLine("  first job run...");
+                    Console.WriteLine("========================================");
+
+                    var J = CreateJobFromStatement(2);
+                    Assert.AreEqual(JobStatus.PreActivation, J.Status, "unexpected job status");
+                    J.Activate();
+
+                    Console.WriteLine("Waiting for jobs to finish...");
+                    BoSSSshell.WorkflowMgm.BlockUntilAllJobsTerminate(1000);
+                    Console.WriteLine("All jobs finished.");
+
+                    var s = J.GetStatus(true);
+                    Assert.AreEqual(JobStatus.FinishedSuccessful, s, "unexpected job status: " + s);
+                    Assert.AreEqual(1, BoSSSshell.WorkflowMgm.Sessions.Length, "expecting exactly one session after the workseet has been executed");
+                    Assert.AreEqual(basename, BoSSSshell.WorkflowMgm.Sessions.Single().ProjectName, "un-expected project name");
+                    Assert.AreEqual(1, J.AllDeployments.Count(), "expecting 1 deployment");
+                    var allDepl = WorkflowMgmTestUtils.GetAllDeployments(basename + "*");
+                    Assert.AreEqual(1, allDepl.Length, $"expecting 1 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
+
+                    sessionGuid = J.LatestSession.ID;
+                    Assert.IsTrue(J.LatestSession.SuccessfulTermination, "session is expected to be successful");
+
+                    Console.WriteLine("done run 1. =============================");
+                    Console.WriteLine();
+                    Console.WriteLine();
+                }
+
+                // 2.) Persistence test: if the Worksheet is already executed, the job will **not** be re-submitted
+                // ------------------------------------------------------------------------------------------------
+                {
+                    BoSSSshell.WorkflowMgm.ResetProject();
+
+                    Console.WriteLine("========================================");
+                    Console.WriteLine("  second job run...");
+                    Console.WriteLine("========================================");
+
+                    var J = CreateJobFromStatement(2);
+                    Assert.AreEqual(JobStatus.PreActivation, J.Status, "unexpected job status");
+                    J.Activate();
+
+                    BoSSSshell.WorkflowMgm.BlockUntilAllJobsTerminate(1000);
+
+                    Assert.AreEqual(JobStatus.FinishedSuccessful, J.Status, "unexpected job status");
+                    Assert.AreEqual(1, BoSSSshell.WorkflowMgm.Sessions.Length, "expecting exactly one session after the workseet has been executed");
+                    Assert.AreEqual(basename, BoSSSshell.WorkflowMgm.Sessions.Single().ProjectName, "un-expected project name");
+                    Assert.AreEqual(1, J.AllDeployments.Count(), "expecting 1 deployment");
+                    var allDepl = WorkflowMgmTestUtils.GetAllDeployments(basename + "*");
+                    Assert.AreEqual(1, allDepl.Length, $"expecting 1 deployments, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
+
+                    Assert.AreEqual(sessionGuid, J.LatestSession.ID, "expecting session ID known from first run");
+                    Assert.IsTrue(J.LatestSession.SuccessfulTermination, "session is expected to be successful");
+
+                    Assert.AreEqual(1, BoSSSshell.WorkflowMgm.Grids.Length, "expecting exactly one grid");
+
+                    Console.WriteLine("done run 2. =============================");
+                    Console.WriteLine();
+                    Console.WriteLine();
+                }
+
+                // 3.) delete deployments and test a third time:
+                // -----------------------------------------------
+                {
+                    BoSSSshell.WorkflowMgm.ResetProject(ResetJobs: true, deleteDeployments: false);
+                    WorkflowMgmTestUtils.DeleteDeployments(basename + "*");
+
+                    Console.WriteLine("========================================");
+                    Console.WriteLine("  third job run...");
+                    Console.WriteLine("========================================");
+
+                    var J = CreateJobFromStatement(1); // different number of procs should have no effect
+                    Assert.AreEqual(JobStatus.PreActivation, J.Status, "unexpected job status");
+                    J.Activate();
+
+                    Assert.AreEqual(JobStatus.FinishedSuccessful, J.Status, "unexpected job status");
+                    Assert.AreEqual(1, BoSSSshell.WorkflowMgm.Sessions.Length, "expecting exactly one session after the workseet has been executed");
+                    Assert.AreEqual(basename, BoSSSshell.WorkflowMgm.Sessions.Single().ProjectName, "un-expected project name");
+                    Assert.AreEqual(1, J.AllDeployments.Count(), "expecting 1 deployment");
+
+                    // note: job should have one deployment, if we can find an existing session,
+                    // but there will be no more deployment directory.
+                    var allDepl = WorkflowMgmTestUtils.GetAllDeployments(basename + "*");
+                    Assert.AreEqual(0, allDepl.Length, $"expecting 0 deployment directories, but got: {allDepl.Length}: " + allDepl.ToConcatString("", ", ", ";"));
+
+                    Assert.AreEqual(sessionGuid, J.LatestSession.ID, "expecting session ID known from first run");
+                    Assert.IsTrue(J.LatestSession.SuccessfulTermination, "session is expected to be successful");
+
+                    Assert.AreEqual(1, BoSSSshell.WorkflowMgm.Grids.Length, "expecting exactly one grid");
+
+                    Console.WriteLine("done run 3. =============================");
+                }
+            } finally {
+                TestMutex.ReleaseMutex();
+            }
+            Console.WriteLine("success!");
         }
     }
 }

@@ -111,6 +111,7 @@ RUN mkdir -p /home/${USERNAME}/BoSSS-Install \
 COPY public/Docker/bosss-entrypoint.sh /usr/local/bin/bosss-entrypoint.sh
 
 RUN chmod +x /usr/local/bin/bosss-entrypoint.sh
+RUN sed -i 's/\r$//' /usr/local/bin/bosss-entrypoint.sh
 
 ENV BOSSS_INSTALL=/home/${USERNAME}/BoSSS-Install
 ENV LD_LIBRARY_PATH=/home/${USERNAME}/BoSSS-Install/bin/native/linux/amd64-openmpi

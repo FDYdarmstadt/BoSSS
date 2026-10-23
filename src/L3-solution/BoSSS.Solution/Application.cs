@@ -29,6 +29,7 @@ using BoSSS.Solution.Queries;
 using CommandLine;
 using CommandLine.Text;
 using ilPSP;
+using ilPSP.LinSolvers.PETSc;
 using ilPSP.Tracing;
 using ilPSP.Utils;
 using log4net;
@@ -254,6 +255,13 @@ namespace BoSSS.Solution {
             int rank, size;
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
+
+            // Preload the one packaged real-MPI PETSc runtime after MPI and threading
+            // have been initialized.
+            if(!PETScNativeLibraries.TryPreload(out string petscLoadFailure)) {
+                m_Logger.Warn($"The PETSc MPI+OpenMP runtime could not be preloaded: {petscLoadFailure}");
+            }
+
             if (_MustFinalizeMPI) {
                 if (rank == 0) {
 
@@ -754,6 +762,13 @@ namespace BoSSS.Solution {
                     ctrlV2.ProjectName = opt.ProjectName;
                 if (opt.SessionName != null && ctrlV2.SessionName.IsEmptyOrWhite())
                     ctrlV2.SessionName = opt.SessionName;
+                if (!opt.DatabaseGuid.IsEmptyOrWhite()) {
+                    if (!Guid.TryParse(opt.DatabaseGuid, out Guid dbGuid))
+                        throw new ArgumentException($"Unable to parse command line argument '--dbguid {opt.DatabaseGuid}' as a GUID.");
+                    ctrlV2.DbID = dbGuid;
+                }
+                if (opt.SaveToDb != null)
+                    ctrlV2.savetodb = opt.SaveToDb.Value;
 
                 if (opt.ImmediatePlotPeriod != null) {
                     ctrlV2.ImmediatePlotPeriod = opt.ImmediatePlotPeriod.Value;
@@ -1449,7 +1464,8 @@ namespace BoSSS.Solution {
         /// </summary>
         /// <returns></returns>
         protected virtual IDatabaseInfo GetDatabase() {
-            if (this.Control == null || (this.Control.DbPath.IsNullOrEmpty() && (this.Control.AlternateDbPaths == null || this.Control.AlternateDbPaths.Length <= 0 || this.Control.AlternateDbPaths.All(tt => tt.DbPath.IsEmptyOrWhite())))) {
+            bool noPath = this.Control == null || (this.Control.DbPath.IsNullOrEmpty() && (this.Control.AlternateDbPaths == null || this.Control.AlternateDbPaths.Length <= 0 || this.Control.AlternateDbPaths.All(tt => tt.DbPath.IsEmptyOrWhite())));
+            if (this.Control == null || (noPath && this.Control.DbID == Guid.Empty)) {
                 return NullDatabaseInfo.Instance;
             } else {
 
@@ -1460,6 +1476,12 @@ namespace BoSSS.Solution {
                     if(this.Control.DbID == Guid.Empty || this.Control.DbID == kv.Key) {
                         altPaths.AddRange(kv.Value);
                     }
+                }
+
+                if (noPath && altPaths.Count <= 0) {
+                    // the database is identified by its ID only (e.g., `--dbguid`), but the file `DatabasePaths.json` does not contain this ID.
+                    throw new IOException($"Unable to find a path for the database with ID {this.Control.DbID}: no entry for this ID in the file '{DatabasePaths.filename}' " 
+                        + $"(searched in the working directory '{Directory.GetCurrentDirectory()}' and in the user settings directory); the file contains {allPaths.Count} database(s): {allPaths.Keys.ToConcatString("[", ", ", "]")}.");
                 }
 
                 return DatabaseInfo.Open(this.Control.DbPath, altPaths);
@@ -1500,11 +1522,6 @@ namespace BoSSS.Solution {
             get;
             private set;
         }
-
-        ///// <summary>
-        ///// Provisional alternative grid;
-        ///// </summary>
-        //protected AggregationGrid AggGrid;
 
 
         /// <summary>
@@ -2978,26 +2995,7 @@ namespace BoSSS.Solution {
 
                     // re-set Level-Set tracker
                     this.CreateTracker();
-
-                    //void FuckYouLog() {
-                    //    Console.WriteLine(" ------ tracker version: " + this.LsTrk?.VersionCnt);
-                    //    foreach(var f in m_RegisteredFields) {
-                    //        string white = " ";
-                    //        for(int i = f?.Identification?.Length ?? 0; i < 25; i++)
-                    //            white += " ";
-
-                    //        if(f is XDGField xf) {
-                    //            Console.WriteLine("         " + f.Identification + ":" + white + xf.m_TrackerVersion + "\t" + xf.UpdateBehaviour);
-                    //        }
-                    //        if(f is TraceDGField tf) {
-                    //            Console.WriteLine("         " + f.Identification + ":" + white + tf.m_TrackerVersion + "\t" + tf.UpdateBehaviour);
-                    //        }
-                    //    }
-                    //    Console.WriteLine(" ~~~~~~~ ");
-                    //    Console.WriteLine();
-                    //}
-
-                    
+                                        
                     // re-create fields
                     if (this.Control != null) {
                         InitFromAttributes.CreateFieldsAuto(

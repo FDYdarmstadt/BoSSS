@@ -1,0 +1,124 @@
+#include "Globals.h"
+#include <nethost.h>
+#include <hostfxr.h>
+#include <coreclr_delegates.h>
+#include <dlfcn.h>
+#include <cstdlib>
+#include <cstdint>
+#include <mutex>
+#include <string>
+#include <vector>
+
+namespace {
+std::mutex initialization;
+load_assembly_and_get_function_pointer_fn loader = nullptr;
+std::string assemblyPath;
+std::string directoryPath;
+using error_fn = int (*)(unsigned char*, int);
+error_fn copyError = nullptr;
+const char* managedType = "BoSSS.Application.ExternalBinding.NativeExports, BoSSS.Application.ExternalBinding";
+void require(bool ok, const std::string& message) {
+    if (!ok) throw std::runtime_error(message);
+}
+void* symbol(void* library, const char* name) {
+    void* p = dlsym(library, name);
+    require(p != nullptr, std::string("hostfxr export missing: ") + name);
+    return p;
+}
+}
+namespace BoSSS {
+void Globals::Init(const char* managedDirectory) {
+    ManagedCallScope managedCall;
+    std::lock_guard<std::mutex> guard(initialization);
+    require(managedDirectory && *managedDirectory, "Managed assembly directory is empty.");
+    char* canonical = realpath(managedDirectory, nullptr);
+    require(canonical != nullptr, std::string("Managed assembly directory does not exist: ") + managedDirectory);
+    std::string directory(canonical);
+    free(canonical);
+    if (loader) {
+        require(directory == directoryPath, "The CLR bridge is already initialized from a different directory.");
+        return;
+    }
+    size_t size = 0;
+    get_hostfxr_path(nullptr, &size, nullptr);
+    require(size > 0, "nethost could not locate hostfxr; install the .NET 10 runtime.");
+    std::vector<char_t> path(size);
+    require(get_hostfxr_path(path.data(), &size, nullptr) == 0, "nethost could not locate hostfxr.");
+    // Deliberately retain the hosting library for the process lifetime.
+    void* library = dlopen(path.data(), RTLD_NOW | RTLD_LOCAL);
+    if (!library) throw std::runtime_error(std::string("Cannot load hostfxr: ") + dlerror());
+    auto init = reinterpret_cast<hostfxr_initialize_for_runtime_config_fn>(symbol(library, "hostfxr_initialize_for_runtime_config"));
+    auto getDelegate = reinterpret_cast<hostfxr_get_runtime_delegate_fn>(symbol(library, "hostfxr_get_runtime_delegate"));
+    auto close = reinterpret_cast<hostfxr_close_fn>(symbol(library, "hostfxr_close"));
+    hostfxr_handle context = nullptr;
+    int rc = init((directory + "/BoSSS.Application.ExternalBinding.runtimeconfig.json").c_str(), nullptr, &context);
+    if (rc < 0 || !context) {
+        if (context) close(context);
+        throw std::runtime_error("hostfxr initialization failed: " + std::to_string(rc));
+    }
+    void* rawLoader = nullptr;
+    rc = getDelegate(context, hdt_load_assembly_and_get_function_pointer, &rawLoader);
+    close(context); // This releases the configuration context, not the CLR.
+    require(rc == 0 && rawLoader, "hostfxr runtime delegate failed: " + std::to_string(rc));
+    auto candidate = reinterpret_cast<load_assembly_and_get_function_pointer_fn>(rawLoader);
+    std::string assembly = directory + "/BoSSS.Application.ExternalBinding.dll";
+    void* error = nullptr;
+    rc = candidate(assembly.c_str(), managedType, "CopyLastError", UNMANAGEDCALLERSONLY_METHOD, nullptr, &error);
+    require(rc == 0 && error, "Cannot load BoSSS native adapters: " + std::to_string(rc));
+    void* abi = nullptr;
+    rc = candidate(assembly.c_str(), managedType, "AbiFingerprint", UNMANAGEDCALLERSONLY_METHOD, nullptr, &abi);
+    require(rc == 0 && abi, "Cannot query BoSSS bridge ABI fingerprint.");
+    require(reinterpret_cast<std::uint64_t (*)()>(abi)() == 0x@ABI@ULL,
+            "BoSSS bridge ABI mismatch; regenerate wrappers and rebuild both C++ and managed code.");
+    assemblyPath = assembly;
+    directoryPath = directory;
+    copyError = reinterpret_cast<error_fn>(error);
+    loader = candidate; // Publish only after successful initialization.
+}
+void* Globals::Resolve(const char* method) {
+    ManagedCallScope managedCall;
+    require(loader != nullptr, "Call BoSSS::Globals::Init before constructing a managed proxy.");
+    void* result = nullptr;
+    int rc = loader(assemblyPath.c_str(), managedType, method, UNMANAGEDCALLERSONLY_METHOD, nullptr, &result);
+    require(rc == 0 && result, std::string("Cannot resolve managed adapter ") + method + ": " + std::to_string(rc));
+    return result;
+}
+void Globals::Check(int status, const char* operation) {
+    if (!status) return;
+    ManagedCallScope managedCall;
+    std::string message = std::string(operation) + " failed";
+    if (copyError) {
+        int size = copyError(nullptr, 0);
+        if (size > 0) {
+            std::vector<unsigned char> buffer(size);
+            if (copyError(buffer.data(), size) == size)
+                message += ": " + std::string(reinterpret_cast<char*>(buffer.data()));
+        }
+    }
+    throw std::runtime_error(message);
+}
+void Globals::Bind(void* handle, void* foreign) {
+    ManagedCallScope managedCall;
+    using Fn = int (*)(void*, void*);
+    static Fn fn = reinterpret_cast<Fn>(Resolve("Bind"));
+    Check(fn(handle, foreign), "Bind");
+}
+void* Globals::Foreign(void* handle) {
+    ManagedCallScope managedCall;
+    using Fn = int (*)(void*, void**);
+    static Fn fn = reinterpret_cast<Fn>(Resolve("Foreign"));
+    void* foreign = nullptr;
+    Check(fn(handle, &foreign), "Foreign");
+    return foreign;
+}
+void Globals::Release(void* handle, bool dispose) noexcept {
+    try {
+        ManagedCallScope managedCall;
+        using Fn = int (*)(void*, int);
+        static Fn fn = reinterpret_cast<Fn>(Resolve("Release"));
+        Check(fn(handle, dispose ? 1 : 0), "Release");
+    } catch (const std::exception& error) {
+        std::fprintf(stderr, "BoSSS proxy cleanup: %s\n", error.what());
+    } catch (...) { std::fprintf(stderr, "BoSSS proxy cleanup failed.\n"); }
+}
+}

@@ -211,6 +211,15 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
+        /// <summary>
+        /// Closes cached SSH connections explicitly. Batch cleanup commands use
+        /// this before returning so their SSH client cannot keep CI build files
+        /// open while GitLab starts the next job.
+        /// </summary>
+        public static void CloseAllSSHconnections() {
+            KillAllSSHconnections();
+        }
+
         static SlurmClient() {
             AppDomain.CurrentDomain.ProcessExit += delegate (object sender, EventArgs args) {
                 KillAllSSHconnections();
@@ -506,6 +515,27 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
+        /// <summary>
+        /// Cancels several Slurm jobs per SSH command. This is used by CI cleanup,
+        /// where cancelling hundreds of submitted tests one-by-one can exceed the
+        /// GitLab cancellation grace period.
+        /// </summary>
+        public void CancelMany(IEnumerable<string> idTokens, string message) {
+            const int batchSize = 100;
+            string[] tokens = idTokens
+                .Where(id => id.IsNonEmpty())
+                .Distinct()
+                .ToArray();
+
+            for(int i = 0; i < tokens.Length; i += batchSize) {
+                string batch = string.Join(" ", tokens.Skip(i).Take(batchSize));
+                using(var tr = new FuncTrace()) {
+                    tr.Info($"Canceling {Math.Min(batchSize, tokens.Length - i)} Slurm job(s)");
+                    SSHConnection.RunCommand("scancel " + batch);
+                }
+            }
+        }
+
 
         /// <summary>
         /// Returns path to text-file for standard error stream
@@ -618,7 +648,10 @@ namespace BoSSS.Application.BoSSSpad {
                         throw new NotSupportedException("Unable to handle environment variable with whitespace: " + envvar.Key);
 
                     string envValue = envvar.Value;
-                    if(envValue.ContainsWhite() || envValue.Contains("'")) {
+                    // quote everything that contains shell-special characters (e.g., parentheses or double quotes in `cs:`-control statements),
+                    // not only values with whitespace or single quotes
+                    bool NeedsQuoting = envValue.Length == 0 || envValue.Any(ch => !(char.IsAsciiLetterOrDigit(ch) || "_-+=:,.@%/".Contains(ch)));
+                    if(NeedsQuoting) {
                         envValue = envValue.Replace("'", "'\"'\"'"); // see: https://stackoverflow.com/questions/1250079/how-to-escape-single-quotes-within-single-quoted-strings
                         envValue = "'" + envValue + "'";
                     }
@@ -700,6 +733,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                     // when using SLURM, sometime `srun` is recommended instead of `mpiexec`; but on Ubuntu 24, e.g., slurm and openMPI are incompatible and sometimes crash the application
                     sw.WriteLine($"export OMP_NUM_THREADS={NumThreads}");
+                    sw.WriteLine($"export OPENBLAS_NUM_THREADS={NumThreads}");
                     sw.WriteLine($"mpirun -n {MPIprocs} --map-by slot:PE={TotalThreadsPerRank}:HWTCPUS --bind-to hwthread " +
                         $"{base.DotnetRuntime} " +
                         GetSanitizedEntryAssemblyname(myJob) + 
@@ -711,7 +745,7 @@ namespace BoSSS.Application.BoSSSpad {
                     sw.WriteLine($"srun --cpu-bind=cores " +
                         $"--mem-bind=local " +
                         //"--output=rank_%t_trace.out strace -f -e clone " + // for debugging threading
-                        $"bash -c 'export OMP_NUM_THREADS={NumThreads}; " + //if not used like this, srun overwrites OMP_NUM_THREADS to TotalThreadsPerRank.
+                        $"bash -c 'export OMP_NUM_THREADS={NumThreads}; export OPENBLAS_NUM_THREADS={NumThreads}; " + //if not used like this, srun overwrites OMP_NUM_THREADS to TotalThreadsPerRank.
                         $"{base.DotnetRuntime} " +
                         GetSanitizedEntryAssemblyname(myJob) +
                         "'");
