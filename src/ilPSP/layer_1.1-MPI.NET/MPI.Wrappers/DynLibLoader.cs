@@ -52,6 +52,60 @@ namespace MPI.Wrappers.Utils {
             }
         }
 
+        readonly DynLibLoader m_LibraryOwner;
+
+        /// <summary>
+        /// Binds another interface to an already selected library. The owner must remain undisposed
+        /// while this interface is used; disposing this interface never unloads the borrowed module.
+        /// </summary>
+        protected DynLibLoader(DynLibLoader owner, GetNameMangling nameMangling) {
+            if(owner == null)
+                throw new ArgumentNullException(nameof(owner));
+            if(owner.LibHandle.val == IntPtr.Zero)
+                throw new ObjectDisposedException(nameof(owner));
+            m_LibraryOwner = owner;
+            m_debugoutput = new StringWriter();
+            m_PreqLibHandle = new DynamicLibraries.DynLibHandle[0];
+            m_LibHandle = owner.LibHandle;
+            CurrentLibraryName = owner.CurrentLibraryName;
+            if(!LoadAllDelegates(nameMangling, CurrentLibraryName)) {
+                UnloadAllDelegates();
+                throw new ApplicationException("Unable to bind interface " + GetType().Name + " to "
+                    + CurrentLibraryName + System.Environment.NewLine + m_debugoutput);
+            }
+        }
+
+        /// <summary>Attempts to construct an optional native interface, preserving loader diagnostics on failure.</summary>
+        public static T TryLoad<T>(Func<T> create, out string reason) where T : DynLibLoader {
+            try {
+                T result = create();
+                reason = null;
+                return result;
+            } catch(Exception e) when(e is ApplicationException || e is DllNotFoundException || e is EntryPointNotFoundException || e is BadImageFormatException) {
+                reason = e.Message;
+                return null;
+            }
+        }
+
+        [DllImport("libc.so.6", EntryPoint = "getenv")]
+        static extern IntPtr NativeGetEnv(string name);
+
+        [DllImport("libc.so.6", EntryPoint = "setenv")]
+        static extern int NativeSetEnv(string name, string value, int overwrite);
+
+        /// <summary>
+        /// Sets a default in the Linux native environment before loading a library. Managed environment
+        /// updates do not reliably reach native getenv; an existing native value is always preserved.
+        /// </summary>
+        public static string SetNativeEnvironmentDefault(string name, string value) {
+            IntPtr current = NativeGetEnv(name);
+            if(current != IntPtr.Zero)
+                return Marshal.PtrToStringAnsi(current);
+            if(NativeSetEnv(name, value, 0) != 0)
+                return null;
+            return Marshal.PtrToStringAnsi(NativeGetEnv(name));
+        }
+
         private DynamicLibraries.DynLibHandle[] m_PreqLibHandle;
 
         /// <summary>
@@ -415,7 +469,8 @@ namespace MPI.Wrappers.Utils {
                     if (FuncPtr == IntPtr.Zero) {
                         //throw new ApplicationException("Library '" + LibNames[i] + "' not working - missing function '" + UnmanagedName + "';");
                         // try next library ..
-                        DynamicLibraries.UnloadDynLib(m_LibHandle);
+                        if(m_LibraryOwner == null)
+                            DynamicLibraries.UnloadDynLib(m_LibHandle);
                         m_LibHandle.val = IntPtr.Zero;
                         success = false;
                         Info("FAILED: >" + errstr2 + "<");
@@ -660,7 +715,8 @@ namespace MPI.Wrappers.Utils {
         /// </summary>
         virtual public void Dispose() {
             if (m_LibHandle.val != IntPtr.Zero) {
-                DynamicLibraries.UnloadDynLib(m_LibHandle);
+                if(m_LibraryOwner == null)
+                    DynamicLibraries.UnloadDynLib(m_LibHandle);
                 m_LibHandle.val = IntPtr.Zero;
                 UnloadAllDelegates();
             }

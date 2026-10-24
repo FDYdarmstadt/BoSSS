@@ -1221,20 +1221,7 @@ namespace ilPSP.Utils {
         }
 
         public static string[][][] GetPrerequesiteLibraries(Parallelism par) {
-            var ret = new string[GetLibname(par).Length][][];
-            ret[0] = new string[][] {
-                new string[] {
-                    "libfakeintel.dll",  // 1st try: load library which fakes an intel processor 
-                    ""  //                  2nd try: no fake-intel - run just without it, intel MKL might run non-optimized
-                }
-            };
-            ret[1] = new string[][] { 
-                new string[] {
-                    "libfakeintel.so",   // 1st try: load library which fakes an intel processor 
-                    ""  //                  2nd try: no fake-intel - run just without it, intel MKL might run non-optimized
-                }
-            };
-            return ret;
+            return new string[GetLibname(par).Length][][];
         }
 
         public static int[] GetPointerSizeFilter(Parallelism par) {
@@ -1279,23 +1266,9 @@ namespace ilPSP.Utils {
         /// <summary>
         /// ctor
         /// </summary>
-        public UnsafeDBLAS(Parallelism par) :
-            base(BLAS_LAPACK_IntelMKL_Libstuff.GetLibname(par),
-                 BLAS_LAPACK_IntelMKL_Libstuff.GetPrerequesiteLibraries(par),
-                 BLAS_LAPACK_IntelMKL_Libstuff.GetGetNameMangling(par),
-                 BLAS_LAPACK_IntelMKL_Libstuff.GetPlatformID(par),
-                 BLAS_LAPACK_IntelMKL_Libstuff.GetPointerSizeFilter(par)) {
-            Provider = BLASProvider.MKL;
-        }
-
-        /// <summary>
-        /// ctor for a provider other than Intel MKL; throws an <see cref="ApplicationException"/> if the library cannot be loaded.
-        /// </summary>
-        internal UnsafeDBLAS(BLASProvider prov) :
-            base(BLAS_OpenBLAS_Libstuff.GetLibstuff()) {
-            if(prov != BLASProvider.OpenBLAS)
-                throw new ArgumentOutOfRangeException(nameof(prov));
-            Provider = prov;
+        public UnsafeDBLAS(Parallelism par, BLASProvider provider = BLASProvider.MKL) :
+            base(BLAS_LAPACK_Libraries.Get(provider, par)) {
+            Provider = provider;
         }
 
         /// <summary>
@@ -1473,10 +1446,10 @@ namespace ilPSP.Utils {
             }
         }
 
-        internal static void ActivateOMP() {
+        public static void ActivateOMP() {
             SetThreadingMode(ilPSP.Environment.MaxNumOpenMPthreads > 1 && ilPSP.Environment.NumThreads > 1);
         }
-        internal static void ActivateSEQ() {
+        public static void ActivateSEQ() {
             SetThreadingMode(false);
         }
 

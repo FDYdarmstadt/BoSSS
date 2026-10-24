@@ -583,7 +583,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 }
 
                 
-                LAPACK.F77_LAPACK.DGELSY(noOfLambdas, noOfNodes, matrix, rhs, mask.NoOfItemsLocally, RCOND);
+                LAPACK.DGELSY(noOfLambdas, noOfNodes, matrix, rhs, mask.NoOfItemsLocally, RCOND);
 
                 n = 0;
                 foreach (Chunk chunk in mask) {
@@ -648,7 +648,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 rhs[k] += quadResults[iSubGrid, k];
             }
 
-            LAPACK.F77_LAPACK.DGELSY(noOfLambdas, noOfNodes, basisValues.Storage, rhs, 1, RCOND);
+            LAPACK.DGELSY(noOfLambdas, noOfNodes, basisValues.Storage, rhs, 1, RCOND);
 
             QuadRule optimizedRule = new QuadRule() {
                 Nodes = nodes,

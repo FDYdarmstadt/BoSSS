@@ -86,9 +86,9 @@ namespace BoSSS.Application.BoSSSpad {
                 // MPI should already be loaded
                 CheckDynamicLibrary("MPI", () => (DynLibLoader)csMPI.Raw);
                 CheckDynamicLibrary("BLAS (sequential)", () => new UnsafeDBLAS(Parallelism.SEQ));
-                CheckDynamicLibrary("LAPACK (sequential)", () => new LAPACK(Parallelism.SEQ));
+                CheckDynamicLibrary("LAPACK (sequential)", () => new UnsafeLAPACK(Parallelism.SEQ));
                 CheckDynamicLibrary("BLAS (OpenMP-parallel)", () => new UnsafeDBLAS(Parallelism.OMP));
-                CheckDynamicLibrary("LAPACK (OpenMPparallel)", () => new LAPACK(Parallelism.OMP));
+                CheckDynamicLibrary("LAPACK (OpenMPparallel)", () => new UnsafeLAPACK(Parallelism.OMP));
             }
 
 
@@ -239,7 +239,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
             Console.WriteLine(Row("threads") + $"{ilPSP.Environment.NumThreads} TPL thread(s), max. {ilPSP.Environment.MaxNumOpenMPthreads} OpenMP thread(s), OpenMP {(ilPSP.Environment.OpenMPenabled ? "enabled" : "disabled")}; tensor kernels always single-threaded");
             Console.WriteLine(Row("CPU affinity (this thread)") + CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ",", "]") + $" of {CPUAffinity.TotalNumberOfCPUs} CPU(s)");
-            Console.WriteLine(Row("MKL") + "Good (using " + BLAS.MKLLibraryPath + "; also used for LAPACK and PARDISO)");
+            Console.WriteLine(Row("MKL") + "Good (using " + BLAS.MKLLibraryPath + "; PARDISO also uses MKL)");
             if(BLAS.OpenBLASAvailable) {
                 Console.WriteLine(Row("OpenBLAS") + "Good (" + BLAS.OpenBLASLoadInfo + "; " + BLAS.OpenBLASConfig + $"; current thread count {BLAS.OpenBLASNumThreads})");
             } else {

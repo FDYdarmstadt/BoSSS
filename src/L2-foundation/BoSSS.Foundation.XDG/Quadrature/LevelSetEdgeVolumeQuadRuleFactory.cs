@@ -463,7 +463,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 }
 
                 if (rhs.Length > 0) {
-                    LAPACK.F77_LAPACK.DGELSY(noOfLambdas, noOfNodesPerEdge, basisValuesEdge.Storage, rhs, noOfRhs, 1e-12);
+                    LAPACK.DGELSY(noOfLambdas, noOfNodesPerEdge, basisValuesEdge.Storage, rhs, noOfRhs, 1e-12);
                 }
 
                 iSubGrid = -1;

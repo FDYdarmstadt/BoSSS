@@ -923,7 +923,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                         //int M = _Mtx.NoOfRows;
                         //int N = _Mtx.NoOfCols;
-                        //LAPACK.F77_LAPACK.DGELSY(M, N, _Mtx.Entries, _RHS.Entries, 1, 1.0e-14);
+                        //LAPACK.DGELSY(M, N, _Mtx.Entries, _RHS.Entries, 1, 1.0e-14);
                         Mtx_Stokes.LeastSquareSolve(_RHS);
 
 

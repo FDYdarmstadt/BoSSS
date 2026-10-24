@@ -574,7 +574,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 }
                             }
 
-                            LAPACK.F77_LAPACK.DGELSY(noOfPhis, noOfNodes, matrix, rhs, 1, RCOND);
+                            LAPACK.DGELSY(noOfPhis, noOfNodes, matrix, rhs, 1, RCOND);
 
                             QuadRule optimizedRule = new QuadRule() {
                                 Nodes = nodesArray,
@@ -674,7 +674,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     }
                 }
 
-                LAPACK.F77_LAPACK.DGELSY(noOfPhis, noOfNodes, matrix, rhs, 1, RCOND);
+                LAPACK.DGELSY(noOfPhis, noOfNodes, matrix, rhs, 1, RCOND);
 
                 QuadRule optimizedRule = new QuadRule() {
                     Nodes = nodesArray,
