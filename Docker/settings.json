@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "defaultMode": "bypassPermissions",
+    "deny": [
+      "Bash(rm *)",
+      "Bash(rmdir *)",
+      "Bash(unlink *)",
+      "Bash(shred *)",
+      "Bash(find * -delete*)",
+      "Bash(find * -exec rm*)",
+      "Bash(git clean*)",
+      "Bash(git rm*)"
+    ]
+  },
+  "skipDangerousModePermissionPrompt": true,
+  "model": "opus",
+  "effortLevel": "high"
+}

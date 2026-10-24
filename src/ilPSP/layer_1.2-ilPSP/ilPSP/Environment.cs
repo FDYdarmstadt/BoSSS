@@ -251,7 +251,7 @@ namespace ilPSP {
                 backup_MaxNumOpenMPthreads = MaxNumOpenMPthreads;
                 MaxNumOpenMPthreads = 1;
                 BLAS.ActivateSEQ();
-                LAPACK.ActivateSEQ();
+
             }
         }
 
@@ -268,7 +268,6 @@ namespace ilPSP {
             }
 
             BLAS.ActivateOMP();
-            LAPACK.ActivateOMP();
             PinOMPthreadsSometimes();
         }
 
@@ -290,13 +289,11 @@ namespace ilPSP {
             try {
                 InParallelSection = true;
                 BLAS.ActivateSEQ();
-                LAPACK.ActivateSEQ();
 
                 return Parallel.For(fromInclusive, toExclusive, options, body);
             } finally {
                 InParallelSection = false;
                 BLAS.ActivateOMP();
-                LAPACK.ActivateOMP();
                 PinOMPthreads();
             }
         }
@@ -899,13 +896,15 @@ namespace ilPSP {
                 //csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD); // wait for all ranks to finish setting up the CPU affinity
 
                 BLAS.ActivateOMP();
-                LAPACK.ActivateOMP();
                 PinTPLThreads(tr);
                 //tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity after TPL binding: " + CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ",", "]"));
                 PinOMPthreads(tr);
                 StdoutOnlyOnRank0 = true;
                 tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity after OpenMP binding: " + CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ",", "]"));
 
+                // BLAS provider (MKL/OpenBLAS): once per process, now that thread budget and CPU allocation are known
+                BLAS.SelectProviderAtStartup();
+                tr.Info($"R{MPIEnv.MPI_Rank}: BLAS provider {BLAS.Provider}: {BLAS.ProviderSelectionReason}");
             }
         }
 

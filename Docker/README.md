@@ -10,13 +10,30 @@ Included tools:
 - Node.js
 - best-effort installation of Claude and Codex CLIs
 
-## Build
+## Build and launch
 
-Run from repository root:
+The executable scripts locate the repository relative to their own path, so they
+can be called from any working directory.
+
+| Ubuntu | Build only | Launch only | Build then launch | Image |
+| --- | --- | --- | --- | --- |
+| 24.04 | `./build-ubuntu24-container.sh` | `./launch-ubuntu24-container.sh` | `./buildNlaunch-ubuntu24-container.sh` | `bosss-dev24` |
+| 26.04 | `./build-ubuntu26-container.sh` | `./launch-ubuntu26-container.sh` | `./buildNlaunch-ubuntu26-container.sh` | `bosss-dev26` |
+
+Set `BOSSS_INSTALL` before launching:
+
 ```bash
-docker build -t bosss-dev -f public/Docker/Dockerfile \
-  --build-arg UID=$(id -u) --build-arg GID=$(id -g) .
+export BOSSS_INSTALL=/path/to/BoSSS-Install
+./buildNlaunch-ubuntu24-container.sh
 ```
+
+Each combined script calls the matching build script and then the matching launch
+script, stopping on build failure. Launching separately uses the same workspace,
+host installation mount and Git identity forwarding.
+
+Both Dockerfiles copy the entrypoint and configuration from files in this directory
+so they also work with the legacy Docker builder. Ubuntu 26.04 retains its Codex
+settings in `config-ubuntu26.toml`.
 
 Windows CMD:
 ```bat
@@ -40,7 +57,7 @@ docker run --rm -it \
   -v "$(pwd)":/workspace \
   -v "$BOSSS_INSTALL":/host-bosss-install:ro \
   -w /workspace \
-  bosss-dev
+  bosss-dev24
 ```
 
 Windows CMD:
@@ -79,8 +96,17 @@ docker run --rm -it \
   -v "$(pwd)":/workspace \
   -v "$BOSSS_INSTALL":/host-bosss-install:ro \
   -w /workspace \
-  bosss-dev
+  bosss-dev24
 ```
+
+## Git identity
+
+The launch scripts read the host's effective `user.name` and `user.email` for this
+repository and pass them as `BOSSS_GIT_USER_NAME` and `BOSSS_GIT_USER_EMAIL`.
+The shared entrypoint sets those values in the container user's global Git config
+on startup. Missing host values leave the corresponding container setting alone.
+Only these two identity values are forwarded. Rebuild existing images to include
+the updated entrypoint before using the launch-only script.
 
 Windows CMD:
 ```bat

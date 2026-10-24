@@ -18,133 +18,76 @@ using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using MPI.Wrappers.Utils;
-using ilPSP.Tracing;
 
 namespace ilPSP.Utils {
 
-    /// <summary>
-    /// some parts of the LAPACK interface (FORTRAN 77 - style -- interface), which are used by BoSSS;
-    /// </summary>
-    public class LAPACK : DynLibLoader {
+    /// <summary>LAPACK convenience methods; provider and threading follow BLAS.</summary>
+    public static class LAPACK {
+        // Load imports only when LAPACK is first used, after native search-path bootstrap.
+        static LAPACK() { }
 
-        /// <summary>
-        /// sequential (single-threaded) LAPACK wrapper
-        /// </summary>
-        public readonly static LAPACK seq_F77_LAPACK;
+        /// <summary>Sequential MKL import, for explicitly sequential calls.</summary>
+        public static readonly UnsafeLAPACK seq_F77_LAPACK = new UnsafeLAPACK(Parallelism.SEQ);
+        /// <summary>Threaded MKL import.</summary>
+        public static readonly UnsafeLAPACK omp_F77_LAPACK = new UnsafeLAPACK(Parallelism.OMP);
+        /// <summary>Current import, selected together with BLAS.</summary>
+        public static UnsafeLAPACK F77_LAPACK => BLAS.ActiveLAPACK;
 
-        /// <summary>
-        /// parallel (multi-threaded) LAPACK wrapper
-        /// </summary>
-        public readonly static LAPACK omp_F77_LAPACK;
+        /// <summary>Selected native DGECON_ entry point.</summary>
+        public static UnsafeLAPACK._DGECON DGECON_ => F77_LAPACK.DGECON_;
 
-        /// <summary>
-        /// entry point to FORTRAN 77 - style LAPACK
-        /// </summary>
-        public static LAPACK F77_LAPACK {
-            get {
-                return LAPACK._F77_LAPACK;
-            }
-        }
+        /// <summary>Selected native DPOSV_ entry point.</summary>
+        public static UnsafeLAPACK._DPOSV DPOSV_ => F77_LAPACK.DPOSV_;
 
-        static LAPACK _F77_LAPACK;
+        /// <summary>Selected native DPOTRF_ entry point.</summary>
+        public static UnsafeLAPACK._DPOTRF DPOTRF_ => F77_LAPACK.DPOTRF_;
 
-        internal static void ActivateOMP() {
-            if (ilPSP.Environment.MaxNumOpenMPthreads > 1 && ilPSP.Environment.NumThreads > 1)
-                _F77_LAPACK = omp_F77_LAPACK;
-            else
-                _F77_LAPACK = seq_F77_LAPACK;
-        }
-        internal static void ActivateSEQ() {
-            _F77_LAPACK = seq_F77_LAPACK;
-        }
+        /// <summary>Selected native DPOTRI_ entry point.</summary>
+        public static UnsafeLAPACK._DPOTRI DPOTRI_ => F77_LAPACK.DPOTRI_;
 
+        /// <summary>Selected native DTRTRI_ entry point.</summary>
+        public static UnsafeLAPACK._DTRTRI DTRTRI_ => F77_LAPACK.DTRTRI_;
 
+        /// <summary>Selected native DSYTRF_ entry point.</summary>
+        public static UnsafeLAPACK._DSYTRF DSYTRF_ => F77_LAPACK.DSYTRF_;
 
-        static LAPACK() {
-            seq_F77_LAPACK = new LAPACK(Parallelism.SEQ);
-            omp_F77_LAPACK = new LAPACK(Parallelism.OMP);
-            _F77_LAPACK = omp_F77_LAPACK;
-        }
+        /// <summary>Selected native DGETRF entry point.</summary>
+        public static UnsafeLAPACK._DGETRF DGETRF => F77_LAPACK.DGETRF;
 
-     
+        /// <summary>Selected native DGETRS entry point.</summary>
+        public static UnsafeLAPACK._DGETRS DGETRS => F77_LAPACK.DGETRS;
 
-        /// <summary>
-        /// ctor
-        /// </summary>
-        public LAPACK(Parallelism par) :
-            base(BLAS_LAPACK_IntelMKL_Libstuff.GetLibname(par),
-                 BLAS_LAPACK_IntelMKL_Libstuff.GetPrerequesiteLibraries(par),
-                 BLAS_LAPACK_IntelMKL_Libstuff.GetGetNameMangling(par),
-                 BLAS_LAPACK_IntelMKL_Libstuff.GetPlatformID(par),
-                 BLAS_LAPACK_IntelMKL_Libstuff.GetPointerSizeFilter(par)) {
-        }
+        /// <summary>Selected native DGETRI_ entry point.</summary>
+        public static UnsafeLAPACK._DGETRI DGETRI_ => F77_LAPACK.DGETRI_;
 
-#pragma warning disable        649
-        _DGETRF dgetrf;
-        _DGETRS dgetrs;
-        _DGETRI dgetri;
-        _DGELSY dgelsy;
-        _DGELSS dgelss;
-        _DPOTRF dpotrf;
-        _DTRTRI dtrtri;
-        _DPOTRI dpotri;
-        _DGEQRF dgeqrf;
-        _DGEQP3 dgeqp3;
-        _DORGQR dorgqr;
-        _DPOSV  dposv;
-        //_DGESVD dgesvd;
-        //_DSYTRF dsytrf;
-        _DGECON dgecon;
-        _DGEEV dgeev;
-        _DSYEV dsyev;
-#pragma warning restore 649
+        /// <summary>Selected native DGELSY_ entry point.</summary>
+        public static UnsafeLAPACK._DGELSY DGELSY_ => F77_LAPACK.DGELSY_;
 
-        /// <summary>
-        /// Reciprocal condition number
-        /// </summary>
-        public unsafe delegate void _DGECON(ref int NORM, ref int N, double* A, ref int LDA, ref double ANORM, ref double RCOND, double* WORK, int* IWORK, ref int INFO);
- 
-        /// <summary>
-        /// Reciprocal condition number
-        /// </summary>
-        public _DGECON DGECON_ {
-            get {
-                return dgecon;
-            }
-        }
+        /// <summary>Selected native DGELSS_ entry point.</summary>
+        public static UnsafeLAPACK._DGELSS DGELSS_ => F77_LAPACK.DGELSS_;
 
-        /// <summary>
-        /// Solution by Cholesky factorization
-        /// </summary>
-        public unsafe delegate void _DPOSV(ref int UPLO, ref int N, ref int NRHS, double* A, ref int LDA, double* B, ref int LDB, out int INFO);
+        /// <summary>Selected native DGEQP3_ entry point.</summary>
+        public static UnsafeLAPACK._DGEQP3 DGEQP3_ => F77_LAPACK.DGEQP3_;
 
-        /// <summary>
-        /// Solution by Cholesky factorization
-        /// </summary>
-        public unsafe _DPOSV DPOSV_ {
-            get {
-                return dposv;
-            }
-        }
+        /// <summary>Selected native DGEQRF_ entry point.</summary>
+        public static UnsafeLAPACK._DGEQRF DGEQRF_ => F77_LAPACK.DGEQRF_;
 
-        /// <summary>
-        /// Cholesky factorization
-        /// </summary>
-        public unsafe delegate void _DPOTRF(ref int UPLO, ref int N, double* A, ref int LDA, out int INFO);
+        /// <summary>Selected native DORGQR_ entry point.</summary>
+        public static UnsafeLAPACK._DORGQR DORGQR_ => F77_LAPACK.DORGQR_;
 
-        /// <summary>
-        /// Cholesky-factorization
-        /// </summary>
-        public unsafe _DPOTRF DPOTRF_ {
-            get {
-                return dpotrf;
-            }
-        }
+        /// <summary>Selected native DGESVD_ entry point.</summary>
+        public static UnsafeLAPACK._DGESVD DGESVD_ => F77_LAPACK.DGESVD_;
+
+        /// <summary>Selected native DGEEV_ entry point.</summary>
+        public static UnsafeLAPACK._DGEEV DGEEV_ => F77_LAPACK.DGEEV_;
+
+        /// <summary>Selected native DSYEV_ entry point.</summary>
+        public static UnsafeLAPACK._DSYEV DSYEV_ => F77_LAPACK.DSYEV_;
 
         /// <summary>
         /// FORTRAN-style LAPACK
         /// </summary>
-        public void DPOTRF(char UPLO, int N, double[] A, int LDA, out int INFO) {
+        public static void DPOTRF(char UPLO, int N, double[] A, int LDA, out int INFO) {
             if (UPLO != 'U' && UPLO != 'L')
                 throw new ArgumentOutOfRangeException();
             int _UPLO = UPLO;
@@ -159,21 +102,7 @@ namespace ilPSP.Utils {
         /// <summary>
         /// FORTRAN-style LAPACK
         /// </summary>
-        public unsafe delegate void _DPOTRI(ref int UPLO, ref int N, double* A, ref int LDA, out int INFO);
-
-        /// <summary>
-        /// FORTRAN-style LAPACK
-        /// </summary>
-        public unsafe _DPOTRI DPOTRI_ {
-            get {
-                return dpotri;
-            }
-        }
-
-        /// <summary>
-        /// FORTRAN-style LAPACK
-        /// </summary>
-        public void DPOTRI(char UPLO, int N, double[] A, int LDA, out int INFO) {
+        public static void DPOTRI(char UPLO, int N, double[] A, int LDA, out int INFO) {
             if (UPLO != 'U' && UPLO != 'L')
                 throw new ArgumentOutOfRangeException();
             int _UPLO = UPLO;
@@ -185,32 +114,16 @@ namespace ilPSP.Utils {
             }
         }
 
-
-        /// <summary>
-        /// triangular matrix inversion
-        /// </summary>
-        public unsafe delegate void _DTRTRI(ref int UPLO, ref int DIAG, ref int N, double* A, ref int LDA, out int INFO);
-
-        /// <summary>
-        /// triangular matrix inversion
-        /// </summary>
-        public unsafe _DTRTRI DTRTRI_ {
-            get {
-                return dtrtri;
-            }
-        }
-
         /// <summary>
         /// FORTRAN-style LAPACK
         /// </summary>
-        public void DTRTRI(int UPLO, int DIAG, int N, double[] A, int LDA, out int INFO) {
+        public static void DTRTRI(int UPLO, int DIAG, int N, double[] A, int LDA, out int INFO) {
             if (UPLO != 'U' && UPLO != 'L')
                 throw new ArgumentOutOfRangeException();
             if (DIAG != 'N' && DIAG != 'U')
                 throw new ArgumentOutOfRangeException();
 
             int _UPLO = UPLO, _DIAG = DIAG;
-
 
             unsafe {
                 fixed (double* pa = A) {
@@ -219,26 +132,10 @@ namespace ilPSP.Utils {
             }
         }
 
-
         /// <summary>
         /// factorization of a real symmetric matrix A
         /// </summary>
-        public unsafe delegate void _DSYTRF(ref int UPLO, ref int N, double* A, ref int LDA, int* IPIV, double* WORK, int* LWORK, ref int INFO);
-
-        /// <summary>
-        /// factorization of a real symmetric matrix A
-        /// </summary>
-        public unsafe _DSYTRF DSYTRF_ {
-            get {
-                return null;
-                //return dsytrf;
-            }
-        }
-
-        /// <summary>
-        /// factorization of a real symmetric matrix A
-        /// </summary>
-        unsafe public void DSYTRF(int UPLO, int N, double* A, int LDA, int* IPIV, double* WORK, int* LWORK, out int INFO)
+        unsafe public static void DSYTRF(int UPLO, int N, double* A, int LDA, int* IPIV, double* WORK, int* LWORK, out int INFO)
         {
             if (UPLO != 'U' && UPLO != 'L')
                 throw new ArgumentOutOfRangeException();
@@ -247,30 +144,14 @@ namespace ilPSP.Utils {
             DSYTRF_(ref UPLO, ref N, A, ref LDA, IPIV, WORK, LWORK, ref INFO);
         }
 
-
-
-        /// <summary>
-        /// FORTRAN-style LAPACK, matrices in FORTRAN order;
-        /// </summary>
-        public unsafe delegate void _DGETRF(ref int m, ref int n, double* a, ref int lda, int* ipiv, out int info);
-
-        /// <summary>
-        /// FORTRAN-style LAPACK, matrices in FORTRAN order;
-        /// </summary>
-        public unsafe _DGETRF DGETRF {
-            get {
-                return dgetrf;
-            }
-        }
-
         /// <summary>
         /// FORTRAN-style LAPACK
         /// </summary>
-        public void DGETRFF(ref int M, ref int N, double[] A, ref int LDA, int[] IPIV, out int INFO) {
+        public static void DGETRFF(ref int M, ref int N, double[] A, ref int LDA, int[] IPIV, out int INFO) {
             unsafe {
                 fixed (double* pa = A) {
                     fixed (int* pIPIV = IPIV) {
-                        dgetrf(ref M, ref N, pa, ref LDA, pIPIV, out INFO);
+                        F77_LAPACK.DGETRF(ref M, ref N, pa, ref LDA, pIPIV, out INFO);
                     }
                 }
             }
@@ -279,39 +160,15 @@ namespace ilPSP.Utils {
         /// <summary>
         /// FORTRAN-style LAPACK
         /// </summary>
-        unsafe public delegate void _DGETRS(ref char transa, ref int n, ref int nrhs, double* a, ref int lda, int* ipiv, double* b, ref int ldb, out int info);
 
         /// <summary>
         /// FORTRAN-style LAPACK
         /// </summary>
-        public unsafe _DGETRS DGETRS {
-            get {
-                return dgetrs;
-            }
-        }
-
-        /// <summary>
-        /// FORTRAN-style LAPACK
-        /// </summary>
-        public unsafe delegate void _DGETRI(ref int N, double* A, ref int LDA, int* IPIV, double* WORK, ref int LWORK, out int INFO);
-
-        /// <summary>
-        /// FORTRAN-style LAPACK
-        /// </summary>
-        public unsafe _DGETRI DGETRI_ {
-            get {
-                return dgetri;
-            }
-        }
-
-        /// <summary>
-        /// FORTRAN-style LAPACK
-        /// </summary>
-        public void DGETRI(ref int N, double[] A, ref int LDA, int[] IPIV, double[] WORK, ref int LWORK, out int INFO) {
+        public static void DGETRI(ref int N, double[] A, ref int LDA, int[] IPIV, double[] WORK, ref int LWORK, out int INFO) {
             unsafe {
                 fixed (double* pa = A, pwork = WORK) {
                     fixed (int* pIPIV = IPIV) {
-                        dgetri(ref N, pa, ref LDA, pIPIV, pwork, ref LWORK, out INFO);
+                        F77_LAPACK.DGETRI_(ref N, pa, ref LDA, pIPIV, pwork, ref LWORK, out INFO);
                     }
                 }
             }
@@ -348,7 +205,7 @@ namespace ilPSP.Utils {
         /// negative number implies that all non-negative eigenvalues are taken
         /// into account
         /// </param>
-        public void DGELSY(int M, int N, double[] A, double[] B, int NRHS, double RCOND) {
+        public static void DGELSY(int M, int N, double[] A, double[] B, int NRHS, double RCOND) {
             {
                 Debug.Assert(
                     A.Length == M * N,
@@ -412,7 +269,7 @@ namespace ilPSP.Utils {
         /// negative number implies that all non-negative eigenvalues are taken
         /// into account
         /// </param>
-        unsafe internal void DGELSY(int M, int N, double* pA, double* pB, int LDB, int NRHS, double RCOND) {
+        internal static unsafe void DGELSY(int M, int N, double* pA, double* pB, int LDB, int NRHS, double RCOND) {
             {
                 int RANK;
                 int LWORK = -1;
@@ -421,7 +278,7 @@ namespace ilPSP.Utils {
                 int* JPVT = stackalloc int[N];
                 double* pLENGTH = stackalloc double[1];
 
-                dgelsy(ref M, ref N, ref NRHS, (double*)pA, ref M, (double*)pB, ref LDB, JPVT, ref RCOND, out RANK, pLENGTH, ref LWORK, out INFO);
+                F77_LAPACK.DGELSY_(ref M, ref N, ref NRHS, (double*)pA, ref M, (double*)pB, ref LDB, JPVT, ref RCOND, out RANK, pLENGTH, ref LWORK, out INFO);
 
                 if (INFO != 0) {
                     throw new ApplicationException("Failed to determine optimal work size");
@@ -432,7 +289,7 @@ namespace ilPSP.Utils {
                 LWORK = (int)*pLENGTH;
                 double[] work = new double[LWORK];
                 fixed (double* pWORK = work) {
-                    dgelsy(ref M, ref N, ref NRHS, (double*)pA, ref M, (double*)pB, ref LDB, JPVT, ref RCOND, out RANK, pWORK, ref LWORK, out INFO);
+                    F77_LAPACK.DGELSY_(ref M, ref N, ref NRHS, (double*)pA, ref M, (double*)pB, ref LDB, JPVT, ref RCOND, out RANK, pWORK, ref LWORK, out INFO);
                 }
 
                 if (INFO != 0) {
@@ -444,27 +301,13 @@ namespace ilPSP.Utils {
         /// <summary>
         /// See http://www.netlib.org/lapack/double/dgelsy.f
         /// </summary>
-        public void DGELSY(ref int M, ref int N, ref int NRHS, double[] A, ref int LDA, double[] B, ref int LDB, int[] JPVT, ref double RCOND, out int RANK, double[] WORK, ref int LWORK, out int INFO) {
+        public static void DGELSY(ref int M, ref int N, ref int NRHS, double[] A, ref int LDA, double[] B, ref int LDB, int[] JPVT, ref double RCOND, out int RANK, double[] WORK, ref int LWORK, out int INFO) {
             unsafe {
                 fixed (double* pA = A, pB = B, pWORK = WORK) {
                     fixed (int* pJPVT = JPVT) {
-                        dgelsy(ref M, ref N, ref NRHS, pA, ref LDA, pB, ref LDB, pJPVT, ref RCOND, out RANK, pWORK, ref LWORK, out INFO);
+                        F77_LAPACK.DGELSY_(ref M, ref N, ref NRHS, pA, ref LDA, pB, ref LDB, pJPVT, ref RCOND, out RANK, pWORK, ref LWORK, out INFO);
                     }
                 }
-            }
-        }
-
-        /// <summary>
-        /// See http://www.netlib.org/lapack/double/dgelsy.f
-        /// </summary>
-        public unsafe delegate void _DGELSY(ref int M, ref int N, ref int NRHS, double* A, ref int LDA, double* B, ref int LDB, int* JPVT, ref double RCOND, out int RANK, double* WORK, ref int LWORK, out int INFO);
-
-        /// <summary>
-        /// <see cref="_DGELSY"/>
-        /// </summary>
-        public unsafe _DGELSY DGELSY_ {
-            get {
-                return dgelsy;
             }
         }
 
@@ -502,7 +345,7 @@ namespace ilPSP.Utils {
         /// <returns>
         /// An estimate for the condition number of <paramref name="A"/>.
         /// </returns>
-        public unsafe double DGELSS(int M, int N, double[] A, double[] B, int NRHS, double RCOND) {
+        public static unsafe double DGELSS(int M, int N, double[] A, double[] B, int NRHS, double RCOND) {
             {
                 Debug.Assert(
                     A.Length == M * N,
@@ -530,7 +373,7 @@ namespace ilPSP.Utils {
                     double* pS = stackalloc double[Math.Min(M, N)];
                     double* pLENGTH = stackalloc double[1];
 
-                    dgelss(ref M, ref N, ref NRHS, (double*)_pA, ref M, (double*)_pB, ref LDB, pS, ref RCOND, out RANK, pLENGTH, ref LWORK, out INFO);
+                    F77_LAPACK.DGELSS_(ref M, ref N, ref NRHS, (double*)_pA, ref M, (double*)_pB, ref LDB, pS, ref RCOND, out RANK, pLENGTH, ref LWORK, out INFO);
 
                     if (INFO != 0) {
                         throw new ApplicationException("Failed to determine optimal work size");
@@ -541,7 +384,7 @@ namespace ilPSP.Utils {
                     LWORK = (int)*pLENGTH;
                     double[] work = new double[LWORK];
                     fixed (double* pWORK = work) {
-                        dgelss(ref M, ref N, ref NRHS, (double*)_pA, ref M, (double*)_pB, ref LDB, pS, ref RCOND, out RANK, pWORK, ref LWORK, out INFO);
+                        F77_LAPACK.DGELSS_(ref M, ref N, ref NRHS, (double*)_pA, ref M, (double*)_pB, ref LDB, pS, ref RCOND, out RANK, pWORK, ref LWORK, out INFO);
                     }
 
                     if (INFO != 0) {
@@ -560,28 +403,14 @@ namespace ilPSP.Utils {
         /// <summary>
         /// See http://www.netlib.org/lapack/double/dgelss.f
         /// </summary>
-        public void DGELSS(ref int M, ref int N, ref int NRHS, double[] A, ref int LDA, double[] B, ref int LDB, double[] S, ref double RCOND, out int RANK, double[] WORK, ref int LWORK, out int INFO) {
+        public static void DGELSS(ref int M, ref int N, ref int NRHS, double[] A, ref int LDA, double[] B, ref int LDB, double[] S, ref double RCOND, out int RANK, double[] WORK, ref int LWORK, out int INFO) {
             unsafe {
                 fixed (double* pA = A, pB = B, pS = S, pWORK = WORK) {
-                    dgelss(ref M, ref N, ref NRHS, pA, ref LDA, pB, ref LDB, pS, ref RCOND, out RANK, pWORK, ref LWORK, out INFO);
+                    F77_LAPACK.DGELSS_(ref M, ref N, ref NRHS, pA, ref LDA, pB, ref LDB, pS, ref RCOND, out RANK, pWORK, ref LWORK, out INFO);
                 }
             }
         }
 
-        /// <summary>
-        /// See http://www.netlib.org/lapack/double/dgelss.f
-        /// </summary>
-        public unsafe delegate void _DGELSS(ref int M, ref int N, ref int NRHS, double* A, ref int LDA, double* B, ref int LDB, double* S, ref double RCOND, out int RANK, double* WORK, ref int LWORK, out int INFO);
-
-        /// <summary>
-        /// <see cref="_DGELSS"/>
-        /// </summary>
-        public unsafe _DGELSS DGELSS_ {
-            get {
-                return dgelss;
-            }
-        }
-        
         /// <summary>
         /// DGEQP3 computes a QR factorization of a matrix <paramref name="A"/>
         /// with column pivoting (A*P = Q*R) using Level 3 BLAS
@@ -611,13 +440,13 @@ namespace ilPSP.Utils {
         /// See <see cref="DORGQR"/> for information about the contents of
         /// <paramref name="A"/> and <paramref name="TAU"/> on exit.
         /// </remarks>
-        public unsafe void DGEQP3(ref int M, ref int N, double* A, ref int LDA, int* JPVT, double* TAU) {
+        public static unsafe void DGEQP3(ref int M, ref int N, double* A, ref int LDA, int* JPVT, double* TAU) {
             // Determine optimal workspace size
             int INFO;
             int LWORK = -1;
             double LENGTH;
             unsafe {
-                dgeqp3(ref M, ref N, A, ref M, JPVT, TAU, &LENGTH, ref LWORK, out INFO);
+                F77_LAPACK.DGEQP3_(ref M, ref N, A, ref M, JPVT, TAU, &LENGTH, ref LWORK, out INFO);
             }
             if (INFO != 0) {
                 throw new ApplicationException("Failed to determine optimal work size");
@@ -630,25 +459,11 @@ namespace ilPSP.Utils {
 
             // Actual computation
             fixed (double* pWORK = work) {
-                dgeqp3(ref M, ref N, A, ref M, JPVT, TAU, pWORK, ref LWORK, out INFO);
+                F77_LAPACK.DGEQP3_(ref M, ref N, A, ref M, JPVT, TAU, pWORK, ref LWORK, out INFO);
             }
 
             if (INFO != 0) {
                 throw new ApplicationException("Failed to determine pivoted QR factorization");
-            }
-        }
-
-        /// <summary>
-        /// See http://www.netlib.org/lapack/double/dgeqp3.f
-        /// </summary>
-        public unsafe delegate void _DGEQP3(ref int M, ref int N, double* A, ref int LDA, int* JPVT, double* TAU, double* WORK, ref int LWORK, out int INFO);
-
-        /// <summary>
-        /// <see cref="_DGEQP3"/>
-        /// </summary>
-        public unsafe _DGEQP3 DGEQP3_ {
-            get {
-                return dgeqp3;
             }
         }
 
@@ -682,12 +497,12 @@ namespace ilPSP.Utils {
         /// See <see cref="DORGQR"/> for information about the contents of
         /// <paramref name="A"/> and <paramref name="TAU"/> on exit.
         /// </remarks>
-        public unsafe void DGEQRF(ref int M, ref int N, double* A, ref int LDA, double* TAU) {
+        public static unsafe void DGEQRF(ref int M, ref int N, double* A, ref int LDA, double* TAU) {
             // Determine optimal workspace size
             int INFO;
             int LWORK = -1;
             double* pLENGTH = stackalloc double[1];
-            dgeqrf(ref M, ref N, A, ref M, TAU, pLENGTH, ref LWORK, out INFO);
+            F77_LAPACK.DGEQRF_(ref M, ref N, A, ref M, TAU, pLENGTH, ref LWORK, out INFO);
 
             if (INFO != 0) {
                 throw new ApplicationException("Failed to determine optimal work size");
@@ -700,7 +515,7 @@ namespace ilPSP.Utils {
 
             // Actual computation
             fixed (double* pWORK = work) {
-                dgeqrf(ref M, ref N, A, ref M, TAU, pWORK, ref LWORK, out INFO);
+                F77_LAPACK.DGEQRF_(ref M, ref N, A, ref M, TAU, pWORK, ref LWORK, out INFO);
             }
 
             if (INFO != 0) {
@@ -708,20 +523,6 @@ namespace ilPSP.Utils {
             }
         }
 
-        /// <summary>
-        /// See http://www.netlib.org/lapack/double/dgeqrf.f
-        /// </summary>
-        public unsafe delegate void _DGEQRF(ref int M, ref int N, double* A, ref int LDA, double* TAU, double* WORK, ref int LWORK, out int INFO);
-
-        /// <summary>
-        /// <see cref="_DGEQRF"/>
-        /// </summary>
-        public unsafe _DGEQRF DGEQRF_ {
-            get {
-                return dgeqrf;
-            }
-        }
-        
         /// <summary>
         /// Generates an <paramref name="M"/>-by-<paramref name="N"/> real
         /// matrix Q with orthonormal columns, which is defined as the first
@@ -752,12 +553,12 @@ namespace ilPSP.Utils {
         /// The scalar factor of the elementary reflector H(i), as returned by
         /// <see cref="DGEQP3"/>
         /// </param>
-        public unsafe void DORGQR(ref int M, ref int N, ref int K, double* A, ref int LDA, double* TAU) {
+        public static unsafe void DORGQR(ref int M, ref int N, ref int K, double* A, ref int LDA, double* TAU) {
             // Determine optimal workspace size
             int INFO;
             int LWORK = -1;
             double* pLENGTH = stackalloc double[1];
-            dorgqr(ref M, ref N, ref K, A, ref LDA, TAU, pLENGTH, ref LWORK, out INFO);
+            F77_LAPACK.DORGQR_(ref M, ref N, ref K, A, ref LDA, TAU, pLENGTH, ref LWORK, out INFO);
 
             if (INFO != 0) {
                 throw new ApplicationException("Failed to determine optimal work size");
@@ -770,28 +571,13 @@ namespace ilPSP.Utils {
 
             // Actual computation
             fixed (double* pWORK = work) {
-                dorgqr(ref M, ref N, ref K, A, ref LDA, TAU, pWORK, ref LWORK, out INFO);
+                F77_LAPACK.DORGQR_(ref M, ref N, ref K, A, ref LDA, TAU, pWORK, ref LWORK, out INFO);
             }
 
             if (INFO != 0) {
                 throw new ApplicationException("Failed to construct matrix Q");
             }
         }
-
-        /// <summary>
-        /// See: http://www.netlib.org/lapack/double/dorgqr.f"
-        /// </summary>
-        public unsafe delegate void _DORGQR(ref int M, ref int N, ref int K, double* A, ref int LDA, double* TAU, double* WORK, ref int LWORK, out int INFO);
-
-        /// <summary>
-        /// <see cref="_DORGQR"/>
-        /// </summary>
-        public unsafe _DORGQR DORGQR_ {
-            get {
-                return dorgqr;
-            }
-        }
-
 
         /// <summary>
         /// DGESVD computes the singular value decomposition (SVD) of a real
@@ -851,7 +637,7 @@ namespace ilPSP.Utils {
         /// <param name="LDVT">
         /// Leading dimension of <paramref name="VT"/>
         /// </param>
-        public unsafe void DGESVD(int JOBU, int JOBVT, int M, int N, double* A, int LDA, double* S, double* U, int LDU, double* VT, int LDVT)
+        public static unsafe void DGESVD(int JOBU, int JOBVT, int M, int N, double* A, int LDA, double* S, double* U, int LDU, double* VT, int LDVT)
         {
             throw new NotImplementedException("temporarily deactivated");
             /*
@@ -887,52 +673,5 @@ namespace ilPSP.Utils {
             */
         }
 
-        /// <summary>
-        /// Singular Value Decomposition
-        /// </summary>
-        public unsafe delegate void _DGESVD(ref int JOBU, ref int JOBVT, ref int M, ref int N, double* A, ref int LDA, double* S, double* U, ref int LDU, double* VT, ref int LDVT, double* WORK, ref int LWORK, out int INFO);
-
-        /// <summary>
-        /// Singular Value Decomposition
-        /// </summary>
-        public unsafe _DGESVD DGESVD_
-        {
-            get
-            {
-                throw new NotImplementedException("temporarily deactivated");
-                //return dgesvd;
-            }
-        }
-
-
-
-        /// <summary>
-        /// General matrix eigenvalues.
-        /// </summary>
-        public unsafe delegate void _DGEEV(ref int JOBVL, ref int JOBVR, ref int N, double* A, ref int LDA, double* WR, double* WI, double* VL, ref int LDVL, double* VR, ref int LDVR, double* WORK, ref int LWORK, out int INFO);
-
-        /// <summary>
-        /// <see cref="_DGEEV"/>
-        /// </summary>
-        public unsafe _DGEEV DGEEV_ {
-            get {
-                return dgeev;
-            }
-        }
-
-
-        /// <summary>
-        /// Symmetrical matrix eigenvalues.
-        /// </summary>
-        public unsafe delegate void _DSYEV(ref int JOBZ, ref int UPLO, ref int N, double* A, ref int LDA, double* W, double* WORK, ref int LWORK, out int INFO);
-
-        /// <summary>
-        /// <see cref="_DSYEV"/>
-        /// </summary>
-        public unsafe _DSYEV DSYEV_ {
-            get {
-                return dsyev;
-            }
-        }
     }
 }

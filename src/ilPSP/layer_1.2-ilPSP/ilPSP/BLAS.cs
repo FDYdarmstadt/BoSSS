@@ -1221,20 +1221,7 @@ namespace ilPSP.Utils {
         }
 
         public static string[][][] GetPrerequesiteLibraries(Parallelism par) {
-            var ret = new string[GetLibname(par).Length][][];
-            ret[0] = new string[][] {
-                new string[] {
-                    "libfakeintel.dll",  // 1st try: load library which fakes an intel processor 
-                    ""  //                  2nd try: no fake-intel - run just without it, intel MKL might run non-optimized
-                }
-            };
-            ret[1] = new string[][] { 
-                new string[] {
-                    "libfakeintel.so",   // 1st try: load library which fakes an intel processor 
-                    ""  //                  2nd try: no fake-intel - run just without it, intel MKL might run non-optimized
-                }
-            };
-            return ret;
+            return new string[GetLibname(par).Length][][];
         }
 
         public static int[] GetPointerSizeFilter(Parallelism par) {
@@ -1247,6 +1234,28 @@ namespace ilPSP.Utils {
 
     
     /// <summary>
+    /// provides arguments for <see cref="DynLibLoader"/>, for the OpenBLAS which is bundled with the PETSc native wrapper
+    /// (`libBoSSSnative_petsc_mpi_omp.so`; same `BoSSS_`-prefixed Fortran-style BLAS entries as the MKL libraries).
+    /// There is no OpenBLAS in the Windows native build.
+    /// </summary>
+    public static class BLAS_OpenBLAS_Libstuff {
+
+        /// <summary>
+        /// name of the native library which contains OpenBLAS
+        /// </summary>
+        public const string LinuxLibName = "libBoSSSnative_petsc_mpi_omp.so";
+
+        internal static (string[] _LibNames, string[][][] PrequesiteLibraries, GetNameMangling[] NameMangling, PlatformID[] OsFilter, int[] PointerSizeFilter) GetLibstuff() {
+            return (new string[] { LinuxLibName },
+                new string[][][] { null },
+                new GetNameMangling[] { DynLibLoader.BoSSS_Prefix },
+                new PlatformID[] { PlatformID.Unix },
+                new int[] { 8 });
+        }
+    }
+
+
+    /// <summary>
     /// subset of BLAS
     /// </summary>
     public sealed class UnsafeDBLAS : DynLibLoader {
@@ -1257,12 +1266,18 @@ namespace ilPSP.Utils {
         /// <summary>
         /// ctor
         /// </summary>
-        public UnsafeDBLAS(Parallelism par) :
-            base(BLAS_LAPACK_IntelMKL_Libstuff.GetLibname(par),
-                 BLAS_LAPACK_IntelMKL_Libstuff.GetPrerequesiteLibraries(par),
-                 BLAS_LAPACK_IntelMKL_Libstuff.GetGetNameMangling(par),
-                 BLAS_LAPACK_IntelMKL_Libstuff.GetPlatformID(par),
-                 BLAS_LAPACK_IntelMKL_Libstuff.GetPointerSizeFilter(par)) { }
+        public UnsafeDBLAS(Parallelism par, BLASProvider provider = BLASProvider.MKL) :
+            base(BLAS_LAPACK_Libraries.Get(provider, par)) {
+            Provider = provider;
+        }
+
+        /// <summary>
+        /// the BLAS implementation behind this wrapper
+        /// </summary>
+        public BLASProvider Provider {
+            get;
+            private set;
+        }
 
         
         /// <summary> FORTRAN BLAS routine </summary>
@@ -1391,7 +1406,7 @@ namespace ilPSP.Utils {
     /// <summary>
     /// some parts of the BLAS interface, which are used by BoSSS;
     /// </summary>
-    static public class BLAS {
+    static public partial class BLAS {
 
         /// <summary>
         /// the machine double accuracy: the smallest x, so that 1 + x > 1
@@ -1408,13 +1423,21 @@ namespace ilPSP.Utils {
             }
         }
 
+        /// <summary>
+        /// sequential Intel MKL;
+        /// Note: tensor kernels should use <see cref="SeqDGEMM"/> resp. <see cref="SeqDGEMV"/>, which respect the active <see cref="Provider"/>.
+        /// </summary>
         public readonly static UnsafeDBLAS m_seq_BLAS;
+
+        /// <summary>
+        /// OpenMP-parallel Intel MKL
+        /// </summary>
         public readonly static UnsafeDBLAS m_omp_BLAS;
 
-        static UnsafeDBLAS m_BLAS;
+        static volatile UnsafeDBLAS m_BLAS;
 
 
-        /// <summary>Cos
+        /// <summary>
         /// most native BLAS interface available
         /// </summary>
         public static UnsafeDBLAS F77_BLAS { 
@@ -1423,14 +1446,11 @@ namespace ilPSP.Utils {
             }
         }
 
-        internal static void ActivateOMP() {
-            if (ilPSP.Environment.MaxNumOpenMPthreads > 1 && ilPSP.Environment.NumThreads > 1)
-                m_BLAS = m_omp_BLAS;
-            else
-                m_BLAS = m_seq_BLAS;
+        public static void ActivateOMP() {
+            SetThreadingMode(ilPSP.Environment.MaxNumOpenMPthreads > 1 && ilPSP.Environment.NumThreads > 1);
         }
-        internal static void ActivateSEQ() {
-            m_BLAS = m_seq_BLAS;
+        public static void ActivateSEQ() {
+            SetThreadingMode(false);
         }
 
 

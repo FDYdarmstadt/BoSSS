@@ -1,0 +1,9 @@
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
+
+model = "gpt-6.1-sol"
+model_reasoning_effort = "medium"
+service_tier = "default"
+
+[projects."/workspace"]
+trust_level = "trusted"

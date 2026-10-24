@@ -67,6 +67,9 @@ namespace ilPSP {
                 (broadcast ? "" : prefix)+(transposeA ? "ki" : "ik"), prefix+(transposeB ? "jk" : "kj"));
             t.Multiply(alpha,a,b,beta,ref program);
             for(int i = 0; i < expected.Length; i++) {
+                // beta = 0: non-finite entries of T on input give an undefined result (owner decision 2026-10-22: no extra
+                // pass for NaN propagation; BLAS paths do not read T); non-finite values with beta != 0 must propagate
+                if(beta == 0.0 && !double.IsFinite(initial[i])) continue;
                 if(double.IsNaN(expected[i])) Assert.IsTrue(double.IsNaN(t.Storage[i]), "NaN propagation");
                 else if(double.IsInfinity(expected[i])) Assert.AreEqual(expected[i],t.Storage[i]);
                 else Assert.That(t.Storage[i], Is.EqualTo(expected[i]).Within(2e-12*Math.Max(1,Math.Abs(expected[i]))),
@@ -135,7 +138,7 @@ namespace ilPSP {
         }
 
         delegate bool TryKernelGeneral(int r, int s, double* t, double* a, double* b,
-            int* lr, int* ct, int* ca, int* cb, int* ls, int* sa, int* sb, double alpha, double beta, long gettBelow);
+            int* lr, int* ct, int* ca, int* cb, int* ls, int* sa, int* sb, double alpha, double beta, long gettBelow, int minDim);
 
         /// <summary>
         /// Packed DGEMM for general contractions (multi-index M, N, K, batches, padded strides), called directly,
@@ -171,7 +174,6 @@ namespace ilPSP {
                 }
                 var T = Mk(c.T); var A = Mk(c.A); var B = Mk(c.B);
                 foreach(var X in new[] { T, A, B }) for(int i = 0; i < X.Storage.Length; i++) X.Storage[i] = rng.NextDouble() - .5;
-                if(beta == 0.0) T.Storage[T.Index(new int[T.Dimension])] = double.NaN;
 
                 int DT = c.T.Length, NS = c.sum.Length;
                 int* lr = stackalloc int[DT]; int* ct = stackalloc int[DT]; int* ca = stackalloc int[DT]; int* cb = stackalloc int[DT];
@@ -192,7 +194,7 @@ namespace ilPSP {
                     Reference(DT, NS, t0, a0, b0, lr, ct, ca, cb, ls, sa, sb, .75, beta);
                     double[] expected = (double[])T.Storage.Clone();
                     initial.CopyTo(T.Storage, 0);
-                    taken = tryGeneral(DT, NS, t0, a0, b0, lr, ct, ca, cb, ls, sa, sb, .75, beta, 0);
+                    taken = tryGeneral(DT, NS, t0, a0, b0, lr, ct, ca, cb, ls, sa, sb, .75, beta, 0, 0);
                     Assert.IsTrue(taken, $"{c.T},{c.A},{c.B}: general packed DGEMM path expected");
                     double maxRef = expected.Where(x => !double.IsNaN(x)).Max(x => Math.Abs(x));
                     for(int i = 0; i < expected.Length; i++) {

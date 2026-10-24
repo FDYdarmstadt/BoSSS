@@ -2468,7 +2468,7 @@ namespace ilPSP {
                     int LDB = B.NoOfRows;
                     CopyToUnsafeBuffer(Mtx, this_entries, true);
 
-                    LAPACK.F77_LAPACK.DGELSY(M, N, this_entries, _RHS, LDB, NRHS, RCOND);
+                    LAPACK.DGELSY(M, N, this_entries, _RHS, LDB, NRHS, RCOND);
 
                     CopyFromUnsafeBuffer(B, _RHS, true);
                 }
@@ -2525,7 +2525,7 @@ namespace ilPSP {
                     int LDB = B.NoOfRows;
                     CopyToUnsafeBuffer(Mtx, this_entries, true);
 
-                    LAPACK.F77_LAPACK.DGELSY(M, N, this_entries, _RHS, LDB, NRHS, RCOND);
+                    LAPACK.DGELSY(M, N, this_entries, _RHS, LDB, NRHS, RCOND);
 
                     CopyFromUnsafeBuffer(X, _RHS, true);
                 }
@@ -2583,7 +2583,7 @@ namespace ilPSP {
                 fixed (double* p_RHS = _RHS, this_entries = _this_entries) {
                     CopyToUnsafeBuffer(Mtx, this_entries, true);
 
-                    LAPACK.F77_LAPACK.DGELSY(M, N, this_entries, p_RHS, _RHS.Length, 1, RCOND);
+                    LAPACK.DGELSY(M, N, this_entries, p_RHS, _RHS.Length, 1, RCOND);
 
                 }
             }
@@ -3172,10 +3172,10 @@ namespace ilPSP {
                 fixed (double* pM = _M, pTAU = TAU) {
                     CopyToUnsafeBuffer(M, pM, true);
 
-                    LAPACK.F77_LAPACK.DGEQRF(ref N, ref N, pM, ref N, pTAU);
+                    LAPACK.DGEQRF(ref N, ref N, pM, ref N, pTAU);
                     CopyFromUnsafeBuffer(R, pM, true);
 
-                    LAPACK.F77_LAPACK.DORGQR(ref N, ref N, ref N, pM, ref N, pTAU);
+                    LAPACK.DORGQR(ref N, ref N, ref N, pM, ref N, pTAU);
                     CopyFromUnsafeBuffer(Q, pM, true);
                 }
                 TempBuffer.FreeTempBuffer(i0);
@@ -3246,10 +3246,10 @@ namespace ilPSP {
                     fixed (int* pP = P) {
                         CopyToUnsafeBuffer(M, pM, true);
 
-                        LAPACK.F77_LAPACK.DGEQP3(ref N, ref N, pM, ref N, pP, pTAU);
+                        LAPACK.DGEQP3(ref N, ref N, pM, ref N, pP, pTAU);
                         CopyFromUnsafeBuffer(R, pM, true);
 
-                        LAPACK.F77_LAPACK.DORGQR(ref N, ref N, ref N, pM, ref N, pTAU);
+                        LAPACK.DORGQR(ref N, ref N, ref N, pM, ref N, pTAU);
                         CopyFromUnsafeBuffer(Q, pM, true);
                     }
                 }
@@ -3378,7 +3378,7 @@ namespace ilPSP {
                 {
                     CopyToUnsafeBuffer(Mtx, _A, true);
 
-                    LAPACK.F77_LAPACK.DGESVD(JOBU, JOBVT, M, N, _A, LDA, _S, _U, LDU, _VT, LDVT);
+                    LAPACK.DGESVD(JOBU, JOBVT, M, N, _A, LDA, _S, _U, LDU, _VT, LDVT);
 
                     CopyFromUnsafeBuffer(S, _S, true);
                     CopyFromUnsafeBuffer(VT, _VT, true);

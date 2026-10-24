@@ -39,20 +39,14 @@ namespace ilPSP {
         internal static bool s_GettStageShortVector = false;
 
         /// <summary>
-        /// true on AMD CPUs: gathered operands and staged T blocks are not used there (see <see cref="GettProfitable"/>).
-        /// Measured on AMD EPYC 7F52 (Zen 2; PLAN-4, FINDINGS.md 2026-10-03): vs. the generated kernels, gathered
-        /// cases 1.42x geomean but down to 0.55x, staged T 1.06x but down to 0.42x (Intel i7-6700: 2.87x for
-        /// gathered); unit-stride cases 2.75x. Per-machine calibration instead of this vendor rule: PLAN-5.
+        /// If true, the blocked SIMD path (see <see cref="GettProfitable"/>) is not used for gathered operands and
+        /// staged T blocks; such calls then use the generated kernels or BLAS. Default: false on all CPUs.
+        /// This was a vendor rule (on for AMD CPUs without AVX-512) until PLAN-5: the census replay is faster without it
+        /// on AMD EPYC 7F52 (Zen 2) x1.07, 7543 and 7763 (Zen 3) x1.10 and x1.14, 9654 (Zen 4) x1.16 (FINDINGS.md, 2026-10-23);
+        /// it was introduced for Zen 2 on PLAN-4 measurements (gathered 1.42x geomean, down to 0.55x).
+        /// Configuration is by code only (e.g. for measurements, or if a CPU is found where gathers are slow).
         /// </summary>
-        internal static bool s_GettSlowGather = IsAmdCpu();
-
-        static bool IsAmdCpu() {
-            if(!X86Base.IsSupported)
-                return false;
-            var (_, ebx, ecx, edx) = X86Base.CpuId(0, 0);
-            // vendor string: EBX, EDX, ECX = "Auth" "enti" "cAMD"
-            return ebx == 0x68747541 && edx == 0x69746e65 && ecx == 0x444d4163;
-        }
+        public static bool GettAvoidGatheredAndStaged = false;
 
         /// <summary> execution plan of the blocked SIMD path for one call </summary>
         unsafe struct GettPlan {
@@ -169,8 +163,8 @@ namespace ilPSP {
             long K = (p.NS > 0 ? p.K0 : 1) * (long)(p.NS > 1 ? p.K1 : 1);
             if(p.lenV <= 3 && p.NS > 0 && K <= 4) return false;   // half-empty vectors vs. unrolled scalar reference kernels
             if(p.pat == 3 && K <= 2) return false;                // gathered X without re-use and very short reduction
-            if(s_GettSlowGather && (p.stage || p.pat == 2 || p.pat == 3 || p.pat == 5 || p.pat == 6))
-                return false;                                     // AMD (Zen 2): gathers / staging not profitable
+            if(GettAvoidGatheredAndStaged && (p.stage || p.pat == 2 || p.pat == 3 || p.pat == 5 || p.pat == 6))
+                return false;                                     // switched on explicitly: gathers / staging not wanted
             long work = (long)p.lenV * p.lenR * K * nBatch;
             for(int i = 0; i < p.nOuter; i++) work *= p.oLen[i];
             if(work < 64) return false;                           // tiny: set-up overhead dominates
@@ -272,13 +266,26 @@ namespace ilPSP {
         /// the caller must check <see cref="GettTNonOverlapping"/> for all loops)
         /// </summary>
         unsafe static bool GettWouldRun(int DT, int NS, int* len, int* ct, int* ca, int* cb, int* lenSum, int* sa, int* sb, int nBatch) {
+            return GettWouldRun(DT, NS, len, ct, ca, cb, lenSum, sa, sb, nBatch, out _);
+        }
+
+        /// <summary>
+        /// as <see cref="GettWouldRun(int, int, int*, int*, int*, int*, int*, int*, int*, int)"/>;
+        /// <paramref name="gathered"/>: the plan uses gathered operands or a staged T block (kernel patterns 2, 3, 5, 6),
+        /// which run at about 1/3 of the speed of the unit-stride patterns (PLAN-5, RESULTS-5.md)
+        /// </summary>
+        unsafe static bool GettWouldRun(int DT, int NS, int* len, int* ct, int* ca, int* cb, int* lenSum, int* sa, int* sb, int nBatch, out bool gathered) {
+            gathered = false;
 #if MULTIPLY_FASTPATH_DIAGNOSTICS
             if(s_FastPathOff || s_GettOff)
                 return false;
 #endif
-            return GettPrepare(out GettPlan p, DT, NS, len, ct, ca, cb, lenSum, sa, sb)
+            if(!(GettPrepare(out GettPlan p, DT, NS, len, ct, ca, cb, lenSum, sa, sb)
                 && GettProfitable(ref p, nBatch)
-                && GettTNonOverlapping(DT, len, ct);
+                && GettTNonOverlapping(DT, len, ct)))
+                return false;
+            gathered = p.stage || p.pat == 2 || p.pat == 3 || p.pat == 5 || p.pat == 6;
+            return true;
         }
 
         /// <summary>

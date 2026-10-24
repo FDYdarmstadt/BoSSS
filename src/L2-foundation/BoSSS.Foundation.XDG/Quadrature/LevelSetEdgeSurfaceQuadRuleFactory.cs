@@ -265,7 +265,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         }
                     }
 
-                    LAPACK.F77_LAPACK.DGELSY(numberOfPhis, noOfNodesOnEdge, matrix, rhs, 1, 1e-12);
+                    LAPACK.DGELSY(numberOfPhis, noOfNodesOnEdge, matrix, rhs, 1, 1e-12);
 
                     int edge = Math.Abs(LevelSetData.GridDat.Cells.Cells2Edges[cell][e]) - 1;
                     double maxWeight = 0.0;

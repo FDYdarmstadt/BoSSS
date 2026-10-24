@@ -208,8 +208,15 @@ namespace ilPSP {
         // bitwise identical to the generated kernels. Packed DGEMM additionally copies all operands
         // (4.7x slower than the SIMD path for a census shape 20x49/6), hence the higher limit.
         // Keep the limits in one place, for re-tuning per machine/library (PLAN-5).
+        //
+        // PLAN-5 (AMD EPYC 9654, RESULTS-5.md): the packing limit depends on the SIMD plan. With gathered operands, the
+        // SIMD path runs at 11-14 GF/s and packed DGEMM wins all census entries above 64^3 (1.8-2.6x). Without gathers
+        // (20-33 GF/s), packing only pays off for large GEMMs with no short dimension: `ij,pqi,pqj` n^2/(n*8) packed/SIMD
+        // 0.67 (n = 35), 1.03 (64), 1.20 (96), 1.66 (128); `ijk,ip,jpk` 20xJx3/35 (m = 20): 0.75-0.91 for all J up to 2048.
         internal const long GETT_PREFERRED_BELOW_MNK = 12000;
         internal const long GETT_PREFERRED_BELOW_MNK_PACKED = 64 * 64 * 64;
+        internal const long GETT_PREFERRED_BELOW_MNK_PACKED_UNIT = 4000000;
+        internal const int GETT_PACKED_UNIT_MIN_DIM = 48;
         static unsafe bool TryMultiplyBlas(int runDim, int sumDim,
             double* t, double* a, double* b, int* lengths,
             int* ct, int* ca, int* cb, int* sums, int* sa, int* sb,
@@ -227,34 +234,43 @@ namespace ilPSP {
                 return false;
             for(int s = 0; s < sumDim; s++)
                 if(sums[s] <= 0) return false;
+            // small GEMMs: MKL JIT is faster than both the blocked SIMD path and DGEMM (PLAN-5, RESULTS-5.md)
+            if(sumDim == 1 && MklJitGemm && TryJitGemm(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) return FastPathSelected("TryJitGemm");
+            // matrix-vector: DGEMV is 1.2x-5x faster than the SIMD path from 8x8 on (PLAN-5, RESULTS-5.md)
+            if(sumDim == 1 && TryDirectGemv(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) return FastPathSelected("TryDirectGemv");
             long gettBelow = 0, gettBelowPacked = 0;
+            int packedMinDim = 0;
             {
                 // every BLAS path needs m*n*k >= 4096 per matrix; only then, the SIMD path plan is evaluated
                 long work = sums[0] * (sumDim > 1 ? (long)sums[1] : 1);
                 for(int d = 0; d < runDim; d++) work *= lengths[d];
                 if(work < 4096)
                     return false;
-                if(GettWouldRun(runDim, sumDim, lengths, ct, ca, cb, sums, sa, sb, 1)) {
+                if(GettWouldRun(runDim, sumDim, lengths, ct, ca, cb, sums, sa, sb, 1, out bool gettGathered)) {
                     gettBelow = GETT_PREFERRED_BELOW_MNK;
-                    gettBelowPacked = GETT_PREFERRED_BELOW_MNK_PACKED;
+                    gettBelowPacked = gettGathered ? GETT_PREFERRED_BELOW_MNK_PACKED : GETT_PREFERRED_BELOW_MNK_PACKED_UNIT;
+                    packedMinDim = gettGathered ? 0 : GETT_PACKED_UNIT_MIN_DIM;
                 }
             }
             if(sumDim != 1)
                 goto general;
             if(TryDirectGemmRank4(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta, gettBelow)) return FastPathSelected("TryDirectGemmRank4");
             if(TryDirectGemm(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta, gettBelow)) return FastPathSelected("TryDirectGemm");
-            if(TryDirectGemv(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta)) return FastPathSelected("TryDirectGemv");
 #if MULTIPLY_FASTPATH_DIAGNOSTICS
             if(s_FastPathGemmOnly)
                 return false;
 #endif
-            if(TryPackedGemm(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta, gettBelowPacked)) return FastPathSelected("TryPackedGemm");
+            if(s_BlisGett && TryBlisGett(runDim, sumDim, t, a, b, lengths, ct, ca, cb, sums, sa, sb, alpha, beta, Math.Max(s_BlisGettMinMnk, gettBelow))) return FastPathSelected("TryBlisGett");
+            if(TryPackedGemm(runDim, t, a, b, lengths, ct, ca, cb, sums[0], sa, sb, alpha, beta, gettBelowPacked, packedMinDim)) return FastPathSelected("TryPackedGemm");
+            goto packedGeneral;
         general:
 #if MULTIPLY_FASTPATH_DIAGNOSTICS
             if(s_FastPathGemmOnly)
                 return false;
 #endif
-            if(TryPackedGemmGeneral(runDim, sumDim, t, a, b, lengths, ct, ca, cb, sums, sa, sb, alpha, beta, gettBelowPacked)) return FastPathSelected("TryPackedGemmGeneral");
+            if(s_BlisGett && TryBlisGett(runDim, sumDim, t, a, b, lengths, ct, ca, cb, sums, sa, sb, alpha, beta, Math.Max(s_BlisGettMinMnk, gettBelow))) return FastPathSelected("TryBlisGett");
+        packedGeneral:
+            if(TryPackedGemmGeneral(runDim, sumDim, t, a, b, lengths, ct, ca, cb, sums, sa, sb, alpha, beta, gettBelowPacked, packedMinDim)) return FastPathSelected("TryPackedGemmGeneral");
             return false;
         }
 
@@ -266,7 +282,7 @@ namespace ilPSP {
         /// tables, TempBuffer), one DGEMM per batch entry, T copied back.
         /// </summary>
         static unsafe bool TryPackedGemmGeneral(int runDim, int sumDim, double* t, double* a, double* b,
-            int* lengths, int* ct, int* ca, int* cb, int* sums, int* sa, int* sb, double alpha, double beta, long gettBelow) {
+            int* lengths, int* ct, int* ca, int* cb, int* sums, int* sa, int* sb, double alpha, double beta, long gettBelow, int minDim = 0) {
             const int MAXD = 8;
             if(!s_PackedGemmGeneral || runDim > MAXD || sumDim < 1 || sumDim > 2) return false;
             int* dM = stackalloc int[MAXD]; int* dN = stackalloc int[MAXD]; int* dB = stackalloc int[MAXD];
@@ -281,7 +297,7 @@ namespace ilPSP {
                 else return false; // T-only (broadcast) loop
             }
             for(int s = 0; s < sumDim; s++) k *= sums[s];
-            if(m < 8 || n < 8 || k < 8) return false;
+            if(m < 8 || n < 8 || k < 8 || m < minDim || n < minDim || k < minDim) return false;
             long mnk = m * n * k;
             if(mnk < GEMM_PACKED_GENERAL_MIN_MNK || mnk < gettBelow) return false;
             if(m * k + k * n + m * n > int.MaxValue / 2 || m + n + 2 * k > (1 << 24)) return false;
@@ -312,11 +328,11 @@ namespace ilPSP {
                             double* tq = t + ot, aq = a + oa, bq = b + ob;
                             for(int i = 0; i < M; i++) { double* ai = aq + oAM[i]; double* pai = pa + i * K; for(int l = 0; l < K; l++) pai[l] = ai[oAK[l]]; }
                             for(int l = 0; l < K; l++) { double* bl = bq + oBK[l]; double* pbl = pb + l * N; for(int j = 0; j < N; j++) pbl[j] = bl[oBN[j]]; }
-                            for(int i = 0; i < M; i++) { double* ti = tq + oTM[i]; double* pci = pc + i * N; for(int j = 0; j < N; j++) pci[j] = ti[oTN[j]]; }
+                            if(beta != 0.0) // beta = 0: T is not read (BLAS semantics, NaN/Inf in T are not propagated)
+                                for(int i = 0; i < M; i++) { double* ti = tq + oTM[i]; double* pci = pc + i * N; for(int j = 0; j < N; j++) pci[j] = ti[oTN[j]]; }
                             int ta = 'n', tb = 'n', lda = N, ldb = K, ldc = N;
                             double nativeBeta = beta;
-                            if(beta == 0.0) { for(int i = 0; i < M * N; i++) pc[i] *= beta; nativeBeta = 1.0; } // keeps NaN/Inf propagation
-                            BLAS.m_seq_BLAS.DGEMM(ref ta, ref tb, ref N, ref M, ref K, ref alpha,
+                            BLAS.SeqDGEMM(ref ta, ref tb, ref N, ref M, ref K, ref alpha,
                                 pb, ref lda, pa, ref ldb, ref nativeBeta, pc, ref ldc);
                             for(int i = 0; i < M; i++) { double* ti = tq + oTM[i]; double* pci = pc + i * N; for(int j = 0; j < N; j++) ti[oTN[j]] = pci[j]; }
                             // next batch entry (odometer, innermost = last)
@@ -397,12 +413,8 @@ namespace ilPSP {
                     ot += idx * ct[d]; oa += idx * ca[d]; ob += idx * cb[d];
                 }
                 double* tp = t + ot, ap = a + oa, bp = b + ob;
-                double nativeBeta = beta;
-                if(beta == 0.0) {
-                    for(int i = 0; i < m; i++) for(int j = 0; j < n; j++) tp[i * ldc + j] *= beta;
-                    nativeBeta = 1.0;
-                }
-                BLAS.m_seq_BLAS.DGEMM(ref ta, ref tb, ref M, ref N, ref K,
+                double nativeBeta = beta; // beta = 0: T is not read (BLAS semantics)
+                BLAS.SeqDGEMM(ref ta, ref tb, ref M, ref N, ref K,
                     ref alpha, ap, ref lda, bp, ref ldb, ref nativeBeta, tp, ref ldc);
             }
             return true;
@@ -419,7 +431,7 @@ namespace ilPSP {
             int trfT0Sw, int trfASw, int trfBSw,
             int preA, int cycleA, int postA, int preB, int cycleB, int postB,
             bool directAllowed) {
-            if(!directAllowed || runDim < 3 || sumDim != 1 || lengths[0] < 1 || sums[0] < 8)
+            if(!directAllowed || runDim < 3 || sumDim != 1 || lengths[0] < 1 || sums[0] < 1)
                 return false;
 #if MULTIPLY_FASTPATH_DIAGNOSTICS
             if(s_FastPathOff)
@@ -427,6 +439,24 @@ namespace ilPSP {
 #endif
             int innerRun = runDim - 1;
             if(innerRun != 2) return false;
+            // small slices: MKL JIT kernel (PLAN-5), all slices have the same shape and strides
+            if(MklJitGemm && JitGemmKernel(lengths + 1, ct + 1, ca + 1, cb + 1, sums[0], sa, sb, alpha, beta, out var jitKern)) {
+                for(int i = 0; i < lengths[0]; i++) {
+                    if(trfT[i] * trfT0Sw < 0 || (trfA[i * cycleA + preA] + postA) * trfASw < 0 || (trfB[i * cycleB + preB] + postB) * trfBSw < 0)
+                        return false; // validate every mapped slice before modifying the destination
+                }
+                for(int i = 0; i < lengths[0]; i++) {
+                    int ti = trfT[i] * trfT0Sw;
+                    int ai = (trfA[i * cycleA + preA] + postA) * trfASw;
+                    int bi = (trfB[i * cycleB + preB] + postB) * trfBSw;
+                    double* ts = t + ct[0] * (i * (1 - trfT0Sw) + ti);
+                    double* ap = a + ca[0] * (i * (1 - trfASw) + ai);
+                    double* bp = b + cb[0] * (i * (1 - trfBSw) + bi);
+                    jitKern.Invoke(bp, ap, ts);
+                }
+                return FastPathSelected("WTrafoJit");
+            }
+            if(sums[0] < 8) return false;
             // the blocked SIMD path is preferred for small GEMMs, see GETT_PREFERRED_BELOW_MNK
             if((long)lengths[1] * lengths[2] * sums[0] < GETT_PREFERRED_BELOW_MNK
                 && GettWouldRun(innerRun, sumDim, lengths + 1, ct + 1, ca + 1, cb + 1, sums, sa, sb, lengths[0])
@@ -483,13 +513,12 @@ namespace ilPSP {
             else if(sb[0] == 1 && cb[col] >= k) { transA = 't'; lda = cb[col]; }
             else return false;
             int batches = row == 0 ? 1 : lengths[0], ldc = ct[row];
+            if(s_MklBatchDirect && row != 0
+                && DirectGemmMklBatch(batches, transA, transB, n, m, k, alpha, b, lda, cb[0], a, ldb, ca[0], beta, t, ldc, ct[0], m, n))
+                return true;
             for(int q = 0; q < batches; q++) {
-                double nativeBeta = beta;
-                if(beta == 0.0) {
-                    for(int i = 0; i < m; i++) for(int j = 0; j < n; j++) t[i * ldc + j] *= beta;
-                    nativeBeta = 1.0;
-                }
-                BLAS.m_seq_BLAS.DGEMM(ref transA, ref transB, ref n, ref m, ref k,
+                double nativeBeta = beta; // beta = 0: T is not read (BLAS semantics)
+                BLAS.SeqDGEMM(ref transA, ref transB, ref n, ref m, ref k,
                     ref alpha, b, ref lda, a, ref ldb, ref nativeBeta, t, ref ldc);
                 if(row != 0) { t += ct[0]; a += ca[0]; b += cb[0]; }
             }
@@ -499,9 +528,10 @@ namespace ilPSP {
         // Pack arbitrary leading dimensions. The caller excludes aliases so the
         // established in-place traversal semantics remain unchanged.
         static unsafe bool TryPackedGemm(int runDim, double* t, double* a, double* b,
-            int* lengths, int* ct, int* ca, int* cb, int k, int* sa, int* sb, double alpha, double beta, long gettBelow) {
+            int* lengths, int* ct, int* ca, int* cb, int k, int* sa, int* sb, double alpha, double beta, long gettBelow, int minDim = 0) {
             if(runDim != 2 && runDim != 3) return false;
             int row = runDim - 2, col = row + 1, m = lengths[row], n = lengths[col];
+            if(m < minDim || n < minDim || k < minDim) return false;
             if(k < 1 || m < 4 || n < 4 || (long)m * n * k < 4096 || (long)m * n * k < gettBelow || ca[col] != 0 || cb[row] != 0) return false;
             int batches = row == 0 ? 1 : lengths[0];
             // one temporary buffer for the packed A (m x k), B (k x n) and T (m x n) blocks
@@ -512,11 +542,11 @@ namespace ilPSP {
                     for(int q = 0; q < batches; q++) {
                         for(int i = 0; i < m; i++) for(int l = 0; l < k; l++) pa[i * k + l] = a[i * ca[row] + l * sa[0]];
                         for(int l = 0; l < k; l++) for(int j = 0; j < n; j++) pb[l * n + j] = b[l * sb[0] + j * cb[col]];
-                        for(int i = 0; i < m; i++) for(int j = 0; j < n; j++) pc[i * n + j] = t[i * ct[row] + j * ct[col]];
+                        if(beta != 0.0) // beta = 0: T is not read (BLAS semantics)
+                            for(int i = 0; i < m; i++) for(int j = 0; j < n; j++) pc[i * n + j] = t[i * ct[row] + j * ct[col]];
                         int ta = 'n', tb = 'n', M = n, N = m, K = k, lda = n, ldb = k, ldc = n;
                         double nativeBeta = beta;
-                        if(beta == 0.0) { for(int i = 0; i < m * n; i++) pc[i] *= beta; nativeBeta = 1.0; }
-                        BLAS.m_seq_BLAS.DGEMM(ref ta, ref tb, ref M, ref N, ref K, ref alpha,
+                        BLAS.SeqDGEMM(ref ta, ref tb, ref M, ref N, ref K, ref alpha,
                             pb, ref lda, pa, ref ldb, ref nativeBeta, pc, ref ldc);
                         for(int i = 0; i < m; i++) for(int j = 0; j < n; j++) t[i * ct[row] + j * ct[col]] = pc[i * n + j];
                         if(row != 0) { t += ct[0]; a += ca[0]; b += cb[0]; }
@@ -528,30 +558,38 @@ namespace ilPSP {
             return true;
         }
 
+        // T[i] = alpha * sum_p M[i,p] v[p] + beta * T[i] (one running loop i of length > 1; loops of length 1 are ignored).
+        // PLAN-5 (AMD EPYC 9654, benchmarks/native-small/results-gemv-epyc9654.csv): MKL DGEMV is 1.2x-5x faster than the
+        // SIMD path from 8x8 on, for both matrix layouts (exception: column-major 35x35, SIMD 1.3x faster).
         static unsafe bool TryDirectGemv(int runDim, double* t, double* a, double* b,
             int* lengths, int* ct, int* ca, int* cb, int k, int* sa, int* sb, double alpha, double beta) {
-            if(runDim != 1) return false;
-            int m = lengths[0];
-            if(m < 8 || k < 8 || (long)m * k < 512) return false;
-            bool left = ca[0] != 0 && cb[0] == 0, right = cb[0] != 0 && ca[0] == 0;
-            if(!left && !right) return false;
-            if(ct[0] != 1) return false;
-            if(sa[0] != 1 || sb[0] != 1) return false;
-            // BoSSS is row-major while BLAS is column-major: a row-major
-            // m-by-k matrix is presented as its k-by-m transpose.
-            int trans = 't', M = k, N = m, lda = left ? ca[0] : cb[0], inc = 1;
-            // BLAS requires lda >= max(1, M); otherwise, DGEMV rejects the call (parameter error)
-            // and leaves T unchanged, although this path would report success.
-            if(lda < k) return false;
-            // all eligibility checks done; only now, the destination may be modified
-            double nativeBeta = beta;
-            if(beta == 0.0) {
-                for(int i = 0; i < m; i++) t[i] *= beta;
-                nativeBeta = 1.0;
+            int d0 = -1;
+            for(int d = 0; d < runDim; d++) {
+                if(lengths[d] <= 0) return false;
+                if(lengths[d] == 1) continue;
+                if(d0 >= 0) return false; // more than one running loop
+                d0 = d;
             }
+            if(d0 < 0) return false;
+            int m = lengths[d0];
+            if(m < 8 || k < 8) return false;
+            bool left = ca[d0] != 0 && cb[d0] == 0, right = cb[d0] != 0 && ca[d0] == 0;
+            if(!left && !right) return false;
+            int cm = left ? ca[d0] : cb[d0], cs = left ? sa[0] : sb[0]; // matrix strides along i and p
+            int incx = left ? sb[0] : sa[0], incy = ct[d0];                // vector and T strides
+            if(incx <= 0 || incy <= 0) return false;
+            // BoSSS is row-major while BLAS is column-major:
+            int trans, M, N, lda;
+            if(cs == 1 && cm >= k) { trans = 't'; M = k; N = m; lda = cm; }      // row-major matrix = transpose of a k x m column-major one
+            else if(cm == 1 && cs >= m) { trans = 'n'; M = m; N = k; lda = cs; } // column-major matrix
+            else return false;
+            // (BLAS requires lda >= max(1, M); otherwise, DGEMV rejects the call (parameter error)
+            // and leaves T unchanged, although this path would report success: checked above.)
+            // all eligibility checks done; only now, the destination may be modified
+            double nativeBeta = beta; // beta = 0: T is not read (BLAS semantics)
             double* mtx = left ? a : b;
             double* vec = left ? b : a;
-            BLAS.m_seq_BLAS.DGEMV(ref trans, ref M, ref N, ref alpha, mtx, ref lda, vec, ref inc, ref nativeBeta, t, ref inc);
+            BLAS.SeqDGEMV(ref trans, ref M, ref N, ref alpha, mtx, ref lda, vec, ref incx, ref nativeBeta, t, ref incy);
             return true;
         }
 

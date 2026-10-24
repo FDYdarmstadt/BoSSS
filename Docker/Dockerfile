@@ -45,140 +45,46 @@ RUN npm install -g @anthropic-ai/claude-code || true
 RUN npm install -g @openai/codex || true
 
 # Non-root user by default (recommended for OpenMPI usage and safer dev workflows).
-RUN groupadd --gid ${GID} ${USERNAME} \
-	&& useradd --uid ${UID} --gid ${GID} -m -s /bin/bash ${USERNAME} \
-	&& usermod -aG sudo ${USERNAME} \
+# Base images may already contain the requested IDs (e.g. ubuntu at 1000:1000).
+# Reuse the group and rename/move an existing user rather than duplicating IDs.
+RUN test "${UID}" -ne 0 \
+	&& if ! getent group "${GID}" > /dev/null; then \
+		groupadd --gid "${GID}" "${USERNAME}"; \
+	fi \
+	&& if getent passwd "${UID}" > /dev/null; then \
+		existing_user="$(getent passwd "${UID}" | cut -d: -f1)"; \
+		if [ "$existing_user" != "${USERNAME}" ]; then \
+			usermod --login "${USERNAME}" "$existing_user" || exit 1; \
+		fi; \
+		usermod --home "/home/${USERNAME}" --move-home \
+			--gid "${GID}" --shell /bin/bash "${USERNAME}"; \
+	else \
+		useradd --uid "${UID}" --gid "${GID}" -m -s /bin/bash "${USERNAME}"; \
+	fi \
+	&& usermod -aG sudo "${USERNAME}" \
 	&& echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USERNAME} \
 	&& chmod 0440 /etc/sudoers.d/${USERNAME}
 
-RUN install -d -o ${USERNAME} -g ${USERNAME} /home/${USERNAME}/.BoSSS/etc \
-	&& cat > /home/${USERNAME}/.BoSSS/etc/MatlabConnectorConfig.json <<'EOF'
-{
-  "Flav": "Octave"
-}
-EOF
+COPY public/Docker/MatlabConnectorConfig.json /home/${USERNAME}/.BoSSS/etc/MatlabConnectorConfig.json
 
-RUN chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.BoSSS/
+RUN chown -R ${USERNAME}:${GID} /home/${USERNAME}/.BoSSS/
 
-RUN install -d -o ${USERNAME} -g ${USERNAME} /home/${USERNAME}/.codex \
-	&& cat > /home/${USERNAME}/.codex/config.toml <<'EOF'
-approval_policy = "never"
-sandbox_mode = "danger-full-access"
+COPY public/Docker/config.toml /home/${USERNAME}/.codex/config.toml
 
-model = "gpt-5.6-luna"
-model_reasoning_effort = "medium"
-service_tier = "default"
-
-[projects."/workspace"]
-trust_level = "trusted"
-
-EOF
-
-RUN chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.codex
+RUN chown -R ${USERNAME}:${GID} /home/${USERNAME}/.codex
 
 
-RUN install -d -o ${USERNAME} -g ${USERNAME} /home/${USERNAME}/.claude \
-	&& cat > /home/${USERNAME}/.claude/settings.json <<'EOF'
-{
-  "permissions": {
-    "defaultMode": "bypassPermissions",
-    "deny": [
-      "Bash(rm *)",
-      "Bash(rmdir *)",
-      "Bash(unlink *)",
-      "Bash(shred *)",
-      "Bash(find * -delete*)",
-      "Bash(find * -exec rm*)",
-      "Bash(git clean*)",
-      "Bash(git rm*)"
-    ]
-  },
-  "skipDangerousModePermissionPrompt": true,
-  "model": "opus",
-  "effortLevel": "high"
-}
+COPY public/Docker/settings.json /home/${USERNAME}/.claude/settings.json
 
-EOF
-
-RUN chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.claude
+RUN chown -R ${USERNAME}:${GID} /home/${USERNAME}/.claude
 
 
 # Runtime location for full BoSSS host install copied from host-mounted folder.
 RUN mkdir -p /home/${USERNAME}/BoSSS-Install \
-	&& chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/BoSSS-Install
+	&& chown -R ${USERNAME}:${GID} /home/${USERNAME}/BoSSS-Install
 
-RUN cat <<'EOF' > /usr/local/bin/bosss-entrypoint.sh
-#!/usr/bin/env bash
-set -uo pipefail
-
-warn() {
-	echo "[bosss-entrypoint] WARNING: $*" >&2
-}
-
-configure_git_identity_from_host() {
-	local host_gitconfig="${HOST_GITCONFIG:-}"
-	local candidate
-	local host_name=""
-	local host_email=""
-
-	if [[ -z "$host_gitconfig" ]]; then
-		for candidate in \
-			"/host-home/.gitconfig" \
-			"/host/.gitconfig" \
-			"/mnt/host-home/.gitconfig" \
-			"/run/host-home/.gitconfig"; do
-			if [[ -f "$candidate" ]]; then
-				host_gitconfig="$candidate"
-				break
-			fi
-		done
-	fi
-
-	if [[ -n "$host_gitconfig" && -f "$host_gitconfig" ]]; then
-		host_name="$(git config --file "$host_gitconfig" --get user.name || true)"
-		host_email="$(git config --file "$host_gitconfig" --get user.email || true)"
-
-		if [[ -n "$host_name" ]]; then
-			git config --global user.name "$host_name" || warn "Failed to set git user.name from host config"
-		fi
-
-		if [[ -n "$host_email" ]]; then
-			git config --global user.email "$host_email" || warn "Failed to set git user.email from host config"
-		fi
-	fi
-}
-
-export BOSSS_INSTALL="${BOSSS_INSTALL:-${HOME}/BoSSS-Install}"
-SYNC_MARKER="${HOME}/.BoSSS/.host-sync-done"
-
-configure_git_identity_from_host
-
-# If host BoSSS install is mounted to /host-bosss-install, copy it into user home.
-# Copy is done once by default; set BOSSS_FORCE_SYNC=1 to overwrite on every start.
-if [[ -d /host-bosss-install ]]; then
-	mkdir -p "$BOSSS_INSTALL" || warn "Could not create BOSSS_INSTALL directory: $BOSSS_INSTALL"
-	mkdir -p "$(dirname "$SYNC_MARKER")" || warn "Could not create sync-marker directory"
-	if [[ "${BOSSS_FORCE_SYNC:-0}" == "1" || ! -f "$SYNC_MARKER" ]]; then
-		rm -rf "$BOSSS_INSTALL" || warn "Could not remove existing BOSSS_INSTALL directory"
-		mkdir -p "$BOSSS_INSTALL" || warn "Could not recreate BOSSS_INSTALL directory"
-		if ! cp -r /host-bosss-install/. "$BOSSS_INSTALL"/; then
-			warn "Failed to copy /host-bosss-install into $BOSSS_INSTALL; continuing without sync"
-		else
-			chown -R "$(id -u)":"$(id -g)" "$BOSSS_INSTALL" || warn "Could not normalize ownership in $BOSSS_INSTALL"
-			date -u +"%Y-%m-%dT%H:%M:%SZ" > "$SYNC_MARKER" || warn "Could not update sync marker: $SYNC_MARKER"
-		fi
-	fi
-fi
-
-if [[ -d "$BOSSS_INSTALL/bin/native/linux/amd64-openmpi" ]]; then
-	export LD_LIBRARY_PATH="$BOSSS_INSTALL/bin/native/linux/amd64-openmpi:${LD_LIBRARY_PATH:-}"
-else
-	warn "Native library path not found: $BOSSS_INSTALL/bin/native/linux/amd64-openmpi"
-	export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}"
-fi
-
-exec "$@"
-EOF
+# Copy scripts/configuration explicitly: legacy Docker builders can produce empty heredocs.
+COPY public/Docker/bosss-entrypoint.sh /usr/local/bin/bosss-entrypoint.sh
 
 RUN chmod +x /usr/local/bin/bosss-entrypoint.sh
 RUN sed -i 's/\r$//' /usr/local/bin/bosss-entrypoint.sh

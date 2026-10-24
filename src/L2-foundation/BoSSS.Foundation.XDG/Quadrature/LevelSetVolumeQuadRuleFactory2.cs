@@ -237,7 +237,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
             int M = Mtx.NoOfRows;
             int N = Mtx.NoOfCols;
-            //LAPACK.F77_LAPACK.DGELSY(M, N, _Mtx.Entries, _RHS.Entries, sgrd.LocalNoOfCells, 1.0e-14);
+            //LAPACK.DGELSY(M, N, _Mtx.Entries, _RHS.Entries, sgrd.LocalNoOfCells, 1.0e-14);
             Mtx.LeastSquareSolve(_RHS); // solve for multiple rhs!
 
             #if DEBUG
@@ -414,7 +414,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                     int M = _Mtx.NoOfRows;
                     int N = _Mtx.NoOfCols;
-                    LAPACK.F77_LAPACK.DGELSY(M, N, _Mtx.Entries, _RHS.Entries, 1, 1.0e-14);
+                    LAPACK.DGELSY(M, N, _Mtx.Entries, _RHS.Entries, 1, 1.0e-14);
 
                     
 

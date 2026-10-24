@@ -27,6 +27,7 @@ using MPI.Wrappers;
 using MPI.Wrappers.Utils;
 using System;
 using System.IO;
+using System.Linq;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -85,9 +86,9 @@ namespace BoSSS.Application.BoSSSpad {
                 // MPI should already be loaded
                 CheckDynamicLibrary("MPI", () => (DynLibLoader)csMPI.Raw);
                 CheckDynamicLibrary("BLAS (sequential)", () => new UnsafeDBLAS(Parallelism.SEQ));
-                CheckDynamicLibrary("LAPACK (sequential)", () => new LAPACK(Parallelism.SEQ));
+                CheckDynamicLibrary("LAPACK (sequential)", () => new UnsafeLAPACK(Parallelism.SEQ));
                 CheckDynamicLibrary("BLAS (OpenMP-parallel)", () => new UnsafeDBLAS(Parallelism.OMP));
-                CheckDynamicLibrary("LAPACK (OpenMPparallel)", () => new LAPACK(Parallelism.OMP));
+                CheckDynamicLibrary("LAPACK (OpenMPparallel)", () => new UnsafeLAPACK(Parallelism.OMP));
             }
 
 
@@ -134,6 +135,9 @@ namespace BoSSS.Application.BoSSSpad {
                 CheckDynamicLibrary("OpenCL", () => new ilPSP.LinSolvers.monkey.CL.cl(), isOptional: true);
                 CheckDynamicLibrary("CUDA", () => new ilPSP.LinSolvers.monkey.CUDA.cu(), isOptional: true);
             }
+
+            if(isReportingRank)
+                ReportBLASProvider();
 
             if (log != null) {
                 log.Close();
@@ -215,6 +219,62 @@ namespace BoSSS.Application.BoSSSpad {
         private static void ReportSkipped(string libraryName, string reason) {
             string prepend = String.Format("- {0}:", libraryName).PadRight(38);
             Console.WriteLine(prepend + "Skipped (" + reason + ")");
+        }
+
+        /// <summary>
+        /// BLAS provider selection (MKL/OpenBLAS) and optional native BLAS extensions;
+        /// reuses the runtime discovery of <see cref="BLAS"/>, i.e. no re-calibration and no PETSc initialization.
+        /// </summary>
+        private static void ReportBLASProvider() {
+            Console.WriteLine();
+            Console.WriteLine("BLAS provider:");
+            string Row(string name) => String.Format("- {0}:", name).PadRight(38);
+
+            Console.WriteLine(Row("requested") + (BLAS.RequestedProvider ?? "(startup selection not executed)") + $" (environment variable {BLAS.ProviderEnvVar}: mkl (default), auto or openblas)");
+            Console.WriteLine(Row("effective") + BLAS.Provider + " (" + BLAS.ProviderSelectionReason + ")");
+            if(BLAS.LastCalibration != null) {
+                foreach(var c in BLAS.LastCalibration.Cases)
+                    Console.WriteLine(Row("  " + c.Name) + string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                        "OpenBLAS/MKL time {0:0.000} ({1})", c.Ratio, c.Threaded ? "threaded" : "sequential"));
+            }
+            Console.WriteLine(Row("threads") + $"{ilPSP.Environment.NumThreads} TPL thread(s), max. {ilPSP.Environment.MaxNumOpenMPthreads} OpenMP thread(s), OpenMP {(ilPSP.Environment.OpenMPenabled ? "enabled" : "disabled")}; tensor kernels always single-threaded");
+            Console.WriteLine(Row("CPU affinity (this thread)") + CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ",", "]") + $" of {CPUAffinity.TotalNumberOfCPUs} CPU(s)");
+            Console.WriteLine(Row("MKL") + "Good (using " + BLAS.MKLLibraryPath + "; PARDISO also uses MKL)");
+            if(BLAS.OpenBLASAvailable) {
+                Console.WriteLine(Row("OpenBLAS") + "Good (" + BLAS.OpenBLASLoadInfo + "; " + BLAS.OpenBLASConfig + $"; current thread count {BLAS.OpenBLASNumThreads})");
+            } else {
+                Console.WriteLine(Row("OpenBLAS") + "Unavailable (" + BLAS.OpenBLASUnavailableReason + ")");
+            }
+
+            // optional extensions: presence of the exports only; not used by this BoSSS version yet
+            string Exports(DynamicLibraries.DynLibHandle h, params string[] names) {
+                var missing = names.Where(n => DynamicLibraries.LoadSymbol(h, n, out _) == IntPtr.Zero).ToArray();
+                return missing.Length == 0 ? "exports present" : "missing export(s) " + missing.ToConcatString("", ", ", "");
+            }
+            var mkl = BLAS.m_seq_BLAS.LibHandle;
+            string Usable(bool avail, string reason) => avail ? "Good" : "Unavailable (" + reason + ")";
+            Console.WriteLine(Row("MKL batch GEMM/GEMV") + Usable(MKLBatch.Available, MKLBatch.UnavailableReason) + "; not used by Multiply (no measured gain over a loop of DGEMMs)");
+            Console.WriteLine(Row("MKL JIT GEMM") + Usable(MKLJit.Available, MKLJit.UnavailableReason) + (MKLJit.Available ? $"; used by Multiply for small GEMMs ({MKLJit.NumKernels} kernel(s) cached in this process)" : "; Multiply uses the blocked SIMD path / DGEMM instead"));
+            Console.WriteLine(Row("BLIS (in MKL library)") + Usable(BLIS.Available, BLIS.UnavailableReason) + "; general-stride Multiply path available, but off by default (no consistent gain measured)");
+            Console.WriteLine(Row("MKL fake-Intel probe") + Exports(mkl, "BOSSS_use_mkl_fakes", "BOSSS_mkl_fakes_were_called") + "; " + FakeIntelIndicator(mkl, "embedded"));
+            foreach(var pre in BLAS.m_seq_BLAS.PreReqLibHandles.Where(h => h.val != IntPtr.Zero))
+                Console.WriteLine(Row("  libfakeintel (prerequisite)") + FakeIntelIndicator(pre, "separate library"));
+            Console.WriteLine(Row("LIBXSMM") + Usable(LIBXSMM.Available, LIBXSMM.UnavailableReason) + (LIBXSMM.Available ? " (" + LIBXSMM.LibraryPath + ")" : "") + "; not used by Multiply (MKL JIT is faster)");
+        }
+
+        /// <summary>
+        /// Reads the sticky indicator `int BOSSS_mkl_fakes_were_called(void)` (prototype verified by disassembly);
+        /// a zero does not prove that the fake was not used, since MKL caches its CPU dispatch.
+        /// </summary>
+        [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
+        private delegate int IntFunc();
+
+        private static string FakeIntelIndicator(DynamicLibraries.DynLibHandle h, string what) {
+            IntPtr p = DynamicLibraries.LoadSymbol(h, "BOSSS_mkl_fakes_were_called", out _);
+            if(p == IntPtr.Zero)
+                return what + ": no indicator";
+            int v = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<IntFunc>(p)();
+            return what + (v != 0 ? $": fake Intel CPU check was called ({v})" : ": indicator 0 (not called, or MKL dispatch cached)");
         }
 
         private static void ReportPETScLoadCoverage() {
