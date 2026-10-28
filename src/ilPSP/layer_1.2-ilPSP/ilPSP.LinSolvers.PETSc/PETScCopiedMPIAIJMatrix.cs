@@ -32,8 +32,8 @@ namespace ilPSP.LinSolvers.PETSc {
 
         sealed class Csr {
             internal int[] RowPointers;
-            internal int[] ColumnIndices;
-            internal double[] Values;
+            internal List<int> ColumnIndices;
+            internal List<double> Values;
         }
 
         readonly UnsafePETSc m_Native;
@@ -61,8 +61,8 @@ namespace ilPSP.LinSolvers.PETSc {
                     dimensions.GlobalRows, dimensions.GlobalColumns,
                     0, IntPtr.Zero, 0, IntPtr.Zero, out result.m_Handle), native, "PETSc MatCreateAIJ");
                 fixed(int* pRowPointers = csr.RowPointers)
-                fixed(int* pColumnIndices = csr.ColumnIndices)
-                fixed(double* pValues = csr.Values) {
+                fixed(int* pColumnIndices = CollectionsMarshal.AsSpan(csr.ColumnIndices))
+                fixed(double* pValues = CollectionsMarshal.AsSpan(csr.Values)) {
                     if(dimensions.MpiSize == 1)
                         Check(native.SetSequentialAijPreallocationCsr(result.m_Handle, (IntPtr)pRowPointers, (IntPtr)pColumnIndices, (IntPtr)pValues), native, "PETSc MatSeqAIJSetPreallocationCSR");
                     else
@@ -87,6 +87,11 @@ namespace ilPSP.LinSolvers.PETSc {
                 int rowLength = matrix.GetRow(globalRowStart + localRow, ref rowColumns, ref rowValues);
                 if(rowLength < 0 || (rowLength > 0 && (rowColumns == null || rowValues == null || rowColumns.Length < rowLength || rowValues.Length < rowLength)))
                     throw new InvalidOperationException("The BoSSS matrix returned invalid row storage.");
+                int requiredCapacity = checked(columns.Count + rowLength);
+                if(requiredCapacity > columns.Capacity) {
+                    columns.EnsureCapacity(requiredCapacity);
+                    values.EnsureCapacity(requiredCapacity);
+                }
                 int previousColumn = -1;
                 for(int entry = 0; entry < rowLength; entry++) {
                     long column = rowColumns[entry];
@@ -101,11 +106,19 @@ namespace ilPSP.LinSolvers.PETSc {
                 }
                 rowPointers[localRow + 1] = columns.Count;
             }
-            return new Csr {
+            if(columns.Count == 0) {
+                // PETSc reads no entries when every row pointer is zero, but
+                // keep the pinned spans non-empty for native implementations
+                // which do not accept null placeholder pointers.
+                columns.Add(0);
+                values.Add(0.0);
+            }
+            var result = new Csr {
                 RowPointers = rowPointers,
-                ColumnIndices = columns.Count == 0 ? new int[1] : columns.ToArray(),
-                Values = values.Count == 0 ? new double[1] : values.ToArray()
+                ColumnIndices = columns,
+                Values = values
             };
+            return result;
         }
 
         public override void Dispose() {
