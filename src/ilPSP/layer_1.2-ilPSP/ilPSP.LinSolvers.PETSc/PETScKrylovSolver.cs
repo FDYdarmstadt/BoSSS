@@ -41,8 +41,11 @@ namespace ilPSP.LinSolvers.PETSc {
 
         /// <inheritdoc/>
         protected override void ConfigureKsp() {
-            bool hasFirst = FirstFieldRows != null && FirstFieldRows.Length > 0;
-            bool hasSecond = SecondFieldRows != null && SecondFieldRows.Length > 0;
+            // A distributed field can legitimately own zero rows on one rank.
+            // Non-null arrays mean that the split is configured collectively;
+            // PETSc accepts a zero-length local contribution to a parallel IS.
+            bool hasFirst = FirstFieldRows != null;
+            bool hasSecond = SecondFieldRows != null;
             if(hasFirst != hasSecond)
                 throw new ArgumentException("Both PETSc field-split row arrays must be supplied together.");
 

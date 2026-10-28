@@ -42,7 +42,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// buffers for PETSc's lifetime and avoids a second native CSR copy.
         /// </summary>
         [DataMember]
-        public PETScMatrixInput MatrixInput = PETScMatrixInput.BorrowedCsr;
+        public PETScMatrixInput MatrixInput = PETScMatrixInput.CopiedCsr;
 
         /// <summary>
         /// LU or Cholesky factorization.
@@ -161,7 +161,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         bool m_Converged;
 
         /// <summary>PETSc matrix ownership and transfer representation.</summary>
-        public PETScMatrixInput MatrixInput { get; set; } = PETScMatrixInput.BorrowedCsr;
+        public PETScMatrixInput MatrixInput { get; set; } = PETScMatrixInput.CopiedCsr;
 
         /// <summary>LU or Cholesky factorization.</summary>
         public PETScDirectFactorization Factorization { get; set; } = PETScDirectFactorization.LU;
@@ -264,7 +264,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// PETSc matrix representation used by this Krylov solver.
         /// </summary>
         [DataMember]
-        public PETScMatrixInput MatrixInput = PETScMatrixInput.BorrowedCsr;
+        public PETScMatrixInput MatrixInput = PETScMatrixInput.CopiedCsr;
 
         /// <summary>
         /// Optional BoSSS variable indices that form PETSc field split 0. Both split arrays
@@ -368,7 +368,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// PETSc matrix representation used for the supplied operator matrix.
         /// </summary>
-        public PETScMatrixInput MatrixInput { get; set; } = PETScMatrixInput.BorrowedCsr;
+        public PETScMatrixInput MatrixInput { get; set; } = PETScMatrixInput.CopiedCsr;
 
         /// <summary>
         /// Optional BoSSS variable indices for PETSc field split 0.
