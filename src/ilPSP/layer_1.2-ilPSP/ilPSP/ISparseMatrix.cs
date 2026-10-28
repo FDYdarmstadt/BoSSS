@@ -235,6 +235,14 @@ namespace ilPSP.LinSolvers {
         /// <returns>
         /// Number of entries used in <paramref name="ColumnIndices"/> and <paramref name="Values"/>.
         /// </returns>
+        /// <remarks>
+        /// <b>Warning:</b> the output arrays are reusable capacity buffers. Their
+        /// <see cref="Array.Length"/> may be greater than the returned row length,
+        /// and entries at indices greater than or equal to the returned length are
+        /// undefined. Callers must use the return value as the valid range. Use
+        /// <see cref="IMutuableMatrixEx_Extensions.GetRowExact(IMutableMatrixEx, long)"/>
+        /// when exact-length arrays are required.
+        /// </remarks>
         int GetRow(long RowIndex, ref long[] ColumnIndices, ref double[] Values);
 
         /// <summary>

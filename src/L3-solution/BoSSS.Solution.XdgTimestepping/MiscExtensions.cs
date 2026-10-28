@@ -75,9 +75,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                                         int NoOfNonZeros = OpMatrix.GetNoOfNonZerosPerRow(iRow);
                                         if(NoOfNonZeros > 0) {
 
-                                            long[] colIdx = null;
-                                            double[] entries = null;
-                                            OpMatrix.GetRow(iRow, ref colIdx, ref entries);
+                                            var (_, entries) = OpMatrix.GetRowExact(iRow);
                                             double err = entries.Max();
 
 
