@@ -1955,14 +1955,9 @@ namespace ilPSP.LinSolvers {
         public int GetRow(long RowIndex, ref long[] ColumnIndices, ref double[] Values) {
             //MatrixEntry[] row = GetRowShallow(RowIndex);
             //return (MatrixEntry[])row.Clone();
-            TrimAndSortRow(m_RowPartitioning.TransformIndexToLocal(RowIndex));
-
-            MatrixEntry[] row = m_Entries[m_RowPartitioning.TransformIndexToLocal(RowIndex)];
-            int nnz = 0;
-            if (row != null) {
-                while (nnz < row.Length && row[nnz].ColIndex >= 0)
-                    nnz++;
-            }
+            int localRow = m_RowPartitioning.TransformIndexToLocal(RowIndex);
+            int nnz = TrimAndSortRow(localRow);
+            MatrixEntry[] row = m_Entries[localRow];
 
 
             if (ColumnIndices == null || ColumnIndices.Length < nnz)

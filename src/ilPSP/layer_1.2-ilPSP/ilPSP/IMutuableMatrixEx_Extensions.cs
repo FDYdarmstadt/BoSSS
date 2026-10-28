@@ -944,13 +944,37 @@ namespace ilPSP.LinSolvers {
         }
 
         /// <summary>
-        /// Easy-to-use wrapper around <see cref="IMutableMatrixEx.GetRow(long, ref long[], ref double[])"/>
+        /// Easy-to-use, exact-length wrapper around
+        /// <see cref="IMutableMatrixEx.GetRow(long, ref long[], ref double[])"/>.
         /// </summary>
+        /// <remarks>
+        /// Unlike the reusable-buffer overload, both returned arrays have exactly
+        /// the number of entries in the requested row.
+        /// </remarks>
         static public (long[] colIdx, double[] entries) GetRow(this IMutableMatrixEx M, long iRow) {
-            int L = M.RowPartitioning.LocalLength;
+            return M.GetRowExact(iRow);
+        }
+
+        /// <summary>
+        /// Returns nonzero column indices and values using arrays whose
+        /// <see cref="Array.Length"/> is exactly the row length.
+        /// </summary>
+        /// <remarks>
+        /// This wrapper may allocate and copy when the reusable buffers returned by
+        /// <see cref="IMutableMatrixEx.GetRow(long, ref long[], ref double[])"/>
+        /// contain spare capacity. Performance-sensitive loops should instead reuse
+        /// buffers and honor the row length returned by that overload.
+        /// </remarks>
+        static public (long[] colIdx, double[] entries) GetRowExact(this IMutableMatrixEx M, long iRow) {
             long[] col = null;
             double[] val = null;
-            int Lr = M.GetRow(iRow, ref col, ref val);
+            int rowLength = M.GetRow(iRow, ref col, ref val);
+            if(rowLength == 0)
+                return (Array.Empty<long>(), Array.Empty<double>());
+            if(col.Length != rowLength)
+                Array.Resize(ref col, rowLength);
+            if(val.Length != rowLength)
+                Array.Resize(ref val, rowLength);
             return (col, val);
         }
 
