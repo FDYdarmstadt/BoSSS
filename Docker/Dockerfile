@@ -39,6 +39,29 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
 	&& apt-get install -y --no-install-recommends nodejs \
 	&& rm -rf /var/lib/apt/lists/*
 
+# Python: `pip` and `pipx` available globally.
+# The Jupyter stack lives in one shared pipx venv (apps exposed in /usr/local/bin),
+# so that `jupyter`, `jupyter-nbconvert`, `papermill` and the python3 kernel (ipykernel) see each other.
+# BoSSSpad --JupyterBatch (e.g. TutorialTests) requires `papermill` and `jupyter nbconvert`.
+ENV PIPX_HOME=/opt/pipx
+ENV PIPX_BIN_DIR=/usr/local/bin
+ENV PIPX_MAN_DIR=/usr/local/share/man
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends \
+		python3 \
+		python3-dev \
+		python3-pip \
+		python3-venv \
+		pipx \
+	&& rm -rf /var/lib/apt/lists/* \
+	&& pipx install --include-deps notebook \
+	&& pipx inject notebook nbconvert jupyter_core jupyter_client ipykernel \
+	&& pipx inject --include-apps notebook papermill \
+	&& pip --version \
+	&& pipx --version \
+	&& jupyter --version \
+	&& papermill --version
+
 # Try to install Claude and Codex CLIs.
 # Build does not fail if upstream package names or availability change.
 RUN npm install -g @anthropic-ai/claude-code || true
@@ -92,8 +115,14 @@ RUN sed -i 's/\r$//' /usr/local/bin/bosss-entrypoint.sh
 ENV BOSSS_INSTALL=/home/${USERNAME}/BoSSS-Install
 ENV LD_LIBRARY_PATH=/home/${USERNAME}/BoSSS-Install/bin/native/linux/amd64-openmpi
 
-WORKDIR /workspace
+# .NET Interactive (C#, F#, PowerShell Jupyter kernels), installed as global tool for the non-root user.
+ENV PATH=/home/${USERNAME}/.dotnet/tools:${PATH}
 USER ${USERNAME}
+RUN dotnet tool install --global Microsoft.dotnet-interactive \
+	&& dotnet interactive jupyter install \
+	&& jupyter kernelspec list
+
+WORKDIR /workspace
 
 ENTRYPOINT ["/usr/local/bin/bosss-entrypoint.sh"]
 CMD ["bash"]
