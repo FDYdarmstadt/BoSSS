@@ -74,12 +74,17 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             var Tangents = TempBuffer.GetTempMultidimensionalarray(out int iTangentsBuf, 2 * K, D);
 
             for(int i = 0; i < L; i++) {
-                int jCell0 = E2C[iEdge + i, 0];
-                int iFace = E2F[iEdge + i, 0];
-                var Kref = gridData.iGeomCells.GetRefElement(jCell0);
+                // The metric must be computed in a cell which is conformal with the edge:
+                // the weights of the rule are line measures in the reference coordinates of the edge, resp. of a cell conformal with it
+                // (EdgeRuleFromCellBoundaryFactory takes the rule from such a cell). On a hanging face, cell 0 may be the coarse cell, which is
+                // not conformal; its tangent stretching is too large by the refinement ratio (factor 2 on the line integrals for 2:1).
+                int iSide = gridData.iGeomEdges.IsEdgeConformalWithCell1(iEdge + i) ? 0 : 1;
+                int jCell = E2C[iEdge + i, iSide];
+                int iFace = E2F[iEdge + i, iSide];
+                var Kref = gridData.iGeomCells.GetRefElement(jCell);
 
-                var NodesCell = qr.Nodes.GetVolumeNodeSet(gridData, E2Ctrafo[iEdge + i, 0], false);
-                var LevSetNormals = this.m_levelSetData.GetLevelSetReferenceNormals(NodesCell, jCell0, 1).ExtractSubArrayShallow(0, -1, -1);
+                var NodesCell = qr.Nodes.GetVolumeNodeSet(gridData, E2Ctrafo[iEdge + i, iSide], false);
+                var LevSetNormals = this.m_levelSetData.GetLevelSetReferenceNormals(NodesCell, jCell, 1).ExtractSubArrayShallow(0, -1, -1);
                 var CellNormal = Kref.FaceNormals.GetRowPt(iFace);
 
 
@@ -97,7 +102,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                     }
                 }
 
-                var TangentsTransformed = gridData.TransformLocal2Global(Tangents, jCell0);
+                var TangentsTransformed = gridData.TransformLocal2Global(Tangents, jCell);
 
                 // the metric is the local stretching of the tangent on the boundary line
                 for(int k = 0; k < K; k++) {
