@@ -72,24 +72,33 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
             var metric = MultidimensionalArray.Create(L, K);
             var Tangents = TempBuffer.GetTempMultidimensionalarray(out int iTangentsBuf, 2 * K, D);
+            var TangentLengthInCell1 = new double[K];
 
             for(int i = 0; i < L; i++) {
-                // The metric must be computed in a cell which is conformal with the edge:
-                // the weights of the rule are line measures in the reference coordinates of the edge, resp. of a cell conformal with it
-                // (EdgeRuleFromCellBoundaryFactory takes the rule from such a cell). On a hanging face, cell 0 may be the coarse cell, which is
-                // not conformal; its tangent stretching is too large by the refinement ratio (factor 2 on the line integrals for 2:1).
-                int iSide = gridData.iGeomEdges.IsEdgeConformalWithCell1(iEdge + i) ? 0 : 1;
-                int jCell = E2C[iEdge + i, iSide];
-                int iFace = E2F[iEdge + i, iSide];
-                var Kref = gridData.iGeomCells.GetRefElement(jCell);
+                int jCell0 = E2C[iEdge + i, 0];
+                int iFace = E2F[iEdge + i, 0];
+                var Kref = gridData.iGeomCells.GetRefElement(jCell0);
 
-                var NodesCell = qr.Nodes.GetVolumeNodeSet(gridData, E2Ctrafo[iEdge + i, iSide], false);
-                var LevSetNormals = this.m_levelSetData.GetLevelSetReferenceNormals(NodesCell, jCell, 1).ExtractSubArrayShallow(0, -1, -1);
+                // On a hanging face, cell 0 may be the coarse cell, which is not conformal with the edge; the rule is then taken from cell 1
+                // (see EdgeRuleFromCellBoundaryFactory), i.e. its weights are line measures in the reference coordinates of cell 1.
+                // The tangent below is a unit vector in the reference coordinates of cell 0, which is longer in those of cell 1
+                // (by the refinement ratio, i.e. twice as long for 2:1); the metric is divided by this length.
+                // Only the geometry of cell 1 is used, since it may be an external cell, where the level set is not available.
+                bool scaleToCell1 = !gridData.iGeomEdges.IsEdgeConformalWithCell1(iEdge + i);
+                MultidimensionalArray M0 = null, M1 = null;
+                if(scaleToCell1) {
+                    M0 = gridData.iGeomEdges.Edge2CellTrafos[E2Ctrafo[iEdge + i, 0]].Matrix;
+                    M1 = gridData.iGeomEdges.Edge2CellTrafos[E2Ctrafo[iEdge + i, 1]].Matrix;
+                }
+
+                var NodesCell = qr.Nodes.GetVolumeNodeSet(gridData, E2Ctrafo[iEdge + i, 0], false);
+                var LevSetNormals = this.m_levelSetData.GetLevelSetReferenceNormals(NodesCell, jCell0, 1).ExtractSubArrayShallow(0, -1, -1);
                 var CellNormal = Kref.FaceNormals.GetRowPt(iFace);
 
 
 
                 for(int k = 0; k < K; k++) {
+                    TangentLengthInCell1[k] = 1.0;
                     if(qr.Weights[k] != 0) { // avoid empty rules
                         var SurfNormal = LevSetNormals.GetRowPt(k);
                         var Node = NodesCell.GetRowPt(k);
@@ -99,16 +108,19 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
                         Tangents.SetRowPt(k, Tangent + Node);
                         Tangents.SetRowPt(k + K, Node);
+
+                        if(scaleToCell1)
+                            TangentLengthInCell1[k] = LengthInOtherCell(M0, M1, Tangent);
                     }
                 }
 
-                var TangentsTransformed = gridData.TransformLocal2Global(Tangents, jCell);
+                var TangentsTransformed = gridData.TransformLocal2Global(Tangents, jCell0);
 
                 // the metric is the local stretching of the tangent on the boundary line
                 for(int k = 0; k < K; k++) {
                     if(qr.Weights[k] != 0) { // avoid empty rules
                         var TangentTransformed = TangentsTransformed.GetRowPt(k) - TangentsTransformed.GetRow(k + K);
-                        metric[i, k] = TangentTransformed.L2Norm();
+                        metric[i, k] = TangentTransformed.L2Norm() / TangentLengthInCell1[k];
                     }
                 }
             }
@@ -116,6 +128,36 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             TempBuffer.FreeTempBuffer(iTangentsBuf);
 
             return metric;
+        }
+
+        /// <summary>
+        /// Length of a vector <paramref name="t"/> on an edge, given in the reference coordinates of cell 0, in the reference coordinates of cell 1:
+        /// with the matrices <paramref name="M0"/>, <paramref name="M1"/> of the edge-to-cell transformations, the vector in edge coordinates is
+        /// $ \tau = (M_0^T M_0)^{-1} M_0^T t $ and the result is $ | M_1 \tau | $.
+        /// </summary>
+        static double LengthInOtherCell(MultidimensionalArray M0, MultidimensionalArray M1, Vector t) {
+            int D = M0.GetLength(0);
+            if(M0.GetLength(1) != 2)
+                throw new NotSupportedException("only implemented for edges of 3D cells");
+
+            double g00 = 0, g01 = 0, g11 = 0, r0 = 0, r1 = 0;
+            for(int d = 0; d < D; d++) {
+                g00 += M0[d, 0] * M0[d, 0];
+                g01 += M0[d, 0] * M0[d, 1];
+                g11 += M0[d, 1] * M0[d, 1];
+                r0 += M0[d, 0] * t[d];
+                r1 += M0[d, 1] * t[d];
+            }
+            double det = g00 * g11 - g01 * g01;
+            double tau0 = (g11 * r0 - g01 * r1) / det;
+            double tau1 = (g00 * r1 - g01 * r0) / det;
+
+            double acc = 0;
+            for(int d = 0; d < D; d++) {
+                double v = M1[d, 0] * tau0 + M1[d, 1] * tau1;
+                acc += v * v;
+            }
+            return Math.Sqrt(acc);
         }
     }
 

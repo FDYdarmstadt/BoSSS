@@ -6,6 +6,7 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Utils;
 using ilPSP;
 using ilPSP.Utils;
+using MPI.Wrappers;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -152,7 +153,7 @@ namespace BoSSS.Application.XDGTest {
                 Assert.AreEqual(length, I[0], 1.0e-10, $"length of interface \\cap edge {e} (hanging: {hanging})");
                 Assert.AreEqual(intXZ, I[1], 1.0e-10, $"integral of x + z over interface \\cap edge {e} (hanging: {hanging})");
             }
-            Assert.Greater(NoOfHanging, 0, "no hanging face cut by the interface");
+            Assert.Greater(NoOfHanging.MPISum(), 0, "no hanging face cut by the interface");
         }
 
 
