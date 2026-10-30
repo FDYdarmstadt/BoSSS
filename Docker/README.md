@@ -7,6 +7,11 @@ Included tools:
 - OpenMPI
 - .NET SDK 8.0
 - .NET SDK 10.0
+- Python 3 with `pip` and `pipx` (global)
+- Jupyter (`notebook`, `nbconvert`, `papermill`, `ipykernel`) in one shared pipx venv
+  under `/opt/pipx`, commands exposed in `/usr/local/bin`
+- .NET Interactive (`dotnet-interactive` global tool of the `bosss` user) with the
+  Jupyter kernels `.net-csharp`, `.net-fsharp`, `.net-powershell`, besides `python3`
 - Node.js
 - best-effort installation of Claude and Codex CLIs
 
