@@ -23,7 +23,7 @@ using System.Diagnostics;
 
 using MPI.Wrappers;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Bson;
+using System.Text;
 
 namespace ilPSP.Utils {
     
@@ -273,6 +273,10 @@ namespace ilPSP.Utils {
         /// formatter used for all serialization/de-serialization
         /// </summary>
         JsonSerializer jsonFormatter = new JsonSerializer() {
+            // Keep object-valued strings and non-finite doubles unchanged in text JSON.
+            Converters = { new TypePreservingDateConverter() },
+            DateParseHandling = DateParseHandling.None,
+            FloatFormatHandling = FloatFormatHandling.Symbol,
             NullValueHandling = NullValueHandling.Include,
             TypeNameHandling = TypeNameHandling.All,
             ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
@@ -309,33 +313,26 @@ namespace ilPSP.Utils {
 
         public static bool writeSize = false;
 
-        byte[] SerializeObject(object o) {
+        byte[] SerializeObject(object o, out int serializedLength) {
             using (var ms = new MemoryStream()) {
                 Stopwatch stw = new Stopwatch();
                 stw.Start();
-                //if (m_UseJson) {
-                {
-                    // see: https://stackoverflow.com/questions/25741895/error-serialising-simple-string-to-bson-using-newtonsoft-json-net
-                    //var containerArray = Array.CreateInstance(o.GetType(), 1);
-                    //containerArray.SetValue(o, 0);
-                    var containerObj = new JsonContainer() { PayLoad = o };
-
-                    using (var w = new BsonDataWriter(ms)) {
-                        jsonFormatter.Serialize(w, containerObj);
-                    }
+                // BSON builds an in-memory token tree before writing it. For large grid
+                // exchanges this multiplies peak memory on every MPI rank. Stream JSON
+                // directly instead, retaining the existing type metadata and envelope.
+                var containerObj = new JsonContainer() { PayLoad = o };
+                using (var text = new StreamWriter(ms, new UTF8Encoding(false), 1024, leaveOpen: true))
+                using (var writer = new JsonTextWriter(text)) {
+                    jsonFormatter.Serialize(writer, containerObj);
                 }
-                //} else {
-                //    m_Formatter.Serialize(ms, o);
-                //}
                 stw.Stop(); 
 
+                // Keep the backing array without copying, but transmit only valid bytes.
+                serializedLength = checked((int)ms.Length);
                 byte[] ret = ms.GetBuffer();
-                //if (ret.Length > ms.Position) {
-                //    Array.Resize(ref ret, (int)ms.Position);
-                //}
 
                 if (writeSize) {
-                    Console.Error.WriteLine($"r{this.m_Rank}: serialized to {ret.Length/(1024.0*1024.0)} MEGAbyte! took {stw.Elapsed.TotalMilliseconds} msec(UesJSON = {true})");
+                    Console.Error.WriteLine($"r{this.m_Rank}: serialized to {serializedLength/(1024.0*1024.0)} MEGAbyte! took {stw.Elapsed.TotalMilliseconds} msec(UesJSON = {true})");
                 }
 
                 return ret;
@@ -345,18 +342,11 @@ namespace ilPSP.Utils {
 
         object DeserializeObject(byte[] data, Type t) {
             using (var ms = new MemoryStream(data)) {
-                //if (m_UseJson) {
-                {
-                    //Type ArrayType = Array.CreateInstance(t, 0).GetType();
-
-                    using (var w = new BsonDataReader(ms)) {
-                        var containerObj = (JsonContainer) jsonFormatter.Deserialize(w, typeof(JsonContainer));
-                        return containerObj.PayLoad;
-                    }
+                using (var text = new StreamReader(ms, Encoding.UTF8))
+                using (var reader = new JsonTextReader(text)) {
+                    var containerObj = (JsonContainer)jsonFormatter.Deserialize(reader, typeof(JsonContainer));
+                    return containerObj.PayLoad;
                 }
-                //} else {
-                //    return m_Formatter.Deserialize(ms);
-                //}
             }
         }
 
@@ -420,7 +410,7 @@ namespace ilPSP.Utils {
             // serialize object
             // ---------------
 
-            byte[] Buffer = SerializeObject(graph);
+            byte[] Buffer = SerializeObject(graph, out int serializedLength);
             m_SendBuffers[TargetProc] = Buffer;
 #if DEBUG
             DeserializeObject(Buffer, graph.GetType());
@@ -431,7 +421,7 @@ namespace ilPSP.Utils {
             // ------------
 
             // send size of object 
-            m_SendObjectSizes[TargetProc] = m_SendBuffers[TargetProc].Length;
+            m_SendObjectSizes[TargetProc] = serializedLength;
             csMPI.Raw.Issend(Marshal.UnsafeAddrOfPinnedArrayElement(m_SendObjectSizes, TargetProc),
                           4, csMPI.Raw._DATATYPE.BYTE,
                           TargetProc, TagBufferSize + m_MyTagOffset,
@@ -443,9 +433,9 @@ namespace ilPSP.Utils {
                 m_SendBuffersPin[TargetProc] = GCHandle.Alloc(Buffer, GCHandleType.Pinned);
             else
                 m_SendBuffersPin.Add(TargetProc, GCHandle.Alloc(Buffer, GCHandleType.Pinned));
-            if (Buffer.Length > 0) {
+            if (serializedLength > 0) {
                 csMPI.Raw.Issend(Marshal.UnsafeAddrOfPinnedArrayElement(Buffer, 0),
-                              Buffer.Length, csMPI.Raw._DATATYPE.BYTE,
+                              serializedLength, csMPI.Raw._DATATYPE.BYTE,
                               TargetProc, TagBufferContent + m_MyTagOffset,
                               m_MPI_comm,
                               out m_Requests[m_Size + TargetProc]);

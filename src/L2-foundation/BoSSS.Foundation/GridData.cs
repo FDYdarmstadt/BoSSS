@@ -1390,7 +1390,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                 // external cell data
                 // ==================
                 {
-                    SerialisationMessenger sms = new SerialisationMessenger(MPI.Wrappers.csMPI.Raw._COMM.WORLD);
+                    // Release communication buffers before constructing the remaining grid data.
+                    using var sms = new SerialisationMessenger(MPI.Wrappers.csMPI.Raw._COMM.WORLD);
                     sms.SetCommPathsAndCommit(m_Parallel.ProcessesToSendTo);
 
                     foreach (var p in m_Parallel.ProcessesToSendTo) {
