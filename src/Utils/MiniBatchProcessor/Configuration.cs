@@ -82,6 +82,11 @@ namespace MiniBatchProcessor {
         /// </summary>
         public int MaxProcessors = 4;
 
+        /// <summary>
+        /// Additional options passed to mpirun on Unix systems, e.g. "--oversubscribe --bind-to none".
+        /// </summary>
+        public string AdditionalMPIotptions = "";
+
 
         /// <summary>
         /// Time interval in which the server checks the jobs.
