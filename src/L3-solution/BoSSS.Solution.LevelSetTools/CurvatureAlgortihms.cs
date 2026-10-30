@@ -314,7 +314,10 @@ namespace BoSSS.Solution.LevelSetTools {
                 default: {
                     // same as SurfaceStressTensor_IsotropicMode.Curvature_Projected, but Hessian does not exist yet
                     int[] lim;
-                    ComputeHessian(levSet, CC, config, out H, out H, levSet, G, G, l2pr); // do not distinguish between filtered and unfiltered, use what is available
+                    // two separate variables: passing H to both out parameters makes the filtered Hessian overwrite the unfiltered one
+                    // before it is filtered, i.e. H = 0 if config.useFiltLevSetHess
+                    ComputeHessian(levSet, CC, config, out var LevSetHess, out var FiltLevSetHess, levSet, G, G, l2pr);
+                    H = config.useFiltLevSetHess ? FiltLevSetHess : LevSetHess;
                     ProjectTotalCurvature(G, H, Curvature, CC, out lim);
 
                     if(!config.CurvatureLimiting)
@@ -543,6 +546,8 @@ namespace BoSSS.Solution.LevelSetTools {
             SinglePhaseField FiltLevSet, SinglePhaseField[] LevSetGrad,
             SinglePhaseField[] FiltLevSetGrad, L2PatchRecovery l2pr)
         {
+            if(config.useFiltLevSetHess && config.NoOfPatchRecoverySweeps > 0 && l2pr == null)
+                throw new ArgumentException("Filtering the Hessian (useFiltLevSetHess) requires the patch recovery; it is only set up if the level set or its gradient is filtered as well.");
             int D = LevSet.GridDat.SpatialDimension;
             LevSetHess = new SinglePhaseField[D, D];
             FiltLevSetHess = new SinglePhaseField[D, D];
