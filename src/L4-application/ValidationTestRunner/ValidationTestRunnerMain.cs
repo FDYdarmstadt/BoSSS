@@ -124,6 +124,14 @@ namespace ValidationTestRunner {
 
     static class ValidationTestRunnerMain {
 
+        private static string GetEnvironmentVariableIgnoreCase(string name) {
+            foreach(System.Collections.DictionaryEntry entry in System.Environment.GetEnvironmentVariables()) {
+                if(string.Equals(entry.Key as string, name, StringComparison.OrdinalIgnoreCase))
+                    return entry.Value as string;
+            }
+            return null;
+        }
+
         /// <summary>
         /// simpler version of <see cref="DeleteDatabaseAndDeploymentsWhenOld(string, string, string, TimeSpan)">
         /// </summary>
@@ -226,13 +234,10 @@ namespace ValidationTestRunner {
 
             var nau = DateTime.Now;
 
-            EnforceDeletionEnvVar = EnforceDeletionEnvVar.ToUpperInvariant();
-
-
             bool enforce = false;
             if(EnforceDeletionEnvVar != null) {
-                string really = System.Environment.GetEnvironmentVariable(EnforceDeletionEnvVar) ?? "";
-                string really2 = System.Environment.GetEnvironmentVariable("BOSSS_DELTETE_OLD_DEPLOYMENTS_DATABASES_MASTER") ?? "";
+                string really = GetEnvironmentVariableIgnoreCase(EnforceDeletionEnvVar) ?? "";
+                string really2 = GetEnvironmentVariableIgnoreCase("BOSSS_DELTETE_OLD_DEPLOYMENTS_DATABASES_MASTER") ?? "";
                 if((really.IsNonEmpty() && really.Trim() != "0")
                     || (really2.IsNonEmpty() && really2.Trim() != "0")
                     || masterEnforceDeletion) {
