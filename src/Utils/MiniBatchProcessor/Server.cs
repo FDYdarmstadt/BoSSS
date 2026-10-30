@@ -558,8 +558,8 @@ namespace MiniBatchProcessor {
                 }
                 PrevRunning = Running.Count;
 
-                // see if there are available processors
-                if (AvailableProcs <= 0 || ExclusiveUse) {
+                // see if there are available processors and job slots
+                if (AvailableProcs <= 0 || ExclusiveUse || Running.Count >= config.MaxNoOfConcurrentJobs) {
                     Thread.Sleep(config.ServerPollingInSeconds*1000);
                     continue;
                 }

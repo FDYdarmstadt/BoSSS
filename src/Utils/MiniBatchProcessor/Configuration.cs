@@ -83,6 +83,11 @@ namespace MiniBatchProcessor {
         public int MaxProcessors = 4;
 
         /// <summary>
+        /// Maximum number of jobs the server may run at the same time.
+        /// </summary>
+        public int MaxNoOfConcurrentJobs = 4;
+
+        /// <summary>
         /// Additional options passed to mpirun on Unix systems, e.g. "--oversubscribe --bind-to none".
         /// </summary>
         public string AdditionalMPIotptions = "";
