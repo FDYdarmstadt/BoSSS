@@ -2346,12 +2346,16 @@ namespace ilPSP.LinSolvers {
             if(BlockRows == null)
                 return 0;
 
-            // Traverse the block row only once. The former implementation first
-            // counted all nonzeros and then repeated the complete traversal to
-            // fill the arrays. GetRow callers conventionally reuse these buffers,
-            // so amortized growth is cheaper than scanning every row twice.
+            // Size from block metadata only, then traverse the numerical entries
+            // once. This avoids the former full count traversal as well as
+            // capacity checks in the hot per-entry/per-sub-block fill loop.
+            int requiredCapacity = GetRowStorageUpperBound(rowSblkIdx, BlockRows);
+            if(ColumnIndices == null || ColumnIndices.Length < requiredCapacity
+                    || (!NoValues && (Values == null || Values.Length < requiredCapacity))) {
+                EnsureRowStorage(ref ColumnIndices, ref Values, NoValues, requiredCapacity);
+            }
             int nnz = 0;
-            GetRowInternal_pass(ref ColumnIndices, ref Values, NoValues, rowSblkIdx, iSblk, ref nnz, BlockRows);
+            GetRowInternal_pass(ColumnIndices, Values, NoValues, rowSblkIdx, iSblk, ref nnz, BlockRows);
 
             // ======================
             // return
@@ -2373,7 +2377,37 @@ namespace ilPSP.LinSolvers {
             }
         }
 
-        void GetRowInternal_pass(ref long[] ColumnIndices, ref double[] Values, bool NoValues, int rowSblkIdx, int iSblk, ref int nnz, SortedDictionary<long, BlockEntry> BlockRows) {
+        int GetRowStorageUpperBound(int rowSblkIdx, SortedDictionary<long, BlockEntry> BlockRows) {
+            int capacity = 0;
+            foreach(var kv in BlockRows) {
+                long jBlk = kv.Key;
+                BlockEntry B = kv.Value;
+                int noOfSblkCols;
+                int[] colSubblkLen;
+                int externalBlockLength;
+                if(jBlk >= m_ColPartitioning.FirstBlock && jBlk < m_ColPartitioning.LocalNoOfBlocks + m_ColPartitioning.FirstBlock) {
+                    int jBlkT = m_ColPartitioning.GetBlockType(jBlk);
+                    colSubblkLen = m_ColPartitioning.GetSubblkLen(jBlkT);
+                    noOfSblkCols = B.InMembnk.GetLength(1);
+                    externalBlockLength = 0;
+                } else {
+                    GetExternalSubblockIndices(m_ColPartitioning, jBlk, out long j0, out long jE);
+                    externalBlockLength = checked((int)(jE - j0));
+                    colSubblkLen = null;
+                    noOfSblkCols = 1;
+                }
+
+                for(int colSblkIdx = 0; colSblkIdx < noOfSblkCols; colSblkIdx++) {
+                    if(B.MembnkIdx[rowSblkIdx, colSblkIdx] >= 0) {
+                        int width = colSubblkLen != null ? colSubblkLen[colSblkIdx] : externalBlockLength;
+                        capacity = checked(capacity + width);
+                    }
+                }
+            }
+            return capacity;
+        }
+
+        void GetRowInternal_pass(long[] ColumnIndices, double[] Values, bool NoValues, int rowSblkIdx, int iSblk, ref int nnz, SortedDictionary<long, BlockEntry> BlockRows) {
             int cnt = 0;
             foreach(var kv in BlockRows) { // loop over blocks in row...
                 long jBlk = kv.Key;
@@ -2432,7 +2466,6 @@ namespace ilPSP.LinSolvers {
 
                             double vat = Rawmem[RowOffset + jsb * CJ];
                             if(vat != 0.0) {
-                                EnsureRowStorage(ref ColumnIndices, ref Values, NoValues, checked(cnt + 1));
                                 ColumnIndices[cnt] = j;
                                 if(NoValues == false)
                                     Values[cnt] = vat;
