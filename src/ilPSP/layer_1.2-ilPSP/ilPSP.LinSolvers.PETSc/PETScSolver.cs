@@ -51,8 +51,11 @@ namespace ilPSP.LinSolvers.PETSc {
         int m_LocalRows = -1;
         bool m_Disposed;
 
-        /// <summary>PETSc matrix ownership and transfer representation.</summary>
-        public PETScMatrixInput MatrixInput { get; set; } = PETScMatrixInput.BorrowedCsr;
+        /// <summary>
+        /// PETSc matrix ownership and transfer representation. Copied CSR is
+        /// the default; borrowed CSR must be selected explicitly.
+        /// </summary>
+        public PETScMatrixInput MatrixInput { get; set; } = PETScMatrixInput.CopiedCsr;
 
         /// <summary>
         /// Writes outer-KSP iteration residuals through a managed PETSc monitor.
@@ -112,8 +115,10 @@ namespace ilPSP.LinSolvers.PETSc {
                     m_Native = PETScNativeLibraries.Get();
                     EnsurePetscInitialized();
                     m_Communicator = GetNativeCommunicator(matrix.MPI_Comm);
+
+                    PETScMatrixInput selectedMatrixInput = SelectMatrixInput(mpiSize);
                     using(new BlockTrace("PETSC2_NativeMatrixCreate", tr)) {
-                        m_Matrix = PETScMPIAIJMatrix.Create(m_Native, m_Communicator, SelectMatrixInput(mpiSize), matrix);
+                        m_Matrix = PETScMPIAIJMatrix.Create(m_Native, m_Communicator, selectedMatrixInput, matrix);
                         m_LocalRows = m_Matrix.LocalRows;
                     }
                     using(new BlockTrace("PETSC2_NativeKspCreate", tr)) {

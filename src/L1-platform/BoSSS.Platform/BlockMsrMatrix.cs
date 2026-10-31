@@ -2310,6 +2310,13 @@ namespace ilPSP.LinSolvers {
         /// see <see cref="IMutableMatrixEx.GetOccupiedColumnIndices"/>;
         /// the returned array is a non-shallow copy of the row;
         /// </summary>
+        /// <remarks>
+        /// <b>Warning:</b> <paramref name="ColumnIndices"/> and
+        /// <paramref name="Values"/> are reusable capacity buffers and may be
+        /// longer than the returned row length. Only indices below the return
+        /// value are valid. Use <see cref="IMutuableMatrixEx_Extensions.GetRowExact(IMutableMatrixEx, long)"/>
+        /// when exact-length arrays are required.
+        /// </remarks>
         public int GetRow(long i, ref long[] ColumnIndices, ref double[] Values) {
             return GetRowInternal(i, ref ColumnIndices, ref Values, false);
         }
@@ -2335,38 +2342,69 @@ namespace ilPSP.LinSolvers {
             Debug.Assert(iSblk >= 0);
             Debug.Assert(iSblk < m_RowPartitioning.GetSubblkLen(iBlkT)[rowSblkIdx]);
 
-            // ==================================
-            // compute number of occupied entries
-            // ==================================
-            int nnz = -10;
-
             var BlockRows = this.m_BlockRows[iBlkLoc];
-            if(BlockRows == null) {
-                nnz = 0;
-            } else {
-                GetRowInternal_pass(null, null, true, rowSblkIdx, iSblk, ref nnz, BlockRows);
+            if(BlockRows == null)
+                return 0;
+
+            // Size from block metadata only, then traverse the numerical entries
+            // once. This avoids the former full count traversal as well as
+            // capacity checks in the hot per-entry/per-sub-block fill loop.
+            int requiredCapacity = GetRowStorageUpperBound(rowSblkIdx, BlockRows);
+            if(ColumnIndices == null || ColumnIndices.Length < requiredCapacity
+                    || (!NoValues && (Values == null || Values.Length < requiredCapacity))) {
+                EnsureRowStorage(ref ColumnIndices, ref Values, NoValues, requiredCapacity);
             }
-
-            // ======================
-            // allocate return memory
-            // ======================
-            if(ColumnIndices == null || ColumnIndices.Length < nnz)
-                ColumnIndices = new long[nnz];
-            if((Values == null || Values.Length < nnz) && (NoValues == false))
-                Values = new double[nnz];
-
-            // ======================
-            // set return values
-            // ======================
-
-            if(nnz > 0) {
-                GetRowInternal_pass(ColumnIndices, Values, NoValues, rowSblkIdx, iSblk, ref nnz, BlockRows);
-            }
+            int nnz = 0;
+            GetRowInternal_pass(ColumnIndices, Values, NoValues, rowSblkIdx, iSblk, ref nnz, BlockRows);
 
             // ======================
             // return
             // ======================
             return nnz;
+        }
+
+        static void EnsureRowStorage(ref long[] ColumnIndices, ref double[] Values, bool NoValues, int requiredLength) {
+            if(ColumnIndices == null || ColumnIndices.Length < requiredLength) {
+                int oldLength = ColumnIndices?.Length ?? 0;
+                int newLength = oldLength == 0 ? 16 : checked(oldLength * 2);
+                if(newLength < requiredLength)
+                    newLength = requiredLength;
+                Array.Resize(ref ColumnIndices, newLength);
+            }
+            if(!NoValues && (Values == null || Values.Length < requiredLength)) {
+                int newLength = Math.Max(ColumnIndices.Length, requiredLength);
+                Array.Resize(ref Values, newLength);
+            }
+        }
+
+        int GetRowStorageUpperBound(int rowSblkIdx, SortedDictionary<long, BlockEntry> BlockRows) {
+            int capacity = 0;
+            foreach(var kv in BlockRows) {
+                long jBlk = kv.Key;
+                BlockEntry B = kv.Value;
+                int noOfSblkCols;
+                int[] colSubblkLen;
+                int externalBlockLength;
+                if(jBlk >= m_ColPartitioning.FirstBlock && jBlk < m_ColPartitioning.LocalNoOfBlocks + m_ColPartitioning.FirstBlock) {
+                    int jBlkT = m_ColPartitioning.GetBlockType(jBlk);
+                    colSubblkLen = m_ColPartitioning.GetSubblkLen(jBlkT);
+                    noOfSblkCols = B.InMembnk.GetLength(1);
+                    externalBlockLength = 0;
+                } else {
+                    GetExternalSubblockIndices(m_ColPartitioning, jBlk, out long j0, out long jE);
+                    externalBlockLength = checked((int)(jE - j0));
+                    colSubblkLen = null;
+                    noOfSblkCols = 1;
+                }
+
+                for(int colSblkIdx = 0; colSblkIdx < noOfSblkCols; colSblkIdx++) {
+                    if(B.MembnkIdx[rowSblkIdx, colSblkIdx] >= 0) {
+                        int width = colSubblkLen != null ? colSubblkLen[colSblkIdx] : externalBlockLength;
+                        capacity = checked(capacity + width);
+                    }
+                }
+            }
+            return capacity;
         }
 
         void GetRowInternal_pass(long[] ColumnIndices, double[] Values, bool NoValues, int rowSblkIdx, int iSblk, ref int nnz, SortedDictionary<long, BlockEntry> BlockRows) {
@@ -2428,11 +2466,9 @@ namespace ilPSP.LinSolvers {
 
                             double vat = Rawmem[RowOffset + jsb * CJ];
                             if(vat != 0.0) {
-                                if(ColumnIndices != null) {
-                                    ColumnIndices[cnt] = j;
-                                    if(NoValues == false)
-                                        Values[cnt] = vat;
-                                }
+                                ColumnIndices[cnt] = j;
+                                if(NoValues == false)
+                                    Values[cnt] = vat;
                                 cnt++;
                             }
                         }
@@ -2440,11 +2476,7 @@ namespace ilPSP.LinSolvers {
                 }
             }
 
-            if(nnz >= 0) {
-                Debug.Assert(cnt == nnz);
-            } else {
-                nnz = cnt;
-            }
+            nnz = cnt;
         }
 
         /// <summary>
@@ -4311,8 +4343,7 @@ namespace ilPSP.LinSolvers {
                 if (quick) { //checks only the number of stored values                    
 					totalNonDiagonal += GetOccupiedColumnIndices(i, ref ColumnIndices); 
                 } else { //by explicitly checking the stored values
-                    double[] Values = null;
-					GetRowInternal(i, ref ColumnIndices, ref Values, false);
+					var (_, Values) = this.GetRowExact(i);
 					foreach (var Val in Values) {
 						totalNonDiagonal += Math.Abs(Val) > threshold ? 1 : 0; //check if it is non-zero
 					}

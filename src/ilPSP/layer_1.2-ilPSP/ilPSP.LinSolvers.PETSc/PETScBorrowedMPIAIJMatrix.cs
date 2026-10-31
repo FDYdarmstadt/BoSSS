@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace ilPSP.LinSolvers.PETSc {
@@ -103,16 +104,18 @@ namespace ilPSP.LinSolvers.PETSc {
             long firstOwnedColumn = matrix.ColPartitioning.i0;
             long lastOwnedColumn = firstOwnedColumn + matrix.ColPartitioning.LocalLength;
             var result = new SplitCsr {
-                DiagonalRowPointers = new int[localRows + 1],
-                OffdiagonalRowPointers = new int[localRows + 1]
+                DiagonalRowPointers = GC.AllocateUninitializedArray<int>(localRows + 1, pinned: true),
+                OffdiagonalRowPointers = GC.AllocateUninitializedArray<int>(localRows + 1, pinned: true)
             };
             long[] rowColumns = null;
             double[] rowValues = null;
+            result.DiagonalRowPointers[0] = 0;
+            result.OffdiagonalRowPointers[0] = 0;
 
             for(int localRow = 0; localRow < localRows; localRow++) {
                 long globalRow = globalRowStart + localRow;
-                int rowLength = matrix.GetRow(globalRow, ref rowColumns, ref rowValues);
-                ValidateRow(rowLength, rowColumns, rowValues);
+                int rowLength = matrix.GetOccupiedColumnIndices(globalRow, ref rowColumns);
+                ValidateColumns(rowLength, rowColumns);
                 int diagonalCount = 0;
                 int offdiagonalCount = 0;
                 bool hasStructuralDiagonal = false;
@@ -133,35 +136,38 @@ namespace ilPSP.LinSolvers.PETSc {
 
             int diagonalNonzeros = result.DiagonalRowPointers[localRows];
             int offdiagonalNonzeros = result.OffdiagonalRowPointers[localRows];
-            result.DiagonalColumnIndices = new int[Math.Max(diagonalNonzeros, 1)];
-            result.DiagonalValues = new double[Math.Max(diagonalNonzeros, 1)];
-            result.OffdiagonalColumnIndices = new int[Math.Max(offdiagonalNonzeros, 1)];
-            result.OffdiagonalValues = new double[Math.Max(offdiagonalNonzeros, 1)];
-            int[] diagonalOffsets = (int[])result.DiagonalRowPointers.Clone();
-            int[] offdiagonalOffsets = (int[])result.OffdiagonalRowPointers.Clone();
+            result.DiagonalColumnIndices = GC.AllocateUninitializedArray<int>(Math.Max(diagonalNonzeros, 1), pinned: true);
+            result.DiagonalValues = GC.AllocateUninitializedArray<double>(Math.Max(diagonalNonzeros, 1), pinned: true);
+            result.OffdiagonalColumnIndices = GC.AllocateUninitializedArray<int>(Math.Max(offdiagonalNonzeros, 1), pinned: true);
+            result.OffdiagonalValues = GC.AllocateUninitializedArray<double>(Math.Max(offdiagonalNonzeros, 1), pinned: true);
 
             for(int localRow = 0; localRow < localRows; localRow++) {
                 long globalRow = globalRowStart + localRow;
                 int rowLength = matrix.GetRow(globalRow, ref rowColumns, ref rowValues);
+                ValidateRow(rowLength, rowColumns, rowValues);
                 bool hasStructuralDiagonal = false;
+                int diagonalOffset = result.DiagonalRowPointers[localRow];
+                int offdiagonalOffset = result.OffdiagonalRowPointers[localRow];
                 for(int entry = 0; entry < rowLength; entry++) {
                     long column = rowColumns[entry];
                     if(column >= firstOwnedColumn && column < lastOwnedColumn) {
-                        int offset = diagonalOffsets[localRow]++;
+                        int offset = diagonalOffset++;
                         result.DiagonalColumnIndices[offset] = checked((int)(column - firstOwnedColumn));
                         result.DiagonalValues[offset] = rowValues[entry];
                     } else {
-                        int offset = offdiagonalOffsets[localRow]++;
+                        int offset = offdiagonalOffset++;
                         result.OffdiagonalColumnIndices[offset] = checked((int)column);
                         result.OffdiagonalValues[offset] = rowValues[entry];
                     }
                     hasStructuralDiagonal |= column == globalRow;
                 }
                 if(!hasStructuralDiagonal) {
-                    int offset = diagonalOffsets[localRow]++;
+                    int offset = diagonalOffset++;
                     result.DiagonalColumnIndices[offset] = localRow;
                     result.DiagonalValues[offset] = 0.0;
                 }
+                Debug.Assert(diagonalOffset == result.DiagonalRowPointers[localRow + 1]);
+                Debug.Assert(offdiagonalOffset == result.OffdiagonalRowPointers[localRow + 1]);
             }
             return result;
         }
@@ -204,6 +210,11 @@ namespace ilPSP.LinSolvers.PETSc {
         static void ValidateRow(int rowLength, long[] columns, double[] values) {
             if(rowLength < 0 || (rowLength > 0 && (columns == null || values == null || columns.Length < rowLength || values.Length < rowLength)))
                 throw new InvalidOperationException("The BoSSS matrix returned invalid row storage.");
+        }
+
+        static void ValidateColumns(int rowLength, long[] columns) {
+            if(rowLength < 0 || (rowLength > 0 && (columns == null || columns.Length < rowLength)))
+                throw new InvalidOperationException("The BoSSS matrix returned invalid structural row storage.");
         }
 
         static void ValidateColumn(long column, int globalRows) {
