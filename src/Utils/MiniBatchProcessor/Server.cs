@@ -558,8 +558,8 @@ namespace MiniBatchProcessor {
                 }
                 PrevRunning = Running.Count;
 
-                // see if there are available processors
-                if (AvailableProcs <= 0 || ExclusiveUse) {
+                // see if there are available processors and job slots
+                if (AvailableProcs <= 0 || ExclusiveUse || Running.Count >= config.MaxNoOfConcurrentJobs) {
                     Thread.Sleep(config.ServerPollingInSeconds*1000);
                     continue;
                 }
@@ -595,6 +595,7 @@ namespace MiniBatchProcessor {
                         data = NextJobs[0],
                         WorkDir = Path.Combine(config.BatchInstructionDir, ClientAndServer.WORK_FINISHED_DIR),
                         BatchInstructionDir = config.BatchInstructionDir,
+                        AdditionalMPIotptions = config.AdditionalMPIotptions,
                         TermAct = delegate () { base.UpdateStatus(NextJobs[0].ID, JobStatus.Finished); }
                     };
                     Thread th = new Thread(task.Run);
@@ -630,6 +631,11 @@ namespace MiniBatchProcessor {
             /// 
             /// </summary>
             public string BatchInstructionDir;
+
+            /// <summary>
+            /// Additional options passed to mpirun.
+            /// </summary>
+            public string AdditionalMPIotptions;
 
             /// <summary>
             /// True if the process exited without errors.
@@ -682,7 +688,7 @@ namespace MiniBatchProcessor {
 
                         } else {
                             psi.FileName = "mpirun";
-                            psi.Arguments = " -np " + data.NoOfProcs + "  " + data.exefile + " ";
+                            psi.Arguments = " -np " + data.NoOfProcs + " " + AdditionalMPIotptions + " " + data.exefile + " ";
                         }
                         break;
                     default:

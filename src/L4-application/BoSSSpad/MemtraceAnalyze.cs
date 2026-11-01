@@ -365,7 +365,9 @@ namespace BoSSS.Application.BoSSSpad {
                             continue;
                         if (line[i].MPISize == sz_k) {
                             Debug.Assert(line[i].MPISize == sz_k);
-                            ret[i].TotalMem[iLine] = line[i].GetMPIMem(out long _, out long _, out long _);
+                            ret[k].TotalMem[iLine] = line[i].GetMPIMem(out long _, out long _, out long _);
+                            marker[i] = true;
+                            break;
                         }
                     }
                 }

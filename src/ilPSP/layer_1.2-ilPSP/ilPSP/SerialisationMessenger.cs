@@ -17,13 +17,14 @@ limitations under the License.
 using System;
 using System.Collections.Generic;
 using System.Collections;
-using System.IO;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
 
 using MPI.Wrappers;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Bson;
+using System.Runtime.Serialization;
+using MessagePack;
+using MessagePack.Formatters;
+using MessagePack.Resolvers;
 
 namespace ilPSP.Utils {
     
@@ -262,102 +263,105 @@ namespace ilPSP.Utils {
         /// </summary>
         bool m_CommPathsCommited;
 
-/*
-        /// <summary>
-        /// formatter used for all serialization/de-serialization (legacy)
-        /// </summary>
-        BinaryFormatter m_Formatter = new BinaryFormatter();
-*/
+        // The typeless root preserves Transmit(object)/GetNext<T> semantics and
+        // object-valued members, without repeating type names for every typed cell.
+        // DataContract types need the allow-private resolver for their private data.
+        internal static readonly MessagePackSerializerOptions SerializationOptions =
+            MessagePackSerializerOptions.Standard.WithResolver(new MessengerResolver());
 
-        /// <summary>
-        /// formatter used for all serialization/de-serialization
-        /// </summary>
-        JsonSerializer jsonFormatter = new JsonSerializer() {
-            NullValueHandling = NullValueHandling.Include,
-            TypeNameHandling = TypeNameHandling.All,
-            ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
-            ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
-            //TypeNameAssemblyFormat = System.Runtime.Serialization.Formatters.FormatterAssemblyStyle.Full
-            TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Full
-        };
-        
-        /*
-        bool m_UseJson = true;
-
-        /// <summary>
-        /// Whether to use a JSON formatter (text) or the binary formatter
-        /// - true: use text/JSON
-        /// - false: use binary
-        /// </summary>
-        public bool UseJson {
-            get {
-                return m_UseJson;
-            }
-            set {
-                if (m_CommPathsCommited || m_TransmissionInProgress)
-                    throw new NotSupportedException("Cannot be changed after setup phase.");
-                m_UseJson = value;
+        sealed class MessengerResolver : IFormatterResolver {
+            public IMessagePackFormatter<T> GetFormatter<T>() {
+                return FormatterCache<T>.Formatter;
             }
 
+            static class FormatterCache<T> {
+                internal static readonly IMessagePackFormatter<T> Formatter = Create();
+
+                static IMessagePackFormatter<T> Create() {
+                    if (typeof(T) == typeof(Vector))
+                        return (IMessagePackFormatter<T>)(object)new VectorFormatter();
+                    var formatter = typeof(T).IsDefined(typeof(DataContractAttribute), false)
+                        ? ContractlessStandardResolverAllowPrivate.Instance.GetFormatter<T>()
+                        : TypelessContractlessStandardResolver.Instance.GetFormatter<T>();
+                    // Concrete base-typed members may contain a derived object.
+                    // Keep its runtime type, while exact-type values use their
+                    // normal compact formatter without an extra type header.
+                    if (formatter != null && typeof(T).IsClass && !typeof(T).IsSealed && typeof(T) != typeof(object))
+                        return new PolymorphicFormatter<T>(formatter);
+                    return formatter;
+                }
+            }
         }
-        */
 
-        [Serializable]
-        class JsonContainer {
-            public object PayLoad;
+        // Vector implements IList<double>, but its dimension is fixed and its
+        // constructors do not follow MessagePack's collection/object conventions.
+        // Serialize its actual data contract directly, excluding alignment padding.
+        internal sealed class VectorFormatter : IMessagePackFormatter<Vector> {
+            public void Serialize(ref MessagePackWriter writer, Vector value, MessagePackSerializerOptions options) {
+                writer.WriteArrayHeader(4);
+                writer.Write(value.Dim);
+                writer.Write(value.x);
+                writer.Write(value.y);
+                writer.Write(value.z);
+            }
+
+            public Vector Deserialize(ref MessagePackReader reader, MessagePackSerializerOptions options) {
+                if (reader.ReadArrayHeader() != 4)
+                    throw new MessagePackSerializationException("Invalid Vector member count.");
+                int dimension = reader.ReadInt32();
+                if (dimension < 0 || dimension > 3)
+                    throw new MessagePackSerializationException("Invalid Vector dimension.");
+                return new Vector {
+                    Dim = dimension,
+                    x = reader.ReadDouble(),
+                    y = reader.ReadDouble(),
+                    z = reader.ReadDouble()
+                };
+            }
+        }
+
+        sealed class PolymorphicFormatter<T> : IMessagePackFormatter<T> {
+            readonly IMessagePackFormatter<T> formatter;
+
+            internal PolymorphicFormatter(IMessagePackFormatter<T> formatter) {
+                this.formatter = formatter;
+            }
+
+            public void Serialize(ref MessagePackWriter writer, T value, MessagePackSerializerOptions options) {
+                if (value != null && value.GetType() != typeof(T))
+                    TypelessFormatter.Instance.Serialize(ref writer, value, options);
+                else
+                    formatter.Serialize(ref writer, value, options);
+            }
+
+            public T Deserialize(ref MessagePackReader reader, MessagePackSerializerOptions options) {
+                if (reader.NextMessagePackType == MessagePackType.Extension) {
+                    var peek = reader.CreatePeekReader();
+                    // Extension 100 is MessagePack-CSharp's reserved typeless format.
+                    if (peek.ReadExtensionFormatHeader().TypeCode == 100)
+                        return (T)TypelessFormatter.Instance.Deserialize(ref reader, options);
+                }
+                return formatter.Deserialize(ref reader, options);
+            }
         }
 
         public static bool writeSize = false;
 
-        byte[] SerializeObject(object o) {
-            using (var ms = new MemoryStream()) {
-                Stopwatch stw = new Stopwatch();
-                stw.Start();
-                //if (m_UseJson) {
-                {
-                    // see: https://stackoverflow.com/questions/25741895/error-serialising-simple-string-to-bson-using-newtonsoft-json-net
-                    //var containerArray = Array.CreateInstance(o.GetType(), 1);
-                    //containerArray.SetValue(o, 0);
-                    var containerObj = new JsonContainer() { PayLoad = o };
-
-                    using (var w = new BsonDataWriter(ms)) {
-                        jsonFormatter.Serialize(w, containerObj);
-                    }
-                }
-                //} else {
-                //    m_Formatter.Serialize(ms, o);
-                //}
-                stw.Stop(); 
-
-                byte[] ret = ms.GetBuffer();
-                //if (ret.Length > ms.Position) {
-                //    Array.Resize(ref ret, (int)ms.Position);
-                //}
-
-                if (writeSize) {
-                    Console.Error.WriteLine($"r{this.m_Rank}: serialized to {ret.Length/(1024.0*1024.0)} MEGAbyte! took {stw.Elapsed.TotalMilliseconds} msec(UesJSON = {true})");
-                }
-
-                return ret;
+        byte[] SerializeObject(object value, out int serializedLength) {
+            var watch = Stopwatch.StartNew();
+            byte[] buffer = MessagePackSerializer.Serialize<object>(value, SerializationOptions);
+            serializedLength = buffer.Length;
+            if (writeSize) {
+                Console.Error.WriteLine($"r{m_Rank}: serialized to {serializedLength / (1024.0 * 1024.0)} MEGAbyte! took {watch.Elapsed.TotalMilliseconds} msec (MessagePack)");
             }
-
+            return buffer;
         }
 
-        object DeserializeObject(byte[] data, Type t) {
-            using (var ms = new MemoryStream(data)) {
-                //if (m_UseJson) {
-                {
-                    //Type ArrayType = Array.CreateInstance(t, 0).GetType();
-
-                    using (var w = new BsonDataReader(ms)) {
-                        var containerObj = (JsonContainer) jsonFormatter.Deserialize(w, typeof(JsonContainer));
-                        return containerObj.PayLoad;
-                    }
-                }
-                //} else {
-                //    return m_Formatter.Deserialize(ms);
-                //}
-            }
+        object DeserializeObject(byte[] data, int serializedLength) {
+            // Receive buffers can be reused for a smaller subsequent message.
+            // Pass only the bytes received this time, excluding stale trailing data.
+            return MessagePackSerializer.Deserialize<object>(
+                new ReadOnlyMemory<byte>(data, 0, serializedLength), SerializationOptions);
         }
 
 
@@ -420,10 +424,10 @@ namespace ilPSP.Utils {
             // serialize object
             // ---------------
 
-            byte[] Buffer = SerializeObject(graph);
+            byte[] Buffer = SerializeObject(graph, out int serializedLength);
             m_SendBuffers[TargetProc] = Buffer;
 #if DEBUG
-            DeserializeObject(Buffer, graph.GetType());
+            DeserializeObject(Buffer, serializedLength);
 #endif
 
             // ------------
@@ -431,7 +435,7 @@ namespace ilPSP.Utils {
             // ------------
 
             // send size of object 
-            m_SendObjectSizes[TargetProc] = m_SendBuffers[TargetProc].Length;
+            m_SendObjectSizes[TargetProc] = serializedLength;
             csMPI.Raw.Issend(Marshal.UnsafeAddrOfPinnedArrayElement(m_SendObjectSizes, TargetProc),
                           4, csMPI.Raw._DATATYPE.BYTE,
                           TargetProc, TagBufferSize + m_MyTagOffset,
@@ -443,9 +447,9 @@ namespace ilPSP.Utils {
                 m_SendBuffersPin[TargetProc] = GCHandle.Alloc(Buffer, GCHandleType.Pinned);
             else
                 m_SendBuffersPin.Add(TargetProc, GCHandle.Alloc(Buffer, GCHandleType.Pinned));
-            if (Buffer.Length > 0) {
+            if (serializedLength > 0) {
                 csMPI.Raw.Issend(Marshal.UnsafeAddrOfPinnedArrayElement(Buffer, 0),
-                              Buffer.Length, csMPI.Raw._DATATYPE.BYTE,
+                              serializedLength, csMPI.Raw._DATATYPE.BYTE,
                               TargetProc, TagBufferContent + m_MyTagOffset,
                               m_MPI_comm,
                               out m_Requests[m_Size + TargetProc]);
@@ -690,7 +694,7 @@ namespace ilPSP.Utils {
                     //}
 
                     // deserialize
-                    o = (T)DeserializeObject(m_ReceiveBuffers[proc], typeof(T));
+                    o = (T)DeserializeObject(m_ReceiveBuffers[proc], m_ReceiveObjectSizes[proc]);
                     TargetProc = proc;
                     return true;
                     
