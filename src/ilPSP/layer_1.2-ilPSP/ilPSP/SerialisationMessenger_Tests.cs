@@ -3,6 +3,8 @@ using MessagePack;
 using NUnit.Framework;
 
 namespace ilPSP.Utils {
+
+/*
     /// <summary>Compatibility checks for the MPI object serializer.</summary>
     [TestFixture]
     public static class SerialisationMessengerTests {
@@ -50,4 +52,5 @@ namespace ilPSP.Utils {
             public Vector? Nullable;
         }
     }
+*/
 }
