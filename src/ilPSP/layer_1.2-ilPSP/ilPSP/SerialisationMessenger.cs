@@ -266,7 +266,7 @@ namespace ilPSP.Utils {
         // The typeless root preserves Transmit(object)/GetNext<T> semantics and
         // object-valued members, without repeating type names for every typed cell.
         // DataContract types need the allow-private resolver for their private data.
-        static readonly MessagePackSerializerOptions SerializationOptions =
+        internal static readonly MessagePackSerializerOptions SerializationOptions =
             MessagePackSerializerOptions.Standard.WithResolver(new MessengerResolver());
 
         sealed class MessengerResolver : IFormatterResolver {
@@ -278,6 +278,8 @@ namespace ilPSP.Utils {
                 internal static readonly IMessagePackFormatter<T> Formatter = Create();
 
                 static IMessagePackFormatter<T> Create() {
+                    if (typeof(T) == typeof(Vector))
+                        return (IMessagePackFormatter<T>)(object)new VectorFormatter();
                     var formatter = typeof(T).IsDefined(typeof(DataContractAttribute), false)
                         ? ContractlessStandardResolverAllowPrivate.Instance.GetFormatter<T>()
                         : TypelessContractlessStandardResolver.Instance.GetFormatter<T>();
@@ -288,6 +290,33 @@ namespace ilPSP.Utils {
                         return new PolymorphicFormatter<T>(formatter);
                     return formatter;
                 }
+            }
+        }
+
+        // Vector implements IList<double>, but its dimension is fixed and its
+        // constructors do not follow MessagePack's collection/object conventions.
+        // Serialize its actual data contract directly, excluding alignment padding.
+        internal sealed class VectorFormatter : IMessagePackFormatter<Vector> {
+            public void Serialize(ref MessagePackWriter writer, Vector value, MessagePackSerializerOptions options) {
+                writer.WriteArrayHeader(4);
+                writer.Write(value.Dim);
+                writer.Write(value.x);
+                writer.Write(value.y);
+                writer.Write(value.z);
+            }
+
+            public Vector Deserialize(ref MessagePackReader reader, MessagePackSerializerOptions options) {
+                if (reader.ReadArrayHeader() != 4)
+                    throw new MessagePackSerializationException("Invalid Vector member count.");
+                int dimension = reader.ReadInt32();
+                if (dimension < 0 || dimension > 3)
+                    throw new MessagePackSerializationException("Invalid Vector dimension.");
+                return new Vector {
+                    Dim = dimension,
+                    x = reader.ReadDouble(),
+                    y = reader.ReadDouble(),
+                    z = reader.ReadDouble()
+                };
             }
         }
 
