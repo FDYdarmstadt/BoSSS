@@ -525,27 +525,15 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                         bLinearRequired = LinearRequired;
                         bAffineRequired = AffineRequired;
-                        {
-                            // rotationally periodic edges: rotate vector-valued OUT-side parameters by M^-1 (i.e. into IN's frame);
-                            // the rotation brackets both the linear and the affine evaluation, so that both use the same linearization point
-                            GetPeriodicEdgesAndMatrices(i0, Length, gDat, out var mainPeriodicIdx, out var mainPeriodicMtx);
-                            MultidimensionalArray[] originalParamsOut = null;
-                            if (mainPeriodicIdx.Count > 0) {
-                                var mainPeriodicMtxInv = mainPeriodicMtx.Select(M => { var Minv = M.CloneAs(); Minv.InvertInPlace(); return Minv; }).ToList();
-                                originalParamsOut = RotateParameters(m_ParameterFieldsValues_OUT, GetParameterVectorTuples(D), mainPeriodicIdx, mainPeriodicMtxInv, NS.NoOfNodes);
-                            }
 
+                        // for rotationally periodic edges
+                        if ( bLinearRequired )
+                            DropStaleRotationSlots(Length, NS.NoOfNodes); // required for every chunk
+                        var rotPeriodic = PeriodicEdgeChunk.TryCreate(this, i0, Length, gDat, NS.NoOfNodes, D); // null if none in this chunk
+                        //
+
+                        using ( rotPeriodic?.RotateOutParametersIntoInFrame() ) {
                             if ( bLinearRequired ) {
-                                // drop lazily created vector-tuple cross blocks (see RotateCrossBlock) which are sized for a different chunk
-                                InvalidateStaleVectorTupleSlots(m_UxVSumBuffer, Length, NS.NoOfNodes);
-                                InvalidateStaleVectorTupleSlots(m_GradUxVSumBuffer, Length, NS.NoOfNodes);
-                                InvalidateStaleVectorTupleSlots(m_Trf_GradUxVSumBuffer, Length, NS.NoOfNodes);
-                                InvalidateStaleVectorTupleSlots(m_UxGradVSumBuffer, Length, NS.NoOfNodes);
-                                InvalidateStaleVectorTupleSlots(m_Trf_UxGradVSumBuffer, Length, NS.NoOfNodes);
-                                InvalidateStaleVectorTupleSlots(m_GradUxGradVSumBuffer, Length, NS.NoOfNodes);
-                                InvalidateStaleVectorTupleSlots(m_Trf_GradUxGradVSumBuffer, Length, NS.NoOfNodes);
-
-                                // native-normal pass, i.e. the cr=0 (IN-cell equation) blocks; OUT-side parameters are already rotated into IN's frame
                                 EvalNSumForm(ref efp, i0, m_Edgeform_UxV, Edges, m_UxVComponentBuffer, m_UxVSumBuffer, false, NS.NoOfNodes, D, m_Edgeform_UxV_Watches, MustLock,
                                     (E, mda) => E.InternalEdge_UxV(ref efp, mda),
                                     (E, mda) => E.BoundaryEdge_UxV(ref efp, mda));
@@ -560,7 +548,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                                     (E, mda) => E.BoundaryEdge_GradUxGradV(ref efp, mda));
                             }
                             if ( bAffineRequired ) {
-                                // native-normal pass for the affine part, with the same rotated parameters as above
                                 EvalNSumForm(ref efp, i0, m_EdgeSourceV, Edges, m_VComponentBuffer, m_VSumBuffer, true, NS.NoOfNodes, D, m_EdgeSourceV_Watches, MustLock,
                                     (E, mda) => E.InternalEdge_V(ref efp, mda),
                                     (E, mda) => E.BoundaryEdge_V(ref efp, mda));
@@ -568,20 +555,9 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                                     (E, mda) => E.InternalEdge_GradV(ref efp, mda),
                                     (E, mda) => E.BoundaryEdge_GradV(ref efp, mda));
                             }
-
-                            if (originalParamsOut != null)
-                                RestoreParameters(m_ParameterFieldsValues_OUT, originalParamsOut);
-
-                            if ( bLinearRequired ) {
-                                // rotationally periodic edges: rotate the IN/OUT blocks of vector-valued variables into a consistent frame
-                                ApplyPeriodicRotation(i0, Length, gDat, efp, Edges, MustLock, NS.NoOfNodes, D);
-                            }
-
-                            if ( bAffineRequired ) {
-                                // rotationally periodic edges: cr=1 (OUT-cell equation) part of the affine buffers
-                                ApplyPeriodicRotationAffine(i0, Length, gDat, efp, Edges, MustLock, NS.NoOfNodes, D);
-                            }
                         }
+                        // for rotationally periodic edges
+                        rotPeriodic?.ApplyRotation(bLinearRequired, bAffineRequired, efp, Edges, MustLock); // OUT-cell blocks in OUT's frame
                     }
                 } finally {
                     this.Flux_Eval.Stop();
@@ -1057,6 +1033,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
             }
 
+            #region helper functions for rotated periodic boundaries
             /// <summary>
             /// Deep copy of a sum buffer (null entries stay null).
             /// </summary>
@@ -1426,12 +1403,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             /// Rotationally periodic edges: re-computes the cr=1 (OUT-cell equation) blocks in OUT's frame (Step 1)
             /// and rotates the IN/OUT cross blocks of vector-valued domain variables (Step 2).
             /// </summary>
-            private void ApplyPeriodicRotation(int i0, int Length, IGridData grid, EdgeFormParams efp, List<MyChunk> Edges, bool MustLock, int NoOfNodes, int D) {
+            private void ApplyPeriodicRotation(int i0, int Length, List<int> periodicIdx, List<MultidimensionalArray> periodicMtx, EdgeFormParams efp, List<MyChunk> Edges, bool MustLock, int NoOfNodes, int D) {
                 int GAMMA = m_owner.GAMMA;
-
-                GetPeriodicEdgesAndMatrices(i0, Length, grid, out var periodicIdx, out var periodicMtx);
-                if (periodicIdx.Count <= 0)
-                    return;
 
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // Step 1: re-evaluate all forms in OUT's frame
@@ -1504,12 +1477,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             /// Affine counterpart of Step 1 in <see cref="ApplyPeriodicRotation"/>: re-computes the cr=1 (OUT-cell equation) part
             /// of <see cref="m_VSumBuffer"/>/<see cref="m_GradVSumBuffer"/> with rotated normal and IN-side parameters rotated into OUT's frame.
             /// </summary>
-            private void ApplyPeriodicRotationAffine(int i0, int Length, IGridData grid, EdgeFormParams efp, List<MyChunk> Edges, bool MustLock, int NoOfNodes, int D) {
+            private void ApplyPeriodicRotationAffine(int i0, List<int> periodicIdx, List<MultidimensionalArray> periodicMtx, EdgeFormParams efp, List<MyChunk> Edges, bool MustLock, int NoOfNodes, int D) {
                 int GAMMA = m_owner.GAMMA;
-
-                GetPeriodicEdgesAndMatrices(i0, Length, grid, out var periodicIdx, out var periodicMtx);
-                if (periodicIdx.Count <= 0)
-                    return;
 
                 var scratchV = CloneSumBufferStructure(m_VSumBuffer);
                 var scratchGradV = CloneSumBufferStructure(m_GradVSumBuffer);
@@ -1526,6 +1495,84 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 SpliceCr1Block(scratchV, m_VSumBuffer, GAMMA, NoOfNodes, periodicIdx);
                 SpliceCr1Block(scratchGradV, m_GradVSumBuffer, GAMMA, NoOfNodes, periodicIdx);
             }
+
+            /// <summary>
+            /// Drops blocks created by <see cref="RotateCrossBlock"/> for a chunk of different size.
+            /// </summary>
+            private void DropStaleRotationSlots(int Length, int NoOfNodes) {
+                InvalidateStaleVectorTupleSlots(m_UxVSumBuffer, Length, NoOfNodes);
+                InvalidateStaleVectorTupleSlots(m_GradUxVSumBuffer, Length, NoOfNodes);
+                InvalidateStaleVectorTupleSlots(m_Trf_GradUxVSumBuffer, Length, NoOfNodes);
+                InvalidateStaleVectorTupleSlots(m_UxGradVSumBuffer, Length, NoOfNodes);
+                InvalidateStaleVectorTupleSlots(m_Trf_UxGradVSumBuffer, Length, NoOfNodes);
+                InvalidateStaleVectorTupleSlots(m_GradUxGradVSumBuffer, Length, NoOfNodes);
+                InvalidateStaleVectorTupleSlots(m_Trf_GradUxGradVSumBuffer, Length, NoOfNodes);
+            }
+
+            /// <summary>
+            /// Rotationally periodic edges of one chunk.
+            /// </summary>
+            private sealed class PeriodicEdgeChunk {
+
+                readonly ThreadLocals m_tl;
+                readonly int m_i0, m_Length, m_NoOfNodes, m_D;
+                readonly List<int> m_Idx;
+                readonly List<MultidimensionalArray> m_Mtx;
+
+                PeriodicEdgeChunk(ThreadLocals tl, int i0, int Length, int NoOfNodes, int D, List<int> Idx, List<MultidimensionalArray> Mtx) {
+                    m_tl = tl;
+                    m_i0 = i0;
+                    m_Length = Length;
+                    m_NoOfNodes = NoOfNodes;
+                    m_D = D;
+                    m_Idx = Idx;
+                    m_Mtx = Mtx;
+                }
+
+                /// <summary>
+                /// null, if the chunk contains no rotationally periodic edges.
+                /// </summary>
+                public static PeriodicEdgeChunk TryCreate(ThreadLocals tl, int i0, int Length, IGridData grid, int NoOfNodes, int D) {
+                    tl.GetPeriodicEdgesAndMatrices(i0, Length, grid, out var Idx, out var Mtx);
+                    if (Idx.Count <= 0)
+                        return null;
+                    return new PeriodicEdgeChunk(tl, i0, Length, NoOfNodes, D, Idx, Mtx);
+                }
+
+                /// <summary>
+                /// Rotates the OUT-side parameters into IN's frame, until the returned object is disposed.
+                /// </summary>
+                public IDisposable RotateOutParametersIntoInFrame() {
+                    var MtxInv = m_Mtx.Select(M => { var Minv = M.CloneAs(); Minv.InvertInPlace(); return Minv; }).ToList();
+                    var paramValues = m_tl.m_ParameterFieldsValues_OUT;
+                    var original = RotateParameters(paramValues, m_tl.GetParameterVectorTuples(m_D), m_Idx, MtxInv, m_NoOfNodes);
+                    return new ParameterRestore(paramValues, original);
+                }
+
+                /// <summary>
+                /// See <see cref="ApplyPeriodicRotation"/> and <see cref="ApplyPeriodicRotationAffine"/>.
+                /// </summary>
+                public void ApplyRotation(bool LinearRequired, bool AffineRequired, EdgeFormParams efp, List<MyChunk> Edges, bool MustLock) {
+                    if (LinearRequired)
+                        m_tl.ApplyPeriodicRotation(m_i0, m_Length, m_Idx, m_Mtx, efp, Edges, MustLock, m_NoOfNodes, m_D);
+                    if (AffineRequired)
+                        m_tl.ApplyPeriodicRotationAffine(m_i0, m_Idx, m_Mtx, efp, Edges, MustLock, m_NoOfNodes, m_D);
+                }
+
+                sealed class ParameterRestore : IDisposable {
+                    readonly MultidimensionalArray[] m_paramValues, m_original;
+
+                    public ParameterRestore(MultidimensionalArray[] paramValues, MultidimensionalArray[] original) {
+                        m_paramValues = paramValues;
+                        m_original = original;
+                    }
+
+                    public void Dispose() {
+                        RestoreParameters(m_paramValues, m_original);
+                    }
+                }
+            }
+            #endregion
 
             private MultidimensionalArray ExtractTrafo(MultidimensionalArray trafo, int N) {
                 if (trafo.GetLength(1) == N)
