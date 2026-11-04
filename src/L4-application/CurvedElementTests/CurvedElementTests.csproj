@@ -11,6 +11,7 @@
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.Grid\BoSSS.Foundation.Grid.csproj" />
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj" />
     <ProjectReference Include="..\XNSE_Solver\XNSE_Solver.csproj" />
+    <ProjectReference Include="..\XNSFE_Solver\XNSFE_Solver.csproj" />
 
   </ItemGroup>
 

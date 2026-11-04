@@ -64,49 +64,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// </remarks>
     public delegate void OperatorEvalOrLin(out BlockMsrMatrix Matrix, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] CurrentState, bool Linearization, out IDifferentialOperator OberFrickelHack);
 
-    /// <summary>
-    /// Results of the check M(u0)*u0 + b(u0) == f(u0) (linearization vs. evaluation) in <see cref="NonlinearSolver.EvaluateOperator"/>, e.g. for tests.
-    /// </summary>
-    public static class OperatorSelfConsistencyCheck {
-
-        /// <summary>
-        /// L2 norm of M(u0)*u0 + b(u0) - f(u0) of the most recent check; null, if no check has been performed yet.
-        /// </summary>
-        public static double? LastAbsoluteError { get; internal set; }
-
-        /// <summary>
-        /// comparison value of the most recent check; a mismatch is reported if <see cref="LastAbsoluteError"/> exceeds it
-        /// </summary>
-        public static double? LastComparisonDenominator { get; internal set; }
-
-        /// <summary>
-        /// <see cref="LastAbsoluteError"/> divided by <see cref="LastComparisonDenominator"/>
-        /// </summary>
-        public static double? LastRelativeError =>
-            (LastAbsoluteError.HasValue && LastComparisonDenominator.HasValue && LastComparisonDenominator.Value > 0)
-            ? LastAbsoluteError.Value / LastComparisonDenominator.Value
-            : (double?)null;
-
-        /// <summary>
-        /// maximum of <see cref="LastRelativeError"/> since the last <see cref="Reset"/>
-        /// </summary>
-        public static double? MaxRelativeError { get; internal set; }
-
-        /// <summary>
-        /// if true, the check is performed in every evaluation (instead of every 10th/1000th in DEBUG/RELEASE)
-        /// </summary>
-        public static bool ForceCheckEveryCall = false;
-
-        /// <summary>
-        /// resets the recorded values (but not <see cref="ForceCheckEveryCall"/>)
-        /// </summary>
-        public static void Reset() {
-            LastAbsoluteError = null;
-            LastComparisonDenominator = null;
-            MaxRelativeError = null;
-        }
-    }
-
 
     /// <summary>
     /// base-class for non-linear solvers
@@ -316,7 +273,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 #else
                 const int TEST_INTERVALL = 1000;
 #endif
-                if (OperatorSelfConsistencyCheck.ForceCheckEveryCall || EvaluationCounter % TEST_INTERVALL == 0) { // do the following, expensive check only for every TEST_INTERVALL-th evaluation.
+                if (EvaluationCounter % TEST_INTERVALL == 0) { // do the following, expensive check only for every TEST_INTERVALL-th evaluation.
 
                     // Comparison of linearization and evaluation:
                     // -------------------------------------------
@@ -339,15 +296,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     err.AccV(-1.0, OpEvalRaw);
                     double l2_err = err.MPI_L2Norm();
                     double comp = Math.Sqrt(Math.Max(OpEvalRaw.MPI_L2Norm(), Check.MPI_L2Norm()) * BLAS.MachineEps + BLAS.MachineEps);
-
-                    OperatorSelfConsistencyCheck.LastAbsoluteError = l2_err;
-                    OperatorSelfConsistencyCheck.LastComparisonDenominator = comp;
-                    {
-                        double relNow = comp > 0 ? l2_err / comp : 0.0;
-                        if (!OperatorSelfConsistencyCheck.MaxRelativeError.HasValue || relNow > OperatorSelfConsistencyCheck.MaxRelativeError.Value)
-                            OperatorSelfConsistencyCheck.MaxRelativeError = relNow;
-                    }
-
+                
                     if (l2_err > comp) {
                         //tr.Error($"EvaluateOperator: Mismatch between operator linearization and evaluation: Operator matrix-Jacobian distance: {l2_err}, relative: {l2_err / comp} (comparison value {comp})");
                         Console.Error.WriteLine($"Mismatch between operator linearization and evaluation: absolute dist.: {l2_err}, relative: {l2_err/comp} (comparison denominator {comp})");

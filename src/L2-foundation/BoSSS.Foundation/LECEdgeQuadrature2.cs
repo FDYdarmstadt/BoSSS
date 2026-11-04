@@ -1035,66 +1035,107 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
             #region helper functions for rotated periodic boundaries
             /// <summary>
-            /// Sum buffer with the same non-null entries and sizes as <paramref name="src"/>, initialized with zeros.
+            /// Rotationally periodic edges of one chunk.
             /// </summary>
-            private static MultidimensionalArray[, , ,] CloneSumBufferStructure(MultidimensionalArray[, , ,] src) {
-                int n0 = src.GetLength(0), n1 = src.GetLength(1), n2 = src.GetLength(2), n3 = src.GetLength(3);
-                var dst = new MultidimensionalArray[n0, n1, n2, n3];
-                for (int a = 0; a < n0; a++)
-                    for (int b = 0; b < n1; b++)
-                        for (int c = 0; c < n2; c++)
-                            for (int d = 0; d < n3; d++)
-                                if (src[a, b, c, d] != null)
-                                    dst[a, b, c, d] = MultidimensionalArray.Create(src[a, b, c, d].Lengths);
-                return dst;
-            }
+            private sealed class PeriodicEdgeChunk {
 
-            /// <summary>
-            /// Shallow sub-array of <paramref name="A"/> for edge <paramref name="i"/>, i.e. <paramref name="A"/>[i, *, ...].
-            /// </summary>
-            private static MultidimensionalArray EdgeSlice(MultidimensionalArray A, int i) {
-                int[] idx = new int[A.Dimension];
-                idx.SetAll(-1);
-                idx[0] = i;
-                return A.ExtractSubArrayShallow(idx);
-            }
+                readonly ThreadLocals m_tl;
+                readonly int m_i0, m_Length, m_NoOfNodes, m_D;
+                readonly List<int> m_Idx;
+                readonly List<MultidimensionalArray> m_Mtx;    // IN's frame to OUT's frame
+                readonly List<MultidimensionalArray> m_MtxInv; // OUT's frame to IN's frame
+                readonly List<MyChunk> m_SubChunks; // runs of consecutive periodic edges, for the re-evaluation in OUT's frame
 
-            /// <summary>
-            /// Mixes the arrays <paramref name="V"/> by <paramref name="Mtx"/>, i.e. V[d] = sum_e Mtx[d,e] V[e] (all arrays of equal size).
-            /// </summary>
-            private static void MixArrays(MultidimensionalArray[] V, MultidimensionalArray Mtx) {
-                var Old = V.Select(v => v.CloneAs()).ToArray();
-                for (int d = 0; d < V.Length; d++) {
-                    V[d].Clear();
-                    for (int e = 0; e < V.Length; e++)
-                        V[d].Acc(Mtx[d, e], Old[e]);
+                PeriodicEdgeChunk(ThreadLocals tl, int i0, int Length, IGridData grid, int NoOfNodes, int D, List<int> Idx, List<MultidimensionalArray> Mtx) {
+                    m_tl = tl;
+                    m_i0 = i0;
+                    m_Length = Length;
+                    m_NoOfNodes = NoOfNodes;
+                    m_D = D;
+                    m_Idx = Idx;
+                    m_Mtx = Mtx;
+                    m_MtxInv = Mtx.Select(M => { var Minv = M.CloneAs(); Minv.InvertInPlace(); return Minv; }).ToList();
+                    m_SubChunks = GetSubChunks(i0, Idx, grid);
                 }
-            }
 
-            /// <summary>
-            /// Copies the cr=1 (OUT-cell equation) blocks from <paramref name="scratch"/> into <paramref name="main"/>,
-            /// restricted to the edges in <paramref name="periodicIdx"/>.
-            /// </summary>
-            /// <param name="scratch">Result of the rotated-normal re-evaluation.</param>
-            /// <param name="main">Main (native-normal) buffer to splice the cr=1 block into.</param>
-            /// <param name="GAMMA">Number of codomain variables.</param>
-            /// <param name="NoOfNodes">Number of quadrature nodes per edge.</param>
-            /// <param name="periodicIdx">Indices of the periodic edges in the current chunk.</param>
-            private void SpliceCr1Block(MultidimensionalArray[, , ,] scratch, MultidimensionalArray[, , ,] main, int GAMMA, int NoOfNodes, List<int> periodicIdx) {
-                int DELTA = scratch.GetLength(1);
-                int CC = scratch.GetLength(3); // 2 for the bilinear (UxV etc.) buffers, 1 for the affine (EdgeSourceV etc.) buffers
-                for (int gamma = 0; gamma < GAMMA; gamma++) {
-                    for (int delta = 0; delta < DELTA; delta++) {
-                        for (int cc = 0; cc < CC; cc++) {
-                            var src = scratch[gamma, delta, 1, cc];
-                            var dst = main[gamma, delta, 1, cc];
-                            if (src == null || dst == null)
-                                continue; // nothing to copy
-                            foreach (int i in periodicIdx)
-                                EdgeSlice(dst, i).Set(EdgeSlice(src, i));
+                /// <summary>
+                /// null, if the chunk contains no rotationally periodic edges.
+                /// </summary>
+                public static PeriodicEdgeChunk TryCreate(ThreadLocals tl, int i0, int Length, IGridData grid, int NoOfNodes, int D) {
+                    tl.GetPeriodicEdgesAndMatrices(i0, Length, grid, out var Idx, out var Mtx);
+                    if (Idx.Count <= 0)
+                        return null;
+                    return new PeriodicEdgeChunk(tl, i0, Length, grid, NoOfNodes, D, Idx, Mtx);
+                }
+
+                /// <summary>
+                /// groups the (ascending) chunk-local edge indices <paramref name="Idx"/> into runs of consecutive edges of the same type
+                /// </summary>
+                static List<MyChunk> GetSubChunks(int i0, List<int> Idx, IGridData grid) {
+                    var CellIdx = grid.iGeomEdges.CellIndices;
+                    var ret = new List<MyChunk>();
+                    MyChunk cur = default(MyChunk);
+                    for (int k = 0; k < Idx.Count; k++) {
+                        int iEdge = Idx[k] + i0;
+                        bool Type = CellIdx[iEdge, 1] >= 0;
+                        if (cur.Len > 0 && cur.i0 + cur.Len == iEdge && cur.Type == Type) {
+                            cur.Len++;
+                        } else {
+                            if (cur.Len > 0)
+                                ret.Add(cur);
+                            cur = default(MyChunk);
+                            cur.i0 = iEdge;
+                            cur.Len = 1;
+                            cur.Type = Type;
                         }
                     }
+                    if (cur.Len > 0)
+                        ret.Add(cur);
+                    return ret;
                 }
+
+                /// <summary>
+                /// Rotates the OUT-side parameters into IN's frame, until the returned object is disposed.
+                /// </summary>
+                public IDisposable RotateOutParametersIntoInFrame() {
+                    var paramValues = m_tl.m_ParameterFieldsValues_OUT;
+                    var original = RotateParameters(paramValues, m_tl.GetParameterVectorTuples(m_D), m_Idx, m_MtxInv, m_NoOfNodes);
+                    return new ParameterRestore(paramValues, original);
+                }
+
+                /// <summary>
+                /// See <see cref="ApplyPeriodicRotation"/>.
+                /// </summary>
+                public void ApplyRotation(bool LinearRequired, bool AffineRequired, EdgeFormParams efp, bool MustLock) {
+                    if (LinearRequired || AffineRequired)
+                        m_tl.ApplyPeriodicRotation(m_i0, m_Length, m_Idx, m_Mtx, m_MtxInv, LinearRequired, AffineRequired, efp, m_SubChunks, MustLock, m_NoOfNodes, m_D);
+                }
+
+                sealed class ParameterRestore : IDisposable {
+                    readonly MultidimensionalArray[] m_paramValues, m_original;
+
+                    public ParameterRestore(MultidimensionalArray[] paramValues, MultidimensionalArray[] original) {
+                        m_paramValues = paramValues;
+                        m_original = original;
+                    }
+
+                    public void Dispose() {
+                        RestoreParameters(m_paramValues, m_original);
+                    }
+                }
+            }
+
+            /// <summary>
+            /// Drops blocks created by <see cref="RotateCrossBlock"/> for a chunk of different size.
+            /// </summary>
+            private void DropStaleRotationSlots(int Length, int NoOfNodes) {
+                InvalidateStaleVectorTupleSlots(m_UxVSumBuffer, Length, NoOfNodes);
+                InvalidateStaleVectorTupleSlots(m_GradUxVSumBuffer, Length, NoOfNodes);
+                InvalidateStaleVectorTupleSlots(m_Trf_GradUxVSumBuffer, Length, NoOfNodes);
+                InvalidateStaleVectorTupleSlots(m_UxGradVSumBuffer, Length, NoOfNodes);
+                InvalidateStaleVectorTupleSlots(m_Trf_UxGradVSumBuffer, Length, NoOfNodes);
+                InvalidateStaleVectorTupleSlots(m_GradUxGradVSumBuffer, Length, NoOfNodes);
+                InvalidateStaleVectorTupleSlots(m_Trf_GradUxGradVSumBuffer, Length, NoOfNodes);
             }
 
             /// <summary>
@@ -1114,189 +1155,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                             }
             }
 
-            private static bool LengthsMatch(MultidimensionalArray a, int[] wantLengths) {
-                if (a.Dimension != wantLengths.Length)
-                    return false;
-                for (int k = 0; k < wantLengths.Length; k++)
-                    if (a.GetLength(k) != wantLengths[k])
-                        return false;
-                return true;
-            }
-
-            /// <summary>
-            /// Rotates the (cr,cc) block of all vector-tuples of domain variables by <paramref name="Mtx"/>, on edge <paramref name="i"/>.
-            /// Missing or wrongly sized entries of <paramref name="SumBuffer"/> and <paramref name="TrfBuffer"/> are (re-)allocated.
-            /// </summary>
-            private void RotateCrossBlock(MultidimensionalArray[, , ,] SumBuffer, MultidimensionalArray[, , ,] TrfBuffer, int[][] VectorTuples, int GAMMA, int Length, int NoOfNodes, MultidimensionalArray Mtx, int i, int cr, int cc) {
-                bool aliased = object.ReferenceEquals(SumBuffer, TrfBuffer);
-
-                foreach (int[] tuple in VectorTuples) {
-                    int Dloc = tuple.Length;
-
-                    for (int gamma = 0; gamma < GAMMA; gamma++) {
-                        MultidimensionalArray template = null;
-                        for (int d = 0; d < Dloc; d++) {
-                            var b = SumBuffer[gamma, tuple[d], cr, cc];
-                            if (b != null && b.GetLength(0) == Length && b.GetLength(1) == NoOfNodes) {
-                                template = b; // a correctly sized slot
-                                break;
-                            }
-                        }
-                        if (template == null) {
-                            // fallback: any non-null slot, only used for the shape of the extra axes
-                            for (int d = 0; d < Dloc; d++) {
-                                var b = SumBuffer[gamma, tuple[d], cr, cc];
-                                if (b != null) {
-                                    template = b;
-                                    break;
-                                }
-                            }
-                        }
-                        if (template == null)
-                            continue; // nothing to rotate for this (gamma,cr,cc)
-
-                        int[] wantLengths = template.Lengths;
-                        wantLengths[0] = Length;
-                        wantLengths[1] = NoOfNodes;
-
-                        var bufs = new MultidimensionalArray[Dloc];
-                        for (int d = 0; d < Dloc; d++) {
-                            var b = SumBuffer[gamma, tuple[d], cr, cc];
-                            if (b == null || !LengthsMatch(b, wantLengths)) {
-                                b = MultidimensionalArray.Create(wantLengths);
-                                SumBuffer[gamma, tuple[d], cr, cc] = b;
-                            }
-                            bufs[d] = b;
-
-                            if (!aliased && (TrfBuffer[gamma, tuple[d], cr, cc] == null || !LengthsMatch(TrfBuffer[gamma, tuple[d], cr, cc], wantLengths))) {
-                                TrfBuffer[gamma, tuple[d], cr, cc] = MultidimensionalArray.Create(wantLengths);
-                            }
-                        }
-
-                        MixArrays(bufs.Select(b => EdgeSlice(b, i)).ToArray(), Mtx);
-                    }
-                }
-            }
-
-            /// <summary>
-            /// Rotates the derivative-direction axis (at position <paramref name="gradAxisPos"/>) of the (cr,cc) block
-            /// of all variables by <paramref name="Mtx"/>, on edge <paramref name="i"/>; used for the GradU axis of the GradUxV and GradUxGradV buffers.
-            /// </summary>
-            private void RotateGradientAxis(MultidimensionalArray[, , ,] SumBuffer, int GammaCount, int DeltaCount, int gradAxisPos, MultidimensionalArray Mtx, int i, int cr, int cc) {
-                // index strings for the edge-i slice, without the edge index: 'k' node, 'e' other extra axis, 'a'/'b' derivative direction before/after
-                string Old, New;
-                switch (gradAxisPos) {
-                    case 2: Old = "ka"; New = "kb"; break;   // GradUxV:     [edge, node, GradU]
-                    case 3: Old = "kea"; New = "keb"; break; // GradUxGradV: [edge, node, GradV, GradU]
-                    default: throw new NotSupportedException();
-                }
-
-                for (int gamma = 0; gamma < GammaCount; gamma++) {
-                    for (int delta = 0; delta < DeltaCount; delta++) {
-                        var b = SumBuffer[gamma, delta, cr, cc];
-                        if (b == null)
-                            continue;
-                        Debug.Assert(b.Dimension == gradAxisPos + 1);
-
-                        var bi = EdgeSlice(b, i);
-                        bi.Multiply(1.0, Mtx, bi.CloneAs(), 0.0, New, "ba", Old);
-                    }
-                }
-            }
-
-            /// <summary>
-            /// Groups the linearization-point gradient parameters "&lt;Comp&gt;_lin_d[&lt;dir&gt;]" into tuples of fixed direction and varying component.
-            /// </summary>
-            /// <remarks>
-            /// Together with the same-component tuples found by <see cref="BoSSS.Foundation.Quadrature.PeriodicBoundaryUtils.GetVectorFieldIndices"/>,
-            /// rotating both groupings yields the tensor rotation M*T*M^T of the gradient.
-            /// </remarks>
-            private int[][] GetLinDCrossComponentTuples(int D) {
-                var names = m_owner.Operator.ParameterVar;
-                const string marker = "_lin_d[";
-                var byDirection = new Dictionary<int, List<int>>();
-                for (int i = 0; i < names.Count; i++) {
-                    string n = names[i];
-                    int b = n.LastIndexOf(marker, StringComparison.Ordinal);
-                    if (b < 0)
-                        continue;
-                    int closeBracket = n.IndexOf(']', b);
-                    if (closeBracket < 0)
-                        continue;
-                    string dirDigits = n.Substring(b + marker.Length, closeBracket - (b + marker.Length));
-                    if (!int.TryParse(dirDigits, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int dir))
-                        continue;
-                    if (!byDirection.TryGetValue(dir, out var list)) {
-                        list = new List<int>();
-                        byDirection[dir] = list;
-                    }
-                    list.Add(i);
-                }
-
-                var result = new List<int[]>();
-                foreach (var kv in byDirection) {
-                    var origIdx = kv.Value;
-                    var baseNames = origIdx.Select(i => {
-                        string n = names[i];
-                        int b = n.LastIndexOf(marker, StringComparison.Ordinal);
-                        return n.Substring(0, b);
-                    }).ToArray();
-                    var subTuples = BoSSS.Foundation.Quadrature.PeriodicBoundaryUtils.GetVectorFieldIndices(baseNames, D);
-                    foreach (var st in subTuples)
-                        result.Add(st.Select(localIdx => origIdx[localIdx]).ToArray());
-                }
-                return result.ToArray();
-            }
-
-            /// <summary>
-            /// Vector tuples of the parameters, including the cross-component tuples of the "_lin_d" gradients.
-            /// </summary>
-            private int[][] GetParameterVectorTuples(int D) {
-                var tuples = BoSSS.Foundation.Quadrature.PeriodicBoundaryUtils.GetVectorFieldIndices(m_owner.Operator.ParameterVar, D).ToArray();
-                var crossTuples = GetLinDCrossComponentTuples(D);
-                if (crossTuples.Length > 0)
-                    tuples = tuples.Concat(crossTuples).ToArray();
-                return tuples;
-            }
-
-            /// <summary>
-            /// Rotates all vector tuples of <paramref name="paramValues"/> on the edges <paramref name="periodicIdx"/> by <paramref name="Mtxs"/>;
-            /// returns the original arrays, for <see cref="RestoreParameters"/>.
-            /// </summary>
-            private static MultidimensionalArray[] RotateParameters(MultidimensionalArray[] paramValues, int[][] tuples, List<int> periodicIdx, List<MultidimensionalArray> Mtxs, int NoOfNodes) {
-                var original = (MultidimensionalArray[])paramValues.Clone();
-                foreach (var tuple in tuples)
-                    RotateParamSlotsOnPeriodicEdges(paramValues, tuple, periodicIdx, Mtxs, NoOfNodes);
-                return original;
-            }
-
-            /// <summary>
-            /// Undoes <see cref="RotateParameters"/>.
-            /// </summary>
-            private static void RestoreParameters(MultidimensionalArray[] paramValues, MultidimensionalArray[] original) {
-                Array.Copy(original, paramValues, original.Length);
-            }
-
-            /// <summary>
-            /// Rotates the parameter values of one vector tuple on the edges <paramref name="periodicIdx"/> by the matrices <paramref name="Mtxs"/>.
-            /// </summary>
-            /// <remarks>
-            /// Works on clones, which are assigned to <paramref name="paramValues"/>; the original arrays may be shared with domain-variable values and must not be modified.
-            /// </remarks>
-            private static void RotateParamSlotsOnPeriodicEdges(MultidimensionalArray[] paramValues, int[] tuple, List<int> periodicIdx, List<MultidimensionalArray> Mtxs, int NoOfNodes) {
-                int Dloc = tuple.Length;
-                var bufs = new MultidimensionalArray[Dloc];
-                for (int d = 0; d < Dloc; d++) {
-                    bufs[d] = paramValues[tuple[d]].CloneAs();
-                    paramValues[tuple[d]] = bufs[d];
-                }
-
-                for (int k = 0; k < periodicIdx.Count; k++) {
-                    int i = periodicIdx[k];
-                    MixArrays(bufs.Select(b => EdgeSlice(b, i)).ToArray(), Mtxs[k]);
-                }
-            }
-
             /// <summary>
             /// Returns the periodic edges in the current chunk and, for each, the rotation matrix from IN's frame to OUT's frame.
             /// </summary>
@@ -1314,35 +1172,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                         : grid.Grid.PeriodicTrafo[eT - BoSSS.Foundation.Grid.Classic.GridCommons.FIRST_PERIODIC_BC_TAG];
                     periodicIdx.Add(i);
                     periodicMtx.Add(Trafo.Matrix);
-                }
-            }
-
-            /// <summary>
-            /// Rotated normals for the OUT-cell equation on the periodic edges <paramref name="periodicIdx"/> (other edges unchanged).
-            /// </summary>
-            private MultidimensionalArray GetRotatedNormals(List<int> periodicIdx, List<MultidimensionalArray> periodicMtx, int NoOfNodes) {
-                var RotatedNormals = NormalBuffer.CloneAs();
-                for (int k = 0; k < periodicIdx.Count; k++) {
-                    int i = periodicIdx[k];
-                    EdgeSlice(RotatedNormals, i).Multiply(1.0, periodicMtx[k], EdgeSlice(NormalBuffer, i), 0.0, "kd", "de", "ke");
-                }
-                return RotatedNormals;
-            }
-
-            /// <summary>
-            /// Runs <paramref name="evaluate"/> in OUT's frame, i.e. with rotated normals and the IN-side parameters rotated by M;
-            /// the OUT-side parameters stay native.
-            /// </summary>
-            private void EvaluateInOutFrame(List<int> periodicIdx, List<MultidimensionalArray> periodicMtx, int NoOfNodes, int D, Action evaluate) {
-                var RotatedNormals = GetRotatedNormals(periodicIdx, periodicMtx, NoOfNodes);
-                var savedNormals = this.NormalBuffer;
-                var originalParamsIn = RotateParameters(m_ParameterFieldsValues_IN, GetParameterVectorTuples(D), periodicIdx, periodicMtx, NoOfNodes);
-                this.NormalBuffer = RotatedNormals;
-                try {
-                    evaluate();
-                } finally {
-                    this.NormalBuffer = savedNormals;
-                    RestoreParameters(m_ParameterFieldsValues_IN, originalParamsIn);
                 }
             }
 
@@ -1441,108 +1270,280 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             }
 
             /// <summary>
-            /// Drops blocks created by <see cref="RotateCrossBlock"/> for a chunk of different size.
+            /// Runs <paramref name="evaluate"/> in OUT's frame, i.e. with rotated normals and the IN-side parameters rotated by M;
+            /// the OUT-side parameters stay native.
             /// </summary>
-            private void DropStaleRotationSlots(int Length, int NoOfNodes) {
-                InvalidateStaleVectorTupleSlots(m_UxVSumBuffer, Length, NoOfNodes);
-                InvalidateStaleVectorTupleSlots(m_GradUxVSumBuffer, Length, NoOfNodes);
-                InvalidateStaleVectorTupleSlots(m_Trf_GradUxVSumBuffer, Length, NoOfNodes);
-                InvalidateStaleVectorTupleSlots(m_UxGradVSumBuffer, Length, NoOfNodes);
-                InvalidateStaleVectorTupleSlots(m_Trf_UxGradVSumBuffer, Length, NoOfNodes);
-                InvalidateStaleVectorTupleSlots(m_GradUxGradVSumBuffer, Length, NoOfNodes);
-                InvalidateStaleVectorTupleSlots(m_Trf_GradUxGradVSumBuffer, Length, NoOfNodes);
+            private void EvaluateInOutFrame(List<int> periodicIdx, List<MultidimensionalArray> periodicMtx, int NoOfNodes, int D, Action evaluate) {
+                var RotatedNormals = GetRotatedNormals(periodicIdx, periodicMtx, NoOfNodes);
+                var savedNormals = this.NormalBuffer;
+                var originalParamsIn = RotateParameters(m_ParameterFieldsValues_IN, GetParameterVectorTuples(D), periodicIdx, periodicMtx, NoOfNodes);
+                this.NormalBuffer = RotatedNormals;
+                try {
+                    evaluate();
+                } finally {
+                    this.NormalBuffer = savedNormals;
+                    RestoreParameters(m_ParameterFieldsValues_IN, originalParamsIn);
+                }
             }
 
             /// <summary>
-            /// Rotationally periodic edges of one chunk.
+            /// Rotated normals for the OUT-cell equation on the periodic edges <paramref name="periodicIdx"/> (other edges unchanged).
             /// </summary>
-            private sealed class PeriodicEdgeChunk {
-
-                readonly ThreadLocals m_tl;
-                readonly int m_i0, m_Length, m_NoOfNodes, m_D;
-                readonly List<int> m_Idx;
-                readonly List<MultidimensionalArray> m_Mtx;    // IN's frame to OUT's frame
-                readonly List<MultidimensionalArray> m_MtxInv; // OUT's frame to IN's frame
-                readonly List<MyChunk> m_SubChunks; // runs of consecutive periodic edges, for the re-evaluation in OUT's frame
-
-                PeriodicEdgeChunk(ThreadLocals tl, int i0, int Length, IGridData grid, int NoOfNodes, int D, List<int> Idx, List<MultidimensionalArray> Mtx) {
-                    m_tl = tl;
-                    m_i0 = i0;
-                    m_Length = Length;
-                    m_NoOfNodes = NoOfNodes;
-                    m_D = D;
-                    m_Idx = Idx;
-                    m_Mtx = Mtx;
-                    m_MtxInv = Mtx.Select(M => { var Minv = M.CloneAs(); Minv.InvertInPlace(); return Minv; }).ToList();
-                    m_SubChunks = GetSubChunks(i0, Idx, grid);
+            private MultidimensionalArray GetRotatedNormals(List<int> periodicIdx, List<MultidimensionalArray> periodicMtx, int NoOfNodes) {
+                var RotatedNormals = NormalBuffer.CloneAs();
+                for (int k = 0; k < periodicIdx.Count; k++) {
+                    int i = periodicIdx[k];
+                    EdgeSlice(RotatedNormals, i).Multiply(1.0, periodicMtx[k], EdgeSlice(NormalBuffer, i), 0.0, "kd", "de", "ke");
                 }
+                return RotatedNormals;
+            }
 
-                /// <summary>
-                /// null, if the chunk contains no rotationally periodic edges.
-                /// </summary>
-                public static PeriodicEdgeChunk TryCreate(ThreadLocals tl, int i0, int Length, IGridData grid, int NoOfNodes, int D) {
-                    tl.GetPeriodicEdgesAndMatrices(i0, Length, grid, out var Idx, out var Mtx);
-                    if (Idx.Count <= 0)
-                        return null;
-                    return new PeriodicEdgeChunk(tl, i0, Length, grid, NoOfNodes, D, Idx, Mtx);
-                }
+            /// <summary>
+            /// Sum buffer with the same non-null entries and sizes as <paramref name="src"/>, initialized with zeros.
+            /// </summary>
+            private static MultidimensionalArray[, , ,] CloneSumBufferStructure(MultidimensionalArray[, , ,] src) {
+                int n0 = src.GetLength(0), n1 = src.GetLength(1), n2 = src.GetLength(2), n3 = src.GetLength(3);
+                var dst = new MultidimensionalArray[n0, n1, n2, n3];
+                for (int a = 0; a < n0; a++)
+                    for (int b = 0; b < n1; b++)
+                        for (int c = 0; c < n2; c++)
+                            for (int d = 0; d < n3; d++)
+                                if (src[a, b, c, d] != null)
+                                    dst[a, b, c, d] = MultidimensionalArray.Create(src[a, b, c, d].Lengths);
+                return dst;
+            }
 
-                /// <summary>
-                /// groups the (ascending) chunk-local edge indices <paramref name="Idx"/> into runs of consecutive edges of the same type
-                /// </summary>
-                static List<MyChunk> GetSubChunks(int i0, List<int> Idx, IGridData grid) {
-                    var CellIdx = grid.iGeomEdges.CellIndices;
-                    var ret = new List<MyChunk>();
-                    MyChunk cur = default(MyChunk);
-                    for (int k = 0; k < Idx.Count; k++) {
-                        int iEdge = Idx[k] + i0;
-                        bool Type = CellIdx[iEdge, 1] >= 0;
-                        if (cur.Len > 0 && cur.i0 + cur.Len == iEdge && cur.Type == Type) {
-                            cur.Len++;
-                        } else {
-                            if (cur.Len > 0)
-                                ret.Add(cur);
-                            cur = default(MyChunk);
-                            cur.i0 = iEdge;
-                            cur.Len = 1;
-                            cur.Type = Type;
+            /// <summary>
+            /// Copies the cr=1 (OUT-cell equation) blocks from <paramref name="scratch"/> into <paramref name="main"/>,
+            /// restricted to the edges in <paramref name="periodicIdx"/>.
+            /// </summary>
+            /// <param name="scratch">Result of the rotated-normal re-evaluation.</param>
+            /// <param name="main">Main (native-normal) buffer to splice the cr=1 block into.</param>
+            /// <param name="GAMMA">Number of codomain variables.</param>
+            /// <param name="NoOfNodes">Number of quadrature nodes per edge.</param>
+            /// <param name="periodicIdx">Indices of the periodic edges in the current chunk.</param>
+            private void SpliceCr1Block(MultidimensionalArray[, , ,] scratch, MultidimensionalArray[, , ,] main, int GAMMA, int NoOfNodes, List<int> periodicIdx) {
+                int DELTA = scratch.GetLength(1);
+                int CC = scratch.GetLength(3); // 2 for the bilinear (UxV etc.) buffers, 1 for the affine (EdgeSourceV etc.) buffers
+                for (int gamma = 0; gamma < GAMMA; gamma++) {
+                    for (int delta = 0; delta < DELTA; delta++) {
+                        for (int cc = 0; cc < CC; cc++) {
+                            var src = scratch[gamma, delta, 1, cc];
+                            var dst = main[gamma, delta, 1, cc];
+                            if (src == null || dst == null)
+                                continue; // nothing to copy
+                            foreach (int i in periodicIdx)
+                                EdgeSlice(dst, i).Set(EdgeSlice(src, i));
                         }
-                    }
-                    if (cur.Len > 0)
-                        ret.Add(cur);
-                    return ret;
-                }
-
-                /// <summary>
-                /// Rotates the OUT-side parameters into IN's frame, until the returned object is disposed.
-                /// </summary>
-                public IDisposable RotateOutParametersIntoInFrame() {
-                    var paramValues = m_tl.m_ParameterFieldsValues_OUT;
-                    var original = RotateParameters(paramValues, m_tl.GetParameterVectorTuples(m_D), m_Idx, m_MtxInv, m_NoOfNodes);
-                    return new ParameterRestore(paramValues, original);
-                }
-
-                /// <summary>
-                /// See <see cref="ApplyPeriodicRotation"/>.
-                /// </summary>
-                public void ApplyRotation(bool LinearRequired, bool AffineRequired, EdgeFormParams efp, bool MustLock) {
-                    if (LinearRequired || AffineRequired)
-                        m_tl.ApplyPeriodicRotation(m_i0, m_Length, m_Idx, m_Mtx, m_MtxInv, LinearRequired, AffineRequired, efp, m_SubChunks, MustLock, m_NoOfNodes, m_D);
-                }
-
-                sealed class ParameterRestore : IDisposable {
-                    readonly MultidimensionalArray[] m_paramValues, m_original;
-
-                    public ParameterRestore(MultidimensionalArray[] paramValues, MultidimensionalArray[] original) {
-                        m_paramValues = paramValues;
-                        m_original = original;
-                    }
-
-                    public void Dispose() {
-                        RestoreParameters(m_paramValues, m_original);
                     }
                 }
             }
+
+            /// <summary>
+            /// Rotates the (cr,cc) block of all vector-tuples of domain variables by <paramref name="Mtx"/>, on edge <paramref name="i"/>.
+            /// Missing or wrongly sized entries of <paramref name="SumBuffer"/> and <paramref name="TrfBuffer"/> are (re-)allocated.
+            /// </summary>
+            private void RotateCrossBlock(MultidimensionalArray[, , ,] SumBuffer, MultidimensionalArray[, , ,] TrfBuffer, int[][] VectorTuples, int GAMMA, int Length, int NoOfNodes, MultidimensionalArray Mtx, int i, int cr, int cc) {
+                bool aliased = object.ReferenceEquals(SumBuffer, TrfBuffer);
+
+                foreach (int[] tuple in VectorTuples) {
+                    int Dloc = tuple.Length;
+
+                    for (int gamma = 0; gamma < GAMMA; gamma++) {
+                        MultidimensionalArray template = null;
+                        for (int d = 0; d < Dloc; d++) {
+                            var b = SumBuffer[gamma, tuple[d], cr, cc];
+                            if (b != null && b.GetLength(0) == Length && b.GetLength(1) == NoOfNodes) {
+                                template = b; // a correctly sized slot
+                                break;
+                            }
+                        }
+                        if (template == null) {
+                            // fallback: any non-null slot, only used for the shape of the extra axes
+                            for (int d = 0; d < Dloc; d++) {
+                                var b = SumBuffer[gamma, tuple[d], cr, cc];
+                                if (b != null) {
+                                    template = b;
+                                    break;
+                                }
+                            }
+                        }
+                        if (template == null)
+                            continue; // nothing to rotate for this (gamma,cr,cc)
+
+                        int[] wantLengths = template.Lengths;
+                        wantLengths[0] = Length;
+                        wantLengths[1] = NoOfNodes;
+
+                        var bufs = new MultidimensionalArray[Dloc];
+                        for (int d = 0; d < Dloc; d++) {
+                            var b = SumBuffer[gamma, tuple[d], cr, cc];
+                            if (b == null || !LengthsMatch(b, wantLengths)) {
+                                b = MultidimensionalArray.Create(wantLengths);
+                                SumBuffer[gamma, tuple[d], cr, cc] = b;
+                            }
+                            bufs[d] = b;
+
+                            if (!aliased && (TrfBuffer[gamma, tuple[d], cr, cc] == null || !LengthsMatch(TrfBuffer[gamma, tuple[d], cr, cc], wantLengths))) {
+                                TrfBuffer[gamma, tuple[d], cr, cc] = MultidimensionalArray.Create(wantLengths);
+                            }
+                        }
+
+                        MixArrays(bufs.Select(b => EdgeSlice(b, i)).ToArray(), Mtx);
+                    }
+                }
+            }
+
+            private static bool LengthsMatch(MultidimensionalArray a, int[] wantLengths) {
+                if (a.Dimension != wantLengths.Length)
+                    return false;
+                for (int k = 0; k < wantLengths.Length; k++)
+                    if (a.GetLength(k) != wantLengths[k])
+                        return false;
+                return true;
+            }
+
+            /// <summary>
+            /// Rotates the derivative-direction axis (at position <paramref name="gradAxisPos"/>) of the (cr,cc) block
+            /// of all variables by <paramref name="Mtx"/>, on edge <paramref name="i"/>; used for the GradU axis of the GradUxV and GradUxGradV buffers.
+            /// </summary>
+            private void RotateGradientAxis(MultidimensionalArray[, , ,] SumBuffer, int GammaCount, int DeltaCount, int gradAxisPos, MultidimensionalArray Mtx, int i, int cr, int cc) {
+                // index strings for the edge-i slice, without the edge index: 'k' node, 'e' other extra axis, 'a'/'b' derivative direction before/after
+                string Old, New;
+                switch (gradAxisPos) {
+                    case 2: Old = "ka"; New = "kb"; break;   // GradUxV:     [edge, node, GradU]
+                    case 3: Old = "kea"; New = "keb"; break; // GradUxGradV: [edge, node, GradV, GradU]
+                    default: throw new NotSupportedException();
+                }
+
+                for (int gamma = 0; gamma < GammaCount; gamma++) {
+                    for (int delta = 0; delta < DeltaCount; delta++) {
+                        var b = SumBuffer[gamma, delta, cr, cc];
+                        if (b == null)
+                            continue;
+                        Debug.Assert(b.Dimension == gradAxisPos + 1);
+
+                        var bi = EdgeSlice(b, i);
+                        bi.Multiply(1.0, Mtx, bi.CloneAs(), 0.0, New, "ba", Old);
+                    }
+                }
+            }
+
+            /// <summary>
+            /// Vector tuples of the parameters, including the cross-component tuples of the "_lin_d" gradients.
+            /// </summary>
+            private int[][] GetParameterVectorTuples(int D) {
+                var tuples = BoSSS.Foundation.Quadrature.PeriodicBoundaryUtils.GetVectorFieldIndices(m_owner.Operator.ParameterVar, D).ToArray();
+                var crossTuples = GetLinDCrossComponentTuples(D);
+                if (crossTuples.Length > 0)
+                    tuples = tuples.Concat(crossTuples).ToArray();
+                return tuples;
+            }
+
+            /// <summary>
+            /// Groups the linearization-point gradient parameters "&lt;Comp&gt;_lin_d[&lt;dir&gt;]" into tuples of fixed direction and varying component.
+            /// </summary>
+            /// <remarks>
+            /// Together with the same-component tuples found by <see cref="BoSSS.Foundation.Quadrature.PeriodicBoundaryUtils.GetVectorFieldIndices"/>,
+            /// rotating both groupings yields the tensor rotation M*T*M^T of the gradient.
+            /// </remarks>
+            private int[][] GetLinDCrossComponentTuples(int D) {
+                var names = m_owner.Operator.ParameterVar;
+                const string marker = "_lin_d[";
+                var byDirection = new Dictionary<int, List<int>>();
+                for (int i = 0; i < names.Count; i++) {
+                    string n = names[i];
+                    int b = n.LastIndexOf(marker, StringComparison.Ordinal);
+                    if (b < 0)
+                        continue;
+                    int closeBracket = n.IndexOf(']', b);
+                    if (closeBracket < 0)
+                        continue;
+                    string dirDigits = n.Substring(b + marker.Length, closeBracket - (b + marker.Length));
+                    if (!int.TryParse(dirDigits, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int dir))
+                        continue;
+                    if (!byDirection.TryGetValue(dir, out var list)) {
+                        list = new List<int>();
+                        byDirection[dir] = list;
+                    }
+                    list.Add(i);
+                }
+
+                var result = new List<int[]>();
+                foreach (var kv in byDirection) {
+                    var origIdx = kv.Value;
+                    var baseNames = origIdx.Select(i => {
+                        string n = names[i];
+                        int b = n.LastIndexOf(marker, StringComparison.Ordinal);
+                        return n.Substring(0, b);
+                    }).ToArray();
+                    var subTuples = BoSSS.Foundation.Quadrature.PeriodicBoundaryUtils.GetVectorFieldIndices(baseNames, D);
+                    foreach (var st in subTuples)
+                        result.Add(st.Select(localIdx => origIdx[localIdx]).ToArray());
+                }
+                return result.ToArray();
+            }
+
+            /// <summary>
+            /// Rotates all vector tuples of <paramref name="paramValues"/> on the edges <paramref name="periodicIdx"/> by <paramref name="Mtxs"/>;
+            /// returns the original arrays, for <see cref="RestoreParameters"/>.
+            /// </summary>
+            private static MultidimensionalArray[] RotateParameters(MultidimensionalArray[] paramValues, int[][] tuples, List<int> periodicIdx, List<MultidimensionalArray> Mtxs, int NoOfNodes) {
+                var original = (MultidimensionalArray[])paramValues.Clone();
+                foreach (var tuple in tuples)
+                    RotateParamSlotsOnPeriodicEdges(paramValues, tuple, periodicIdx, Mtxs, NoOfNodes);
+                return original;
+            }
+
+            /// <summary>
+            /// Rotates the parameter values of one vector tuple on the edges <paramref name="periodicIdx"/> by the matrices <paramref name="Mtxs"/>.
+            /// </summary>
+            /// <remarks>
+            /// Works on clones, which are assigned to <paramref name="paramValues"/>; the original arrays may be shared with domain-variable values and must not be modified.
+            /// </remarks>
+            private static void RotateParamSlotsOnPeriodicEdges(MultidimensionalArray[] paramValues, int[] tuple, List<int> periodicIdx, List<MultidimensionalArray> Mtxs, int NoOfNodes) {
+                int Dloc = tuple.Length;
+                var bufs = new MultidimensionalArray[Dloc];
+                for (int d = 0; d < Dloc; d++) {
+                    bufs[d] = paramValues[tuple[d]].CloneAs();
+                    paramValues[tuple[d]] = bufs[d];
+                }
+
+                for (int k = 0; k < periodicIdx.Count; k++) {
+                    int i = periodicIdx[k];
+                    MixArrays(bufs.Select(b => EdgeSlice(b, i)).ToArray(), Mtxs[k]);
+                }
+            }
+
+            /// <summary>
+            /// Undoes <see cref="RotateParameters"/>.
+            /// </summary>
+            private static void RestoreParameters(MultidimensionalArray[] paramValues, MultidimensionalArray[] original) {
+                Array.Copy(original, paramValues, original.Length);
+            }
+
+            /// <summary>
+            /// Shallow sub-array of <paramref name="A"/> for edge <paramref name="i"/>, i.e. <paramref name="A"/>[i, *, ...].
+            /// </summary>
+            private static MultidimensionalArray EdgeSlice(MultidimensionalArray A, int i) {
+                int[] idx = new int[A.Dimension];
+                idx.SetAll(-1);
+                idx[0] = i;
+                return A.ExtractSubArrayShallow(idx);
+            }
+
+            /// <summary>
+            /// Mixes the arrays <paramref name="V"/> by <paramref name="Mtx"/>, i.e. V[d] = sum_e Mtx[d,e] V[e] (all arrays of equal size).
+            /// </summary>
+            private static void MixArrays(MultidimensionalArray[] V, MultidimensionalArray Mtx) {
+                var Old = V.Select(v => v.CloneAs()).ToArray();
+                for (int d = 0; d < V.Length; d++) {
+                    V[d].Clear();
+                    for (int e = 0; e < V.Length; e++)
+                        V[d].Acc(Mtx[d, e], Old[e]);
+                }
+            }
+
             #endregion
 
             private MultidimensionalArray ExtractTrafo(MultidimensionalArray trafo, int N) {
