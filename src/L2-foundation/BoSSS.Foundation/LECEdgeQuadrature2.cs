@@ -557,7 +557,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                             }
                         }
                         // for rotationally periodic edges
-                        rotPeriodic?.ApplyRotation(bLinearRequired, bAffineRequired, efp, Edges, MustLock); // OUT-cell blocks in OUT's frame
+                        rotPeriodic?.ApplyRotation(bLinearRequired, bAffineRequired, efp, MustLock); // OUT-cell blocks in OUT's frame
                     }
                 } finally {
                     this.Flux_Eval.Stop();
@@ -1035,7 +1035,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
             #region helper functions for rotated periodic boundaries
             /// <summary>
-            /// Deep copy of a sum buffer (null entries stay null).
+            /// Sum buffer with the same non-null entries and sizes as <paramref name="src"/>, initialized with zeros.
             /// </summary>
             private static MultidimensionalArray[, , ,] CloneSumBufferStructure(MultidimensionalArray[, , ,] src) {
                 int n0 = src.GetLength(0), n1 = src.GetLength(1), n2 = src.GetLength(2), n3 = src.GetLength(3);
@@ -1045,8 +1045,30 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                         for (int c = 0; c < n2; c++)
                             for (int d = 0; d < n3; d++)
                                 if (src[a, b, c, d] != null)
-                                    dst[a, b, c, d] = src[a, b, c, d].CloneAs();
+                                    dst[a, b, c, d] = MultidimensionalArray.Create(src[a, b, c, d].Lengths);
                 return dst;
+            }
+
+            /// <summary>
+            /// Shallow sub-array of <paramref name="A"/> for edge <paramref name="i"/>, i.e. <paramref name="A"/>[i, *, ...].
+            /// </summary>
+            private static MultidimensionalArray EdgeSlice(MultidimensionalArray A, int i) {
+                int[] idx = new int[A.Dimension];
+                idx.SetAll(-1);
+                idx[0] = i;
+                return A.ExtractSubArrayShallow(idx);
+            }
+
+            /// <summary>
+            /// Mixes the arrays <paramref name="V"/> by <paramref name="Mtx"/>, i.e. V[d] = sum_e Mtx[d,e] V[e] (all arrays of equal size).
+            /// </summary>
+            private static void MixArrays(MultidimensionalArray[] V, MultidimensionalArray Mtx) {
+                var Old = V.Select(v => v.CloneAs()).ToArray();
+                for (int d = 0; d < V.Length; d++) {
+                    V[d].Clear();
+                    for (int e = 0; e < V.Length; e++)
+                        V[d].Acc(Mtx[d, e], Old[e]);
+                }
             }
 
             /// <summary>
@@ -1068,23 +1090,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                             var dst = main[gamma, delta, 1, cc];
                             if (src == null || dst == null)
                                 continue; // nothing to copy
-                            int Dim = src.Dimension;
-                            int extra1 = Dim >= 3 ? src.GetLength(2) : 1;
-                            int extra2 = Dim >= 4 ? src.GetLength(3) : 1;
-                            int[] idx = new int[Dim];
-                            for (int k = 0; k < periodicIdx.Count; k++) {
-                                idx[0] = periodicIdx[k];
-                                for (int node = 0; node < NoOfNodes; node++) {
-                                    idx[1] = node;
-                                    for (int e1 = 0; e1 < extra1; e1++) {
-                                        if (Dim >= 3) idx[2] = e1;
-                                        for (int e2 = 0; e2 < extra2; e2++) {
-                                            if (Dim >= 4) idx[3] = e2;
-                                            dst[idx] = src[idx];
-                                        }
-                                    }
-                                }
-                            }
+                            foreach (int i in periodicIdx)
+                                EdgeSlice(dst, i).Set(EdgeSlice(src, i));
                         }
                     }
                 }
@@ -1166,32 +1173,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                             }
                         }
 
-                        int Dim = template.Dimension;
-                        int extra1 = Dim >= 3 ? template.GetLength(2) : 1;
-                        int extra2 = Dim >= 4 ? template.GetLength(3) : 1;
-
-                        double[] vOld = new double[Dloc];
-                        int[] idx = new int[Dim];
-                        idx[0] = i;
-                        for (int k = 0; k < NoOfNodes; k++) {
-                            idx[1] = k;
-                            for (int e1 = 0; e1 < extra1; e1++) {
-                                if (Dim >= 3) idx[2] = e1;
-                                for (int e2 = 0; e2 < extra2; e2++) {
-                                    if (Dim >= 4) idx[3] = e2;
-
-                                    for (int d = 0; d < Dloc; d++)
-                                        vOld[d] = bufs[d][idx];
-
-                                    for (int d = 0; d < Dloc; d++) {
-                                        double acc = 0.0;
-                                        for (int e = 0; e < Dloc; e++)
-                                            acc += Mtx[d, e] * vOld[e];
-                                        bufs[d][idx] = acc;
-                                    }
-                                }
-                            }
-                        }
+                        MixArrays(bufs.Select(b => EdgeSlice(b, i)).ToArray(), Mtx);
                     }
                 }
             }
@@ -1200,39 +1182,24 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             /// Rotates the derivative-direction axis (at position <paramref name="gradAxisPos"/>) of the (cr,cc) block
             /// of all variables by <paramref name="Mtx"/>, on edge <paramref name="i"/>; used for the GradU axis of the GradUxV and GradUxGradV buffers.
             /// </summary>
-            private void RotateGradientAxis(MultidimensionalArray[, , ,] SumBuffer, int GammaCount, int DeltaCount, int NoOfNodes, int gradAxisPos, MultidimensionalArray Mtx, int i, int cr, int cc) {
+            private void RotateGradientAxis(MultidimensionalArray[, , ,] SumBuffer, int GammaCount, int DeltaCount, int gradAxisPos, MultidimensionalArray Mtx, int i, int cr, int cc) {
+                // index strings for the edge-i slice, without the edge index: 'k' node, 'e' other extra axis, 'a'/'b' derivative direction before/after
+                string Old, New;
+                switch (gradAxisPos) {
+                    case 2: Old = "ka"; New = "kb"; break;   // GradUxV:     [edge, node, GradU]
+                    case 3: Old = "kea"; New = "keb"; break; // GradUxGradV: [edge, node, GradV, GradU]
+                    default: throw new NotSupportedException();
+                }
+
                 for (int gamma = 0; gamma < GammaCount; gamma++) {
                     for (int delta = 0; delta < DeltaCount; delta++) {
                         var b = SumBuffer[gamma, delta, cr, cc];
                         if (b == null)
                             continue;
+                        Debug.Assert(b.Dimension == gradAxisPos + 1);
 
-                        int Dim = b.Dimension;
-                        int Dloc = b.GetLength(gradAxisPos);
-                        int otherExtraPos = (Dim >= 4) ? (gradAxisPos == 2 ? 3 : 2) : -1;
-                        int otherExtraLen = otherExtraPos >= 0 ? b.GetLength(otherExtraPos) : 1;
-
-                        double[] vOld = new double[Dloc];
-                        int[] idx = new int[Dim];
-                        idx[0] = i;
-                        for (int k = 0; k < NoOfNodes; k++) {
-                            idx[1] = k;
-                            for (int eo = 0; eo < otherExtraLen; eo++) {
-                                if (otherExtraPos >= 0) idx[otherExtraPos] = eo;
-
-                                for (int bIdx = 0; bIdx < Dloc; bIdx++) {
-                                    idx[gradAxisPos] = bIdx;
-                                    vOld[bIdx] = b[idx];
-                                }
-                                for (int bIdx = 0; bIdx < Dloc; bIdx++) {
-                                    double acc = 0.0;
-                                    for (int e = 0; e < Dloc; e++)
-                                        acc += Mtx[bIdx, e] * vOld[e];
-                                    idx[gradAxisPos] = bIdx;
-                                    b[idx] = acc;
-                                }
-                            }
-                        }
+                        var bi = EdgeSlice(b, i);
+                        bi.Multiply(1.0, Mtx, bi.CloneAs(), 0.0, New, "ba", Old);
                     }
                 }
             }
@@ -1324,20 +1291,9 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                     paramValues[tuple[d]] = bufs[d];
                 }
 
-                double[] vOld = new double[Dloc];
                 for (int k = 0; k < periodicIdx.Count; k++) {
                     int i = periodicIdx[k];
-                    var M = Mtxs[k];
-                    for (int node = 0; node < NoOfNodes; node++) {
-                        for (int d = 0; d < Dloc; d++)
-                            vOld[d] = bufs[d][i, node];
-                        for (int d = 0; d < Dloc; d++) {
-                            double acc = 0.0;
-                            for (int e = 0; e < Dloc; e++)
-                                acc += M[d, e] * vOld[e];
-                            bufs[d][i, node] = acc;
-                        }
-                    }
+                    MixArrays(bufs.Select(b => EdgeSlice(b, i)).ToArray(), Mtxs[k]);
                 }
             }
 
@@ -1366,18 +1322,9 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             /// </summary>
             private MultidimensionalArray GetRotatedNormals(List<int> periodicIdx, List<MultidimensionalArray> periodicMtx, int NoOfNodes) {
                 var RotatedNormals = NormalBuffer.CloneAs();
-                int D = NormalBuffer.GetLength(2);
                 for (int k = 0; k < periodicIdx.Count; k++) {
                     int i = periodicIdx[k];
-                    var Mtx = periodicMtx[k];
-                    for (int node = 0; node < NoOfNodes; node++) {
-                        for (int d = 0; d < D; d++) {
-                            double acc = 0.0;
-                            for (int e = 0; e < D; e++)
-                                acc += Mtx[d, e] * NormalBuffer[i, node, e];
-                            RotatedNormals[i, node, d] = acc;
-                        }
-                    }
+                    EdgeSlice(RotatedNormals, i).Multiply(1.0, periodicMtx[k], EdgeSlice(NormalBuffer, i), 0.0, "kd", "de", "ke");
                 }
                 return RotatedNormals;
             }
@@ -1400,41 +1347,60 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             }
 
             /// <summary>
-            /// Rotationally periodic edges: re-computes the cr=1 (OUT-cell equation) blocks in OUT's frame (Step 1)
+            /// Rotationally periodic edges: re-computes the cr=1 (OUT-cell equation) blocks of the linear and the affine part in OUT's frame (Step 1)
             /// and rotates the IN/OUT cross blocks of vector-valued domain variables (Step 2).
             /// </summary>
-            private void ApplyPeriodicRotation(int i0, int Length, List<int> periodicIdx, List<MultidimensionalArray> periodicMtx, EdgeFormParams efp, List<MyChunk> Edges, bool MustLock, int NoOfNodes, int D) {
+            private void ApplyPeriodicRotation(int i0, int Length, List<int> periodicIdx, List<MultidimensionalArray> periodicMtx, List<MultidimensionalArray> periodicMtxInv,
+                bool LinearRequired, bool AffineRequired, EdgeFormParams efp, List<MyChunk> Edges, bool MustLock, int NoOfNodes, int D) {
                 int GAMMA = m_owner.GAMMA;
 
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                // Step 1: re-evaluate all forms in OUT's frame
+                // Step 1: re-evaluate all forms in OUT's frame, only on the periodic edges (`Edges`),
                 // and copy the cr=1 (OUT-cell equation) blocks into the main buffers
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 {
-                    var scratchUxV = CloneSumBufferStructure(m_UxVSumBuffer);
-                    var scratchGradUxV = CloneSumBufferStructure(m_GradUxVSumBuffer);
-                    var scratchUxGradV = CloneSumBufferStructure(m_UxGradVSumBuffer);
-                    var scratchGradUxGradV = CloneSumBufferStructure(m_GradUxGradVSumBuffer);
+                    var scratchUxV = LinearRequired ? CloneSumBufferStructure(m_UxVSumBuffer) : null;
+                    var scratchGradUxV = LinearRequired ? CloneSumBufferStructure(m_GradUxVSumBuffer) : null;
+                    var scratchUxGradV = LinearRequired ? CloneSumBufferStructure(m_UxGradVSumBuffer) : null;
+                    var scratchGradUxGradV = LinearRequired ? CloneSumBufferStructure(m_GradUxGradVSumBuffer) : null;
+                    var scratchV = AffineRequired ? CloneSumBufferStructure(m_VSumBuffer) : null;
+                    var scratchGradV = AffineRequired ? CloneSumBufferStructure(m_GradVSumBuffer) : null;
 
                     EvaluateInOutFrame(periodicIdx, periodicMtx, NoOfNodes, D, delegate () {
-                        EvalNSumForm(ref efp, i0, m_Edgeform_UxV, Edges, m_UxVComponentBuffer, scratchUxV, false, NoOfNodes, D, m_Edgeform_UxV_Watches, MustLock,
-                            (E, mda) => E.InternalEdge_UxV(ref efp, mda),
-                            (E, mda) => E.BoundaryEdge_UxV(ref efp, mda));
-                        EvalNSumForm(ref efp, i0, m_Edgeform_GradUxV, Edges, m_GradUxVComponentBuffer, scratchGradUxV, false, NoOfNodes, D, m_Edgeform_GradUxV_Watches, MustLock,
-                            (E, mda) => E.InternalEdge_GradUxV(ref efp, mda),
-                            (E, mda) => E.BoundaryEdge_GradUxV(ref efp, mda));
-                        EvalNSumForm(ref efp, i0, m_Edgeform_UxGradV, Edges, m_UxGradVComponentBuffer, scratchUxGradV, false, NoOfNodes, D, m_Edgeform_UxGradV_Watches, MustLock,
-                            (E, mda) => E.InternalEdge_UxGradV(ref efp, mda),
-                            (E, mda) => E.BoundaryEdge_UxGradV(ref efp, mda));
-                        EvalNSumForm(ref efp, i0, m_Edgeform_GradUxGradV, Edges, m_GradUxGradVComponentBuffer, scratchGradUxGradV, false, NoOfNodes, D, m_Edgeform_GradUxGradV_Watches, MustLock,
-                            (E, mda) => E.InternalEdge_GradUxGradV(ref efp, mda),
-                            (E, mda) => E.BoundaryEdge_GradUxGradV(ref efp, mda));
+                        if (LinearRequired) {
+                            EvalNSumForm(ref efp, i0, m_Edgeform_UxV, Edges, m_UxVComponentBuffer, scratchUxV, false, NoOfNodes, D, m_Edgeform_UxV_Watches, MustLock,
+                                (E, mda) => E.InternalEdge_UxV(ref efp, mda),
+                                (E, mda) => E.BoundaryEdge_UxV(ref efp, mda));
+                            EvalNSumForm(ref efp, i0, m_Edgeform_GradUxV, Edges, m_GradUxVComponentBuffer, scratchGradUxV, false, NoOfNodes, D, m_Edgeform_GradUxV_Watches, MustLock,
+                                (E, mda) => E.InternalEdge_GradUxV(ref efp, mda),
+                                (E, mda) => E.BoundaryEdge_GradUxV(ref efp, mda));
+                            EvalNSumForm(ref efp, i0, m_Edgeform_UxGradV, Edges, m_UxGradVComponentBuffer, scratchUxGradV, false, NoOfNodes, D, m_Edgeform_UxGradV_Watches, MustLock,
+                                (E, mda) => E.InternalEdge_UxGradV(ref efp, mda),
+                                (E, mda) => E.BoundaryEdge_UxGradV(ref efp, mda));
+                            EvalNSumForm(ref efp, i0, m_Edgeform_GradUxGradV, Edges, m_GradUxGradVComponentBuffer, scratchGradUxGradV, false, NoOfNodes, D, m_Edgeform_GradUxGradV_Watches, MustLock,
+                                (E, mda) => E.InternalEdge_GradUxGradV(ref efp, mda),
+                                (E, mda) => E.BoundaryEdge_GradUxGradV(ref efp, mda));
+                        }
+                        if (AffineRequired) {
+                            EvalNSumForm(ref efp, i0, m_EdgeSourceV, Edges, m_VComponentBuffer, scratchV, true, NoOfNodes, D, m_EdgeSourceV_Watches, MustLock,
+                                (E, mda) => E.InternalEdge_V(ref efp, mda),
+                                (E, mda) => E.BoundaryEdge_V(ref efp, mda));
+                            EvalNSumForm(ref efp, i0, m_EdgeSourceGradV, Edges, m_GradVComponentBuffer, scratchGradV, true, NoOfNodes, D, m_EdgeSourceGradV_Watches, MustLock,
+                                (E, mda) => E.InternalEdge_GradV(ref efp, mda),
+                                (E, mda) => E.BoundaryEdge_GradV(ref efp, mda));
+                        }
                     });
 
-                    SpliceCr1Block(scratchUxV, m_UxVSumBuffer, GAMMA, NoOfNodes, periodicIdx);
-                    SpliceCr1Block(scratchGradUxV, m_GradUxVSumBuffer, GAMMA, NoOfNodes, periodicIdx);
-                    SpliceCr1Block(scratchUxGradV, m_UxGradVSumBuffer, GAMMA, NoOfNodes, periodicIdx);
-                    SpliceCr1Block(scratchGradUxGradV, m_GradUxGradVSumBuffer, GAMMA, NoOfNodes, periodicIdx);
+                    if (LinearRequired) {
+                        SpliceCr1Block(scratchUxV, m_UxVSumBuffer, GAMMA, NoOfNodes, periodicIdx);
+                        SpliceCr1Block(scratchGradUxV, m_GradUxVSumBuffer, GAMMA, NoOfNodes, periodicIdx);
+                        SpliceCr1Block(scratchUxGradV, m_UxGradVSumBuffer, GAMMA, NoOfNodes, periodicIdx);
+                        SpliceCr1Block(scratchGradUxGradV, m_GradUxGradVSumBuffer, GAMMA, NoOfNodes, periodicIdx);
+                    }
+                    if (AffineRequired) {
+                        SpliceCr1Block(scratchV, m_VSumBuffer, GAMMA, NoOfNodes, periodicIdx);
+                        SpliceCr1Block(scratchGradV, m_GradVSumBuffer, GAMMA, NoOfNodes, periodicIdx);
+                    }
                 }
 
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1442,6 +1408,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 // (cr=0,cc=1) by M, (cr=1,cc=0) by M^-1; for GradUxV and GradUxGradV,
                 // also the GradU direction axis (see RotateGradientAxis)
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                if (!LinearRequired)
+                    return;
                 int[][] VectorTuples = m_owner.Operator.VectorFieldIndices.ToArray();
                 if (VectorTuples.Length <= 0)
                     return;
@@ -1449,8 +1417,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 for (int k = 0; k < periodicIdx.Count; k++) {
                     int i = periodicIdx[k];
                     var M = periodicMtx[k];
-                    var Minv = M.CloneAs();
-                    Minv.InvertInPlace();
+                    var Minv = periodicMtxInv[k];
 
                     RotateCrossBlock(m_UxVSumBuffer, m_Trf_UxVSumBuffer, VectorTuples, GAMMA, Length, NoOfNodes, M, i, 0, 1);
                     RotateCrossBlock(m_UxVSumBuffer, m_Trf_UxVSumBuffer, VectorTuples, GAMMA, Length, NoOfNodes, Minv, i, 1, 0);
@@ -1458,8 +1425,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                     RotateCrossBlock(m_GradUxVSumBuffer, m_Trf_GradUxVSumBuffer, VectorTuples, GAMMA, Length, NoOfNodes, M, i, 0, 1);
                     RotateCrossBlock(m_GradUxVSumBuffer, m_Trf_GradUxVSumBuffer, VectorTuples, GAMMA, Length, NoOfNodes, Minv, i, 1, 0);
                     // GradU direction axis (position 2)
-                    RotateGradientAxis(m_GradUxVSumBuffer, GAMMA, m_owner.DELTA, NoOfNodes, 2, M, i, 0, 1);
-                    RotateGradientAxis(m_GradUxVSumBuffer, GAMMA, m_owner.DELTA, NoOfNodes, 2, Minv, i, 1, 0);
+                    RotateGradientAxis(m_GradUxVSumBuffer, GAMMA, m_owner.DELTA, 2, M, i, 0, 1);
+                    RotateGradientAxis(m_GradUxVSumBuffer, GAMMA, m_owner.DELTA, 2, Minv, i, 1, 0);
 
                     RotateCrossBlock(m_UxGradVSumBuffer, m_Trf_UxGradVSumBuffer, VectorTuples, GAMMA, Length, NoOfNodes, M, i, 0, 1);
                     RotateCrossBlock(m_UxGradVSumBuffer, m_Trf_UxGradVSumBuffer, VectorTuples, GAMMA, Length, NoOfNodes, Minv, i, 1, 0);
@@ -1468,32 +1435,9 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                     RotateCrossBlock(m_GradUxGradVSumBuffer, m_Trf_GradUxGradVSumBuffer, VectorTuples, GAMMA, Length, NoOfNodes, M, i, 0, 1);
                     RotateCrossBlock(m_GradUxGradVSumBuffer, m_Trf_GradUxGradVSumBuffer, VectorTuples, GAMMA, Length, NoOfNodes, Minv, i, 1, 0);
                     // GradU direction axis (position 3; position 2 is GradV)
-                    RotateGradientAxis(m_GradUxGradVSumBuffer, GAMMA, m_owner.DELTA, NoOfNodes, 3, M, i, 0, 1);
-                    RotateGradientAxis(m_GradUxGradVSumBuffer, GAMMA, m_owner.DELTA, NoOfNodes, 3, Minv, i, 1, 0);
+                    RotateGradientAxis(m_GradUxGradVSumBuffer, GAMMA, m_owner.DELTA, 3, M, i, 0, 1);
+                    RotateGradientAxis(m_GradUxGradVSumBuffer, GAMMA, m_owner.DELTA, 3, Minv, i, 1, 0);
                 }
-            }
-
-            /// <summary>
-            /// Affine counterpart of Step 1 in <see cref="ApplyPeriodicRotation"/>: re-computes the cr=1 (OUT-cell equation) part
-            /// of <see cref="m_VSumBuffer"/>/<see cref="m_GradVSumBuffer"/> with rotated normal and IN-side parameters rotated into OUT's frame.
-            /// </summary>
-            private void ApplyPeriodicRotationAffine(int i0, List<int> periodicIdx, List<MultidimensionalArray> periodicMtx, EdgeFormParams efp, List<MyChunk> Edges, bool MustLock, int NoOfNodes, int D) {
-                int GAMMA = m_owner.GAMMA;
-
-                var scratchV = CloneSumBufferStructure(m_VSumBuffer);
-                var scratchGradV = CloneSumBufferStructure(m_GradVSumBuffer);
-
-                EvaluateInOutFrame(periodicIdx, periodicMtx, NoOfNodes, D, delegate () {
-                    EvalNSumForm(ref efp, i0, m_EdgeSourceV, Edges, m_VComponentBuffer, scratchV, true, NoOfNodes, D, m_EdgeSourceV_Watches, MustLock,
-                        (E, mda) => E.InternalEdge_V(ref efp, mda),
-                        (E, mda) => E.BoundaryEdge_V(ref efp, mda));
-                    EvalNSumForm(ref efp, i0, m_EdgeSourceGradV, Edges, m_GradVComponentBuffer, scratchGradV, true, NoOfNodes, D, m_EdgeSourceGradV_Watches, MustLock,
-                        (E, mda) => E.InternalEdge_GradV(ref efp, mda),
-                        (E, mda) => E.BoundaryEdge_GradV(ref efp, mda));
-                });
-
-                SpliceCr1Block(scratchV, m_VSumBuffer, GAMMA, NoOfNodes, periodicIdx);
-                SpliceCr1Block(scratchGradV, m_GradVSumBuffer, GAMMA, NoOfNodes, periodicIdx);
             }
 
             /// <summary>
@@ -1517,9 +1461,11 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 readonly ThreadLocals m_tl;
                 readonly int m_i0, m_Length, m_NoOfNodes, m_D;
                 readonly List<int> m_Idx;
-                readonly List<MultidimensionalArray> m_Mtx;
+                readonly List<MultidimensionalArray> m_Mtx;    // IN's frame to OUT's frame
+                readonly List<MultidimensionalArray> m_MtxInv; // OUT's frame to IN's frame
+                readonly List<MyChunk> m_SubChunks; // runs of consecutive periodic edges, for the re-evaluation in OUT's frame
 
-                PeriodicEdgeChunk(ThreadLocals tl, int i0, int Length, int NoOfNodes, int D, List<int> Idx, List<MultidimensionalArray> Mtx) {
+                PeriodicEdgeChunk(ThreadLocals tl, int i0, int Length, IGridData grid, int NoOfNodes, int D, List<int> Idx, List<MultidimensionalArray> Mtx) {
                     m_tl = tl;
                     m_i0 = i0;
                     m_Length = Length;
@@ -1527,6 +1473,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                     m_D = D;
                     m_Idx = Idx;
                     m_Mtx = Mtx;
+                    m_MtxInv = Mtx.Select(M => { var Minv = M.CloneAs(); Minv.InvertInPlace(); return Minv; }).ToList();
+                    m_SubChunks = GetSubChunks(i0, Idx, grid);
                 }
 
                 /// <summary>
@@ -1536,27 +1484,50 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                     tl.GetPeriodicEdgesAndMatrices(i0, Length, grid, out var Idx, out var Mtx);
                     if (Idx.Count <= 0)
                         return null;
-                    return new PeriodicEdgeChunk(tl, i0, Length, NoOfNodes, D, Idx, Mtx);
+                    return new PeriodicEdgeChunk(tl, i0, Length, grid, NoOfNodes, D, Idx, Mtx);
+                }
+
+                /// <summary>
+                /// groups the (ascending) chunk-local edge indices <paramref name="Idx"/> into runs of consecutive edges of the same type
+                /// </summary>
+                static List<MyChunk> GetSubChunks(int i0, List<int> Idx, IGridData grid) {
+                    var CellIdx = grid.iGeomEdges.CellIndices;
+                    var ret = new List<MyChunk>();
+                    MyChunk cur = default(MyChunk);
+                    for (int k = 0; k < Idx.Count; k++) {
+                        int iEdge = Idx[k] + i0;
+                        bool Type = CellIdx[iEdge, 1] >= 0;
+                        if (cur.Len > 0 && cur.i0 + cur.Len == iEdge && cur.Type == Type) {
+                            cur.Len++;
+                        } else {
+                            if (cur.Len > 0)
+                                ret.Add(cur);
+                            cur = default(MyChunk);
+                            cur.i0 = iEdge;
+                            cur.Len = 1;
+                            cur.Type = Type;
+                        }
+                    }
+                    if (cur.Len > 0)
+                        ret.Add(cur);
+                    return ret;
                 }
 
                 /// <summary>
                 /// Rotates the OUT-side parameters into IN's frame, until the returned object is disposed.
                 /// </summary>
                 public IDisposable RotateOutParametersIntoInFrame() {
-                    var MtxInv = m_Mtx.Select(M => { var Minv = M.CloneAs(); Minv.InvertInPlace(); return Minv; }).ToList();
                     var paramValues = m_tl.m_ParameterFieldsValues_OUT;
-                    var original = RotateParameters(paramValues, m_tl.GetParameterVectorTuples(m_D), m_Idx, MtxInv, m_NoOfNodes);
+                    var original = RotateParameters(paramValues, m_tl.GetParameterVectorTuples(m_D), m_Idx, m_MtxInv, m_NoOfNodes);
                     return new ParameterRestore(paramValues, original);
                 }
 
                 /// <summary>
-                /// See <see cref="ApplyPeriodicRotation"/> and <see cref="ApplyPeriodicRotationAffine"/>.
+                /// See <see cref="ApplyPeriodicRotation"/>.
                 /// </summary>
-                public void ApplyRotation(bool LinearRequired, bool AffineRequired, EdgeFormParams efp, List<MyChunk> Edges, bool MustLock) {
-                    if (LinearRequired)
-                        m_tl.ApplyPeriodicRotation(m_i0, m_Length, m_Idx, m_Mtx, efp, Edges, MustLock, m_NoOfNodes, m_D);
-                    if (AffineRequired)
-                        m_tl.ApplyPeriodicRotationAffine(m_i0, m_Idx, m_Mtx, efp, Edges, MustLock, m_NoOfNodes, m_D);
+                public void ApplyRotation(bool LinearRequired, bool AffineRequired, EdgeFormParams efp, bool MustLock) {
+                    if (LinearRequired || AffineRequired)
+                        m_tl.ApplyPeriodicRotation(m_i0, m_Length, m_Idx, m_Mtx, m_MtxInv, LinearRequired, AffineRequired, efp, m_SubChunks, MustLock, m_NoOfNodes, m_D);
                 }
 
                 sealed class ParameterRestore : IDisposable {
