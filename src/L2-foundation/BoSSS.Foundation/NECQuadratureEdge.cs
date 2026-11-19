@@ -1402,7 +1402,11 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                             //(new CellMask(GridDat, Chunk.GetSingleElementChunk(GridDat.iLogicalEdges.CellIndices[iEdge, 1]))).SaveToTextFile("PerOtCell.csv", false);
 
 
-                            var Trafo = grid.Grid.PeriodicTrafo[eT - Grid.Classic.GridCommons.FIRST_PERIODIC_BC_TAG];
+                            // periodic transformation of this edge, normalized to the orientation IN -> OUT
+                            var gridDataConcrete = grid as BoSSS.Foundation.Grid.Classic.GridData;
+                            var Trafo = gridDataConcrete != null
+                                ? gridDataConcrete.Edges.GetPeriodicTrafo(iEdge, true)
+                                : grid.Grid.PeriodicTrafo[eT - Grid.Classic.GridCommons.FIRST_PERIODIC_BC_TAG];
 
 
                             void TransformVector(MultidimensionalArray Mtx, MultidimensionalArray[] Vals) {
@@ -1410,18 +1414,25 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                                 foreach (int[] VecPtr in VectorTuples) {
                                     Debug.Assert(VecPtr.Length == D);
 
-                                    for (int k = 0; k < NoOfNodes; k++) {
-                                        if (VecPtr[0] >= Vals.Length || Vals[VecPtr[0]] == null)
-                                            continue;
+                                    // missing tuple members (not required by any component) are treated as zero
+                                    bool anyPresent = false;
+                                    for (int d = 0; d < D; d++) {
+                                        if (VecPtr[d] < Vals.Length && Vals[VecPtr[d]] != null)
+                                            anyPresent = true;
+                                    }
+                                    if (!anyPresent)
+                                        continue;
 
+                                    for (int k = 0; k < NoOfNodes; k++) {
                                         for (int d = 0; d < D; d++) {
-                                            Uorg[d] = Vals[VecPtr[d]][i, k];
+                                            Uorg[d] = (VecPtr[d] < Vals.Length && Vals[VecPtr[d]] != null) ? Vals[VecPtr[d]][i, k] : 0.0;
                                         }
 
                                         Vector Udest = Mtx.MtxVecMul(Uorg);
 
                                         for (int d = 0; d < D; d++) {
-                                            Vals[VecPtr[d]][i, k] = Udest[d];
+                                            if (VecPtr[d] < Vals.Length && Vals[VecPtr[d]] != null)
+                                                Vals[VecPtr[d]][i, k] = Udest[d];
                                         }
                                     }
                                 }
@@ -1435,33 +1446,19 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                                 foreach (int[] VecPtr in VectorTuples) {
                                     Debug.Assert(VecPtr.Length == D);
 
-                                    /*
-                                    Vector Uorg = new Vector(D);
-                                    for(int k = 0; k < NoOfNodes; k++) {
-                                        if(VecPtr[0] >= Gradients.Length || Gradients[VecPtr[0]] == null)
-                                            continue;
-
-                                        for(int e = 0; e < D; e++) {
-                                            for(int d = 0; d < D; d++) {
-                                                Uorg[d] = Gradients[VecPtr[d]][i, k, e];
-                                            }
-
-                                            Vector Udest = Mtx.MtxVecMul(Uorg);
-
-                                            for(int d = 0; d < D; d++) {
-                                                Gradients[VecPtr[d]][i, k, e] = Udest[d];
-                                            }
-                                        }
+                                    // missing tuple members (not required by any component) are treated as zero
+                                    bool anyPresent = false;
+                                    for (int e = 0; e < D; e++) {
+                                        if (VecPtr[e] < Gradients.Length && Gradients[VecPtr[e]] != null)
+                                            anyPresent = true;
                                     }
-                                    */
+                                    if (!anyPresent)
+                                        continue;
 
                                     for (int k = 0; k < NoOfNodes; k++) {
-                                        if (VecPtr[0] >= Gradients.Length || Gradients[VecPtr[0]] == null)
-                                            continue;
-
                                         for (int e = 0; e < D; e++) {
                                             for (int d = 0; d < D; d++) {
-                                                GT[e, d] = Gradients[VecPtr[e]][i, k, d];
+                                                GT[e, d] = (VecPtr[e] < Gradients.Length && Gradients[VecPtr[e]] != null) ? Gradients[VecPtr[e]][i, k, d] : 0.0;
                                             }
                                         }
 
@@ -1469,6 +1466,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
 
                                         for (int e = 0; e < D; e++) {
+                                            if (VecPtr[e] >= Gradients.Length || Gradients[VecPtr[e]] == null)
+                                                continue;
                                             for (int d = 0; d < D; d++) {
                                                 Gradients[VecPtr[e]][i, k, d] = GTD[e, d];
                                             }

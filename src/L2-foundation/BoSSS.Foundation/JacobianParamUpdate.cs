@@ -95,7 +95,14 @@ namespace BoSSS.Foundation {
 
         //DelPartialParameterUpdate originalUpdate;
 
-        int NoOfOrgParams;
+        /// <summary>
+        /// Number of parameters of the original operator, i.e. the leading entries of <see cref="JacobianParameterVars"/>
+        /// (before the "_lin"/"_lin_d" parameters).
+        /// </summary>
+        public int NoOfOrgParams {
+            get;
+            private set;
+        }
 
         List<IEquationComponent> Components = new List<IEquationComponent>();
 

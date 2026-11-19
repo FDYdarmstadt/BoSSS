@@ -1336,29 +1336,13 @@ namespace BoSSS.Foundation {
 
 
         internal bool RequiresComplicatedPeriodicity(IGridData gd) {
-            /*
-            var tags = gd.iGeomEdges.EdgeTags;
-            int E = gd.iGeomEdges.Count;
-            Debug.Assert(E == tags.Length);
-            
-            //for(int e = 0; e < E; e++) {
-            //    int tag = tags[e];
-            //    if(tag >= Grid.Classic.GridCommons.FIRST_PERIODIC_BC_TAG) {
-
-            //        return true;
-            //    }
-            //}
-
+            // true, if at least one periodic boundary is rotated (i.e. its transformation matrix is not the identity)
             foreach(var Trafo in gd.Grid.PeriodicTrafo) {
                 var Mtx = Trafo.Matrix.CloneAs();
                 Mtx.AccEye(-1.0);
                 if(Mtx.InfNorm() >= 1e-8)
-                    throw new NotSupportedException("Non-parallel periodic edges are still not supported.");
+                    return true;
             }
-            */
-
-            // feature deactivated for now, because the implementation for linear components sucks so much
-
             return false;
         }
 
@@ -2949,11 +2933,23 @@ namespace BoSSS.Foundation {
             // create derivative operator
             // ==========================
 
+            // quadrature order of the Jacobian operator: same as for the original operator,
+            // i.e. the synthetic "_lin"/"_lin_d" parameters appended by JacobianParamUpdate are ignored
+            Func<int[], int[], int[], int> JacobianQuadOrderFunction = (DomDegs, ParamDegs, CoDomDegs) => {
+                int[] origParamDegs;
+                if (h.NoOfOrgParams > 0 && ParamDegs != null && ParamDegs.Length >= h.NoOfOrgParams) {
+                    origParamDegs = ParamDegs.Take(h.NoOfOrgParams).ToArray();
+                } else {
+                    origParamDegs = new int[] { 0 }; // matches GetOrderFromQuadOrderFunction's convention for "no parameters"
+                }
+                return this.QuadOrderFunction(DomDegs, origParamDegs, CoDomDegs);
+            };
+
             var JacobianOp = new DifferentialOperator(
                    this.DomainVar,
                    h.JacobianParameterVars,
                    this.CodomainVar,
-                   this.QuadOrderFunction);
+                   JacobianQuadOrderFunction);
 
             if (this.TemporalOperator != null)
                 JacobianOp.TemporalOperator = new TemporalOperatorContainer(JacobianOp, this.TemporalOperator);

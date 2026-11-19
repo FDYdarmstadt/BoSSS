@@ -1121,7 +1121,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                                     _R.Multiply(1.0, trafo, _R, 0.0, "im", "i", "im");
                                 } else {
                                     Debug.Assert(object.ReferenceEquals(QuadResult.Storage, _Q.Storage));
-                                    _Q.Multiply(1.0, ExtractTrafo(trafo, m_owner.m_RowL[gamma]), _R, 0.0, "im", "imn", "in");
+                                    // apply the orthonormalization `trafo` for curved cells (same index convention as for the matrix part above)
+                                    _Q.Multiply(1.0, ExtractTrafo(trafo, m_owner.m_RowL[gamma]), _R, 0.0, "in", "imn", "im");
                                 }
                             }
                             I0Col += 1;
